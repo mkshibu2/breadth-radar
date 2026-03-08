@@ -12,6 +12,7 @@
   --text:   #d4e2ed; --sub:    #7a9bb5; --dim:    #3e5470;
   --accent: #38bdf8; --lime:   #4ade80; --green:  #22c55e;
   --teal:   #2dd4bf; --yellow: #facc15; --orange: #fb923c; --red: #f87171;
+  --purple: #a855f7;
   --body: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace; --disp: 'Barlow Condensed', sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -66,7 +67,7 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 .wrap{position:relative;z-index:1;padding:20px 28px;display:flex;flex-direction:column;gap:20px;}
 
 /* HERO */
-.hero{display:grid;grid-template-columns:160px 220px 1fr 200px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.hero{display:grid;grid-template-columns:160px 220px 1fr 200px 180px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
 @media(max-width:900px){.hero{grid-template-columns:1fr 1fr;}}
 .h-score{padding:20px 28px;border-right:1px solid var(--border);}
 .h-score-lbl{font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;font-family:var(--mono);margin-bottom:6px;}
@@ -162,6 +163,60 @@ svg.spk{overflow:visible;display:block;margin-left:auto;}
 details summary{font-size:10px;color:var(--sub);letter-spacing:1px;cursor:pointer;text-transform:uppercase;margin-bottom:4px;list-style:none;font-family:var(--mono);padding:6px 0;}
 details summary::-webkit-details-marker{display:none;}
 details summary:hover{color:var(--text);}
+
+/* ── BSR MODULE ── */
+.bsr-hero{display:grid;grid-template-columns:140px 200px 1fr 180px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;overflow:hidden;border-top:2px solid var(--purple);}
+@media(max-width:900px){.bsr-hero{grid-template-columns:1fr 1fr;}}
+.bsr-score-panel{padding:18px 24px;border-right:1px solid var(--border);}
+.bsr-score-lbl{font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;font-family:var(--mono);margin-bottom:6px;}
+.bsr-score-num{font-family:var(--disp);font-size:72px;font-weight:800;line-height:0.95;transition:color 0.4s;color:var(--dim);}
+.bsr-score-sub{font-size:11px;color:var(--sub);margin-top:6px;font-family:var(--mono);}
+.bsr-zone-panel{padding:18px 24px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;}
+.bsr-zone-lbl{font-size:10px;letter-spacing:3px;color:var(--dim);font-family:var(--mono);text-transform:uppercase;margin-bottom:8px;}
+.bsr-zone-name{font-family:var(--disp);font-size:22px;font-weight:700;letter-spacing:1px;transition:color 0.4s;color:var(--dim);line-height:1.2;}
+.bsr-stats{display:flex;gap:16px;margin-top:8px;font-size:10px;font-family:var(--mono);color:var(--sub);}
+.bsr-stats span b{font-size:14px;}
+.bsr-meter-panel{padding:18px 24px;display:flex;flex-direction:column;justify-content:center;}
+.bsr-m-zones{display:flex;height:4px;border-radius:3px;overflow:hidden;gap:2px;margin-bottom:8px;}
+.bsr-m-track{height:10px;background:var(--border);border-radius:5px;overflow:hidden;margin-bottom:8px;}
+.bsr-m-fill{height:100%;border-radius:5px;transition:width 0.8s cubic-bezier(.4,0,.2,1),background 0.4s;}
+.bsr-m-ticks{display:flex;justify-content:space-between;font-size:9px;color:var(--dim);font-family:var(--mono);}
+.bsr-last-panel{padding:18px 20px;border-left:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;gap:8px;}
+.bsr-last-lbl{font-size:10px;letter-spacing:2px;color:var(--dim);font-family:var(--mono);text-transform:uppercase;}
+.bsr-counts{display:flex;flex-direction:column;gap:6px;}
+.bsr-count-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-family:var(--mono);}
+.bsr-count-row b{font-size:14px;font-weight:700;}
+
+/* BSR ADD FORM */
+.bsr-add-form{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:16px 20px;}
+.bsr-form-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:end;}
+@media(max-width:800px){.bsr-form-grid{grid-template-columns:1fr 1fr;}}
+.bsr-field label{font-size:9px;letter-spacing:1.5px;color:var(--sub);text-transform:uppercase;font-family:var(--mono);display:block;margin-bottom:5px;}
+.bsr-field input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--accent);font-family:var(--mono);font-size:15px;font-weight:600;padding:7px 9px;outline:none;border-radius:2px;transition:border-color 0.15s;}
+.bsr-field input:focus{border-color:var(--accent);}
+.bsr-field input::placeholder{color:var(--dim);font-size:12px;font-weight:400;}
+.btn-bsr-add{background:var(--purple);color:#0a0e14;font-family:var(--body);font-size:12px;font-weight:700;padding:10px 20px;border:none;border-radius:3px;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.btn-bsr-add:hover{background:#d8b4fe;transform:translateY(-1px);}
+
+/* BSR TABLE */
+.bsr-table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.bsr-table{width:100%;border-collapse:collapse;font-size:11px;}
+.bsr-table th{font-size:9px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;font-weight:500;padding:9px 12px;text-align:right;border-bottom:2px solid var(--border);white-space:nowrap;background:var(--bg3);font-family:var(--mono);}
+.bsr-table th:first-child,.bsr-table th:nth-child(2){text-align:left;}
+.bsr-table td{padding:9px 12px;text-align:right;border-bottom:1px solid rgba(30,45,66,0.5);white-space:nowrap;font-family:var(--mono);font-size:11px;vertical-align:middle;}
+.bsr-table td:first-child,.bsr-table td:nth-child(2){text-align:left;}
+.bsr-table tr:hover td{background:rgba(168,85,247,0.03);}
+.bsr-status{display:inline-block;font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 9px;border-radius:3px;text-transform:uppercase;font-family:var(--mono);}
+.bsr-status.success{background:rgba(74,222,128,0.15);color:var(--lime);}
+.bsr-status.failed{background:rgba(248,113,113,0.15);color:var(--red);}
+.bsr-status.pending{background:rgba(250,204,21,0.12);color:var(--yellow);}
+.bsr-price-input{background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:11px;padding:3px 6px;width:80px;outline:none;border-radius:2px;text-align:right;}
+.bsr-price-input:focus{border-color:var(--accent);}
+
+/* BSR CHART */
+.bsr-chart-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:20px;}
+.bsr-canvas-wrap{position:relative;width:100%;height:160px;}
+canvas#bsr-chart{width:100%;height:100%;}
 </style>
 </head>
 <body>
@@ -261,6 +316,11 @@ details summary:hover{color:var(--text);}
       <div><div class="h-last-lbl">Last Saved</div><div class="h-last-date" id="h-lastdate">—</div></div>
       <div><div class="h-last-lbl">Score Trend</div><div class="h-last-trend" id="h-trend">—</div></div>
       <div class="h-last-trend" id="h-entries" style="color:var(--dim)">0 entries stored</div>
+    </div>
+    <div class="h-last" style="border-left:1px solid var(--border);background:rgba(168,85,247,0.04);">
+      <div><div class="h-last-lbl" style="color:var(--purple)">BSR Rate</div><div class="h-last-date" id="hero-bsr-pct" style="font-size:28px;font-family:var(--disp);font-weight:800;color:var(--dim)">—</div></div>
+      <div><div class="h-last-lbl">Environment</div><div class="h-last-trend" id="hero-bsr-zone" style="font-size:11px;font-weight:600">—</div></div>
+      <div style="font-size:10px;color:var(--dim);font-family:var(--mono)" id="hero-bsr-counts">0 trades</div>
     </div>
   </div>
 
@@ -400,6 +460,131 @@ details summary:hover{color:var(--text);}
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- BSR — BREAKOUT SUCCESS RATE TRACKER MODULE         -->
+  <!-- ══════════════════════════════════════════════════ -->
+
+  <!-- BSR HERO -->
+  <div>
+    <div class="sec" style="--dim:var(--purple)">
+      <span style="color:var(--purple)">Breakout Success Rate (BSR) Tracker</span>
+      <span style="font-size:9px;color:var(--sub);letter-spacing:0;text-transform:none;font-family:var(--body);margin-left:4px;">Success ≥5% gain · Failure: below pivot after 3 days</span>
+    </div>
+    <div class="bsr-hero">
+      <div class="bsr-score-panel">
+        <div class="bsr-score-lbl">BSR</div>
+        <div class="bsr-score-num" id="bsr-num">—</div>
+        <div class="bsr-score-sub">success rate</div>
+      </div>
+      <div class="bsr-zone-panel">
+        <div class="bsr-zone-lbl">Environment</div>
+        <div class="bsr-zone-name" id="bsr-zone">No Data</div>
+        <div class="bsr-stats">
+          <span><b id="bsr-sn" style="color:var(--lime)">0</b> Success</span>
+          <span><b id="bsr-fn" style="color:var(--red)">0</b> Failed</span>
+          <span><b id="bsr-pn" style="color:var(--yellow)">0</b> Pending</span>
+        </div>
+      </div>
+      <div class="bsr-meter-panel">
+        <div class="bsr-m-zones">
+          <div class="mz" style="background:rgba(248,113,113,0.5)"></div>
+          <div class="mz" style="background:rgba(251,146,60,0.5)"></div>
+          <div class="mz" style="background:rgba(250,204,21,0.5)"></div>
+          <div class="mz" style="background:rgba(34,197,94,0.5)"></div>
+          <div class="mz" style="background:rgba(168,85,247,0.6)"></div>
+        </div>
+        <div class="bsr-m-track"><div class="bsr-m-fill" id="bsr-fill" style="width:0%;background:var(--dim)"></div></div>
+        <div class="bsr-m-ticks">
+          <div>0%<span style="color:var(--red);font-size:8px">AVOID</span></div>
+          <div>30%<span style="color:var(--orange);font-size:8px">WEAK</span></div>
+          <div>50%<span style="color:var(--yellow);font-size:8px">MIXED</span></div>
+          <div>65%<span style="color:var(--green);font-size:8px">HEALTHY</span></div>
+          <div style="text-align:right">80%<span style="color:var(--purple);font-size:8px">STRONG</span></div>
+        </div>
+        <div style="font-size:10px;color:var(--sub);font-family:var(--mono);margin-top:10px" id="bsr-breakdown"></div>
+      </div>
+      <div class="bsr-last-panel">
+        <div class="bsr-last-lbl">Latest Trade</div>
+        <div style="font-size:13px;color:var(--text);font-family:var(--mono);font-weight:600" id="bsr-last-sym">—</div>
+        <div style="font-size:10px;color:var(--sub);font-family:var(--mono);margin-top:4px" id="bsr-last-info">—</div>
+        <div style="font-size:10px;color:var(--dim);font-family:var(--mono);margin-top:8px" id="bsr-total">0 trades logged</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BSR ADD TRADE FORM -->
+  <div class="bsr-add-form">
+    <div class="sec" style="margin-bottom:12px">Add Breakout Trade</div>
+    <div class="bsr-form-grid">
+      <div class="bsr-field">
+        <label>Stock Symbol</label>
+        <input type="text" id="bsr-sym" placeholder="RELIANCE" style="text-transform:uppercase">
+      </div>
+      <div class="bsr-field">
+        <label>Pivot Price &#8377;</label>
+        <input type="number" id="bsr-pivot" placeholder="2450.00" step="0.05" min="0">
+      </div>
+      <div class="bsr-field">
+        <label>Current Price &#8377;</label>
+        <input type="number" id="bsr-curr" placeholder="2510.00" step="0.05" min="0">
+      </div>
+      <div class="bsr-field">
+        <label>Breakout Date</label>
+        <input type="date" id="bsr-date">
+      </div>
+      <div style="display:flex;align-items:flex-end">
+        <button class="btn-bsr-add" onclick="bsrAdd()">+ Add Trade</button>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--sub);font-family:var(--mono);margin-top:10px">
+      &#9432;&nbsp; Click any price in the table below to update it.
+      &nbsp;|&nbsp; <b style="color:var(--lime)">Success:</b> Current &#8805; Pivot &#215;1.05
+      &nbsp;|&nbsp; <b style="color:var(--red)">Failure:</b> Current &lt; Pivot AND Days &#8805; 3
+      &nbsp;|&nbsp; <b style="color:var(--yellow)">Pending:</b> Days &lt; 3
+    </div>
+    <div style="font-size:11px;font-family:var(--mono);opacity:0;transition:opacity 0.4s;margin-top:6px;min-height:18px" id="bsr-msg"></div>
+  </div>
+
+  <!-- BSR TRADE TABLE -->
+  <div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="sec" style="margin-bottom:0;flex:1">Trade Log</div>
+      <button class="btn-export" onclick="bsrExport()" style="border-color:rgba(168,85,247,0.3);color:var(--purple)">&#8595;&nbsp; Export Trades CSV</button>
+    </div>
+    <div class="bsr-table-wrap">
+      <table class="bsr-table">
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Breakout Date</th>
+            <th>Days</th>
+            <th>Pivot &#8377;</th>
+            <th>Current &#8377;</th>
+            <th>Chg%</th>
+            <th>Target &#8377;</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="bsr-tbody">
+          <tr><td colspan="9" style="color:var(--dim);padding:24px;text-align:center;letter-spacing:2px;font-size:11px;font-family:var(--mono);">NO TRADES LOGGED YET — ADD YOUR FIRST BREAKOUT ABOVE</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BSR TREND CHART -->
+  <div class="bsr-chart-wrap">
+    <div class="sec">BSR Trend — Success Rate Over Time</div>
+    <div class="bsr-canvas-wrap"><canvas id="bsr-chart"></canvas></div>
+    <div class="chart-legend" style="margin-top:10px">
+      <span><span class="ldot" style="background:var(--purple)"></span>BSR %</span>
+      <span><span class="ldot" style="background:var(--green)"></span>Healthy (65%)</span>
+      <span><span class="ldot" style="background:var(--yellow)"></span>Mixed (50%)</span>
+      <span style="color:var(--dim);font-size:10px;margin-left:6px">&#9432;&nbsp; Rising BSR = improving breakout environment in current market</span>
+    </div>
+  </div>
+
 </div>
 <script>
 // ════════════════════════════════════════════════════
@@ -423,7 +608,7 @@ async function jbCreate(key, data) {
   const r = await fetch(`${JB}/b`, {
     method: 'POST',
     headers: { 'Content-Type':'application/json', 'X-Master-Key': key, 'X-Bin-Name':'NSE-Breadth-Radar', 'X-Bin-Private':'true' },
-    body: JSON.stringify({ records: data })
+    body: JSON.stringify({ records: data, bsr: [] })
   });
   if(!r.ok) throw new Error('Create failed: ' + r.status);
   const j = await r.json();
@@ -436,14 +621,15 @@ async function jbRead(key, bin) {
   });
   if(!r.ok) throw new Error('Read failed: ' + r.status);
   const j = await r.json();
-  return j.record.records || [];
+  // Return full record object (may have .records and .bsr)
+  return j.record;
 }
 
-async function jbUpdate(key, bin, data) {
+async function jbUpdate(key, bin, payload) {
   const r = await fetch(`${JB}/b/${bin}`, {
     method: 'PUT',
     headers: { 'Content-Type':'application/json', 'X-Master-Key': key },
-    body: JSON.stringify({ records: data })
+    body: JSON.stringify(payload)
   });
   if(!r.ok) throw new Error('Update failed: ' + r.status);
 }
@@ -473,6 +659,9 @@ function setupFlash(msg, color) {
   setTimeout(()=>el.style.opacity='0', 5000);
 }
 
+// Helper: build combined cloud payload
+function buildPayload() { return { records: loadLocal(), bsr: bsrLoad() }; }
+
 async function connectCloud() {
   const key = document.getElementById('cfg-key').value.trim();
   let   bin = document.getElementById('cfg-bin').value.trim();
@@ -480,19 +669,15 @@ async function connectCloud() {
   setSyncStatus('syncing','Connecting…');
   try {
     if(!bin) {
-      // Create a new bin with existing local data
-      const local = loadLocal();
-      bin = await jbCreate(key, local);
+      bin = await jbCreate(key, loadLocal());
       document.getElementById('cfg-bin').value = bin;
       setupFlash(`✓ Connected! Bin ID: ${bin}  — Copy this ID to other devices`, 'var(--lime)');
     } else {
-      // Test existing bin
       await jbRead(key, bin);
       setupFlash('✓ Connected to existing bin successfully', 'var(--lime)');
     }
     saveCfg(key, bin);
     setSyncStatus('ok','Synced');
-    // Pull fresh data from cloud
     await pullFromCloud(key, bin);
   } catch(e) {
     setSyncStatus('err','Sync Error');
@@ -505,9 +690,11 @@ async function testConnection() {
   if(!cfg.key||!cfg.bin) { setupFlash('Enter Key and Bin ID first', 'var(--orange)'); return; }
   setSyncStatus('syncing','Testing…');
   try {
-    const data = await jbRead(cfg.key, cfg.bin);
+    const raw = await jbRead(cfg.key, cfg.bin);
+    const recs = Array.isArray(raw) ? raw : (raw.records||[]);
+    const bsrT = Array.isArray(raw) ? [] : (raw.bsr||[]);
     setSyncStatus('ok','Synced');
-    setupFlash(`✓ Connection OK — ${data.length} records found in cloud`, 'var(--lime)');
+    setupFlash(`✓ Connection OK — ${recs.length} breadth records + ${bsrT.length} BSR trades in cloud`, 'var(--lime)');
   } catch(e) {
     setSyncStatus('err','Error');
     setupFlash('✗ ' + e.message, 'var(--red)');
@@ -519,23 +706,34 @@ async function pullFromCloud(key, bin) {
   if(!cfg.key||!cfg.bin) { setupFlash('No credentials configured', 'var(--orange)'); return; }
   setSyncStatus('syncing','Pulling…');
   try {
-    const cloud = await jbRead(cfg.key, cfg.bin);
-    saveLocal(cloud);
+    const raw = await jbRead(cfg.key, cfg.bin);
+    const cloudRecs = Array.isArray(raw) ? raw : (raw.records||[]);
+    const cloudBsr  = Array.isArray(raw) ? [] : (raw.bsr||[]);
+    // Merge breadth records
+    const local = loadLocal();
+    const merged = Object.values([...cloudRecs,...local].reduce((m,r)=>{m[r.date]=r;return m;},{}));
+    saveLocal(merged);
+    // Merge BSR trades by id
+    const localBsr = bsrLoad();
+    const bsrById  = {};
+    [...cloudBsr,...localBsr].forEach(t=>{ if(t&&t.id) bsrById[t.id]=t; });
+    bsrSave(Object.values(bsrById));
     setSyncStatus('ok','Synced');
-    setupFlash(`✓ Pulled ${cloud.length} records from cloud`, 'var(--lime)');
+    setupFlash(`✓ Pulled — ${merged.length} breadth records, ${Object.values(bsrById).length} BSR trades`, 'var(--lime)');
     renderAll();
+    bsrRenderAll();
   } catch(e) {
     setSyncStatus('err','Sync Error');
     setupFlash('✗ Pull failed: ' + e.message, 'var(--red)');
   }
 }
 
-async function pushToCloud(data) {
+async function pushToCloud() {
   const cfg = getCfg();
-  if(!cfg.key||!cfg.bin) return; // silently skip if not configured
+  if(!cfg.key||!cfg.bin) return;
   setSyncStatus('syncing','Saving…');
   try {
-    await jbUpdate(cfg.key, cfg.bin, data);
+    await jbUpdate(cfg.key, cfg.bin, buildPayload());
     setSyncStatus('ok','Synced');
   } catch(e) {
     setSyncStatus('err','Sync Error');
@@ -549,9 +747,9 @@ async function forcePush() {
   if(!cfg.key||!cfg.bin) { setupFlash('No credentials configured', 'var(--orange)'); return; }
   setSyncStatus('syncing','Pushing…');
   try {
-    await jbUpdate(cfg.key, cfg.bin, loadLocal());
+    await jbUpdate(cfg.key, cfg.bin, buildPayload());
     setSyncStatus('ok','Synced');
-    setupFlash('✓ Local data pushed to cloud', 'var(--lime)');
+    setupFlash('✓ All local data pushed to cloud', 'var(--lime)');
   } catch(e) {
     setSyncStatus('err','Error');
     setupFlash('✗ Push failed: ' + e.message, 'var(--red)');
@@ -661,7 +859,7 @@ async function saveToday() {
   clearInputs();
   renderAll();
   // Push to cloud asynchronously
-  await pushToCloud(sorted);
+  await pushToCloud();
 }
 
 function clearInputs() {
@@ -689,7 +887,7 @@ async function del(date) {
   if(!confirm('Delete entry for '+fmt(date)+'?')) return;
   const data=loadLocal().filter(r=>r.date!==date);
   saveLocal(data); renderAll();
-  await pushToCloud(data);
+  await pushToCloud();
 }
 
 // ════════════════════════════════════════════════════
@@ -879,12 +1077,14 @@ function exportCSV() {
 function renderAll() {
   const data=loadLocal();
   renderHero(data); renderChart(data); renderSnapshot(data); renderHistory(data);
+  bsrRenderAll();
 }
 
 // On load: init UI, check if credentials exist and auto-pull
 (async function init() {
   document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
   document.getElementById('entry-today').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('bsr-date').value = todayISO();
   // Hide setup panel by default if already configured
   const cfg=getCfg();
   const panel=document.getElementById('setup-panel');
@@ -897,6 +1097,13 @@ function renderAll() {
       const local=loadLocal();
       const merged=Object.values([...cloud,...local].reduce((m,r)=>{m[r.date]=r;return m;},{}));
       saveLocal(merged);
+      // Also pull BSR from cloud
+      const raw2 = await jbRead(cfg.key,cfg.bin);
+      const cBsr = Array.isArray(raw2)?[]:(raw2.bsr||[]);
+      const lBsr = bsrLoad();
+      const bsrMap = {};
+      [...cBsr,...lBsr].forEach(t=>{if(t&&t.id)bsrMap[t.id]=t;});
+      bsrSave(Object.values(bsrMap));
       setSyncStatus('ok','Synced');
     } catch(e) {
       setSyncStatus('err','Offline');
@@ -906,9 +1113,281 @@ function renderAll() {
     setSyncStatus('','Not configured');
   }
   renderAll();
+  bsrRenderAll();
 })();
 
-window.addEventListener('resize',()=>renderChart(loadLocal()));
+window.addEventListener('resize',()=>{ renderChart(loadLocal()); bsrRenderChart(); });
+
+// ════════════════════════════════════════════════════
+//  BSR — BREAKOUT SUCCESS RATE TRACKER
+// ════════════════════════════════════════════════════
+const LS_BSR = 'nse_bsr_v1';
+const bsrLoad = () => { try { return JSON.parse(localStorage.getItem(LS_BSR)) || []; } catch(e) { return []; } };
+const bsrSave = d => localStorage.setItem(LS_BSR, JSON.stringify(d));
+
+// BSR cloud sync — handled by shared pushToCloud() / pullFromCloud()
+
+// ── EVALUATION ───────────────────────────────────────
+function bsrDaysSince(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const now = new Date(); now.setHours(0,0,0,0);
+  return Math.floor((now - d) / 86400000);
+}
+
+function bsrEval(trade) {
+  const pivot = +trade.pivot, curr = +trade.curr;
+  const days  = bsrDaysSince(trade.date);
+  if(curr >= pivot * 1.05)              return 'success';
+  if(curr < pivot && days >= 3)         return 'failed';
+  return 'pending';
+}
+
+function bsrZone(pct) {
+  if(pct >= 80) return { name:'STRONG BREAKOUT ENV', color:'var(--purple)',  bg:'rgba(168,85,247,0.12)' };
+  if(pct >= 65) return { name:'HEALTHY ENVIRONMENT', color:'var(--green)',   bg:'rgba(34,197,94,0.12)'  };
+  if(pct >= 50) return { name:'MIXED CONDITIONS',    color:'var(--yellow)',  bg:'rgba(250,204,21,0.12)' };
+  if(pct >= 30) return { name:'WEAK BREAKOUTS',      color:'var(--orange)',  bg:'rgba(251,146,60,0.12)' };
+  return              { name:'AVOID BREAKOUTS',      color:'var(--red)',     bg:'rgba(248,113,113,0.12)' };
+}
+
+// ── ADD TRADE ─────────────────────────────────────────
+function bsrAdd() {
+  const sym   = document.getElementById('bsr-sym').value.trim().toUpperCase();
+  const pivot = document.getElementById('bsr-pivot').value.trim();
+  const curr  = document.getElementById('bsr-curr').value.trim();
+  const date  = document.getElementById('bsr-date').value;
+  if(!sym || !pivot || !date) { bsrFlash('⚠ Symbol, Pivot Price and Date are required', 'var(--orange)'); return; }
+  const trades = bsrLoad();
+  const id = Date.now().toString();
+  trades.push({ id, sym, pivot, curr: curr || pivot, date });
+  bsrSave(trades);
+  bsrFlash(`✓ Added ${sym} — pivot ₹${pivot}`, 'var(--lime)');
+  // Clear form
+  ['bsr-sym','bsr-pivot','bsr-curr'].forEach(i => document.getElementById(i).value = '');
+  document.getElementById('bsr-date').value = '';
+  bsrRenderAll();
+  pushToCloud();
+}
+
+function bsrDelete(id) {
+  if(!confirm('Remove this trade?')) return;
+  const trades = bsrLoad().filter(t => t.id !== id);
+  bsrSave(trades); bsrRenderAll(); pushToCloud();
+}
+
+function bsrUpdatePrice(id, newPrice) {
+  const trades = bsrLoad();
+  const t = trades.find(x => x.id === id);
+  if(!t) return;
+  t.curr = newPrice;
+  bsrSave(trades); bsrRenderAll(); pushToCloud();
+}
+
+function bsrFlash(msg, color) {
+  const el = document.getElementById('bsr-msg');
+  el.textContent = msg; el.style.color = color; el.style.opacity = '1';
+  setTimeout(() => el.style.opacity = '0', 4000);
+}
+
+// ── RENDER HERO ───────────────────────────────────────
+function bsrRenderHero(trades) {
+  const el = id => document.getElementById(id);
+  const results = trades.map(t => bsrEval(t));
+  const succ = results.filter(r => r === 'success').length;
+  const fail = results.filter(r => r === 'failed').length;
+  const pend = results.filter(r => r === 'pending').length;
+  const total = succ + fail;
+  const pct = total > 0 ? Math.round(succ / total * 100) : null;
+
+  el('bsr-sn').textContent = succ;
+  el('bsr-fn').textContent = fail;
+  el('bsr-pn').textContent = pend;
+  el('bsr-total').textContent = trades.length + ' trade' + (trades.length !== 1 ? 's' : '') + ' logged';
+
+  if(pct === null) {
+    el('bsr-num').textContent = '—'; el('bsr-num').style.color = 'var(--dim)';
+    el('bsr-zone').textContent = 'No Data'; el('bsr-zone').style.color = 'var(--dim)';
+    el('bsr-fill').style.width = '0%';
+    el('bsr-breakdown').textContent = '';
+    // Update top hero card
+    el('hero-bsr-pct').textContent = '—'; el('hero-bsr-pct').style.color = 'var(--dim)';
+    el('hero-bsr-zone').textContent = '—'; el('hero-bsr-zone').style.color = 'var(--dim)';
+    el('hero-bsr-counts').textContent = trades.length + ' trades';
+  } else {
+    const z = bsrZone(pct);
+    el('bsr-num').textContent = pct + '%'; el('bsr-num').style.color = z.color;
+    el('bsr-zone').textContent = z.name; el('bsr-zone').style.color = z.color;
+    el('bsr-fill').style.width = pct + '%'; el('bsr-fill').style.background = z.color;
+    el('bsr-breakdown').innerHTML = `<span>${succ} success + ${fail} failed = ${total} evaluated &nbsp;|&nbsp; ${pend} pending (excluded)</span>`;
+    // Update top hero card
+    el('hero-bsr-pct').textContent = pct + '%'; el('hero-bsr-pct').style.color = z.color;
+    el('hero-bsr-zone').textContent = z.name; el('hero-bsr-zone').style.color = z.color;
+    el('hero-bsr-counts').textContent = `${succ}✓  ${fail}✗  ${pend}⏳`;
+  }
+
+  if(trades.length > 0) {
+    const last = trades[trades.length - 1];
+    el('bsr-last-sym').textContent = last.sym;
+    const s = bsrEval(last);
+    const sc = s==='success'?'var(--lime)':s==='failed'?'var(--red)':'var(--yellow)';
+    el('bsr-last-info').innerHTML = `Pivot &#8377;${last.pivot} &nbsp;<span style="color:${sc};text-transform:uppercase;font-size:9px;font-weight:700">${s}</span>`;
+  } else {
+    el('bsr-last-sym').textContent = '—';
+    el('bsr-last-info').textContent = '—';
+  }
+}
+
+// ── RENDER TABLE ──────────────────────────────────────
+function bsrRenderTable(trades) {
+  const tbody = document.getElementById('bsr-tbody');
+  if(!trades.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="color:var(--dim);padding:24px;text-align:center;letter-spacing:2px;font-size:11px;font-family:var(--mono);">NO TRADES LOGGED YET</td></tr>';
+    return;
+  }
+  // Sort newest first
+  const sorted = [...trades].sort((a,b) => b.date.localeCompare(a.date));
+  tbody.innerHTML = sorted.map(t => {
+    const pivot  = +t.pivot, curr = +t.curr;
+    const days   = bsrDaysSince(t.date);
+    const status = bsrEval(t);
+    const chgPct = ((curr - pivot) / pivot * 100).toFixed(2);
+    const target = (pivot * 1.05).toFixed(2);
+    const chgColor = +chgPct >= 5 ? 'var(--lime)' : +chgPct >= 0 ? 'var(--green)' : 'var(--red)';
+    const statusClass = status === 'success' ? 'success' : status === 'failed' ? 'failed' : 'pending';
+    const statusLabel = status === 'success' ? '✓ Success' : status === 'failed' ? '✗ Failed' : '⏳ Pending';
+    return `<tr>
+      <td style="font-weight:700;color:var(--text);font-size:12px">${t.sym}</td>
+      <td style="color:var(--sub)">${fmt(t.date)}</td>
+      <td style="color:var(--sub)">${days}d</td>
+      <td style="color:var(--text)">₹${(+t.pivot).toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+      <td>
+        <input class="bsr-price-input" type="number" value="${curr}" step="0.05"
+          onblur="if(this.value && +this.value !== ${curr}) bsrUpdatePrice('${t.id}', this.value)"
+          onkeydown="if(event.key==='Enter') this.blur()"
+          title="Click to edit price">
+      </td>
+      <td style="color:${chgColor};font-weight:600">${+chgPct >= 0 ? '+' : ''}${chgPct}%</td>
+      <td style="color:var(--dim)">₹${(+target).toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+      <td><span class="bsr-status ${statusClass}">${statusLabel}</span></td>
+      <td><button class="del-btn" onclick="bsrDelete('${t.id}')" title="Remove trade">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── RENDER CHART ──────────────────────────────────────
+function bsrRenderChart() {
+  const canvas = document.getElementById('bsr-chart');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const wrap = canvas.parentElement;
+  const dpr = window.devicePixelRatio || 1;
+  const W = wrap.clientWidth, H = 160;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const trades = bsrLoad();
+  if(trades.length < 2) {
+    ctx.fillStyle = 'rgba(62,84,112,0.5)';
+    ctx.font = '12px Inter, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Add at least 2 trades to see BSR trend', W/2, H/2); return;
+  }
+
+  const PAD = {t:16, r:20, b:36, l:44};
+  const cW = W - PAD.l - PAD.r, cH = H - PAD.t - PAD.b;
+  const sorted = [...trades].sort((a,b) => a.date.localeCompare(b.date));
+
+  // Compute running BSR at each trade point
+  const points = [];
+  sorted.forEach((t, i) => {
+    const slice = sorted.slice(0, i+1);
+    const results = slice.map(x => bsrEval(x));
+    const s = results.filter(r=>r==='success').length;
+    const f = results.filter(r=>r==='failed').length;
+    const total = s + f;
+    const pct = total > 0 ? Math.round(s/total*100) : null;
+    if(pct !== null) points.push({ label: t.sym, pct, date: t.date });
+  });
+
+  if(points.length < 2) {
+    ctx.fillStyle = 'rgba(62,84,112,0.5)';
+    ctx.font = '12px Inter, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Waiting for evaluated trades (Success or Failed)…', W/2, H/2); return;
+  }
+
+  // Zone fills
+  [[65,100,'rgba(34,197,94,0.05)'],[50,65,'rgba(250,204,21,0.05)'],[0,50,'rgba(248,113,113,0.05)']].forEach(([lo,hi,c])=>{
+    ctx.fillStyle=c; ctx.fillRect(PAD.l, PAD.t+cH-hi/100*cH, cW, (hi-lo)/100*cH);
+  });
+  // Reference lines
+  [[65,'rgba(34,197,94,0.35)'],[50,'rgba(250,204,21,0.3)']].forEach(([v,c])=>{
+    const y=PAD.t+cH-v/100*cH;
+    ctx.beginPath();ctx.strokeStyle=c;ctx.setLineDash([4,4]);ctx.lineWidth=1;
+    ctx.moveTo(PAD.l,y);ctx.lineTo(PAD.l+cW,y);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=c;ctx.font='9px JetBrains Mono,monospace';ctx.textAlign='right';
+    ctx.fillText(v+'%',PAD.l-4,y+3);
+  });
+  // Y-axis labels
+  [0,25,50,75,100].forEach(v=>{
+    ctx.fillStyle='rgba(122,155,181,0.4)';ctx.font='9px JetBrains Mono,monospace';ctx.textAlign='right';
+    ctx.fillText(v+'%',PAD.l-6,PAD.t+cH-v/100*cH+3);
+  });
+
+  const step = points.length > 1 ? cW/(points.length-1) : cW;
+
+  // Area fill
+  ctx.beginPath();
+  points.forEach((p,i)=>{ const x=PAD.l+i*step,y=PAD.t+cH-p.pct/100*cH; i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+  ctx.lineTo(PAD.l+(points.length-1)*step,PAD.t+cH);ctx.lineTo(PAD.l,PAD.t+cH);ctx.closePath();
+  const g=ctx.createLinearGradient(0,PAD.t,0,PAD.t+cH);
+  g.addColorStop(0,'rgba(168,85,247,0.2)');g.addColorStop(1,'rgba(168,85,247,0.0)');
+  ctx.fillStyle=g;ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  points.forEach((p,i)=>{ const x=PAD.l+i*step,y=PAD.t+cH-p.pct/100*cH; i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+  ctx.strokeStyle='#c084fc';ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke();
+
+  // Dots + labels
+  points.forEach((p,i)=>{
+    const x=PAD.l+i*step,y=PAD.t+cH-p.pct/100*cH;
+    const c=p.pct>=65?'#22c55e':p.pct>=50?'#facc15':'#f87171';
+    ctx.beginPath();ctx.arc(x,y,3.5,0,Math.PI*2);ctx.fillStyle=c;ctx.fill();
+    // Label every point or last
+    if(points.length<=8||i===points.length-1){
+      ctx.fillStyle=c;ctx.font='bold 9px JetBrains Mono,monospace';ctx.textAlign='center';
+      ctx.fillText(p.pct+'%',x,y-9);
+    }
+    // X label
+    ctx.fillStyle='rgba(122,155,181,0.6)';ctx.font='8px JetBrains Mono,monospace';ctx.textAlign='center';
+    if(i===0||i===points.length-1||(points.length<=8))
+      ctx.fillText(p.label,x,H-6);
+  });
+}
+
+// ── EXPORT ────────────────────────────────────────────
+function bsrExport() {
+  const trades = bsrLoad();
+  if(!trades.length){alert('No trades to export');return;}
+  const hdr = ['Symbol','Breakout Date','Days','Pivot','Current Price','Change%','Target(+5%)','Status'];
+  const rows = trades.map(t => {
+    const pivot=+t.pivot,curr=+t.curr,days=bsrDaysSince(t.date);
+    const chg=((curr-pivot)/pivot*100).toFixed(2);
+    return [t.sym,t.date,days,pivot,curr,chg,(pivot*1.05).toFixed(2),bsrEval(t)].join(',');
+  });
+  const blob=new Blob([[hdr.join(','),...rows].join('\n')],{type:'text/csv'});
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'bsr_trades_'+todayISO()+'.csv'});
+  a.click();URL.revokeObjectURL(a.href);
+}
+
+// ── RENDER ALL BSR ────────────────────────────────────
+function bsrRenderAll() {
+  const trades = bsrLoad();
+  bsrRenderHero(trades);
+  bsrRenderTable(trades);
+  bsrRenderChart();
+}
 </script>
 </body>
 </html>
