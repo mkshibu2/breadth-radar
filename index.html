@@ -13,6 +13,7 @@
   --accent: #38bdf8; --lime:   #4ade80; --green:  #22c55e;
   --teal:   #2dd4bf; --yellow: #facc15; --orange: #fb923c; --red: #f87171;
   --purple: #a855f7;
+  --cyan: #22d3ee;
   --body: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace; --disp: 'Barlow Condensed', sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -67,7 +68,7 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 .wrap{position:relative;z-index:1;padding:20px 28px;display:flex;flex-direction:column;gap:20px;}
 
 /* HERO */
-.hero{display:grid;grid-template-columns:160px 220px 1fr 200px 180px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.hero{display:grid;grid-template-columns:160px 220px 1fr 200px 180px 160px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
 @media(max-width:900px){.hero{grid-template-columns:1fr 1fr;}}
 .h-score{padding:20px 28px;border-right:1px solid var(--border);}
 .h-score-lbl{font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;font-family:var(--mono);margin-bottom:6px;}
@@ -217,6 +218,63 @@ details summary:hover{color:var(--text);}
 .bsr-chart-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:20px;}
 .bsr-canvas-wrap{position:relative;width:100%;height:160px;}
 canvas#bsr-chart{width:100%;height:100%;}
+
+/* ── MARKET PRESSURE METER (MPM) ── */
+.mpm-hero{display:grid;grid-template-columns:130px 1fr 230px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;overflow:hidden;border-top:2px solid var(--teal);}
+@media(max-width:900px){.mpm-hero{grid-template-columns:1fr 1fr;}}
+.mpm-score-panel{padding:18px 20px;border-right:1px solid var(--border);}
+.mpm-score-lbl{font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;font-family:var(--mono);margin-bottom:6px;}
+.mpm-score-num{font-family:var(--disp);font-size:64px;font-weight:800;line-height:0.95;transition:color 0.4s;color:var(--dim);}
+.mpm-score-sub{font-size:10px;color:var(--sub);margin-top:5px;font-family:var(--mono);}
+.mpm-gauge-panel{padding:18px 24px;display:flex;flex-direction:column;justify-content:center;gap:8px;}
+.mpm-gauge-wrap{position:relative;width:100%;height:14px;background:var(--border);border-radius:7px;overflow:visible;}
+.mpm-gauge-fill{height:14px;border-radius:7px;background:linear-gradient(90deg,var(--red) 0%,var(--orange) 20%,var(--yellow) 45%,var(--green) 70%,var(--lime) 100%);width:100%;}
+.mpm-needle{position:absolute;top:-3px;width:4px;height:20px;background:white;border-radius:2px;transform:translateX(-50%);transition:left 0.9s cubic-bezier(.4,0,.2,1);box-shadow:0 0 8px rgba(0,0,0,0.6);z-index:2;}
+.mpm-gauge-labels{display:flex;justify-content:space-between;font-size:8px;color:var(--dim);font-family:var(--mono);margin-top:5px;}
+.mpm-bars{display:flex;gap:8px;height:48px;align-items:flex-end;margin-top:6px;}
+.mpm-bar-group{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;}
+.mpm-bar-fill{width:100%;border-radius:2px 2px 0 0;min-height:3px;transition:height 0.6s ease;}
+.mpm-bar-lbl{font-size:8px;color:var(--dim);font-family:var(--mono);}
+.mpm-bar-val{font-size:9px;font-weight:700;font-family:var(--mono);}
+.mpm-cond-panel{padding:18px 20px;border-left:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;gap:6px;}
+.mpm-cond-name{font-family:var(--disp);font-size:20px;font-weight:700;letter-spacing:1px;color:var(--dim);line-height:1.2;}
+.mpm-cond-hint{font-size:10px;color:var(--sub);font-family:var(--mono);line-height:1.5;}
+.mpm-counts{display:flex;gap:14px;font-size:10px;font-family:var(--mono);margin-top:4px;}
+.mpm-form{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:16px 20px;}
+.mpm-form-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:end;}
+@media(max-width:800px){.mpm-form-grid{grid-template-columns:1fr 1fr;}}
+.btn-mpm-add{background:var(--teal);color:#0a0e14;font-family:var(--body);font-size:12px;font-weight:700;padding:10px 20px;border:none;border-radius:3px;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.btn-mpm-add:hover{background:#67e8f9;transform:translateY(-1px);}
+/* MPM CSV Import */
+.mpm-import-panel{background:var(--bg3);border:1px solid rgba(34,211,238,0.25);border-radius:3px;padding:14px 16px;margin-top:14px;}
+.mpm-import-title{font-size:10px;letter-spacing:2px;color:var(--teal);text-transform:uppercase;font-family:var(--mono);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.mpm-drop-zone{border:2px dashed rgba(34,211,238,0.3);border-radius:4px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg4);position:relative;}
+.mpm-drop-zone:hover,.mpm-drop-zone.drag-over{border-color:var(--teal);background:rgba(34,211,238,0.06);}
+.mpm-drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.mpm-drop-lbl{font-size:12px;color:var(--sub);font-family:var(--mono);}
+.mpm-drop-lbl b{color:var(--teal);}
+.mpm-drop-lbl small{display:block;font-size:10px;color:var(--dim);margin-top:4px;}
+.mpm-import-steps{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+.mpm-step{font-size:10px;color:var(--sub);font-family:var(--mono);display:flex;align-items:flex-start;gap:6px;flex:1;min-width:140px;}
+.mpm-step-num{background:var(--teal);color:#0a0e14;font-weight:700;font-size:9px;padding:1px 6px;border-radius:2px;flex-shrink:0;margin-top:1px;}
+.mpm-preview{margin-top:12px;display:none;}
+.mpm-preview-title{font-size:10px;color:var(--teal);font-family:var(--mono);margin-bottom:6px;}
+.mpm-preview-rows{font-size:10px;font-family:var(--mono);color:var(--sub);max-height:120px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:2px;padding:8px;}
+.btn-mpm-import{background:var(--teal);color:#0a0e14;font-family:var(--body);font-size:12px;font-weight:700;padding:9px 20px;border:none;border-radius:3px;cursor:pointer;transition:all 0.15s;margin-top:10px;}
+.btn-mpm-import:hover{background:#67e8f9;}
+.btn-mpm-import:disabled{background:var(--dim);cursor:not-allowed;}
+
+.mpm-table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:4px;overflow-x:auto;}
+.mpm-table{width:100%;border-collapse:collapse;font-size:11px;min-width:700px;}
+.mpm-table th{font-size:9px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;font-weight:500;padding:9px 12px;text-align:right;border-bottom:2px solid var(--border);white-space:nowrap;background:var(--bg3);font-family:var(--mono);}
+.mpm-table th:first-child,.mpm-table th:nth-child(2){text-align:left;}
+.mpm-table td{padding:9px 12px;text-align:right;border-bottom:1px solid rgba(30,45,66,0.5);white-space:nowrap;font-family:var(--mono);font-size:11px;vertical-align:middle;}
+.mpm-table td:first-child,.mpm-table td:nth-child(2){text-align:left;}
+.mpm-table tr:hover td{background:rgba(34,211,238,0.03);}
+.mpm-dtype{display:inline-block;font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 9px;border-radius:3px;text-transform:uppercase;font-family:var(--mono);}
+.mpm-dtype.acc{background:rgba(74,222,128,0.15);color:var(--lime);}
+.mpm-dtype.dist{background:rgba(248,113,113,0.15);color:var(--red);}
+.mpm-dtype.neutral{background:rgba(122,155,181,0.1);color:var(--sub);}
 </style>
 </head>
 <body>
@@ -321,6 +379,11 @@ canvas#bsr-chart{width:100%;height:100%;}
       <div><div class="h-last-lbl" style="color:var(--purple)">BSR Rate</div><div class="h-last-date" id="hero-bsr-pct" style="font-size:28px;font-family:var(--disp);font-weight:800;color:var(--dim)">—</div></div>
       <div><div class="h-last-lbl">Environment</div><div class="h-last-trend" id="hero-bsr-zone" style="font-size:11px;font-weight:600">—</div></div>
       <div style="font-size:10px;color:var(--dim);font-family:var(--mono)" id="hero-bsr-counts">0 trades</div>
+    </div>
+    <div class="h-last" style="border-left:1px solid var(--border);background:rgba(20,180,80,0.04);">
+      <div><div class="h-last-lbl" style="color:var(--teal)">Pressure</div><div class="h-last-date" id="hero-mpm-score" style="font-size:28px;font-family:var(--disp);font-weight:800;color:var(--dim)">—</div></div>
+      <div><div class="h-last-lbl">Market State</div><div class="h-last-trend" id="hero-mpm-cond" style="font-size:10px;font-weight:600">—</div></div>
+      <div style="font-size:9px;color:var(--dim);font-family:var(--mono)" id="hero-mpm-counts">A:0 D:0 / 25d</div>
     </div>
   </div>
 
@@ -557,10 +620,10 @@ canvas#bsr-chart{width:100%;height:100%;}
           <tr>
             <th>Symbol</th>
             <th>Breakout Date</th>
-            <th>Days</th>
+            <th>Breakout Age</th>
             <th>Pivot &#8377;</th>
             <th>Current &#8377;</th>
-            <th>Chg%</th>
+            <th>Gain %</th>
             <th>Target &#8377;</th>
             <th>Status</th>
             <th></th>
@@ -584,6 +647,151 @@ canvas#bsr-chart{width:100%;height:100%;}
       <span style="color:var(--dim);font-size:10px;margin-left:6px">&#9432;&nbsp; Rising BSR = improving breakout environment in current market</span>
     </div>
   </div>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- MPM — MARKET PRESSURE METER MODULE                 -->
+  <!-- ══════════════════════════════════════════════════ -->
+
+  <!-- MPM HERO -->
+  <div>
+    <div class="sec" style="--dim:var(--teal)">
+      <span style="color:var(--teal)">Market Pressure Meter (MPM)</span>
+      <span style="font-size:9px;color:var(--sub);letter-spacing:0;text-transform:none;font-family:var(--body);margin-left:4px;">Nifty 500 · Last 25 Trading Days · Acc Day = Close↑ + Vol↑ &nbsp;|&nbsp; Dist Day = Close↓ + Vol↑</span>
+    </div>
+    <div class="mpm-hero">
+      <div class="mpm-score-panel">
+        <div class="mpm-score-lbl">Pressure</div>
+        <div class="mpm-score-num" id="mpm-score">—</div>
+        <div class="mpm-score-sub">Acc − Dist</div>
+      </div>
+      <div class="mpm-gauge-panel">
+        <div style="font-size:10px;letter-spacing:2px;color:var(--dim);font-family:var(--mono);text-transform:uppercase;margin-bottom:2px">Pressure Gauge</div>
+        <div class="mpm-gauge-wrap">
+          <div class="mpm-gauge-fill"></div>
+          <div class="mpm-needle" id="mpm-needle" style="left:50%"></div>
+        </div>
+        <div class="mpm-gauge-labels">
+          <span style="color:var(--red)">Heavy Sell</span>
+          <span style="color:var(--orange)">Weak</span>
+          <span style="color:var(--yellow)">Neutral</span>
+          <span style="color:var(--green)">Healthy</span>
+          <span style="color:var(--lime)">Strong Buy</span>
+        </div>
+        <div class="mpm-bars" id="mpm-bars">
+          <!-- rendered by JS -->
+        </div>
+        <div style="font-size:10px;color:var(--sub);font-family:var(--mono);margin-top:4px" id="mpm-window">Showing last 25 trading days</div>
+      </div>
+      <div class="mpm-cond-panel">
+        <div style="font-size:10px;letter-spacing:2px;color:var(--dim);font-family:var(--mono);text-transform:uppercase;margin-bottom:4px">Condition</div>
+        <div class="mpm-cond-name" id="mpm-cond">No Data</div>
+        <div class="mpm-cond-hint" id="mpm-hint">Enter Nifty daily data to see market pressure analysis.</div>
+        <div class="mpm-counts">
+          <span><b id="mpm-acc-n" style="color:var(--lime);font-size:14px">0</b> <span style="color:var(--sub)">Acc</span></span>
+          <span><b id="mpm-dist-n" style="color:var(--red);font-size:14px">0</b> <span style="color:var(--sub)">Dist</span></span>
+          <span><b id="mpm-neut-n" style="color:var(--dim);font-size:14px">0</b> <span style="color:var(--sub)">Neutral</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MPM ENTRY FORM -->
+  <div class="mpm-form">
+    <div class="sec" style="margin-bottom:12px">Add Nifty Day — <span style="color:var(--teal);letter-spacing:0;text-transform:none;font-family:var(--body);font-size:12px">Enter each trading day's data manually</span></div>
+    <div class="mpm-form-grid">
+      <div class="bsr-field">
+        <label>Date</label>
+        <input type="date" id="mpm-date">
+      </div>
+      <div class="bsr-field">
+        <label>Nifty Close</label>
+        <input type="number" id="mpm-close" placeholder="24500" step="0.05" min="0">
+      </div>
+      <div class="bsr-field">
+        <label>Previous Close</label>
+        <input type="number" id="mpm-pclose" placeholder="24350" step="0.05" min="0">
+        <div class="ef-hint" style="font-size:9px;color:var(--dim);margin-top:3px">Auto-fills from last entry</div>
+      </div>
+      <div class="bsr-field">
+        <label>Volume (Cr shares)</label>
+        <input type="number" id="mpm-vol" placeholder="18.5" step="0.01" min="0">
+      </div>
+      <div class="bsr-field">
+        <label>Prev Volume (Cr)</label>
+        <input type="number" id="mpm-pvol" placeholder="16.2" step="0.01" min="0">
+        <div class="ef-hint" style="font-size:9px;color:var(--dim);margin-top:3px">Auto-fills from last entry</div>
+      </div>
+      <div style="display:flex;align-items:flex-end">
+        <button class="btn-mpm-add" onclick="mpmAdd()">+ Add Day</button>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--sub);font-family:var(--mono);margin-top:10px">
+      &#9432;&nbsp; <b style="color:var(--lime)">Acc Day:</b> Close &gt; Prev Close AND Vol &gt; Prev Vol &nbsp;|&nbsp;
+      <b style="color:var(--red)">Dist Day:</b> Close &lt; Prev Close AND Vol &gt; Prev Vol &nbsp;|&nbsp;
+      Score = Acc Days − Dist Days (last 25 trading days)
+    </div>
+    <div style="font-size:11px;font-family:var(--mono);opacity:0;transition:opacity 0.4s;margin-top:6px;min-height:18px" id="mpm-msg"></div>
+
+    <!-- YAHOO CSV IMPORT PANEL -->
+    <div class="mpm-import-panel">
+      <div class="mpm-import-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Auto-Import from NSE Historical Index CSV — 1 minute per week
+      </div>
+      <div class="mpm-import-steps">
+        <div class="mpm-step"><span class="mpm-step-num">1</span>Go to <b style="color:var(--accent)">nseindia.com/reports-indices-historical-index-data</b></div>
+        <div class="mpm-step"><span class="mpm-step-num">2</span>Select Index: <b style="color:var(--text)">Nifty 50</b> · Set date range: last 30 days → click <b style="color:var(--text)">Get Data</b></div>
+        <div class="mpm-step"><span class="mpm-step-num">3</span>Click <b style="color:var(--text)">Download (.csv)</b> button on the page</div>
+        <div class="mpm-step"><span class="mpm-step-num">4</span>Drop the downloaded CSV below → Preview → click <b style="color:var(--teal)">Import All Days</b></div>
+      </div>
+      <div class="mpm-drop-zone" id="mpm-drop-zone"
+           ondragover="event.preventDefault();this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="mpmHandleDrop(event)">
+        <input type="file" accept=".csv" onchange="mpmHandleFile(this.files[0])">
+        <div class="mpm-drop-lbl">
+          <b>Click to browse</b> or drag &amp; drop your NSE CSV file here
+          <small>File will be named like: ind_close_all_DDMMYYYY.csv · Columns: Index Name, Index Date, Open Index Value … Volume</small>
+        </div>
+      </div>
+      <div class="mpm-preview" id="mpm-preview">
+        <div class="mpm-preview-title" id="mpm-preview-title">Preview</div>
+        <div class="mpm-preview-rows" id="mpm-preview-rows"></div>
+        <button class="btn-mpm-import" id="btn-mpm-import" onclick="mpmImportConfirm()" disabled>Import All Days</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MPM TABLE -->
+  <div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="sec" style="margin-bottom:0;flex:1">Pressure Day Log — Last 25 Trading Days</div>
+      <button class="btn-export" onclick="mpmExport()" style="border-color:rgba(34,211,238,0.3);color:var(--teal)">&#8595;&nbsp; Export MPM CSV</button>
+    </div>
+    <div class="mpm-table-wrap">
+      <table class="mpm-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Day Type</th>
+            <th>Nifty Close</th>
+            <th>Prev Close</th>
+            <th>Close Chg %</th>
+            <th>Volume (Cr)</th>
+            <th>Prev Vol (Cr)</th>
+            <th>Vol Chg %</th>
+            <th>Running Score</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="mpm-tbody">
+          <tr><td colspan="10" style="color:var(--dim);padding:24px;text-align:center;letter-spacing:2px;font-size:11px;font-family:var(--mono);">NO DATA YET — ADD NIFTY DAILY DATA ABOVE</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 
 </div>
 <script>
@@ -660,7 +868,7 @@ function setupFlash(msg, color) {
 }
 
 // Helper: build combined cloud payload
-function buildPayload() { return { records: loadLocal(), bsr: bsrLoad() }; }
+function buildPayload() { return { records: loadLocal(), bsr: bsrLoad(), mpm: mpmLoad() }; }
 
 async function connectCloud() {
   const key = document.getElementById('cfg-key').value.trim();
@@ -718,10 +926,17 @@ async function pullFromCloud(key, bin) {
     const bsrById  = {};
     [...cloudBsr,...localBsr].forEach(t=>{ if(t&&t.id) bsrById[t.id]=t; });
     bsrSave(Object.values(bsrById));
+    // Merge MPM
+    const cloudMpm = Array.isArray(raw) ? [] : (raw.mpm||[]);
+    const localMpm = mpmLoad();
+    const mpmById  = {};
+    [...cloudMpm,...localMpm].forEach(d=>{ if(d&&d.id) mpmById[d.id]=d; });
+    mpmSave(Object.values(mpmById));
     setSyncStatus('ok','Synced');
-    setupFlash(`✓ Pulled — ${merged.length} breadth records, ${Object.values(bsrById).length} BSR trades`, 'var(--lime)');
+    setupFlash(`✓ Pulled — ${merged.length} breadth + ${Object.values(bsrById).length} BSR + ${Object.values(mpmById).length} MPM records`, 'var(--lime)');
     renderAll();
     bsrRenderAll();
+    mpmRenderAll();
   } catch(e) {
     setSyncStatus('err','Sync Error');
     setupFlash('✗ Pull failed: ' + e.message, 'var(--red)');
@@ -1078,6 +1293,7 @@ function renderAll() {
   const data=loadLocal();
   renderHero(data); renderChart(data); renderSnapshot(data); renderHistory(data);
   bsrRenderAll();
+  mpmRenderAll();
 }
 
 // On load: init UI, check if credentials exist and auto-pull
@@ -1104,6 +1320,13 @@ function renderAll() {
       const bsrMap = {};
       [...cBsr,...lBsr].forEach(t=>{if(t&&t.id)bsrMap[t.id]=t;});
       bsrSave(Object.values(bsrMap));
+      // Pull MPM
+      const raw3 = await jbRead(cfg.key,cfg.bin);
+      const cMpm = Array.isArray(raw3)?[]:(raw3.mpm||[]);
+      const lMpm = mpmLoad();
+      const mpmMap = {};
+      [...cMpm,...lMpm].forEach(d=>{if(d&&d.id)mpmMap[d.id]=d;});
+      mpmSave(Object.values(mpmMap));
       setSyncStatus('ok','Synced');
     } catch(e) {
       setSyncStatus('err','Offline');
@@ -1114,6 +1337,8 @@ function renderAll() {
   }
   renderAll();
   bsrRenderAll();
+  mpmRenderAll();
+  document.getElementById('mpm-date').value = todayISO();
 })();
 
 window.addEventListener('resize',()=>{ renderChart(loadLocal()); bsrRenderChart(); });
@@ -1258,7 +1483,7 @@ function bsrRenderTable(trades) {
     return `<tr>
       <td style="font-weight:700;color:var(--text);font-size:12px">${t.sym}</td>
       <td style="color:var(--sub)">${fmt(t.date)}</td>
-      <td style="color:var(--sub)">${days}d</td>
+      <td style="color:var(--sub)">${days}d <span style="font-size:9px;color:var(--dim)">${days<=5?'Early':days<=15?'Mid':'Late'}</span></td>
       <td style="color:var(--text)">₹${(+t.pivot).toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
       <td>
         <input class="bsr-price-input" type="number" value="${curr}" step="0.05"
@@ -1382,6 +1607,440 @@ function bsrExport() {
 }
 
 // ── RENDER ALL BSR ────────────────────────────────────
+
+// ════════════════════════════════════════════════════
+//  MPM — MARKET PRESSURE METER
+// ════════════════════════════════════════════════════
+const LS_MPM = 'nse_mpm_v1';
+const mpmLoad = () => { try { return JSON.parse(localStorage.getItem(LS_MPM)) || []; } catch(e) { return []; } };
+const mpmSave = d => localStorage.setItem(LS_MPM, JSON.stringify(d));
+
+function mpmClassify(close, pclose, vol, pvol) {
+  const closeUp = +close > +pclose;
+  const volUp   = +vol   > +pvol;
+  if( closeUp &&  volUp) return 'acc';
+  if(!closeUp &&  volUp) return 'dist';
+  return 'neutral';
+}
+
+function mpmCondition(score) {
+  if(score >=  5) return { name:'STRONG BUYING',  color:'var(--lime)',   hint:'Institutions actively accumulating. Favourable for breakouts.' };
+  if(score >=  2) return { name:'HEALTHY',         color:'var(--green)',  hint:'More accumulation than distribution. Market internals positive.' };
+  if(score >=  0) return { name:'NEUTRAL',         color:'var(--yellow)', hint:'Balanced pressure. Watch for direction shift before acting.' };
+  if(score >= -3) return { name:'WEAK / CAUTION',  color:'var(--orange)', hint:'Distribution starting to dominate. Reduce risk, tighten stops.' };
+  return               { name:'HEAVY SELLING',    color:'var(--red)',    hint:'Sustained distribution. Avoid new breakout entries.' };
+}
+
+function mpmNeedlePos(score) {
+  const c = Math.max(-10, Math.min(10, score));
+  return ((c + 10) / 20 * 90 + 5).toFixed(1) + '%';
+}
+
+
+// ════════════════════════════════════════════════════
+//  MPM — YAHOO FINANCE CSV IMPORT
+// ════════════════════════════════════════════════════
+
+// Global staging area for parsed CSV rows
+let _mpmParsed = [];
+
+// Handle drag-drop
+function mpmHandleDrop(e) {
+  e.preventDefault();
+  document.getElementById('mpm-drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if(file) mpmHandleFile(file);
+}
+
+// Parse the CSV file
+function mpmHandleFile(file) {
+  if(!file || !file.name.toLowerCase().endsWith('.csv')) {
+    mpmFlash('Please select a .csv file downloaded from NSE', 'var(--orange)');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => mpmParseCSV(e.target.result, file.name);
+  reader.readAsText(file);
+}
+
+// Core CSV parser — handles NSE Historical Index CSV format
+// NSE columns: Index Name,Index Date,Open Index Value,...,Closing Index Value,...,Volume,...
+function mpmParseCSV(text, filename) {
+  // ── STEP 1: Clean raw text ─────────────────────────
+  // Strip UTF-8 BOM if present, normalise line endings
+  let raw = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  if(lines.length < 2) { mpmFlash('CSV appears empty — check the file', 'var(--red)'); return; }
+
+  // ── STEP 2: Smart CSV splitter (handles quoted fields) ──
+  function splitCSVLine(line) {
+    const result = [];
+    let cur = '', inQ = false;
+    for(let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if(ch === '"') { inQ = !inQ; continue; }
+      if(ch === ',' && !inQ) { result.push(cur.trim()); cur = ''; continue; }
+      cur += ch;
+    }
+    result.push(cur.trim());
+    return result;
+  }
+
+  // ── STEP 3: Parse header — very tolerant matching ─────
+  const header = splitCSVLine(lines[0]).map(h => h.replace(/"/g,'').trim().toLowerCase());
+
+  // Show raw header in console always — helps debug
+  console.log('[MPM Import] File:', filename);
+  console.log('[MPM Import] Header columns:', header);
+  console.log('[MPM Import] First data row:', lines[1]);
+
+  // Try multiple possible column name variants NSE has used over the years
+  const colIdx = (keywords) => {
+    for(const kw of keywords) {
+      const idx = header.findIndex(h => h.includes(kw));
+      if(idx !== -1) return idx;
+    }
+    return -1;
+  };
+
+  const iName  = colIdx(['index name']);
+  const iDate  = colIdx(['index date', 'date']);
+  const iClose = colIdx(['closing index value', 'closing', 'close']);
+  const iVol   = colIdx(['shares traded', 'volume', 'vol']);
+
+  console.log('[MPM Import] Column indices → name:', iName, 'date:', iDate, 'close:', iClose, 'vol:', iVol);
+
+  if(iDate === -1 || iClose === -1) {
+    // Show user the actual headers so they can report back
+    const headerStr = header.slice(0,8).join(' | ');
+    mpmFlash(
+      'Column not found. Columns detected: ' + headerStr +
+      ' — Open browser console (F12) for full debug info.',
+      'var(--red)'
+    );
+    return;
+  }
+
+  // ── STEP 4: Detect format — single-index or multi-index file ──
+  // NSE sends either: (a) one file per index (no Index Name col, just date rows)
+  //                or (b) all-indices file (has Index Name column, must filter to Nifty 50)
+  const isMultiIndex = iName !== -1;
+
+  // ── STEP 5: Parse data rows ───────────────────────────
+  const rows = [];
+  for(let i = 1; i < lines.length; i++) {
+    const cols = splitCSVLine(lines[i]);
+    if(cols.length < 3) continue;
+
+    // Filter by index name if multi-index file
+    if(isMultiIndex) {
+      const nm = (cols[iName] || '').toLowerCase().trim();
+      // Accept "nifty 50" exactly — reject "nifty 500", "nifty next 50", "nifty 50 tr" etc.
+      if(nm !== 'nifty 50') continue;
+    }
+
+    const dateRaw  = (cols[iDate]  || '').trim();
+    const closeRaw = (cols[iClose] || '').trim();
+    const volRaw   = iVol !== -1 ? (cols[iVol] || '').trim() : '';
+
+    // Skip blank/header repeat rows
+    if(!dateRaw || dateRaw.toLowerCase().includes('date')) continue;
+    if(!closeRaw || closeRaw === '-' || closeRaw === '') continue;
+
+
+    // ── Parse date: DD-MMM-YYYY (06-MAR-2026), DD-MM-YYYY, DD/MM/YYYY, YYYY-MM-DD ──
+    let date;
+    const clean = dateRaw.replace(/\//g, '-').toUpperCase();
+    const MONTHS = {JAN:'01',FEB:'02',MAR:'03',APR:'04',MAY:'05',JUN:'06',
+                    JUL:'07',AUG:'08',SEP:'09',OCT:'10',NOV:'11',DEC:'12'};
+    if(/^\d{2}-[A-Z]{3}-\d{4}$/.test(clean)) {
+      // 06-MAR-2026 format (actual NSE single-index download)
+      const parts = clean.split('-');
+      const mm = MONTHS[parts[1]];
+      if(!mm) { console.log('[MPM Import] Unknown month:', parts[1]); continue; }
+      date = parts[2] + '-' + mm + '-' + parts[0];
+    } else if(/^\d{2}-\d{2}-\d{4}$/.test(clean)) {
+      // 06-03-2026 format
+      const p = clean.split('-');
+      date = p[2] + '-' + p[1] + '-' + p[0];
+    } else if(/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+      // 2026-03-06 ISO format
+      date = clean.toLowerCase();
+    } else {
+      console.log('[MPM Import] Skipping unrecognised date:', dateRaw);
+      continue;
+    }
+
+    const close  = parseFloat(closeRaw.replace(/,/g, ''));
+    if(isNaN(close)) continue;
+
+    // Volume: may be blank for index files — use 0 as sentinel
+    let vol = 0;
+    if(volRaw && volRaw !== '-') {
+      const volAbs = parseFloat(volRaw.replace(/,/g, ''));
+      if(!isNaN(volAbs)) {
+        // Convert to Crore if in absolute shares (> 1 lakh → likely shares, not already Cr)
+        vol = volAbs > 100000 ? volAbs / 10000000 : volAbs;
+      }
+    }
+
+    rows.push({ date, close, vol });
+  }
+
+  console.log('[MPM Import] Rows parsed:', rows.length, rows.slice(0,3));
+
+  if(rows.length === 0) {
+    mpmFlash(
+      'No data rows found after filtering. ' +
+      (isMultiIndex ? 'Check that the file contains "Nifty 50" rows (not Nifty 500).' : 'File may be empty.') +
+      ' Check browser console (F12) for details.',
+      'var(--orange)'
+    );
+    return;
+  }
+
+  // Sort oldest first so we can compute prev values
+  rows.sort((a, b) => a.date.localeCompare(b.date));
+
+  // ── STEP 6: Build day objects with prev close / prev vol ──
+  const days = [];
+  for(let i = 1; i < rows.length; i++) {
+    const r    = rows[i];
+    const prev = rows[i - 1];
+    days.push({
+      date:   r.date,
+      close:  r.close.toFixed(2),
+      pclose: prev.close.toFixed(2),
+      vol:    r.vol.toFixed(4),
+      pvol:   prev.vol.toFixed(4),
+    });
+  }
+
+  if(days.length === 0) {
+    mpmFlash('Only 1 row found — select a wider date range (at least 30 days) on NSE to get 25 trading days.', 'var(--orange)');
+    return;
+  }
+
+  // ── WARN if volume is all zeros (index-only file without volume) ──
+  const hasVol = days.some(d => +d.vol > 0);
+  if(!hasVol) {
+    console.warn('[MPM Import] Volume column is all zeros — Acc/Dist classification will only use close direction.');
+    mpmFlash('⚠ Volume data missing in file — days classified by close direction only. Import will still work.', 'var(--yellow)');
+  }
+
+  // Keep last 25 trading days
+  const last25 = days.slice(-25);
+  _mpmParsed = last25;
+
+  // ── STEP 7: Show preview panel ────────────────────────
+  const preview      = document.getElementById('mpm-preview');
+  const previewRows  = document.getElementById('mpm-preview-rows');
+  const previewTitle = document.getElementById('mpm-preview-title');
+  const importBtn    = document.getElementById('btn-mpm-import');
+
+  previewTitle.textContent = last25.length + ' Nifty 50 trading days parsed from ' + filename + ':';
+
+  const displayRows = [...last25].reverse().slice(0, 10);
+  previewRows.innerHTML = displayRows.map(d => {
+    const dtype = mpmClassify(d.close, d.pclose, d.vol, d.pvol);
+    const icon  = dtype === 'acc' ? '▲' : dtype === 'dist' ? '▼' : '▬';
+    const color = dtype === 'acc' ? '#4ade80' : dtype === 'dist' ? '#f87171' : '#3e5470';
+    const closeFmt = (+d.close).toLocaleString('en-IN', {minimumFractionDigits:2});
+    const volFmt   = (+d.vol).toFixed(2);
+    return '<span style="color:' + color + '">' + icon + '  ' + d.date +
+           '  Close: ₹' + closeFmt + '  Vol: ' + volFmt + ' Cr</span>\n';
+  }).join('') + (last25.length > 10 ? '<span style="color:var(--dim)">… and ' + (last25.length-10) + ' more</span>' : '');
+
+  preview.style.display = 'block';
+  importBtn.disabled    = false;
+  importBtn.textContent = 'Import ' + last25.length + ' Days';
+
+  const acc  = last25.filter(d => mpmClassify(d.close,d.pclose,d.vol,d.pvol)==='acc').length;
+  const dist = last25.filter(d => mpmClassify(d.close,d.pclose,d.vol,d.pvol)==='dist').length;
+  mpmFlash(
+    'NSE CSV parsed — ' + last25.length + ' days  |  ' + acc + ' Acc  ' + dist + ' Dist. Review and click Import.',
+    'var(--teal)'
+  );
+}
+
+// Confirm import — merge with existing data, push to cloud
+function mpmImportConfirm() {
+  if(!_mpmParsed.length) return;
+
+  const existing = mpmLoad();
+  // Build map by date — new data overwrites existing for same date
+  const byDate = {};
+  existing.forEach(d => { byDate[d.date] = d; });
+  _mpmParsed.forEach(d => {
+    byDate[d.date] = {
+      id:     byDate[d.date] ? byDate[d.date].id : Date.now().toString() + Math.random().toString(36).slice(2,6),
+      date:   d.date,
+      close:  d.close,
+      pclose: d.pclose,
+      vol:    d.vol,
+      pvol:   d.pvol,
+      dtype:  mpmClassify(d.close, d.pclose, d.vol, d.pvol)
+    };
+  });
+
+  const merged = Object.values(byDate).sort((a,b) => b.date.localeCompare(a.date)).slice(0, 25);
+  mpmSave(merged);
+
+  // Reset UI
+  _mpmParsed = [];
+  document.getElementById('mpm-preview').style.display = 'none';
+  document.getElementById('btn-mpm-import').disabled = true;
+  document.getElementById('mpm-drop-zone').classList.remove('drag-over');
+
+  const acc  = merged.filter(d => d.dtype === 'acc').length;
+  const dist = merged.filter(d => d.dtype === 'dist').length;
+  mpmFlash('Imported ' + merged.length + ' days — ' + acc + ' Acc, ' + dist + ' Dist days', 'var(--lime)');
+
+  mpmRenderAll();
+  pushToCloud();
+}
+
+function mpmAdd() {
+  const date   = document.getElementById('mpm-date').value;
+  const close  = document.getElementById('mpm-close').value.trim();
+  const pclose = document.getElementById('mpm-pclose').value.trim();
+  const vol    = document.getElementById('mpm-vol').value.trim();
+  const pvol   = document.getElementById('mpm-pvol').value.trim();
+  if(!date||!close||!pclose||!vol||!pvol) { mpmFlash('All 5 fields required','var(--orange)'); return; }
+  const days = mpmLoad().filter(d => d.date !== date);
+  const dtype = mpmClassify(close, pclose, vol, pvol);
+  days.push({ id: Date.now().toString(), date, close, pclose, vol, pvol, dtype });
+  const sorted = days.sort((a,b) => b.date.localeCompare(a.date)).slice(0, 25);
+  mpmSave(sorted);
+  mpmFlash('Added ' + date + ' — ' + dtype.toUpperCase() + ' day', dtype==='acc'?'var(--lime)':dtype==='dist'?'var(--red)':'var(--sub)');
+  document.getElementById('mpm-pclose').value = close;
+  document.getElementById('mpm-pvol').value   = vol;
+  document.getElementById('mpm-close').value  = '';
+  document.getElementById('mpm-vol').value    = '';
+  const nd = new Date(date + 'T00:00:00'); nd.setDate(nd.getDate()+1);
+  document.getElementById('mpm-date').value = nd.toISOString().slice(0,10);
+  mpmRenderAll();
+  pushToCloud();
+}
+
+function mpmDelete(id) {
+  if(!confirm('Remove this day?')) return;
+  const days = mpmLoad().filter(d => d.id !== id);
+  mpmSave(days); mpmRenderAll(); pushToCloud();
+}
+
+function mpmFlash(msg, color) {
+  const el = document.getElementById('mpm-msg');
+  el.textContent = msg; el.style.color = color; el.style.opacity = '1';
+  setTimeout(() => el.style.opacity = '0', 4000);
+}
+
+function mpmRenderHero(days) {
+  const el = id => document.getElementById(id);
+  const last25 = days.slice(0, 25);
+  const acc  = last25.filter(d => d.dtype === 'acc').length;
+  const dist = last25.filter(d => d.dtype === 'dist').length;
+  const neut = last25.filter(d => d.dtype === 'neutral').length;
+  const score = acc - dist;
+  const cond  = mpmCondition(score);
+  el('mpm-acc-n').textContent  = acc;
+  el('mpm-dist-n').textContent = dist;
+  el('mpm-neut-n').textContent = neut;
+  el('mpm-window').textContent = 'Showing ' + last25.length + ' of last 25 trading days';
+  if(!days.length) {
+    el('mpm-score').textContent = '—'; el('mpm-score').style.color = 'var(--dim)';
+    el('mpm-cond').textContent  = 'No Data'; el('mpm-cond').style.color = 'var(--dim)';
+    el('mpm-hint').textContent  = 'Enter Nifty daily data to see market pressure analysis.';
+    el('mpm-needle').style.left = '50%';
+    el('mpm-bars').innerHTML    = '';
+    el('hero-mpm-score').textContent = '—'; el('hero-mpm-score').style.color = 'var(--dim)';
+    el('hero-mpm-cond').textContent  = '—'; el('hero-mpm-cond').style.color  = 'var(--dim)';
+    el('hero-mpm-counts').textContent = 'A:0 D:0 / 25d';
+    return;
+  }
+  const sStr = score > 0 ? '+' + score : '' + score;
+  el('mpm-score').textContent = sStr;  el('mpm-score').style.color = cond.color;
+  el('mpm-cond').textContent  = cond.name; el('mpm-cond').style.color = cond.color;
+  el('mpm-hint').textContent  = cond.hint;
+  el('mpm-needle').style.left = mpmNeedlePos(score);
+  el('hero-mpm-score').textContent = sStr;      el('hero-mpm-score').style.color = cond.color;
+  el('hero-mpm-cond').textContent  = cond.name; el('hero-mpm-cond').style.color  = cond.color;
+  el('hero-mpm-counts').textContent = 'A:' + acc + '  D:' + dist + '  N:' + neut;
+  const bars10 = [...last25].sort((a,b) => a.date.localeCompare(b.date)).slice(-10);
+  el('mpm-bars').innerHTML = bars10.map(d => {
+    const c = d.dtype==='acc'?'var(--lime)':d.dtype==='dist'?'var(--red)':'var(--dim)';
+    const h = d.dtype==='neutral'?8:32;
+    const lbl = d.dtype==='acc'?'A':d.dtype==='dist'?'D':'N';
+    return '<div class="mpm-bar-group"><div class="mpm-bar-val" style="color:' + c + '">' + lbl + '</div>' +
+           '<div class="mpm-bar-fill" style="background:' + c + ';height:' + h + 'px"></div>' +
+           '<div class="mpm-bar-lbl">' + fmt(d.date).slice(0,6) + '</div></div>';
+  }).join('');
+}
+
+function mpmRenderTable(days) {
+  const tbody = document.getElementById('mpm-tbody');
+  if(!days.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="color:var(--dim);padding:24px;text-align:center;letter-spacing:2px;font-size:11px;font-family:var(--mono);">NO DATA YET</td></tr>';
+    return;
+  }
+  const asc = [...days].sort((a,b) => a.date.localeCompare(b.date));
+  let runAcc=0, runDist=0;
+  const withRun = asc.map(d => {
+    if(d.dtype==='acc')  runAcc++;
+    if(d.dtype==='dist') runDist++;
+    return Object.assign({}, d, {rs: runAcc - runDist});
+  }).reverse();
+  tbody.innerHTML = withRun.map(function(d) {
+    var cc     = d.pclose ? ((+d.close - +d.pclose) / +d.pclose * 100).toFixed(2) : null;
+    var vc     = d.pvol   ? ((+d.vol   - +d.pvol)   / +d.pvol   * 100).toFixed(2) : null;
+    var closeC = cc ? (+cc>0 ? 'var(--green)' : +cc<0 ? 'var(--red)' : 'var(--dim)') : 'var(--dim)';
+    var volC   = vc ? (+vc>0 ? 'var(--teal)'  : 'var(--dim)') : 'var(--dim)';
+    var sc     = d.rs > 0 ? 'var(--lime)' : d.rs < 0 ? 'var(--red)' : 'var(--yellow)';
+    var tcls   = d.dtype==='acc' ? 'acc' : d.dtype==='dist' ? 'dist' : 'neutral';
+    var tlbl   = d.dtype==='acc' ? '&#9650; Accumulation' : d.dtype==='dist' ? '&#9660; Distribution' : '&#9644; Neutral';
+    var ccStr  = cc  ? ((+cc>=0  ? '+' : '') + cc  + '%') : '&mdash;';
+    var vcStr  = vc  ? ((+vc>=0  ? '+' : '') + vc  + '%') : '&mdash;';
+    var rsStr  = (d.rs > 0 ? '+' : '') + d.rs;
+    var cFmt   = (+d.close).toLocaleString('en-IN', {minimumFractionDigits:2});
+    var pcFmt  = (+d.pclose).toLocaleString('en-IN',{minimumFractionDigits:2});
+    return [
+      '<tr>',
+      '<td style="color:var(--sub)">'                          + fmt(d.date)  + '</td>',
+      '<td><span class="mpm-dtype ' + tcls + '">'              + tlbl         + '</span></td>',
+      '<td style="color:var(--text)">&#8377;'                  + cFmt         + '</td>',
+      '<td style="color:var(--sub)">&#8377;'                   + pcFmt        + '</td>',
+      '<td style="color:' + closeC + ';font-weight:600">'      + ccStr        + '</td>',
+      '<td style="color:var(--teal)">'                         + (+d.vol).toFixed(2)  + '</td>',
+      '<td style="color:var(--sub)">'                          + (+d.pvol).toFixed(2) + '</td>',
+      '<td style="color:' + volC + '">'                        + vcStr        + '</td>',
+      '<td style="color:' + sc   + ';font-weight:700">'        + rsStr        + '</td>',
+      '<td><button class="del-btn" onclick="mpmDelete(this.dataset.id)" data-id="' + d.id + '" title="Remove">&#10005;</button></td>',
+      '</tr>'
+    ].join('');
+  }).join('');
+}
+
+function mpmExport() {
+  const days = mpmLoad();
+  if(!days.length){ alert('No MPM data to export'); return; }
+  const hdr = ['Date','Day Type','Close','Prev Close','Close Chg%','Volume(Cr)','Prev Vol(Cr)','Vol Chg%'];
+  const rows = days.map(d => {
+    const cc = d.pclose ? ((+d.close-+d.pclose)/+d.pclose*100).toFixed(2) : '';
+    const vc = d.pvol   ? ((+d.vol-+d.pvol)/+d.pvol*100).toFixed(2) : '';
+    return [d.date, d.dtype, d.close, d.pclose, cc, d.vol, d.pvol, vc].join(',');
+  });
+  const blob = new Blob([[hdr.join(','),...rows].join('\n')],{type:'text/csv'});
+  const a = Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'mpm_'+todayISO()+'.csv'});
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+function mpmRenderAll() {
+  const days = mpmLoad();
+  mpmRenderHero(days);
+  mpmRenderTable(days);
+}
+
 function bsrRenderAll() {
   const trades = bsrLoad();
   bsrRenderHero(trades);
