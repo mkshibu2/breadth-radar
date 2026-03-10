@@ -79,7 +79,22 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
 .page{padding:10px 12px;display:flex;flex-direction:column;gap:8px;}
 
 /* ── TOP STATUS STRIP — single full-width bar, 6 cells ── */
-.status-strip{display:grid;grid-template-columns:110px 170px 1fr 130px 130px 130px 120px 140px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.status-strip{display:grid;grid-template-columns:110px 170px 1fr 130px 130px 130px 120px 140px;background:var(--bg2);border:1px solid var(--border);border-radius:6px 6px 0 0;overflow:hidden;}
+.analysis-strip{display:grid;grid-template-columns:repeat(4,1fr);background:var(--bg3);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;overflow:hidden;margin-bottom:0;}
+.as-cell{padding:10px 16px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;position:relative;}
+.as-cell:last-child{border-right:none;}
+.as-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);margin-bottom:3px;}
+.as-phase{font-family:var(--disp);font-size:20px;font-weight:800;line-height:1;transition:color .3s;}
+.as-desc{font-size:10px;color:var(--sub);margin-top:3px;line-height:1.4;}
+.as-pills{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;}
+.as-pill{font-size:9px;padding:1px 5px;border-radius:2px;font-weight:600;border:1px solid transparent;}
+.as-pill.ok{background:rgba(74,222,128,.12);color:var(--lime);border-color:rgba(74,222,128,.2);}
+.as-pill.warn{background:rgba(251,191,36,.10);color:var(--yellow);border-color:rgba(251,191,36,.2);}
+.as-pill.bad{background:rgba(248,113,113,.10);color:var(--red);border-color:rgba(248,113,113,.2);}
+.as-pill.dim{background:rgba(72,85,102,.2);color:var(--sub);border-color:var(--border);}
+.as-big{font-family:var(--disp);font-size:28px;font-weight:800;line-height:1;transition:color .3s;}
+.as-sig{font-size:11px;font-weight:600;margin-top:3px;transition:color .3s;}
+.as-ftd-banner{padding:6px 16px;font-size:11px;font-weight:600;text-align:center;border-top:1px solid var(--border);}
 .ss-momentum{font-family:var(--disp);font-size:32px;font-weight:800;line-height:1;transition:color .4s;}
 .ss-thrust-val{font-family:var(--disp);font-size:28px;font-weight:800;line-height:1;transition:color .4s;}
 .ss-thrust-sig{font-size:11px;font-weight:600;margin-top:4px;transition:color .4s;}
@@ -111,6 +126,40 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
 .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start;}
 .col{display:flex;flex-direction:column;gap:8px;}
 
+/* ── FOLLOW-THROUGH DAY DETECTOR ───────────────────────── */
+.ftd-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px;}
+.ftd-cell{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:10px 12px;}
+.ftd-cell.ftd-detected{border-color:var(--lime);background:rgba(74,222,128,.07);}
+.ftd-cell.ftd-attempt{border-color:var(--yellow);background:rgba(250,204,21,.06);}
+.ftd-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--sub);margin-bottom:5px;}
+.ftd-val{font-family:var(--disp);font-size:22px;font-weight:800;line-height:1;}
+.ftd-sub{font-size:10px;color:var(--sub);margin-top:4px;}
+.ftd-banner{padding:10px 14px;margin:0 12px 12px;border-radius:5px;font-size:12px;font-weight:600;text-align:center;}
+.ftd-log{padding:0 12px 12px;}
+.ftd-row{display:grid;grid-template-columns:90px 1fr 70px 60px 80px;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(39,52,71,.4);font-size:11px;}
+.ftd-row:last-child{border-bottom:none;}
+.ftd-col-hdr{font-size:10px;color:var(--dim);font-weight:600;text-transform:uppercase;}
+
+/* ── DISTRIBUTION DAY COUNTER ───────────────────────────── */
+.ddc-hero{display:grid;grid-template-columns:100px 1fr 110px;gap:0;border-top:2px solid var(--red);}
+.ddc-panel{padding:12px 16px;}
+.ddc-big{font-family:var(--disp);font-size:52px;font-weight:800;line-height:1;}
+.ddc-gauge{display:flex;gap:3px;align-items:flex-end;height:36px;margin-top:8px;}
+.ddc-bar-w{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.ddc-bar-b{width:16px;border-radius:2px 2px 0 0;transition:height .5s;}
+.ddc-bar-n{font-size:9px;color:var(--dim);}
+.ddc-status{font-family:var(--disp);font-size:16px;font-weight:700;margin-bottom:4px;}
+.ddc-hint{font-size:11px;color:var(--sub);line-height:1.5;}
+
+/* ── NH/NL RATIO TREND ───────────────────────────────────── */
+.nhnl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;}
+.nhnl-cell{padding:12px 14px;border-right:1px solid var(--border);}
+.nhnl-cell:last-child{border-right:none;}
+.nhnl-big{font-family:var(--disp);font-size:32px;font-weight:800;line-height:1;margin:4px 0;}
+.nhnl-trend-bars{display:flex;gap:2px;align-items:flex-end;height:28px;margin-top:6px;}
+.nhnl-bar{width:10px;border-radius:1px 1px 0 0;transition:height .4s;}
+.nhnl-signal{font-size:11px;font-weight:600;margin-top:4px;}
+
 /* ── MARKET CYCLE ENGINE ────────────────────────────────── */
 .mce-card{border-top:3px solid var(--accent);}
 .mce-phase{font-family:var(--disp);font-size:30px;font-weight:800;line-height:1;transition:color .4s;margin:4px 0;}
@@ -121,38 +170,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
 .mce-sig.warn{background:rgba(251,191,36,.10);color:var(--yellow);border-color:rgba(251,191,36,.25);}
 .mce-sig.bad{background:rgba(248,113,113,.10);color:var(--red);border-color:rgba(248,113,113,.25);}
 .mce-sig.dim{background:rgba(72,85,102,.20);color:var(--sub);border-color:var(--border);}
-
-/* ── SECTOR BREADTH MAP ──────────────────────────────────── */
-.sbm-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:12px;}
-.sbm-cell{border-radius:6px;padding:10px 8px;cursor:pointer;transition:transform .15s,box-shadow .15s;position:relative;border:1px solid transparent;}
-.sbm-cell:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.35);}
-.sbm-cell.active{box-shadow:0 0 0 2px var(--accent);}
-.sbm-name{font-size:11px;font-weight:600;color:rgba(255,255,255,.85);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.sbm-pct{font-family:var(--disp);font-size:26px;font-weight:800;line-height:1;color:#fff;}
-.sbm-bar{height:3px;border-radius:2px;background:rgba(255,255,255,.25);margin-top:6px;overflow:hidden;}
-.sbm-bar-fill{height:100%;border-radius:2px;background:rgba(255,255,255,.6);transition:width .6s cubic-bezier(.4,0,.2,1);}
-.sbm-adv{font-size:10px;color:rgba(255,255,255,.6);margin-top:4px;}
-/* detail panel */
-.sbm-detail{display:none;padding:10px 12px;border-top:1px solid var(--border);background:var(--bg3);}
-.sbm-detail.open{display:block;}
-.sbm-detail-title{font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;}
-.sbm-adv-list{display:flex;flex-wrap:wrap;gap:5px;}
-.sbm-stock-tag{font-size:11px;font-family:var(--mono);background:var(--bg4);border:1px solid var(--border);border-radius:3px;padding:2px 7px;color:var(--text);}
-.sbm-input-row{display:grid;grid-template-columns:1fr 80px 80px 90px;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(39,52,71,.4);}
-.sbm-input-row:last-child{border-bottom:none;}
-.sbm-input-row label{font-size:12px;color:var(--sub);font-weight:500;}
-.sbm-num{width:100%;background:var(--bg);border:1px solid var(--bdr2);color:var(--accent);font-family:var(--mono);font-size:13px;font-weight:600;padding:4px 6px;border-radius:3px;outline:none;text-align:center;}
-.sbm-num:focus{border-color:var(--accent);}
-.sbm-col-hdr{font-size:10px;color:var(--dim);text-align:center;padding:2px 0;font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
-.sbm-legend{display:flex;gap:10px;padding:8px 12px;border-top:1px solid var(--border);flex-wrap:wrap;}
-.sbm-leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--sub);}
-.sbm-leg-dot{width:10px;height:10px;border-radius:2px;}
-/* color zones */
-.sbm-z-strong{background:linear-gradient(135deg,#16a34a,#15803d);}
-.sbm-z-good{background:linear-gradient(135deg,#4ade80,#22c55e);}
-.sbm-z-caution{background:linear-gradient(135deg,#ca8a04,#a16207);}
-.sbm-z-weak{background:linear-gradient(135deg,#dc2626,#b91c1c);}
-.sbm-z-empty{background:var(--bg3);border-color:var(--border)!important;}
 
 /* ── CARD ────────────────────────────────────────────────── */
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
@@ -174,6 +191,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
 .ef input::placeholder{color:var(--dim);font-size:11px;font-weight:400;}
 .ef-hint{font-size:11px;color:var(--dim);margin-top:2px;}
 .opt-row{display:grid;grid-template-columns:1fr 2fr;gap:5px;margin-bottom:6px;}
+.unified-entry-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:8px;}
+.ueg-divider{grid-column:1/-1;height:1px;background:var(--border);margin:4px 0;}
+.ueg-label{grid-column:1/-1;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);padding-top:2px;}
+.ftd-type-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0 4px;}
 .entry-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
 .btn{font-size:13px;font-weight:600;padding:8px 18px;border:none;border-radius:4px;cursor:pointer;transition:all .15s;}
 .btn-primary{background:var(--accent);color:#0e1420;}
@@ -370,6 +391,7 @@ canvas#bsr-chart{width:100%;height:100%;}
     grid-template-columns:1fr 1fr;
     grid-template-rows:auto auto auto auto auto;
   }
+  .analysis-strip{grid-template-columns:1fr 1fr;}
   .ss-cell{padding:10px 12px;}
   .ss-big{font-size:42px;}
   .ss-zone{font-size:20px;}
@@ -470,7 +492,7 @@ canvas#bsr-chart{width:100%;height:100%;}
   <a class="src-btn" href="https://www.moneycontrol.com/stocksmarketsindia/heat-map-advance-decline-ratio-nse-bse" target="_blank"><span class="dot"></span>MC Heatmap</a>
   <a class="src-btn" href="https://www.nseindia.com/market-data/52-week-high-equity-market" target="_blank"><span class="dot"></span>52W High/Low</a>
   <a class="src-btn" href="https://trendlyne.com/equity/market-bullish-bearish-breadth/equi-weighted/" target="_blank"><span class="dot"></span>Trendlyne Breadth</a>
-  <a class="src-btn" href="https://www.nseindia.com/market-data/sector-indices" target="_blank" style="color:var(--teal);border-color:rgba(45,212,191,.25);background:rgba(45,212,191,.04)"><span class="dot" style="background:var(--teal)"></span>NSE Sector Breadth</a>
+  <a class="src-btn" href="manual.html" target="_blank" style="color:var(--lime);border-color:rgba(74,222,128,.25);background:rgba(74,222,128,.04);margin-left:8px"><span class="dot" style="background:var(--lime)"></span>📖 User Guide</a>
 </div>
 
 <!-- CLOUD SETUP PANEL -->
@@ -589,155 +611,169 @@ canvas#bsr-chart{width:100%;height:100%;}
 
   </div>
 
+  <!-- ── ANALYSIS STRIP — Row 2 of band ──────────────────── -->
+  <div class="analysis-strip card">
+
+    <!-- A1: Market Cycle -->
+    <div class="as-cell" style="border-top:2px solid var(--accent)">
+      <div class="as-lbl">📡 Market Cycle</div>
+      <div class="as-phase" id="as-phase" style="color:var(--dim)">—</div>
+      <div class="as-desc" id="as-desc">Waiting for data</div>
+      <div class="as-pills" id="as-pills"></div>
+    </div>
+
+    <!-- A2: FTD Status -->
+    <div class="as-cell" style="border-top:2px solid var(--lime)">
+      <div class="as-lbl">🚀 Follow-Through Day</div>
+      <div class="as-phase" id="as-ftd-status" style="color:var(--dim)">—</div>
+      <div class="as-desc" id="as-ftd-sub">Log a rally attempt to begin tracking</div>
+      <div class="as-pills" id="as-ftd-pills"></div>
+    </div>
+
+    <!-- A3: Distribution Days -->
+    <div class="as-cell" style="border-top:2px solid var(--red)">
+      <div class="as-lbl">📉 Distribution Days</div>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <div class="as-big" id="as-dist" style="color:var(--dim)">—</div>
+        <div style="font-size:11px;color:var(--sub)">/ 25d</div>
+      </div>
+      <div class="as-sig" id="as-dist-status" style="color:var(--dim)">—</div>
+      <div class="as-desc" id="as-dist-hint">Auto from MPM data</div>
+    </div>
+
+    <!-- A4: H/L Ratio Trend -->
+    <div class="as-cell" style="border-top:2px solid var(--accent)">
+      <div class="as-lbl">📊 H/L Ratio Trend</div>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <div class="as-big" id="as-hl-today" style="color:var(--dim)">—</div>
+        <div style="font-size:11px;color:var(--sub)" id="as-hl-trend-arrow">today</div>
+      </div>
+      <div class="as-sig" id="as-hl-sig" style="color:var(--dim)">—</div>
+      <div class="as-desc" id="as-hl-desc">5d avg: <b id="as-hl-5d">—</b> · 10d avg: <b id="as-hl-10d">—</b></div>
+    </div>
+
+  </div>
+  <!-- FTD banner (full width, below analysis strip, hidden until active) -->
+  <div id="as-ftd-banner" class="as-ftd-banner card" style="display:none;border-radius:0;margin-top:-1px;border-top:none"></div>
+
   <!-- ── TWO COLUMN GRID ───────────────────────────────────── -->
   <div class="dash-grid">
 
     <!-- ═══ LEFT COLUMN ════════════════════════════════════ -->
     <div class="col">
 
-      <!-- EOD Data Entry -->
-      <div class="card">
+      <!-- ═══ UNIFIED EOD DATA ENTRY ═══════════════════════════ -->
+      <div class="card" style="border-top:3px solid var(--accent)">
         <div class="card-head">
-          <div class="card-title">EOD Data Entry — <span id="entry-today"></span></div>
+          <div class="card-title">📋 EOD Data Entry — <span id="entry-today"></span></div>
+          <div style="display:flex;gap:5px">
+            <button class="btn btn-sec" style="font-size:11px;padding:3px 8px" onclick="loadTodayIntoForm()">Edit Today</button>
+            <button class="btn btn-sec" style="font-size:11px;padding:3px 8px" onclick="clearInputs()">Clear</button>
+          </div>
         </div>
         <div class="card-body">
-          <div class="entry-grid">
+
+          <!-- ROW 1: Nifty 500 Breadth (NSE India) -->
+          <div class="ueg-label">🔵 Nifty 500 Breadth — <a href="https://www.nseindia.com/market-data/advance" target="_blank" style="color:var(--accent);font-size:10px">NSE India ↗</a></div>
+          <div class="entry-grid" style="margin-bottom:8px">
             <div class="ef">
-              <div class="ef-src">NSE India</div>
               <div class="ef-lbl">Advances</div>
               <input type="number" id="i-adv" placeholder="312" min="0" max="500">
               <div class="ef-hint">Nifty 500 advancing</div>
             </div>
             <div class="ef">
-              <div class="ef-src">NSE India</div>
               <div class="ef-lbl">Declines</div>
               <input type="number" id="i-dec" placeholder="174" min="0" max="500">
               <div class="ef-hint">Nifty 500 declining</div>
             </div>
             <div class="ef">
-              <div class="ef-src">NSE India</div>
               <div class="ef-lbl">Unchanged</div>
               <input type="number" id="i-unc" placeholder="14" min="0" max="500">
               <div class="ef-hint">Neither up nor down</div>
             </div>
             <div class="ef">
-              <div class="ef-src">NSE India</div>
               <div class="ef-lbl">52W Highs</div>
               <input type="number" id="i-hi" placeholder="28" min="0">
               <div class="ef-hint">New 52-week highs</div>
             </div>
             <div class="ef">
-              <div class="ef-src">NSE India</div>
               <div class="ef-lbl">52W Lows</div>
               <input type="number" id="i-lo" placeholder="6" min="0">
               <div class="ef-hint">New 52-week lows</div>
             </div>
+          </div>
+
+          <!-- ROW 2: Moving Average Breadth (Trendlyne) -->
+          <div class="ueg-label">🟢 MA Breadth — <a href="https://trendlyne.com/equity/market-bullish-bearish-breadth/equi-weighted/" target="_blank" style="color:var(--accent);font-size:10px">Trendlyne ↗</a></div>
+          <div class="entry-grid" style="margin-bottom:8px">
             <div class="ef" style="border-color:rgba(91,163,245,.3)">
-              <div class="ef-src" style="color:var(--accent)">Trendlyne</div>
               <div class="ef-lbl">% &gt; EMA20</div>
               <input type="number" id="i-e20" placeholder="54" min="0" max="100" step="0.1">
               <div class="ef-hint">Early momentum</div>
             </div>
             <div class="ef" style="border-color:rgba(91,163,245,.3)">
-              <div class="ef-src" style="color:var(--accent)">Trendlyne</div>
               <div class="ef-lbl">% &gt; SMA50</div>
               <input type="number" id="i-s50" placeholder="42" min="0" max="100" step="0.1">
               <div class="ef-hint">Healthy trend</div>
             </div>
             <div class="ef" style="border-color:rgba(91,163,245,.3)">
-              <div class="ef-src" style="color:var(--accent)">Trendlyne</div>
               <div class="ef-lbl">% &gt; SMA200</div>
               <input type="number" id="i-s200" placeholder="38" min="0" max="100" step="0.1">
               <div class="ef-hint">Bull market</div>
             </div>
           </div>
-          <details style="margin-bottom:8px">
-            <summary>&#9656; Optional — Nifty Close &amp; Notes</summary>
-            <div class="opt-row" style="margin-top:7px">
-              <div class="ef">
-                <div class="ef-src">NSE</div>
-                <div class="ef-lbl">Nifty 50 Close</div>
-                <input type="number" id="i-nifty" placeholder="24500" step="0.05">
-              </div>
-              <div class="ef">
-                <div class="ef-src">Notes</div>
-                <div class="ef-lbl">Notes</div>
-                <input type="text" id="i-notes" placeholder="FII buying, Budget day…" style="font-size:12px;font-weight:400">
-              </div>
+
+          <!-- ROW 3: Nifty 50 (Index data for MPM + FTD) -->
+          <div class="ueg-label">🟠 Nifty 50 — Close &amp; Volume (feeds MPM + FTD automatically)</div>
+          <div class="entry-grid" style="margin-bottom:8px">
+            <div class="ef" style="border-color:rgba(251,146,60,.3)">
+              <div class="ef-lbl">Nifty Close</div>
+              <input type="number" id="i-nifty" placeholder="26500" step="0.05" oninput="eodAutoFill()">
+              <div class="ef-hint">Today's Nifty 50 close</div>
             </div>
-          </details>
-          <div class="entry-actions">
-            <button class="btn btn-primary" onclick="saveToday()">&#8595;&nbsp;Save &amp; Sync</button>
-            <button class="btn btn-sec" onclick="clearInputs()">Clear</button>
-            <button class="btn btn-sec" onclick="loadTodayIntoForm()">Edit Today</button>
+            <div class="ef" style="border-color:rgba(251,146,60,.3)">
+              <div class="ef-lbl">Nifty Volume (Cr)</div>
+              <input type="number" id="i-vol" placeholder="18.5" step="0.01" min="0">
+              <div class="ef-hint">Today's total volume</div>
+            </div>
+            <div class="ef" style="border-color:rgba(251,146,60,.15);background:rgba(251,146,60,.03)">
+              <div class="ef-lbl" style="color:var(--dim)">Prev Close <span style="font-size:9px">(auto)</span></div>
+              <input type="number" id="i-prev-nifty" placeholder="auto" step="0.05" readonly style="color:var(--sub);cursor:default">
+              <div class="ef-hint">From yesterday's saved entry</div>
+            </div>
+            <div class="ef" style="border-color:rgba(251,146,60,.15);background:rgba(251,146,60,.03)">
+              <div class="ef-lbl" style="color:var(--dim)">Prev Volume <span style="font-size:9px">(auto)</span></div>
+              <input type="number" id="i-prev-vol" placeholder="auto" step="0.01" readonly style="color:var(--sub);cursor:default">
+              <div class="ef-hint">From yesterday's saved entry</div>
+            </div>
+          </div>
+
+          <!-- ROW 4: FTD Tag + Notes -->
+          <div class="ueg-label">🟡 FTD Tag &amp; Notes</div>
+          <div class="ftd-type-row">
+            <div style="display:flex;align-items:center;gap:6px;flex:1">
+              <span style="font-size:12px;color:var(--sub)">Today's rally status:</span>
+              <select id="i-ftd-type" class="sbm-num" style="width:180px;font-size:12px">
+                <option value="">— None / Normal day —</option>
+                <option value="attempt">Day 1 of Rally Attempt</option>
+                <option value="followthrough">Follow-Through Day</option>
+                <option value="distribution">Distribution Day</option>
+              </select>
+            </div>
+            <div class="ef" style="flex:2;border:none;padding:0;background:none">
+              <input type="text" id="i-notes" placeholder="FII buying, Budget day, FTD confirmed…" style="font-size:12px;font-weight:400;width:100%">
+            </div>
+          </div>
+
+          <!-- SAVE ACTIONS -->
+          <div class="entry-actions" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+            <button class="btn btn-primary" onclick="saveToday()">&#8595;&nbsp;Save &amp; Sync All</button>
             <span class="save-msg" id="save-msg"></span>
           </div>
         </div>
       </div>
 
-      <!-- Market Cycle Engine -->
-      <div class="card mce-card" id="mce-card">
-        <div class="card-head">
-          <div class="card-title">📡 Market Cycle Engine</div>
-          <span style="font-size:10px;color:var(--dim)" id="mce-updated">—</span>
-        </div>
-        <div class="card-body" style="padding:14px 16px">
-          <div style="display:flex;align-items:flex-start;gap:16px">
-            <div>
-              <div class="ss-lbl" style="margin-bottom:4px">Current Phase</div>
-              <div class="mce-phase" id="mce-phase" style="color:var(--dim)">—</div>
-            </div>
-            <div style="flex:1">
-              <div class="mce-signals" id="mce-signals"></div>
-            </div>
-          </div>
-          <div class="mce-desc" id="mce-desc">Waiting for data — save breadth, BSR and MPM entries.</div>
-        </div>
-      </div>
 
-      <!-- Sector Breadth Map -->
-      <div class="card" id="sbm-card">
-        <div class="card-head">
-          <div class="card-title">Sector Breadth Map</div>
-          <div style="display:flex;gap:6px;align-items:center">
-            <span style="font-size:10px;color:var(--dim)" id="sbm-updated">Enter data below</span>
-            <button class="card-action btn-export" style="color:var(--accent);border-color:rgba(91,163,245,.3)" onclick="sbmToggleEdit()">✏ Edit</button>
-          </div>
-        </div>
-        <!-- Heatmap grid -->
-        <div class="sbm-grid" id="sbm-grid">
-          <!-- rendered by JS -->
-        </div>
-        <!-- Legend -->
-        <div class="sbm-legend">
-          <div class="sbm-leg-item"><div class="sbm-leg-dot sbm-z-strong"></div> ≥70% Strong</div>
-          <div class="sbm-leg-item"><div class="sbm-leg-dot sbm-z-good"></div> 50–70% Good</div>
-          <div class="sbm-leg-item"><div class="sbm-leg-dot sbm-z-caution"></div> 30–50% Caution</div>
-          <div class="sbm-leg-item"><div class="sbm-leg-dot sbm-z-weak"></div> &lt;30% Weak</div>
-        </div>
-        <!-- Edit panel (hidden by default) -->
-        <div id="sbm-edit-panel" style="display:none;padding:12px;border-top:1px solid var(--border)">
-          <div style="display:grid;grid-template-columns:1fr 80px 80px 90px;gap:6px;margin-bottom:4px;padding:0 0 4px 0;border-bottom:1px solid var(--border)">
-            <div class="sbm-col-hdr" style="text-align:left">Sector</div>
-            <div class="sbm-col-hdr">Adv</div>
-            <div class="sbm-col-hdr">Total</div>
-            <div class="sbm-col-hdr">Breadth %</div>
-          </div>
-          <div id="sbm-inputs"></div>
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn" style="background:var(--accent);color:#0e1420" onclick="sbmSave()">✓ Save</button>
-            <button class="btn" style="background:transparent;border:1px solid var(--border);color:var(--sub)" onclick="sbmToggleEdit()">Cancel</button>
-          </div>
-        </div>
-        <!-- Advancing stocks detail panel -->
-        <div class="sbm-detail" id="sbm-detail">
-          <div class="sbm-detail-title" id="sbm-detail-title">—</div>
-          <div class="sbm-adv-list" id="sbm-detail-stocks"></div>
-          <div style="font-size:10px;color:var(--dim);margin-top:8px">
-            💡 Enter top advancing stocks in Edit mode to see them here
-          </div>
-        </div>
-      </div>
 
       <!-- Score Chart -->
       <div class="card">
@@ -1122,7 +1158,7 @@ function setupFlash(msg, color) {
 }
 
 // Helper: build combined cloud payload
-function buildPayload() { return { records: loadLocal(), bsr: bsrLoad(), mpm: mpmLoad(), sbm: sbmLoad() }; }
+function buildPayload() { return { records: loadLocal(), bsr: bsrLoad(), mpm: mpmLoad(), ftd: ftdLoad() }; }
 
 async function connectCloud() {
   const key = document.getElementById('cfg-key').value.trim();
@@ -1186,19 +1222,19 @@ async function pullFromCloud(key, bin) {
     const mpmById  = {};
     [...cloudMpm,...localMpm].forEach(d=>{ if(d&&d.id) mpmById[d.id]=d; });
     mpmSave(Object.values(mpmById));
-    // Merge SBM — cloud wins for newer _updated timestamp
-    const cloudSbm = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.sbm||{}) : {};
-    const localSbm = sbmLoad();
-    const cloudTs = cloudSbm._updated||'';
-    const localTs = localSbm._updated||'';
-    const mergedSbm = cloudTs >= localTs ? {...localSbm, ...cloudSbm} : {...cloudSbm, ...localSbm};
-    sbmSaveData(mergedSbm);
+    // Merge FTD by id
+    const cloudFtd = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd||[]) : [];
+    const localFtd = ftdLoad();
+    const ftdById  = {};
+    [...cloudFtd,...localFtd].forEach(d=>{ if(d&&d.id) ftdById[d.id]=d; });
+    const mergedFtd = Object.values(ftdById).sort((a,b)=>b.date.localeCompare(a.date));
+    ftdSaveData(mergedFtd);
     setSyncStatus('ok','Synced');
     setupFlash(`✓ Pulled — ${merged.length} breadth + ${Object.values(bsrById).length} BSR + ${Object.values(mpmById).length} MPM records`, 'var(--lime)');
     renderAll();
     bsrRenderAll();
     mpmRenderAll();
-    sbmRender();
+    ftdRender();
   } catch(e) {
     setSyncStatus('err','Sync Error');
     setupFlash('✗ Pull failed: ' + e.message, 'var(--red)');
@@ -1324,34 +1360,90 @@ async function saveToday() {
   const adv=g('i-adv'),dec=g('i-dec'),e20=g('i-e20'),s50=g('i-s50'),s200=g('i-s200');
   if(!adv&&!dec&&!e20&&!s50) { flash('⚠ Enter at least Advances + Declines or EMA/SMA values','var(--orange)'); return; }
   const today=todayISO();
-  const data=loadLocal().filter(r=>r.date!==today);
-  const row={date:today,adv,dec,unc:g('i-unc'),hi:g('i-hi'),lo:g('i-lo'),e20,s50,s200,nifty:g('i-nifty'),notes:g('i-notes')};
+  const allData=loadLocal();
+  const data=allData.filter(r=>r.date!==today);
+  const vol = g('i-vol');
+  const row={date:today,adv,dec,unc:g('i-unc'),hi:g('i-hi'),lo:g('i-lo'),e20,s50,s200,
+             nifty:g('i-nifty'),vol,notes:g('i-notes')};
   row.score=calcScore(row);
   const z=getZone(row.score);
   row.zone=z.name; row.r=z.r;
   data.push(row);
   const sorted=data.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30);
   saveLocal(sorted);
+
+  // ── Auto-create MPM entry from Nifty close + volume ──────
+  const niftyClose = parseFloat(row.nifty);
+  const niftyVol   = parseFloat(row.vol);
+  if (!isNaN(niftyClose) && !isNaN(niftyVol)) {
+    const prevRow = allData.find(r => r.date !== today && r.nifty);
+    const prevClose = prevRow ? parseFloat(prevRow.nifty) : NaN;
+    const prevVol   = prevRow ? parseFloat(prevRow.vol)   : NaN;
+    if (!isNaN(prevClose) && !isNaN(prevVol)) {
+      const dtype = niftyClose > prevClose && niftyVol > prevVol ? 'acc'
+                  : niftyClose < prevClose && niftyVol > prevVol ? 'dist'
+                  : 'neutral';
+      const mpmDays = mpmLoad().filter(d => d.date !== today);
+      // Only auto-add if not already manually entered today
+      const alreadyHasMpm = mpmLoad().some(d => d.date === today);
+      if (!alreadyHasMpm) {
+        mpmDays.unshift({id: 'eod_'+today, date: today, close: niftyClose, pclose: prevClose,
+                         vol: niftyVol, pvol: prevVol, dtype, auto: true});
+        mpmSave(mpmDays);
+      }
+    }
+  }
+
+  // ── Auto-create FTD entry if tagged ──────────────────────
+  const ftdTag = g('i-ftd-type');
+  if (ftdTag) {
+    const prevRow2 = sorted.find(r => r.date !== today);
+    const prevClose2 = prevRow2 ? parseFloat(prevRow2.nifty) : NaN;
+    const prevVol2   = prevRow2 ? parseFloat(prevRow2.vol)   : NaN;
+    const nClose2    = parseFloat(row.nifty);
+    const nVol2      = parseFloat(row.vol);
+    const movePct = (!isNaN(nClose2) && !isNaN(prevClose2) && prevClose2 > 0)
+                    ? +((nClose2 - prevClose2) / prevClose2 * 100).toFixed(2) : 0;
+    const volUp = (!isNaN(nVol2) && !isNaN(prevVol2)) ? nVol2 > prevVol2 : false;
+    const ftdDays = ftdLoad().filter(d => d.date !== today);
+    ftdDays.unshift({id: Date.now(), date: today, close: nClose2||0, prev: prevClose2||0,
+                     movePct, volUp, type: ftdTag});
+    ftdSaveData(ftdDays);
+  }
+
   flash(`✓ Saved — Score: ${row.score}  Zone: ${z.name}  R: ${z.r}`,'var(--lime)');
   clearInputs();
   renderAll();
-  // Push to cloud asynchronously
   await pushToCloud();
 }
 
 function clearInputs() {
-  ['i-adv','i-dec','i-unc','i-hi','i-lo','i-e20','i-s50','i-s200','i-nifty','i-notes'].forEach(id=>document.getElementById(id).value='');
+  ['i-adv','i-dec','i-unc','i-hi','i-lo','i-e20','i-s50','i-s200','i-nifty','i-vol','i-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const ftdSel=document.getElementById('i-ftd-type'); if(ftdSel) ftdSel.value='';
+  eodAutoFill();
 }
 
 function loadTodayIntoForm() {
   const row=loadLocal().find(r=>r.date===todayISO());
   if(!row){flash('No entry for today yet','var(--sub)');return;}
-  const set=(id,v)=>{document.getElementById(id).value=v||'';};
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
   set('i-adv',row.adv);set('i-dec',row.dec);set('i-unc',row.unc);
   set('i-hi',row.hi);set('i-lo',row.lo);
   set('i-e20',row.e20);set('i-s50',row.s50);set('i-s200',row.s200);
-  set('i-nifty',row.nifty);set('i-notes',row.notes);
+  set('i-nifty',row.nifty);set('i-vol',row.vol);set('i-notes',row.notes);
+  eodAutoFill();
   flash('Today loaded — click Save & Sync to overwrite','var(--yellow)');
+}
+
+// Auto-fill prev close + prev vol from yesterday's saved record
+function eodAutoFill() {
+  const data = loadLocal();
+  const today = todayISO();
+  const prev = data.find(r => r.date !== today && r.nifty);
+  const pClose = document.getElementById('i-prev-nifty');
+  const pVol   = document.getElementById('i-prev-vol');
+  if (pClose && prev) pClose.value = prev.nifty || '';
+  if (pVol   && prev) pVol.value   = prev.vol   || '';
 }
 
 function flash(msg,color) {
@@ -1637,14 +1729,15 @@ function exportCSV() {
 //  MAIN RENDER + INIT
 // ════════════════════════════════════════════════════
 // ════════════════════════════════════════════════════
-//  MARKET CYCLE ENGINE
+//  MARKET CYCLE ENGINE (writes to analysis strip)
 // ════════════════════════════════════════════════════
 function renderMarketCycle() {
   const el = id => document.getElementById(id);
-  const phaseEl   = el('mce-phase');
-  const descEl    = el('mce-desc');
-  const sigsEl    = el('mce-signals');
-  const updEl     = el('mce-updated');
+  // analysis strip targets
+  const phaseEl = el('as-phase');
+  const descEl  = el('as-desc');
+  const sigsEl  = el('as-pills');
+  const updEl   = null;
   if (!phaseEl) return;
 
   // ── Gather inputs from live data ──────────────────
@@ -1760,156 +1853,331 @@ function renderMarketCycle() {
   }
 
   sigsEl.innerHTML = pills.map(([lbl, cls]) =>
-    `<span class="mce-sig ${cls}">${lbl}</span>`).join('');
+    `<span class="as-pill ${cls}">${lbl}</span>`).join('');
 
   if (updEl && records.length) updEl.textContent = fmtLong(records[0].date);
+
+  // ── Analysis strip cells ──────────────────────────
+  renderAnalysisFTD();
+  renderAnalysisDDC();
+  renderAnalysisNHNL(records);
 }
 
-// ════════════════════════════════════════════════════
-//  SECTOR BREADTH MAP
-// ════════════════════════════════════════════════════
-const SBM_SECTORS = [
-  {id:'banking',   name:'Banking',        total:20},
-  {id:'it',        name:'IT',             total:20},
-  {id:'auto',      name:'Auto',           total:22},
-  {id:'pharma',    name:'Pharma',         total:20},
-  {id:'metal',     name:'Metal',          total:15},
-  {id:'fmcg',      name:'FMCG',           total:15},
-  {id:'realty',    name:'Realty',         total:10},
-  {id:'energy',    name:'Energy',         total:12},
-  {id:'infra',     name:'Infrastructure', total:18},
-  {id:'finserv',   name:'Fin Services',   total:20},
-];
-
-const LS_SBM = 'sbm_data';
-function sbmLoad() {
-  try { return JSON.parse(localStorage.getItem(LS_SBM)||'{}'); } catch(e){ return {}; }
-}
-function sbmSaveData(d) {
-  localStorage.setItem(LS_SBM, JSON.stringify(d));
-}
-
-function sbmZoneClass(pct) {
-  if (pct === null) return 'sbm-z-empty';
-  if (pct >= 70)   return 'sbm-z-strong';
-  if (pct >= 50)   return 'sbm-z-good';
-  if (pct >= 30)   return 'sbm-z-caution';
-  return 'sbm-z-weak';
-}
-
-function sbmRender() {
-  const data = sbmLoad();
-  const grid = document.getElementById('sbm-grid');
-  if (!grid) return;
-
-  grid.innerHTML = SBM_SECTORS.map(sec => {
-    const d = data[sec.id];
-    const adv   = d ? (d.adv||0) : null;
-    const total = d ? (d.total||sec.total) : sec.total;
-    const pct   = (adv !== null && total > 0) ? Math.round(adv/total*100) : null;
-    const zCls  = sbmZoneClass(pct);
-    const barW  = pct !== null ? pct : 0;
-    const stocks = d && d.stocks ? d.stocks : [];
-    return `
-      <div class="sbm-cell ${zCls}" id="sbm-cell-${sec.id}"
-           onclick="sbmCellClick('${sec.id}','${sec.name}',${JSON.stringify(stocks)})">
-        <div class="sbm-name">${sec.name}</div>
-        <div class="sbm-pct">${pct !== null ? pct+'%' : '—'}</div>
-        <div class="sbm-bar"><div class="sbm-bar-fill" style="width:${barW}%"></div></div>
-        <div class="sbm-adv">${adv !== null ? adv+' / '+total+' adv' : 'No data'}</div>
-      </div>`;
-  }).join('');
-
-  // Update timestamp
-  const ts = data._updated;
-  const upd = document.getElementById('sbm-updated');
-  if (upd) upd.textContent = ts ? 'Updated: '+ts : 'Enter data below';
+function renderAnalysisFTD() {
+  const el = id => document.getElementById(id);
+  if (!el('as-ftd-status')) return;
+  const days = ftdLoad();
+  const attempts = days.filter(d => d.type === 'attempt');
+  const ftds     = days.filter(d => d.type === 'followthrough');
+  let rallyDay = 0;
+  if (attempts.length) {
+    const attemptDate = attempts[0].date;
+    rallyDay = days.filter(d => d.date >= attemptDate && d.type !== 'distribution').length;
+  }
+  const ftdConfirmed = ftds.length > 0 && rallyDay >= 4;
+  const banner = el('as-ftd-banner');
+  if (ftdConfirmed) {
+    el('as-ftd-status').textContent = 'CONFIRMED ✅';
+    el('as-ftd-status').style.color = 'var(--lime)';
+    el('as-ftd-sub').textContent = 'FTD on ' + ftds[0].date + ' — Pilot entries OK (0.25R)';
+    el('as-ftd-pills').innerHTML = `<span class="as-pill ok">Day ${rallyDay}</span><span class="as-pill ok">Rally Valid</span>`;
+    if (banner) { banner.style.display='block'; banner.style.background='rgba(74,222,128,.1)'; banner.style.color='var(--lime)'; banner.style.borderTop='1px solid rgba(74,222,128,.25)'; banner.textContent='✅ Follow-Through Day Confirmed — Breakouts may be entered with pilot positions (0.25R)'; }
+  } else if (attempts.length) {
+    el('as-ftd-status').textContent = `Watching · Day ${rallyDay}`;
+    el('as-ftd-status').style.color = 'var(--yellow)';
+    el('as-ftd-sub').textContent = rallyDay < 4 ? 'Need Day 4+ with +1.5% on higher vol' : 'Watching for FTD';
+    el('as-ftd-pills').innerHTML = `<span class="as-pill warn">Attempt Day ${rallyDay}</span>`;
+    if (banner) { banner.style.display='block'; banner.style.background='rgba(250,204,21,.07)'; banner.style.color='var(--yellow)'; banner.style.borderTop='1px solid rgba(250,204,21,.2)'; banner.textContent=`⏳ Rally Attempt — Day ${rallyDay}. Wait for FTD before entering new positions.`; }
+  } else {
+    el('as-ftd-status').textContent = 'No Attempt';
+    el('as-ftd-status').style.color = 'var(--dim)';
+    el('as-ftd-sub').textContent = 'Log a rally attempt in the EOD entry form';
+    el('as-ftd-pills').innerHTML = '';
+    if (banner) banner.style.display = 'none';
+  }
 }
 
-function sbmCellClick(id, name, stocks) {
-  // toggle active state
-  document.querySelectorAll('.sbm-cell').forEach(c=>c.classList.remove('active'));
-  const cell = document.getElementById('sbm-cell-'+id);
-  const detail = document.getElementById('sbm-detail');
-  const title  = document.getElementById('sbm-detail-title');
-  const list   = document.getElementById('sbm-detail-stocks');
-  if (!detail) return;
-  // if same cell clicked again, close
-  if (detail.classList.contains('open') && detail.dataset.sector === id) {
-    detail.classList.remove('open');
-    detail.dataset.sector = '';
+function renderAnalysisDDC() {
+  const el = id => document.getElementById(id);
+  if (!el('as-dist')) return;
+  const days = mpmLoad().slice(0, 25);
+  if (!days.length) {
+    el('as-dist').textContent = '—'; el('as-dist').style.color = 'var(--dim)';
+    el('as-dist-status').textContent = '—'; el('as-dist-hint').textContent = 'Add MPM entries';
     return;
   }
-  cell.classList.add('active');
-  detail.dataset.sector = id;
-  title.textContent = name + ' — Top Advancing Stocks';
-  if (stocks.length) {
-    list.innerHTML = stocks.map(s=>`<span class="sbm-stock-tag">${s}</span>`).join('');
-  } else {
-    list.innerHTML = '<span style="color:var(--dim);font-size:11px">No stocks entered yet — use Edit mode</span>';
-  }
-  detail.classList.add('open');
+  const dist = days.filter(d => d.dtype === 'dist').length;
+  const acc  = days.filter(d => d.dtype === 'acc').length;
+  let status, color, hint;
+  if (dist >= 6)          { status = '⚠ Heavy Distribution'; color = 'var(--red)';    hint = 'Reduce exposure'; }
+  else if (dist >= 4)     { status = 'Elevated';              color = 'var(--orange)'; hint = 'Avoid new adds'; }
+  else if (dist<=1&&acc>=4){ status = 'Accumulation';         color = 'var(--lime)';   hint = 'Favourable for breakouts'; }
+  else                    { status = 'Normal';                 color = 'var(--sub)';   hint = `Acc: ${acc} · Dist: ${dist}`; }
+  el('as-dist').textContent = dist; el('as-dist').style.color = color;
+  el('as-dist-status').textContent = status; el('as-dist-status').style.color = color;
+  el('as-dist-hint').textContent = hint;
 }
 
-let _sbmEditOpen = false;
-function sbmToggleEdit() {
-  _sbmEditOpen = !_sbmEditOpen;
-  const panel = document.getElementById('sbm-edit-panel');
-  const detail = document.getElementById('sbm-detail');
-  if (!panel) return;
-  if (_sbmEditOpen) {
-    // close detail
-    if (detail) detail.classList.remove('open');
-    const data = sbmLoad();
-    const inputs = document.getElementById('sbm-inputs');
-    inputs.innerHTML = SBM_SECTORS.map(sec => {
-      const d = data[sec.id]||{};
-      const adv   = d.adv   !== undefined ? d.adv   : '';
-      const total = d.total !== undefined ? d.total : sec.total;
-      const stocks = d.stocks ? d.stocks.join(', ') : '';
-      return `
-        <div class="sbm-input-row">
-          <label>${sec.name}</label>
-          <input class="sbm-num" id="sbm-adv-${sec.id}"   type="number" min="0" placeholder="Adv"   value="${adv}">
-          <input class="sbm-num" id="sbm-tot-${sec.id}"   type="number" min="1" placeholder="Tot"   value="${total}">
-          <input class="sbm-num" id="sbm-stk-${sec.id}"   type="text"            placeholder="HDFC,ICICI…" value="${stocks}"
-                 style="font-size:10px;width:100%;text-align:left">
-        </div>`;
-    }).join('');
-    panel.style.display = 'block';
-  } else {
-    panel.style.display = 'none';
+function renderAnalysisNHNL(data) {
+  const el = id => document.getElementById(id);
+  if (!el('as-hl-today') || !data || !data.length) return;
+  const hlR = r => { const hi=+r.hi||0, lo=+r.lo||0; return (hi+lo)>0 ? hi/(hi+lo) : null; };
+  const todayPct = (v => v!==null ? Math.round(v*100) : null)(hlR(data[0]));
+  const color = todayPct===null?'var(--dim)':todayPct>=60?'var(--lime)':todayPct>=40?'var(--yellow)':'var(--red)';
+  el('as-hl-today').textContent = todayPct!==null ? todayPct+'%' : '—';
+  el('as-hl-today').style.color = color;
+  const avg = (arr) => arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length*100) : null;
+  const avg5  = avg(data.slice(0,5).map(hlR).filter(v=>v!==null));
+  const avg10 = avg(data.slice(0,10).map(hlR).filter(v=>v!==null));
+  el('as-hl-5d').textContent  = avg5  !== null ? avg5+'%'  : '—';
+  el('as-hl-10d').textContent = avg10 !== null ? avg10+'%' : '—';
+  if (avg5!==null && avg10!==null) {
+    const diff = avg5 - avg10;
+    const arrow = diff>=5?'↑↑':diff>=0?'↑':diff>=-5?'↓':'↓↓';
+    const tc = diff>=3?'var(--lime)':diff>=0?'var(--yellow)':'var(--red)';
+    el('as-hl-trend-arrow').textContent = arrow; el('as-hl-trend-arrow').style.color = tc;
+    el('as-hl-sig').textContent = (diff>=0?'+':'')+diff+'pp · '+(diff>=3?'Expanding':diff>=0?'Stable':'Contracting');
+    el('as-hl-sig').style.color = tc;
   }
 }
 
-function sbmSave() {
-  const data = sbmLoad();
-  SBM_SECTORS.forEach(sec => {
-    const advEl = document.getElementById('sbm-adv-'+sec.id);
-    const totEl = document.getElementById('sbm-tot-'+sec.id);
-    const stkEl = document.getElementById('sbm-stk-'+sec.id);
-    if (!advEl) return;
-    const adv   = advEl.value !== '' ? parseInt(advEl.value)||0 : null;
-    const total = totEl.value !== '' ? parseInt(totEl.value)||sec.total : sec.total;
-    const stocks = stkEl.value ? stkEl.value.split(',').map(s=>s.trim()).filter(Boolean) : [];
-    if (adv !== null) {
-      data[sec.id] = {adv, total, stocks};
-    }
-  });
-  const now = new Date();
-  data._updated = now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
-  sbmSaveData(data);
-  _sbmEditOpen = false;
-  document.getElementById('sbm-edit-panel').style.display = 'none';
-  sbmRender();
+// ════════════════════════════════════════════════════
+//  FOLLOW-THROUGH DAY DETECTOR
+// ════════════════════════════════════════════════════
+const LS_FTD = 'ftd_data';
+function ftdLoad() { try { return JSON.parse(localStorage.getItem(LS_FTD)||'[]'); } catch(e){ return []; } }
+function ftdSaveData(d) { localStorage.setItem(LS_FTD, JSON.stringify(d)); }
+
+let _ftdAddOpen = false;
+function ftdToggleAdd() {
+  _ftdAddOpen = !_ftdAddOpen;
+  document.getElementById('ftd-add-panel').style.display = _ftdAddOpen ? 'block' : 'none';
+  if (_ftdAddOpen) {
+    document.getElementById('ftd-date').value = new Date().toISOString().slice(0,10);
+  }
+}
+
+function ftdAddDay() {
+  const date  = document.getElementById('ftd-date').value;
+  const close = parseFloat(document.getElementById('ftd-close').value);
+  const prev  = parseFloat(document.getElementById('ftd-prev').value);
+  const volUp = document.getElementById('ftd-vol').value === 'yes';
+  const type  = document.getElementById('ftd-type').value;
+  if (!date || isNaN(close) || isNaN(prev)) { alert('Please fill Date, Close and Prev Close'); return; }
+  const movePct = ((close - prev) / prev * 100);
+  const days = ftdLoad();
+  days.unshift({ date, close, prev, movePct: +movePct.toFixed(2), volUp, type, id: Date.now() });
+  ftdSaveData(days);
+  _ftdAddOpen = false;
+  document.getElementById('ftd-add-panel').style.display = 'none';
+  ftdRender();
   pushToCloud();
+}
+
+function ftdReset() {
+  if (!confirm('Reset current rally attempt? This clears all FTD log entries.')) return;
+  ftdSaveData([]);
+  ftdRender();
+  pushToCloud();
+}
+
+function ftdRender() {
+  const el  = id => document.getElementById(id);
+  const days = ftdLoad();
+
+  if (!days.length) {
+    el('ftd-status').textContent = 'No Data'; el('ftd-status').style.color = 'var(--dim)';
+    el('ftd-status-sub').textContent = 'Log Day 1 of a rally attempt to begin tracking';
+    el('ftd-rally-day').textContent = '—'; el('ftd-move').textContent = '—';
+    el('ftd-log-wrap').style.display = 'none';
+    el('ftd-banner').style.display = 'none';
+    el('ftd-status-cell').className = 'ftd-cell';
+    return;
+  }
+
+  // Find attempt start (most recent 'attempt' entry)
+  const attempts = days.filter(d => d.type === 'attempt');
+  const ftds     = days.filter(d => d.type === 'followthrough');
+  const latest   = days[0];
+
+  // Count rally days since last attempt
+  let rallyDay = 0;
+  if (attempts.length) {
+    const attemptDate = attempts[0].date;
+    rallyDay = days.filter(d => d.date >= attemptDate && d.type !== 'distribution').length;
+  }
+
+  // FTD detected?
+  const ftdDetected = ftds.length > 0 && rallyDay >= 4;
+  const latestFtd   = ftds[0];
+
+  el('ftd-rally-day').textContent = rallyDay ? 'Day ' + rallyDay : '—';
+  el('ftd-move').textContent = latest.movePct > 0 ? '+' + latest.movePct + '%' : latest.movePct + '%';
+  el('ftd-move').style.color = latest.movePct >= 1.5 ? 'var(--lime)' : 'var(--orange)';
+
+  if (ftdDetected) {
+    el('ftd-status').textContent = 'CONFIRMED'; el('ftd-status').style.color = 'var(--lime)';
+    el('ftd-status-sub').textContent = 'FTD on ' + latestFtd.date + ' — Rally confirmed';
+    el('ftd-status-cell').className = 'ftd-cell ftd-detected';
+    el('ftd-banner').style.display = 'block';
+    el('ftd-banner').style.background = 'rgba(74,222,128,.12)';
+    el('ftd-banner').style.color = 'var(--lime)';
+    el('ftd-banner').style.border = '1px solid rgba(74,222,128,.3)';
+    el('ftd-banner').textContent = '✅ Follow-Through Day Confirmed — Breakouts may be entered with pilot positions (0.25R)';
+  } else if (attempts.length) {
+    el('ftd-status').textContent = 'Watching'; el('ftd-status').style.color = 'var(--yellow)';
+    el('ftd-status-sub').textContent = rallyDay < 4 ? `Day ${rallyDay} — Need Day 4+ with +1.5% on higher vol` : 'Watching for FTD confirmation';
+    el('ftd-status-cell').className = 'ftd-cell ftd-attempt';
+    el('ftd-banner').style.display = 'block';
+    el('ftd-banner').style.background = 'rgba(250,204,21,.08)';
+    el('ftd-banner').style.color = 'var(--yellow)';
+    el('ftd-banner').style.border = '1px solid rgba(250,204,21,.2)';
+    el('ftd-banner').textContent = `⏳ Rally Attempt in progress — Day ${rallyDay}. No new entries until FTD confirmed.`;
+  } else {
+    el('ftd-status').textContent = 'No Attempt'; el('ftd-status').style.color = 'var(--dim)';
+    el('ftd-status-sub').textContent = 'Market in correction — wait for Day 1 of rally attempt';
+    el('ftd-status-cell').className = 'ftd-cell';
+    el('ftd-banner').style.display = 'none';
+  }
+
+  // Log table
+  el('ftd-log-wrap').style.display = 'block';
+  const typeLabel = { attempt:'Rally Day 1', followthrough:'Follow-Through', distribution:'Distribution' };
+  const typeColor = { attempt:'var(--yellow)', followthrough:'var(--lime)', distribution:'var(--red)' };
+  el('ftd-log').innerHTML = days.slice(0,10).map(d => `
+    <div class="ftd-row">
+      <span style="color:var(--sub)">${d.date}</span>
+      <span style="color:${typeColor[d.type]||'var(--sub)'};font-weight:600">${typeLabel[d.type]||d.type}</span>
+      <span style="font-family:var(--mono)">${d.close}</span>
+      <span style="color:${d.movePct>=1.5?'var(--lime)':d.movePct<0?'var(--red)':'var(--sub)'}">${d.movePct>0?'+':''}${d.movePct}%</span>
+      <span style="color:${d.volUp?'var(--lime)':'var(--dim)'}">${d.volUp?'↑ Yes':'— No'}</span>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════
+//  DISTRIBUTION DAY COUNTER
+// ════════════════════════════════════════════════════
+function ddcRender() {
+  const el = id => document.getElementById(id);
+  if (!el('ddc-count')) return;
+  const days   = mpmLoad().slice(0, 25);
+  const dist   = days.filter(d => d.dtype === 'dist').length;
+  const acc    = days.filter(d => d.dtype === 'acc').length;
+  const net    = acc - dist;
+
+  if (!days.length) {
+    el('ddc-count').textContent = '—'; el('ddc-count').style.color = 'var(--dim)';
+    el('ddc-status').textContent = '—'; el('ddc-net').textContent = '—';
+    el('ddc-acc').textContent = '—'; el('ddc-gauge').innerHTML = '';
+    return;
+  }
+
+  el('ddc-count').textContent = dist;
+  el('ddc-acc').textContent   = acc;
+  el('ddc-net').textContent   = (net >= 0 ? '+' : '') + net;
+  el('ddc-net').style.color   = net >= 3 ? 'var(--lime)' : net >= 0 ? 'var(--yellow)' : 'var(--red)';
+
+  let status, hint, color;
+  if (dist >= 6) {
+    status = '⚠ Heavy Distribution'; color = 'var(--red)';
+    hint = dist + ' distribution days — historically precedes corrections. Reduce exposure, tighten stops.';
+  } else if (dist >= 4) {
+    status = 'Elevated Distribution'; color = 'var(--orange)';
+    hint = dist + ' distribution days — caution warranted. Avoid adding new positions.';
+  } else if (dist <= 1 && acc >= 4) {
+    status = 'Accumulation Phase'; color = 'var(--lime)';
+    hint = 'Low distribution, strong accumulation. Institutions are buying. Favourable for breakouts.';
+  } else {
+    status = 'Normal'; color = 'var(--sub)';
+    hint = 'Distribution within normal range. Monitor for clustering of dist days.';
+  }
+  el('ddc-count').style.color = color;
+  el('ddc-status').textContent = status; el('ddc-status').style.color = color;
+  el('ddc-hint').textContent   = hint;
+
+  // Gauge — last 10 days as bars
+  const last10 = [...days].sort((a,b)=>a.date.localeCompare(b.date)).slice(-10);
+  el('ddc-gauge').innerHTML = last10.map(d => {
+    const c = d.dtype==='dist'?'#f87171':d.dtype==='acc'?'#4ade80':'#4a5e76';
+    const h = d.dtype==='neutral'?6:24;
+    return `<div class="ddc-bar-w"><div class="ddc-bar-b" style="background:${c};height:${h}px"></div><div class="ddc-bar-n">${d.dtype==='dist'?'D':d.dtype==='acc'?'A':'N'}</div></div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════
+//  NEW HIGH / NEW LOW RATIO TREND
+// ════════════════════════════════════════════════════
+function nhnlRender(data) {
+  const el = id => document.getElementById(id);
+  if (!el('nhnl-today') || !data.length) {
+    if(el('nhnl-today')) { el('nhnl-today').textContent='—'; el('nhnl-5d').textContent='—'; el('nhnl-10d').textContent='—'; el('nhnl-trend').textContent='—'; el('nhnl-bars').innerHTML=''; }
+    return;
+  }
+
+  function hlRatio(r) {
+    const hi = +r.hi||0, lo = +r.lo||0;
+    return (hi+lo) > 0 ? hi/(hi+lo) : null;
+  }
+
+  // Today
+  const today = hlRatio(data[0]);
+  const todayPct = today !== null ? Math.round(today*100) : null;
+  el('nhnl-today').textContent = todayPct !== null ? todayPct+'%' : '—';
+  el('nhnl-today').style.color = todayPct === null ? 'var(--dim)' : todayPct >= 60 ? 'var(--lime)' : todayPct >= 40 ? 'var(--yellow)' : 'var(--red)';
+
+  // Signal
+  let sig = '—', sigColor = 'var(--dim)';
+  if (todayPct !== null) {
+    if (todayPct >= 70) { sig = '🟢 Strongly Bullish'; sigColor = 'var(--lime)'; }
+    else if (todayPct >= 55) { sig = '↑ Bullish'; sigColor = 'var(--lime)'; }
+    else if (todayPct >= 40) { sig = '→ Neutral'; sigColor = 'var(--yellow)'; }
+    else if (todayPct >= 25) { sig = '↓ Bearish'; sigColor = 'var(--orange)'; }
+    else { sig = '🔴 Strongly Bearish'; sigColor = 'var(--red)'; }
+  }
+  el('nhnl-signal').textContent = sig; el('nhnl-signal').style.color = sigColor;
+
+  // 5-day avg
+  const ratios5 = data.slice(0,5).map(hlRatio).filter(v => v !== null);
+  const avg5 = ratios5.length ? Math.round(ratios5.reduce((a,b)=>a+b,0)/ratios5.length*100) : null;
+  el('nhnl-5d').textContent = avg5 !== null ? avg5+'%' : '—';
+  el('nhnl-5d').style.color = avg5 === null ? 'var(--dim)' : avg5 >= 55 ? 'var(--lime)' : avg5 >= 40 ? 'var(--yellow)' : 'var(--red)';
+
+  // 10-day avg
+  const ratios10 = data.slice(0,10).map(hlRatio).filter(v => v !== null);
+  const avg10 = ratios10.length ? Math.round(ratios10.reduce((a,b)=>a+b,0)/ratios10.length*100) : null;
+  el('nhnl-10d').textContent = avg10 !== null ? avg10+'%' : '—';
+  el('nhnl-10d').style.color = 'var(--sub)';
+
+  // Trend: 5d vs 10d
+  if (avg5 !== null && avg10 !== null) {
+    const diff = avg5 - avg10;
+    const trendSymbol = diff >= 5 ? '↑↑' : diff >= 0 ? '↑' : diff >= -5 ? '↓' : '↓↓';
+    const trendColor  = diff >= 3 ? 'var(--lime)' : diff >= 0 ? 'var(--yellow)' : 'var(--red)';
+    el('nhnl-trend').textContent = trendSymbol; el('nhnl-trend').style.color = trendColor;
+    el('nhnl-trend-sig').textContent = (diff >= 0 ? '+' : '') + diff + 'pp — ' + (diff >= 3 ? 'Expanding' : diff >= 0 ? 'Stable' : 'Contracting');
+    el('nhnl-trend-sig').style.color = trendColor;
+  } else {
+    el('nhnl-trend').textContent = '—'; el('nhnl-trend-sig').textContent = 'Need 5+ entries';
+  }
+
+  // Mini bars (last 10, newest right)
+  const bars = data.slice(0,10).reverse();
+  el('nhnl-bars').innerHTML = bars.map(r => {
+    const ratio = hlRatio(r);
+    const h = ratio !== null ? Math.max(3, Math.round(ratio * 28)) : 3;
+    const c = ratio === null ? 'var(--dim)' : ratio >= 0.6 ? '#4ade80' : ratio >= 0.4 ? '#fbbf24' : '#f87171';
+    return `<div class="nhnl-bar" style="background:${c};height:${h}px;flex:1"></div>`;
+  }).join('');
 }
 
 function renderAll() {
   const data=loadLocal();
   renderHero(data);
   renderMarketCycle();
-  sbmRender(); renderChart(data); renderSnapshot(data); renderHistory(data);
+  ftdRender();
+  ddcRender();
+  nhnlRender(data);
+  renderChart(data); renderSnapshot(data); renderHistory(data);
   bsrRenderAll();
   mpmRenderAll();
 }
@@ -2678,6 +2946,7 @@ function mpmRenderAll() {
   mpmRenderHero(days);
   mpmRenderTable(days);
   renderMarketCycle();
+  ddcRender();
 }
 
 function bsrRenderAll() {
