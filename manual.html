@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSE Breadth Radar — User Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #0e1420;
+  --bg2:    #161e2e;
+  --bg3:    #1c2638;
+  --bg4:    #212d40;
+  --border: #273447;
+  --bdr2:   #324158;
+  --text:   #dde6f0;
+  --sub:    #8899b0;
+  --dim:    #4a5e76;
+  --accent: #5ba3f5;
+  --lime:   #4ade80;
+  --green:  #34d399;
+  --teal:   #2dd4bf;
+  --yellow: #fbbf24;
+  --orange: #fb923c;
+  --red:    #f87171;
+  --purple: #a78bfa;
+  --body:   'DM Sans', sans-serif;
+  --mono:   'DM Mono', monospace;
+  --disp:   'Barlow Condensed', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ── HEADER ── */
+.hdr {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 50px;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+}
+.hdr-logo { font-family: var(--disp); font-size: 20px; font-weight: 800; letter-spacing: 4px; color: var(--accent); text-transform: uppercase; }
+.hdr-logo em { color: var(--dim); font-style: normal; font-weight: 600; }
+.hdr-back { font-size: 12px; color: var(--sub); text-decoration: none; border: 1px solid var(--border); padding: 3px 10px; border-radius: 4px; transition: all .15s; }
+.hdr-back:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ── LAYOUT ── */
+.page { max-width: 960px; margin: 0 auto; padding: 24px 20px 60px; }
+
+/* ── TOC ── */
+.toc {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 20px 24px; margin-bottom: 32px;
+  border-left: 3px solid var(--accent);
+}
+.toc-title { font-family: var(--disp); font-size: 18px; font-weight: 800; color: var(--accent); margin-bottom: 14px; letter-spacing: 1px; }
+.toc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 32px; }
+.toc a { color: var(--sub); text-decoration: none; font-size: 13px; padding: 3px 0; display: flex; align-items: center; gap: 8px; transition: color .15s; }
+.toc a:hover { color: var(--accent); }
+.toc-num { font-family: var(--mono); font-size: 11px; color: var(--dim); min-width: 20px; }
+
+/* ── SECTIONS ── */
+.section { margin-bottom: 40px; }
+.section-hdr {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 20px;
+}
+.section-num { font-family: var(--mono); font-size: 11px; color: var(--dim); background: var(--bg3); padding: 3px 8px; border-radius: 3px; }
+.section-title { font-family: var(--disp); font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: .5px; }
+
+/* ── PROSE ── */
+p { color: var(--sub); margin-bottom: 12px; }
+p b { color: var(--text); font-weight: 600; }
+p strong { color: var(--accent); font-weight: 600; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 6px;
+  margin-bottom: 12px; overflow: hidden;
+}
+.card-head {
+  padding: 10px 16px; background: var(--bg3); border-bottom: 1px solid var(--border);
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--sub);
+}
+.card-body { padding: 14px 16px; }
+
+/* ── STEP LIST ── */
+.steps { list-style: none; counter-reset: step; }
+.steps li {
+  counter-increment: step;
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 10px 0; border-bottom: 1px solid rgba(39,52,71,.5);
+}
+.steps li:last-child { border-bottom: none; }
+.step-num {
+  font-family: var(--disp); font-size: 22px; font-weight: 800;
+  color: var(--accent); min-width: 28px; line-height: 1.2;
+}
+.step-body { flex: 1; }
+.step-body b { color: var(--text); font-size: 14px; display: block; margin-bottom: 3px; }
+.step-body span { color: var(--sub); font-size: 13px; }
+.step-body a { color: var(--accent); }
+.step-time { font-family: var(--mono); font-size: 10px; color: var(--dim); background: var(--bg4); padding: 1px 6px; border-radius: 2px; margin-left: 6px; vertical-align: middle; }
+
+/* ── TABLES ── */
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th { background: var(--bg3); color: var(--sub); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 9px 12px; border-bottom: 1px solid rgba(39,52,71,.4); color: var(--sub); vertical-align: top; }
+.tbl td:first-child { color: var(--text); font-weight: 500; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: rgba(255,255,255,.02); }
+
+/* ── ZONE BADGE ── */
+.badge {
+  display: inline-block; font-family: var(--mono); font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 3px; border: 1px solid transparent;
+}
+.z-healthy  { color: var(--lime);   background: rgba(74,222,128,.10);  border-color: rgba(74,222,128,.25); }
+.z-exp      { color: var(--green);  background: rgba(52,211,153,.10);  border-color: rgba(52,211,153,.25); }
+.z-caution  { color: var(--yellow); background: rgba(251,191,36,.10);  border-color: rgba(251,191,36,.25); }
+.z-def      { color: var(--orange); background: rgba(251,146,60,.10);  border-color: rgba(251,146,60,.25); }
+.z-crash    { color: var(--red);    background: rgba(248,113,113,.10); border-color: rgba(248,113,113,.25); }
+.z-recov    { color: var(--orange); background: rgba(251,146,60,.10);  border-color: rgba(251,146,60,.25); }
+.z-expand   { color: var(--lime);   background: rgba(74,222,128,.10);  border-color: rgba(74,222,128,.25); }
+.z-late     { color: var(--yellow); background: rgba(251,191,36,.10);  border-color: rgba(251,191,36,.25); }
+.z-correct  { color: var(--red);    background: rgba(248,113,113,.10); border-color: rgba(248,113,113,.25); }
+
+/* ── HIGHLIGHT BOXES ── */
+.tip {
+  border-radius: 5px; padding: 12px 16px; margin-bottom: 12px;
+  font-size: 13px; line-height: 1.5;
+}
+.tip-green  { background: rgba(74,222,128,.07);  border-left: 3px solid var(--lime);   color: var(--text); }
+.tip-yellow { background: rgba(251,191,36,.07);  border-left: 3px solid var(--yellow); color: var(--text); }
+.tip-red    { background: rgba(248,113,113,.07); border-left: 3px solid var(--red);    color: var(--text); }
+.tip-blue   { background: rgba(91,163,245,.07);  border-left: 3px solid var(--accent); color: var(--text); }
+.tip b      { font-weight: 700; }
+
+/* ── BAND DIAGRAM ── */
+.band-demo {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+  overflow: hidden; margin-bottom: 12px;
+}
+.band-row { display: grid; gap: 0; }
+.band-row-1 { grid-template-columns: 110px 170px 1fr 130px 130px 130px; border-bottom: 1px solid var(--border); }
+.band-row-2 { grid-template-columns: repeat(4,1fr); }
+.band-cell {
+  padding: 10px 14px; border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; justify-content: center;
+}
+.band-cell:last-child { border-right: none; }
+.band-cell-lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--dim); margin-bottom: 3px; }
+.band-cell-val { font-family: var(--disp); font-size: 18px; font-weight: 800; color: var(--accent); }
+.band-cell-sub { font-size: 10px; color: var(--sub); margin-top: 2px; }
+
+/* ── RUPEE TABLE ── */
+.rupee-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.rupee-card {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 5px;
+  padding: 12px 14px; border-top: 2px solid var(--dim);
+}
+.rupee-card.healthy { border-top-color: var(--lime); }
+.rupee-card.expanding { border-top-color: var(--green); }
+.rupee-card.caution { border-top-color: var(--yellow); }
+.rupee-zone { font-family: var(--disp); font-size: 14px; font-weight: 800; margin-bottom: 8px; }
+.rupee-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; border-bottom: 1px solid rgba(39,52,71,.4); }
+.rupee-row:last-child { border-bottom: none; }
+.rupee-row span:first-child { color: var(--sub); }
+.rupee-row span:last-child { font-family: var(--mono); color: var(--text); font-weight: 600; }
+
+/* ── FTD FLOW ── */
+.ftd-flow { display: flex; gap: 0; margin-bottom: 14px; }
+.ftd-step {
+  flex: 1; padding: 12px 14px; background: var(--bg3); border: 1px solid var(--border);
+  border-right: none; position: relative;
+}
+.ftd-step:last-child { border-right: 1px solid var(--border); border-radius: 0 5px 5px 0; }
+.ftd-step:first-child { border-radius: 5px 0 0 5px; }
+.ftd-step-num { font-family: var(--disp); font-size: 28px; font-weight: 800; color: var(--dim); line-height: 1; }
+.ftd-step-title { font-size: 12px; font-weight: 700; color: var(--text); margin: 4px 0 3px; }
+.ftd-step-desc { font-size: 11px; color: var(--sub); line-height: 1.4; }
+.ftd-step.active .ftd-step-num { color: var(--lime); }
+.ftd-step.active { border-color: rgba(74,222,128,.3); background: rgba(74,222,128,.04); }
+.ftd-arrow { display: flex; align-items: center; padding: 0 2px; color: var(--dim); font-size: 14px; }
+
+/* ── CHEAT SHEET ── */
+.cheat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cheat-card {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 5px;
+  padding: 12px 14px;
+}
+.cheat-title { font-family: var(--disp); font-size: 14px; font-weight: 800; color: var(--accent); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .5px; }
+.cheat-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(39,52,71,.3); font-size: 12px; }
+.cheat-row:last-child { border-bottom: none; }
+.cheat-row span:first-child { color: var(--sub); }
+
+/* ── FOOTER ── */
+.footer {
+  margin-top: 60px; padding: 24px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+.footer-credit { font-size: 13px; color: var(--sub); line-height: 1.8; }
+.footer-credit b { color: var(--text); font-weight: 600; }
+.footer-name { font-family: var(--disp); font-size: 20px; font-weight: 700; color: var(--accent); letter-spacing: 1px; margin-top: 8px; display: block; }
+.footer-role { font-size: 11px; color: var(--dim); letter-spacing: .5px; margin-top: 2px; }
+.footer-ver { font-family: var(--mono); font-size: 10px; color: var(--dim); margin-top: 12px; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px) {
+  .toc-grid { grid-template-columns: 1fr; }
+  .rupee-grid { grid-template-columns: 1fr; }
+  .cheat-grid { grid-template-columns: 1fr; }
+  .band-row-1 { grid-template-columns: 1fr 1fr 1fr; }
+  .band-row-2 { grid-template-columns: 1fr 1fr; }
+  .ftd-flow { flex-direction: column; }
+  .ftd-step { border-right: 1px solid var(--border) !important; border-radius: 5px !important; margin-bottom: 4px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-logo">NSE <em>BREADTH</em> RADAR &nbsp;<span style="font-size:13px;color:var(--dim);font-family:var(--body);letter-spacing:0;font-weight:400">User Guide</span></div>
+  <a class="hdr-back" href="index.html">← Back to Dashboard</a>
+</div>
+
+<div class="page">
+
+  <!-- INTRO -->
+  <div style="margin-bottom:28px;padding:20px 24px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;border-left:3px solid var(--accent)">
+    <div style="font-family:var(--disp);font-size:26px;font-weight:800;color:var(--text);margin-bottom:8px">NSE Breadth Radar — Operational Manual</div>
+    <p style="margin-bottom:4px">A personal market breadth intelligence system built for <b>breakout swing trading</b> using the O'Neil / Minervini / Darvas / Weinstein methodology on NSE-listed stocks.</p>
+    <p style="margin:0">Universe: <b>Nifty 500</b> &nbsp;·&nbsp; Capital: <b>₹5,00,000</b> &nbsp;·&nbsp; Max Risk/Trade: <b>1% = ₹5,000</b> &nbsp;·&nbsp; Broker: <b>Dhan</b></p>
+  </div>
+
+  <!-- TABLE OF CONTENTS -->
+  <div class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-grid">
+      <a href="#s1"><span class="toc-num">01</span> Daily 5-Minute Workflow</a>
+      <a href="#s2"><span class="toc-num">02</span> Reading the Status Band</a>
+      <a href="#s3"><span class="toc-num">03</span> Analysis Strip — 4 Indicators</a>
+      <a href="#s4"><span class="toc-num">04</span> Follow-Through Day (FTD) Guide</a>
+      <a href="#s5"><span class="toc-num">05</span> BSR Tracker</a>
+      <a href="#s6"><span class="toc-num">06</span> Market Pressure Meter (MPM)</a>
+      <a href="#s7"><span class="toc-num">07</span> Position Sizing — ₹ Examples</a>
+      <a href="#s8"><span class="toc-num">08</span> Cloud Sync Setup</a>
+      <a href="#s9"><span class="toc-num">09</span> Quick Reference Cheat Sheet</a>
+    </div>
+  </div>
+
+
+  <!-- ═══ SECTION 1 ══════════════════════════════════════════════ -->
+  <div class="section" id="s1">
+    <div class="section-hdr">
+      <span class="section-num">01</span>
+      <span class="section-title">Daily 5-Minute EOD Workflow</span>
+    </div>
+
+    <p>After market close (3:30 PM IST), open the dashboard and the sources below in separate tabs. Enter all data into the <b>single EOD Data Entry panel</b> and click <strong>Save &amp; Sync All</strong> once. That single save updates every indicator on the dashboard automatically.</p>
+
+    <div class="card">
+      <div class="card-head">Step-by-step daily routine</div>
+      <div class="card-body" style="padding:8px 0">
+        <ul class="steps">
+          <li>
+            <span class="step-num">1</span>
+            <div class="step-body">
+              <b>Open NSE Advance/Decline page <span class="step-time">~30 sec</span></b>
+              <span>Go to <a href="https://www.nseindia.com/market-data/advance" target="_blank">nseindia.com → Advance/Decline</a>. Enter <b>Advances, Declines, Unchanged</b> for Nifty 500. Then go to <a href="https://www.nseindia.com/market-data/52-week-high-equity-market" target="_blank">52W High/Low page</a> — enter <b>52W Highs</b> and <b>52W Lows</b>.</span>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">2</span>
+            <div class="step-body">
+              <b>Open Trendlyne Breadth page <span class="step-time">~30 sec</span></b>
+              <span>Go to <a href="https://trendlyne.com/equity/market-bullish-bearish-breadth/equi-weighted/" target="_blank">Trendlyne Breadth</a>. Enter <b>%&gt;EMA20, %&gt;SMA50, %&gt;SMA200</b> (three numbers, all as percentages like 28.6).</span>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">3</span>
+            <div class="step-body">
+              <b>Enter Nifty 50 Close + Volume <span class="step-time">~15 sec</span></b>
+              <span>Enter today's <b>Nifty 50 closing price</b> and <b>total volume in Crores</b>. The previous close and volume will auto-fill from yesterday's saved entry — verify they look correct. This data automatically powers the MPM (accumulation/distribution calculation) — no separate MPM entry needed for normal days.</span>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">4</span>
+            <div class="step-body">
+              <b>Tag today's FTD status (if applicable) <span class="step-time">~5 sec</span></b>
+              <span>If today is the <b>first day the market bounced from a low</b>, select "Day 1 of Rally Attempt". If Nifty rose 1.5%+ on higher volume on Day 4 or later of a rally, select "Follow-Through Day". On normal days, leave blank. See Section 04 for full FTD guide.</span>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">5</span>
+            <div class="step-body">
+              <b>Add a note (optional) <span class="step-time">~10 sec</span></b>
+              <span>Type any relevant context — <em>FII buying, RBI policy, Budget day, FTD confirmed</em>. This appears in your 30-day history for future reference.</span>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">6</span>
+            <div class="step-body">
+              <b>Click "Save &amp; Sync All" <span class="step-time">~5 sec</span></b>
+              <span>One click saves everything: breadth score, MPM entry, FTD log, and pushes all data to JSONBin cloud. The entire dashboard updates instantly — Band, Analysis Strip, charts, history.</span>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">7</span>
+            <div class="step-body">
+              <b>Update BSR if you have open trades <span class="step-time">~1 min</span></b>
+              <span>Go to the <b>BSR Tracker</b> (right column). Click the current price field next to each open trade and update it. The success/failure status and BSR% will recalculate automatically.</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="tip tip-blue">
+      <b>Total time: ~5 minutes.</b> The entire routine is designed to be done in one sitting after market close. All indicators update from a single Save.
+    </div>
+  </div>
+
+
+  <!-- ═══ SECTION 2 ══════════════════════════════════════════════ -->
+  <div class="section" id="s2">
+    <div class="section-hdr">
+      <span class="section-num">02</span>
+      <span class="section-title">Reading the Status Band</span>
+    </div>
+
+    <p>The top band is a two-row command centre. <b>Row 1</b> shows live numbers. <b>Row 2</b> (Analysis Strip) shows interpreted signals. Read them together as one picture.</p>
+
+    <div class="card">
+      <div class="card-head">Row 1 — Eight cells explained</div>
+      <div class="card-body" style="padding:0">
+        <table class="tbl">
+          <thead><tr><th>Cell</th><th>What it shows</th><th>What to do</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="badge z-healthy">Breadth Score</span></td>
+              <td>Composite 0–100 score. Weighted: A/D ratio 35% + 52W H/L 15% + %&gt;EMA20 20% + %&gt;SMA50 15% + %&gt;SMA200 15%.</td>
+              <td>Primary number. Drives zone and position sizing. Above 45 = you can trade.</td>
+            </tr>
+            <tr>
+              <td><span class="badge z-exp">Market Zone</span></td>
+              <td>Five zones: HEALTHY (≥55) / EXPANDING (≥45) / CAUTION (≥35) / DEFENSIVE (≥20) / CORRECTION (&lt;20).</td>
+              <td>Your position sizing permission level. See Section 07.</td>
+            </tr>
+            <tr>
+              <td><span class="badge" style="color:var(--sub);border-color:var(--border)">Zone Meter</span></td>
+              <td>Visual progress bar showing where the score sits across the five zones.</td>
+              <td>Quick visual. The coloured bands show which zone you're in.</td>
+            </tr>
+            <tr>
+              <td><span class="badge" style="color:var(--sub);border-color:var(--border)">Last Saved</span></td>
+              <td>Date of last entry, trend arrow (pts change from previous day), and total entries stored.</td>
+              <td>Verify today's entry was saved. Check the trend direction.</td>
+            </tr>
+            <tr>
+              <td><span class="badge" style="color:var(--purple);border-color:rgba(167,139,250,.3);background:rgba(167,139,250,.08)">BSR Rate</span></td>
+              <td>Breakout Success Rate — % of your tracked breakouts that hit +5% above pivot. Pending trades excluded.</td>
+              <td>&gt;65% = breakouts working, can add size. &lt;50% = market not rewarding breakouts, reduce size.</td>
+            </tr>
+            <tr>
+              <td><span class="badge" style="color:var(--teal);border-color:rgba(45,212,191,.3);background:rgba(45,212,191,.08)">Pressure</span></td>
+              <td>MPM score = Acc days − Dist days in last 25 sessions. Positive = institutions buying. Negative = selling.</td>
+              <td>Confirm breadth reading. High breadth + positive pressure = strong environment.</td>
+            </tr>
+            <tr>
+              <td><span class="badge" style="color:var(--yellow);border-color:rgba(251,191,36,.3)">Momentum</span></td>
+              <td>Today's score minus yesterday's score. Shows direction of change.</td>
+              <td>+10 or more = strong expansion day. Negative = breadth deteriorating.</td>
+            </tr>
+            <tr>
+              <td><span class="badge" style="color:var(--orange);border-color:rgba(251,146,60,.3)">Thrust</span></td>
+              <td>Today's score minus score 3 days ago. ≥+15 = Breadth Thrust signal.</td>
+              <td>A Thrust ≥+15 historically precedes strong rally legs. Look for breakout setups immediately.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">Row 2 — Analysis Strip (interpreted signals)</div>
+      <div class="card-body" style="padding:0">
+        <table class="tbl">
+          <thead><tr><th>Cell</th><th>What it shows</th><th>Action implication</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>📡 Market Cycle</td>
+              <td>Auto-classified phase: Correction / Defensive / Caution / Recovery / Expansion / Late Stage. Uses Score + Momentum + BSR + MPM together.</td>
+              <td>Recovery = pilot entries (0.25R). Expansion = full sizing. Late Stage = trail stops. Correction = no new trades.</td>
+            </tr>
+            <tr>
+              <td>🚀 FTD Status</td>
+              <td>No Attempt / Watching Day N / CONFIRMED ✅. Green banner appears when FTD is confirmed.</td>
+              <td>Only enter new breakouts after CONFIRMED. During "Watching" — prepare your watchlist but do not buy.</td>
+            </tr>
+            <tr>
+              <td>📉 Distribution Days</td>
+              <td>Count of distribution days (close down + volume up) in last 25 sessions. Auto from MPM data.</td>
+              <td>4+ = caution. 6+ = reduce exposure immediately. O'Neil's rule: 5–7 dist days typically precede corrections.</td>
+            </tr>
+            <tr>
+              <td>📊 H/L Trend</td>
+              <td>New Highs / (Highs + Lows) ratio. Today, 5-day avg, 10-day avg, and trend arrow.</td>
+              <td>↑↑ Expanding = early bull sign, often leads breadth score recovery. ↓↓ Contracting = market weakening even if price is stable.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══ SECTION 3 ══════════════════════════════════════════════ -->
+  <div class="section" id="s3">
+    <div class="section-hdr">
+      <span class="section-num">03</span>
+      <span class="section-title">Reading All Indicators Together</span>
+    </div>
+
+    <p>No single indicator should be read in isolation. The power of this dashboard is the <b>convergence</b> of multiple signals. Here are the key combinations:</p>
+
+    <div class="card">
+      <div class="card-head">Signal combinations and their meaning</div>
+      <div class="card-body" style="padding:0">
+        <table class="tbl">
+          <thead><tr><th>Score</th><th>Momentum</th><th>BSR</th><th>MPM</th><th>Dist Days</th><th>Interpretation</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="badge z-healthy">&gt;55</span></td>
+              <td style="color:var(--lime)">Positive</td>
+              <td style="color:var(--lime)">&gt;65%</td>
+              <td style="color:var(--lime)">Positive</td>
+              <td style="color:var(--lime)">&lt;3</td>
+              <td><b style="color:var(--lime)">Full deployment.</b> Enter best setups at full 1R. Add to winners at E2/E3.</td>
+            </tr>
+            <tr>
+              <td><span class="badge z-exp">45–55</span></td>
+              <td style="color:var(--yellow)">Positive</td>
+              <td style="color:var(--yellow)">50–65%</td>
+              <td style="color:var(--sub)">Neutral</td>
+              <td style="color:var(--sub)">2–4</td>
+              <td><b style="color:var(--green)">Active but selective.</b> Enter best-of-the-best setups. Size at 0.5–1R. No pyramiding yet.</td>
+            </tr>
+            <tr>
+              <td><span class="badge z-caution">35–45</span></td>
+              <td style="color:var(--yellow)">Mixed</td>
+              <td style="color:var(--orange)">&lt;50%</td>
+              <td style="color:var(--sub)">Neutral</td>
+              <td style="color:var(--yellow)">3–5</td>
+              <td><b style="color:var(--yellow)">Pilot entries only.</b> 0.25R max. Do not add. This is your current zone (Score 43).</td>
+            </tr>
+            <tr>
+              <td><span class="badge z-def">&lt;35</span></td>
+              <td style="color:var(--red)">Negative</td>
+              <td style="color:var(--red)">&lt;40%</td>
+              <td style="color:var(--red)">Negative</td>
+              <td style="color:var(--red)">&gt;5</td>
+              <td><b style="color:var(--red)">No new trades.</b> Tighten stops on open positions. Wait for breadth recovery.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tip tip-yellow">
+      <b>Your October 2025 lesson:</b> You entered 10 trades during Oct 3–9 with breadth between 0.35–0.55, while the market was turning down and MPM was going negative. The distribution day count was rising. The combined signal was "do not enter" — but individual setups looked attractive. <b>Always check the full dashboard before any entry.</b>
+    </div>
+  </div>
+
+
+  <!-- ═══ SECTION 4 ══════════════════════════════════════════════ -->
+  <div class="section" id="s4">
+    <div class="section-hdr">
+      <span class="section-num">04</span>
+      <span class="section-title">Follow-Through Day (FTD) — Complete Guide</span>
+    </div>
+
+    <p>The FTD is <b>O'Neil's most important signal</b> for knowing when a new rally is real. It filters out dead-cat bounces and keeps you out of the market during corrections. Check MarketSmith India's Market Outlook page daily — they classify this for you.</p>
+
+    <div class="ftd-flow">
+      <div class="ftd-step">
+        <div class="ftd-step-num">1</div>
+        <div class="ftd-step-title">Market Low</div>
+        <div class="ftd-step-desc">Market hits a low. Could be the bottom. You don't know yet.</div>
+      </div>
+      <div class="ftd-step">
+        <div class="ftd-step-num">2</div>
+        <div class="ftd-step-title">Rally Attempt</div>
+        <div class="ftd-step-desc">Index bounces and closes up. <b>This is Day 1.</b> Select "Day 1 of Rally Attempt" in EOD form. No buying yet.</div>
+      </div>
+      <div class="ftd-step">
+        <div class="ftd-step-num">3</div>
+        <div class="ftd-step-title">Days 2–3</div>
+        <div class="ftd-step-desc">Market must hold above Day 1 low. If it undercuts → attempt failed, restart. Leave dropdown blank.</div>
+      </div>
+      <div class="ftd-step active">
+        <div class="ftd-step-num">4+</div>
+        <div class="ftd-step-title">FTD ✅</div>
+        <div class="ftd-step-desc">Day 4 or later: Nifty closes <b>+1.5% or more on higher volume.</b> Select "Follow-Through Day". Green banner appears. You may now enter.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">What to select in the FTD dropdown — daily guide</div>
+      <div class="card-body" style="padding:0">
+        <table class="tbl">
+          <thead><tr><th>Market situation today</th><th>Select in dropdown</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Market bouncing from low for the first time</td>
+              <td><span class="badge z-caution">Day 1 of Rally Attempt</span></td>
+              <td>Start watching. Prepare watchlist. No buying.</td>
+            </tr>
+            <tr>
+              <td>Days 2–3 of rally attempt (holding above Day 1 low)</td>
+              <td><span class="badge" style="color:var(--sub);border-color:var(--border)">Leave blank</span></td>
+              <td>Continue watching. Do not enter.</td>
+            </tr>
+            <tr>
+              <td>Day 4+ with +1.5% on higher volume (check MarketSmith India Market Outlook)</td>
+              <td><span class="badge z-healthy">Follow-Through Day</span></td>
+              <td><b>Green banner activates.</b> Enter pilots (0.25R) on best setups.</td>
+            </tr>
+            <tr>
+              <td>Market closes down on heavy volume (any day)</td>
+              <td><span class="badge z-crash">Distribution Day</span></td>
+              <td>Adds to distribution day count. Be alert if this becomes a cluster.</td>
+            </tr>
+            <tr>
+              <td>Normal up or neutral day, no special condition</td>
+              <td><span class="badge" style="color:var(--sub);border-color:var(--border)">Leave blank</span></td>
+              <td>Routine save. Nothing special.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tip tip-red">
+      <b>Critical rule:</b> Do not enter any new breakout trades until the FTD is confirmed — regardless of how good a chart setup looks. O'Neil's research shows that 3 out of 4 breakouts during a correction fail. The FTD is your permission slip.
+    </div>
+
+    <div class="tip tip-green">
+      <b>MarketSmith India shortcut:</b> Their Market Outlook label maps directly to the dropdown. "Confirmed Uptrend" = FTD already happened (select Follow-Through Day if it just changed). "Rally Attempt" = select Day 1. "Uptrend Under Pressure" = leave blank but watch distribution days closely.
+    </div>
+  </div>
+
+
+  <!-- ═══ SECTION 5 ══════════════════════════════════════════════ -->
+  <div class="section" id="s5">
+    <div class="section-hdr">
+      <span class="section-num">05</span>
+      <span class="section-title">BSR Tracker — Breakout Success Rate</span>
+    </div>
+
+    <p>The BSR Tracker is your real-time feedback loop on whether breakouts are working in the current environment. It tells you what the market is actually doing to your setups — not theory, your own trades.</p>
+
+    <div class="card">
+      <div class="card-head">How to use BSR daily</div>
+      <div class="card-body">
+        <ul class="steps">
+          <li>
+            <span class="step-num">1</span>
+            <div class="step-body">
+              <b>When you enter a breakout trade</b>
+              <span>Add it to BSR Tracker: Symbol, Pivot price, Breakout date. The age (Early/Mid/Late) and status (Pending) will auto-calculate.</span>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">2</span>
+            <div class="step-body">
+              <b>Update current prices daily</b>
+              <span>Click the price field next to each trade in the BSR log and type today's closing price. Success/Fail updates immediately: <b>Success</b> = price ≥ Pivot × 1.05 (+5%). <b>Fail</b> = price &lt; Pivot AND days ≥ 3. <b>Pending</b> = days &lt; 3 (excluded from BSR%).</span>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">3</span>
+            <div class="step-body">
+              <b>Read the BSR% in the band</b>
+              <span>This is your permission dial for position sizing. See the table below.</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">BSR% → Position sizing action</div>
+      <div class="card-body" style="padding:0">
+        <table class="tbl">
+          <thead><tr><th>BSR %</th><th>Environment</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge z-healthy">≥80%</span></td><td>Strong — breakouts running well</td><td>Full size entries. Add at E2/E3 aggressively.</td></tr>
+            <tr><td><span class="badge z-exp">65–80%</span></td><td>Healthy — most setups working</td><td>Full size entries. Add on strength.</td></tr>
+            <tr><td><span class="badge z-caution">50–65%</span></td><td>Mixed — selective participation</td><td>Reduce size to 0.5R. Only A+ setups.</td></tr>
+            <tr><td><span class="badge z-def">30–50%</span></td><td>Weak — market not rewarding breakouts</td><td>Pilot entries only (0.25R). No adds.</td></tr>
+            <tr><td><span class="badge z-crash">&lt;30%</span></td><td>Avoid — breakouts failing consistently</td><td>Stop entering breakouts. Manage existing positions.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tip tip-blue">
+      <b>Your rule:</b> Add to a position only within 2.5% of pivot. Never let a 5%+ winner become a loss. Your BSR history will tell you when the market consistently respects these rules.
+    </div>
+  </div>
+
+
+  <!-- ═══ SECTION 6 ══════════════════════════════════════════════ -->
+  <div class="section" id="s6">
+    <div class="section-hdr">
+      <span class="section-num">06</span>
+      <span class="section-title">Market Pressure Meter (MPM)</span>
+    </div>
+
+    <p>MPM tracks institutional activity on Nifty 50. <b>Accumulation days</b> = Close up AND Volume up (institutions buying into strength). <b>Distribution days</b> = Close down AND Volume up (institutions selling into weakness). Neutral = volume lower than prior day.</p>
+
+    <div class="card">
+      <div class="card-head">MPM Score interpretation — Last 25 trading days</div>
+      <div class="card-body" style="padding:0">
+        <table class="tbl">
+          <thead><tr><th>Score (Acc − Dist)</th><th>Condition</th><th>Implication</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge z-healthy">≥ +5</span></td><td>Strong Buying</td><td>Institutions accumulating. Rally likely sustainable.</td></tr>
+            <tr><td><span class="badge z-exp">+2 to +4</span></td><td>Healthy</td><td>More buying than selling. Positive backdrop.</td></tr>
+            <tr><td><span class="badge z-caution">0 to +1</span></td><td>Neutral</td><td>No strong signal either way. Use breadth score as primary.</td></tr>
+            <tr><td><span class="badge z-def">−1 to −3</span></td><td>Weak</td><td>Distribution starting. Caution on new entries.</td></tr>
+            <tr><td><span class="badge z-crash">≤ −4</span></td><td>Heavy Selling</td><td>Institutional selling dominant. No new trades. Tighten stops.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <p><b>Auto-fill from EOD entry:</b> When you enter Nifty Close and Volume in the EOD form and click Save, the system automatically classifies the day as Acc/Dist/Neutral and adds it to MPM — no manual MPM entry needed for normal days. The MPM form in the right column is only needed for historical backdating or corrections.</p>
+
+    <div class="tip tip-yellow">
+      <b>Distribution Day Alert:</b> If the Analysis Strip shows 4+ distribution days, avoid opening new positions. At 6+ distribution days, O'Neil's research shows a correction is typically already underway or imminent. Begin tightening stops on all open trades.
+    </div>
+  </div>
+
+
+  <!-- ═══ SECTION 7 ══════════════════════════════════════════════ -->
+  <div class="section" id="s7">
+    <div class="section-hdr">
+      <span class="section-num">07</span>
+      <span class="section-title">Position Sizing — ₹5,00,000 Capital</span>
+    </div>
+
+    <p>Your fixed rules: <b>Max risk = 1% of capital = ₹5,000 per trade.</b> Position size is determined by stop-loss distance from pivot. The breadth zone then scales your actual risk deployed.</p>
+
+    <div class="card">
+      <div class="card-head">Position sizing formula</div>
+      <div class="card-body">
+        <p><b>Risk per share</b> = Entry Price × SL% &nbsp;&nbsp; | &nbsp;&nbsp; <b>Quantity</b> = ₹5,000 ÷ Risk per share</p>
+        <p style="margin:0"><b>Example:</b> Stock at ₹500, SL at 7% below entry → Risk/share = ₹35 → Qty = 5000 ÷ 35 = <b>142 shares</b> → Entry value ≈ ₹71,000 (14.2% of capital in one trade)</p>
+      </div>
+    </div>
+
+    <div class="rupee-grid">
+      <div class="rupee-card healthy">
+        <div class="rupee-zone" style="color:var(--lime)">HEALTHY ≥55 · 3–4R</div>
+        <div class="rupee-row"><span>Risk deployed</span><span>Full ₹5,000</span></div>
+        <div class="rupee-row"><span>Pilot (E1)</span><span>₹5,000 risk</span></div>
+        <div class="rupee-row"><span>Add at E2</span><span>₹3,000–5,000</span></div>
+        <div class="rupee-row"><span>Add at E3/E4</span><span>₹2,000–3,000</span></div>
+        <div class="rupee-row"><span>Profit target</span><span>20–30%</span></div>
+      </div>
+      <div class="rupee-card expanding">
+        <div class="rupee-zone" style="color:var(--green)">EXPANDING 45–55 · 2–3R</div>
+        <div class="rupee-row"><span>Risk deployed</span><span>₹3,000–4,000</span></div>
+        <div class="rupee-row"><span>Pilot (E1)</span><span>₹2,500 risk</span></div>
+        <div class="rupee-row"><span>Add at E2</span><span>₹1,500–2,500</span></div>
+        <div class="rupee-row"><span>Add at E3</span><span>On proven strength only</span></div>
+        <div class="rupee-row"><span>Profit target</span><span>15–25%</span></div>
+      </div>
+      <div class="rupee-card caution">
+        <div class="rupee-zone" style="color:var(--yellow)">CAUTION 35–45 · 1–2R</div>
+        <div class="rupee-row"><span>Risk deployed</span><span>₹1,250 (0.25R)</span></div>
+        <div class="rupee-row"><span>Pilot only</span><span>No adds</span></div>
+        <div class="rupee-row"><span>Only if FTD confirmed</span><span>—</span></div>
+        <div class="rupee-row"><span>Profit target</span><span>10–20% then exit</span></div>
+        <div class="rupee-row"><span>Max SL</span><span>5% (not 7%)</span></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="card-head">Zone → R mapping — full reference</div>
+      <div class="card-body" style="padding:0">
+        <table class="tbl">
+          <thead><tr><th>Zone</th><th>Score</th><th>R-multiple target</th><th>Max positions</th><th>SL discipline</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge z-healthy">Healthy</span></td><td>≥55</td><td>3–4R</td><td>5–6 open</td><td>7% max, trail after +8%</td></tr>
+            <tr><td><span class="badge z-exp">Expanding</span></td><td>45–55</td><td>2–3R</td><td>3–4 open</td><td>5–7%, trail after +5%</td></tr>
+            <tr><td><span class="badge z-caution">Caution</span></td><td>35–45</td><td>1–2R</td><td>2 max</td><td>5% max. No second chances.</td></tr>
+            <tr><td><span class="badge z-def">Defensive</span></td><td>20–35</td><td>1R only</td><td>1 max</td><td>Tight. Exit on first sign of failure.</td></tr>
+            <tr><td><span class="badge z-crash">Correction</span></td><td>&lt;20</td><td>0R — no new trades</td><td>0</td><td>Manage existing only.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tip tip-red">
+      <b>Your hard rule:</b> Never let a 5%+ winner become a loss. Once a stock is up 5% from your entry, move your stop to breakeven. This one rule prevents the THANGAMAYIL pattern — re-entering after a big win and giving it all back.
+    </div>
+  </div>
+
+
+  <!-- ═══ SECTION 8 ══════════════════════════════════════════════ -->
+  <div class="section" id="s8">
+    <div class="section-hdr">
+      <span class="section-num">08</span>
+      <span class="section-title">Cloud Sync — Access from Any Device</span>
+    </div>
+
+    <p>All your data is stored in two places: <b>browser localStorage</b> (instant, offline) and <b>JSONBin.io</b> (cloud, syncs across devices). Setup is one-time per device.</p>
+
+    <div class="card">
+      <div class="card-head">First-time setup on a new device</div>
+      <div class="card-body">
+        <ul class="steps">
+          <li><span class="step-num">1</span><div class="step-body"><b>Create a JSONBin account (first time only)</b><span>Go to <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> → Sign up (free) → API Keys → copy your Master Key.</span></div></li>
+          <li><span class="step-num">2</span><div class="step-body"><b>Connect on first device</b><span>Click the sync status button in the top-right of the dashboard header → paste your Master Key → click "Connect &amp; Create Bin". A Bin ID is created automatically and saved.</span></div></li>
+          <li><span class="step-num">3</span><div class="step-body"><b>On second device</b><span>Open the dashboard → click sync button → paste the same Master Key → the Bin ID will auto-fill. Click "↓ Pull" to fetch all your data from the cloud.</span></div></li>
+          <li><span class="step-num">4</span><div class="step-body"><b>Daily sync</b><span>Every time you click "Save &amp; Sync All" in the EOD form, data is automatically pushed to the cloud. On other devices, click "↓ Pull" to get the latest. Or click "↑ Push" to force-upload from the current device.</span></div></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="tip tip-blue">
+      <b>What syncs:</b> Breadth history (30 days) · BSR trades · MPM daily log · FTD rally log. All in a single JSONBin. Your API key is stored only in each browser's localStorage — it is never sent anywhere except JSONBin's own servers.
+    </div>
+  </div>
+
+
+  <!-- ═══ SECTION 9 ══════════════════════════════════════════════ -->
+  <div class="section" id="s9">
+    <div class="section-hdr">
+      <span class="section-num">09</span>
+      <span class="section-title">Quick Reference Cheat Sheet</span>
+    </div>
+
+    <div class="cheat-grid">
+
+      <div class="cheat-card">
+        <div class="cheat-title">Breadth Score Zones</div>
+        <div class="cheat-row"><span><span class="badge z-healthy">≥55 Healthy</span></span><span style="color:var(--lime)">3–4R · Full size</span></div>
+        <div class="cheat-row"><span><span class="badge z-exp">45–55 Expanding</span></span><span style="color:var(--green)">2–3R · Active</span></div>
+        <div class="cheat-row"><span><span class="badge z-caution">35–45 Caution</span></span><span style="color:var(--yellow)">1–2R · Pilots only</span></div>
+        <div class="cheat-row"><span><span class="badge z-def">20–35 Defensive</span></span><span style="color:var(--orange)">1R · 1 trade max</span></div>
+        <div class="cheat-row"><span><span class="badge z-crash">&lt;20 Correction</span></span><span style="color:var(--red)">0R · No entries</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title">Market Cycle Phases</div>
+        <div class="cheat-row"><span><span class="badge z-correct">Correction</span></span><span style="color:var(--red)">Score&lt;30, BSR&lt;40%, MPM−</span></div>
+        <div class="cheat-row"><span><span class="badge z-recov">Recovery</span></span><span style="color:var(--orange)">Momentum&gt;+5, Score 30–45</span></div>
+        <div class="cheat-row"><span><span class="badge z-caution">Caution</span></span><span style="color:var(--yellow)">Score 35–45, mixed signals</span></div>
+        <div class="cheat-row"><span><span class="badge z-expand">Expansion</span></span><span style="color:var(--lime)">Score&gt;45, BSR&gt;60%, Mom+</span></div>
+        <div class="cheat-row"><span><span class="badge z-late">Late Stage</span></span><span style="color:var(--yellow)">Score&gt;55 + BSR declining</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title">Position Sizing Rules</div>
+        <div class="cheat-row"><span>Capital</span><span style="color:var(--text)">₹5,00,000</span></div>
+        <div class="cheat-row"><span>Max risk / trade</span><span style="color:var(--text)">1% = ₹5,000</span></div>
+        <div class="cheat-row"><span>Pilot size (E1)</span><span style="color:var(--text)">0.25R = ₹1,250</span></div>
+        <div class="cheat-row"><span>Max SL (normal)</span><span style="color:var(--text)">7%</span></div>
+        <div class="cheat-row"><span>Max SL (Caution zone)</span><span style="color:var(--text)">5%</span></div>
+        <div class="cheat-row"><span>Add-on window</span><span style="color:var(--text)">Within 2.5% of pivot</span></div>
+        <div class="cheat-row"><span>Profit target</span><span style="color:var(--text)">20–25% normal market</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title">FTD Dropdown Guide</div>
+        <div class="cheat-row"><span>Market bounces from low</span><span style="color:var(--yellow)">Day 1 Rally Attempt</span></div>
+        <div class="cheat-row"><span>Days 2–3 holding</span><span style="color:var(--sub)">Leave blank</span></div>
+        <div class="cheat-row"><span>Day 4+ · +1.5% · Vol↑</span><span style="color:var(--lime)">Follow-Through Day</span></div>
+        <div class="cheat-row"><span>Close↓ on heavy volume</span><span style="color:var(--red)">Distribution Day</span></div>
+        <div class="cheat-row"><span>Normal day</span><span style="color:var(--sub)">Leave blank</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title">BSR% Action Guide</div>
+        <div class="cheat-row"><span><span class="badge z-healthy">≥80%</span></span><span style="color:var(--lime)">Full size + pyramid</span></div>
+        <div class="cheat-row"><span><span class="badge z-exp">65–80%</span></span><span style="color:var(--green)">Full size</span></div>
+        <div class="cheat-row"><span><span class="badge z-caution">50–65%</span></span><span style="color:var(--yellow)">Half size, A+ only</span></div>
+        <div class="cheat-row"><span><span class="badge z-def">30–50%</span></span><span style="color:var(--orange)">Pilot only (0.25R)</span></div>
+        <div class="cheat-row"><span><span class="badge z-crash">&lt;30%</span></span><span style="color:var(--red)">No new breakouts</span></div>
+      </div>
+
+      <div class="cheat-card">
+        <div class="cheat-title">Distribution Day Alert</div>
+        <div class="cheat-row"><span>1–3 dist days</span><span style="color:var(--sub)">Normal · Continue</span></div>
+        <div class="cheat-row"><span>4–5 dist days</span><span style="color:var(--yellow)">Caution · No new adds</span></div>
+        <div class="cheat-row"><span>6+ dist days</span><span style="color:var(--red)">Reduce exposure now</span></div>
+        <div class="cheat-row"><span>Cluster in 2 weeks</span><span style="color:var(--red)">Exit weakest positions</span></div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div style="font-size:10px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px">NSE Breadth Radar · Personal Trading Intelligence System</div>
+    <div class="footer-credit">
+      Conceived, designed and built by
+      <span class="footer-name">Shibu M K</span>
+      <span class="footer-role">Swing Trader · O'Neil / Minervini Methodology · Kozhikode, Kerala</span>
+    </div>
+    <div class="footer-ver">Version 4.0 · March 2026 · Universe: Nifty 500 · Broker: Dhan</div>
+  </div>
+
+</div><!-- /page -->
+</body>
+</html>
