@@ -79,7 +79,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
 .page{padding:10px 12px;display:flex;flex-direction:column;gap:8px;}
 
 /* ── TOP STATUS STRIP — single full-width bar, 6 cells ── */
-.status-strip{display:grid;grid-template-columns:110px 170px 1fr 130px 130px 130px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.status-strip{display:grid;grid-template-columns:110px 170px 1fr 130px 130px 130px 120px 140px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.ss-momentum{font-family:var(--disp);font-size:32px;font-weight:800;line-height:1;transition:color .4s;}
+.ss-thrust-val{font-family:var(--disp);font-size:28px;font-weight:800;line-height:1;transition:color .4s;}
+.ss-thrust-sig{font-size:11px;font-weight:600;margin-top:4px;transition:color .4s;}
 .ss-cell{padding:14px 18px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;}
 .ss-cell:last-child{border-right:none;}
 .ss-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--sub);margin-bottom:5px;}
@@ -107,6 +110,49 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
 /* ── MAIN TWO-COLUMN GRID ────────────────────────────────── */
 .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start;}
 .col{display:flex;flex-direction:column;gap:8px;}
+
+/* ── MARKET CYCLE ENGINE ────────────────────────────────── */
+.mce-card{border-top:3px solid var(--accent);}
+.mce-phase{font-family:var(--disp);font-size:30px;font-weight:800;line-height:1;transition:color .4s;margin:4px 0;}
+.mce-desc{font-size:12px;color:var(--sub);line-height:1.5;margin-top:5px;}
+.mce-signals{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.mce-sig{font-size:10px;padding:2px 8px;border-radius:3px;font-weight:600;border:1px solid transparent;}
+.mce-sig.ok{background:rgba(74,222,128,.12);color:var(--lime);border-color:rgba(74,222,128,.25);}
+.mce-sig.warn{background:rgba(251,191,36,.10);color:var(--yellow);border-color:rgba(251,191,36,.25);}
+.mce-sig.bad{background:rgba(248,113,113,.10);color:var(--red);border-color:rgba(248,113,113,.25);}
+.mce-sig.dim{background:rgba(72,85,102,.20);color:var(--sub);border-color:var(--border);}
+
+/* ── SECTOR BREADTH MAP ──────────────────────────────────── */
+.sbm-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:12px;}
+.sbm-cell{border-radius:6px;padding:10px 8px;cursor:pointer;transition:transform .15s,box-shadow .15s;position:relative;border:1px solid transparent;}
+.sbm-cell:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.35);}
+.sbm-cell.active{box-shadow:0 0 0 2px var(--accent);}
+.sbm-name{font-size:11px;font-weight:600;color:rgba(255,255,255,.85);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sbm-pct{font-family:var(--disp);font-size:26px;font-weight:800;line-height:1;color:#fff;}
+.sbm-bar{height:3px;border-radius:2px;background:rgba(255,255,255,.25);margin-top:6px;overflow:hidden;}
+.sbm-bar-fill{height:100%;border-radius:2px;background:rgba(255,255,255,.6);transition:width .6s cubic-bezier(.4,0,.2,1);}
+.sbm-adv{font-size:10px;color:rgba(255,255,255,.6);margin-top:4px;}
+/* detail panel */
+.sbm-detail{display:none;padding:10px 12px;border-top:1px solid var(--border);background:var(--bg3);}
+.sbm-detail.open{display:block;}
+.sbm-detail-title{font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;}
+.sbm-adv-list{display:flex;flex-wrap:wrap;gap:5px;}
+.sbm-stock-tag{font-size:11px;font-family:var(--mono);background:var(--bg4);border:1px solid var(--border);border-radius:3px;padding:2px 7px;color:var(--text);}
+.sbm-input-row{display:grid;grid-template-columns:1fr 80px 80px 90px;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(39,52,71,.4);}
+.sbm-input-row:last-child{border-bottom:none;}
+.sbm-input-row label{font-size:12px;color:var(--sub);font-weight:500;}
+.sbm-num{width:100%;background:var(--bg);border:1px solid var(--bdr2);color:var(--accent);font-family:var(--mono);font-size:13px;font-weight:600;padding:4px 6px;border-radius:3px;outline:none;text-align:center;}
+.sbm-num:focus{border-color:var(--accent);}
+.sbm-col-hdr{font-size:10px;color:var(--dim);text-align:center;padding:2px 0;font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+.sbm-legend{display:flex;gap:10px;padding:8px 12px;border-top:1px solid var(--border);flex-wrap:wrap;}
+.sbm-leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--sub);}
+.sbm-leg-dot{width:10px;height:10px;border-radius:2px;}
+/* color zones */
+.sbm-z-strong{background:linear-gradient(135deg,#16a34a,#15803d);}
+.sbm-z-good{background:linear-gradient(135deg,#4ade80,#22c55e);}
+.sbm-z-caution{background:linear-gradient(135deg,#ca8a04,#a16207);}
+.sbm-z-weak{background:linear-gradient(135deg,#dc2626,#b91c1c);}
+.sbm-z-empty{background:var(--bg3);border-color:var(--border)!important;}
 
 /* ── CARD ────────────────────────────────────────────────── */
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
@@ -298,12 +344,14 @@ canvas#bsr-chart{width:100%;height:100%;}
 @media(max-width:960px){
   .dash-grid{grid-template-columns:1fr;}
   .status-strip{
-    grid-template-columns:1fr 1fr 1fr;
-    grid-template-rows:auto auto;
+    grid-template-columns:1fr 1fr 1fr 1fr;
+    grid-template-rows:auto auto auto;
   }
-  /* Meter spans full width on row 2 */
+  /* Meter spans full width on row 3 */
   .ss-meter{grid-column:1/-1;border-right:none;border-top:1px solid var(--border);}
   .ss-cell:nth-child(4){border-right:1px solid var(--border);}
+  .ss-cell:nth-child(7){border-right:1px solid var(--border);}
+  .ss-cell:nth-child(8){border-right:none;}
 }
 
 /* ── MOBILE (≤600px) ─────────────────────────────────────── */
@@ -317,10 +365,10 @@ canvas#bsr-chart{width:100%;height:100%;}
   .src-bar{padding:4px 10px;gap:4px;}
   .src-btn{font-size:11px;padding:2px 7px;}
 
-  /* STATUS STRIP — 2×2 grid + meter full-width */
+  /* STATUS STRIP — 2×4 grid + meter full-width */
   .status-strip{
     grid-template-columns:1fr 1fr;
-    grid-template-rows:auto auto auto;
+    grid-template-rows:auto auto auto auto auto;
   }
   .ss-cell{padding:10px 12px;}
   .ss-big{font-size:42px;}
@@ -341,6 +389,8 @@ canvas#bsr-chart{width:100%;height:100%;}
   .ss-cell:nth-child(4){border-right:1px solid var(--border);}
   .ss-cell:nth-child(5){border-right:1px solid var(--border);}
   .ss-cell:nth-child(6){border-right:none;}
+  .ss-cell:nth-child(7){border-right:1px solid var(--border);}
+  .ss-cell:nth-child(8){border-right:none;}
   .score-bk{font-size:10px;gap:6px;}
 
   /* EOD entry — 1 column on mobile */
@@ -420,6 +470,7 @@ canvas#bsr-chart{width:100%;height:100%;}
   <a class="src-btn" href="https://www.moneycontrol.com/stocksmarketsindia/heat-map-advance-decline-ratio-nse-bse" target="_blank"><span class="dot"></span>MC Heatmap</a>
   <a class="src-btn" href="https://www.nseindia.com/market-data/52-week-high-equity-market" target="_blank"><span class="dot"></span>52W High/Low</a>
   <a class="src-btn" href="https://trendlyne.com/equity/market-bullish-bearish-breadth/equi-weighted/" target="_blank"><span class="dot"></span>Trendlyne Breadth</a>
+  <a class="src-btn" href="https://www.nseindia.com/market-data/sector-indices" target="_blank" style="color:var(--teal);border-color:rgba(45,212,191,.25);background:rgba(45,212,191,.04)"><span class="dot" style="background:var(--teal)"></span>NSE Sector Breadth</a>
 </div>
 
 <!-- CLOUD SETUP PANEL -->
@@ -515,11 +566,25 @@ canvas#bsr-chart{width:100%;height:100%;}
     </div>
 
     <!-- 6: Market Pressure -->
-    <div class="ss-cell" style="background:rgba(45,212,191,.05);border-top:2px solid var(--teal);border-right:none">
+    <div class="ss-cell" style="background:rgba(45,212,191,.05);border-top:2px solid var(--teal)">
       <div class="ss-lbl" style="color:var(--teal)">Pressure</div>
       <div class="ss-score" id="hero-mpm-score" style="color:var(--dim)">—</div>
       <div class="ss-cond" id="hero-mpm-cond" style="color:var(--dim)">—</div>
       <div class="ss-mini" id="hero-mpm-counts">A:0 D:0</div>
+    </div>
+
+    <!-- 7: Breadth Momentum -->
+    <div class="ss-cell" id="momentum-cell" style="border-top:2px solid var(--yellow)">
+      <div class="ss-lbl" style="color:var(--yellow)">Breadth Momentum</div>
+      <div class="ss-momentum" id="h-momentum" style="color:var(--dim)">—</div>
+      <div class="ss-cond" id="h-momentum-label" style="color:var(--dim)">vs yesterday</div>
+    </div>
+
+    <!-- 8: Breadth Thrust -->
+    <div class="ss-cell" id="thrust-cell" style="border-top:2px solid var(--orange);border-right:none">
+      <div class="ss-lbl" style="color:var(--orange)">Breadth Thrust</div>
+      <div class="ss-thrust-val" id="h-thrust" style="color:var(--dim)">—</div>
+      <div class="ss-thrust-sig" id="h-thrust-signal" style="color:var(--dim)">3-day change</div>
     </div>
 
   </div>
@@ -606,6 +671,70 @@ canvas#bsr-chart{width:100%;height:100%;}
             <button class="btn btn-sec" onclick="clearInputs()">Clear</button>
             <button class="btn btn-sec" onclick="loadTodayIntoForm()">Edit Today</button>
             <span class="save-msg" id="save-msg"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Market Cycle Engine -->
+      <div class="card mce-card" id="mce-card">
+        <div class="card-head">
+          <div class="card-title">📡 Market Cycle Engine</div>
+          <span style="font-size:10px;color:var(--dim)" id="mce-updated">—</span>
+        </div>
+        <div class="card-body" style="padding:14px 16px">
+          <div style="display:flex;align-items:flex-start;gap:16px">
+            <div>
+              <div class="ss-lbl" style="margin-bottom:4px">Current Phase</div>
+              <div class="mce-phase" id="mce-phase" style="color:var(--dim)">—</div>
+            </div>
+            <div style="flex:1">
+              <div class="mce-signals" id="mce-signals"></div>
+            </div>
+          </div>
+          <div class="mce-desc" id="mce-desc">Waiting for data — save breadth, BSR and MPM entries.</div>
+        </div>
+      </div>
+
+      <!-- Sector Breadth Map -->
+      <div class="card" id="sbm-card">
+        <div class="card-head">
+          <div class="card-title">Sector Breadth Map</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span style="font-size:10px;color:var(--dim)" id="sbm-updated">Enter data below</span>
+            <button class="card-action btn-export" style="color:var(--accent);border-color:rgba(91,163,245,.3)" onclick="sbmToggleEdit()">✏ Edit</button>
+          </div>
+        </div>
+        <!-- Heatmap grid -->
+        <div class="sbm-grid" id="sbm-grid">
+          <!-- rendered by JS -->
+        </div>
+        <!-- Legend -->
+        <div class="sbm-legend">
+          <div class="sbm-leg-item"><div class="sbm-leg-dot sbm-z-strong"></div> ≥70% Strong</div>
+          <div class="sbm-leg-item"><div class="sbm-leg-dot sbm-z-good"></div> 50–70% Good</div>
+          <div class="sbm-leg-item"><div class="sbm-leg-dot sbm-z-caution"></div> 30–50% Caution</div>
+          <div class="sbm-leg-item"><div class="sbm-leg-dot sbm-z-weak"></div> &lt;30% Weak</div>
+        </div>
+        <!-- Edit panel (hidden by default) -->
+        <div id="sbm-edit-panel" style="display:none;padding:12px;border-top:1px solid var(--border)">
+          <div style="display:grid;grid-template-columns:1fr 80px 80px 90px;gap:6px;margin-bottom:4px;padding:0 0 4px 0;border-bottom:1px solid var(--border)">
+            <div class="sbm-col-hdr" style="text-align:left">Sector</div>
+            <div class="sbm-col-hdr">Adv</div>
+            <div class="sbm-col-hdr">Total</div>
+            <div class="sbm-col-hdr">Breadth %</div>
+          </div>
+          <div id="sbm-inputs"></div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn" style="background:var(--accent);color:#0e1420" onclick="sbmSave()">✓ Save</button>
+            <button class="btn" style="background:transparent;border:1px solid var(--border);color:var(--sub)" onclick="sbmToggleEdit()">Cancel</button>
+          </div>
+        </div>
+        <!-- Advancing stocks detail panel -->
+        <div class="sbm-detail" id="sbm-detail">
+          <div class="sbm-detail-title" id="sbm-detail-title">—</div>
+          <div class="sbm-adv-list" id="sbm-detail-stocks"></div>
+          <div style="font-size:10px;color:var(--dim);margin-top:8px">
+            💡 Enter top advancing stocks in Edit mode to see them here
           </div>
         </div>
       </div>
@@ -993,7 +1122,7 @@ function setupFlash(msg, color) {
 }
 
 // Helper: build combined cloud payload
-function buildPayload() { return { records: loadLocal(), bsr: bsrLoad(), mpm: mpmLoad() }; }
+function buildPayload() { return { records: loadLocal(), bsr: bsrLoad(), mpm: mpmLoad(), sbm: sbmLoad() }; }
 
 async function connectCloud() {
   const key = document.getElementById('cfg-key').value.trim();
@@ -1057,11 +1186,19 @@ async function pullFromCloud(key, bin) {
     const mpmById  = {};
     [...cloudMpm,...localMpm].forEach(d=>{ if(d&&d.id) mpmById[d.id]=d; });
     mpmSave(Object.values(mpmById));
+    // Merge SBM — cloud wins for newer _updated timestamp
+    const cloudSbm = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.sbm||{}) : {};
+    const localSbm = sbmLoad();
+    const cloudTs = cloudSbm._updated||'';
+    const localTs = localSbm._updated||'';
+    const mergedSbm = cloudTs >= localTs ? {...localSbm, ...cloudSbm} : {...cloudSbm, ...localSbm};
+    sbmSaveData(mergedSbm);
     setSyncStatus('ok','Synced');
     setupFlash(`✓ Pulled — ${merged.length} breadth + ${Object.values(bsrById).length} BSR + ${Object.values(mpmById).length} MPM records`, 'var(--lime)');
     renderAll();
     bsrRenderAll();
     mpmRenderAll();
+    sbmRender();
   } catch(e) {
     setSyncStatus('err','Sync Error');
     setupFlash('✗ Pull failed: ' + e.message, 'var(--red)');
@@ -1239,6 +1376,8 @@ function renderHero(data) {
     ['h-score','h-zone','h-r'].forEach(id=>{el(id).textContent='—';el(id).style.color='var(--dim)';});
     el('h-fill').style.width='0%'; el('h-lastdate').textContent='—';
     el('h-trend').innerHTML='—'; el('h-entries').textContent='0 entries stored'; el('score-bk').innerHTML='';
+    ['h-momentum','h-thrust'].forEach(id=>{el(id).textContent='—';el(id).style.color='var(--dim)';});
+    el('h-momentum-label').textContent='vs yesterday'; el('h-thrust-signal').textContent='3-day change';
     return;
   }
   const r=data[0],prev=data[1],s=r.score,z=getZone(s);
@@ -1254,6 +1393,89 @@ function renderHero(data) {
   } else { el('h-trend').innerHTML='<span class="flat">First entry</span>'; }
   const adv=+r.adv||0,dec=+r.dec||0,hi=+r.hi||0,lo=+r.lo||0,e20=+r.e20||0,s50=+r.s50||0,s200=+r.s200||0,tot=adv+dec||1;
   el('score-bk').innerHTML=`<span>A/D%: <b>${(adv/tot*100).toFixed(0)}%</b> ×0.35</span><span>EMA20: <b style="color:${pctClr(e20)}">${e20}%</b></span><span>SMA50: <b style="color:${pctClr(s50)}">${s50}%</b></span><span>SMA200: <b style="color:${pctClr(s200)}">${s200}%</b></span><span>H/L%: <b>${(hi+lo)>0?(hi/(hi+lo)*100).toFixed(0)+'%':'—'}</b> ×0.15</span>`;
+  renderMomentumThrust(data);
+}
+
+// ════════════════════════════════════════════════════
+//  BREADTH MOMENTUM + THRUST
+// ════════════════════════════════════════════════════
+function renderMomentumThrust(data) {
+  const el = id => document.getElementById(id);
+
+  // ── Helpers ──────────────────────────────────────
+  function momentumColor(d) {
+    if (d >= 10)  return 'var(--lime)';
+    if (d >= 5)   return '#86efac';   // light green
+    if (d >= 0)   return 'var(--yellow)';
+    return 'var(--red)';
+  }
+  function momentumLabel(d) {
+    if (d >= 10)  return 'Strong Expansion';
+    if (d >= 5)   return 'Improving Breadth';
+    if (d >= 0)   return 'Neutral';
+    return 'Weakening Breadth';
+  }
+  function thrustColor(d) {
+    if (d >= 15) return 'var(--lime)';
+    if (d >= 10) return '#86efac';
+    return 'var(--sub)';
+  }
+  function thrustSignal(d) {
+    if (d >= 15) return '🚀 Strong Breadth Thrust';
+    if (d >= 10) return '↑ Moderate Thrust';
+    return 'No Thrust';
+  }
+
+  // ── Breadth Momentum (today − yesterday) ─────────
+  const mCell = document.getElementById('momentum-cell');
+  if (data.length >= 2) {
+    const d = data[0].score - data[1].score;
+    const sign = d > 0 ? '+' : '';
+    const col = momentumColor(d);
+    el('h-momentum').textContent = sign + d;
+    el('h-momentum').style.color = col;
+    el('h-momentum-label').textContent = momentumLabel(d);
+    el('h-momentum-label').style.color = col;
+    if (mCell) mCell.style.background = d >= 10
+      ? 'rgba(74,222,128,.07)'
+      : d < 0
+        ? 'rgba(248,113,113,.06)'
+        : 'rgba(250,204,21,.05)';
+  } else {
+    el('h-momentum').textContent = '—';
+    el('h-momentum-label').textContent = 'Need 2+ entries';
+    el('h-momentum').style.color = 'var(--dim)';
+    el('h-momentum-label').style.color = 'var(--dim)';
+  }
+
+  // ── Breadth Thrust (today − 3 days ago) ──────────
+  const tCell = document.getElementById('thrust-cell');
+  if (data.length >= 4) {
+    const d = data[0].score - data[3].score;
+    const sign = d > 0 ? '+' : '';
+    const col = thrustColor(d);
+    const sig = thrustSignal(d);
+    el('h-thrust').textContent = sign + d;
+    el('h-thrust').style.color = col;
+    el('h-thrust-signal').textContent = sig;
+    el('h-thrust-signal').style.color = col;
+    if (tCell) tCell.style.background = d >= 15
+      ? 'rgba(74,222,128,.09)'
+      : 'transparent';
+  } else if (data.length >= 2) {
+    // show partial thrust with available data
+    const d = data[0].score - data[data.length-1].score;
+    const sign = d > 0 ? '+' : '';
+    el('h-thrust').textContent = sign + d;
+    el('h-thrust').style.color = thrustColor(d);
+    el('h-thrust-signal').textContent = `(${data.length}d) ${thrustSignal(d)}`;
+    el('h-thrust-signal').style.color = thrustColor(d);
+  } else {
+    el('h-thrust').textContent = '—';
+    el('h-thrust-signal').textContent = 'Need 4+ entries';
+    el('h-thrust').style.color = 'var(--dim)';
+    el('h-thrust-signal').style.color = 'var(--dim)';
+  }
 }
 
 // ════════════════════════════════════════════════════
@@ -1414,9 +1636,280 @@ function exportCSV() {
 // ════════════════════════════════════════════════════
 //  MAIN RENDER + INIT
 // ════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════
+//  MARKET CYCLE ENGINE
+// ════════════════════════════════════════════════════
+function renderMarketCycle() {
+  const el = id => document.getElementById(id);
+  const phaseEl   = el('mce-phase');
+  const descEl    = el('mce-desc');
+  const sigsEl    = el('mce-signals');
+  const updEl     = el('mce-updated');
+  if (!phaseEl) return;
+
+  // ── Gather inputs from live data ──────────────────
+  const records = loadLocal();           // breadth history newest-first
+  const bsrTrades = bsrLoad();
+  const mpmDays   = mpmLoad();
+
+  const breadthScore    = records.length ? records[0].score : null;
+  const breadthPrev     = records.length >= 2 ? records[1].score : null;
+  const breadthMomentum = (breadthScore !== null && breadthPrev !== null)
+                          ? breadthScore - breadthPrev : null;
+
+  // BSR rate
+  const bsrResults = bsrTrades.map(t => bsrEval(t));
+  const bsrSucc = bsrResults.filter(r => r === 'success').length;
+  const bsrFail = bsrResults.filter(r => r === 'failed').length;
+  const bsrPct  = (bsrSucc + bsrFail) > 0
+                  ? Math.round(bsrSucc / (bsrSucc + bsrFail) * 100) : null;
+
+  // BSR declining? compare last 5 vs previous 5 trades
+  let bsrDeclining = false;
+  if (bsrTrades.length >= 10) {
+    const evalAll = bsrTrades.map(t => bsrEval(t) === 'success' ? 1 : bsrEval(t) === 'failed' ? 0 : null).filter(v => v !== null);
+    const recent5 = evalAll.slice(0, 5).reduce((a,b)=>a+b,0) / 5;
+    const prev5   = evalAll.slice(5, 10).reduce((a,b)=>a+b,0) / 5;
+    bsrDeclining  = recent5 < prev5;
+  }
+
+  // MPM score (acc - dist in last 25d)
+  const last25 = mpmDays.slice(0, 25);
+  const mpmAcc  = last25.filter(d => d.dtype === 'acc').length;
+  const mpmDist = last25.filter(d => d.dtype === 'dist').length;
+  const mpmScore = last25.length ? mpmAcc - mpmDist : null;
+  const mpmNeg   = mpmScore !== null && mpmScore < 0;
+
+  // ── No data ───────────────────────────────────────
+  if (breadthScore === null) {
+    phaseEl.textContent = '—'; phaseEl.style.color = 'var(--dim)';
+    descEl.textContent  = 'Waiting for data — save breadth, BSR and MPM entries.';
+    sigsEl.innerHTML    = '';
+    if (updEl) updEl.textContent = '—';
+    return;
+  }
+
+  // ── Phase Classification ──────────────────────────
+  // Priority: Correction → Late Stage → Expansion → Recovery → Caution (default)
+  let phase, color, desc;
+
+  if (breadthScore < 30 && (bsrPct === null || bsrPct < 40) && mpmNeg) {
+    phase = 'Correction';
+    color = 'var(--red)';
+    desc  = 'Market internals deteriorating. Avoid new breakout entries. Preserve capital.';
+  } else if (breadthScore > 55 && bsrDeclining) {
+    phase = 'Late Stage';
+    color = 'var(--yellow)';
+    desc  = 'Breadth extended but breakout success declining. Trail stops. Reduce new adds.';
+  } else if (breadthScore > 45 && (bsrPct === null || bsrPct > 60) && (breadthMomentum === null || breadthMomentum >= 0)) {
+    phase = 'Expansion';
+    color = 'var(--lime)';
+    desc  = 'Strong participation and breakouts working. Full position sizing justified.';
+  } else if (breadthMomentum !== null && breadthMomentum > 5 && breadthScore >= 30 && breadthScore <= 45) {
+    phase = 'Recovery';
+    color = 'var(--orange)';
+    desc  = 'Market participation improving. Pilot entries (0.25R) justified. Watch for follow-through.';
+  } else if (breadthScore >= 35 && breadthScore <= 45) {
+    phase = 'Caution';
+    color = 'var(--yellow)';
+    desc  = 'Mixed internals. Selective entries only. Keep size at 1–2R.';
+  } else if (breadthScore < 35) {
+    phase = 'Defensive';
+    color = 'var(--orange)';
+    desc  = 'Weak breadth. Reduce exposure, tighten stops, wait for recovery signal.';
+  } else {
+    phase = 'Neutral';
+    color = 'var(--sub)';
+    desc  = 'Conditions mixed — no clear phase signal yet.';
+  }
+
+  phaseEl.textContent  = phase;
+  phaseEl.style.color  = color;
+  descEl.textContent   = desc;
+
+  // ── Signal pills ──────────────────────────────────
+  const pills = [];
+
+  // Breadth Score pill
+  if (breadthScore !== null) {
+    const bc = breadthScore >= 55 ? 'ok' : breadthScore >= 35 ? 'warn' : 'bad';
+    pills.push([`Score: ${breadthScore}`, bc]);
+  }
+  // Momentum pill
+  if (breadthMomentum !== null) {
+    const sign = breadthMomentum > 0 ? '+' : '';
+    const mc = breadthMomentum >= 5 ? 'ok' : breadthMomentum >= 0 ? 'warn' : 'bad';
+    pills.push([`Momentum: ${sign}${breadthMomentum}`, mc]);
+  } else {
+    pills.push(['Momentum: —', 'dim']);
+  }
+  // BSR pill
+  if (bsrPct !== null) {
+    const bc2 = bsrPct >= 60 ? 'ok' : bsrPct >= 40 ? 'warn' : 'bad';
+    pills.push([`BSR: ${bsrPct}%${bsrDeclining ? ' ↓' : ''}`, bc2]);
+  } else {
+    pills.push(['BSR: —', 'dim']);
+  }
+  // MPM pill
+  if (mpmScore !== null) {
+    const sign = mpmScore > 0 ? '+' : '';
+    const mc2 = mpmScore >= 2 ? 'ok' : mpmScore >= 0 ? 'warn' : 'bad';
+    pills.push([`Pressure: ${sign}${mpmScore}`, mc2]);
+  } else {
+    pills.push(['Pressure: —', 'dim']);
+  }
+
+  sigsEl.innerHTML = pills.map(([lbl, cls]) =>
+    `<span class="mce-sig ${cls}">${lbl}</span>`).join('');
+
+  if (updEl && records.length) updEl.textContent = fmtLong(records[0].date);
+}
+
+// ════════════════════════════════════════════════════
+//  SECTOR BREADTH MAP
+// ════════════════════════════════════════════════════
+const SBM_SECTORS = [
+  {id:'banking',   name:'Banking',        total:20},
+  {id:'it',        name:'IT',             total:20},
+  {id:'auto',      name:'Auto',           total:22},
+  {id:'pharma',    name:'Pharma',         total:20},
+  {id:'metal',     name:'Metal',          total:15},
+  {id:'fmcg',      name:'FMCG',           total:15},
+  {id:'realty',    name:'Realty',         total:10},
+  {id:'energy',    name:'Energy',         total:12},
+  {id:'infra',     name:'Infrastructure', total:18},
+  {id:'finserv',   name:'Fin Services',   total:20},
+];
+
+const LS_SBM = 'sbm_data';
+function sbmLoad() {
+  try { return JSON.parse(localStorage.getItem(LS_SBM)||'{}'); } catch(e){ return {}; }
+}
+function sbmSaveData(d) {
+  localStorage.setItem(LS_SBM, JSON.stringify(d));
+}
+
+function sbmZoneClass(pct) {
+  if (pct === null) return 'sbm-z-empty';
+  if (pct >= 70)   return 'sbm-z-strong';
+  if (pct >= 50)   return 'sbm-z-good';
+  if (pct >= 30)   return 'sbm-z-caution';
+  return 'sbm-z-weak';
+}
+
+function sbmRender() {
+  const data = sbmLoad();
+  const grid = document.getElementById('sbm-grid');
+  if (!grid) return;
+
+  grid.innerHTML = SBM_SECTORS.map(sec => {
+    const d = data[sec.id];
+    const adv   = d ? (d.adv||0) : null;
+    const total = d ? (d.total||sec.total) : sec.total;
+    const pct   = (adv !== null && total > 0) ? Math.round(adv/total*100) : null;
+    const zCls  = sbmZoneClass(pct);
+    const barW  = pct !== null ? pct : 0;
+    const stocks = d && d.stocks ? d.stocks : [];
+    return `
+      <div class="sbm-cell ${zCls}" id="sbm-cell-${sec.id}"
+           onclick="sbmCellClick('${sec.id}','${sec.name}',${JSON.stringify(stocks)})">
+        <div class="sbm-name">${sec.name}</div>
+        <div class="sbm-pct">${pct !== null ? pct+'%' : '—'}</div>
+        <div class="sbm-bar"><div class="sbm-bar-fill" style="width:${barW}%"></div></div>
+        <div class="sbm-adv">${adv !== null ? adv+' / '+total+' adv' : 'No data'}</div>
+      </div>`;
+  }).join('');
+
+  // Update timestamp
+  const ts = data._updated;
+  const upd = document.getElementById('sbm-updated');
+  if (upd) upd.textContent = ts ? 'Updated: '+ts : 'Enter data below';
+}
+
+function sbmCellClick(id, name, stocks) {
+  // toggle active state
+  document.querySelectorAll('.sbm-cell').forEach(c=>c.classList.remove('active'));
+  const cell = document.getElementById('sbm-cell-'+id);
+  const detail = document.getElementById('sbm-detail');
+  const title  = document.getElementById('sbm-detail-title');
+  const list   = document.getElementById('sbm-detail-stocks');
+  if (!detail) return;
+  // if same cell clicked again, close
+  if (detail.classList.contains('open') && detail.dataset.sector === id) {
+    detail.classList.remove('open');
+    detail.dataset.sector = '';
+    return;
+  }
+  cell.classList.add('active');
+  detail.dataset.sector = id;
+  title.textContent = name + ' — Top Advancing Stocks';
+  if (stocks.length) {
+    list.innerHTML = stocks.map(s=>`<span class="sbm-stock-tag">${s}</span>`).join('');
+  } else {
+    list.innerHTML = '<span style="color:var(--dim);font-size:11px">No stocks entered yet — use Edit mode</span>';
+  }
+  detail.classList.add('open');
+}
+
+let _sbmEditOpen = false;
+function sbmToggleEdit() {
+  _sbmEditOpen = !_sbmEditOpen;
+  const panel = document.getElementById('sbm-edit-panel');
+  const detail = document.getElementById('sbm-detail');
+  if (!panel) return;
+  if (_sbmEditOpen) {
+    // close detail
+    if (detail) detail.classList.remove('open');
+    const data = sbmLoad();
+    const inputs = document.getElementById('sbm-inputs');
+    inputs.innerHTML = SBM_SECTORS.map(sec => {
+      const d = data[sec.id]||{};
+      const adv   = d.adv   !== undefined ? d.adv   : '';
+      const total = d.total !== undefined ? d.total : sec.total;
+      const stocks = d.stocks ? d.stocks.join(', ') : '';
+      return `
+        <div class="sbm-input-row">
+          <label>${sec.name}</label>
+          <input class="sbm-num" id="sbm-adv-${sec.id}"   type="number" min="0" placeholder="Adv"   value="${adv}">
+          <input class="sbm-num" id="sbm-tot-${sec.id}"   type="number" min="1" placeholder="Tot"   value="${total}">
+          <input class="sbm-num" id="sbm-stk-${sec.id}"   type="text"            placeholder="HDFC,ICICI…" value="${stocks}"
+                 style="font-size:10px;width:100%;text-align:left">
+        </div>`;
+    }).join('');
+    panel.style.display = 'block';
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+function sbmSave() {
+  const data = sbmLoad();
+  SBM_SECTORS.forEach(sec => {
+    const advEl = document.getElementById('sbm-adv-'+sec.id);
+    const totEl = document.getElementById('sbm-tot-'+sec.id);
+    const stkEl = document.getElementById('sbm-stk-'+sec.id);
+    if (!advEl) return;
+    const adv   = advEl.value !== '' ? parseInt(advEl.value)||0 : null;
+    const total = totEl.value !== '' ? parseInt(totEl.value)||sec.total : sec.total;
+    const stocks = stkEl.value ? stkEl.value.split(',').map(s=>s.trim()).filter(Boolean) : [];
+    if (adv !== null) {
+      data[sec.id] = {adv, total, stocks};
+    }
+  });
+  const now = new Date();
+  data._updated = now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  sbmSaveData(data);
+  _sbmEditOpen = false;
+  document.getElementById('sbm-edit-panel').style.display = 'none';
+  sbmRender();
+  pushToCloud();
+}
+
 function renderAll() {
   const data=loadLocal();
-  renderHero(data); renderChart(data); renderSnapshot(data); renderHistory(data);
+  renderHero(data);
+  renderMarketCycle();
+  sbmRender(); renderChart(data); renderSnapshot(data); renderHistory(data);
   bsrRenderAll();
   mpmRenderAll();
 }
@@ -2184,6 +2677,7 @@ function mpmRenderAll() {
   const days = mpmLoad();
   mpmRenderHero(days);
   mpmRenderTable(days);
+  renderMarketCycle();
 }
 
 function bsrRenderAll() {
@@ -2191,6 +2685,7 @@ function bsrRenderAll() {
   bsrRenderHero(trades);
   bsrRenderTable(trades);
   bsrRenderChart();
+  renderMarketCycle();
 }
 </script>
 </body>
