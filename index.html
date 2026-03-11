@@ -1204,22 +1204,45 @@ async function jbCreate(key, data) {
 }
 
 async function jbRead(key, bin) {
+  console.log('[jbRead] Reading bin:', bin);
   const r = await fetch(`${JB}/b/${bin}/latest`, {
     headers: { 'X-Master-Key': key }
   });
   if(!r.ok) throw new Error('Read failed: ' + r.status);
   const j = await r.json();
-  // Return full record object (may have .records and .bsr)
-  return j.record;
+  console.log('[jbRead] Raw response keys:', Object.keys(j));
+  console.log('[jbRead] j.record type:', typeof j.record, Array.isArray(j.record));
+  const rec = j.record;
+  if (rec && typeof rec === 'object' && !Array.isArray(rec)) {
+    console.log('[jbRead] Payload keys:', Object.keys(rec));
+    console.log('[jbRead] records:', rec.records ? rec.records.length : 'MISSING');
+    console.log('[jbRead] mpm:', rec.mpm ? rec.mpm.length : 'MISSING');
+    console.log('[jbRead] bsr:', rec.bsr ? rec.bsr.length : 'MISSING');
+    console.log('[jbRead] mpm sample:', rec.mpm ? rec.mpm.slice(0,2) : 'none');
+  } else {
+    console.log('[jbRead] Record is array or null:', rec);
+  }
+  return rec;
 }
 
 async function jbUpdate(key, bin, payload) {
+  console.log('[jbUpdate] Pushing payload:', {
+    records: payload.records ? payload.records.length : 0,
+    bsr: payload.bsr ? payload.bsr.length : 0,
+    mpm: payload.mpm ? payload.mpm.length : 0,
+    ftd: payload.ftd ? payload.ftd.length : 0,
+    mpmSample: payload.mpm ? payload.mpm.slice(0,2) : []
+  });
+  const body = JSON.stringify(payload);
+  console.log('[jbUpdate] Payload size:', body.length, 'bytes');
   const r = await fetch(`${JB}/b/${bin}`, {
     method: 'PUT',
     headers: { 'Content-Type':'application/json', 'X-Master-Key': key },
-    body: JSON.stringify(payload)
+    body: body
   });
-  if(!r.ok) throw new Error('Update failed: ' + r.status);
+  const respText = await r.text();
+  console.log('[jbUpdate] Response status:', r.status, 'body:', respText.slice(0,200));
+  if(!r.ok) throw new Error('Update failed: ' + r.status + ' ' + respText.slice(0,100));
 }
 
 // ════════════════════════════════════════════════════
@@ -2609,6 +2632,13 @@ function seedHistoricalData() {
   document.getElementById('entry-today').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
   document.getElementById('bsr-date').value = todayISO();
 
+  // ── Log localStorage state on startup ──────────────────
+  console.log('[Init] localStorage keys:', Object.keys(localStorage));
+  console.log('[Init] LS_DATA length:', (localStorage.getItem('nse_breadth_v3')||'').length);
+  console.log('[Init] LS_MPM length:', (localStorage.getItem('nse_mpm_v1')||'').length);
+  console.log('[Init] LS_KEY present:', !!localStorage.getItem('nse_jb_key'));
+  console.log('[Init] LS_BIN present:', !!localStorage.getItem('nse_jb_bin'));
+
   // ── Seed historical data on first load ──────────────────
   seedHistoricalData();
 
@@ -3275,6 +3305,9 @@ async function mpmImportConfirm() {
 
   const merged = Object.values(byDate).sort((a,b) => b.date.localeCompare(a.date)).slice(0, 25);
   mpmSave(merged);
+  console.log('[mpmImport] Saved', merged.length, 'days to localStorage');
+  console.log('[mpmImport] LS_MPM size after save:', (localStorage.getItem('nse_mpm_v1')||'').length, 'bytes');
+  console.log('[mpmImport] buildPayload mpm count:', buildPayload().mpm.length);
 
   // Reset UI
   _mpmParsed = [];
