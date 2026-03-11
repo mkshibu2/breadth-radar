@@ -1590,7 +1590,10 @@ function renderChart(data) {
   const ctx=canvas.getContext('2d');
   const wrap=canvas.parentElement;
   const dpr=window.devicePixelRatio||1;
-  const W=wrap.clientWidth, H=220;
+  // Use getBoundingClientRect for reliable width even before first paint
+  const rect=wrap.getBoundingClientRect();
+  const W=rect.width||wrap.offsetWidth||wrap.scrollWidth||600;
+  const H=150;
   canvas.width=W*dpr; canvas.height=H*dpr;
   canvas.style.width=W+'px'; canvas.style.height=H+'px';
   ctx.scale(dpr,dpr);
@@ -2192,14 +2195,8 @@ function renderAll() {
   renderHistory(data);
   bsrRenderAll();
   mpmRenderAll();
-  // Chart needs real clientWidth — defer if canvas not yet painted
-  const canvas = document.getElementById('score-chart');
-  const w = canvas ? canvas.parentElement.clientWidth : 0;
-  if (w > 10) {
-    renderChart(data);
-  } else {
-    requestAnimationFrame(() => setTimeout(() => renderChart(data), 60));
-  }
+  // Always render chart — getBoundingClientRect works even before first paint
+  renderChart(data);
 }
 
 // On load: init UI, check if credentials exist and auto-pull
@@ -2321,30 +2318,47 @@ function seedHistoricalData() {
     panel.style.display='';
     setSyncStatus('','Not configured');
   }
-  // Run non-visual renders immediately
-  renderHero(loadLocal());
-  renderMarketCycle();
-  ftdRender();
-  ddcRender();
-  nhnlRender(loadLocal());
+  renderAll();
   bsrRenderAll();
   mpmRenderAll();
   eodAutoFill();
   document.getElementById('mpm-date').value = todayISO();
-  // Defer chart + table renders until after browser has painted layout
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      const data = loadLocal();
-      renderChart(data);
-      renderSnapshot(data);
-      renderHistory(data);
-      // Re-run hero in case cloud data changed things
-      renderHero(data);
-    }, 80);
-  });
 })();
 
 window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal()); bsrRenderChart(); },50); });
+
+// ResizeObserver — fires when canvas container gets real dimensions
+// This fixes the "DevTools open/close" bug completely
+(function setupResizeObservers() {
+  const chartWrap = document.querySelector('.chart-canvas-wrap');
+  const bsrWrap   = document.querySelector('.bsr-canvas-wrap');
+  let chartReady = false, bsrReady = false;
+  if (window.ResizeObserver && chartWrap) {
+    const ro = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const w = entry.contentRect.width;
+        if (w > 10) {
+          renderChart(loadLocal());
+          renderSnapshot(loadLocal());
+          renderHistory(loadLocal());
+          if (!chartReady) { chartReady = true; }
+        }
+      }
+    });
+    ro.observe(chartWrap);
+  }
+  if (window.ResizeObserver && bsrWrap) {
+    const ro2 = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 10 && !bsrReady) {
+          bsrRenderChart();
+          bsrReady = true;
+        }
+      }
+    });
+    ro2.observe(bsrWrap);
+  }
+})();
 
 // ════════════════════════════════════════════════════
 //  BSR — BREAKOUT SUCCESS RATE TRACKER
@@ -2509,7 +2523,8 @@ function bsrRenderChart() {
   const ctx = canvas.getContext('2d');
   const wrap = canvas.parentElement;
   const dpr = window.devicePixelRatio || 1;
-  const W = wrap.clientWidth, H = 160;
+  const bRect = wrap.getBoundingClientRect();
+  const W = bRect.width||wrap.offsetWidth||400, H = 160;
   canvas.width = W * dpr; canvas.height = H * dpr;
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
   ctx.scale(dpr, dpr);
