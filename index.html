@@ -2188,9 +2188,18 @@ function renderAll() {
   ftdRender();
   ddcRender();
   nhnlRender(data);
-  renderChart(data); renderSnapshot(data); renderHistory(data);
+  renderSnapshot(data);
+  renderHistory(data);
   bsrRenderAll();
   mpmRenderAll();
+  // Chart needs real clientWidth — defer if canvas not yet painted
+  const canvas = document.getElementById('score-chart');
+  const w = canvas ? canvas.parentElement.clientWidth : 0;
+  if (w > 10) {
+    renderChart(data);
+  } else {
+    requestAnimationFrame(() => setTimeout(() => renderChart(data), 60));
+  }
 }
 
 // On load: init UI, check if credentials exist and auto-pull
@@ -2312,14 +2321,30 @@ function seedHistoricalData() {
     panel.style.display='';
     setSyncStatus('','Not configured');
   }
-  renderAll();
+  // Run non-visual renders immediately
+  renderHero(loadLocal());
+  renderMarketCycle();
+  ftdRender();
+  ddcRender();
+  nhnlRender(loadLocal());
   bsrRenderAll();
   mpmRenderAll();
   eodAutoFill();
   document.getElementById('mpm-date').value = todayISO();
+  // Defer chart + table renders until after browser has painted layout
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      const data = loadLocal();
+      renderChart(data);
+      renderSnapshot(data);
+      renderHistory(data);
+      // Re-run hero in case cloud data changed things
+      renderHero(data);
+    }, 80);
+  });
 })();
 
-window.addEventListener('resize',()=>{ renderChart(loadLocal()); bsrRenderChart(); });
+window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal()); bsrRenderChart(); },50); });
 
 // ════════════════════════════════════════════════════
 //  BSR — BREAKOUT SUCCESS RATE TRACKER
