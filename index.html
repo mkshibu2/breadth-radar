@@ -123,7 +123,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
 .score-bk b{color:var(--text);font-weight:600;font-family:var(--mono);}
 
 /* ── MAIN TWO-COLUMN GRID ────────────────────────────────── */
-.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start;}
+.dash-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:start;}
 .col{display:flex;flex-direction:column;gap:8px;}
 
 /* ── FOLLOW-THROUGH DAY DETECTOR ───────────────────────── */
@@ -196,6 +196,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
 .ueg-label{grid-column:1/-1;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);padding-top:2px;}
 .ftd-type-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0 4px;}
 .entry-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.past-modal-overlay{position:fixed;inset:0;background:rgba(5,8,15,.75);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;}
+.past-modal{background:var(--bg2);border:1px solid var(--border);border-radius:8px;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;border-top:3px solid var(--purple);}
+.past-modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);}
+.past-modal-title{font-family:var(--disp);font-size:18px;font-weight:800;color:var(--text);}
+.past-modal-close{background:none;border:none;color:var(--sub);font-size:20px;cursor:pointer;line-height:1;}
+.past-modal-close:hover{color:var(--text);}
+.past-modal-body{padding:16px 18px;}
+.past-date-row{display:grid;grid-template-columns:160px 1fr;gap:8px;align-items:center;margin-bottom:12px;}
+.past-date-row label{font-size:12px;color:var(--sub);font-weight:600;}
 .btn{font-size:13px;font-weight:600;padding:8px 18px;border:none;border-radius:4px;cursor:pointer;transition:all .15s;}
 .btn-primary{background:var(--accent);color:#0e1420;}
 .btn-primary:hover{background:#7bb8f7;}
@@ -492,6 +501,7 @@ canvas#bsr-chart{width:100%;height:100%;}
   <a class="src-btn" href="https://www.moneycontrol.com/stocksmarketsindia/heat-map-advance-decline-ratio-nse-bse" target="_blank"><span class="dot"></span>MC Heatmap</a>
   <a class="src-btn" href="https://www.nseindia.com/market-data/52-week-high-equity-market" target="_blank"><span class="dot"></span>52W High/Low</a>
   <a class="src-btn" href="https://trendlyne.com/equity/market-bullish-bearish-breadth/equi-weighted/" target="_blank"><span class="dot"></span>Trendlyne Breadth</a>
+  <a class="src-btn" href="https://economictimes.indiatimes.com/markets/stock-market-mood" target="_blank"><span class="dot"></span>ET Market Mood</a>
   <a class="src-btn" href="manual.html" target="_blank" style="color:var(--lime);border-color:rgba(74,222,128,.25);background:rgba(74,222,128,.04);margin-left:8px"><span class="dot" style="background:var(--lime)"></span>📖 User Guide</a>
 </div>
 
@@ -667,6 +677,7 @@ canvas#bsr-chart{width:100%;height:100%;}
         <div class="card-head">
           <div class="card-title">📋 EOD Data Entry — <span id="entry-today"></span></div>
           <div style="display:flex;gap:5px">
+            <button class="btn btn-sec" style="font-size:11px;padding:3px 8px;color:var(--purple);border-color:rgba(167,139,250,.3)" onclick="openPastEntry()">📅 Past Entry</button>
             <button class="btn btn-sec" style="font-size:11px;padding:3px 8px" onclick="loadTodayIntoForm()">Edit Today</button>
             <button class="btn btn-sec" style="font-size:11px;padding:3px 8px" onclick="clearInputs()">Clear</button>
           </div>
@@ -2183,36 +2194,116 @@ function renderAll() {
 }
 
 // On load: init UI, check if credentials exist and auto-pull
+
+// ════════════════════════════════════════════════════
+//  HISTORICAL SEED DATA (ET Market Mood — Nifty 500)
+//  Seeded once. Will not overwrite existing entries.
+// ════════════════════════════════════════════════════
+function seedHistoricalData() {
+  const SEED_KEY = 'nse_seed_v1';
+  if (localStorage.getItem(SEED_KEY)) return; // already seeded
+
+  // Source: ET Stock Market Mood — Overview (SMA%) + Advance/Decline tabs
+  // SMA20 used as proxy for EMA20 | SMA50 = SMA50 | SMA200 = SMA200
+  // A/D: Advanced + Declined from ET A/D tab (Unchanged = 500 - Adv - Dec)
+  // Nifty close = Nifty 50 (used for display only, no MPM auto-calc for seed data)
+  const seedData = [
+    {date:'2026-03-10',adv:425,dec:75, unc:0,  hi:0,lo:0,e20:28,s50:31,s200:37,nifty:22342.95,notes:'ET seed'},
+    {date:'2026-03-06',adv:170,dec:330,unc:0,  hi:0,lo:0,e20:20,s50:29,s200:29,nifty:22481.30,notes:'ET seed'},
+    {date:'2026-03-05',adv:383,dec:117,unc:0,  hi:0,lo:0,e20:23,s50:29,s200:31,nifty:22697.80,notes:'ET seed'},
+    {date:'2026-03-04',adv:54, dec:446,unc:0,  hi:0,lo:0,e20:14,s50:26,s200:28,nifty:22409.80,notes:'ET seed'},
+    {date:'2026-03-02',adv:56, dec:444,unc:0,  hi:0,lo:0,e20:26,s50:33,s200:31,nifty:22835.95,notes:'ET seed'},
+    {date:'2026-02-27',adv:118,dec:382,unc:0,  hi:0,lo:0,e20:39,s50:42,s200:35,nifty:23166.85,notes:'ET seed'},
+    {date:'2026-02-26',adv:260,dec:240,unc:0,  hi:0,lo:0,e20:52,s50:49,s200:38,nifty:23448.50,notes:'ET seed'},
+    {date:'2026-02-25',adv:314,dec:186,unc:0,  hi:0,lo:0,e20:53,s50:49,s200:38,nifty:23403.80,notes:'ET seed'},
+    {date:'2026-02-24',adv:182,dec:318,unc:0,  hi:0,lo:0,e20:47,s50:44,s200:36,nifty:23304.60,notes:'ET seed'},
+    {date:'2026-02-23',adv:298,dec:202,unc:0,  hi:0,lo:0,e20:53,s50:48,s200:37,nifty:23484.95,notes:'ET seed'},
+    {date:'2026-02-20',adv:255,dec:245,unc:0,  hi:0,lo:0,e20:51,s50:46,s200:36,nifty:23395.00,notes:'ET seed'},
+    {date:'2026-02-19',adv:68, dec:432,unc:0,  hi:0,lo:0,e20:52,s50:44,s200:36,nifty:23297.45,notes:'ET seed'},
+    {date:'2026-02-18',adv:292,dec:208,unc:0,  hi:0,lo:0,e20:65,s50:53,s200:40,nifty:23645.80,notes:'ET seed'},
+    {date:'2026-02-17',adv:337,dec:163,unc:0,  hi:0,lo:0,e20:65,s50:48,s200:39,nifty:23540.05,notes:'ET seed'},
+    {date:'2026-02-16',adv:293,dec:207,unc:0,  hi:0,lo:0,e20:58,s50:44,s200:37,nifty:23472.45,notes:'ET seed'},
+    {date:'2026-02-13',adv:70, dec:430,unc:0,  hi:0,lo:0,e20:55,s50:42,s200:38,nifty:23313.15,notes:'ET seed'},
+    {date:'2026-02-12',adv:136,dec:364,unc:0,  hi:0,lo:0,e20:71,s50:50,s200:41,nifty:23651.55,notes:'ET seed'},
+    {date:'2026-02-11',adv:238,dec:262,unc:0,  hi:0,lo:0,e20:76,s50:55,s200:44,nifty:23783.05,notes:'ET seed'},
+    {date:'2026-02-10',adv:292,dec:208,unc:0,  hi:0,lo:0,e20:78,s50:54,s200:42,nifty:23753.75,notes:'ET seed'},
+    {date:'2026-02-09',adv:422,dec:78, unc:0,  hi:0,lo:0,e20:75,s50:51,s200:41,nifty:23683.40,notes:'ET seed'},
+    {date:'2026-02-06',adv:214,dec:286,unc:0,  hi:0,lo:0,e20:55,s50:41,s200:37,nifty:23434.00,notes:'ET seed'},
+    {date:'2026-02-05',adv:214,dec:286,unc:0,  hi:0,lo:0,e20:55,s50:39,s200:36,nifty:23411.70,notes:'ET seed'},
+    {date:'2026-02-04',adv:160,dec:340,unc:0,  hi:0,lo:0,e20:59,s50:41,s200:37,nifty:23534.95,notes:'ET seed'},
+    {date:'2026-02-03',adv:329,dec:171,unc:0,  hi:0,lo:0,e20:52,s50:38,s200:37,nifty:23446.30,notes:'ET seed'},
+    {date:'2026-02-02',adv:448,dec:52, unc:0,  hi:0,lo:0,e20:24,s50:23,s200:30,nifty:22837.00,notes:'ET seed'},
+    {date:'2026-02-01',adv:313,dec:187,unc:0,  hi:0,lo:0,e20:17,s50:19,s200:27,nifty:22611.30,notes:'ET seed'},
+    {date:'2026-01-30',adv:120,dec:380,unc:0,  hi:0,lo:0,e20:30,s50:29,s200:32,nifty:23079.50,notes:'ET seed'},
+    {date:'2026-01-29',adv:328,dec:172,unc:0,  hi:0,lo:0,e20:21,s50:23,s200:31,nifty:23134.80,notes:'ET seed'},
+    {date:'2026-01-28',adv:189,dec:311,unc:0,  hi:0,lo:0,e20:22,s50:23,s200:30,nifty:23082.10,notes:'ET seed'},
+  ];
+
+  // Calculate scores and zones, then merge with any existing local data
+  const existing = loadLocal();
+  const existingDates = new Set(existing.map(r => r.date));
+
+  const toAdd = seedData
+    .filter(r => !existingDates.has(r.date))
+    .map(r => {
+      r.score = calcScore(r);
+      const z = getZone(r.score);
+      r.zone = z.name; r.r = z.r;
+      return r;
+    });
+
+  if (toAdd.length > 0) {
+    saveLocal([...existing, ...toAdd]);
+  }
+  localStorage.setItem(SEED_KEY, '1');
+}
+
 (async function init() {
   document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
   document.getElementById('entry-today').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
   document.getElementById('bsr-date').value = todayISO();
-  // Hide setup panel by default if already configured
+
+  // ── Seed historical data on first load ──────────────────
+  seedHistoricalData();
+
   const cfg=getCfg();
   const panel=document.getElementById('setup-panel');
   if(cfg.key && cfg.bin) {
     panel.style.display='none';
     setSyncStatus('syncing','Syncing…');
     try {
-      const cloud=await jbRead(cfg.key,cfg.bin);
-      // Merge: cloud is source of truth, but keep any local-only entries
-      const local=loadLocal();
-      const merged=Object.values([...cloud,...local].reduce((m,r)=>{m[r.date]=r;return m;},{}));
-      saveLocal(merged);
-      // Also pull BSR from cloud
-      const raw2 = await jbRead(cfg.key,cfg.bin);
-      const cBsr = Array.isArray(raw2)?[]:(raw2.bsr||[]);
+      // Single read — merge all four datasets
+      const payload = await jbRead(cfg.key,cfg.bin);
+      const isLegacy = Array.isArray(payload);
+
+      // Breadth records
+      const cRec = isLegacy ? payload : (payload.records||[]);
+      const local = loadLocal();
+      const recMap = {};
+      [...cRec,...local].forEach(r=>{if(r&&r.date)recMap[r.date]=r;});
+      saveLocal(Object.values(recMap));
+
+      // BSR
+      const cBsr = isLegacy ? [] : (payload.bsr||[]);
       const lBsr = bsrLoad();
       const bsrMap = {};
       [...cBsr,...lBsr].forEach(t=>{if(t&&t.id)bsrMap[t.id]=t;});
       bsrSave(Object.values(bsrMap));
-      // Pull MPM
-      const raw3 = await jbRead(cfg.key,cfg.bin);
-      const cMpm = Array.isArray(raw3)?[]:(raw3.mpm||[]);
+
+      // MPM
+      const cMpm = isLegacy ? [] : (payload.mpm||[]);
       const lMpm = mpmLoad();
       const mpmMap = {};
       [...cMpm,...lMpm].forEach(d=>{if(d&&d.id)mpmMap[d.id]=d;});
       mpmSave(Object.values(mpmMap));
+
+      // FTD
+      const cFtd = isLegacy ? [] : (payload.ftd||[]);
+      const lFtd = ftdLoad();
+      const ftdMap = {};
+      [...cFtd,...lFtd].forEach(d=>{if(d&&d.id)ftdMap[d.id]=d;});
+      ftdSaveData(Object.values(ftdMap));
+
       setSyncStatus('ok','Synced');
     } catch(e) {
       setSyncStatus('err','Offline');
@@ -2224,6 +2315,7 @@ function renderAll() {
   renderAll();
   bsrRenderAll();
   mpmRenderAll();
+  eodAutoFill();
   document.getElementById('mpm-date').value = todayISO();
 })();
 
@@ -2956,6 +3048,126 @@ function bsrRenderAll() {
   bsrRenderChart();
   renderMarketCycle();
 }
+
+// ════════════════════════════════════════════════════
+//  PAST DATE ENTRY MODAL
+// ════════════════════════════════════════════════════
+function openPastEntry() {
+  const d = new Date(); d.setDate(d.getDate()-1);
+  document.getElementById('p-date').value = d.toISOString().split('T')[0];
+  renderPastSeedList();
+  document.getElementById('past-modal').style.display = 'flex';
+}
+function closePastEntry() {
+  document.getElementById('past-modal').style.display = 'none';
+  ['p-adv','p-dec','p-unc','p-hi','p-lo','p-e20','p-s50','p-s200','p-nifty'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('past-save-msg').textContent='';
+}
+function loadPastRowIntoModal(date) {
+  const row = loadLocal().find(r=>r.date===date);
+  if(!row) return;
+  document.getElementById('p-date').value  = date;
+  document.getElementById('p-adv').value   = row.adv||'';
+  document.getElementById('p-dec').value   = row.dec||'';
+  document.getElementById('p-unc').value   = row.unc||'';
+  document.getElementById('p-hi').value    = row.hi||'';
+  document.getElementById('p-lo').value    = row.lo||'';
+  document.getElementById('p-e20').value   = row.e20||'';
+  document.getElementById('p-s50').value   = row.s50||'';
+  document.getElementById('p-s200').value  = row.s200||'';
+  document.getElementById('p-nifty').value = row.nifty||'';
+}
+function renderPastSeedList() {
+  const el = document.getElementById('past-seed-list');
+  if(!el) return;
+  const data = loadLocal().sort((a,b)=>b.date.localeCompare(a.date));
+  if(!data.length){el.innerHTML='<div style="color:var(--dim);font-size:11px">No entries yet</div>';return;}
+  el.innerHTML = data.map(r=>{
+    const z = getZone(r.score||0);
+    const isSeed = r.notes&&r.notes.includes('ET seed');
+    return `<div onclick="loadPastRowIntoModal('${r.date}')" style="display:grid;grid-template-columns:100px 50px 90px 1fr;gap:6px;align-items:center;padding:5px 8px;border-radius:4px;cursor:pointer;border-bottom:1px solid var(--border);font-size:11px" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background='none'">
+      <span style="color:var(--text);font-family:var(--mono)">${r.date}</span>
+      <span style="font-family:var(--disp);font-size:16px;font-weight:800;color:${z.color}">${r.score||'—'}</span>
+      <span style="color:${z.color};font-size:10px">${r.zone||'—'}</span>
+      <span style="color:var(--dim);font-size:10px">${isSeed?'<span style="color:var(--purple);font-size:9px">ET seed</span>':r.notes||''}</span>
+    </div>`;
+  }).join('');
+}
+async function savePastEntry() {
+  const g = id => document.getElementById(id).value.trim();
+  const date = g('p-date');
+  if(!date){showPastMsg('⚠ Select a date','var(--orange)');return;}
+  if(date >= todayISO()){showPastMsg('⚠ Use main form for today','var(--orange)');return;}
+  const adv=g('p-adv'),e20=g('p-e20');
+  if(!adv&&!e20){showPastMsg('⚠ Enter at least Advances or SMA% values','var(--orange)');return;}
+  const row={date, adv, dec:g('p-dec'), unc:g('p-unc'), hi:g('p-hi'), lo:g('p-lo'),
+             e20, s50:g('p-s50'), s200:g('p-s200'), nifty:g('p-nifty'),
+             notes: (adv||g('p-dec')) ? '' : 'ET seed'};
+  row.score = calcScore(row);
+  const z = getZone(row.score);
+  row.zone=z.name; row.r=z.r;
+  const existing = loadLocal().filter(r=>r.date!==date);
+  saveLocal([...existing, row]);
+  showPastMsg('✓ Saved '+date+' — Score: '+row.score+' ('+z.name+')','var(--lime)');
+  renderPastSeedList();
+  renderAll();
+  await pushToCloud();
+}
+function showPastMsg(msg,color) {
+  const el=document.getElementById('past-save-msg');
+  if(el){el.textContent=msg;el.style.color=color;}
+}
+
 </script>
+
+<!-- ── PAST DATE ENTRY MODAL ──────────────────────────── -->
+<div class="past-modal-overlay" id="past-modal" style="display:none" onclick="if(event.target===this)closePastEntry()">
+  <div class="past-modal">
+    <div class="past-modal-head">
+      <div class="past-modal-title">📅 Past Date Entry</div>
+      <button class="past-modal-close" onclick="closePastEntry()">✕</button>
+    </div>
+    <div class="past-modal-body">
+      <p style="font-size:12px;color:var(--sub);margin-bottom:14px">Enter historical data for any past trading day. Source: <a href="https://economictimes.indiatimes.com/markets/stock-market-mood" target="_blank" style="color:var(--accent)">ET Market Mood ↗</a>. Existing entries for the same date will be overwritten.</p>
+
+      <div class="past-date-row">
+        <label>Date</label>
+        <input type="date" id="p-date" class="sbm-num" style="width:160px">
+      </div>
+
+      <div class="ueg-label" style="margin-bottom:6px">🔵 Advance / Decline (ET → Advance/Decline tab)</div>
+      <div class="entry-grid" style="margin-bottom:10px">
+        <div class="ef"><div class="ef-lbl">Advances</div><input type="number" id="p-adv" placeholder="425" min="0" max="500"></div>
+        <div class="ef"><div class="ef-lbl">Declines</div><input type="number" id="p-dec" placeholder="75"  min="0" max="500"></div>
+        <div class="ef"><div class="ef-lbl">Unchanged</div><input type="number" id="p-unc" placeholder="0"   min="0" max="500"></div>
+        <div class="ef"><div class="ef-lbl">52W Highs</div><input type="number" id="p-hi"  placeholder="0"   min="0"></div>
+        <div class="ef"><div class="ef-lbl">52W Lows</div><input type="number" id="p-lo"   placeholder="0"   min="0"></div>
+      </div>
+
+      <div class="ueg-label" style="margin-bottom:6px">🟢 MA Breadth % (ET → Overview tab, Percentage view, Nifty 500)</div>
+      <div class="entry-grid" style="margin-bottom:10px">
+        <div class="ef" style="border-color:rgba(91,163,245,.3)"><div class="ef-lbl">% &gt; SMA20 <span style="font-size:9px;color:var(--dim)">(≈EMA20)</span></div><input type="number" id="p-e20" placeholder="28" min="0" max="100" step="0.1"></div>
+        <div class="ef" style="border-color:rgba(91,163,245,.3)"><div class="ef-lbl">% &gt; SMA50</div><input type="number" id="p-s50" placeholder="31" min="0" max="100" step="0.1"></div>
+        <div class="ef" style="border-color:rgba(91,163,245,.3)"><div class="ef-lbl">% &gt; SMA200</div><input type="number" id="p-s200" placeholder="37" min="0" max="100" step="0.1"></div>
+        <div class="ef" style="border-color:rgba(251,146,60,.3)"><div class="ef-lbl">Nifty Close</div><input type="number" id="p-nifty" placeholder="22342" step="0.05"></div>
+      </div>
+
+      <div id="past-save-msg" style="font-size:12px;margin-bottom:8px;min-height:16px"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="savePastEntry()" style="background:var(--purple)">💾 Save Past Entry</button>
+        <button class="btn btn-sec" onclick="closePastEntry()">Cancel</button>
+        <button class="btn btn-sec" style="margin-left:auto;color:var(--dim);border-color:var(--border)" onclick="loadSeedIntoModal()">📋 Load Next Seed Date</button>
+      </div>
+
+      <!-- Quick-fill table from seed -->
+      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);margin-bottom:8px">Already seeded from ET data — click any row to edit</div>
+        <div id="past-seed-list" style="max-height:200px;overflow-y:auto"></div>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
