@@ -1304,12 +1304,12 @@ async function pullFromCloud(key, bin) {
     const bsrById  = {};
     [...cloudBsr,...localBsr].forEach(t=>{ if(t&&t.id) bsrById[t.id]=t; });
     bsrSave(Object.values(bsrById));
-    // Merge MPM
+    // Merge MPM — use date as key (stable across devices)
     const cloudMpm = Array.isArray(raw) ? [] : (raw.mpm||[]);
     const localMpm = mpmLoad();
-    const mpmById  = {};
-    [...cloudMpm,...localMpm].forEach(d=>{ if(d&&d.id) mpmById[d.id]=d; });
-    mpmSave(Object.values(mpmById));
+    const mpmByDate = {};
+    [...cloudMpm,...localMpm].forEach(d=>{ if(d&&d.date) mpmByDate[d.date]=d; });
+    mpmSave(Object.values(mpmByDate));
     // Merge FTD by id
     const cloudFtd = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd||[]) : [];
     const localFtd = ftdLoad();
@@ -2629,11 +2629,11 @@ function seedHistoricalData() {
       [...cBsr,...lBsr].forEach(t=>{if(t&&t.id)bsrMap[t.id]=t;});
       bsrSave(Object.values(bsrMap));
 
-      // MPM
+      // MPM — merge by date (stable key across devices)
       const cMpm = isLegacy ? [] : (payload.mpm||[]);
       const lMpm = mpmLoad();
       const mpmMap = {};
-      [...cMpm,...lMpm].forEach(d=>{if(d&&d.id)mpmMap[d.id]=d;});
+      [...cMpm,...lMpm].forEach(d=>{if(d&&d.date)mpmMap[d.date]=d;});
       mpmSave(Object.values(mpmMap));
 
       // FTD
@@ -2964,7 +2964,7 @@ function bsrExport() {
 // ════════════════════════════════════════════════════
 const LS_MPM = 'nse_mpm_v1';
 const mpmLoad = () => { try { return JSON.parse(localStorage.getItem(LS_MPM)) || []; } catch(e) { return []; } };
-const mpmSave = d => localStorage.setItem(LS_MPM, JSON.stringify(d));
+const mpmSave = d => localStorage.setItem(LS_MPM, JSON.stringify(d.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,60)));
 
 function mpmClassify(close, pclose, vol, pvol) {
   const closeUp = +close > +pclose;
@@ -3245,7 +3245,7 @@ function mpmImportConfirm() {
   existing.forEach(d => { byDate[d.date] = d; });
   _mpmParsed.forEach(d => {
     byDate[d.date] = {
-      id:     byDate[d.date] ? byDate[d.date].id : Date.now().toString() + Math.random().toString(36).slice(2,6),
+      id:     d.date,   // date IS the unique key for MPM — stable across devices
       date:   d.date,
       close:  d.close,
       pclose: d.pclose,
