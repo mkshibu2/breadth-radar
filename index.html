@@ -2103,16 +2103,22 @@ function ftdReset() {
 }
 
 function ftdRender() {
+  // Safe element setter — silently skips if element doesn't exist
   const el  = id => document.getElementById(id);
+  const set = (id, prop, val) => { const e = el(id); if(e) e[prop] = val; };
+  const sty = (id, prop, val) => { const e = el(id); if(e) e.style[prop] = val; };
+  const cls = (id, val)       => { const e = el(id); if(e) e.className = val; };
   const days = ftdLoad();
 
   if (!days.length) {
-    el('ftd-status').textContent = 'No Data'; el('ftd-status').style.color = 'var(--dim)';
-    el('ftd-status-sub').textContent = 'Log Day 1 of a rally attempt to begin tracking';
-    el('ftd-rally-day').textContent = '—'; el('ftd-move').textContent = '—';
-    el('ftd-log-wrap').style.display = 'none';
-    el('ftd-banner').style.display = 'none';
-    el('ftd-status-cell').className = 'ftd-cell';
+    set('ftd-status',     'textContent', 'No Data');
+    sty('ftd-status',     'color', 'var(--dim)');
+    set('ftd-status-sub', 'textContent', 'Log Day 1 of a rally attempt to begin tracking');
+    set('ftd-rally-day',  'textContent', '—');
+    set('ftd-move',       'textContent', '—');
+    sty('ftd-log-wrap',   'display', 'none');
+    sty('ftd-banner',     'display', 'none');
+    cls('ftd-status-cell','ftd-cell');
     return;
   }
 
@@ -2132,37 +2138,37 @@ function ftdRender() {
   const ftdDetected = ftds.length > 0 && rallyDay >= 4;
   const latestFtd   = ftds[0];
 
-  el('ftd-rally-day').textContent = rallyDay ? 'Day ' + rallyDay : '—';
-  el('ftd-move').textContent = latest.movePct > 0 ? '+' + latest.movePct + '%' : latest.movePct + '%';
-  el('ftd-move').style.color = latest.movePct >= 1.5 ? 'var(--lime)' : 'var(--orange)';
+  set('ftd-rally-day', 'textContent', rallyDay ? 'Day ' + rallyDay : '—');
+  set('ftd-move', 'textContent', latest.movePct > 0 ? '+' + latest.movePct + '%' : latest.movePct + '%');
+  sty('ftd-move', 'color', latest.movePct >= 1.5 ? 'var(--lime)' : 'var(--orange)');
 
   if (ftdDetected) {
-    el('ftd-status').textContent = 'CONFIRMED'; el('ftd-status').style.color = 'var(--lime)';
-    el('ftd-status-sub').textContent = 'FTD on ' + latestFtd.date + ' — Rally confirmed';
-    el('ftd-status-cell').className = 'ftd-cell ftd-detected';
-    el('ftd-banner').style.display = 'block';
-    el('ftd-banner').style.background = 'rgba(74,222,128,.12)';
-    el('ftd-banner').style.color = 'var(--lime)';
-    el('ftd-banner').style.border = '1px solid rgba(74,222,128,.3)';
-    el('ftd-banner').textContent = '✅ Follow-Through Day Confirmed — Breakouts may be entered with pilot positions (0.25R)';
+    set('ftd-status', 'textContent', 'CONFIRMED'); sty('ftd-status', 'color', 'var(--lime)');
+    set('ftd-status-sub', 'textContent', 'FTD on ' + latestFtd.date + ' — Rally confirmed');
+    cls('ftd-status-cell', 'ftd-cell ftd-detected');
+    sty('ftd-banner', 'display', 'block');
+    sty('ftd-banner', 'background', 'rgba(74,222,128,.12)');
+    sty('ftd-banner', 'color', 'var(--lime)');
+    sty('ftd-banner', 'border', '1px solid rgba(74,222,128,.3)');
+    set('ftd-banner', 'textContent', '✅ Follow-Through Day Confirmed — Breakouts may be entered with pilot positions (0.25R)');
   } else if (attempts.length) {
-    el('ftd-status').textContent = 'Watching'; el('ftd-status').style.color = 'var(--yellow)';
-    el('ftd-status-sub').textContent = rallyDay < 4 ? `Day ${rallyDay} — Need Day 4+ with +1.5% on higher vol` : 'Watching for FTD confirmation';
-    el('ftd-status-cell').className = 'ftd-cell ftd-attempt';
-    el('ftd-banner').style.display = 'block';
-    el('ftd-banner').style.background = 'rgba(250,204,21,.08)';
-    el('ftd-banner').style.color = 'var(--yellow)';
-    el('ftd-banner').style.border = '1px solid rgba(250,204,21,.2)';
-    el('ftd-banner').textContent = `⏳ Rally Attempt in progress — Day ${rallyDay}. No new entries until FTD confirmed.`;
+    set('ftd-status', 'textContent', 'Watching'); sty('ftd-status', 'color', 'var(--yellow)');
+    set('ftd-status-sub', 'textContent', rallyDay < 4 ? `Day ${rallyDay} — Need Day 4+ with +1.5% on higher vol` : 'Watching for FTD confirmation');
+    cls('ftd-status-cell', 'ftd-cell ftd-attempt');
+    sty('ftd-banner', 'display', 'block');
+    sty('ftd-banner', 'background', 'rgba(250,204,21,.08)');
+    sty('ftd-banner', 'color', 'var(--yellow)');
+    sty('ftd-banner', 'border', '1px solid rgba(250,204,21,.2)');
+    set('ftd-banner', 'textContent', `⏳ Rally Attempt in progress — Day ${rallyDay}. No new entries until FTD confirmed.`);
   } else {
-    el('ftd-status').textContent = 'No Attempt'; el('ftd-status').style.color = 'var(--dim)';
-    el('ftd-status-sub').textContent = 'Market in correction — wait for Day 1 of rally attempt';
-    el('ftd-status-cell').className = 'ftd-cell';
-    el('ftd-banner').style.display = 'none';
+    set('ftd-status', 'textContent', 'No Attempt'); sty('ftd-status', 'color', 'var(--dim)');
+    set('ftd-status-sub', 'textContent', 'Market in correction — wait for Day 1 of rally attempt');
+    cls('ftd-status-cell', 'ftd-cell');
+    sty('ftd-banner', 'display', 'none');
   }
 
   // Log table
-  el('ftd-log-wrap').style.display = 'block';
+  sty('ftd-log-wrap', 'display', 'block');
   const typeLabel = { attempt:'Rally Day 1', followthrough:'Follow-Through', distribution:'Distribution' };
   const typeColor = { attempt:'var(--yellow)', followthrough:'var(--lime)', distribution:'var(--red)' };
   el('ftd-log').innerHTML = days.slice(0,10).map(d => `
@@ -2548,16 +2554,17 @@ function renderMarketSummary() {
 
 function renderAll() {
   const data=loadLocal();
-  renderHero(data);
-  renderMarketCycle();
-  renderMarketSummary();
-  ftdRender();
-  ddcRender();
-  nhnlRender(data);
-  renderSnapshot(data);
-  renderHistory(data);
-  bsrRenderAll();
-  mpmRenderAll();
+  const safe = (fn, name) => { try { fn(); } catch(e) { console.warn('[renderAll] ' + name + ' failed:', e.message); } };
+  safe(() => renderHero(data),         'renderHero');
+  safe(() => renderMarketCycle(),      'renderMarketCycle');
+  safe(() => renderMarketSummary(),    'renderMarketSummary');
+  safe(() => ftdRender(),              'ftdRender');
+  safe(() => ddcRender(),              'ddcRender');
+  safe(() => nhnlRender(data),         'nhnlRender');
+  safe(() => renderSnapshot(data),     'renderSnapshot');
+  safe(() => renderHistory(data),      'renderHistory');
+  safe(() => bsrRenderAll(),           'bsrRenderAll');
+  safe(() => mpmRenderAll(),           'mpmRenderAll');
   // Always render chart — getBoundingClientRect works even before first paint
   renderChart(data);
 }
