@@ -2636,12 +2636,19 @@ function seedHistoricalData() {
       [...cBsr,...lBsr].forEach(t=>{if(t&&t.id)bsrMap[t.id]=t;});
       bsrSave(Object.values(bsrMap));
 
-      // MPM — merge by date (stable key across devices)
+      // MPM — merge by date. Local always wins (most recently imported)
       const cMpm = isLegacy ? [] : (payload.mpm||[]);
       const lMpm = mpmLoad();
       const mpmMap = {};
+      // Cloud first, then local overwrites — local is always most current
       [...cMpm,...lMpm].forEach(d=>{if(d&&d.date)mpmMap[d.date]=d;});
-      mpmSave(Object.values(mpmMap));
+      const mergedMpm = Object.values(mpmMap);
+      // If cloud returned FEWER entries than local, local is more up to date — keep it
+      if (mergedMpm.length >= lMpm.length) {
+        mpmSave(mergedMpm);
+      }
+      // else: local already has more data, mpmSave not called → local preserved
+      console.log('[MPM Merge] Cloud:', cMpm.length, 'Local:', lMpm.length, 'Merged:', mergedMpm.length);
 
       // FTD
       const cFtd = isLegacy ? [] : (payload.ftd||[]);
@@ -2650,9 +2657,13 @@ function seedHistoricalData() {
       [...cFtd,...lFtd].forEach(d=>{if(d&&d.id)ftdMap[d.id]=d;});
       ftdSaveData(Object.values(ftdMap));
 
-      setSyncStatus('ok','Synced');
+      const mpmCount = mpmLoad().length;
+      const recCount = loadLocal().length;
+      setSyncStatus('ok', `Synced · ${recCount}rec · ${mpmCount}mpm`);
+      console.log('[Init Pull] Records:', recCount, 'MPM days:', mpmCount, 'BSR:', bsrLoad().length);
     } catch(e) {
-      setSyncStatus('err','Offline');
+      setSyncStatus('err','Offline — ' + e.message);
+      console.error('[Init Pull] Failed:', e);
     }
   } else {
     panel.style.display='';
@@ -3243,7 +3254,7 @@ function mpmParseCSV(text, filename) {
 }
 
 // Confirm import — merge with existing data, push to cloud
-function mpmImportConfirm() {
+async function mpmImportConfirm() {
   if(!_mpmParsed.length) return;
 
   const existing = mpmLoad();
@@ -3275,17 +3286,22 @@ function mpmImportConfirm() {
   const dist = merged.filter(d => d.dtype === 'dist').length;
   mpmFlash('Imported ' + merged.length + ' days — ' + acc + ' Acc, ' + dist + ' Dist days', 'var(--lime)');
   mpmRenderAll();
-  // Push to cloud and show status
+  // Push to cloud immediately after save
   const cfg2 = getCfg();
   const syncMsgEl = document.getElementById('mpm-sync-msg');
   if(!cfg2.key||!cfg2.bin) {
-    if(syncMsgEl){syncMsgEl.textContent='⚠ Data saved locally. Configure JSONBin in header to sync across devices.';syncMsgEl.style.color='var(--orange)';syncMsgEl.style.display='block';}
+    if(syncMsgEl){syncMsgEl.textContent='⚠ Data saved locally only. Configure JSONBin credentials to sync.';syncMsgEl.style.color='var(--orange)';syncMsgEl.style.display='block';}
   } else {
-    if(syncMsgEl){syncMsgEl.textContent='☁ Syncing to cloud…';syncMsgEl.style.color='var(--teal)';syncMsgEl.style.display='block';}
-    pushToCloud().then(()=>{
-      if(syncMsgEl){syncMsgEl.textContent='✓ Synced to cloud — data safe across all devices';syncMsgEl.style.color='var(--lime)';syncMsgEl.style.display='block';}
+    if(syncMsgEl){syncMsgEl.textContent='☁ Pushing to cloud…';syncMsgEl.style.color='var(--teal)';syncMsgEl.style.display='block';}
+    try {
+      await jbUpdate(cfg2.key, cfg2.bin, buildPayload());
+      setSyncStatus('ok','Synced');
+      const n2 = mpmLoad().length;
+      if(syncMsgEl){syncMsgEl.textContent='✓ '+n2+' MPM days saved to cloud';syncMsgEl.style.color='var(--lime)';}
       setTimeout(()=>{if(syncMsgEl)syncMsgEl.style.display='none';},8000);
-    });
+    } catch(err) {
+      if(syncMsgEl){syncMsgEl.textContent='✗ Cloud push failed: '+err.message;syncMsgEl.style.color='var(--red)';}
+    }
   }
 }
 
