@@ -477,6 +477,36 @@ canvas#bsr-chart{width:100%;height:100%;}
   .chart-canvas-wrap{height:130px;}
   .bsr-canvas-wrap{height:100px;}
 }
+
+/* ── MARKET SUMMARY & EXPOSURE METER ─────────────────────────── */
+.msem-card{border-top:3px solid var(--teal);margin-bottom:8px;}
+.msem-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-bottom:1px solid var(--border);}
+.msem-section{padding:14px 16px;border-right:1px solid var(--border);}
+.msem-section:last-child{border-right:none;}
+.msem-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-bottom:8px;}
+.msem-phase{font-family:var(--disp);font-size:22px;font-weight:800;line-height:1;margin-bottom:6px;}
+.msem-summary{font-size:12px;color:var(--sub);line-height:1.6;}
+.msem-guidance{list-style:none;padding:0;margin:0;}
+.msem-guidance li{font-size:12px;color:var(--text);padding:3px 0;line-height:1.5;}
+.msem-guidance li::before{content:"• ";color:var(--teal);}
+.msem-guidance li.warn::before{content:"⚠ ";color:var(--yellow);}
+.msem-guidance li.bad::before{content:"✗ ";color:var(--red);}
+.msem-guidance li.good::before{content:"✓ ";color:var(--lime);}
+.msem-risk{font-size:12px;line-height:1.6;color:var(--sub);}
+.msem-risk-item{display:flex;align-items:flex-start;gap:6px;margin-bottom:5px;font-size:12px;}
+.msem-risk-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+/* Exposure meter — full width row */
+.msem-exposure{padding:14px 16px;}
+.msem-exp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.msem-exp-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);}
+.msem-exp-value{font-family:var(--disp);font-size:24px;font-weight:800;}
+.msem-exp-range{font-size:11px;color:var(--sub);margin-top:2px;}
+.msem-exp-track{position:relative;height:14px;border-radius:7px;background:var(--bg4);overflow:hidden;margin-bottom:6px;}
+.msem-exp-fill{height:100%;border-radius:7px;transition:width .6s cubic-bezier(.4,0,.2,1);}
+.msem-exp-zones{display:flex;justify-content:space-between;font-size:9px;color:var(--dim);margin-bottom:4px;}
+.msem-exp-note{font-size:11px;color:var(--sub);line-height:1.5;}
+@media(max-width:800px){.msem-grid{grid-template-columns:1fr;}.msem-section{border-right:none;border-bottom:1px solid var(--border);}}
+
 </style>
 </head>
 <body>
@@ -665,6 +695,53 @@ canvas#bsr-chart{width:100%;height:100%;}
   </div>
   <!-- FTD banner (full width, below analysis strip, hidden until active) -->
   <div id="as-ftd-banner" class="as-ftd-banner card" style="display:none;border-radius:0;margin-top:-1px;border-top:none"></div>
+
+
+  <!-- ── MARKET SUMMARY & EXPOSURE METER ──────────────────────── -->
+  <div class="card msem-card" id="msem-card">
+    <div class="card-head">
+      <div class="card-title">🧭 Market Summary &amp; Trading Guidance</div>
+      <div id="msem-updated" style="font-size:11px;color:var(--dim)"></div>
+    </div>
+    <div class="msem-grid">
+      <!-- Section 1: Market Summary -->
+      <div class="msem-section">
+        <div class="msem-label">📊 Market Summary</div>
+        <div class="msem-phase" id="msem-phase">—</div>
+        <div id="msem-summary" class="msem-summary">—</div>
+      </div>
+      <!-- Section 2: Trading Guidance -->
+      <div class="msem-section">
+        <div class="msem-label">🎯 Trading Guidance</div>
+        <ul class="msem-guidance" id="msem-guidance"></ul>
+      </div>
+      <!-- Section 3: Risk Advisory -->
+      <div class="msem-section">
+        <div class="msem-label">⚠ Risk Advisory</div>
+        <div id="msem-risk" class="msem-risk"></div>
+      </div>
+    </div>
+    <!-- Exposure Meter — full width -->
+    <div class="msem-exposure">
+      <div class="msem-exp-header">
+        <div>
+          <div class="msem-exp-title">📈 Recommended Market Exposure</div>
+          <div class="msem-exp-range" id="msem-exp-range">—</div>
+        </div>
+        <div style="text-align:right">
+          <div class="msem-exp-value" id="msem-exp-pct">—</div>
+          <div style="font-size:10px;color:var(--dim)" id="msem-exp-label">Calculating…</div>
+        </div>
+      </div>
+      <div class="msem-exp-zones">
+        <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+      </div>
+      <div class="msem-exp-track">
+        <div class="msem-exp-fill" id="msem-exp-fill" style="width:0%"></div>
+      </div>
+      <div class="msem-exp-note" id="msem-exp-note"></div>
+    </div>
+  </div>
 
   <!-- ── TWO COLUMN GRID ───────────────────────────────────── -->
   <div class="dash-grid">
@@ -2184,10 +2261,266 @@ function nhnlRender(data) {
   }).join('');
 }
 
+
+// ════════════════════════════════════════════════════
+//  MARKET SUMMARY & EXPOSURE METER
+// ════════════════════════════════════════════════════
+function renderMarketSummary() {
+  const el = id => document.getElementById(id);
+  if (!el('msem-phase')) return;
+
+  // ── Gather all inputs ─────────────────────────────
+  const records   = loadLocal();
+  const mpmDays   = mpmLoad().slice(0, 25);
+  const bsrTrades = bsrLoad();
+  const ftdDays   = ftdLoad();
+
+  if (!records.length) {
+    el('msem-phase').textContent    = '—';
+    el('msem-phase').style.color    = 'var(--dim)';
+    el('msem-summary').textContent  = 'Save your first EOD entry to generate market summary.';
+    el('msem-guidance').innerHTML   = '<li>No data yet</li>';
+    el('msem-risk').innerHTML       = '—';
+    el('msem-exp-pct').textContent  = '—';
+    el('msem-exp-range').textContent= '—';
+    el('msem-exp-note').textContent = 'Save EOD data to calculate exposure.';
+    el('msem-exp-fill').style.width = '0%';
+    return;
+  }
+
+  const r           = records[0];
+  const prev        = records[1] || {};
+  const score       = r.score || 0;
+  const momentum    = (r.score && prev.score) ? r.score - prev.score : null;
+
+  // MPM score
+  const mpmAcc  = mpmDays.filter(d => d.dtype === 'acc').length;
+  const mpmDist = mpmDays.filter(d => d.dtype === 'dist').length;
+  const mpmScore = mpmDays.length ? mpmAcc - mpmDist : null;
+
+  // Distribution days
+  const distCount = mpmDays.filter(d => d.dtype === 'dist').length;
+
+  // BSR
+  const bsrEvals = bsrTrades.map(t => bsrEval(t));
+  const bsrSucc  = bsrEvals.filter(x => x === 'success').length;
+  const bsrFail  = bsrEvals.filter(x => x === 'failed').length;
+  const bsrPct   = (bsrSucc + bsrFail) > 0 ? Math.round(bsrSucc / (bsrSucc + bsrFail) * 100) : null;
+
+  // FTD
+  const hasFTD     = ftdDays.some(d => d.type === 'followthrough');
+  const hasAttempt = ftdDays.some(d => d.type === 'attempt');
+
+  // ── Phase label + color (mirrors renderMarketCycle logic) ─────
+  let phase, phaseColor, phaseBg;
+  if (score < 30) {
+    phase = 'Correction'; phaseColor = 'var(--red)'; phaseBg = 'rgba(248,113,113,.1)';
+  } else if (score >= 30 && score < 40) {
+    phase = 'Early Recovery'; phaseColor = 'var(--orange)'; phaseBg = 'rgba(251,146,60,.1)';
+  } else if (score >= 40 && score < 50) {
+    phase = 'Recovery'; phaseColor = 'var(--yellow)'; phaseBg = 'rgba(251,191,36,.1)';
+  } else if (score >= 50 && score < 60) {
+    phase = 'Expansion'; phaseColor = 'var(--green)'; phaseBg = 'rgba(52,211,153,.1)';
+  } else {
+    phase = 'Healthy Bull'; phaseColor = 'var(--lime)'; phaseBg = 'rgba(74,222,128,.1)';
+  }
+
+  el('msem-phase').textContent = phase;
+  el('msem-phase').style.color = phaseColor;
+  if (el('msem-updated') && records.length) {
+    el('msem-updated').textContent = 'As of ' + fmtLong(r.date);
+  }
+
+  // ── MARKET SUMMARY (3–5 sentences, rule-based) ───────────────
+  const summaryParts = [];
+
+  // Sentence 1: Overall condition
+  if (score >= 55) {
+    summaryParts.push('Market breadth is healthy with strong participation across Nifty 500 stocks.');
+  } else if (score >= 45) {
+    summaryParts.push('Market breadth is expanding with improving participation across the index.');
+  } else if (score >= 35) {
+    summaryParts.push('Market breadth remains in caution territory — participation is mixed and uneven.');
+  } else if (score >= 20) {
+    summaryParts.push('Market breadth is weak, reflecting broad selling pressure across the index.');
+  } else {
+    summaryParts.push('Market breadth is in deep correction — widespread selling across Nifty 500.');
+  }
+
+  // Sentence 2: Momentum context
+  if (momentum !== null) {
+    if (momentum >= 10) summaryParts.push('Breadth momentum is strongly positive, suggesting a sharp improvement in participation.');
+    else if (momentum >= 3) summaryParts.push('Breadth momentum is improving gradually, a positive early sign.');
+    else if (momentum >= 0) summaryParts.push('Breadth momentum is flat — no meaningful deterioration but no recovery signal yet.');
+    else if (momentum >= -5) summaryParts.push('Breadth momentum is slipping, suggesting further near-term weakness.');
+    else summaryParts.push('Breadth momentum is declining sharply — avoid new entries.');
+  }
+
+  // Sentence 3: Institutional pressure
+  if (mpmScore !== null) {
+    if (mpmScore >= 4) summaryParts.push('Institutional accumulation is dominant — volume confirms buying interest.');
+    else if (mpmScore >= 1) summaryParts.push('Mild accumulation is present but not yet convincing enough to confirm a trend.');
+    else if (mpmScore === 0) summaryParts.push('Accumulation and distribution are balanced — institutions are neutral.');
+    else if (mpmScore >= -3) summaryParts.push('Distribution is slightly elevated — institutional selling pressure persists.');
+    else summaryParts.push('Heavy institutional distribution is active — smart money is selling into strength.');
+  }
+
+  // Sentence 4: FTD / confirmation status
+  if (hasFTD) {
+    summaryParts.push('A Follow-Through Day has been confirmed — breakout entries with pilot size are justified.');
+  } else if (hasAttempt) {
+    summaryParts.push('A rally attempt is underway but no Follow-Through Day confirmed yet — wait for Day 4+ confirmation before adding exposure.');
+  } else if (score < 35) {
+    summaryParts.push('No rally attempt logged — market is not yet showing signs of a recovery.');
+  }
+
+  el('msem-summary').textContent = summaryParts.join(' ');
+
+  // ── TRADING GUIDANCE ─────────────────────────────────────────
+  const guidance = [];
+  if (score < 30) {
+    guidance.push({ text: 'Avoid all new swing trade entries', cls: 'bad' });
+    guidance.push({ text: 'Focus entirely on capital preservation', cls: 'bad' });
+    guidance.push({ text: 'Close or tighten stops on existing positions', cls: 'warn' });
+    guidance.push({ text: 'Wait for score to recover above 35 before re-engaging', cls: '' });
+  } else if (score < 40) {
+    guidance.push({ text: 'Pilot entries only at 0.25R per position', cls: '' });
+    guidance.push({ text: 'Focus exclusively on highest RS-rated stocks', cls: 'good' });
+    guidance.push({ text: 'Maximum total portfolio exposure: 1–2 positions', cls: 'warn' });
+    guidance.push({ text: 'Do not chase extended breakouts', cls: 'bad' });
+    if (!hasFTD) guidance.push({ text: 'Wait for FTD confirmation before scaling up', cls: 'warn' });
+  } else if (score < 50) {
+    guidance.push({ text: 'Entries allowed at 0.5R–1R per position', cls: '' });
+    guidance.push({ text: 'Focus on early-stage base breakouts (Stage 2)', cls: 'good' });
+    guidance.push({ text: 'Keep total exposure at 2–3 positions maximum', cls: 'warn' });
+    guidance.push({ text: 'Use tighter-than-normal stop losses (5–7%)', cls: 'warn' });
+    if (hasFTD) guidance.push({ text: 'FTD confirmed — increase size gradually on follow-up', cls: 'good' });
+  } else if (score < 60) {
+    guidance.push({ text: 'Normal entries at 1R–2R per position', cls: 'good' });
+    guidance.push({ text: 'Breakouts from proper bases should be actioned', cls: 'good' });
+    guidance.push({ text: 'Gradually build exposure as positions prove themselves', cls: '' });
+    guidance.push({ text: 'Standard stop losses (7–8% from pivot)', cls: '' });
+  } else {
+    guidance.push({ text: 'Full position sizing allowed (2R–3R per trade)', cls: 'good' });
+    guidance.push({ text: 'Breakouts highly likely to succeed — act decisively', cls: 'good' });
+    guidance.push({ text: 'Can hold through normal pullbacks with confidence', cls: 'good' });
+    guidance.push({ text: 'Trail stops but allow room for leaders to run', cls: '' });
+  }
+  el('msem-guidance').innerHTML = guidance.map(g =>
+    `<li class="${g.cls}">${g.text}</li>`).join('');
+
+  // ── RISK ADVISORY ─────────────────────────────────────────────
+  const risks = [];
+
+  // Distribution days
+  if (distCount >= 6) {
+    risks.push({ color: 'var(--red)', text: `<strong>${distCount} distribution days</strong> in last 25 sessions — institutional selling pressure is elevated. Reduce aggressive exposure. Use tighter stop losses.` });
+  } else if (distCount >= 4) {
+    risks.push({ color: 'var(--orange)', text: `<strong>${distCount} distribution days</strong> in 25 sessions — elevated selling. Avoid adding new positions until this drops.` });
+  } else if (distCount <= 2 && mpmDays.length >= 10) {
+    risks.push({ color: 'var(--lime)', text: `Only <strong>${distCount} distribution days</strong> in 25 sessions — institutional pressure is low. Market conditions stabilising.` });
+  } else {
+    risks.push({ color: 'var(--sub)', text: `<strong>${distCount} distribution days</strong> in last 25 sessions — within normal range.` });
+  }
+
+  // MPM pressure
+  if (mpmScore !== null) {
+    if (mpmScore < 0) {
+      risks.push({ color: 'var(--orange)', text: `Market Pressure <strong>${mpmScore}</strong> — distribution is dominating accumulation. Market risk remains elevated. Do not fight the tape.` });
+    } else if (mpmScore >= 3) {
+      risks.push({ color: 'var(--lime)', text: `Market Pressure <strong>+${mpmScore}</strong> — accumulation is improving. Institutional participation increasing. Favourable backdrop.` });
+    } else {
+      risks.push({ color: 'var(--sub)', text: `Market Pressure <strong>+${mpmScore}</strong> — accumulation slightly ahead of distribution. Monitor for improvement.` });
+    }
+  } else {
+    risks.push({ color: 'var(--dim)', text: 'Add MPM entries to see institutional pressure analysis.' });
+  }
+
+  // BSR advisory
+  if (bsrPct !== null) {
+    if (bsrPct < 40) {
+      risks.push({ color: 'var(--red)', text: `BSR ${bsrPct}% — breakouts are <strong>failing more than succeeding</strong>. This is not a breakout market. Avoid chasing.` });
+    } else if (bsrPct >= 65) {
+      risks.push({ color: 'var(--lime)', text: `BSR ${bsrPct}% — breakouts are working well. Market environment supports momentum entries.` });
+    }
+  }
+
+  // FTD warning
+  if (!hasFTD && score >= 35) {
+    risks.push({ color: 'var(--yellow)', text: 'No Follow-Through Day confirmed. Per O\u2019Neil method, new uptrend is <strong>unconfirmed</strong>. Size accordingly.' });
+  }
+
+  el('msem-risk').innerHTML = risks.map(r =>
+    `<div class="msem-risk-item"><div class="msem-risk-dot" style="background:${r.color}"></div><div class="msem-risk" style="color:var(--text)">${r.text}</div></div>`
+  ).join('');
+
+  // ── EXPOSURE METER ────────────────────────────────────────────
+  // Composite: Score (50%) + Pressure bonus/penalty (25%) + Distribution penalty (25%)
+  let baseExposure = 0;
+
+  // Base from score
+  if (score < 30)       baseExposure = 5;
+  else if (score < 40)  baseExposure = 17;  // midpoint 10–25
+  else if (score < 50)  baseExposure = 37;  // midpoint 25–50
+  else if (score < 60)  baseExposure = 62;  // midpoint 50–75
+  else                  baseExposure = 87;  // midpoint 75–100
+
+  // Pressure adjustment (±8%)
+  if (mpmScore !== null) {
+    if (mpmScore >= 4)       baseExposure += 8;
+    else if (mpmScore >= 1)  baseExposure += 4;
+    else if (mpmScore < 0)   baseExposure -= 8;
+  }
+
+  // Distribution day penalty
+  if (distCount >= 6)      baseExposure -= 10;
+  else if (distCount >= 4) baseExposure -= 5;
+  else if (distCount <= 1) baseExposure += 5;
+
+  // FTD bonus
+  if (hasFTD)  baseExposure += 5;
+
+  // Clamp 0–100
+  const exposure = Math.min(100, Math.max(0, Math.round(baseExposure)));
+
+  // Exposure range label
+  let expRange, expNote, expColor;
+  if (exposure <= 10) {
+    expRange = '0 – 10%'; expNote = 'Capital preservation mode. No new swing trades.';
+    expColor = 'var(--red)';
+  } else if (exposure <= 25) {
+    expRange = '10 – 25%'; expNote = 'Pilot entries only (0.25R). Highest RS stocks only.';
+    expColor = 'var(--orange)';
+  } else if (exposure <= 50) {
+    expRange = '25 – 50%'; expNote = 'Selective entries at 0.5–1R. Confirm each position before adding.';
+    expColor = 'var(--yellow)';
+  } else if (exposure <= 75) {
+    expRange = '50 – 75%'; expNote = 'Normal position sizing. Breakouts should be actioned.';
+    expColor = 'var(--green)';
+  } else {
+    expRange = '75 – 100%'; expNote = 'Healthy bull market. Full position sizing. Let winners run.';
+    expColor = 'var(--lime)';
+  }
+
+  // ₹ amount at ₹5L capital
+  const capital = 500000;
+  const rupees  = Math.round(capital * exposure / 100 / 1000) * 1000;
+  const rupeesStr = '₹' + (rupees >= 100000 ? (rupees/100000).toFixed(1)+'L' : (rupees/1000).toFixed(0)+'K');
+
+  el('msem-exp-pct').textContent   = exposure + '%';
+  el('msem-exp-pct').style.color   = expColor;
+  el('msem-exp-range').textContent = 'Range: ' + expRange + '  ·  On ₹5L capital: ' + rupeesStr;
+  el('msem-exp-label').textContent = phase + ' zone';
+  el('msem-exp-note').textContent  = expNote;
+  el('msem-exp-fill').style.width  = exposure + '%';
+  el('msem-exp-fill').style.background = expColor;
+}
+
 function renderAll() {
   const data=loadLocal();
   renderHero(data);
   renderMarketCycle();
+  renderMarketSummary();
   ftdRender();
   ddcRender();
   nhnlRender(data);
