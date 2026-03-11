@@ -1106,6 +1106,7 @@ canvas#bsr-chart{width:100%;height:100%;}
             <b style="color:var(--red)">Dist:</b> Close&lt;Prev AND Vol&gt;Prev &nbsp;|&nbsp; Score = Acc−Dist (last 25d)
           </div>
           <div style="font-size:11px;opacity:0;transition:opacity .4s;margin-top:4px;min-height:16px" id="mpm-msg"></div>
+              <div id="mpm-sync-msg" style="font-size:11px;margin-top:6px;display:none;padding:6px 10px;border-radius:4px;background:rgba(45,212,191,.06);border:1px solid rgba(45,212,191,.15)"></div>
 
           <!-- NSE CSV Import -->
           <div class="mpm-import-panel">
@@ -1135,6 +1136,7 @@ canvas#bsr-chart{width:100%;height:100%;}
               <div class="mpm-preview-title" id="mpm-preview-title">Preview</div>
               <div class="mpm-preview-rows" id="mpm-preview-rows"></div>
               <button class="btn-mpm-import" id="btn-mpm-import" onclick="mpmImportConfirm()" disabled>Import All Days</button>
+              <button class="btn btn-sec" style="font-size:11px;padding:4px 10px;margin-left:4px;color:var(--teal);border-color:rgba(45,212,191,.3)" onclick="forcePushMpm()" title="Push MPM data to cloud now">☁ Push to Cloud</button>
             </div>
           </div>
         </div>
@@ -1331,7 +1333,12 @@ async function pullFromCloud(key, bin) {
 
 async function pushToCloud() {
   const cfg = getCfg();
-  if(!cfg.key||!cfg.bin) return;
+  if(!cfg.key||!cfg.bin) {
+    // Show warning in MPM area if it exists
+    const mpmMsg = document.getElementById('mpm-sync-msg');
+    if(mpmMsg) { mpmMsg.textContent='⚠ Cloud not configured — data saved locally only. Configure JSONBin above to persist across devices.'; mpmMsg.style.color='var(--orange)'; mpmMsg.style.display='block'; }
+    return;
+  }
   setSyncStatus('syncing','Saving…');
   try {
     await jbUpdate(cfg.key, cfg.bin, buildPayload());
@@ -3267,9 +3274,19 @@ function mpmImportConfirm() {
   const acc  = merged.filter(d => d.dtype === 'acc').length;
   const dist = merged.filter(d => d.dtype === 'dist').length;
   mpmFlash('Imported ' + merged.length + ' days — ' + acc + ' Acc, ' + dist + ' Dist days', 'var(--lime)');
-
   mpmRenderAll();
-  pushToCloud();
+  // Push to cloud and show status
+  const cfg2 = getCfg();
+  const syncMsgEl = document.getElementById('mpm-sync-msg');
+  if(!cfg2.key||!cfg2.bin) {
+    if(syncMsgEl){syncMsgEl.textContent='⚠ Data saved locally. Configure JSONBin in header to sync across devices.';syncMsgEl.style.color='var(--orange)';syncMsgEl.style.display='block';}
+  } else {
+    if(syncMsgEl){syncMsgEl.textContent='☁ Syncing to cloud…';syncMsgEl.style.color='var(--teal)';syncMsgEl.style.display='block';}
+    pushToCloud().then(()=>{
+      if(syncMsgEl){syncMsgEl.textContent='✓ Synced to cloud — data safe across all devices';syncMsgEl.style.color='var(--lime)';syncMsgEl.style.display='block';}
+      setTimeout(()=>{if(syncMsgEl)syncMsgEl.style.display='none';},8000);
+    });
+  }
 }
 
 function mpmAdd() {
@@ -3404,6 +3421,28 @@ function mpmExport() {
   const blob = new Blob([[hdr.join(','),...rows].join('\n')],{type:'text/csv'});
   const a = Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'mpm_'+todayISO()+'.csv'});
   a.click(); URL.revokeObjectURL(a.href);
+}
+
+
+async function forcePushMpm() {
+  const cfg = getCfg();
+  const msgEl = document.getElementById('mpm-sync-msg');
+  if(!cfg.key||!cfg.bin) {
+    if(msgEl){msgEl.textContent='⚠ Configure JSONBin credentials first (click "Cloud Sync" in the header)';msgEl.style.color='var(--orange)';msgEl.style.display='block';}
+    return;
+  }
+  if(msgEl){msgEl.textContent='☁ Pushing to cloud…';msgEl.style.color='var(--teal)';msgEl.style.display='block';}
+  setSyncStatus('syncing','Saving…');
+  try {
+    await jbUpdate(cfg.key, cfg.bin, buildPayload());
+    setSyncStatus('ok','Synced');
+    const n = mpmLoad().length;
+    if(msgEl){msgEl.textContent='✓ '+n+' MPM days pushed to cloud — safe across all devices';msgEl.style.color='var(--lime)';}
+    setTimeout(()=>{if(msgEl)msgEl.style.display='none';},6000);
+  } catch(e) {
+    setSyncStatus('err','Error');
+    if(msgEl){msgEl.textContent='✗ Push failed: '+e.message;msgEl.style.color='var(--red)';}
+  }
 }
 
 function mpmRenderAll() {
