@@ -1453,23 +1453,32 @@ body.guest-mode #mpm-module-card { display:none !important; }
 // ════════════════════════════════════════════════════
 //  CONFIG & STORAGE
 // ════════════════════════════════════════════════════
+// ── Storage abstraction — works in localStorage sandbox (preview) and real browsers
+const _mem = {};
+const _lsOk = (() => { try { localStorage.setItem('__t','1'); localStorage.removeItem('__t'); return true; } catch(e) { return false; } })();
+const lsGet = k     => { if(_lsOk) return localStorage.getItem(k); return _mem[k]||null; };
+const lsSet = (k,v) => { if(_lsOk) localStorage.setItem(k,v); else _mem[k]=v; };
+const lsDel = k     => { if(_lsOk) localStorage.removeItem(k); else delete _mem[k]; };
+
 const LS_DATA = 'nse_breadth_v3';
 const LS_KEY  = 'nse_jb_key';
 const LS_BIN  = 'nse_jb_bin';
 
-const loadLocal = () => { try { return JSON.parse(localStorage.getItem(LS_DATA)) || []; } catch(e) { return []; } };
-const saveLocal = d => localStorage.setItem(LS_DATA, JSON.stringify(d.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30)));
+const loadLocal = () => { try { return JSON.parse(lsGet(LS_DATA)) || []; } catch(e) { return []; } };
+const saveLocal = d => lsSet(LS_DATA, JSON.stringify(d.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30)));
 
 // BSR + MPM storage constants — defined early so renderAll() can access them
 const LS_BSR  = 'nse_bsr_v1';
-const bsrLoad = () => { try { return JSON.parse(localStorage.getItem(LS_BSR)) || []; } catch(e) { return []; } };
-const bsrSave = d => localStorage.setItem(LS_BSR, JSON.stringify(d));
+const bsrLoad = () => { try { return JSON.parse(lsGet(LS_BSR)) || []; } catch(e) { return []; } };
+const bsrSave = d => lsSet(LS_BSR, JSON.stringify(d));
 
 const LS_MPM  = 'nse_mpm_v1';
-const mpmLoad = () => { try { return JSON.parse(localStorage.getItem(LS_MPM)) || []; } catch(e) { return []; } };
-const mpmSave = d => localStorage.setItem(LS_MPM, JSON.stringify(d.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,60)));
-const getCfg    = () => ({ key: localStorage.getItem(LS_KEY)||'', bin: localStorage.getItem(LS_BIN)||'' });
-const saveCfg   = (k,b) => { localStorage.setItem(LS_KEY,k); localStorage.setItem(LS_BIN,b); };
+const LS_GUEST_BIN = 'nse_guest_bin';
+function isGuestMode() { return !!lsGet(LS_GUEST_BIN); }
+const mpmLoad = () => { try { return JSON.parse(lsGet(LS_MPM)) || []; } catch(e) { return []; } };
+const mpmSave = d => lsSet(LS_MPM, JSON.stringify(d.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,60)));
+const getCfg    = () => ({ key: lsGet(LS_KEY)||'', bin: lsGet(LS_BIN)||'' });
+const saveCfg   = (k,b) => { lsSet(LS_KEY,k); lsSet(LS_BIN,b); };
 
 // ════════════════════════════════════════════════════
 //  JSONBIN CLOUD API
@@ -1665,7 +1674,7 @@ async function forcePush() {
 
 function clearCredentials() {
   if(!confirm('Remove cloud credentials from this device?')) return;
-  localStorage.removeItem(LS_KEY); localStorage.removeItem(LS_BIN);
+  lsDel(LS_KEY); lsDel(LS_BIN);
   document.getElementById('cfg-key').value=''; document.getElementById('cfg-bin').value='';
   setSyncStatus('','Cloud Sync');
   setupFlash('Credentials cleared from this device', 'var(--yellow)');
@@ -2354,8 +2363,8 @@ function renderAnalysisNHNL(data) {
 //  FOLLOW-THROUGH DAY DETECTOR
 // ════════════════════════════════════════════════════
 const LS_FTD = 'ftd_data';
-function ftdLoad() { try { return JSON.parse(localStorage.getItem(LS_FTD)||'[]'); } catch(e){ return []; } }
-function ftdSaveData(d) { localStorage.setItem(LS_FTD, JSON.stringify(d)); }
+function ftdLoad() { try { return JSON.parse(lsGet(LS_FTD)||'[]'); } catch(e){ return []; } }
+function ftdSaveData(d) { lsSet(LS_FTD, JSON.stringify(d)); }
 
 let _ftdAddOpen = false;
 function ftdToggleAdd() {
@@ -2590,8 +2599,10 @@ function nhnlRender(data) {
 //  MARKET SUMMARY & EXPOSURE METER
 // ════════════════════════════════════════════════════
 function renderMarketSummary() {
-  const el = id => document.getElementById(id);
-  if (!el('msem-phase')) return;
+  // null-safe element accessor — returns a no-op dummy if element doesn't exist
+  const _dummy = { textContent:'', innerHTML:'', style:{} };
+  const el = id => document.getElementById(id) || _dummy;
+  if (!document.getElementById('msem-phase')) return;
 
   // ── Gather all inputs ─────────────────────────────
   const records   = loadLocal();
@@ -2831,10 +2842,10 @@ function renderMarketSummary() {
   const rupees  = Math.round(capital * exposure / 100 / 1000) * 1000;
   const rupeesStr = '₹' + (rupees >= 100000 ? (rupees/100000).toFixed(1)+'L' : (rupees/1000).toFixed(0)+'K');
 
+  // msem-exp-* elements are optional (exposure meter lives in analysis strip)
   el('msem-exp-pct').textContent   = exposure + '%';
   el('msem-exp-pct').style.color   = expColor;
   el('msem-exp-range').textContent = 'Range: ' + expRange + '  ·  On ₹5L capital: ' + rupeesStr;
-  el('msem-exp-label').textContent = phase + ' zone';
   el('msem-exp-note').textContent  = expNote;
   el('msem-exp-fill').style.width  = exposure + '%';
   el('msem-exp-fill').style.background = expColor;
@@ -2846,6 +2857,8 @@ function renderMarketSummary() {
 // ════════════════════════════════════════════════════
 function renderRPG() {
   // Primary arc is now in status strip (ss-rpg-*)
+  // null-safe helper for optional elements
+  const _safeEl = id => document.getElementById(id) || { textContent:'', innerHTML:'', style:{} };
   const arcEl    = document.getElementById('ss-rpg-arc');
   const pctEl    = document.getElementById('ss-rpg-pct');
   const sigEl    = document.getElementById('ss-rpg-signal');
@@ -2983,14 +2996,13 @@ function renderRPG() {
   if(pctEl){ pctEl.textContent = pct + '%'; pctEl.style.fill = color; }
   if(sigEl){ sigEl.textContent = signal; sigEl.style.color = color; }
   // Breakdown: show top scoring components in the bk line
+  // ── Breakdown rows ────────────────────────────────
+  const visible = components.filter(c => c.max > 0);
   if(brkEl) {
     const top3 = visible.slice(0,3).map(c=>`${c.lbl.split(' ')[0]} ${c.pts}/${c.max}`).join(' · ');
     brkEl.textContent = top3 + (ftdBonus ? ' · FTD +10' : '');
   }
-
-  // ── Breakdown rows ────────────────────────────────
-  const visible = components.filter(c => c.max > 0);
-  brkEl.innerHTML = visible.map(c => {
+  if(brkEl) brkEl.innerHTML = visible.map(c => {
     const barW  = c.max > 0 ? Math.round(c.pts / c.max * 100) : 0;
     const clr   = c.earned ? color : 'var(--dim)';
     return `<div class="rpg-row">
@@ -3034,8 +3046,9 @@ function renderAll() {
 //  Seeded once. Will not overwrite existing entries.
 // ════════════════════════════════════════════════════
 function seedHistoricalData() {
-  const SEED_KEY = 'nse_seed_v2';
-  if (localStorage.getItem(SEED_KEY)) return; // already seeded
+  // Seed only when there is genuinely no data — no flag needed
+  // This handles fresh installs, cleared localStorage, and new devices
+  if (loadLocal().length > 0) return; // already have data, skip
 
   // Source: ET Stock Market Mood — Overview (SMA%) + Advance/Decline tabs
   // SMA20 used as proxy for EMA20 | SMA50 = SMA50 | SMA200 = SMA200
@@ -3072,7 +3085,6 @@ function seedHistoricalData() {
     {date:'2026-02-01',adv:313,dec:187,unc:0,  hi:0,lo:0,e20:17,s50:19,s200:27,nifty:22611.30,notes:'ET seed'},
     {date:'2026-01-30',adv:120,dec:380,unc:0,  hi:0,lo:0,e20:30,s50:29,s200:32,nifty:23079.50,notes:'ET seed'},
     {date:'2026-01-29',adv:328,dec:172,unc:0,  hi:0,lo:0,e20:21,s50:23,s200:31,nifty:23134.80,notes:'ET seed'},
-    {date:'2026-01-28',adv:189,dec:311,unc:0,  hi:0,lo:0,e20:22,s50:23,s200:30,nifty:23082.10,notes:'ET seed'},
   ];
 
   // Calculate scores and zones, then merge with any existing local data
@@ -3091,7 +3103,7 @@ function seedHistoricalData() {
   if (toAdd.length > 0) {
     saveLocal([...existing, ...toAdd]);
   }
-  localStorage.setItem(SEED_KEY, '1');
+  // (no flag needed — presence of data is the guard)
 }
 
 (async function init() {
@@ -3108,7 +3120,7 @@ function seedHistoricalData() {
     '| mpm:', mpmLoad().length,
     '| bsr:', bsrLoad().length,
     '| cloud:', (_cfg.key && _cfg.bin) ? 'configured' : 'not configured',
-    '| guest:', isGuestMode() ? localStorage.getItem(LS_GUEST_BIN) : 'no'
+    '| guest:', isGuestMode() ? lsGet(LS_GUEST_BIN) : 'no'
   );
 
   // ── Seed historical data on first load ──────────────────
@@ -3791,7 +3803,7 @@ async function mpmImportConfirm() {
   const merged = Object.values(byDate).sort((a,b) => b.date.localeCompare(a.date)).slice(0, 25);
   mpmSave(merged);
   console.log('[mpmImport] Saved', merged.length, 'days to localStorage');
-  console.log('[mpmImport] LS_MPM size after save:', (localStorage.getItem('nse_mpm_v1')||'').length, 'bytes');
+  console.log('[mpmImport] LS_MPM size after save:', (lsGet('nse_mpm_v1')||'').length, 'bytes');
   console.log('[mpmImport] buildPayload mpm count:', buildPayload().mpm.length);
 
   // Reset UI
@@ -4237,7 +4249,7 @@ function openCfgModal() {
   const setupView   = document.getElementById('cfg-setup-view');
 
   // Pre-fill guest bin field if in guest mode
-  const guestBin = localStorage.getItem(LS_GUEST_BIN);
+  const guestBin = lsGet(LS_GUEST_BIN);
   if (guestBin) {
     const el = document.getElementById('cfg-guest-bin');
     if (el) el.value = guestBin;
@@ -4423,9 +4435,6 @@ function showSetup() { openCfgModal(); }
 // ═══════════════════════════════════════════════════════════════════
 // GUEST / VIEW-ONLY MODE
 // ═══════════════════════════════════════════════════════════════════
-const LS_GUEST_BIN = 'nse_guest_bin';
-
-function isGuestMode() { return !!localStorage.getItem(LS_GUEST_BIN); }
 
 function applyGuestMode() {
   document.body.classList.add('guest-mode');
@@ -4467,7 +4476,7 @@ async function cfgConnectGuest() {
     ftdSaveData(ftd.sort((a,b)=>b.date.localeCompare(a.date)));
 
     // Persist guest bin
-    localStorage.setItem(LS_GUEST_BIN, bin);
+    lsSet(LS_GUEST_BIN, bin);
 
     cfgBanner(`✅ Connected! ${recs.length} records · ${bsr.length} BSR · ${mpm.length} MPM loaded.`, 'ok', 'cfg-guest-msg');
 
@@ -4500,7 +4509,7 @@ async function jbReadPublic(bin) {
 
 function cfgExitGuest() {
   if (!confirm('Exit Guest Mode?\n\nThis will clear the guest data from this browser. You can reconnect anytime with the Bin ID.')) return;
-  localStorage.removeItem(LS_GUEST_BIN);
+  lsDel(LS_GUEST_BIN);
   document.body.classList.remove('guest-mode');
   window._guestMode = false;
   if (window._origPushToCloud) window.pushToCloud = window._origPushToCloud;
@@ -4517,7 +4526,7 @@ function cfgExitGuest() {
 
 // Check guest mode on page load (called from init)
 function initGuestMode() {
-  const guestBin = localStorage.getItem(LS_GUEST_BIN);
+  const guestBin = lsGet(LS_GUEST_BIN);
   if (!guestBin) return false;
 
   // Re-apply guest mode styling immediately (data already in localStorage)
