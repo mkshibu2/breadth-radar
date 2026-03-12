@@ -173,7 +173,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
 
 /* ── CARD ────────────────────────────────────────────────── */
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
-.card-head{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:var(--bg3);border-bottom:1px solid var(--border);}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:var(--bg3);border-bottom:1px solid var(--border);position:relative;}
 .card-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--sub);}
 .card-title span{color:var(--accent);}
 .card-action{font-size:10px;color:var(--sub);cursor:pointer;border:none;background:none;padding:0;}
@@ -524,6 +524,61 @@ canvas#bsr-chart{width:100%;height:100%;}
 .rpg-row-lbl{color:var(--dim);}
 .rpg-row-pts{font-weight:700;font-family:var(--mono);}
 
+
+/* ── INFO BUTTON & TOOLTIP ─────────────────────────────────────────── */
+.info-btn{
+  position:absolute;bottom:5px;right:6px;
+  width:16px;height:16px;border-radius:50%;
+  background:transparent;border:1px solid var(--dim);
+  color:var(--dim);font-size:9px;font-weight:700;font-family:var(--body);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  line-height:1;padding:0;opacity:.45;transition:opacity .2s,border-color .2s,color .2s;
+  z-index:10;user-select:none;
+}
+.info-btn:hover{opacity:1;border-color:var(--accent);color:var(--accent);}
+/* strip cells need relative so btn anchors correctly */
+.ss-cell,.ss-rpg,.ss-meter,.as-cell{position:relative;}
+
+/* Tooltip overlay */
+#info-tooltip{
+  display:none;position:fixed;z-index:9999;
+  width:320px;max-width:calc(100vw - 24px);
+  background:var(--bg3);border:1px solid var(--bdr2);
+  border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.6);
+  overflow:hidden;
+  animation:tipIn .15s cubic-bezier(.2,0,.2,1);
+}
+@keyframes tipIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+#info-tooltip .tip-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px 8px;border-bottom:1px solid var(--border);
+  background:var(--bg4);
+}
+#info-tooltip .tip-title{
+  font-family:var(--disp);font-size:15px;font-weight:800;
+  letter-spacing:.3px;color:var(--text);
+}
+#info-tooltip .tip-close{
+  background:none;border:none;color:var(--dim);font-size:16px;
+  cursor:pointer;padding:0 2px;line-height:1;transition:color .15s;
+}
+#info-tooltip .tip-close:hover{color:var(--text);}
+#info-tooltip .tip-body{padding:12px 14px;display:flex;flex-direction:column;gap:10px;}
+#info-tooltip .tip-section{}
+#info-tooltip .tip-sec-lbl{
+  font-family:var(--mono);font-size:9px;font-weight:500;
+  letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--accent);margin-bottom:4px;
+}
+#info-tooltip .tip-sec-txt{
+  font-size:12px;color:var(--sub);line-height:1.6;
+}
+#info-tooltip .tip-sec-txt b{color:var(--text);font-weight:500;}
+#info-tooltip .tip-divider{height:1px;background:var(--border);margin:0 -14px;}
+
+/* info-btn inside card-head — inline not absolute */
+.card-head .info-btn{position:static;opacity:.35;margin-left:4px;flex-shrink:0;}
+.card-head .info-btn:hover{opacity:1;}
 </style>
 </head>
 <body>
@@ -599,6 +654,7 @@ canvas#bsr-chart{width:100%;height:100%;}
       <div class="ss-lbl">Breadth Score</div>
       <div class="ss-big" id="h-score" style="color:var(--dim)">—</div>
       <div class="ss-sub">out of 100</div>
+      <button class="info-btn" onclick="showInfoTip('breadth-score',this)" title="About this indicator">i</button>
     </div>
 
     <!-- 2: Market Zone -->
@@ -606,6 +662,7 @@ canvas#bsr-chart{width:100%;height:100%;}
       <div class="ss-lbl">Market Zone</div>
       <div class="ss-zone" id="h-zone" style="color:var(--dim)">No Data</div>
       <div class="ss-r">Position: <b id="h-r" style="color:var(--dim)">—</b></div>
+      <button class="info-btn" onclick="showInfoTip('market-zone',this)" title="About this indicator">i</button>
     </div>
 
     <!-- 3: Zone Meter -->
@@ -627,6 +684,7 @@ canvas#bsr-chart{width:100%;height:100%;}
         <span>100</span>
       </div>
       <div class="score-bk" id="score-bk"></div>
+      <button class="info-btn" onclick="showInfoTip('zone-meter',this)" title="About this indicator">i</button>
     </div>
 
     <!-- 4: Last Saved -->
@@ -643,6 +701,7 @@ canvas#bsr-chart{width:100%;height:100%;}
       <div class="ss-score" id="hero-bsr-pct" style="color:var(--dim)">—</div>
       <div class="ss-cond" id="hero-bsr-zone" style="color:var(--dim)">—</div>
       <div class="ss-mini" id="hero-bsr-counts">0 trades</div>
+      <button class="info-btn" onclick="showInfoTip('bsr-rate',this)" title="About this indicator">i</button>
     </div>
 
     <!-- 6: Market Pressure -->
@@ -651,6 +710,7 @@ canvas#bsr-chart{width:100%;height:100%;}
       <div class="ss-score" id="hero-mpm-score" style="color:var(--dim)">—</div>
       <div class="ss-cond" id="hero-mpm-cond" style="color:var(--dim)">—</div>
       <div class="ss-mini" id="hero-mpm-counts">A:0 D:0</div>
+      <button class="info-btn" onclick="showInfoTip('market-pressure',this)" title="About this indicator">i</button>
     </div>
 
     <!-- 7: Breadth Momentum -->
@@ -658,6 +718,7 @@ canvas#bsr-chart{width:100%;height:100%;}
       <div class="ss-lbl" style="color:var(--yellow)">Breadth Momentum</div>
       <div class="ss-momentum" id="h-momentum" style="color:var(--dim)">—</div>
       <div class="ss-cond" id="h-momentum-label" style="color:var(--dim)">vs yesterday</div>
+      <button class="info-btn" onclick="showInfoTip('breadth-momentum',this)" title="About this indicator">i</button>
     </div>
 
     <!-- 8: Breadth Thrust -->
@@ -665,6 +726,7 @@ canvas#bsr-chart{width:100%;height:100%;}
       <div class="ss-lbl" style="color:var(--orange)">Breadth Thrust</div>
       <div class="ss-thrust-val" id="h-thrust" style="color:var(--dim)">—</div>
       <div class="ss-thrust-sig" id="h-thrust-signal" style="color:var(--dim)">3-day change</div>
+      <button class="info-btn" onclick="showInfoTip('breadth-thrust',this)" title="About this indicator">i</button>
     </div>
 
     <!-- 9: Rally Probability Gauge (compact) -->
@@ -686,6 +748,7 @@ canvas#bsr-chart{width:100%;height:100%;}
       </div>
       <div class="ss-rpg-signal" id="ss-rpg-signal" style="color:var(--dim)">No Data</div>
       <div class="ss-rpg-bk" id="ss-rpg-bk"></div>
+      <button class="info-btn" onclick="showInfoTip('rally-prob',this)" title="About this indicator">i</button>
     </div>
 
   </div>
@@ -699,6 +762,7 @@ canvas#bsr-chart{width:100%;height:100%;}
       <div class="as-phase" id="as-phase" style="color:var(--dim)">—</div>
       <div class="as-desc" id="as-desc">Waiting for data</div>
       <div class="as-pills" id="as-pills"></div>
+      <button class="info-btn" onclick="showInfoTip('market-cycle',this)" title="About this indicator">i</button>
     </div>
 
     <!-- A2: FTD Status -->
@@ -707,6 +771,7 @@ canvas#bsr-chart{width:100%;height:100%;}
       <div class="as-phase" id="as-ftd-status" style="color:var(--dim)">—</div>
       <div class="as-desc" id="as-ftd-sub">Log a rally attempt to begin tracking</div>
       <div class="as-pills" id="as-ftd-pills"></div>
+      <button class="info-btn" onclick="showInfoTip('ftd',this)" title="About this indicator">i</button>
     </div>
 
     <!-- A3: Distribution Days -->
@@ -718,6 +783,7 @@ canvas#bsr-chart{width:100%;height:100%;}
       </div>
       <div class="as-sig" id="as-dist-status" style="color:var(--dim)">—</div>
       <div class="as-desc" id="as-dist-hint">Auto from MPM data</div>
+      <button class="info-btn" onclick="showInfoTip('dist-days',this)" title="About this indicator">i</button>
     </div>
 
     <!-- A4: H/L Ratio Trend -->
@@ -729,6 +795,7 @@ canvas#bsr-chart{width:100%;height:100%;}
       </div>
       <div class="as-sig" id="as-hl-sig" style="color:var(--dim)">—</div>
       <div class="as-desc" id="as-hl-desc">5d avg: <b id="as-hl-5d">—</b> · 10d avg: <b id="as-hl-10d">—</b></div>
+      <button class="info-btn" onclick="showInfoTip('hl-ratio',this)" title="About this indicator">i</button>
     </div>
 
     <!-- A5: Recommended Exposure (compact) -->
@@ -746,6 +813,7 @@ canvas#bsr-chart{width:100%;height:100%;}
       </div>
       <div style="font-size:11px;color:var(--sub)" id="as-exp-range">—</div>
       <div style="font-size:10px;color:var(--dim);margin-top:3px" id="as-exp-note"></div>
+      <button class="info-btn" onclick="showInfoTip('exposure',this)" title="About this indicator">i</button>
     </div>
 
   </div>
@@ -757,7 +825,7 @@ canvas#bsr-chart{width:100%;height:100%;}
   <div class="card msem-card" id="msem-card">
     <div class="card-head">
       <div class="card-title">🧭 Market Summary &amp; Trading Guidance</div>
-      <div id="msem-updated" style="font-size:11px;color:var(--dim)"></div>
+      <div style="display:flex;align-items:center;gap:8px"><div id="msem-updated" style="font-size:11px;color:var(--dim)"></div><button class="info-btn" onclick="showInfoTip('market-summary',this)" title="About this indicator">i</button></div>
     </div>
     <div class="msem-grid">
       <!-- Section 1: Market Summary -->
@@ -901,7 +969,7 @@ canvas#bsr-chart{width:100%;height:100%;}
 
       <!-- Score Chart -->
       <div class="card">
-        <div class="card-head"><div class="card-title">30-Day Score Trend</div></div>
+        <div class="card-head"><div class="card-title">30-Day Score Trend</div><button class="info-btn" onclick="showInfoTip('score-trend',this)" title="About this indicator">i</button></div>
         <div class="card-body" style="padding-bottom:8px">
           <div class="chart-canvas-wrap"><canvas id="score-chart"></canvas></div>
           <div class="chart-legend">
@@ -1040,6 +1108,7 @@ canvas#bsr-chart{width:100%;height:100%;}
         <!-- BSR Table -->
         <div class="card-head" style="border-top:1px solid var(--border)">
           <div class="card-title">Trade Log</div>
+          <button class="info-btn" onclick="showInfoTip('bsr-tracker',this)" title="About this indicator">i</button>
           <button class="card-action btn-export" onclick="bsrExport()" style="border-color:rgba(167,139,250,.28);color:var(--purple)">&#8595; Export CSV</button>
         </div>
         <div class="bsr-table-wrap">
@@ -1180,6 +1249,7 @@ canvas#bsr-chart{width:100%;height:100%;}
         <!-- MPM Table -->
         <div class="card-head" style="border-top:1px solid var(--border)">
           <div class="card-title">Pressure Day Log — Last 25d</div>
+          <button class="info-btn" onclick="showInfoTip('mpm-tracker',this)" title="About this indicator">i</button>
           <button class="card-action btn-export" onclick="mpmExport()" style="border-color:rgba(45,212,191,.28);color:var(--teal)">&#8595; Export CSV</button>
         </div>
         <div class="mpm-table-wrap">
@@ -3794,6 +3864,166 @@ function showPastMsg(msg,color) {
   if(el){el.textContent=msg;el.style.color=color;}
 }
 
+
+// ═══════════════════════════════════════════════════════════════════
+// ⓘ INFO SYSTEM — data + engine
+// ═══════════════════════════════════════════════════════════════════
+const INFO = {
+  'breadth-score': {
+    title: 'Breadth Score',
+    what: 'A 0–100 composite score measuring how broadly the NSE Nifty 500 market is participating in any move. High score = wide participation = healthy market.',
+    how: '<b>Advance/Decline Ratio</b> (35%) + <b>% stocks above EMA20</b> (20%) + <b>% above SMA50</b> (15%) + <b>% above SMA200</b> (15%) + <b>52W H/L Ratio</b> (15%). Weighted average of all five, scaled 0–100.',
+    use: 'Above <b>55</b> = Healthy Bull — full position sizing. <b>45–55</b> = Expansion. <b>35–45</b> = Recovery — pilot entries only. Below <b>35</b> = Danger — stand aside. This is your primary market posture signal.'
+  },
+  'market-zone': {
+    title: 'Market Zone & Position Size',
+    what: 'Translates the Breadth Score into a named market phase and recommended position size in R (risk units), making it instantly actionable.',
+    how: 'Score &lt; 30 → <b>Correction</b> (0R). 30–45 → <b>Recovery</b> (0.25–0.5R). 45–55 → <b>Expansion</b> (1–2R). &gt;55 → <b>Healthy Bull</b> (2–3R). The R size is a guideline based on O\'Neil / Minervini methodology.',
+    use: 'Check this first every session. It sets your trade sizing ceiling immediately — don\'t take a 2R trade when the zone says Recovery.'
+  },
+  'zone-meter': {
+    title: 'Zone Meter (Score Bar)',
+    what: 'A visual progress bar showing where the current Breadth Score sits across the full 0–100 spectrum, with colour-coded zone bands.',
+    how: 'Five zones: <b style="color:var(--red)">CRASH</b> 0–20, <b style="color:var(--orange)">DEF</b> 20–35, <b style="color:var(--yellow)">CAUTION</b> 35–45, <b style="color:var(--green)">EXP</b> 45–55, <b style="color:var(--lime)">HEALTHY</b> 55–100. Fill width = Score/100. Colour transitions from red → lime.',
+    use: 'Quick visual confirmation of zone. The score number tells you <i>where</i>; the bar shows you <i>how far into that zone</i> you are — e.g. a score of 52 is near the top of Expansion, close to Healthy.'
+  },
+  'bsr-rate': {
+    title: 'BSR — Breakout Success Rate',
+    what: 'The percentage of your logged breakout trades that succeeded — defined as gaining <b>5% or more</b> from the pivot buy point within the trade window.',
+    how: 'From your BSR Trade Log: <b>BSR% = Successful trades ÷ Total trades × 100</b>. A trade is marked success when you log a gain ≥ 5%. The rate is recalculated live as you log trades.',
+    use: 'Above <b>65%</b> — market is rewarding breakouts, act confidently. <b>40–65%</b> — mixed, be selective. Below <b>40%</b> — breakouts are failing, avoid new entries even if the score is decent. This is your real-world feedback loop.'
+  },
+  'market-pressure': {
+    title: 'Market Pressure (MPM)',
+    what: 'Net institutional buying pressure over the last 25 sessions. Positive = institutions accumulating. Negative = distribution dominating.',
+    how: '<b>Pressure = Accumulation Days − Distribution Days</b> (rolling 25-day window). An Accumulation Day = Nifty closes higher on above-average volume. A Distribution Day = closes lower on above-average volume. You log each in the Pressure Day Log.',
+    use: '<b>+4 or above</b> — strong institutional backing, high confidence. <b>+1 to +3</b> — mild positive. <b>0 to −2</b> — caution. <b>Below −3</b> — institutional selling dominating, reduce exposure sharply. Always read alongside Breadth Score.'
+  },
+  'breadth-momentum': {
+    title: 'Breadth Momentum',
+    what: 'The day-over-day <i>change</i> in Breadth Score. Tells you whether market participation is improving or deteriorating right now.',
+    how: '<b>Momentum = Today\'s Score − Yesterday\'s Score</b>. A jump of +10 in a single day is a strong breadth expansion signal. Negative momentum means participation is narrowing even if the absolute score is still decent.',
+    use: 'Positive and rising → confirm your entries. Flat → neutral, wait for direction. Negative two days in a row → tighten stops and reduce new exposure. Watch for momentum divergence — score still high but momentum turning negative is an early warning.'
+  },
+  'breadth-thrust': {
+    title: 'Breadth Thrust',
+    what: 'The 3-day cumulative change in Breadth Score. A momentum acceleration signal that detects rapid, broad market expansion.',
+    how: '<b>Thrust = Today\'s Score − Score 3 days ago</b>. Above <b>+10</b> in 3 days = strong thrust, historically associated with the early stages of sustained rallies. Negative thrust = rapid deterioration.',
+    use: 'A Thrust &gt; +10 alongside a rising score is one of the strongest "all-clear" signals in the dashboard. Combine with FTD confirmation for highest conviction. Thrust &lt; −10 = potential distribution phase beginning — reduce exposure.'
+  },
+  'rally-prob': {
+    title: 'Rally Probability Gauge',
+    what: 'A 0–100% composite probability score estimating how likely the current market environment is to sustain a rally. Combines 6 indicators into one reading.',
+    how: '<b>Breadth Score</b> (20pts) + <b>Momentum</b> (15pts) + <b>Thrust</b> (15pts) + <b>BSR</b> (20pts) + <b>Distribution Days</b> (15pts) + <b>Pressure</b> (15pts) + <b>FTD bonus</b> (+10pts). If no BSR trades logged, 20pts redistributed across other 5 indicators and scaled to 100.',
+    use: '<b>85–100%</b> Very High — full sizing. <b>70–84%</b> High — normal entries. <b>50–69%</b> Moderate — selective pilot only. <b>30–49%</b> Low — wait. Below <b>30%</b> — stand aside entirely. This is your single best "go / no-go" signal.'
+  },
+  'market-cycle': {
+    title: 'Market Cycle Engine',
+    what: 'Classifies the current market into one of four phases — Correction, Recovery, Expansion, or Healthy Bull — using a multi-signal rule engine.',
+    how: 'Uses Breadth Score, Momentum direction, Distribution Day count, MPM Pressure, and H/L Ratio together. Each combination of signals maps to a phase. Signal pills below the phase label show <i>which specific conditions</i> triggered the classification.',
+    use: 'Phase drives your strategy framework: position sizes, stop widths, sector rotation decisions. <b>Correction</b> = 0R cash. <b>Recovery</b> = pilot entries. <b>Expansion</b> = normal sizing. <b>Healthy Bull</b> = maximum exposure. Review daily before making any trade decision.'
+  },
+  'ftd': {
+    title: 'Follow-Through Day (FTD)',
+    what: 'Per William O\'Neil: the <i>single most reliable confirmation</i> that a new market uptrend has begun. No FTD = no confirmed rally, regardless of price action.',
+    how: 'You log a Rally Attempt (Day 1 = first day market closes up after a decline). Then log each subsequent day. An FTD is confirmed when on <b>Day 4 or later</b> the index closes up <b>1.7%+</b> on <b>above-average volume</b>. The tracker counts days and flags confirmation automatically.',
+    use: 'Before FTD: reduce exposure, only pilot entries. After FTD: full position sizing justified. A confirmed FTD adds +10 pts to the Rally Probability Gauge. FTD failure (market falls below rally low) resets the count — start over.'
+  },
+  'dist-days': {
+    title: 'Distribution Days',
+    what: 'A count of days where the Nifty 50 closed <i>lower</i> on <i>higher-than-average volume</i> in the last 25 sessions — the footprint of institutional selling.',
+    how: 'Auto-counted from your Pressure Day Log. Any entry marked as a Distribution Day within the rolling 25-session window is counted. Distribution days more than 25 sessions old are automatically dropped from the count.',
+    use: '<b>0–3</b> — healthy, institutions not distributing. <b>4–5</b> — caution, selling pressure building. <b>6+</b> — elevated institutional selling, reduce all exposure immediately, tighten stops. O\'Neil: 6+ distribution days in 25 sessions is a reliable market top signal.'
+  },
+  'hl-ratio': {
+    title: 'H/L Ratio Trend (52-Week)',
+    what: 'The ratio of stocks making new 52-week highs vs new 52-week lows across the Nifty 500. Measures the underlying health and breadth of leadership.',
+    how: '<b>H/L Ratio = New 52W Highs ÷ (New 52W Highs + New 52W Lows) × 100</b>. You enter the raw H and L counts in the EOD entry. The dashboard shows today\'s ratio, the 5-day average, and the 10-day average for trend context.',
+    use: '<b>Above 50%</b> — more stocks making highs than lows = healthy leadership breadth. <b>25–50%</b> — mixed. <b>Below 25%</b> — deteriorating leadership, broad weakness. A falling H/L ratio even as the index holds up = internal distribution, a leading warning signal.'
+  },
+  'exposure': {
+    title: 'Recommended Market Exposure',
+    what: 'The suggested percentage of your ₹5L trading capital to have deployed in active positions at any given time, adjusted dynamically to market conditions.',
+    how: '<b>Base</b> from Breadth Score (0–10% → 75–87% in steps). Then: <b>MPM Pressure</b> ±4–8%, <b>Distribution Days</b> −5 to −10%, <b>FTD confirmed</b> +5%. Final value clamped to 0–100%. Rupee amount = Exposure% × ₹5,00,000.',
+    use: 'This is your capital allocation ceiling — never exceed it. In Correction: ₹0–50K deployed. Recovery: ₹50K–1.25L. Expansion: ₹1.25L–2.5L. Healthy Bull: up to ₹5L fully deployed. Adjust individual trade size within this ceiling using your 1% risk rule.'
+  },
+  'market-summary': {
+    title: 'Market Summary & Trading Guidance',
+    what: 'A rule-based natural language synthesis of all dashboard signals into plain-English guidance — market summary, actionable trading rules, and risk advisory.',
+    how: 'The engine reads Breadth Score, Momentum, Pressure, Distribution Days, FTD status, and H/L Ratio. It applies a decision tree to generate: <b>Market Summary</b> (current phase narrative), <b>Trading Guidance</b> (specific rules for today), and <b>Risk Advisory</b> (what to watch and avoid).',
+    use: 'Read this card every session morning in under 30 seconds. It tells you exactly what posture to take today. If the guidance conflicts with your instinct, trust the guidance — it\'s driven by the same O\'Neil / Minervini rules you follow anyway, applied mechanically without emotion.'
+  },
+  'score-trend': {
+    title: '30-Day Score Trend Chart',
+    what: 'A canvas line chart showing how the Breadth Score has moved over the last 30 trading sessions, giving historical context to the current reading.',
+    how: 'Plots the <b>Breadth Score</b> (blue line) for each saved EOD record. Colour-coded horizontal zone bands: red (Crash), orange (Defensive), yellow (Caution), green (Expansion), lime (Healthy). Up to 30 data points plotted.',
+    use: 'Look for the trend direction, not just today\'s value. A score of 48 rising from 30 is very different from 48 falling from 60. Sustained scores above 45 with rising momentum = confirmed expansion. A score crossing below 35 from above = regime change warning.'
+  },
+  'bsr-tracker': {
+    title: 'BSR Tracker — Trade Log',
+    what: 'Your personal breakout trade journal used to calculate the Breakout Success Rate (BSR). Every breakout entry you make should be logged here.',
+    how: 'Log each breakout trade with: Stock, Date, Buy Price, Result (Win/Loss), Exit Price. The dashboard calculates <b>success = exit gain ≥ 5%</b>, counts wins and losses, and updates the BSR% in the status strip in real time. Data saved to localStorage and synced to JSONBin cloud.',
+    use: 'A falling BSR (even if the score looks ok) is your earliest warning that breakouts are failing. Log every trade — the more complete the data, the more reliable the BSR signal. Aim for ≥ 65% in a healthy market.'
+  },
+  'mpm-tracker': {
+    title: 'Market Pressure Monitor (MPM)',
+    what: 'A daily log of Accumulation and Distribution Days used to calculate the net market pressure score shown in the status strip.',
+    how: 'Each day you observe: if Nifty closes <b>up on above-avg volume</b> → log as Accumulation (+1). If <b>down on above-avg volume</b> → log as Distribution (−1). The rolling 25-day window is auto-managed. <b>MPM Score = Acc − Dist</b> days in window.',
+    use: 'Maintain the log daily for accurate pressure readings. Missing entries reduce signal accuracy. A shift from positive to negative MPM before the price breaks down is your earliest institutional selling warning. Use this alongside Distribution Day count for confirmation.'
+  }
+};
+
+function showInfoTip(id, btnEl) {
+  const d = INFO[id];
+  if (!d) return;
+
+  const tip = document.getElementById('info-tooltip');
+  document.getElementById('tip-title').textContent = d.title;
+
+  const sections = [
+    { lbl: 'What it is',      txt: d.what },
+    { lbl: 'How it\'s calculated', txt: d.how  },
+    { lbl: 'How to use it',   txt: d.use  }
+  ];
+  document.getElementById('tip-body').innerHTML = sections.map((s,i) =>
+    `<div class="tip-section">
+      <div class="tip-sec-lbl">${s.lbl}</div>
+      <div class="tip-sec-txt">${s.txt}</div>
+    </div>${i < sections.length-1 ? '<div class="tip-divider"></div>' : ''}`
+  ).join('');
+
+  // Position near the button, smart-flipping at edges
+  tip.style.display = 'block';
+  const rect = btnEl.getBoundingClientRect();
+  const tw = 320, th = tip.offsetHeight;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let left = rect.right - tw;
+  let top  = rect.top - th - 8;
+  if (left < 8) left = 8;
+  if (top  < 8) top  = rect.bottom + 8;
+  if (left + tw > vw - 8) left = vw - tw - 8;
+  if (top  + th > vh - 8) top  = Math.max(8, vh - th - 8);
+  tip.style.left = left + 'px';
+  tip.style.top  = top  + 'px';
+
+  // Close on outside click
+  setTimeout(() => {
+    document.addEventListener('click', _outsideTipClose, { once: true });
+  }, 10);
+}
+
+function _outsideTipClose(e) {
+  const tip = document.getElementById('info-tooltip');
+  if (tip && !tip.contains(e.target)) closeInfoTip();
+}
+
+function closeInfoTip() {
+  const tip = document.getElementById('info-tooltip');
+  if (tip) tip.style.display = 'none';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeInfoTip(); });
+
 </script>
 
 <!-- ── PAST DATE ENTRY MODAL ──────────────────────────── -->
@@ -3842,6 +4072,15 @@ function showPastMsg(msg,color) {
       </div>
     </div>
   </div>
+</div>
+
+<!-- ── INFO TOOLTIP ───────────────────────────────────────────────── -->
+<div id="info-tooltip">
+  <div class="tip-head">
+    <div class="tip-title" id="tip-title">—</div>
+    <button class="tip-close" onclick="closeInfoTip()">✕</button>
+  </div>
+  <div class="tip-body" id="tip-body"></div>
 </div>
 </body>
 </html>
