@@ -2593,10 +2593,11 @@ function renderMarketSummary() {
 //  RALLY PROBABILITY GAUGE
 // ════════════════════════════════════════════════════
 function renderRPG() {
-  const arcEl    = document.getElementById('rpg-arc');
-  const pctEl    = document.getElementById('rpg-pct-text');
-  const sigEl    = document.getElementById('rpg-signal');
-  const brkEl    = document.getElementById('rpg-breakdown');
+  // Primary arc is now in status strip (ss-rpg-*)
+  const arcEl    = document.getElementById('ss-rpg-arc');
+  const pctEl    = document.getElementById('ss-rpg-pct');
+  const sigEl    = document.getElementById('ss-rpg-signal');
+  const brkEl    = document.getElementById('ss-rpg-bk');
   if (!arcEl) return;
 
   // ── Gather inputs ─────────────────────────────────
@@ -2608,7 +2609,7 @@ function renderRPG() {
   if (!records.length) {
     pctEl.textContent = '—'; sigEl.textContent = 'No Data';
     sigEl.style.color = 'var(--dim)'; brkEl.innerHTML = '';
-    arcEl.style.strokeDashoffset = '119.4';
+    arcEl.style.strokeDashoffset = '94.2';
     return;
   }
 
@@ -2696,20 +2697,7 @@ function renderRPG() {
   else if (pct >= 30) { signal = 'Low';          color = 'var(--orange)'; }
   else                { signal = 'Very Low';     color = 'var(--red)'; }
 
-  // ── Update status strip compact arc ─────────────
-  const ssArc = document.getElementById('ss-rpg-arc');
-  const ssPct = document.getElementById('ss-rpg-pct');
-  const ssSig = document.getElementById('ss-rpg-signal');
-  const ssBk  = document.getElementById('ss-rpg-bk');
-  const ssArcLen = 94.2;
-  const ssOffset = ssArcLen * (1 - pct / 100);
-  if(ssArc){ ssArc.style.strokeDashoffset = ssOffset.toFixed(1); ssArc.style.stroke = color; }
-  if(ssPct){ ssPct.textContent = pct + '%'; ssPct.style.fill = color; }
-  if(ssSig){ ssSig.textContent = signal; ssSig.style.color = color; }
-  if(ssBk) {
-    const top2 = visible.slice(0,2).map(c=>`${c.lbl.split(' ')[0]}: ${c.pts}/${c.max}`).join(' · ');
-    ssBk.textContent = top2;
-  }
+  // ── (arcEl/pctEl/sigEl already point to ss-rpg-* IDs) ──
 
   // ── Update analysis strip exposure cell ──────────
   const asExpPct   = document.getElementById('as-exp-pct');
@@ -2736,13 +2724,17 @@ function renderRPG() {
   if(asExpRange){ asExpRange.textContent='Range: '+(_exp<=10?'0–10%':_exp<=25?'10–25%':_exp<=50?'25–50%':_exp<=75?'50–75%':'75–100%'); }
   if(asExpNote) { asExpNote.textContent=_expNote; }
 
-  // ── Update main SVG arc (original) ───────────────
-  const arcLen = 119.4;
+  // ── Update the ss-rpg arc ────────────────────────
+  const arcLen = 94.2;
   const offset = arcLen * (1 - pct / 100);
   if(arcEl){ arcEl.style.strokeDashoffset = offset.toFixed(1); arcEl.style.stroke = color; }
-  if(pctEl){ pctEl.textContent = pct + '%'; pctEl.style.fill  = color; }
-  sigEl.textContent = signal;
-  sigEl.style.color = color;
+  if(pctEl){ pctEl.textContent = pct + '%'; pctEl.style.fill = color; }
+  if(sigEl){ sigEl.textContent = signal; sigEl.style.color = color; }
+  // Breakdown: show top scoring components in the bk line
+  if(brkEl) {
+    const top3 = visible.slice(0,3).map(c=>`${c.lbl.split(' ')[0]} ${c.pts}/${c.max}`).join(' · ');
+    brkEl.textContent = top3 + (ftdBonus ? ' · FTD +10' : '');
+  }
 
   // ── Breakdown rows ────────────────────────────────
   const visible = components.filter(c => c.max > 0);
