@@ -760,6 +760,7 @@ canvas#bsr-chart{width:100%;height:100%;}
     <div class="as-cell" style="border-top:2px solid var(--accent)">
       <div class="as-lbl">📡 Market Cycle</div>
       <div class="as-phase" id="as-phase" style="color:var(--dim)">—</div>
+      <div id="as-driver" style="font-size:10px;font-weight:600;letter-spacing:.3px;margin-bottom:3px;transition:color .3s">—</div>
       <div class="as-desc" id="as-desc">Waiting for data</div>
       <div class="as-pills" id="as-pills"></div>
       <button class="info-btn" onclick="showInfoTip('market-cycle',this)" title="About this indicator">i</button>
@@ -1520,11 +1521,11 @@ function calcScore(r) {
   return Math.min(100, Math.max(0, Math.round(advPct*0.35 + hlPct*0.15 + smaPct*0.50)));
 }
 function getZone(s) {
-  if(s>=55) return {name:'HEALTHY',   r:'3–4R',color:'var(--lime)',  bg:'rgba(74,222,128,0.12)'};
-  if(s>=45) return {name:'EXPANDING', r:'2–3R',color:'var(--green)', bg:'rgba(34,197,94,0.12)'};
-  if(s>=35) return {name:'CAUTION',   r:'1–2R',color:'var(--yellow)',bg:'rgba(250,204,21,0.12)'};
-  if(s>=20) return {name:'DEFENSIVE', r:'1R',  color:'var(--orange)',bg:'rgba(251,146,60,0.12)'};
-  return           {name:'CORRECTION',r:'0R',  color:'var(--red)',   bg:'rgba(248,113,113,0.12)'};
+  if(s>=55) return {name:'HEALTHY',   r:'2–3R', color:'var(--lime)',  bg:'rgba(74,222,128,0.12)'};
+  if(s>=45) return {name:'EXPANDING', r:'1–2R', color:'var(--green)', bg:'rgba(34,197,94,0.12)'};
+  if(s>=35) return {name:'CAUTION',   r:'0.5–1R',color:'var(--yellow)',bg:'rgba(250,204,21,0.12)'};
+  if(s>=20) return {name:'DEFENSIVE', r:'0.25R pilot',color:'var(--orange)',bg:'rgba(251,146,60,0.12)'};
+  return           {name:'CORRECTION',r:'0R — stand aside',color:'var(--red)',bg:'rgba(248,113,113,0.12)'};
 }
 
 // ════════════════════════════════════════════════════
@@ -1705,7 +1706,7 @@ function renderHero(data) {
   el('h-entries').textContent=data.length+' / 30 entries stored';
   if(prev){
     const d=s-prev.score,pz=getZone(prev.score);
-    el('h-trend').innerHTML=d>0?`<span class="up">&#9650; ${d} pts</span> from ${prev.score} (${pz.name})`:d<0?`<span class="dn">&#9660; ${Math.abs(d)} pts</span> from ${prev.score} (${pz.name})`:`<span class="flat">unchanged</span> at ${prev.score}`;
+    el('h-trend').innerHTML=d>0?`<span class="up">&#9650; +${d} pts</span> vs ${fmtLong(prev.date)}`:d<0?`<span class="dn">&#9660; ${d} pts</span> vs ${fmtLong(prev.date)}`:`<span class="flat">— unchanged</span> from ${fmtLong(prev.date)}`;
   } else { el('h-trend').innerHTML='<span class="flat">First entry</span>'; }
   const adv=+r.adv||0,dec=+r.dec||0,hi=+r.hi||0,lo=+r.lo||0,e20=+r.e20||0,s50=+r.s50||0,s200=+r.s200||0,tot=adv+dec||1;
   el('score-bk').innerHTML=`<span>A/D%: <b>${(adv/tot*100).toFixed(0)}%</b> ×0.35</span><span>EMA20: <b style="color:${pctClr(e20)}">${e20}%</b></span><span>SMA50: <b style="color:${pctClr(s50)}">${s50}%</b></span><span>SMA200: <b style="color:${pctClr(s200)}">${s200}%</b></span><span>H/L%: <b>${(hi+lo)>0?(hi/(hi+lo)*100).toFixed(0)+'%':'—'}</b> ×0.15</span>`;
@@ -2013,38 +2014,50 @@ function renderMarketCycle() {
   // Priority: Correction → Late Stage → Expansion → Recovery → Caution (default)
   let phase, color, desc;
 
+  let driver = '';
+
   if (breadthScore < 30 && (bsrPct === null || bsrPct < 40) && mpmNeg) {
-    phase = 'Correction';
-    color = 'var(--red)';
-    desc  = 'Market internals deteriorating. Avoid new breakout entries. Preserve capital.';
+    phase  = 'Correction';
+    color  = 'var(--red)';
+    driver = 'Low breadth · Weak BSR · Distribution pressure';
+    desc   = 'Market internals deteriorating. Avoid new breakout entries. Preserve capital. 0R — stand aside.';
   } else if (breadthScore > 55 && bsrDeclining) {
-    phase = 'Late Stage';
-    color = 'var(--yellow)';
-    desc  = 'Breadth extended but breakout success declining. Trail stops. Reduce new adds.';
+    phase  = 'Late Stage';
+    color  = 'var(--yellow)';
+    driver = 'Extended breadth · BSR declining';
+    desc   = 'Breadth extended but breakout success declining. Trail stops, reduce new adds. 0.5–1R max.';
   } else if (breadthScore > 45 && (bsrPct === null || bsrPct > 60) && (breadthMomentum === null || breadthMomentum >= 0)) {
-    phase = 'Expansion';
-    color = 'var(--lime)';
-    desc  = 'Strong participation and breakouts working. Full position sizing justified.';
+    phase  = 'Expansion';
+    color  = 'var(--lime)';
+    driver = 'Strong breadth · Breakouts working';
+    desc   = 'Strong participation and breakouts working. Full position sizing justified. 1–2R entries.';
   } else if (breadthMomentum !== null && breadthMomentum > 5 && breadthScore >= 30 && breadthScore <= 45) {
-    phase = 'Recovery';
-    color = 'var(--orange)';
-    desc  = 'Market participation improving. Pilot entries (0.25R) justified. Watch for follow-through.';
+    phase  = 'Recovery';
+    color  = 'var(--green)';
+    driver = 'Momentum rising · Breadth rebuilding';
+    desc   = 'Market participation improving. Pilot entries (0.25R) only. Wait for FTD before scaling.';
   } else if (breadthScore >= 35 && breadthScore <= 45) {
-    phase = 'Caution';
-    color = 'var(--yellow)';
-    desc  = 'Mixed internals. Selective entries only. Keep size at 1–2R.';
+    phase  = 'Caution';
+    color  = 'var(--yellow)';
+    driver = 'Mixed internals · No clear trend';
+    desc   = 'Mixed signals. Selective entries only, 0.5–1R max. Avoid chasing breakouts.';
   } else if (breadthScore < 35) {
-    phase = 'Defensive';
-    color = 'var(--orange)';
-    desc  = 'Weak breadth. Reduce exposure, tighten stops, wait for recovery signal.';
+    phase  = 'Defensive';
+    color  = 'var(--orange)';
+    driver = 'Weak breadth · Below key thresholds';
+    desc   = 'Weak breadth. Reduce exposure, tighten stops, 0.25R pilot entries only.';
   } else {
-    phase = 'Neutral';
-    color = 'var(--sub)';
-    desc  = 'Conditions mixed — no clear phase signal yet.';
+    phase  = 'Neutral';
+    color  = 'var(--sub)';
+    driver = 'Mixed signals · Awaiting clarity';
+    desc   = 'Conditions mixed — no clear phase signal yet. Observe, no new entries.';
   }
 
   phaseEl.textContent  = phase;
   phaseEl.style.color  = color;
+  // Driver line — shown as subtitle below phase name
+  const driverEl = document.getElementById('as-driver');
+  if (driverEl) { driverEl.textContent = driver; driverEl.style.color = color; driverEl.style.opacity = '.65'; }
   descEl.textContent   = desc;
 
   // ── Signal pills ──────────────────────────────────
@@ -3883,9 +3896,9 @@ const INFO = {
   },
   'zone-meter': {
     title: 'Zone Meter (Score Bar)',
-    what: 'A visual progress bar showing where the current Breadth Score sits across the full 0–100 spectrum, with colour-coded zone bands.',
-    how: 'Five zones: <b style="color:var(--red)">CRASH</b> 0–20, <b style="color:var(--orange)">DEF</b> 20–35, <b style="color:var(--yellow)">CAUTION</b> 35–45, <b style="color:var(--green)">EXP</b> 45–55, <b style="color:var(--lime)">HEALTHY</b> 55–100. Fill width = Score/100. Colour transitions from red → lime.',
-    use: 'Quick visual confirmation of zone. The score number tells you <i>where</i>; the bar shows you <i>how far into that zone</i> you are — e.g. a score of 52 is near the top of Expansion, close to Healthy.'
+    what: 'A visual progress bar showing where the current Breadth Score sits across the full 0–100 spectrum, with colour-coded zone bands and correct position sizes.',
+    how: '<b style="color:var(--red)">CORRECTION</b> 0–20 (0R) · <b style="color:var(--orange)">DEFENSIVE</b> 20–35 (0.25R pilot) · <b style="color:var(--yellow)">CAUTION</b> 35–45 (0.5–1R) · <b style="color:var(--green)">EXPANDING</b> 45–55 (1–2R) · <b style="color:var(--lime)">HEALTHY</b> 55–100 (2–3R). Fill width = Score/100.',
+    use: 'The score number tells you <i>where</i>; the bar shows you <i>how far into that zone</i> you are — e.g. a score of 52 is near the top of Expansion, almost into Healthy territory. Use this to gauge whether a zone change is imminent.'
   },
   'bsr-rate': {
     title: 'BSR — Breakout Success Rate',
@@ -3919,9 +3932,9 @@ const INFO = {
   },
   'market-cycle': {
     title: 'Market Cycle Engine',
-    what: 'Classifies the current market into one of four phases — Correction, Recovery, Expansion, or Healthy Bull — using a multi-signal rule engine.',
-    how: 'Uses Breadth Score, Momentum direction, Distribution Day count, MPM Pressure, and H/L Ratio together. Each combination of signals maps to a phase. Signal pills below the phase label show <i>which specific conditions</i> triggered the classification.',
-    use: 'Phase drives your strategy framework: position sizes, stop widths, sector rotation decisions. <b>Correction</b> = 0R cash. <b>Recovery</b> = pilot entries. <b>Expansion</b> = normal sizing. <b>Healthy Bull</b> = maximum exposure. Review daily before making any trade decision.'
+    what: 'Classifies the current market into one of six phases using a <i>multi-signal</i> rule engine — going beyond just the score to give you a more nuanced, actionable reading. The <b>driver line</b> below the phase name tells you exactly what signals triggered it.',
+    how: 'Priority order: <b>Correction</b> (score&lt;30 + BSR&lt;40% + neg.pressure) → <b>Late Stage</b> (score&gt;55 but BSR declining) → <b>Expansion</b> (score&gt;45 + BSR&gt;60% + positive momentum) → <b>Recovery</b> (score 30–45 + momentum&gt;5) → <b>Caution</b> (score 35–45) → <b>Defensive</b> (score&lt;35). The driver line shows the 2–3 key conditions responsible.',
+    use: 'Market Cycle may differ from Market Zone — that difference is valuable. Zone = pure score position. Cycle = what the composite signals say. When they agree, high conviction. When Cycle is worse than Zone (e.g. Zone says Caution but Cycle says Defensive due to negative pressure), trust the Cycle and be more conservative.'
   },
   'ftd': {
     title: 'Follow-Through Day (FTD)',
