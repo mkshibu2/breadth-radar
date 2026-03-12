@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NSE Breadth Radar — Trading Playbook</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #0a0f1a;
+  --bg2:   #0e1520;
+  --bg3:   #131d2e;
+  --bg4:   #192336;
+  --bg5:   #1f2c40;
+  --border:#1e2d42;
+  --bdr2:  #263548;
+  --text:  #d8e4f0;
+  --sub:   #7a90a8;
+  --dim:   #3d546a;
+  --accent:#4d9de0;
+  --lime:  #3dd68c;
+  --green: #2ec4a0;
+  --teal:  #22c9c0;
+  --yellow:#e8b84b;
+  --orange:#e07b3a;
+  --red:   #e05454;
+  --purple:#9b7fe8;
+  --disp:  'Barlow Condensed';
+  --body:  'IBM Plex Sans';
+  --mono:  'IBM Plex Mono';
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--body); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: linear-gradient(rgba(77,157,224,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(77,157,224,.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none; z-index: 0;
+}
+.wrap { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto; padding: 0 24px 64px; }
+
+/* NAV */
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:0 24px; height:46px; background:rgba(10,15,26,.92); border-bottom:1px solid var(--border); backdrop-filter:blur(12px); position:sticky; top:0; z-index:100; }
+.topbar-brand { font-family:var(--disp); font-size:15px; font-weight:800; letter-spacing:2px; color:var(--text); text-transform:uppercase; }
+.topbar-brand em { color:var(--lime); font-style:normal; }
+.topbar-links { display:flex; gap:5px; }
+.topbar-link { font-size:11px; font-weight:600; letter-spacing:.4px; padding:3px 10px; border-radius:4px; border:1px solid var(--border); color:var(--sub); text-decoration:none; transition:color .15s,border-color .15s; }
+.topbar-link:hover { color:var(--text); border-color:var(--bdr2); }
+.topbar-link.active { color:var(--yellow); border-color:rgba(232,184,75,.3); background:rgba(232,184,75,.05); }
+
+/* HERO */
+.hero { padding:40px 0 28px; border-bottom:1px solid var(--border); margin-bottom:28px; display:grid; grid-template-columns:1fr auto; align-items:end; gap:24px; }
+.hero-eyebrow { font-family:var(--mono); font-size:10px; font-weight:500; letter-spacing:3px; text-transform:uppercase; color:var(--lime); margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+.hero-eyebrow::before { content:''; display:block; width:20px; height:1px; background:var(--lime); }
+.hero-title { font-family:var(--disp); font-size:48px; font-weight:900; line-height:.95; letter-spacing:-1px; color:var(--text); }
+.hero-title span { color:var(--accent); display:block; }
+.hero-sub { font-size:13px; color:var(--sub); margin-top:10px; max-width:520px; line-height:1.55; }
+.hero-meta { text-align:right; }
+.hero-stat { font-family:var(--disp); font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--dim); margin-bottom:5px; }
+.hero-pill { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; letter-spacing:.2px; margin:2px; }
+.pill-lime   { background:rgba(61,214,140,.08);  color:var(--lime);   border:1px solid rgba(61,214,140,.18); }
+.pill-blue   { background:rgba(77,157,224,.08);  color:var(--accent); border:1px solid rgba(77,157,224,.18); }
+.pill-yellow { background:rgba(232,184,75,.08);  color:var(--yellow); border:1px solid rgba(232,184,75,.18); }
+
+/* SECTIONS */
+.section { margin-bottom:24px; }
+.section-head { display:flex; align-items:center; gap:10px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+.section-num { font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; flex-shrink:0; }
+.section-title { font-family:var(--disp); font-size:19px; font-weight:800; letter-spacing:.3px; color:var(--text); }
+.section-icon { font-size:15px; }
+.section-desc { font-size:13px; color:var(--sub); line-height:1.5; margin-bottom:12px; }
+
+/* TABLES */
+.tbl-wrap { border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+thead tr { background:var(--bg4); }
+th { font-family:var(--mono); font-size:10px; font-weight:500; letter-spacing:.8px; text-transform:uppercase; color:var(--dim); padding:7px 12px; text-align:left; border-bottom:1px solid var(--border); white-space:nowrap; }
+td { padding:8px 12px; border-bottom:1px solid rgba(30,45,66,.6); vertical-align:middle; color:var(--text); font-size:13px; }
+tbody tr:last-child td { border-bottom:none; }
+tbody tr:hover td { background:rgba(255,255,255,.012); }
+td:first-child { font-weight:500; }
+
+/* BADGES */
+.badge { display:inline-block; font-family:var(--mono); font-size:11px; font-weight:500; padding:2px 7px; border-radius:3px; white-space:nowrap; }
+.bg { background:rgba(61,214,140,.1);  color:var(--lime);   border:1px solid rgba(61,214,140,.18); }
+.by { background:rgba(232,184,75,.1);  color:var(--yellow); border:1px solid rgba(232,184,75,.18); }
+.br { background:rgba(224,84,84,.1);   color:var(--red);    border:1px solid rgba(224,84,84,.18); }
+.bb { background:rgba(77,157,224,.1);  color:var(--accent); border:1px solid rgba(77,157,224,.18); }
+.bp { background:rgba(155,127,232,.1); color:var(--purple); border:1px solid rgba(155,127,232,.18); }
+
+/* PHASE CARDS */
+.phase-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
+.phase-card { padding:14px 13px; border-radius:6px; border:1px solid var(--border); background:var(--bg3); position:relative; overflow:hidden; }
+.phase-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.pc-red::before    { background:var(--red); }
+.pc-orange::before { background:var(--orange); }
+.pc-green::before  { background:var(--green); }
+.pc-lime::before   { background:var(--lime); }
+.ph-name  { font-family:var(--disp); font-size:17px; font-weight:800; margin-bottom:1px; }
+.ph-score { font-family:var(--mono); font-size:10px; color:var(--dim); margin-bottom:7px; letter-spacing:.3px; }
+.ph-action { font-size:12px; color:var(--sub); line-height:1.45; }
+.ph-size  { font-family:var(--mono); font-size:11px; font-weight:500; margin-top:7px; padding-top:6px; border-top:1px solid var(--border); }
+.pc-red .ph-name    { color:var(--red); }    .pc-red .ph-size    { color:var(--red); }
+.pc-orange .ph-name { color:var(--orange); } .pc-orange .ph-size { color:var(--orange); }
+.pc-green .ph-name  { color:var(--green); }  .pc-green .ph-size  { color:var(--green); }
+.pc-lime .ph-name   { color:var(--lime); }   .pc-lime .ph-size   { color:var(--lime); }
+
+/* RPG */
+.rpg-top { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+.rpg-box { background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:14px; }
+.rpg-box-title { font-family:var(--mono); font-size:10px; letter-spacing:.8px; text-transform:uppercase; color:var(--purple); margin-bottom:8px; }
+.rpg-row { display:flex; justify-content:space-between; align-items:baseline; padding:4px 0; border-bottom:1px solid rgba(30,45,66,.5); font-size:12px; }
+.rpg-row:last-child { border-bottom:none; }
+.rpg-row .rc { color:var(--sub); }
+.rpg-row .rp { font-family:var(--mono); font-weight:500; color:var(--accent); font-size:11px; }
+.rpg-levels { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-bottom:8px; }
+.rpg-level { background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:11px 9px; text-align:center; }
+.rl-pct  { font-family:var(--disp); font-size:19px; font-weight:900; line-height:1; margin-bottom:1px; }
+.rl-lbl  { font-family:var(--disp); font-size:13px; font-weight:700; margin-bottom:4px; }
+.rl-act  { font-size:11px; color:var(--sub); line-height:1.4; }
+.rpg-note { background:rgba(155,127,232,.04); border:1px solid rgba(155,127,232,.18); border-left:3px solid var(--purple); border-radius:0 6px 6px 0; padding:11px 14px; }
+.rpg-note-title { font-family:var(--mono); font-size:10px; letter-spacing:.8px; text-transform:uppercase; color:var(--purple); margin-bottom:7px; }
+.rpg-note ul { padding-left:15px; }
+.rpg-note li { font-size:12px; color:var(--sub); line-height:1.55; margin-bottom:3px; }
+.rpg-note li b { color:var(--text); font-weight:500; }
+
+/* EXPOSURE */
+.exp-bar-track { height:9px; border-radius:5px; background:var(--bg4); overflow:hidden; margin:8px 0 3px; }
+.exp-bar-fill  { height:100%; border-radius:5px; background:linear-gradient(90deg,var(--red) 0%,var(--orange) 25%,var(--yellow) 50%,var(--green) 75%,var(--lime) 100%); }
+.exp-ticks { display:flex; justify-content:space-between; font-family:var(--mono); font-size:10px; color:var(--dim); margin-bottom:8px; }
+.exp-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+.exp-cell { background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:11px 9px; text-align:center; }
+.ec-score { font-family:var(--mono); font-size:10px; color:var(--dim); margin-bottom:4px; letter-spacing:.2px; }
+.ec-pct   { font-family:var(--disp); font-size:20px; font-weight:900; line-height:1; margin-bottom:2px; }
+.ec-inr   { font-size:11px; color:var(--sub); }
+
+/* ROUTINE */
+.routine-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:6px; }
+.routine-step { display:flex; gap:12px; align-items:flex-start; background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:12px 13px; }
+.rs-num   { font-family:var(--disp); font-size:30px; font-weight:900; line-height:1; color:var(--bg5); flex-shrink:0; width:30px; text-align:right; }
+.rs-title { font-size:13px; font-weight:600; color:var(--text); margin-bottom:3px; }
+.rs-desc  { font-size:12px; color:var(--sub); line-height:1.45; }
+.rs-tag   { display:inline-block; font-family:var(--mono); font-size:9px; font-weight:500; padding:1px 6px; border-radius:3px; letter-spacing:.4px; margin-top:5px; }
+
+/* COMBOS */
+.combo-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:6px; }
+.combo { background:var(--bg3); border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+.combo-head { display:flex; align-items:center; gap:9px; padding:9px 13px; border-bottom:1px solid var(--border); }
+.combo-dot  { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.combo-title { font-size:13px; font-weight:600; }
+.combo-body { padding:11px 13px; }
+.combo-signals { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:7px; }
+.combo-action  { font-size:12px; color:var(--sub); line-height:1.45; padding-top:7px; border-top:1px solid rgba(30,45,66,.5); }
+
+/* DEFINITIONS */
+.def-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:6px; }
+.def-item { background:var(--bg3); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:0 6px 6px 0; padding:11px 13px; }
+.def-item.def-purple { border-left-color:var(--purple); }
+.def-term { font-size:13px; font-weight:600; color:var(--accent); margin-bottom:3px; }
+.def-item.def-purple .def-term { color:var(--purple); }
+.def-desc { font-size:12px; color:var(--sub); line-height:1.5; }
+
+/* FOOTER */
+.footer { margin-top:40px; padding-top:18px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+.footer-left { font-size:12px; color:var(--dim); line-height:1.7; }
+.footer-left strong { color:var(--sub); }
+.footer-right { font-family:var(--mono); font-size:10px; color:var(--dim); text-align:right; letter-spacing:.4px; }
+
+@media (max-width:768px) {
+  .hero { grid-template-columns:1fr; } .hero-meta { text-align:left; } .hero-title { font-size:34px; }
+  .phase-grid,.rpg-levels,.exp-grid { grid-template-columns:repeat(2,1fr); }
+  .rpg-top,.routine-grid,.combo-grid,.def-grid { grid-template-columns:1fr; }
+  .footer { flex-direction:column; gap:10px; text-align:center; } .footer-right { text-align:center; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <div class="topbar-brand">NSE Breadth <em>Radar</em></div>
+  <div class="topbar-links">
+    <a class="topbar-link" href="index.html">← Dashboard</a>
+    <a class="topbar-link" href="manual.html">User Guide</a>
+    <a class="topbar-link active" href="playbook.html">Playbook</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<!-- HERO -->
+<div class="hero">
+  <div>
+    <div class="hero-eyebrow">Trading Playbook</div>
+    <h1 class="hero-title">Read Every Signal.<span>Act With Precision.</span></h1>
+    <p class="hero-sub">A complete reference for interpreting and acting on every indicator in the NSE Breadth Radar dashboard — from Breadth Score to Rally Probability.</p>
+  </div>
+  <div class="hero-meta">
+    <div class="hero-stat">Methodology</div>
+    <div>
+      <span class="hero-pill pill-lime">O'Neil</span>
+      <span class="hero-pill pill-blue">Minervini</span>
+      <span class="hero-pill pill-yellow">Weinstein</span>
+    </div>
+    <div style="margin-top:8px">
+      <span class="hero-pill" style="background:rgba(61,214,140,.04);color:var(--dim);border-color:var(--border)">Universe: Nifty 500</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- 01 INDICATOR STATUS -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">01</span>
+    <span class="section-icon">📊</span>
+    <span class="section-title">Indicator Status Guide</span>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Indicator</th><th>🟢 Green — Healthy</th><th>🟡 Yellow — Caution</th><th>🔴 Red — Danger</th></tr></thead>
+      <tbody>
+        <tr><td>Breadth Score</td><td><span class="badge bg">Above 55</span></td><td><span class="badge by">35 – 55</span></td><td><span class="badge br">Below 35</span></td></tr>
+        <tr><td>Breadth Momentum</td><td><span class="badge bg">+5 or more</span></td><td><span class="badge by">0 to +4</span></td><td><span class="badge br">Negative</span></td></tr>
+        <tr><td>Breadth Thrust (3-day)</td><td><span class="badge bg">Above +10</span></td><td><span class="badge by">+5 to +10</span></td><td><span class="badge br">Below +5</span></td></tr>
+        <tr><td>Distribution Days</td><td><span class="badge bg">0 – 3</span></td><td><span class="badge by">4 – 5</span></td><td><span class="badge br">6 or more</span></td></tr>
+        <tr><td>Market Pressure (MPM)</td><td><span class="badge bg">+3 or above</span></td><td><span class="badge by">0 to +2</span></td><td><span class="badge br">Negative</span></td></tr>
+        <tr><td>BSR — Breakout Success Rate</td><td><span class="badge bg">Above 65%</span></td><td><span class="badge by">40% – 65%</span></td><td><span class="badge br">Below 40%</span></td></tr>
+        <tr><td>H/L Ratio (52-Week)</td><td><span class="badge bg">Above 50%</span></td><td><span class="badge by">25% – 50%</span></td><td><span class="badge br">Below 25%</span></td></tr>
+        <tr><td>Rally Probability Gauge</td><td><span class="badge bg">70% – 100%</span></td><td><span class="badge by">40% – 69%</span></td><td><span class="badge br">Below 40%</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- 02 MARKET REGIME -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">02</span>
+    <span class="section-icon">📡</span>
+    <span class="section-title">Market Regime Guide</span>
+  </div>
+  <div class="phase-grid">
+    <div class="phase-card pc-red">
+      <div class="ph-name">Correction</div>
+      <div class="ph-score">SCORE &lt; 30</div>
+      <div class="ph-action">Avoid all new trades. Preserve capital. Tighten stops on open positions. Wait for score to recover above 35 before re-engaging.</div>
+      <div class="ph-size">0R — No new trades</div>
+    </div>
+    <div class="phase-card pc-orange">
+      <div class="ph-name">Recovery</div>
+      <div class="ph-score">SCORE 30 – 45</div>
+      <div class="ph-action">Pilot entries only at 0.25R–0.5R. Focus exclusively on highest RS stocks. Do not chase. Must have FTD before scaling up.</div>
+      <div class="ph-size">0.25R – 0.5R per trade</div>
+    </div>
+    <div class="phase-card pc-green">
+      <div class="ph-name">Expansion</div>
+      <div class="ph-score">SCORE 45 – 55</div>
+      <div class="ph-action">Normal entries at 1R–2R. Action breakouts from proper Stage 2 bases. Build exposure gradually as positions prove themselves.</div>
+      <div class="ph-size">1R – 2R per trade</div>
+    </div>
+    <div class="phase-card pc-lime">
+      <div class="ph-name">Healthy Bull</div>
+      <div class="ph-score">SCORE &gt; 55</div>
+      <div class="ph-action">Full position sizing. Breakouts highly likely to succeed. Act decisively. Hold through normal pullbacks. Trail stops and let leaders run.</div>
+      <div class="ph-size">2R – 3R per trade</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 03 RALLY PROBABILITY GAUGE -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">03</span>
+    <span class="section-icon">🎯</span>
+    <span class="section-title">Rally Probability Gauge</span>
+  </div>
+  <p class="section-desc">The RPG estimates the likelihood that current market conditions will support a <b style="color:var(--text)">sustained rally</b>. It combines six indicators across three rally drivers — <b style="color:var(--accent)">participation</b>, <b style="color:var(--yellow)">momentum</b>, and <b style="color:var(--teal)">institutional behaviour</b> — into a single probability percentage shown as a purple arc gauge on the dashboard analysis strip.</p>
+
+  <div class="rpg-top">
+    <div class="rpg-box">
+      <div class="rpg-box-title">Scoring Model — Max 100 pts</div>
+      <div class="rpg-row"><span class="rc">Breadth Score &gt; 45</span><span class="rp">20 pts</span></div>
+      <div class="rpg-row"><span class="rc">Breadth Score 36–45</span><span class="rp">10 pts</span></div>
+      <div class="rpg-row"><span class="rc">Breadth Score 26–35</span><span class="rp">5 pts</span></div>
+      <div class="rpg-row"><span class="rc">Momentum &gt; +5</span><span class="rp">15 pts</span></div>
+      <div class="rpg-row"><span class="rc">Momentum +1 to +5</span><span class="rp">8 pts</span></div>
+      <div class="rpg-row"><span class="rc">Thrust (3-day) &gt; +10</span><span class="rp">15 pts</span></div>
+      <div class="rpg-row"><span class="rc">Thrust +5 to +10</span><span class="rp">8 pts</span></div>
+      <div class="rpg-row"><span class="rc">BSR ≥ 65%</span><span class="rp">20 pts</span></div>
+      <div class="rpg-row"><span class="rc">BSR 50%–64%</span><span class="rp">12 pts</span></div>
+      <div class="rpg-row"><span class="rc">Distribution Days ≤ 2</span><span class="rp">15 pts</span></div>
+      <div class="rpg-row"><span class="rc">Distribution Days 3–4</span><span class="rp">10 pts</span></div>
+      <div class="rpg-row"><span class="rc">Market Pressure ≥ +4</span><span class="rp">15 pts</span></div>
+      <div class="rpg-row"><span class="rc">Market Pressure +1 to +3</span><span class="rp">10 pts</span></div>
+      <div class="rpg-row" style="border-top:1px solid rgba(155,127,232,.25);margin-top:2px;padding-top:6px"><span class="rc" style="color:var(--purple)">FTD Confirmed (bonus)</span><span class="rp" style="color:var(--purple)">+10</span></div>
+    </div>
+    <div class="rpg-box">
+      <div class="rpg-box-title">Indicator Weights by Rally Driver</div>
+      <div class="tbl-wrap" style="border:none">
+        <table>
+          <thead><tr><th>Rally Driver</th><th>Indicator</th><th style="text-align:right">Wt.</th></tr></thead>
+          <tbody>
+            <tr><td style="color:var(--accent)">Participation</td><td>Breadth Score</td><td style="text-align:right"><span class="badge bb">20</span></td></tr>
+            <tr><td style="color:var(--yellow)">Momentum</td><td>Breadth Momentum</td><td style="text-align:right"><span class="badge by">15</span></td></tr>
+            <tr><td style="color:var(--yellow)">Momentum</td><td>Breadth Thrust</td><td style="text-align:right"><span class="badge by">15</span></td></tr>
+            <tr><td style="color:var(--teal)">Leadership</td><td>BSR</td><td style="text-align:right"><span class="badge bb">20</span></td></tr>
+            <tr><td style="color:var(--teal)">Institutional</td><td>Distribution Days</td><td style="text-align:right"><span class="badge bb">15</span></td></tr>
+            <tr><td style="color:var(--teal)">Institutional</td><td>Market Pressure</td><td style="text-align:right"><span class="badge bb">15</span></td></tr>
+            <tr><td style="color:var(--lime)">Confirmation</td><td>FTD Confirmed</td><td style="text-align:right"><span class="badge bg">+10</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="rpg-levels">
+    <div class="rpg-level" style="border-top:2px solid var(--red)">
+      <div class="rl-pct" style="color:var(--red)">0–29%</div>
+      <div class="rl-lbl" style="color:var(--red)">Very Low</div>
+      <div class="rl-act">Avoid new trades. Capital preservation only.</div>
+    </div>
+    <div class="rpg-level" style="border-top:2px solid var(--orange)">
+      <div class="rl-pct" style="color:var(--orange)">30–49%</div>
+      <div class="rl-lbl" style="color:var(--orange)">Low</div>
+      <div class="rl-act">Pilot entries at 0.25R. Highest RS stocks only.</div>
+    </div>
+    <div class="rpg-level" style="border-top:2px solid var(--yellow)">
+      <div class="rl-pct" style="color:var(--yellow)">50–69%</div>
+      <div class="rl-lbl" style="color:var(--yellow)">Moderate</div>
+      <div class="rl-act">Selective 0.5R–1R entries. Wait for confirmation.</div>
+    </div>
+    <div class="rpg-level" style="border-top:2px solid var(--green)">
+      <div class="rl-pct" style="color:var(--green)">70–84%</div>
+      <div class="rl-lbl" style="color:var(--green)">High</div>
+      <div class="rl-act">Normal 1R–2R entries. Breakouts likely to work.</div>
+    </div>
+    <div class="rpg-level" style="border-top:2px solid var(--lime)">
+      <div class="rl-pct" style="color:var(--lime)">85–100%</div>
+      <div class="rl-lbl" style="color:var(--lime)">Very High</div>
+      <div class="rl-act">Full 2R–3R sizing. High conviction environment.</div>
+    </div>
+  </div>
+
+  <div class="rpg-note">
+    <div class="rpg-note-title">Important Notes</div>
+    <ul>
+      <li>If <b>no BSR trades are logged</b>, the 20 BSR points are redistributed proportionally — you are scored out of 80 and scaled to 100. A note appears in the gauge breakdown on the dashboard.</li>
+      <li>The <b>FTD +10 bonus</b> reflects O'Neil's principle that a confirmed Follow-Through Day is the single most reliable rally confirmation. It can push a Moderate reading into High territory.</li>
+      <li>The gauge is a <b>probability estimate, not a guarantee</b>. Use it alongside Market Cycle phase and the Exposure Meter — never as a standalone signal.</li>
+      <li>The gauge <b>auto-updates</b> every time you save EOD data. No manual input needed.</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- 04 EXPOSURE METER -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">04</span>
+    <span class="section-icon">📈</span>
+    <span class="section-title">Exposure Meter</span>
+  </div>
+  <p class="section-desc">Recommended % of ₹5L capital to deploy. Calculated from Breadth Score + Market Pressure + Distribution Days + FTD status. Adjusted ±5–10% automatically.</p>
+  <div class="exp-bar-track"><div class="exp-bar-fill" style="width:100%"></div></div>
+  <div class="exp-ticks"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+  <div class="exp-grid">
+    <div class="exp-cell"><div class="ec-score">Score &lt; 30</div><div class="ec-pct" style="color:var(--red)">0–10%</div><div class="ec-inr">≤ ₹50K</div></div>
+    <div class="exp-cell"><div class="ec-score">Score 30–40</div><div class="ec-pct" style="color:var(--orange)">10–25%</div><div class="ec-inr">₹50K – 1.25L</div></div>
+    <div class="exp-cell"><div class="ec-score">Score 40–50</div><div class="ec-pct" style="color:var(--yellow)">25–50%</div><div class="ec-inr">₹1.25L – 2.5L</div></div>
+    <div class="exp-cell"><div class="ec-score">Score 50–60</div><div class="ec-pct" style="color:var(--green)">50–75%</div><div class="ec-inr">₹2.5L – 3.75L</div></div>
+    <div class="exp-cell"><div class="ec-score">Score &gt; 60</div><div class="ec-pct" style="color:var(--lime)">75–100%</div><div class="ec-inr">₹3.75L – 5L</div></div>
+  </div>
+</div>
+
+
+<!-- 05 DAILY ROUTINE -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">05</span>
+    <span class="section-icon">⏱</span>
+    <span class="section-title">60-Second Daily Routine</span>
+  </div>
+  <div class="routine-grid">
+    <div class="routine-step">
+      <div class="rs-num">1</div>
+      <div class="rs-body">
+        <div class="rs-title">Check Breadth Score &amp; Market Zone</div>
+        <div class="rs-desc">Is the score above 45? Which zone — Correction / Recovery / Expansion / Healthy? This single number sets your session posture immediately.</div>
+        <span class="rs-tag" style="background:rgba(77,157,224,.1);color:var(--accent);border:1px solid rgba(77,157,224,.18)">Status Strip → Score</span>
+      </div>
+    </div>
+    <div class="routine-step">
+      <div class="rs-num">2</div>
+      <div class="rs-body">
+        <div class="rs-title">Read the Rally Probability Gauge</div>
+        <div class="rs-desc">Check the purple arc on the analysis strip. Below 40% — stand aside. 40–70% — pilot only. Above 70% — full engagement justified.</div>
+        <span class="rs-tag" style="background:rgba(155,127,232,.1);color:var(--purple);border:1px solid rgba(155,127,232,.18)">Analysis Strip → RPG</span>
+      </div>
+    </div>
+    <div class="routine-step">
+      <div class="rs-num">3</div>
+      <div class="rs-body">
+        <div class="rs-title">Confirm Breadth Momentum &amp; Thrust</div>
+        <div class="rs-desc">Is momentum positive and rising? Thrust above +10 signals rapid breadth expansion. Negative momentum means the market is deteriorating.</div>
+        <span class="rs-tag" style="background:rgba(232,184,75,.1);color:var(--yellow);border:1px solid rgba(232,184,75,.18)">Status Strip → Momentum / Thrust</span>
+      </div>
+    </div>
+    <div class="routine-step">
+      <div class="rs-num">4</div>
+      <div class="rs-body">
+        <div class="rs-title">Check Distribution Days &amp; Pressure</div>
+        <div class="rs-desc">6+ distribution days = elevated institutional selling. Negative MPM pressure = distribution dominating. Both together = reduce exposure immediately.</div>
+        <span class="rs-tag" style="background:rgba(224,84,84,.1);color:var(--red);border:1px solid rgba(224,84,84,.18)">Analysis Strip → Dist Days / Pressure</span>
+      </div>
+    </div>
+    <div class="routine-step">
+      <div class="rs-num">5</div>
+      <div class="rs-body">
+        <div class="rs-title">Review BSR</div>
+        <div class="rs-desc">Are your breakouts working? BSR above 65% means the market rewards breakout entries. Below 40% means breakouts are failing — avoid new entries.</div>
+        <span class="rs-tag" style="background:rgba(77,157,224,.1);color:var(--accent);border:1px solid rgba(77,157,224,.18)">Status Strip → BSR Rate</span>
+      </div>
+    </div>
+    <div class="routine-step">
+      <div class="rs-num">6</div>
+      <div class="rs-body">
+        <div class="rs-title">Check FTD Status</div>
+        <div class="rs-desc">Has a Follow-Through Day been confirmed? Per O'Neil, no new uptrend is valid without a FTD on Day 4+ of a rally attempt on above-average volume.</div>
+        <span class="rs-tag" style="background:rgba(61,214,140,.1);color:var(--lime);border:1px solid rgba(61,214,140,.18)">Analysis Strip → FTD</span>
+      </div>
+    </div>
+    <div class="routine-step">
+      <div class="rs-num">7</div>
+      <div class="rs-body">
+        <div class="rs-title">Set Your Exposure</div>
+        <div class="rs-desc">Use the Exposure Meter in the Market Summary card. It shows your exact ₹ deployment amount. Do not exceed this number — discipline is the edge.</div>
+        <span class="rs-tag" style="background:rgba(34,201,192,.1);color:var(--teal);border:1px solid rgba(34,201,192,.18)">Market Summary → Exposure Meter</span>
+      </div>
+    </div>
+    <div class="routine-step">
+      <div class="rs-num">8</div>
+      <div class="rs-body">
+        <div class="rs-title">Save EOD Data</div>
+        <div class="rs-desc">Enter today's A/D breadth, MA breadth, Nifty close and volume. Click Save &amp; Sync All. All 8 indicators update instantly. You're done.</div>
+        <span class="rs-tag" style="background:rgba(77,157,224,.1);color:var(--accent);border:1px solid rgba(77,157,224,.18)">Left Column → EOD Entry</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 06 SIGNAL COMBINATIONS -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">06</span>
+    <span class="section-icon">🔀</span>
+    <span class="section-title">Key Signal Combinations</span>
+  </div>
+  <div class="combo-grid">
+    <div class="combo">
+      <div class="combo-head" style="border-bottom-color:rgba(61,214,140,.15)">
+        <div class="combo-dot" style="background:var(--lime)"></div>
+        <div class="combo-title" style="color:var(--lime)">🚀 Strong Buy Setup</div>
+      </div>
+      <div class="combo-body">
+        <div class="combo-signals">
+          <span class="badge bg">Score &gt; 55</span><span class="badge bg">Momentum +ve</span><span class="badge bg">Pressure +ve</span><span class="badge bg">FTD confirmed</span><span class="badge bp">RPG &gt; 70%</span>
+        </div>
+        <div class="combo-action">Full position sizing 2R–3R. Breakouts from Stage 2 bases. Standard 7–8% stop losses. Let leaders run.</div>
+      </div>
+    </div>
+    <div class="combo">
+      <div class="combo-head" style="border-bottom-color:rgba(232,184,75,.15)">
+        <div class="combo-dot" style="background:var(--yellow)"></div>
+        <div class="combo-title" style="color:var(--yellow)">⚡ Pilot Entry Setup</div>
+      </div>
+      <div class="combo-body">
+        <div class="combo-signals">
+          <span class="badge by">Score 35–50</span><span class="badge bg">Momentum +ve</span><span class="badge br">No FTD yet</span><span class="badge bp">RPG 40–65%</span>
+        </div>
+        <div class="combo-action">0.25R–0.5R per trade. Highest RS stocks only. Tight 5–6% stops. No adds until FTD confirmed.</div>
+      </div>
+    </div>
+    <div class="combo">
+      <div class="combo-head" style="border-bottom-color:rgba(224,123,58,.15)">
+        <div class="combo-dot" style="background:var(--orange)"></div>
+        <div class="combo-title" style="color:var(--orange)">⚠ High Caution</div>
+      </div>
+      <div class="combo-body">
+        <div class="combo-signals">
+          <span class="badge by">Score 30–45</span><span class="badge br">Dist Days 5–6</span><span class="badge br">Pressure –ve</span><span class="badge bp">RPG &lt; 45%</span>
+        </div>
+        <div class="combo-action">Reduce all exposure. Tighten stops to 5%. No new entries. Wait for distribution to drop below 4.</div>
+      </div>
+    </div>
+    <div class="combo">
+      <div class="combo-head" style="border-bottom-color:rgba(224,84,84,.15)">
+        <div class="combo-dot" style="background:var(--red)"></div>
+        <div class="combo-title" style="color:var(--red)">🛑 Stand Aside</div>
+      </div>
+      <div class="combo-body">
+        <div class="combo-signals">
+          <span class="badge br">Score &lt; 30</span><span class="badge br">Dist Days 6+</span><span class="badge br">Pressure –ve</span><span class="badge bp">RPG &lt; 30%</span>
+        </div>
+        <div class="combo-action">Zero new trades. Capital preservation only. Cash is a position. Wait for score to rebuild above 35.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 07 DEFINITIONS -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">07</span>
+    <span class="section-icon">📖</span>
+    <span class="section-title">Indicator Definitions</span>
+  </div>
+  <div class="def-grid">
+    <div class="def-item">
+      <div class="def-term">Breadth Score</div>
+      <div class="def-desc">Weighted composite: A/D ratio (35%), % above EMA20 (20%), % above SMA50 (15%), % above SMA200 (15%), 52W H/L ratio (15%). Scored 0–100.</div>
+    </div>
+    <div class="def-item">
+      <div class="def-term">Breadth Momentum</div>
+      <div class="def-desc">Day-over-day change in Breadth Score. Positive = participation improving. A jump of +10 in one day signals a strong breadth expansion event.</div>
+    </div>
+    <div class="def-item">
+      <div class="def-term">Breadth Thrust</div>
+      <div class="def-desc">3-day change in Breadth Score. Above +10 signals rapid expansion in market participation — an early indicator of potential sustained rally conditions.</div>
+    </div>
+    <div class="def-item">
+      <div class="def-term">Distribution Days</div>
+      <div class="def-desc">Days where Nifty 50 closed lower on higher volume — institutional selling. 6+ in 25 sessions = elevated risk. Auto-counted from the Pressure Day Log.</div>
+    </div>
+    <div class="def-item">
+      <div class="def-term">Market Pressure (MPM)</div>
+      <div class="def-desc">Accumulation days minus Distribution days over last 25 sessions. Positive = institutions buying more than selling. Negative = distribution dominating.</div>
+    </div>
+    <div class="def-item">
+      <div class="def-term">BSR — Breakout Success Rate</div>
+      <div class="def-desc">% of your logged breakout trades that gained 5%+ from pivot. Tells you whether the current market environment is rewarding breakout entries.</div>
+    </div>
+    <div class="def-item">
+      <div class="def-term">FTD — Follow-Through Day</div>
+      <div class="def-desc">A gain of 1.7%+ on above-average volume on Day 4 or later of a rally attempt. Per O'Neil, this is the single most reliable confirmation of a new market uptrend.</div>
+    </div>
+    <div class="def-item def-purple">
+      <div class="def-term">Rally Probability Gauge</div>
+      <div class="def-desc">Combines Breadth Score, Momentum, Thrust, BSR, Distribution Days, and Market Pressure into a 0–100% probability of a sustained rally. FTD adds a +10 confirmation bonus. Shown as a purple arc gauge on the analysis strip.</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-left">
+    NSE Breadth Radar System · Universe: Nifty 500<br>
+    <strong>Conceived, designed and built by Shibu M K</strong><br>
+    Swing Trader · O'Neil / Minervini Methodology · Kozhikode, Kerala
+  </div>
+  <div class="footer-right">
+    <div>TRADING PLAYBOOK</div>
+    <div style="margin-top:3px;color:var(--bg5);font-size:9px">NSE BREADTH RADAR SYSTEM</div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
