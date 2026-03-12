@@ -3034,7 +3034,7 @@ function renderAll() {
 //  Seeded once. Will not overwrite existing entries.
 // ════════════════════════════════════════════════════
 function seedHistoricalData() {
-  const SEED_KEY = 'nse_seed_v1';
+  const SEED_KEY = 'nse_seed_v2';
   if (localStorage.getItem(SEED_KEY)) return; // already seeded
 
   // Source: ET Stock Market Mood — Overview (SMA%) + Advance/Decline tabs
@@ -3042,7 +3042,9 @@ function seedHistoricalData() {
   // A/D: Advanced + Declined from ET A/D tab (Unchanged = 500 - Adv - Dec)
   // Nifty close = Nifty 50 (used for display only, no MPM auto-calc for seed data)
   const seedData = [
-    {date:'2026-03-10',adv:425,dec:75, unc:0,  hi:0,lo:0,e20:28,s50:31,s200:37,nifty:22342.95,notes:'ET seed'},
+    {date:'2026-03-12',adv:312,dec:174,unc:14, hi:28,lo:6, e20:54,s50:42,s200:38,nifty:0,     notes:'ET seed'},
+    {date:'2026-03-11',adv:425,dec:75, unc:0,  hi:0,lo:0, e20:39,s50:35,s200:37,nifty:22342.95,notes:'ET seed'},
+    {date:'2026-03-10',adv:425,dec:75, unc:0,  hi:0,lo:0, e20:28,s50:31,s200:37,nifty:22342.95,notes:'ET seed'},
     {date:'2026-03-06',adv:170,dec:330,unc:0,  hi:0,lo:0,e20:20,s50:29,s200:29,nifty:22481.30,notes:'ET seed'},
     {date:'2026-03-05',adv:383,dec:117,unc:0,  hi:0,lo:0,e20:23,s50:29,s200:31,nifty:22697.80,notes:'ET seed'},
     {date:'2026-03-04',adv:54, dec:446,unc:0,  hi:0,lo:0,e20:14,s50:26,s200:28,nifty:22409.80,notes:'ET seed'},
