@@ -722,6 +722,27 @@ canvas#bsr-chart{width:100%;height:100%;}
   font-family:var(--mono); font-size:11px; color:var(--dim);
   margin-top:8px; word-break:break-all;
 }
+
+/* ── GUEST / VIEW-ONLY MODE ─────────────────────────────────────── */
+.guest-badge {
+  display:none; align-items:center; gap:5px;
+  font-family:var(--mono); font-size:10px; font-weight:600;
+  letter-spacing:.5px; text-transform:uppercase;
+  padding:3px 10px; border-radius:3px;
+  background:rgba(232,184,75,.08); border:1px solid rgba(232,184,75,.25);
+  color:var(--yellow);
+}
+.guest-badge.visible { display:flex; }
+.guest-banner {
+  display:none; padding:8px 16px;
+  background:rgba(232,184,75,.06); border-bottom:1px solid rgba(232,184,75,.18);
+  font-size:12px; color:var(--yellow); text-align:center;
+  letter-spacing:.2px;
+}
+.guest-banner.visible { display:block; }
+body.guest-mode #eod-entry-card,
+body.guest-mode #bsr-module-card,
+body.guest-mode #mpm-module-card { display:none !important; }
 </style>
 </head>
 <body>
@@ -732,6 +753,7 @@ canvas#bsr-chart{width:100%;height:100%;}
   <div class="hdr-right">
     <div class="hdr-tag">Universe: <b>Nifty 500</b></div>
     <div class="hdr-tag" id="hdr-date"></div>
+    <div class="guest-badge" id="guest-badge">👁 Guest View</div>
     <div class="sync-status" onclick="showSetup()" title="Cloud sync settings">
       <div class="sync-dot" id="sync-dot"></div>
       <span id="sync-label">Not Configured</span>
@@ -750,6 +772,9 @@ canvas#bsr-chart{width:100%;height:100%;}
   <a class="src-btn" href="manual.html" target="_blank" style="color:var(--lime);border-color:rgba(74,222,128,.25);background:rgba(74,222,128,.04);margin-left:8px"><span class="dot" style="background:var(--lime)"></span>📖 User Guide</a>
   <a class="src-btn" href="playbook.html" target="_blank" style="color:var(--yellow);border-color:rgba(251,191,36,.25);background:rgba(251,191,36,.04);margin-left:4px"><span class="dot" style="background:var(--yellow)"></span>📋 Playbook</a>
 </div>
+
+<!-- GUEST MODE BANNER -->
+<div class="guest-banner" id="guest-banner">👁 <b>Guest View Mode</b> — You are viewing read-only data. Entry forms are hidden. Pull latest data using the sync button.</div>
 
 <!-- CLOUD SETUP PANEL -->
 <div class="setup-panel" id="setup-panel">
@@ -998,7 +1023,7 @@ canvas#bsr-chart{width:100%;height:100%;}
     <div class="col">
 
       <!-- ═══ UNIFIED EOD DATA ENTRY ═══════════════════════════ -->
-      <div class="card" style="border-top:3px solid var(--accent)">
+      <div class="card" id="eod-entry-card" style="border-top:3px solid var(--accent)">
         <div class="card-head">
           <div class="card-title">📋 EOD Data Entry — <span id="entry-today"></span></div>
           <div style="display:flex;gap:5px">
@@ -1179,7 +1204,7 @@ canvas#bsr-chart{width:100%;height:100%;}
     <div class="col">
 
       <!-- BSR Module -->
-      <div class="card" style="border-top:2px solid var(--purple)">
+      <div class="card" id="bsr-module-card" style="border-top:2px solid var(--purple)">
         <div class="card-head">
           <div class="card-title"><span style="color:var(--purple)">Breakout Trade Log (BSR)</span></div>
           <span style="font-size:9px;color:var(--sub)">✓ Success ≥5% · ✗ Fail: below pivot after 3d</span>
@@ -1282,7 +1307,7 @@ canvas#bsr-chart{width:100%;height:100%;}
       </div>
 
       <!-- MPM Module -->
-      <div class="card" style="border-top:2px solid var(--teal)">
+      <div class="card" id="mpm-module-card" style="border-top:2px solid var(--teal)">
         <div class="card-head">
           <div class="card-title"><span style="color:var(--teal)">Market Pressure Meter (MPM)</span></div>
           <span style="font-size:9px;color:var(--sub)">Acc = Close↑+Vol↑ · Dist = Close↓+Vol↑ · Last 25d</span>
@@ -1434,6 +1459,15 @@ const LS_BIN  = 'nse_jb_bin';
 
 const loadLocal = () => { try { return JSON.parse(localStorage.getItem(LS_DATA)) || []; } catch(e) { return []; } };
 const saveLocal = d => localStorage.setItem(LS_DATA, JSON.stringify(d.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30)));
+
+// BSR + MPM storage constants — defined early so renderAll() can access them
+const LS_BSR  = 'nse_bsr_v1';
+const bsrLoad = () => { try { return JSON.parse(localStorage.getItem(LS_BSR)) || []; } catch(e) { return []; } };
+const bsrSave = d => localStorage.setItem(LS_BSR, JSON.stringify(d));
+
+const LS_MPM  = 'nse_mpm_v1';
+const mpmLoad = () => { try { return JSON.parse(localStorage.getItem(LS_MPM)) || []; } catch(e) { return []; } };
+const mpmSave = d => localStorage.setItem(LS_MPM, JSON.stringify(d.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,60)));
 const getCfg    = () => ({ key: localStorage.getItem(LS_KEY)||'', bin: localStorage.getItem(LS_BIN)||'' });
 const saveCfg   = (k,b) => { localStorage.setItem(LS_KEY,k); localStorage.setItem(LS_BIN,b); };
 
@@ -1454,45 +1488,27 @@ async function jbCreate(key, data) {
 }
 
 async function jbRead(key, bin) {
-  console.log('[jbRead] Reading bin:', bin);
+  // console.log('[jbRead] Reading bin:', bin);
   const r = await fetch(`${JB}/b/${bin}/latest`, {
     headers: { 'X-Master-Key': key }
   });
   if(!r.ok) throw new Error('Read failed: ' + r.status);
   const j = await r.json();
-  console.log('[jbRead] Raw response keys:', Object.keys(j));
-  console.log('[jbRead] j.record type:', typeof j.record, Array.isArray(j.record));
   const rec = j.record;
-  if (rec && typeof rec === 'object' && !Array.isArray(rec)) {
-    console.log('[jbRead] Payload keys:', Object.keys(rec));
-    console.log('[jbRead] records:', rec.records ? rec.records.length : 'MISSING');
-    console.log('[jbRead] mpm:', rec.mpm ? rec.mpm.length : 'MISSING');
-    console.log('[jbRead] bsr:', rec.bsr ? rec.bsr.length : 'MISSING');
-    console.log('[jbRead] mpm sample:', rec.mpm ? rec.mpm.slice(0,2) : 'none');
-  } else {
-    console.log('[jbRead] Record is array or null:', rec);
-  }
+  console.log('[jbRead] OK — records:', rec?.records?.length||0, 'mpm:', rec?.mpm?.length||0, 'bsr:', rec?.bsr?.length||0);
   return rec;
 }
 
 async function jbUpdate(key, bin, payload) {
-  console.log('[jbUpdate] Pushing payload:', {
-    records: payload.records ? payload.records.length : 0,
-    bsr: payload.bsr ? payload.bsr.length : 0,
-    mpm: payload.mpm ? payload.mpm.length : 0,
-    ftd: payload.ftd ? payload.ftd.length : 0,
-    mpmSample: payload.mpm ? payload.mpm.slice(0,2) : []
-  });
   const body = JSON.stringify(payload);
-  console.log('[jbUpdate] Payload size:', body.length, 'bytes');
   const r = await fetch(`${JB}/b/${bin}`, {
     method: 'PUT',
     headers: { 'Content-Type':'application/json', 'X-Master-Key': key },
     body: body
   });
   const respText = await r.text();
-  console.log('[jbUpdate] Response status:', r.status, 'body:', respText.slice(0,200));
   if(!r.ok) throw new Error('Update failed: ' + r.status + ' ' + respText.slice(0,100));
+  console.log('[jbUpdate] OK — pushed', JSON.parse(body)?.records?.length||0, 'records');
 }
 
 // ════════════════════════════════════════════════════
@@ -3082,14 +3098,22 @@ function seedHistoricalData() {
   document.getElementById('bsr-date').value = todayISO();
 
   // ── Log localStorage state on startup ──────────────────
-  console.log('[Init] localStorage keys:', Object.keys(localStorage));
-  console.log('[Init] LS_DATA length:', (localStorage.getItem('nse_breadth_v3')||'').length);
-  console.log('[Init] LS_MPM length:', (localStorage.getItem('nse_mpm_v1')||'').length);
-  console.log('[Init] LS_KEY present:', !!localStorage.getItem('nse_jb_key'));
-  console.log('[Init] LS_BIN present:', !!localStorage.getItem('nse_jb_bin'));
+  // Startup summary (single clean line)
+  const _cfg = getCfg();
+  console.log(
+    '[NSE Breadth Radar] Init —',
+    'records:', loadLocal().length,
+    '| mpm:', mpmLoad().length,
+    '| bsr:', bsrLoad().length,
+    '| cloud:', (_cfg.key && _cfg.bin) ? 'configured' : 'not configured',
+    '| guest:', isGuestMode() ? localStorage.getItem(LS_GUEST_BIN) : 'no'
+  );
 
   // ── Seed historical data on first load ──────────────────
   seedHistoricalData();
+
+  // Check guest mode first — if active, skip owner sync
+  if (initGuestMode()) return; // guest mode handles its own pull
 
   const cfg=getCfg();
   const panel=document.getElementById('setup-panel');
@@ -3157,34 +3181,52 @@ function seedHistoricalData() {
 
 window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal()); bsrRenderChart(); },50); });
 
-// ResizeObserver — fires when canvas container gets real dimensions
-// This fixes the "DevTools open/close" bug completely
+// ResizeObserver — debounced via rAF to prevent "loop" console warnings
+// rAF defers the render until after the browser has finished its layout pass,
+// so the observer callback never triggers a synchronous re-layout loop.
 (function setupResizeObservers() {
+  // Suppress the benign ResizeObserver loop notification globally
+  const _origErr = window.onerror;
+  window.onerror = function(msg, src, line, col, err) {
+    if (typeof msg === 'string' && msg.includes('ResizeObserver loop')) return true; // swallow
+    return _origErr ? _origErr(msg, src, line, col, err) : false;
+  };
+
   const chartWrap = document.querySelector('.chart-canvas-wrap');
   const bsrWrap   = document.querySelector('.bsr-canvas-wrap');
-  let chartReady = false, bsrReady = false;
+  let chartRafId = null, bsrRafId = null;
+
   if (window.ResizeObserver && chartWrap) {
     const ro = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        const w = entry.contentRect.width;
-        if (w > 10) {
-          renderChart(loadLocal());
-          renderSnapshot(loadLocal());
-          renderHistory(loadLocal());
-          if (!chartReady) { chartReady = true; }
+      if (chartRafId) cancelAnimationFrame(chartRafId);
+      chartRafId = requestAnimationFrame(() => {
+        for (const entry of entries) {
+          if (entry.contentRect.width > 10) {
+            const data = loadLocal();
+            renderChart(data);
+            renderSnapshot(data);
+            renderHistory(data);
+          }
         }
-      }
+        chartRafId = null;
+      });
     });
     ro.observe(chartWrap);
   }
+
   if (window.ResizeObserver && bsrWrap) {
+    let bsrReady = false;
     const ro2 = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        if (entry.contentRect.width > 10 && !bsrReady) {
-          bsrRenderChart();
-          bsrReady = true;
+      if (bsrRafId) cancelAnimationFrame(bsrRafId);
+      bsrRafId = requestAnimationFrame(() => {
+        for (const entry of entries) {
+          if (entry.contentRect.width > 10) {
+            bsrRenderChart();
+            bsrReady = true;
+          }
         }
-      }
+        bsrRafId = null;
+      });
     });
     ro2.observe(bsrWrap);
   }
@@ -3193,11 +3235,6 @@ window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal())
 // ════════════════════════════════════════════════════
 //  BSR — BREAKOUT SUCCESS RATE TRACKER
 // ════════════════════════════════════════════════════
-const LS_BSR = 'nse_bsr_v1';
-const bsrLoad = () => { try { return JSON.parse(localStorage.getItem(LS_BSR)) || []; } catch(e) { return []; } };
-const bsrSave = d => localStorage.setItem(LS_BSR, JSON.stringify(d));
-
-// BSR cloud sync — handled by shared pushToCloud() / pullFromCloud()
 
 // ── EVALUATION ───────────────────────────────────────
 function bsrDaysSince(dateStr) {
@@ -3459,9 +3496,6 @@ function bsrExport() {
 // ════════════════════════════════════════════════════
 //  MPM — MARKET PRESSURE METER
 // ════════════════════════════════════════════════════
-const LS_MPM = 'nse_mpm_v1';
-const mpmLoad = () => { try { return JSON.parse(localStorage.getItem(LS_MPM)) || []; } catch(e) { return []; } };
-const mpmSave = d => localStorage.setItem(LS_MPM, JSON.stringify(d.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,60)));
 
 function mpmClassify(close, pclose, vol, pvol) {
   const closeUp = +close > +pclose;
@@ -4200,6 +4234,15 @@ function openCfgModal() {
   const alreadyView = document.getElementById('cfg-already');
   const setupView   = document.getElementById('cfg-setup-view');
 
+  // Pre-fill guest bin field if in guest mode
+  const guestBin = localStorage.getItem(LS_GUEST_BIN);
+  if (guestBin) {
+    const el = document.getElementById('cfg-guest-bin');
+    if (el) el.value = guestBin;
+    const exitBtn = document.getElementById('cfg-exit-guest-btn');
+    if (exitBtn) exitBtn.style.display = 'inline-block';
+  }
+
   if (cfg.key && cfg.bin) {
     // Already configured on this device — show status view
     alreadyView.style.display = 'block';
@@ -4374,6 +4417,136 @@ function cfgClearCreds() {
 // Override the old showSetup to open new modal instead
 function showSetup() { openCfgModal(); }
 
+
+// ═══════════════════════════════════════════════════════════════════
+// GUEST / VIEW-ONLY MODE
+// ═══════════════════════════════════════════════════════════════════
+const LS_GUEST_BIN = 'nse_guest_bin';
+
+function isGuestMode() { return !!localStorage.getItem(LS_GUEST_BIN); }
+
+function applyGuestMode() {
+  document.body.classList.add('guest-mode');
+  const badge  = document.getElementById('guest-badge');
+  const banner = document.getElementById('guest-banner');
+  if (badge)  badge.classList.add('visible');
+  if (banner) banner.classList.add('visible');
+  // Disable all write functions silently
+  window._guestMode = true;
+  // Override pushToCloud so saves are no-ops
+  window._origPushToCloud = window.pushToCloud;
+  window.pushToCloud = async () => { console.log('[Guest] pushToCloud blocked'); };
+  // Update sync button
+  setSyncStatus('ok', 'Guest View · Read-Only');
+  const syncBtn = document.querySelector('.sync-status');
+  if (syncBtn) syncBtn.style.borderColor = 'rgba(232,184,75,.3)';
+}
+
+async function cfgConnectGuest() {
+  const binEl = document.getElementById('cfg-guest-bin');
+  const bin = binEl ? binEl.value.trim() : '';
+  if (!bin) {
+    cfgBanner('⚠ Please enter the Bin ID from the dashboard owner.', 'warn', 'cfg-guest-msg');
+    return;
+  }
+  cfgBanner('🔄 Connecting to shared bin…', 'inf', 'cfg-guest-msg');
+  try {
+    // Public read — no key needed
+    const payload = await jbReadPublic(bin);
+    const recs = Array.isArray(payload) ? payload : (payload.records||[]);
+    const bsr  = Array.isArray(payload) ? [] : (payload.bsr||[]);
+    const mpm  = Array.isArray(payload) ? [] : (payload.mpm||[]);
+    const ftd  = Array.isArray(payload) ? [] : (payload.ftd||[]);
+
+    // Save to local (view-only — will not be pushed back)
+    saveLocal(recs);
+    bsrSave(bsr);
+    mpmSave(mpm);
+    ftdSaveData(ftd.sort((a,b)=>b.date.localeCompare(a.date)));
+
+    // Persist guest bin
+    localStorage.setItem(LS_GUEST_BIN, bin);
+
+    cfgBanner(`✅ Connected! ${recs.length} records · ${bsr.length} BSR · ${mpm.length} MPM loaded.`, 'ok', 'cfg-guest-msg');
+
+    // Show exit button
+    const exitBtn = document.getElementById('cfg-exit-guest-btn');
+    if (exitBtn) exitBtn.style.display = 'inline-block';
+
+    applyGuestMode();
+    renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender();
+
+    // Auto-close modal after 2s
+    setTimeout(closeCfgModal, 2000);
+  } catch(e) {
+    cfgBanner('✗ ' + e.message + '\n\nMake sure the Bin is set to Public on jsonbin.io.', 'err', 'cfg-guest-msg');
+  }
+}
+
+async function jbReadPublic(bin) {
+  // JSONBin public read — no X-Master-Key header needed for public bins
+  const r = await fetch(`${JB}/b/${bin}/latest`, {
+    headers: { 'X-Access-Key': '' }  // empty key for public bins
+  });
+  if (!r.ok) {
+    if (r.status === 401) throw new Error('Bin is private. Ask the owner to make it Public on jsonbin.io.');
+    throw new Error('Read failed: ' + r.status);
+  }
+  const j = await r.json();
+  return j.record || j;
+}
+
+function cfgExitGuest() {
+  if (!confirm('Exit Guest Mode?\n\nThis will clear the guest data from this browser. You can reconnect anytime with the Bin ID.')) return;
+  localStorage.removeItem(LS_GUEST_BIN);
+  document.body.classList.remove('guest-mode');
+  window._guestMode = false;
+  if (window._origPushToCloud) window.pushToCloud = window._origPushToCloud;
+  const badge  = document.getElementById('guest-badge');
+  const banner = document.getElementById('guest-banner');
+  if (badge)  badge.classList.remove('visible');
+  if (banner) banner.classList.remove('visible');
+  // Clear data
+  saveLocal([]); bsrSave([]); mpmSave([]); ftdSaveData([]);
+  setSyncStatus('warn', 'Not Configured · Click to Setup');
+  renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender();
+  closeCfgModal();
+}
+
+// Check guest mode on page load (called from init)
+function initGuestMode() {
+  const guestBin = localStorage.getItem(LS_GUEST_BIN);
+  if (!guestBin) return false;
+
+  // Re-apply guest mode styling immediately (data already in localStorage)
+  applyGuestMode();
+
+  // Show exit button in modal
+  const exitBtn = document.getElementById('cfg-exit-guest-btn');
+  if (exitBtn) exitBtn.style.display = 'inline-block';
+
+  // Pre-fill the guest bin field
+  const binEl = document.getElementById('cfg-guest-bin');
+  if (binEl) binEl.value = guestBin;
+
+  // Silently refresh data from cloud
+  jbReadPublic(guestBin).then(payload => {
+    const recs = Array.isArray(payload) ? payload : (payload.records||[]);
+    const bsr  = Array.isArray(payload) ? [] : (payload.bsr||[]);
+    const mpm  = Array.isArray(payload) ? [] : (payload.mpm||[]);
+    const ftd  = Array.isArray(payload) ? [] : (payload.ftd||[]);
+    saveLocal(recs); bsrSave(bsr); mpmSave(mpm);
+    ftdSaveData(ftd.sort((a,b)=>b.date.localeCompare(a.date)));
+    setSyncStatus('ok', `Guest · ${recs.length}rec · ${mpm.length}mpm`);
+    renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender();
+  }).catch(e => {
+    setSyncStatus('err', 'Guest · Pull Failed');
+    console.warn('[Guest] Refresh failed:', e.message);
+  });
+
+  return true;
+}
+
 </script>
 
 <!-- ── PAST DATE ENTRY MODAL ──────────────────────────── -->
@@ -4515,6 +4688,27 @@ function showSetup() { openCfgModal(); }
           <button class="cfg-btn-primary" id="cfg-connect-btn" onclick="cfgConnect()">Connect &amp; Create Bin</button>
           <button class="cfg-btn-sec" onclick="closeCfgModal()">Cancel</button>
         </div>
+
+        <!-- Guest Mode separator -->
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--yellow);margin-bottom:10px">
+            👁 Guest / View-Only Mode
+          </div>
+          <div style="font-size:12px;color:var(--sub);line-height:1.65;margin-bottom:12px">
+            Share your <b style="color:var(--text)">Bin ID</b> with a friend. They enter it below — <b style="color:var(--text)">no Master Key needed</b>.<br>
+            Make sure your JSONBin is set to <b style="color:var(--yellow)">Public</b> on jsonbin.io first (Bin → Settings → Make Public).
+          </div>
+          <div class="cfg-field">
+            <label>Bin ID <span style="color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">(from the dashboard owner — no key required)</span></label>
+            <input type="text" id="cfg-guest-bin" placeholder="67xxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+          </div>
+          <div class="cfg-banner" id="cfg-guest-msg"></div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="cfg-btn-primary" style="background:var(--yellow);color:#000" onclick="cfgConnectGuest()">👁 Connect as Guest</button>
+            <button class="cfg-btn-sec" id="cfg-exit-guest-btn" onclick="cfgExitGuest()" style="display:none">Exit Guest Mode</button>
+          </div>
+        </div>
+
       </div>
 
     </div>
