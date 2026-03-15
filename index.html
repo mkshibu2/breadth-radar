@@ -1024,6 +1024,45 @@ body.guest-mode #mpm-module-card { display:none !important; }
   .about-head{ padding:16px; }
   .about-creator-name{ font-size:18px; }
 }
+
+/* ── BSR ENHANCEMENTS ───────────────────────────────────────── */
+.bsr-stale-badge {
+  display:inline-block; font-size:9px; padding:1px 5px;
+  border-radius:3px; background:rgba(74,93,118,.3);
+  border:1px solid var(--border); color:var(--dim);
+  margin-left:4px; vertical-align:middle;
+}
+.bsr-tr-stale td { opacity:.45; }
+.bsr-tr-stale td:first-child { opacity:.6; }
+.bsr-tr-resolved td { opacity:.5; }
+.bsr-filter-row {
+  display:flex; align-items:center; gap:8px;
+  padding:6px 12px; border-bottom:1px solid var(--border);
+  background:var(--bg3); flex-wrap:wrap;
+}
+.bsr-filter-btn {
+  font-size:10px; padding:3px 9px; border-radius:3px;
+  border:1px solid var(--border); background:transparent;
+  color:var(--sub); cursor:pointer; font-family:var(--mono);
+  letter-spacing:.3px; transition:all .15s;
+}
+.bsr-filter-btn.active {
+  background:rgba(167,139,250,.12);
+  border-color:rgba(167,139,250,.4);
+  color:var(--purple);
+}
+.bsr-filter-label {
+  font-size:10px; color:var(--dim); margin-left:auto;
+  font-family:var(--mono);
+}
+.bsr-note-box {
+  margin:8px 12px; padding:8px 12px;
+  background:rgba(167,139,250,.04);
+  border:1px solid rgba(167,139,250,.15);
+  border-radius:5px; font-size:11px;
+  color:var(--sub); line-height:1.6;
+}
+.bsr-note-box b { color:var(--purple); }
 </style>
 </head>
 <body>
@@ -1497,7 +1536,22 @@ body.guest-mode #mpm-module-card { display:none !important; }
       <div class="card" id="bsr-module-card" style="border-top:2px solid var(--purple)">
         <div class="card-head">
           <div class="card-title"><span style="color:var(--purple)">Breakout Trade Log (BSR)</span></div>
-          <span style="font-size:9px;color:var(--sub)">✓ Success ≥5% · ✗ Fail: below pivot after 3d</span>
+          <span style="font-size:9px;color:var(--sub)">✓ Success ≥5% above pivot · ✗ Fail: close below pivot after 3d · ⏳ Stale: pending >60d</span>
+        </div>
+        <!-- Filter row -->
+        <div class="bsr-filter-row" id="bsr-filter-row">
+          <button class="bsr-filter-btn active" id="bsr-f-all"    onclick="bsrSetFilter('all')">All</button>
+          <button class="bsr-filter-btn"        id="bsr-f-pending" onclick="bsrSetFilter('pending')">⏳ Pending</button>
+          <button class="bsr-filter-btn"        id="bsr-f-success" onclick="bsrSetFilter('success')">✓ Success</button>
+          <button class="bsr-filter-btn"        id="bsr-f-failed"  onclick="bsrSetFilter('failed')">✗ Failed</button>
+          <button class="bsr-filter-btn"        id="bsr-f-stale"   onclick="bsrSetFilter('stale')">⏳ Stale</button>
+          <span class="bsr-filter-label" id="bsr-filter-label"></span>
+        </div>
+        <!-- What to log note -->
+        <div class="bsr-note-box">
+          <b>What to log:</b> Any valid breakout setup you identify — whether you traded it or not.
+          Log potential BOs from your watchlist too. BSR measures <b>market quality</b>, not personal P&L.
+          Only delete entries made by mistake (wrong symbol/pivot).
         </div>
         <!-- BSR Hero -->
         <div class="bsr-hero">
@@ -3764,7 +3818,14 @@ function bsrEval(trade) {
   const days  = bsrDaysSince(trade.date);
   if(curr >= pivot * 1.05)              return 'success';
   if(curr < pivot && days >= 3)         return 'failed';
+  if(days > 60)                         return 'stale';   // pending but >60 days
   return 'pending';
+}
+
+// bsrIsResolved — success or failed (contributes to BSR%)
+function bsrIsResolved(trade) {
+  const s = bsrEval(trade);
+  return s === 'success' || s === 'failed';
 }
 
 function bsrZone(pct) {
@@ -3773,6 +3834,18 @@ function bsrZone(pct) {
   if(pct >= 50) return { name:'MIXED CONDITIONS',    color:'var(--yellow)',  bg:'rgba(250,204,21,0.12)' };
   if(pct >= 30) return { name:'WEAK BREAKOUTS',      color:'var(--orange)',  bg:'rgba(251,146,60,0.12)' };
   return              { name:'AVOID BREAKOUTS',      color:'var(--red)',     bg:'rgba(248,113,113,0.12)' };
+}
+
+// ── FILTER STATE ──────────────────────────────────────
+let _bsrFilter = 'all'; // all | pending | success | failed | stale
+
+function bsrSetFilter(f) {
+  _bsrFilter = f;
+  ['all','pending','success','failed','stale'].forEach(k => {
+    const btn = document.getElementById('bsr-f-' + k);
+    if (btn) btn.classList.toggle('active', k === f);
+  });
+  bsrRenderTable(bsrLoad());
 }
 
 // ── ADD TRADE ─────────────────────────────────────────
@@ -3804,8 +3877,17 @@ function bsrUpdatePrice(id, newPrice) {
   const trades = bsrLoad();
   const t = trades.find(x => x.id === id);
   if(!t) return;
+  const prevStatus = bsrEval(t);
   t.curr = newPrice;
-  bsrSave(trades); bsrRenderAll(); pushToCloud();
+  const newStatus = bsrEval(t);
+  bsrSave(trades);
+  // Flash on status change
+  if (prevStatus !== newStatus) {
+    if (newStatus === 'success') bsrFlash('🎯 ' + t.sym + ' → Success! ≥5% above pivot', 'var(--lime)');
+    else if (newStatus === 'failed') bsrFlash('✗ ' + t.sym + ' → Failed — closed below pivot', 'var(--red)');
+    else if (newStatus === 'stale') bsrFlash('⏳ ' + t.sym + ' → Stale — pending >60 days', 'var(--dim)');
+  }
+  bsrRenderAll(); pushToCloud();
 }
 
 function bsrFlash(msg, color) {
@@ -3818,11 +3900,12 @@ function bsrFlash(msg, color) {
 function bsrRenderHero(trades) {
   const el = id => document.getElementById(id);
   const results = trades.map(t => bsrEval(t));
-  const succ = results.filter(r => r === 'success').length;
-  const fail = results.filter(r => r === 'failed').length;
-  const pend = results.filter(r => r === 'pending').length;
-  const total = succ + fail;
-  const pct = total > 0 ? Math.round(succ / total * 100) : null;
+  const succ  = results.filter(r => r === 'success').length;
+  const fail  = results.filter(r => r === 'failed').length;
+  const pend  = results.filter(r => r === 'pending').length;
+  const stale = results.filter(r => r === 'stale').length;
+  const total = succ + fail;  // stale excluded from BSR% like pending
+  const pct   = total > 0 ? Math.round(succ / total * 100) : null;
 
   el('bsr-sn').textContent = succ;
   el('bsr-fn').textContent = fail;
@@ -3843,11 +3926,11 @@ function bsrRenderHero(trades) {
     el('bsr-num').textContent = pct + '%'; el('bsr-num').style.color = z.color;
     el('bsr-zone').textContent = z.name; el('bsr-zone').style.color = z.color;
     el('bsr-fill').style.width = pct + '%'; el('bsr-fill').style.background = z.color;
-    el('bsr-breakdown').innerHTML = `<span>${succ} success + ${fail} failed = ${total} evaluated &nbsp;|&nbsp; ${pend} pending (excluded)</span>`;
+    el('bsr-breakdown').innerHTML = `<span>${succ} success + ${fail} failed = ${total} evaluated &nbsp;|&nbsp; ${pend} pending · ${stale} stale (excluded from %)</span>`;
     // Update top hero card
     el('hero-bsr-pct').textContent = pct + '%'; el('hero-bsr-pct').style.color = z.color;
     el('hero-bsr-zone').textContent = z.name; el('hero-bsr-zone').style.color = z.color;
-    el('hero-bsr-counts').textContent = `${succ}✓  ${fail}✗  ${pend}⏳`;
+    el('hero-bsr-counts').textContent = `${succ}✓ ${fail}✗ ${pend}⏳${stale?' '+stale+'📌':''}`;
   }
 
   if(trades.length > 0) {
@@ -3864,37 +3947,80 @@ function bsrRenderHero(trades) {
 
 // ── RENDER TABLE ──────────────────────────────────────
 function bsrRenderTable(trades) {
-  const tbody = document.getElementById('bsr-tbody');
+  const tbody  = document.getElementById('bsr-tbody');
+  const label  = document.getElementById('bsr-filter-label');
+
   if(!trades.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="color:var(--dim);padding:24px;text-align:center;letter-spacing:2px;font-size:11px;font-family:var(--mono);">NO TRADES LOGGED YET</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="color:var(--dim);padding:24px;text-align:center;letter-spacing:2px;font-size:11px;font-family:var(--mono);">NO TRADES LOGGED YET — Add potential breakout setups above</td></tr>';
+    if(label) label.textContent = '';
     return;
   }
+
   // Sort newest first
   const sorted = [...trades].sort((a,b) => b.date.localeCompare(a.date));
-  tbody.innerHTML = sorted.map(t => {
+
+  // Apply filter
+  const filtered = sorted.filter(t => {
+    const s = bsrEval(t);
+    if (_bsrFilter === 'all')     return true;
+    if (_bsrFilter === 'pending') return s === 'pending';
+    if (_bsrFilter === 'success') return s === 'success';
+    if (_bsrFilter === 'failed')  return s === 'failed';
+    if (_bsrFilter === 'stale')   return s === 'stale';
+    return true;
+  });
+
+  // Update label
+  const staleCount   = sorted.filter(t => bsrEval(t) === 'stale').length;
+  const pendingCount = sorted.filter(t => bsrEval(t) === 'pending').length;
+  if(label) {
+    const parts = [];
+    if(staleCount)   parts.push(staleCount + ' stale');
+    if(pendingCount) parts.push(pendingCount + ' pending');
+    label.textContent = filtered.length + ' shown' + (parts.length ? ' · ' + parts.join(' · ') : '');
+  }
+
+  if(!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="color:var(--dim);padding:16px;text-align:center;font-size:11px">No trades match this filter</td></tr>';
+    return;
+  }
+
+  const statusClass = { success:'success', failed:'failed', pending:'pending', stale:'pending' };
+  const statusLabel = {
+    success: '✓ Success',
+    failed:  '✗ Failed',
+    pending: '⏳ Pending',
+    stale:   '⏳ Stale'
+  };
+
+  tbody.innerHTML = filtered.map(t => {
     const pivot  = +t.pivot, curr = +t.curr;
     const days   = bsrDaysSince(t.date);
     const status = bsrEval(t);
     const chgPct = ((curr - pivot) / pivot * 100).toFixed(2);
     const target = (pivot * 1.05).toFixed(2);
     const chgColor = +chgPct >= 5 ? 'var(--lime)' : +chgPct >= 0 ? 'var(--green)' : 'var(--red)';
-    const statusClass = status === 'success' ? 'success' : status === 'failed' ? 'failed' : 'pending';
-    const statusLabel = status === 'success' ? '✓ Success' : status === 'failed' ? '✗ Failed' : '⏳ Pending';
-    return `<tr>
-      <td style="font-weight:700;color:var(--text);font-size:12px">${t.sym}</td>
+    const isStale    = status === 'stale';
+    const isResolved = status === 'success' || status === 'failed';
+    const rowClass   = isStale ? 'bsr-tr-stale' : isResolved ? 'bsr-tr-resolved' : '';
+    const staleBadge = isStale ? '<span class="bsr-stale-badge">60d+</span>' : '';
+    const ageLabel   = days <= 5 ? 'Early' : days <= 15 ? 'Mid' : days <= 60 ? 'Late' : 'Stale';
+
+    return `<tr class="${rowClass}">
+      <td style="font-weight:700;color:var(--text);font-size:12px">${t.sym}${staleBadge}</td>
       <td style="color:var(--sub)">${fmt(t.date)}</td>
-      <td style="color:var(--sub)">${days}d <span style="font-size:9px;color:var(--dim)">${days<=5?'Early':days<=15?'Mid':'Late'}</span></td>
-      <td style="color:var(--text)">₹${(+t.pivot).toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+      <td style="color:var(--sub)">${days}d <span style="font-size:9px;color:${isStale?'var(--red)':'var(--dim)'}">${ageLabel}</span></td>
+      <td style="color:var(--text)">₹${(+t.pivot).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
       <td>
         <input class="bsr-price-input" type="number" value="${curr}" step="0.05"
           onblur="if(this.value && +this.value !== ${curr}) bsrUpdatePrice('${t.id}', this.value)"
           onkeydown="if(event.key==='Enter') this.blur()"
-          title="Click to edit price">
+          title="Update current price — status auto-updates">
       </td>
       <td style="color:${chgColor};font-weight:600">${+chgPct >= 0 ? '+' : ''}${chgPct}%</td>
-      <td style="color:var(--dim)">₹${(+target).toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
-      <td><span class="bsr-status ${statusClass}">${statusLabel}</span></td>
-      <td><button class="del-btn" onclick="bsrDelete('${t.id}')" title="Remove trade">✕</button></td>
+      <td style="color:var(--dim)">₹${(+target).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+      <td><span class="bsr-status ${statusClass[status]||'pending'}">${statusLabel[status]||status}</span></td>
+      <td><button class="del-btn" onclick="bsrDelete('${t.id}')" title="Remove only if entered by mistake">✕</button></td>
     </tr>`;
   }).join('');
 }
