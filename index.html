@@ -81,20 +81,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
 
 /* ── TOP STATUS STRIP — single full-width bar, 6 cells ── */
 .status-strip{display:grid;grid-template-columns:110px 155px 1fr 120px 120px 120px 110px 125px 155px;background:var(--bg2);border:1px solid var(--border);border-radius:6px 6px 0 0;overflow:hidden;}
-.analysis-strip{display:grid;grid-template-columns:repeat(4,1fr) 210px;background:var(--bg3);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;overflow:hidden;margin-bottom:0;}
-.as-cell{padding:9px 13px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;position:relative;}
+.analysis-strip{display:grid;grid-template-columns:minmax(160px,1fr) 175px 145px 155px 135px 135px 155px 150px;background:var(--bg3);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;overflow-x:auto;overflow-y:hidden;margin-bottom:0;}
+.as-cell{padding:12px 16px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:flex-start;position:relative;min-width:0;}
 .as-cell:last-child{border-right:none;}
-.as-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);margin-bottom:3px;}
-.as-phase{font-family:var(--disp);font-size:18px;font-weight:800;line-height:1;transition:color .3s;}
-.as-desc{font-size:10px;color:var(--sub);margin-top:3px;line-height:1.4;}
+.as-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--sub);margin-bottom:4px;}
+.as-phase{font-family:var(--disp);font-size:22px;font-weight:800;line-height:1.1;transition:color .3s;}
+.as-desc{font-size:11px;color:var(--sub);margin-top:3px;line-height:1.4;}
 .as-pills{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;}
-.as-pill{font-size:9px;padding:1px 5px;border-radius:2px;font-weight:600;border:1px solid transparent;}
+.as-pill{font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;border:1px solid;white-space:nowrap;}
 .as-pill.ok{background:rgba(74,222,128,.12);color:var(--lime);border-color:rgba(74,222,128,.2);}
 .as-pill.warn{background:rgba(251,191,36,.10);color:var(--yellow);border-color:rgba(251,191,36,.2);}
 .as-pill.bad{background:rgba(248,113,113,.10);color:var(--red);border-color:rgba(248,113,113,.2);}
 .as-pill.dim{background:rgba(72,85,102,.2);color:var(--sub);border-color:var(--border);}
-.as-big{font-family:var(--disp);font-size:28px;font-weight:800;line-height:1;transition:color .3s;}
-.as-sig{font-size:11px;font-weight:600;margin-top:3px;transition:color .3s;}
+.as-big{font-family:var(--disp);font-size:32px;font-weight:800;line-height:1;transition:color .3s;}
+.as-sig{font-size:12px;font-weight:600;margin-top:3px;transition:color .3s;}
 .as-ftd-banner{padding:6px 16px;font-size:11px;font-weight:600;text-align:center;border-top:1px solid var(--border);}
 .ss-momentum{font-family:var(--disp);font-size:32px;font-weight:800;line-height:1;transition:color .4s;}
 .ss-thrust-val{font-family:var(--disp);font-size:28px;font-weight:800;line-height:1;transition:color .4s;}
@@ -417,15 +417,9 @@ canvas#bsr-chart{width:100%;height:100%;}
     border-top:1px solid var(--border);
   }
 
-  /* Analysis strip: 2+1 layout */
+  /* Analysis strip: scroll on tablet — keeps full layout intact */
   .analysis-strip{
-    grid-template-columns:1fr 1fr;
-    grid-template-rows:auto auto;
-  }
-  .as-cell:nth-child(5){
-    grid-column:1/-1;
-    border-top:1px solid var(--border);
-    border-right:none;
+    grid-template-columns:minmax(160px,1fr) 175px 145px 155px 135px 135px 155px 150px;
   }
 
   /* Market Summary: stack sections */
@@ -480,16 +474,18 @@ canvas#bsr-chart{width:100%;height:100%;}
   .ss-score{ font-size:26px; }
   .ss-cond{ font-size:11px; }
 
-  /* ── ANALYSIS STRIP: 1 column ────────────────────── */
+  /* ── ANALYSIS STRIP: 2-col on mobile ───────────────── */
   .analysis-strip{
-    grid-template-columns:1fr;
+    grid-template-columns:1fr 1fr;
+    overflow-x:hidden;
   }
   .as-cell{
-    border-right:none;
     border-bottom:1px solid var(--border);
+    padding:10px 12px;
   }
+  .as-cell:nth-child(even){ border-right:none; }
   .as-cell:last-child{ border-bottom:none; }
-  .as-phase{ font-size:16px; }
+  .as-phase{ font-size:18px; }
   .as-desc{ font-size:10px; }
 
   /* ── MARKET SUMMARY ──────────────────────────────── */
@@ -597,7 +593,7 @@ canvas#bsr-chart{width:100%;height:100%;}
 .msem-exp-fill{height:100%;border-radius:7px;transition:width .6s cubic-bezier(.4,0,.2,1);}
 .msem-exp-zones{display:flex;justify-content:space-between;font-size:9px;color:var(--dim);margin-bottom:4px;}
 .msem-exp-note{font-size:11px;color:var(--sub);line-height:1.5;}
-@media(max-width:800px){.msem-grid{grid-template-columns:1fr;}.msem-section{border-right:none;border-bottom:1px solid var(--border);}}
+@media(max-width:800px){.msem-grid{grid-template-columns:1fr 1fr 1fr;}.msem-section{border-right:none;border-bottom:1px solid var(--border);}}
 
 
 /* ── RALLY PROBABILITY GAUGE ──────────────────────────────── */
@@ -1153,25 +1149,16 @@ body.guest-mode #mpm-module-card { display:none !important; }
       <button class="info-btn" onclick="showInfoTip('market-zone',this)" title="About this indicator">i</button>
     </div>
 
-    <!-- 3: Zone Meter -->
-    <div class="ss-meter">
-      <div class="m-zone-bar">
-        <div class="mz" style="background:rgba(248,113,113,.5)"></div>
-        <div class="mz" style="background:rgba(251,146,60,.5)"></div>
-        <div class="mz" style="background:rgba(250,204,21,.5)"></div>
-        <div class="mz" style="background:rgba(34,197,94,.5)"></div>
-        <div class="mz" style="background:rgba(74,222,128,.6)"></div>
+    <!-- 3: Breadth Score Bar Chart (25d) -->
+    <div class="ss-meter" id="ss-chart-cell" style="padding:10px 14px;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div class="ss-lbl" style="margin-bottom:0;font-size:10px;">📊 Breadth Score · 25d</div>
+        <div style="font-family:var(--mono);font-size:11px;font-weight:700" id="as-spk-label"></div>
       </div>
-      <div class="m-track"><div class="m-fill" id="h-fill" style="width:0%;background:var(--dim)"></div></div>
-      <div class="m-ticks">
-        <span>0<span style="color:var(--red)">CRASH</span></span>
-        <span>20<span style="color:var(--orange)">DEF</span></span>
-        <span>35<span style="color:var(--yellow)">CAUTION</span></span>
-        <span>45<span style="color:var(--green)">EXP</span></span>
-        <span>55<span style="color:var(--lime)">HEALTHY</span></span>
-        <span>100</span>
+      <div id="ss-chart-wrap" style="overflow:hidden;width:100%;">
+        <canvas id="as-spk-canvas" style="display:block;max-width:100%;"></canvas>
       </div>
-      <div class="score-bk" id="score-bk"></div>
+      <div class="score-bk" id="score-bk" style="margin-top:5px;"></div>
       <button class="info-btn" onclick="showInfoTip('zone-meter',this)" title="About this indicator">i</button>
     </div>
 
@@ -1248,7 +1235,7 @@ body.guest-mode #mpm-module-card { display:none !important; }
     <div class="as-cell" style="border-top:2px solid var(--accent)">
       <div class="as-lbl">📡 Market Cycle</div>
       <div class="as-phase" id="as-phase" style="color:var(--dim)">—</div>
-      <div id="as-driver" style="font-size:10px;font-weight:600;letter-spacing:.3px;margin-bottom:3px;transition:color .3s">—</div>
+      <div id="as-driver" style="font-size:11px;font-weight:600;letter-spacing:.3px;margin-bottom:3px;transition:color .3s">—</div>
       <div class="as-desc" id="as-desc">Waiting for data</div>
       <div class="as-pills" id="as-pills"></div>
       <button class="info-btn" onclick="showInfoTip('market-cycle',this)" title="About this indicator">i</button>
@@ -1275,33 +1262,63 @@ body.guest-mode #mpm-module-card { display:none !important; }
       <button class="info-btn" onclick="showInfoTip('dist-days',this)" title="About this indicator">i</button>
     </div>
 
-    <!-- A4: H/L Ratio Trend -->
-    <div class="as-cell" style="border-top:2px solid var(--accent)">
-      <div class="as-lbl">📊 H/L Ratio Trend</div>
-      <div style="display:flex;align-items:baseline;gap:8px">
-        <div class="as-big" id="as-hl-today" style="color:var(--dim)">—</div>
-        <div style="font-size:11px;color:var(--sub)" id="as-hl-trend-arrow">today</div>
-      </div>
-      <div class="as-sig" id="as-hl-sig" style="color:var(--dim)">—</div>
-      <div class="as-desc" id="as-hl-desc">5d avg: <b id="as-hl-5d">—</b> · 10d avg: <b id="as-hl-10d">—</b></div>
-      <button class="info-btn" onclick="showInfoTip('hl-ratio',this)" title="About this indicator">i</button>
+    <!-- A4: Breadth Divergence -->
+    <div class="as-cell" style="border-top:2px solid var(--orange)">
+      <div class="as-lbl">🔄 Breadth Divergence</div>
+      <div class="as-phase" id="as-div-status" style="color:var(--dim)">—</div>
+      <div class="as-desc" id="as-div-desc">Price vs Breadth · 5d</div>
+      <div class="as-pills" id="as-div-pills"></div>
+      <button class="info-btn" onclick="showInfoTip('breadth-div',this)" title="About this indicator">i</button>
     </div>
 
-    <!-- A5: Recommended Exposure (compact) -->
-    <div class="as-cell" style="border-top:2px solid var(--teal);border-right:none;padding:10px 12px;">
+    <!-- A5: Market Trend Bias -->
+    <div class="as-cell" style="border-top:2px solid var(--accent)">
+      <div class="as-lbl">📅 Trend Bias</div>
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <div class="as-phase" id="as-bias-score" style="color:var(--dim)">—</div>
+        <div style="font-size:11px;color:var(--sub)" id="as-bias-label"></div>
+      </div>
+      <div class="as-desc" id="as-bias-desc">Up vs Down days · 10d</div>
+      <div class="as-pills" id="as-bias-pills"></div>
+      <button class="info-btn" onclick="showInfoTip('trend-bias',this)" title="About this indicator">i</button>
+    </div>
+
+    <!-- A6: Thrust Quality -->
+    <div class="as-cell" style="border-top:2px solid var(--yellow)">
+      <div class="as-lbl">⚡ Thrust Quality</div>
+      <div class="as-phase" id="as-thrust-q" style="color:var(--dim)">—</div>
+      <div class="as-desc" id="as-thrust-q-desc">Bounce conviction</div>
+      <div class="as-pills" id="as-thrust-q-pills"></div>
+      <button class="info-btn" onclick="showInfoTip('thrust-quality',this)" title="About this indicator">i</button>
+    </div>
+
+    <!-- A7: Institutional Bias 10d -->
+    <div class="as-cell" style="border-top:2px solid var(--purple)">
+      <div class="as-lbl">🏦 Inst. Bias 10d</div>
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <div class="as-phase" id="as-inst-score" style="color:var(--dim)">—</div>
+        <div style="font-size:11px;color:var(--sub)" id="as-inst-label"></div>
+      </div>
+      <div class="as-desc" id="as-inst-desc">Acc vs Dist · last 10d</div>
+      <div style="display:flex;gap:3px;margin-top:5px;height:5px;border-radius:2px;overflow:hidden" id="as-inst-bar"></div>
+      <button class="info-btn" onclick="showInfoTip('inst-bias',this)" title="About this indicator">i</button>
+    </div>
+
+    <!-- A8: Market Exposure -->
+    <div class="as-cell" style="border-top:2px solid var(--teal);border-right:none;">
       <div class="as-lbl" style="color:var(--teal)">📈 Mkt Exposure</div>
-      <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px">
-        <div style="font-family:var(--disp);font-size:32px;font-weight:900;line-height:1;transition:color .4s" id="as-exp-pct">—</div>
+      <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:4px">
+        <div style="font-family:var(--disp);font-size:28px;font-weight:900;line-height:1;transition:color .4s" id="as-exp-pct">—</div>
         <div style="font-size:11px;color:var(--sub)" id="as-exp-label"></div>
       </div>
-      <div style="height:8px;border-radius:4px;background:var(--bg4);overflow:hidden;margin-bottom:5px">
-        <div id="as-exp-fill" style="height:100%;border-radius:4px;transition:width .6s cubic-bezier(.4,0,.2,1);width:0%"></div>
+      <div style="height:6px;border-radius:3px;background:var(--bg4);overflow:hidden;margin-bottom:3px">
+        <div id="as-exp-fill" style="height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1);width:0%"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--dim);margin-bottom:5px">
-        <span>0%</span><span>50%</span><span>100%</span>
+      <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim);margin-bottom:3px">
+        <span>0%</span><span>100%</span>
       </div>
-      <div style="font-size:11px;color:var(--sub)" id="as-exp-range">—</div>
-      <div style="font-size:10px;color:var(--dim);margin-top:3px" id="as-exp-note"></div>
+      <div style="font-size:10px;color:var(--sub)" id="as-exp-range">—</div>
+      <div style="font-size:9px;color:var(--dim);margin-top:2px;line-height:1.4" id="as-exp-note"></div>
       <button class="info-btn" onclick="showInfoTip('exposure',this)" title="About this indicator">i</button>
     </div>
 
@@ -2687,10 +2704,200 @@ function renderMarketCycle() {
 
   if (updEl && records.length) updEl.textContent = fmtLong(records[0].date);
 
+  // ── Breadth Score Chart (A2) ─────────────────────
+  renderA1Sparkline(records);
+
   // ── Analysis strip cells ──────────────────────────
   renderAnalysisFTD();
   renderAnalysisDDC();
-  renderAnalysisNHNL(records);
+  renderAnalysisDivergence(records);
+  renderAnalysisTrendBias(records);
+  renderAnalysisThrustQuality(records);
+  renderAnalysisInstBias();
+}
+
+// ════════════════════════════════════════════════════
+//  A2 BREADTH SCORE CHART (25-day themed line chart)
+// ════════════════════════════════════════════════════
+function renderA1Sparkline(records) {
+  const canvas = document.getElementById('as-spk-canvas');
+  if (!canvas) return;
+
+  // Support both locations: ss-chart-cell (status strip) or as-chart-cell (analysis strip)
+  const cell = document.getElementById('ss-chart-cell') || document.getElementById('as-chart-cell');
+  const wrap = document.getElementById('ss-chart-wrap') || document.getElementById('as-chart-wrap');
+  if (!cell || !wrap) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const W = Math.max(100, cell.clientWidth - 2);
+  // Taller in status strip — use available height minus header and score-bk rows
+  const cellH = cell.offsetHeight || 80;
+  const H = Math.max(55, cellH - 46);
+
+  // Set canvas pixel buffer — do NOT set style.width (CSS max-width:100% handles it)
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';  // set once to exact pixel width
+  canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  // Get last 25 records oldest→newest
+  const pts = records.slice(0, 25).reverse();
+  const scores = pts.map(r => +(r.score) || 0);
+  const dates  = pts.map(r => r.date || '');
+
+  // Update header label
+  const lbl = document.getElementById('as-spk-label');
+
+  if (scores.length < 2) {
+    ctx.fillStyle = 'rgba(91,163,245,.06)';
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(0,0,W,H,4); else ctx.rect(0,0,W,H);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(136,153,176,.5)';
+    ctx.font = '10px DM Sans,sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Save EOD entries to see score trend', W/2, H/2+4);
+    if(lbl) lbl.textContent = '—';
+    return;
+  }
+
+  // ── Zone colour helper ───────────────────────────
+  const zoneColor = s =>
+    s >= 55 ? '#4ade80' :
+    s >= 45 ? '#34d399' :
+    s >= 35 ? '#fbbf24' :
+    s >= 20 ? '#fb923c' : '#f87171';
+  const zoneRgb = s =>
+    s >= 55 ? '74,222,128' :
+    s >= 45 ? '52,211,153' :
+    s >= 35 ? '251,191,36' :
+    s >= 20 ? '251,146,60' : '248,113,113';
+
+  const lastS = scores[scores.length - 1];
+  const lastC = zoneColor(lastS);
+
+  // Update header label
+  if (lbl) { lbl.textContent = Math.round(lastS); lbl.style.color = lastC; }
+
+  // Padding: left=22 for y-labels, bottom=14 for dates, top=4, right=4
+  const PAD = { l:18, r:2, t:4, b:14 };
+  const cW  = W - PAD.l - PAD.r;
+  const cH  = H - PAD.t - PAD.b;
+  const sy  = s => PAD.t + cH * (1 - s / 100);
+
+  // ── Background ────────────────────────────────────
+  ctx.fillStyle = 'rgba(22,30,46,.6)';
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Zone band fills ───────────────────────────────
+  const bands = [
+    { from:55, to:100, c:'rgba(74,222,128,.06)'  },
+    { from:45, to:55,  c:'rgba(52,211,153,.05)'  },
+    { from:35, to:45,  c:'rgba(251,191,36,.06)'  },
+    { from:20, to:35,  c:'rgba(251,146,60,.06)'  },
+    { from:0,  to:20,  c:'rgba(248,113,113,.07)' },
+  ];
+  bands.forEach(b => {
+    ctx.fillStyle = b.c;
+    ctx.fillRect(PAD.l, sy(b.to), cW, sy(b.from) - sy(b.to));
+  });
+
+  // ── Zone boundary lines + y-labels ───────────────
+  const zLines = [
+    { v:20, c:'rgba(251,146,60,.3)'  },
+    { v:35, c:'rgba(251,191,36,.25)' },
+    { v:45, c:'rgba(52,211,153,.25)' },
+    { v:55, c:'rgba(74,222,128,.25)' },
+  ];
+  ctx.font = '7px DM Mono,monospace';
+  zLines.forEach(z => {
+    ctx.strokeStyle = z.c; ctx.lineWidth = 0.5;
+    ctx.setLineDash([2,3]);
+    ctx.beginPath();
+    ctx.moveTo(PAD.l, sy(z.v)); ctx.lineTo(PAD.l + cW, sy(z.v));
+    ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(136,153,176,.5)';
+    ctx.textAlign = 'right';
+    ctx.fillText(z.v, PAD.l - 3, sy(z.v) + 2.5);
+  });
+
+  // ── BAR CHART — one bar per day, coloured by zone ──
+  const n    = scores.length;
+  const gap  = Math.max(1, Math.floor(cW / n * 0.18));
+  const barW = Math.max(2, Math.floor((cW - gap * (n - 1)) / n));
+  const baseY = sy(0);
+
+  scores.forEach((s, i) => {
+    const x   = PAD.l + i * (barW + gap);
+    const top = sy(s);
+    const ht  = baseY - top;
+    const c   = zoneColor(s);
+    const isLast = i === n - 1;
+
+    // Bar fill — gradient from zone colour at top to darker at bottom
+    const grad = ctx.createLinearGradient(0, top, 0, baseY);
+    grad.addColorStop(0,   `rgba(${zoneRgb(s)},.75)`);
+    grad.addColorStop(1,   `rgba(${zoneRgb(s)},.25)`);
+    ctx.fillStyle = grad;
+
+    // Rounded top on bar
+    const radius = Math.min(2, barW / 2);
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(x, top, barW, ht, [radius, radius, 0, 0]);
+    } else {
+      ctx.rect(x, top, barW, ht);
+    }
+    ctx.fill();
+
+    // Highlight today's bar (last bar)
+    if (isLast) {
+      ctx.strokeStyle = c;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(x, top, barW, ht, [radius, radius, 0, 0]);
+      } else {
+        ctx.rect(x, top, barW, ht);
+      }
+      ctx.stroke();
+    }
+  });
+
+  // ── Trend line overlay (thin, connecting bar tops) ──
+  ctx.beginPath();
+  scores.forEach((s, i) => {
+    const x = PAD.l + i * (barW + gap) + barW / 2;
+    if (i === 0) ctx.moveTo(x, sy(s));
+    else         ctx.lineTo(x, sy(s));
+  });
+  ctx.strokeStyle = 'rgba(255,255,255,.2)';
+  ctx.lineWidth   = 1;
+  ctx.lineJoin    = 'round';
+  ctx.stroke();
+
+  // ── X-axis baseline ───────────────────────────────
+  ctx.strokeStyle = 'rgba(39,52,71,.8)';
+  ctx.lineWidth   = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD.l, baseY); ctx.lineTo(PAD.l + cW, baseY);
+  ctx.stroke();
+
+  // ── Date labels: first, mid, last ────────────────
+  ctx.font = '7px DM Mono,monospace';
+  ctx.fillStyle = 'rgba(136,153,176,.5)';
+  const labelIdx = [0, Math.floor(n/2), n-1];
+  labelIdx.forEach(i => {
+    const d = dates[i]; if (!d) return;
+    const p = d.split('-');
+    const lb = p.length===3 ? p[2]+'/'+p[1] : d.slice(5);
+    const x  = PAD.l + i * (barW + gap) + barW/2;
+    ctx.textAlign = i===0 ? 'left' : i===n-1 ? 'right' : 'center';
+    ctx.fillText(lb, x, H - 1);
+  });
 }
 
 function renderAnalysisFTD() {
@@ -2767,26 +2974,217 @@ function renderAnalysisDDC() {
   el('as-dist-hint').textContent = hint;
 }
 
-function renderAnalysisNHNL(data) {
+// ════════════════════════════════════════════════════
+//  ANALYSIS STRIP — 4 NEW CELLS
+// ════════════════════════════════════════════════════
+
+// A4: BREADTH DIVERGENCE
+// Compares 5-day Nifty price direction vs 5-day Breadth Score direction
+// Divergence = early warning signal (price and breadth disagree)
+function renderAnalysisDivergence(data) {
   const el = id => document.getElementById(id);
-  if (!el('as-hl-today') || !data || !data.length) return;
-  const hlR = r => { const hi=+r.hi||0, lo=+r.lo||0; return (hi+lo)>0 ? hi/(hi+lo) : null; };
-  const todayPct = (v => v!==null ? Math.round(v*100) : null)(hlR(data[0]));
-  const color = todayPct===null?'var(--dim)':todayPct>=60?'var(--lime)':todayPct>=40?'var(--yellow)':'var(--red)';
-  el('as-hl-today').textContent = todayPct!==null ? todayPct+'%' : '—';
-  el('as-hl-today').style.color = color;
-  const avg = (arr) => arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length*100) : null;
-  const avg5  = avg(data.slice(0,5).map(hlR).filter(v=>v!==null));
-  const avg10 = avg(data.slice(0,10).map(hlR).filter(v=>v!==null));
-  el('as-hl-5d').textContent  = avg5  !== null ? avg5+'%'  : '—';
-  el('as-hl-10d').textContent = avg10 !== null ? avg10+'%' : '—';
-  if (avg5!==null && avg10!==null) {
-    const diff = avg5 - avg10;
-    const arrow = diff>=5?'↑↑':diff>=0?'↑':diff>=-5?'↓':'↓↓';
-    const tc = diff>=3?'var(--lime)':diff>=0?'var(--yellow)':'var(--red)';
-    el('as-hl-trend-arrow').textContent = arrow; el('as-hl-trend-arrow').style.color = tc;
-    el('as-hl-sig').textContent = (diff>=0?'+':'')+diff+'pp · '+(diff>=3?'Expanding':diff>=0?'Stable':'Contracting');
-    el('as-hl-sig').style.color = tc;
+  if (!el('as-div-status') || !data || data.length < 5) {
+    if(el('as-div-status')) { el('as-div-status').textContent='—'; el('as-div-desc').textContent='Need 5+ records'; }
+    return;
+  }
+  const recent  = data.slice(0, 5);
+  const oldest  = recent[recent.length - 1];
+  const newest  = recent[0];
+
+  // Price direction: compare latest Nifty close vs 5 days ago
+  const p0 = parseFloat(newest.nifty), p5 = parseFloat(oldest.nifty);
+  const priceDir  = (!isNaN(p0) && !isNaN(p5) && p5 > 0) ? (p0 > p5 ? 1 : p0 < p5 ? -1 : 0) : null;
+  const pricePct  = (priceDir !== null) ? +((p0 - p5) / p5 * 100).toFixed(1) : null;
+
+  // Breadth direction: compare latest score vs 5 days ago
+  const s0 = newest.score, s5 = oldest.score;
+  const breadthDir = (s0 != null && s5 != null) ? (s0 > s5 ? 1 : s0 < s5 ? -1 : 0) : null;
+  const breadthDiff = (breadthDir !== null) ? (s0 - s5) : null;
+
+  if (priceDir === null || breadthDir === null) {
+    el('as-div-status').textContent = '—';
+    el('as-div-desc').textContent = 'Enter Nifty close values in EOD form';
+    return;
+  }
+
+  let status, color, desc, pills = '';
+  if (priceDir > 0 && breadthDir > 0) {
+    status = 'Confirmed ↑'; color = 'var(--lime)';
+    desc = `Price +${pricePct}% · Score +${breadthDiff}pts · Both rising`;
+    pills = '<span class="as-pill ok">Uptrend Valid</span>';
+  } else if (priceDir < 0 && breadthDir < 0) {
+    status = 'Confirmed ↓'; color = 'var(--red)';
+    desc = `Price ${pricePct}% · Score ${breadthDiff}pts · Both falling`;
+    pills = '<span class="as-pill err">Downtrend Valid</span>';
+  } else if (priceDir > 0 && breadthDir < 0) {
+    status = 'Bear Diverge ⚠'; color = 'var(--orange)';
+    desc = `Price +${pricePct}% but Score ${breadthDiff}pts · Hidden weakness`;
+    pills = '<span class="as-pill warn">Reduce Exposure</span>';
+  } else if (priceDir < 0 && breadthDir > 0) {
+    status = 'Bull Diverge ✦'; color = 'var(--teal)';
+    desc = `Price ${pricePct}% but Score +${breadthDiff}pts · Hidden strength`;
+    pills = '<span class="as-pill" style="border-color:rgba(45,212,191,.3);color:var(--teal)">Watch for Turn</span>';
+  } else {
+    status = 'Neutral →'; color = 'var(--sub)';
+    desc = 'No clear directional signal · 5d flat';
+    pills = '';
+  }
+
+  el('as-div-status').textContent = status;
+  el('as-div-status').style.color = color;
+  el('as-div-desc').textContent   = desc;
+  el('as-div-pills').innerHTML = pills;
+}
+
+// A5: MARKET TREND BIAS
+// Counts up-close vs down-close days over last 10 sessions
+// from Nifty 50 data — tells you what direction market spends more time
+function renderAnalysisTrendBias(data) {
+  const el = id => document.getElementById(id);
+  if (!el('as-bias-score') || !data || data.length < 3) {
+    if(el('as-bias-score')) { el('as-bias-score').textContent='—'; el('as-bias-desc').textContent='Need 3+ records'; }
+    return;
+  }
+  const window10 = data.slice(0, 10);
+
+  // Count up/down days by comparing consecutive closes
+  let upDays = 0, downDays = 0, flatDays = 0;
+  for (let i = 0; i < window10.length - 1; i++) {
+    const curr = parseFloat(window10[i].nifty);
+    const prev = parseFloat(window10[i+1].nifty);
+    if (isNaN(curr) || isNaN(prev) || prev === 0) continue;
+    if (curr > prev)      upDays++;
+    else if (curr < prev) downDays++;
+    else                  flatDays++;
+  }
+  const total = upDays + downDays + flatDays;
+  if (total === 0) {
+    el('as-bias-score').textContent = '—';
+    el('as-bias-desc').textContent = 'Enter Nifty close in EOD form';
+    return;
+  }
+
+  const net     = upDays - downDays;
+  const upPct   = Math.round(upDays / total * 100);
+  let   status, color, pills = '';
+
+  if (net >= 4)       { status = 'Bullish';  color = 'var(--lime)';   pills = '<span class="as-pill ok">Market Rising</span>'; }
+  else if (net >= 2)  { status = 'Mild Bull';color = 'var(--green)';  pills = '<span class="as-pill ok">Slight Upbias</span>'; }
+  else if (net >= -1) { status = 'Neutral';  color = 'var(--sub)';    pills = ''; }
+  else if (net >= -3) { status = 'Mild Bear';color = 'var(--orange)'; pills = '<span class="as-pill warn">Slight Downbias</span>'; }
+  else                { status = 'Bearish';  color = 'var(--red)';    pills = '<span class="as-pill err">Market Falling</span>'; }
+
+  el('as-bias-score').textContent = status;
+  el('as-bias-score').style.color = color;
+  el('as-bias-label').textContent = '';
+  el('as-bias-desc').textContent  = `${upDays}↑ ${downDays}↓ ${flatDays}→ of ${total} sessions`;
+  el('as-bias-pills').innerHTML   = pills || `<span class="as-pill" style="color:var(--sub)">${upPct}% up days</span>`;
+}
+
+// A6: THRUST QUALITY
+// When breadth bounces (score goes up), was it on expanding SMA breadth?
+// Compares avg SMA breadth on positive-score days vs negative-score days (last 10)
+function renderAnalysisThrustQuality(data) {
+  const el = id => document.getElementById(id);
+  if (!el('as-thrust-q') || !data || data.length < 5) {
+    if(el('as-thrust-q')) { el('as-thrust-q').textContent='—'; el('as-thrust-q-desc').textContent='Need 5+ records'; }
+    return;
+  }
+  const window10 = data.slice(0, 10);
+
+  // Identify positive breadth days (score up vs prev) and negative days
+  const posDays = [], negDays = [];
+  for (let i = 0; i < window10.length - 1; i++) {
+    const curr = window10[i], prev = window10[i+1];
+    const scoreDiff = (curr.score || 0) - (prev.score || 0);
+    const smaBreadth = ((+curr.e20||0) + (+curr.s50||0) + (+curr.s200||0)) / 3;
+    if (scoreDiff > 0)      posDays.push(smaBreadth);
+    else if (scoreDiff < 0) negDays.push(smaBreadth);
+  }
+
+  const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+  const posAvg = avg(posDays), negAvg = avg(negDays);
+
+  if (posAvg === null) {
+    el('as-thrust-q').textContent = '—';
+    el('as-thrust-q-desc').textContent = 'No up-days in window';
+    return;
+  }
+
+  // Quality = how much higher is SMA breadth on up-days vs down-days
+  const diff = negAvg !== null ? posAvg - negAvg : null;
+  let status, color, desc, pills = '';
+
+  if (diff === null) {
+    // Only up days — pure momentum
+    status = 'Strong ↑'; color = 'var(--lime)';
+    desc   = `Up-day breadth avg ${posAvg.toFixed(0)}% · No down days`;
+    pills  = '<span class="as-pill ok">High Conviction</span>';
+  } else if (diff >= 8) {
+    status = 'Strong ↑'; color = 'var(--lime)';
+    desc   = `Up-day SMA avg ${posAvg.toFixed(0)}% vs Down ${negAvg.toFixed(0)}%`;
+    pills  = '<span class="as-pill ok">High Conviction</span>';
+  } else if (diff >= 3) {
+    status = 'Moderate'; color = 'var(--yellow)';
+    desc   = `Up-day SMA avg ${posAvg.toFixed(0)}% vs Down ${negAvg.toFixed(0)}%`;
+    pills  = '<span class="as-pill warn">Normal Bounce</span>';
+  } else if (diff >= -2) {
+    status = 'Weak'; color = 'var(--orange)';
+    desc   = `Up-day SMA avg ${posAvg.toFixed(0)}% — barely above down days`;
+    pills  = '<span class="as-pill warn">Low Conviction</span>';
+  } else {
+    status = 'Narrow ↓'; color = 'var(--red)';
+    desc   = `Up-days on weaker breadth ${posAvg.toFixed(0)}% — suspicious bounce`;
+    pills  = '<span class="as-pill err">Avoid Entries</span>';
+  }
+
+  el('as-thrust-q').textContent = status;
+  el('as-thrust-q').style.color = color;
+  el('as-thrust-q-desc').textContent = desc;
+  el('as-thrust-q-pills').innerHTML  = pills;
+}
+
+// A7: INSTITUTIONAL BIAS 10d (MPM-derived)
+// Net acc vs dist over last 10 sessions — what are institutions doing recently?
+function renderAnalysisInstBias() {
+  const el = id => document.getElementById(id);
+  if (!el('as-inst-score')) return;
+  const days10 = mpmLoad().slice(0, 10);
+
+  if (!days10.length) {
+    el('as-inst-score').textContent = '—';
+    el('as-inst-desc').textContent = 'Enter MPM data to track';
+    el('as-inst-bar').innerHTML = '';
+    return;
+  }
+
+  const acc  = days10.filter(d => d.dtype === 'acc').length;
+  const dist = days10.filter(d => d.dtype === 'dist').length;
+  const neut = days10.filter(d => d.dtype === 'neutral').length;
+  const net  = acc - dist;
+  const total = days10.length;
+
+  let status, color, desc, pills = '';
+  if (net >= 4)       { status = 'Accumulating'; color = 'var(--lime)';   pills = '<span class="as-pill ok">Inst. Buying</span>'; }
+  else if (net >= 2)  { status = 'Mild Acc';     color = 'var(--green)';  pills = '<span class="as-pill ok">Net Buying</span>'; }
+  else if (net >= -1) { status = 'Neutral';       color = 'var(--sub)';   pills = ''; }
+  else if (net >= -3) { status = 'Mild Dist';     color = 'var(--orange)';pills = '<span class="as-pill warn">Net Selling</span>'; }
+  else                { status = 'Distributing';  color = 'var(--red)';   pills = '<span class="as-pill err">Inst. Selling</span>'; }
+
+  desc = `${acc} Acc · ${dist} Dist · ${neut} Neut of ${total}d  (net ${net>=0?'+':''}${net})`;
+
+  el('as-inst-score').textContent = status;
+  el('as-inst-score').style.color = color;
+  el('as-inst-label').textContent = `net ${net>=0?'+':''}${net}`;
+  el('as-inst-label').style.color = color;
+  el('as-inst-desc').textContent  = desc;
+  el('as-inst-pills').innerHTML   = pills;
+
+  // Mini bar chart — acc=teal, dist=red, neut=dim
+  if (el('as-inst-bar')) {
+    el('as-inst-bar').innerHTML = days10.map(d =>
+      `<div style="flex:1;background:${d.dtype==='acc'?'var(--teal)':d.dtype==='dist'?'var(--red)':'var(--border)'};border-radius:1px"></div>`
+    ).join('');
   }
 }
 
@@ -3586,7 +3984,7 @@ function renderAll() {
   safe(() => renderMarketSummary(),    'renderMarketSummary');
   safe(() => ftdRender(),              'ftdRender');
   safe(() => ddcRender(),              'ddcRender');
-  safe(() => nhnlRender(data),         'nhnlRender');
+  // nhnlRender removed — replaced by new analysis strip cells
   safe(() => renderSnapshot(data),     'renderSnapshot');
   safe(() => renderHistory(data),      'renderHistory');
   safe(() => bsrRenderAll(),           'bsrRenderAll');
@@ -3749,7 +4147,7 @@ function seedHistoricalData() {
   document.getElementById('mpm-date').value = todayISO();
 })();
 
-window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal()); bsrRenderChart(); },50); });
+window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal()); bsrRenderChart(); renderA1Sparkline(loadLocal()); },50); });
 
 // ResizeObserver — debounced via rAF to prevent "loop" console warnings
 // rAF defers the render until after the browser has finished its layout pass,
@@ -3765,6 +4163,19 @@ window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal())
   const chartWrap = document.querySelector('.chart-canvas-wrap');
   const bsrWrap   = document.querySelector('.bsr-canvas-wrap');
   let chartRafId = null, bsrRafId = null;
+
+  const ssCellWrap = document.getElementById('ss-chart-wrap');
+  if (window.ResizeObserver && ssCellWrap) {
+    let ssCellRafId = null;
+    const roCell = new ResizeObserver(() => {
+      if (ssCellRafId) cancelAnimationFrame(ssCellRafId);
+      ssCellRafId = requestAnimationFrame(() => {
+        renderA1Sparkline(loadLocal());
+        ssCellRafId = null;
+      });
+    });
+    roCell.observe(ssCellWrap);
+  }
 
   if (window.ResizeObserver && chartWrap) {
     const ro = new ResizeObserver(entries => {
@@ -5427,4 +5838,20 @@ document.addEventListener('keydown', e => {
         <div class="about-tool-desc">
           Breadth Score weights: <b>A/D Ratio 35%</b> · <b>%&gt;EMA20 20%</b> · <b>%&gt;SMA50 15%</b> ·
           <b>%&gt;SMA200 15%</b> · <b>52W H/L 15%</b>. Zones: Healthy ≥55 · Expanding 45–55 ·
+    'breadth-div':  { title:'Breadth Divergence',
+      what:'Compares the 5-day direction of Nifty 50 price vs Breadth Score. When they agree — both rising or both falling — the trend is confirmed. When they disagree — price rising but breadth falling — that is a warning signal.',
+      how:'Price direction = today\'s Nifty close vs 5 sessions ago. Breadth direction = today\'s score vs 5 sessions ago. Four states: Confirmed ↑ (both up), Confirmed ↓ (both down), Bearish Divergence (price up, breadth down), Bullish Divergence (price down, breadth up).',
+      act:'Bearish Divergence → reduce exposure, tighten stops. Bullish Divergence → watch for reversal. Confirmed ↑ → normal entry conditions apply.' },
+    'trend-bias':   { title:'Market Trend Bias',
+      what:'Counts how many of the last 10 sessions had Nifty closing up vs closing down. Simple but powerful — a market spending more time going up is healthier than one spending more time going down.',
+      how:'Each day: if today\'s Nifty close > yesterday\'s close = Up day. Down otherwise. Net = Up days − Down days over last 10 sessions.',
+      act:'Net ≥+4 = Bullish bias, look for breakouts. Net -1 to +1 = Neutral, be selective. Net ≤-4 = Bearish bias, reduce exposure or stand aside.' },
+    'thrust-quality':{ title:'Thrust Quality',
+      what:'Measures the quality of recent market bounces. Are up-days happening on broad SMA participation, or on narrow/weak breadth? High conviction = stocks broadly above their MAs on up-days. Low conviction = market bouncing but most stocks still below MAs.',
+      how:'Compares average SMA breadth (mean of %>EMA20, %>SMA50, %>SMA200) on positive-breadth days vs negative-breadth days over last 10 sessions.',
+      act:'Strong = breakouts more likely to follow through. Weak or Narrow = bounces are traps, avoid new entries until conviction improves.' },
+    'inst-bias':    { title:'Institutional Bias 10d',
+      what:'Shows what institutions have been doing in the last 10 sessions based on your MPM (Market Pressure Meter) data. Accumulation days (close up + volume up) indicate institutional buying. Distribution days (close down + volume up) indicate selling.',
+      how:'From your MPM log: counts Accumulation, Distribution and Neutral days in the last 10 sessions. Net = Acc − Dist. Mini bar chart shows day-by-day pattern (teal=acc, red=dist).',
+      act:'Accumulating = safe to hold and add. Neutral = hold, no adds. Distributing = tighten stops, reduce exposure. This is a shorter window than the 25d MPM — tells you what\'s happening right now.' },
  
