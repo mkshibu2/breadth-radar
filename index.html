@@ -1366,12 +1366,17 @@ body.guest-mode #mpm-module-card { display:none !important; }
           </div>
 
           <!-- ROW 3: Nifty 50 (Index data for MPM + FTD) -->
-          <div class="ueg-label">🟠 Nifty 50 — Close &amp; Volume (feeds MPM + FTD automatically)</div>
-          <div class="entry-grid" style="margin-bottom:8px">
+          <div class="ueg-label">🟠 Nifty 50 — Close, Low &amp; Volume (feeds MPM + FTD automatically)</div>
+          <div class="unified-entry-grid" style="margin-bottom:8px">
             <div class="ef" style="border-color:rgba(251,146,60,.3)">
               <div class="ef-lbl">Nifty Close</div>
-              <input type="number" id="i-nifty" placeholder="26500" step="0.05" oninput="eodAutoFill()">
+              <input type="number" id="i-nifty" placeholder="23150" step="0.05" oninput="eodAutoFill()">
               <div class="ef-hint">Today's Nifty 50 close</div>
+            </div>
+            <div class="ef" style="border-color:rgba(251,146,60,.3)">
+              <div class="ef-lbl">Nifty Intraday Low</div>
+              <input type="number" id="i-nifty-low" placeholder="22900" step="0.05">
+              <div class="ef-hint">For undercut detection</div>
             </div>
             <div class="ef" style="border-color:rgba(251,146,60,.3)">
               <div class="ef-lbl">Nifty Volume (Cr)</div>
@@ -1383,29 +1388,33 @@ body.guest-mode #mpm-module-card { display:none !important; }
               <input type="number" id="i-prev-nifty" placeholder="auto" step="0.05" readonly style="color:var(--sub);cursor:default">
               <div class="ef-hint">From yesterday's saved entry</div>
             </div>
-            <div class="ef" style="border-color:rgba(251,146,60,.15);background:rgba(251,146,60,.03)">
-              <div class="ef-lbl" style="color:var(--dim)">Prev Volume <span style="font-size:9px">(auto)</span></div>
-              <input type="number" id="i-prev-vol" placeholder="auto" step="0.01" readonly style="color:var(--sub);cursor:default">
-              <div class="ef-hint">From yesterday's saved entry</div>
-            </div>
           </div>
 
-          <!-- ROW 4: FTD Tag + Notes -->
-          <div class="ueg-label">🟡 FTD Tag &amp; Notes</div>
-          <div class="ftd-type-row">
-            <div style="display:flex;align-items:center;gap:6px;flex:1">
-              <span style="font-size:12px;color:var(--sub)">Today's rally status:</span>
-              <select id="i-ftd-type" class="sbm-num" style="width:180px;font-size:12px">
-                <option value="">— None / Normal day —</option>
-                <option value="attempt">Day 1 of Rally Attempt</option>
-                <option value="followthrough">Follow-Through Day</option>
-                <option value="distribution">Distribution Day</option>
-              </select>
+          <!-- ROW 4: Rally Day 1 Tag + Notes -->
+          <div class="ueg-label">🟡 Rally Attempt &amp; Notes
+            <span style="font-size:10px;font-weight:400;color:var(--dim);margin-left:8px">
+              FTD · Distribution · Normal — auto-detected from values above
+            </span>
+          </div>
+          <div class="ftd-type-row" style="align-items:flex-start;gap:10px">
+            <div style="display:flex;flex-direction:column;gap:6px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;min-width:220px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none">
+                <input type="checkbox" id="i-ftd-attempt" style="width:15px;height:15px;cursor:pointer;accent-color:var(--yellow)">
+                <span style="font-size:12px;color:var(--text);font-weight:600">📍 Day 1 of Rally Attempt</span>
+              </label>
+              <div style="font-size:10px;color:var(--dim);padding-left:23px;line-height:1.5">
+                Tick only on the day the market makes a clear intraday low and closes up — marking the start of a potential rally. Everything else is auto-detected.
+              </div>
             </div>
-            <div class="ef" style="flex:2;border:none;padding:0;background:none">
-              <input type="text" id="i-notes" placeholder="FII buying, Budget day, FTD confirmed…" style="font-size:12px;font-weight:400;width:100%">
+            <button class="btn btn-sec" onclick="ftdManualVoid()" style="font-size:11px;padding:6px 12px;color:var(--red);border-color:rgba(248,113,113,.3);white-space:nowrap;align-self:center">
+              ⚠ Void Attempt
+            </button>
+            <div class="ef" style="flex:1;border:none;padding:0;background:none;min-width:160px">
+              <input type="text" id="i-notes" placeholder="Notes: FII activity, budget day, key support…" style="font-size:12px;font-weight:400;width:100%">
             </div>
           </div>
+          <!-- hidden field for backward compat -->
+          <input type="hidden" id="i-ftd-type" value="">
 
           <!-- SAVE ACTIONS -->
           <div class="entry-actions" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
@@ -1739,7 +1748,7 @@ body.guest-mode #mpm-module-card { display:none !important; }
   <div class="footer-right">
     <div class="footer-credit">
       Designed &amp; built by <b>Shibu M K</b><br>
-      <a href="mailto:shibuvyshnavam@gmail.com">shibuvyshnavam@gmail.com</a>
+      <a href="/cdn-cgi/l/email-protection#e99a81808b9c9f909a8187889f8884a98e84888085c78a8684"><span class="__cf_email__" data-cfemail="215249484354575852494f4057404c61464c40484d0f424e4c">[email&#160;protected]</span></a>
     </div>
     <button class="footer-about-btn" onclick="openAboutModal()">ℹ About</button>
   </div>
@@ -1750,7 +1759,7 @@ body.guest-mode #mpm-module-card { display:none !important; }
 </div>
 
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ════════════════════════════════════════════════════
 //  CONFIG & STORAGE
 // ════════════════════════════════════════════════════
@@ -2068,7 +2077,7 @@ async function saveToday() {
   const data=allData.filter(r=>r.date!==today);
   const vol = g('i-vol');
   const row={date:today,adv,dec,unc:g('i-unc'),hi:g('i-hi'),lo:g('i-lo'),e20,s50,s200,
-             nifty:g('i-nifty'),vol,notes:g('i-notes')};
+             nifty:g('i-nifty'),niftyLow:g('i-nifty-low'),vol,notes:g('i-notes')};
   row.score=calcScore(row);
   const z=getZone(row.score);
   row.zone=z.name; row.r=z.r;
@@ -2098,21 +2107,63 @@ async function saveToday() {
     }
   }
 
-  // ── Auto-create FTD entry if tagged ──────────────────────
-  const ftdTag = g('i-ftd-type');
-  if (ftdTag) {
-    const prevRow2 = sorted.find(r => r.date !== today);
-    const prevClose2 = prevRow2 ? parseFloat(prevRow2.nifty) : NaN;
-    const prevVol2   = prevRow2 ? parseFloat(prevRow2.vol)   : NaN;
-    const nClose2    = parseFloat(row.nifty);
-    const nVol2      = parseFloat(row.vol);
-    const movePct = (!isNaN(nClose2) && !isNaN(prevClose2) && prevClose2 > 0)
-                    ? +((nClose2 - prevClose2) / prevClose2 * 100).toFixed(2) : 0;
-    const volUp = (!isNaN(nVol2) && !isNaN(prevVol2)) ? nVol2 > prevVol2 : false;
-    const ftdDays = ftdLoad().filter(d => d.date !== today);
-    ftdDays.unshift({id: Date.now(), date: today, close: nClose2||0, prev: prevClose2||0,
-                     movePct, volUp, type: ftdTag});
+  // ── FTD auto-detection + undercut check ─────────────────
+  const nClose2    = parseFloat(row.nifty);
+  const nLow2      = parseFloat(row.niftyLow);
+  const prevRow2   = sorted.find(r => r.date !== today);
+  const prevClose2 = prevRow2 ? parseFloat(prevRow2.nifty) : NaN;
+  const prevVol2   = prevRow2 ? parseFloat(prevRow2.vol)   : NaN;
+  const nVol2      = parseFloat(row.vol);
+  const movePct    = (!isNaN(nClose2) && !isNaN(prevClose2) && prevClose2 > 0)
+                     ? +((nClose2 - prevClose2) / prevClose2 * 100).toFixed(2) : 0;
+  const volUp      = (!isNaN(nVol2) && !isNaN(prevVol2)) ? nVol2 > prevVol2 : false;
+
+  // Step 1: Check undercut → auto-void active rally attempt
+  let ftdDays = ftdLoad().filter(d => d.date !== today);
+  const voidMsg = ftdCheckUndercut(ftdDays, nLow2, nClose2, today);
+  if (voidMsg) {
+    ftdDays = ftdLoad().filter(d => d.date !== today);
+    flash('⚠ Rally Attempt VOIDED — ' + voidMsg, 'var(--red)');
+  }
+
+  // Step 2: Determine entry type
+  //   - 'attempt'       → user ticked Day 1 checkbox (manual judgement)
+  //   - 'followthrough' → AUTO: active attempt + Day4+ + ≥+1.5% + vol up
+  //   - 'distribution'  → AUTO: already handled by MPM (dtype='dist') — also log here
+  //   - null            → normal day, no FTD entry needed
+  const isAttemptDay = document.getElementById('i-ftd-attempt') &&
+                       document.getElementById('i-ftd-attempt').checked;
+
+  // Get current rally state for FTD auto-detection
+  const { status: ftdStatus, rallyDay: currentRallyDay } = ftdComputeState();
+  const hasActiveAttempt = (ftdStatus === 'watching' || ftdStatus === 'confirmed');
+
+  let autoType = null;
+  if (isAttemptDay) {
+    autoType = 'attempt';
+  } else if (hasActiveAttempt && currentRallyDay >= 4 && movePct >= 1.5 && volUp) {
+    autoType = 'followthrough';  // Auto-detected FTD
+  } else if (!isNaN(nClose2) && !isNaN(prevClose2) && movePct < 0 && volUp) {
+    autoType = 'distribution';   // Auto-detected distribution day
+  }
+  // Normal day → autoType stays null, no FTD log entry
+
+  if (autoType) {
+    ftdDays = ftdLoad().filter(d => d.date !== today); // re-read in case undercut ran
+    ftdDays.unshift({
+      id: Date.now(), date: today,
+      close: nClose2||0, prev: prevClose2||0, low: nLow2||0,
+      movePct, volUp, type: autoType,
+      auto: autoType !== 'attempt'  // flag: was this auto-detected?
+    });
     ftdSaveData(ftdDays);
+
+    // Show auto-detection feedback in flash
+    if (autoType === 'followthrough') {
+      flash('🎯 Follow-Through Day AUTO-DETECTED — Day ' + (currentRallyDay+1) + ' · +' + movePct + '% · Vol ↑', 'var(--lime)');
+    } else if (autoType === 'distribution') {
+      flash('📉 Distribution Day auto-logged — Close↓ + Vol↑', 'var(--orange)');
+    }
   }
 
   flash(`✓ Saved — Score: ${row.score}  Zone: ${z.name}  R: ${z.r}`,'var(--lime)');
@@ -2122,8 +2173,8 @@ async function saveToday() {
 }
 
 function clearInputs() {
-  ['i-adv','i-dec','i-unc','i-hi','i-lo','i-e20','i-s50','i-s200','i-nifty','i-vol','i-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  const ftdSel=document.getElementById('i-ftd-type'); if(ftdSel) ftdSel.value='';
+  ['i-adv','i-dec','i-unc','i-hi','i-lo','i-e20','i-s50','i-s200','i-nifty','i-nifty-low','i-vol','i-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const cb = document.getElementById('i-ftd-attempt'); if(cb) cb.checked = false;
   eodAutoFill();
 }
 
@@ -2134,7 +2185,13 @@ function loadTodayIntoForm() {
   set('i-adv',row.adv);set('i-dec',row.dec);set('i-unc',row.unc);
   set('i-hi',row.hi);set('i-lo',row.lo);
   set('i-e20',row.e20);set('i-s50',row.s50);set('i-s200',row.s200);
-  set('i-nifty',row.nifty);set('i-vol',row.vol);set('i-notes',row.notes);
+  set('i-nifty',row.nifty);set('i-nifty-low',row.niftyLow||'');set('i-vol',row.vol);set('i-notes',row.notes);
+  // Restore Day 1 checkbox if this was logged as an attempt
+  const _ftdCb = document.getElementById('i-ftd-attempt');
+  if (_ftdCb) {
+    const _todayFtd = ftdLoad().find(d => d.date === date);
+    _ftdCb.checked = !!(_todayFtd && _todayFtd.type === 'attempt');
+  }
   eodAutoFill();
   flash('Today loaded — click Save & Sync to overwrite','var(--yellow)');
 }
@@ -2585,32 +2642,51 @@ function renderMarketCycle() {
 function renderAnalysisFTD() {
   const el = id => document.getElementById(id);
   if (!el('as-ftd-status')) return;
-  const days = ftdLoad();
-  const attempts = days.filter(d => d.type === 'attempt');
-  const ftds     = days.filter(d => d.type === 'followthrough');
-  let rallyDay = 0;
-  if (attempts.length) {
-    const attemptDate = attempts[0].date;
-    rallyDay = days.filter(d => d.date >= attemptDate && d.type !== 'distribution').length;
-  }
-  const ftdConfirmed = ftds.length > 0 && rallyDay >= 4;
   const banner = el('as-ftd-banner');
-  if (ftdConfirmed) {
-    el('as-ftd-status').textContent = 'CONFIRMED ✅';
-    el('as-ftd-status').style.color = 'var(--lime)';
-    el('as-ftd-sub').textContent = 'FTD on ' + ftds[0].date + ' — Pilot entries OK (0.25R)';
-    el('as-ftd-pills').innerHTML = `<span class="as-pill ok">Day ${rallyDay}</span><span class="as-pill ok">Rally Valid</span>`;
-    if (banner) { banner.style.display='block'; banner.style.background='rgba(74,222,128,.1)'; banner.style.color='var(--lime)'; banner.style.borderTop='1px solid rgba(74,222,128,.25)'; banner.textContent='✅ Follow-Through Day Confirmed — Breakouts may be entered with pilot positions (0.25R)'; }
-  } else if (attempts.length) {
-    el('as-ftd-status').textContent = `Watching · Day ${rallyDay}`;
-    el('as-ftd-status').style.color = 'var(--yellow)';
-    el('as-ftd-sub').textContent = rallyDay < 4 ? 'Need Day 4+ with +1.5% on higher vol' : 'Watching for FTD';
-    el('as-ftd-pills').innerHTML = `<span class="as-pill warn">Attempt Day ${rallyDay}</span>`;
-    if (banner) { banner.style.display='block'; banner.style.background='rgba(250,204,21,.07)'; banner.style.color='var(--yellow)'; banner.style.borderTop='1px solid rgba(250,204,21,.2)'; banner.textContent=`⏳ Rally Attempt — Day ${rallyDay}. Wait for FTD before entering new positions.`; }
+
+  const { status, rallyDay, ftdConfirmed, ftdWeak, voidActive, latestFtd } = ftdComputeState();
+  const score = loadLocal().length ? (loadLocal()[0].score || 0) : 0;
+  const inCorrection = score < 30;
+
+  if (voidActive) {
+    el('as-ftd-status').textContent = '⚠ Attempt Voided';
+    el('as-ftd-status').style.color = 'var(--red)';
+    el('as-ftd-sub').textContent = 'Low undercut — rally attempt reset. Log new Day 1 when market bounces.';
+    el('as-ftd-pills').innerHTML = '<span class="as-pill" style="border-color:rgba(248,113,113,.3);color:var(--red)">Void</span>';
+    if (banner) { banner.style.display='block'; banner.style.background='rgba(248,113,113,.08)'; banner.style.color='var(--red)'; banner.style.borderTop='1px solid rgba(248,113,113,.25)'; banner.textContent='🚫 Rally Attempt VOIDED — Low undercut. Wait for new Day 1 before tracking again.'; }
+  } else if (ftdConfirmed) {
+    if (inCorrection || ftdWeak) {
+      // FTD confirmed but breadth too weak to act on
+      el('as-ftd-status').textContent = 'FTD — Breadth Weak ⚠';
+      el('as-ftd-status').style.color = 'var(--orange)';
+      el('as-ftd-sub').textContent = 'FTD confirmed Day ' + rallyDay + ' but score ' + score + ' — breadth too weak to act';
+      el('as-ftd-pills').innerHTML = '<span class="as-pill warn">FTD Day ' + rallyDay + '</span><span class="as-pill" style="border-color:rgba(248,113,113,.3);color:var(--red)">Score ' + score + ' — Caution</span>';
+      if (banner) { banner.style.display='block'; banner.style.background='rgba(248,113,113,.08)'; banner.style.color='var(--orange)'; banner.style.borderTop='1px solid rgba(248,113,113,.2)'; banner.textContent='⚠ FTD confirmed but Breadth Score ' + score + ' is in Correction zone. Do NOT enter new positions until score recovers above 35.'; }
+    } else {
+      el('as-ftd-status').textContent = 'CONFIRMED ✅';
+      el('as-ftd-status').style.color = 'var(--lime)';
+      el('as-ftd-sub').textContent = 'FTD Day ' + rallyDay + ' (' + (latestFtd ? latestFtd.date : '') + ') — Pilot entries OK (0.25–0.5R)';
+      el('as-ftd-pills').innerHTML = '<span class="as-pill ok">Day ' + rallyDay + '</span><span class="as-pill ok">Rally Valid</span>';
+      if (banner) { banner.style.display='block'; banner.style.background='rgba(74,222,128,.1)'; banner.style.color='var(--lime)'; banner.style.borderTop='1px solid rgba(74,222,128,.25)'; banner.textContent='✅ Follow-Through Day Confirmed — Pilot entries (0.25–0.5R). Add only if individual stocks break out on volume.'; }
+    }
+  } else if (status === 'watching') {
+    if (inCorrection) {
+      el('as-ftd-status').textContent = 'Watching · Day ' + rallyDay;
+      el('as-ftd-status').style.color = 'var(--orange)';
+      el('as-ftd-sub').textContent = rallyDay < 4 ? 'Need Day 4+ with +1.5% on higher vol' : 'Watching for FTD — breadth very weak';
+      el('as-ftd-pills').innerHTML = '<span class="as-pill warn">Day ' + rallyDay + '</span><span class="as-pill" style="border-color:rgba(248,113,113,.3);color:var(--red)">Score ' + score + '</span>';
+      if (banner) { banner.style.display='block'; banner.style.background='rgba(248,113,113,.06)'; banner.style.color='var(--orange)'; banner.style.borderTop='1px solid rgba(248,113,113,.2)'; banner.textContent='🚫 Rally Attempt Day ' + rallyDay + ' — Market in Correction (Score ' + score + '). Even if FTD occurs, DO NOT enter until breadth score recovers above 35.'; }
+    } else {
+      el('as-ftd-status').textContent = 'Watching · Day ' + rallyDay;
+      el('as-ftd-status').style.color = 'var(--yellow)';
+      el('as-ftd-sub').textContent = rallyDay < 4 ? 'Need Day 4+ with +1.5% on higher vol' : 'Watching for FTD';
+      el('as-ftd-pills').innerHTML = '<span class="as-pill warn">Attempt Day ' + rallyDay + '</span>';
+      if (banner) { banner.style.display='block'; banner.style.background='rgba(250,204,21,.07)'; banner.style.color='var(--yellow)'; banner.style.borderTop='1px solid rgba(250,204,21,.2)'; banner.textContent='⏳ Rally Attempt — Day ' + rallyDay + '. Wait for FTD (Day 4+, +1.5%, higher vol) before entering new positions.'; }
+    }
   } else {
     el('as-ftd-status').textContent = 'No Attempt';
     el('as-ftd-status').style.color = 'var(--dim)';
-    el('as-ftd-sub').textContent = 'Log a rally attempt in the EOD entry form';
+    el('as-ftd-sub').textContent = 'Log a rally attempt to begin tracking';
     el('as-ftd-pills').innerHTML = '';
     if (banner) banner.style.display = 'none';
   }
@@ -2693,6 +2769,28 @@ function ftdAddDay() {
   pushToCloud();
 }
 
+function ftdManualVoid() {
+  const { status } = ftdComputeState();
+  if (status === 'none' || status === 'void') {
+    alert('No active rally attempt to void.');
+    return;
+  }
+  if (!confirm('Manually void the current rally attempt?\n\nUse this when you judge the attempt has failed (e.g. heavy selling, breadth collapse) even without a technical undercut.')) return;
+  const today = todayISO();
+  const days  = ftdLoad();
+  const updated = days.map(d => {
+    if (d.type === 'attempt' || d.type === 'followthrough') {
+      return { ...d, type:'void', voidedBy: today, voidReason:'Manual void' };
+    }
+    return d;
+  });
+  ftdSaveData(updated);
+  ftdRender();
+  renderAnalysisFTD();
+  pushToCloud();
+  flash('Rally attempt manually voided.', 'var(--orange)');
+}
+
 function ftdReset() {
   if (!confirm('Reset current rally attempt? This clears all FTD log entries.')) return;
   ftdSaveData([]);
@@ -2700,13 +2798,99 @@ function ftdReset() {
   pushToCloud();
 }
 
+// ════════════════════════════════════════════════════
+//  FTD ENGINE — Compute State + Undercut Detection
+// ════════════════════════════════════════════════════
+
+// ftdComputeState — single source of truth for FTD status
+// Returns: { status, rallyDay, ftdConfirmed, ftdWeak, voidActive, latestFtd, latestAttempt }
+function ftdComputeState() {
+  const days = ftdLoad();
+
+  // Check for voided attempt (most recent non-distribution entry is void)
+  const recentSignificant = days.find(d => d.type !== 'distribution');
+  if (recentSignificant && recentSignificant.type === 'void') {
+    return { status:'void', rallyDay:0, ftdConfirmed:false, ftdWeak:false, voidActive:true, latestFtd:null };
+  }
+
+  // Find most recent attempt (after any void entries)
+  const voidIdx  = days.findIndex(d => d.type === 'void');
+  const activeDays = voidIdx >= 0 ? days.slice(0, voidIdx) : days;
+
+  const attempts = activeDays.filter(d => d.type === 'attempt');
+  const ftds     = activeDays.filter(d => d.type === 'followthrough');
+
+  if (!attempts.length && !ftds.length) {
+    return { status:'none', rallyDay:0, ftdConfirmed:false, ftdWeak:false, voidActive:false, latestFtd:null };
+  }
+
+  // Rally day count — count all entries from Day 1 onwards (exclude distribution)
+  const attemptDate = attempts.length ? attempts[0].date : (ftds.length ? ftds[0].date : null);
+  const rallyDay = attemptDate
+    ? activeDays.filter(d => d.date >= attemptDate && d.type !== 'distribution').length
+    : 0;
+
+  // FTD confirmed? Day 4+, +1.5% move, volume up — ALL required
+  const latestFtd = ftds[0] || null;
+  const ftdMeetsMinimum = latestFtd
+    && rallyDay >= 4
+    && latestFtd.movePct >= 1.5
+    && latestFtd.volUp === true;
+
+  // Weak FTD — confirmed technically but breadth score <35
+  const score = loadLocal().length ? (loadLocal()[0].score || 0) : 0;
+  const ftdWeak = ftdMeetsMinimum && score < 35;
+
+  if (ftdMeetsMinimum) {
+    return { status:'confirmed', rallyDay, ftdConfirmed:true, ftdWeak, voidActive:false, latestFtd };
+  }
+  if (attempts.length || ftds.length) {
+    return { status:'watching', rallyDay, ftdConfirmed:false, ftdWeak:false, voidActive:false, latestFtd };
+  }
+  return { status:'none', rallyDay:0, ftdConfirmed:false, ftdWeak:false, voidActive:false, latestFtd:null };
+}
+
+// ftdCheckUndercut — called on each EOD save
+// If there is an active rally attempt AND today's low (or close) undercuts Day 1 low → void
+// Returns a message string if voided, null if not
+function ftdCheckUndercut(days, todayLow, todayClose, todayDate) {
+  // Find the most recent attempt entry
+  const attemptEntry = days.find(d => d.type === 'attempt');
+  if (!attemptEntry) return null; // no active attempt
+
+  // Check for existing void — already voided, nothing to do
+  const recentSignificant = days.find(d => d.type !== 'distribution');
+  if (recentSignificant && recentSignificant.type === 'void') return null;
+
+  // Day 1 reference low — use stored low if available, else use close
+  const day1Low   = parseFloat(attemptEntry.low  || attemptEntry.close || 0);
+  const day1Close = parseFloat(attemptEntry.close || 0);
+  const refLevel  = day1Low > 0 ? day1Low : day1Close;
+
+  // Undercut check — today's low OR close below Day 1 reference
+  const checkValue = (!isNaN(todayLow) && todayLow > 0) ? todayLow : todayClose;
+  if (!refLevel || !checkValue || checkValue >= refLevel) return null;
+
+  // Undercut confirmed — mark all active attempt/followthrough entries as void
+  const updated = days.map(d => {
+    if ((d.type === 'attempt' || d.type === 'followthrough') && d.date <= todayDate) {
+      return { ...d, type:'void', voidedBy: todayDate, voidReason:'Low undercut (' + checkValue + ' < ' + refLevel + ')' };
+    }
+    return d;
+  });
+  ftdSaveData(updated);
+  return 'Undercut ' + refLevel + ' (Day 1 low). Rally attempt reset.';
+}
+
+
 function ftdRender() {
-  // Safe element setter — silently skips if element doesn't exist
   const el  = id => document.getElementById(id);
   const set = (id, prop, val) => { const e = el(id); if(e) e[prop] = val; };
   const sty = (id, prop, val) => { const e = el(id); if(e) e.style[prop] = val; };
   const cls = (id, val)       => { const e = el(id); if(e) e.className = val; };
   const days = ftdLoad();
+  const score = loadLocal().length ? (loadLocal()[0].score || 0) : 0;
+  const inCorrection = score < 30;
 
   if (!days.length) {
     set('ftd-status',     'textContent', 'No Data');
@@ -2720,44 +2904,58 @@ function ftdRender() {
     return;
   }
 
-  // Find attempt start (most recent 'attempt' entry)
-  const attempts = days.filter(d => d.type === 'attempt');
-  const ftds     = days.filter(d => d.type === 'followthrough');
-  const latest   = days[0];
-
-  // Count rally days since last attempt
-  let rallyDay = 0;
-  if (attempts.length) {
-    const attemptDate = attempts[0].date;
-    rallyDay = days.filter(d => d.date >= attemptDate && d.type !== 'distribution').length;
-  }
-
-  // FTD detected?
-  const ftdDetected = ftds.length > 0 && rallyDay >= 4;
-  const latestFtd   = ftds[0];
+  const { status, rallyDay, ftdConfirmed, ftdWeak, voidActive, latestFtd } = ftdComputeState();
+  const latest = days[0];
 
   set('ftd-rally-day', 'textContent', rallyDay ? 'Day ' + rallyDay : '—');
-  set('ftd-move', 'textContent', latest.movePct > 0 ? '+' + latest.movePct + '%' : latest.movePct + '%');
-  sty('ftd-move', 'color', latest.movePct >= 1.5 ? 'var(--lime)' : 'var(--orange)');
+  if (latest.movePct !== undefined) {
+    set('ftd-move', 'textContent', (latest.movePct > 0 ? '+' : '') + latest.movePct + '%');
+    sty('ftd-move', 'color', latest.movePct >= 1.5 ? 'var(--lime)' : latest.movePct < 0 ? 'var(--red)' : 'var(--orange)');
+  }
 
-  if (ftdDetected) {
-    set('ftd-status', 'textContent', 'CONFIRMED'); sty('ftd-status', 'color', 'var(--lime)');
-    set('ftd-status-sub', 'textContent', 'FTD on ' + latestFtd.date + ' — Rally confirmed');
+  if (voidActive) {
+    set('ftd-status', 'textContent', '⚠ Voided'); sty('ftd-status', 'color', 'var(--red)');
+    set('ftd-status-sub', 'textContent', 'Low undercut — rally attempt reset. Log new Day 1 when market bounces.');
+    cls('ftd-status-cell', 'ftd-cell');
+    sty('ftd-banner', 'display', 'block');
+    sty('ftd-banner', 'background', 'rgba(248,113,113,.08)');
+    sty('ftd-banner', 'color', 'var(--red)');
+    sty('ftd-banner', 'border', '1px solid rgba(248,113,113,.25)');
+    set('ftd-banner', 'textContent', '🚫 Rally Attempt VOIDED — Low undercut. Wait for new Day 1 before tracking again.');
+  } else if (ftdConfirmed && (inCorrection || ftdWeak)) {
+    set('ftd-status', 'textContent', 'FTD ⚠ Weak'); sty('ftd-status', 'color', 'var(--orange)');
+    set('ftd-status-sub', 'textContent', 'FTD confirmed Day ' + rallyDay + ' — but breadth score ' + score + ' too weak to act');
+    cls('ftd-status-cell', 'ftd-cell ftd-attempt');
+    sty('ftd-banner', 'display', 'block');
+    sty('ftd-banner', 'background', 'rgba(248,113,113,.07)');
+    sty('ftd-banner', 'color', 'var(--orange)');
+    sty('ftd-banner', 'border', '1px solid rgba(248,113,113,.2)');
+    set('ftd-banner', 'textContent', '⚠ FTD confirmed but Score ' + score + ' — Correction zone. Do NOT enter until score recovers above 35.');
+  } else if (ftdConfirmed) {
+    set('ftd-status', 'textContent', 'CONFIRMED ✅'); sty('ftd-status', 'color', 'var(--lime)');
+    set('ftd-status-sub', 'textContent', 'FTD Day ' + rallyDay + ' (' + (latestFtd ? latestFtd.date : '') + ') — Pilot entries OK');
     cls('ftd-status-cell', 'ftd-cell ftd-detected');
     sty('ftd-banner', 'display', 'block');
     sty('ftd-banner', 'background', 'rgba(74,222,128,.12)');
     sty('ftd-banner', 'color', 'var(--lime)');
     sty('ftd-banner', 'border', '1px solid rgba(74,222,128,.3)');
-    set('ftd-banner', 'textContent', '✅ Follow-Through Day Confirmed — Breakouts may be entered with pilot positions (0.25R)');
-  } else if (attempts.length) {
-    set('ftd-status', 'textContent', 'Watching'); sty('ftd-status', 'color', 'var(--yellow)');
-    set('ftd-status-sub', 'textContent', rallyDay < 4 ? `Day ${rallyDay} — Need Day 4+ with +1.5% on higher vol` : 'Watching for FTD confirmation');
+    set('ftd-banner', 'textContent', '✅ Follow-Through Day Confirmed — Pilot entries (0.25–0.5R). Add only if stocks break out on volume.');
+  } else if (status === 'watching') {
+    const bannerColor = inCorrection ? 'var(--orange)' : 'var(--yellow)';
+    const bannerBg    = inCorrection ? 'rgba(248,113,113,.06)' : 'rgba(250,204,21,.08)';
+    const bannerBdr   = inCorrection ? '1px solid rgba(248,113,113,.2)' : '1px solid rgba(250,204,21,.2)';
+    const msg = inCorrection
+      ? '🚫 Rally Attempt Day ' + rallyDay + ' — Score ' + score + ' (Correction). Even if FTD forms, DO NOT enter until score >35.'
+      : '⏳ Rally Attempt Day ' + rallyDay + '. Need Day 4+ with +1.5% on higher volume before entering.';
+    set('ftd-status', 'textContent', 'Watching · Day ' + rallyDay);
+    sty('ftd-status', 'color', bannerColor);
+    set('ftd-status-sub', 'textContent', rallyDay < 4 ? 'Need Day 4+ with +1.5% on higher vol' : 'Watching for FTD');
     cls('ftd-status-cell', 'ftd-cell ftd-attempt');
     sty('ftd-banner', 'display', 'block');
-    sty('ftd-banner', 'background', 'rgba(250,204,21,.08)');
-    sty('ftd-banner', 'color', 'var(--yellow)');
-    sty('ftd-banner', 'border', '1px solid rgba(250,204,21,.2)');
-    set('ftd-banner', 'textContent', `⏳ Rally Attempt in progress — Day ${rallyDay}. No new entries until FTD confirmed.`);
+    sty('ftd-banner', 'background', bannerBg);
+    sty('ftd-banner', 'color', bannerColor);
+    sty('ftd-banner', 'border', bannerBdr);
+    set('ftd-banner', 'textContent', msg);
   } else {
     set('ftd-status', 'textContent', 'No Attempt'); sty('ftd-status', 'color', 'var(--dim)');
     set('ftd-status-sub', 'textContent', 'Market in correction — wait for Day 1 of rally attempt');
@@ -2765,18 +2963,21 @@ function ftdRender() {
     sty('ftd-banner', 'display', 'none');
   }
 
-  // Log table
+  // Log table — show void entries in red strikethrough
   sty('ftd-log-wrap', 'display', 'block');
-  const typeLabel = { attempt:'Rally Day 1', followthrough:'Follow-Through', distribution:'Distribution' };
-  const typeColor = { attempt:'var(--yellow)', followthrough:'var(--lime)', distribution:'var(--red)' };
-  el('ftd-log').innerHTML = days.slice(0,10).map(d => `
-    <div class="ftd-row">
+  const typeLabel = { attempt:'Rally Day 1', followthrough:'Follow-Through ✅', distribution:'Distribution', void:'⚠ Voided (Undercut)' };
+  const typeColor = { attempt:'var(--yellow)', followthrough:'var(--lime)', distribution:'var(--red)', void:'var(--red)' };
+  el('ftd-log').innerHTML = days.slice(0,15).map(d => {
+    const isVoid = d.type === 'void';
+    const autoTag = d.auto ? '<span style="font-size:9px;color:var(--dim);margin-left:4px">auto</span>' : '';
+    return `<div class="ftd-row" style="${isVoid ? 'opacity:.5;' : ''}">
       <span style="color:var(--sub)">${d.date}</span>
-      <span style="color:${typeColor[d.type]||'var(--sub)'};font-weight:600">${typeLabel[d.type]||d.type}</span>
-      <span style="font-family:var(--mono)">${d.close}</span>
-      <span style="color:${d.movePct>=1.5?'var(--lime)':d.movePct<0?'var(--red)':'var(--sub)'}">${d.movePct>0?'+':''}${d.movePct}%</span>
+      <span style="color:${typeColor[d.type]||'var(--sub)'};font-weight:600;${isVoid?'text-decoration:line-through':''}">${typeLabel[d.type]||d.type}${autoTag}</span>
+      <span style="font-family:var(--mono)">${d.close||'—'}</span>
+      <span style="color:${d.movePct>=1.5?'var(--lime)':d.movePct<0?'var(--red)':'var(--sub)'}">${d.movePct!==undefined?(d.movePct>0?'+':'')+d.movePct+'%':'—'}</span>
       <span style="color:${d.volUp?'var(--lime)':'var(--dim)'}">${d.volUp?'↑ Yes':'— No'}</span>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ════════════════════════════════════════════════════
@@ -5071,7 +5272,7 @@ document.addEventListener('keydown', e => {
         <div class="about-contact">
           <div class="about-contact-row">
             <div class="about-contact-icon">✉</div>
-            <a href="mailto:shibuvyshnavam@gmail.com">shibuvyshnavam@gmail.com</a>
+            <a href="/cdn-cgi/l/email-protection#c9baa1a0abbcbfb0baa1a7a8bfa8a489aea4a8a0a5e7aaa6a4"><span class="__cf_email__" data-cfemail="3b485352594e4d424853555a4d5a567b5c565a525715585456">[email&#160;protected]</span></a>
           </div>
         </div>
       </div>
@@ -5100,19 +5301,4 @@ document.addEventListener('keydown', e => {
         <div class="about-tool-desc">
           Breadth Score weights: <b>A/D Ratio 35%</b> · <b>%&gt;EMA20 20%</b> · <b>%&gt;SMA50 15%</b> ·
           <b>%&gt;SMA200 15%</b> · <b>52W H/L 15%</b>. Zones: Healthy ≥55 · Expanding 45–55 ·
-          Caution 35–45 · Defensive 20–35 · Correction &lt;20.
-        </div>
-      </div>
-
-    </div>
-
-    <div class="about-footer">
-      Data from NSE India · Trendlyne · ET Markets &nbsp;|&nbsp;
-      For educational purposes only — not investment advice &nbsp;|&nbsp;
-      <a href="mailto:shibuvyshnavam@gmail.com">Contact the creator</a>
-    </div>
-
-  </div>
-</div>
-</body>
-</html>
+ 
