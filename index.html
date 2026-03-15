@@ -2990,14 +2990,31 @@ function renderAnalysisDivergence(data) {
     if(el('as-div-status')) { el('as-div-status').textContent='—'; el('as-div-desc').textContent='Need 5+ records'; }
     return;
   }
+
+  // Build date→close lookup from MPM records (has Nifty close for every saved day)
+  const mpmMap = {};
+  mpmLoad().forEach(d => { if(d.date && d.close > 0) mpmMap[d.date] = d.close; });
+  // Helper: get best available Nifty close for a record
+  const getNifty = r => {
+    const v = parseFloat(r.nifty);
+    if (!isNaN(v) && v > 0) return v;
+    return mpmMap[r.date] || null;
+  };
+
   const recent  = data.slice(0, 5);
   const oldest  = recent[recent.length - 1];
   const newest  = recent[0];
 
-  // Price direction: compare latest Nifty close vs 5 days ago
-  const p0 = parseFloat(newest.nifty), p5 = parseFloat(oldest.nifty);
-  const priceDir  = (!isNaN(p0) && !isNaN(p5) && p5 > 0) ? (p0 > p5 ? 1 : p0 < p5 ? -1 : 0) : null;
-  const pricePct  = (priceDir !== null) ? +((p0 - p5) / p5 * 100).toFixed(1) : null;
+  // Price direction: use Nifty close from record or MPM fallback
+  const p0 = getNifty(newest), p5 = getNifty(oldest);
+  let priceDir, pricePct, priceLabel;
+  if (p0 !== null && p5 !== null && p5 > 0) {
+    priceDir   = p0 > p5 ? 1 : p0 < p5 ? -1 : 0;
+    pricePct   = +((p0 - p5) / p5 * 100).toFixed(1);
+    priceLabel = (pricePct >= 0 ? '+' : '') + pricePct + '%';
+  } else {
+    priceDir = null; pricePct = null; priceLabel = '—';
+  }
 
   // Breadth direction: compare latest score vs 5 days ago
   const s0 = newest.score, s5 = oldest.score;
@@ -3006,26 +3023,26 @@ function renderAnalysisDivergence(data) {
 
   if (priceDir === null || breadthDir === null) {
     el('as-div-status').textContent = '—';
-    el('as-div-desc').textContent = 'Enter Nifty close values in EOD form';
+    el('as-div-desc').textContent = '—';
     return;
   }
 
   let status, color, desc, pills = '';
   if (priceDir > 0 && breadthDir > 0) {
     status = 'Confirmed ↑'; color = 'var(--lime)';
-    desc = `Price +${pricePct}% · Score +${breadthDiff}pts · Both rising`;
+    desc = `Price ${priceLabel} · Score +${breadthDiff}pts · Both rising`;
     pills = '<span class="as-pill ok">Uptrend Valid</span>';
   } else if (priceDir < 0 && breadthDir < 0) {
     status = 'Confirmed ↓'; color = 'var(--red)';
-    desc = `Price ${pricePct}% · Score ${breadthDiff}pts · Both falling`;
+    desc = `Price ${priceLabel} · Score ${breadthDiff}pts · Both falling`;
     pills = '<span class="as-pill err">Downtrend Valid</span>';
   } else if (priceDir > 0 && breadthDir < 0) {
     status = 'Bear Diverge ⚠'; color = 'var(--orange)';
-    desc = `Price +${pricePct}% but Score ${breadthDiff}pts · Hidden weakness`;
+    desc = `Price ${priceLabel} but Score ${breadthDiff}pts · Hidden weakness`;
     pills = '<span class="as-pill warn">Reduce Exposure</span>';
   } else if (priceDir < 0 && breadthDir > 0) {
     status = 'Bull Diverge ✦'; color = 'var(--teal)';
-    desc = `Price ${pricePct}% but Score +${breadthDiff}pts · Hidden strength`;
+    desc = `Price ${priceLabel} but Score +${breadthDiff}pts · Hidden strength`;
     pills = '<span class="as-pill" style="border-color:rgba(45,212,191,.3);color:var(--teal)">Watch for Turn</span>';
   } else {
     status = 'Neutral →'; color = 'var(--sub)';
@@ -3052,10 +3069,26 @@ function renderAnalysisTrendBias(data) {
 
   // Count up/down days by comparing consecutive closes
   let upDays = 0, downDays = 0, flatDays = 0;
+  // Build MPM close lookup for trend bias too
+  const mpmMapB = {};
+  mpmLoad().forEach(d => { if(d.date && d.close > 0) mpmMapB[d.date] = d.close; });
+  const getNiftyB = r => {
+    const v = parseFloat(r.nifty);
+    if (!isNaN(v) && v > 0) return v;
+    return mpmMapB[r.date] || null;
+  };
+
   for (let i = 0; i < window10.length - 1; i++) {
-    const curr = parseFloat(window10[i].nifty);
-    const prev = parseFloat(window10[i+1].nifty);
-    if (isNaN(curr) || isNaN(prev) || prev === 0) continue;
+    const curr = getNiftyB(window10[i]);
+    const prev = getNiftyB(window10[i+1]);
+    if (curr === null || prev === null || prev === 0) {
+      // Last resort: use score direction
+      const sc = window10[i].score, sp = window10[i+1].score;
+      if (sc != null && sp != null) {
+        if (sc > sp) upDays++; else if (sc < sp) downDays++; else flatDays++;
+      }
+      continue;
+    }
     if (curr > prev)      upDays++;
     else if (curr < prev) downDays++;
     else                  flatDays++;
@@ -3063,7 +3096,7 @@ function renderAnalysisTrendBias(data) {
   const total = upDays + downDays + flatDays;
   if (total === 0) {
     el('as-bias-score').textContent = '—';
-    el('as-bias-desc').textContent = 'Enter Nifty close in EOD form';
+    el('as-bias-desc').textContent = 'Add Nifty close to EOD entries';
     return;
   }
 
