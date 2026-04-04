@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Trading Model - Shibu</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+  margin:0;
+  font-family: 'Inter', sans-serif;
+  background:#0f172a;
+  color:#e2e8f0;
+  line-height:1.6;
+}
+
+.container {
+  max-width:1000px;
+  margin:auto;
+  padding:24px;
+}
+
+h1 {
+  text-align:center;
+  margin-bottom:20px;
+  font-weight:600;
+}
+
+.section {
+  background:#1e293b;
+  padding:16px;
+  border-radius:10px;
+  margin-bottom:16px;
+}
+
+h2 {
+  margin-top:0;
+  font-size:16px;
+  font-weight:500;
+  border-bottom:1px solid #334155;
+  padding-bottom:6px;
+}
+
+ul { padding-left:20px; }
+
+li {
+  margin:6px 0;
+  font-weight:300;
+}
+
+.table {
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+  font-size:14px;
+}
+
+.table th {
+  text-align:left;
+  padding:8px;
+  border-bottom:1px solid #334155;
+  font-weight:500;
+}
+
+.table td {
+  padding:8px;
+  border-bottom:1px solid #334155;
+  font-weight:300;
+}
+
+.green { color:#22c55e; }
+.yellow { color:#eab308; }
+.red { color:#ef4444; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>The Trading Model - Shibu</h1>
+
+<div class="section">
+<h2><b>1. Environment Analysis</b></h2>
+<p><b>Breadth Score (0–100):</b> Composite measure of market participation.</p>
+<table class="table">
+<tr><th>Condition</th><th>Phase</th><th>Mode</th><th>Action</th></tr>
+<tr>
+<td>BS > 55 & NH > NL</td>
+<td class="green">Healthy Bull</td>
+<td>Aggressive (BS > 55)</td>
+<td>Trade freely, full position size, focus on breakouts</td>
+</tr>
+<tr>
+<td>BS 45–55</td>
+<td class="yellow">Expansion</td>
+<td>Selective (BS 45–55)</td>
+<td>Only best setups, moderate size, avoid chasing</td>
+</tr>
+<tr>
+<td>BS 35–45</td>
+<td class="yellow">Recovery</td>
+<td>Controlled (BS 35–45)</td>
+<td>Pilot entries only (0.25R–0.5R), test strength</td>
+</tr>
+<tr>
+<td>BS < 35</td>
+<td class="red">Danger</td>
+<td>Defensive (BS < 35)</td>
+<td>No new trades, stay in cash, protect capital</td>
+</tr>
+</table>
+</div>
+
+<div class="section">
+<h2><b>2. Stock Screening</b></h2>
+<ul>
+<li>Price above 10EMA, 20EMA, 150SMA, 200SMA</li>
+<li>Within 25% of 52W high</li>
+<li>At least 25% above 52W low</li>
+<li><b>RS ≥ 80</b></li>
+<li><b>Earnings & Sales growth (last 3 quarters)</b></li>
+</ul>
+</div>
+
+<div class="section">
+<h2><b>3. Stock Selection (Detailed Criteria)</b></h2>
+<ul>
+<li><b>Structure:</b> Tight consolidation / base (at least 3–6 weeks), clear resistance level</li>
+<li><b>Trend Alignment:</b> 10EMA > 20EMA > 150SMA > 200SMA</li>
+<li><b>Volume Behavior:</b> Contraction during base, expansion on breakout</li>
+<li><b>Relative Strength:</b> RS ≥ 80 and outperforming index</li>
+<li><b>Sector Strength:</b> Prefer leading sectors with multiple strong stocks</li>
+<li><b>Price Location:</b> Near 52-week high (within 25%)</li>
+<li><b>Avoid:</b> Loose structure, wide candles, erratic volume, laggards</li>
+</ul>
+</div>
+
+<div class="section">
+<h2><b>4. Position Sizing & R System</b></h2>
+<table class="table">
+<tr><th>Mode</th><th>Allocation</th><th>Per Trade</th></tr>
+<tr><td>Aggressive</td><td>80–100%</td><td>Full</td></tr>
+<tr><td>Selective</td><td>40–60%</td><td>Half</td></tr>
+<tr><td>Defensive</td><td>0–20%</td><td>Minimal</td></tr>
+</table>
+
+<ul>
+<li><b>1R = Risk per trade (Max 1% of capital)</b></li>
+<li>Stop Loss defines 1R (Example: 5% SL = 1R)</li>
+<li>0.25R → Very small position (testing)</li>
+<li>0.5R → Pilot position</li>
+<li>1R → Full risk position</li>
+<li>Never exceed 1R total risk per trade</li>
+</ul>
+</div>
+
+<div class="section">
+<h2><b>5. Entry (Pilot & Add-On Method)</b></h2>
+<ul>
+<li><b>Preferred Setups:</b>
+<ul>
+<li>Breakout from consolidation / base</li>
+<li>Volatility contraction pattern (VCP)</li>
+<li>Tight flag / pullback to 10 EMA</li>
+<li>First pullback after breakout</li>
+</ul>
+</li>
+
+<li><b>Pilot Entry:</b> 25–50% at breakout</li>
+<li><b>Add-On:</b> After confirmation or pullback support</li>
+<li>Avoid extended entries (>5% from pivot)</li>
+</ul>
+</div>
+
+<div class="section">
+<h2><b>6. Stop Loss & Trailing System</b></h2>
+<ul>
+<li><b>Initial SL:</b>
+<ul>
+<li>Max 7% or below breakout / swing low</li>
+<li>Defines 1R</li>
+</ul>
+</li>
+
+<li><b>Move to Break Even:</b>
+<ul>
+<li>After price moves ~1R in favor</li>
+<li>Or strong breakout follow-through</li>
+</ul>
+</li>
+
+<li><b>Trailing Stop:</b>
+<ul>
+<li>Primary: 10 EMA (hold as long as price respects it)</li>
+<li>Secondary: 20 EMA (final support)</li>
+<li>For positional trades: 10 Week EMA</li>
+</ul>
+</li>
+
+<li><b>Tighten SL:</b>
+<ul>
+<li>After strong vertical move</li>
+<li>When market weakens</li>
+</ul>
+</li>
+</ul>
+</div>
+
+<div class="section">
+<h2><b>7. Trade Management</b></h2>
+<ul>
+<li><b>Holding Winners:</b>
+<ul>
+<li>Respect pullbacks to 10 EMA (healthy trend)</li>
+<li>Volume contraction during pullback indicates strength</li>
+<li>Support near 10 EMA / breakout level</li>
+<li>Stronger trends may hold 10 Week EMA</li>
+</ul>
+</li>
+
+<li><b>Extended Stock (Definition):</b>
+<ul>
+<li>Price 10–15% above breakout level</li>
+<li>Far from 10 EMA</li>
+<li>Fast vertical move without consolidation</li>
+</ul>
+</li>
+
+<li><b>Parabolic Move:</b>
+<ul>
+<li>Sharp, near-vertical price rise in short time</li>
+<li>Successive large bullish candles</li>
+<li>High risk of reversal</li>
+</ul>
+</li>
+
+<li><b>Exhaustion Gap:</b>
+<ul>
+<li>Gap up after extended run</li>
+<li>Occurs near top of move</li>
+<li>Often followed by reversal or consolidation</li>
+</ul>
+</li>
+
+<li><b>Profit Booking:</b>
+<ul>
+<li>Take partial profits when stock becomes extended</li>
+<li>If parabolic move appears → book aggressively</li>
+<li>If exhaustion gap forms → consider exit or partial exit</li>
+<li>If price shows weakness after strong move → lock profits</li>
+</ul>
+</li>
+
+<li><b>Scaling (Adding Positions):</b>
+<ul>
+<li>Add only after price confirms strength</li>
+<li>Confirmation = higher high + strong close + volume</li>
+<li>Add near pullback support (10 EMA) or new breakout</li>
+<li>Each add should be smaller than previous (risk control)</li>
+<li>Never add to losing trades</li>
+</ul>
+</li>
+
+</ul>
+</div>
+
+<div class="section">
+<h2><b>8. Exit Rules</b></h2>
+<ul>
+<li><b>Hard Exit (Immediate):</b>
+<ul>
+<li>Stop loss hit (max 1R)</li>
+<li>Breakdown below key support with volume</li>
+</ul>
+</li>
+
+<li><b>Technical Exit:</b>
+<ul>
+<li>Strong close below 10 EMA → partial or full exit</li>
+<li>Break below 20 EMA with weakness → full exit</li>
+</ul>
+</li>
+
+<li><b>Market Exit (Override Rule):</b>
+<ul>
+<li>If Breadth weakens (BS < 35)</li>
+<li>Exit weak positions immediately</li>
+<li>Tighten SL on all positions</li>
+</ul>
+</li>
+
+<li><b>Climactic / Extended Exit:</b>
+<ul>
+<li>Stock becomes 10–15% extended from base</li>
+<li>Sharp vertical move (parabolic)</li>
+<li>Book partial or full profits</li>
+</ul>
+</li>
+
+<li><b>Time-Based Exit:</b>
+<ul>
+<li>No progress after reasonable time (5–10 sessions)</li>
+<li>Exit and redeploy capital</li>
+</ul>
+</li>
+
+</ul>
+</div>
+
+<div class="section">
+<h2>9. Re-entry</h2>
+<ul>
+<li>New setup forms</li>
+<li>Breakout again</li>
+<li>Market supports</li>
+</ul>
+</div>
+
+<div class="section">
+<h2><b>10. No Trade Condition</b></h2>
+<ul>
+<li><b>Breadth Score < 35 → Strict NO TRADE</b></li>
+<li>Market participation is weak</li>
+<li>Breakouts are likely to fail</li>
+<li>Capital protection is priority</li>
+<li>Only exception: existing trades with strong trend (manage tightly)</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>11. Daily Execution Routine</h2>
+<ul>
+<li><b>Step 1: Check Breadth Score</b>
+<ul>
+<li>Identify Market Phase (Bull / Expansion / Recovery / Danger)</li>
+<li>Decide Mode (Aggressive / Selective / Controlled / Defensive)</li>
+</ul>
+</li>
+
+<li><b>Step 2: Define Risk & Position Size</b>
+<ul>
+<li>Aggressive → Up to 1R</li>
+<li>Selective → 0.5R</li>
+<li>Recovery → 0.25R–0.5R</li>
+<li>Danger → No trades</li>
+</ul>
+</li>
+
+<li><b>Step 3: Scan Market</b>
+<ul>
+<li>Filter stocks using screening criteria</li>
+<li>Focus only on strong sectors</li>
+</ul>
+</li>
+
+<li><b>Step 4: Select Setups</b>
+<ul>
+<li>Identify valid bases and breakouts</li>
+<li>Avoid extended or weak structures</li>
+</ul>
+</li>
+
+<li><b>Step 5: Execute or Stay Out</b>
+<ul>
+<li>If all conditions align → Enter trade</li>
+<li>If not → Stay in cash</li>
+</ul>
+</li>
+
+<li><b>Step 6: Manage Open Trades</b>
+<ul>
+<li>Trail using 10 EMA</li>
+<li>Watch 20 EMA for deeper weakness</li>
+<li>Adjust based on market condition</li>
+</ul>
+</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>Core Rule</h2>
+<p class="green">Trade when market allows. Stay out when it doesn’t.</p>
+</div>
+
+</div>
+</body>
+</html>
