@@ -227,6 +227,21 @@ canvas#score-chart{width:100%;height:100%;}
 .chart-legend{display:flex;gap:12px;margin-top:7px;font-size:12px;color:var(--sub);flex-wrap:wrap;align-items:center;}
 .ldot{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:3px;vertical-align:middle;}
 
+/* ── CHART HOVER TOOLTIP ─────────────────────────────────── */
+#chart-hover-tip{
+  position:fixed;pointer-events:none;z-index:9999;
+  background:var(--bg3);border:1px solid var(--bdr2);
+  border-radius:5px;padding:7px 11px;
+  font-family:var(--mono);font-size:11px;line-height:1.6;
+  box-shadow:0 4px 16px rgba(0,0,0,.45);
+  opacity:0;transition:opacity .1s;white-space:nowrap;
+}
+#chart-hover-tip.visible{opacity:1;}
+#chart-hover-tip .cht-date{font-size:10px;color:var(--sub);margin-bottom:2px;}
+#chart-hover-tip .cht-score{font-size:16px;font-weight:700;line-height:1.1;}
+#chart-hover-tip .cht-zone{font-size:10px;margin-top:2px;}
+#chart-hover-tip .cht-r{font-size:10px;color:var(--sub);}
+
 /* ── SNAPSHOT TABLE ──────────────────────────────────────── */
 .snap-wrap{overflow:hidden;border-radius:0 0 6px 6px;}
 .snap-table{width:100%;border-collapse:collapse;}
@@ -1155,7 +1170,7 @@ body.guest-mode #mpm-module-card { display:none !important; }
 <div class="src-bar">
   <a class="src-btn" href="manual.html" target="_blank" style="color:var(--lime);border-color:rgba(74,222,128,.25);background:rgba(74,222,128,.04)"><span class="dot" style="background:var(--lime)"></span>📖 User Guide</a>
   <a class="src-btn" href="playbook.html" target="_blank" style="color:var(--yellow);border-color:rgba(251,191,36,.25);background:rgba(251,191,36,.04)"><span class="dot" style="background:var(--yellow)"></span>📋 Playbook</a>
-  <button class="src-btn" onclick="exportSnapshot()" style="color:var(--teal);border-color:rgba(45,212,191,.3);background:rgba(45,212,191,.04);cursor:pointer;font-family:inherit" title="Generate a read-only snapshot to share with anyone"><span class="dot" style="background:var(--teal)"></span>📤 Snapshot</button>
+  <a class="src-btn" href="https://mkshibu2.github.io/trading-manual/" target="_blank" style="color:var(--teal);border-color:rgba(45,212,191,.3);background:rgba(45,212,191,.04)"><span class="dot" style="background:var(--teal)"></span>📊 Trading Model</a>
 </div>
 
 <!-- GUEST MODE BANNER -->
@@ -3240,6 +3255,147 @@ function renderA1Sparkline(records) {
     ctx.fillText(lb, x, H - 1);
   });
 }
+
+// ════════════════════════════════════════════════════
+//  CHART HOVER TOOLTIPS
+// ════════════════════════════════════════════════════
+(function() {
+  const tip   = () => document.getElementById('chart-hover-tip');
+  const fmtD  = d => { if(!d) return ''; const p=d.split('-'); return p.length===3?p[2]+'/'+p[1]+'/'+p[0].slice(2):d; };
+  const colorMap = {'var(--lime)':'#4ade80','var(--green)':'#34d399','var(--yellow)':'#fbbf24','var(--orange)':'#fb923c','var(--red)':'#f87171'};
+
+  function showTip(e, score, date, zone) {
+    const t = tip(); if(!t) return;
+    const c = colorMap[zone.color] || zone.color;
+    document.getElementById('cht-date').textContent  = fmtD(date);
+    document.getElementById('cht-score').textContent = 'Score: ' + score;
+    document.getElementById('cht-score').style.color = c;
+    document.getElementById('cht-zone').textContent  = zone.name;
+    document.getElementById('cht-zone').style.color  = c;
+    document.getElementById('cht-r').textContent     = 'Size: ' + zone.r;
+    t.classList.add('visible');
+    moveTip(e);
+  }
+
+  function moveTip(e) {
+    const t = tip(); if(!t) return;
+    const tw = t.offsetWidth, th = t.offsetHeight;
+    let x = e.clientX + 14, y = e.clientY - th / 2;
+    if (x + tw > window.innerWidth  - 8) x = e.clientX - tw - 14;
+    if (y < 8) y = 8;
+    if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
+    t.style.left = x + 'px';
+    t.style.top  = y + 'px';
+  }
+
+  function hideTip() {
+    const t = tip(); if(t) t.classList.remove('visible');
+  }
+
+  // ── Wire bar chart (25D sparkline) ──────────────────────────
+  function wireBarChart() {
+    const canvas = document.getElementById('as-spk-canvas');
+    if (!canvas || canvas._tipWired) return;
+    canvas._tipWired = true;
+
+    canvas.addEventListener('mousemove', function(e) {
+      const records = loadLocal();
+      const pts = records.slice(0, 25).reverse();
+      if (pts.length < 2) { hideTip(); return; }
+
+      const dpr  = window.devicePixelRatio || 1;
+      const wrap = document.getElementById('ss-chart-wrap') || document.getElementById('as-chart-wrap');
+      if (!wrap) return;
+      const W  = Math.max(120, wrap.offsetWidth);
+      const H  = Math.max(50,  wrap.offsetHeight);
+      const PAD = { l:18, r:2, t:4, b:14 };
+      const cW  = W - PAD.l - PAD.r;
+      const n   = pts.length;
+      const gap  = Math.max(1, Math.floor(cW / n * 0.18));
+      const barW = Math.max(2, Math.floor((cW - gap * (n - 1)) / n));
+
+      const rect = canvas.getBoundingClientRect();
+      const mx   = e.clientX - rect.left;
+
+      let hit = -1;
+      for (let i = 0; i < n; i++) {
+        const x = PAD.l + i * (barW + gap);
+        if (mx >= x && mx <= x + barW) { hit = i; break; }
+      }
+      // fallback: nearest bar centre
+      if (hit === -1) {
+        let minD = Infinity;
+        for (let i = 0; i < n; i++) {
+          const cx = PAD.l + i * (barW + gap) + barW / 2;
+          const d  = Math.abs(mx - cx);
+          if (d < minD) { minD = d; hit = i; }
+        }
+      }
+
+      if (hit >= 0) {
+        const r = pts[hit];
+        showTip(e, r.score, r.date, getZone(+(r.score) || 0));
+      } else { hideTip(); }
+    });
+
+    canvas.addEventListener('mouseleave', hideTip);
+    canvas.style.cursor = 'crosshair';
+  }
+
+  // ── Wire line chart (30D score trend) ───────────────────────
+  function wireLineChart() {
+    const canvas = document.getElementById('score-chart');
+    if (!canvas || canvas._tipWired) return;
+    canvas._tipWired = true;
+
+    canvas.addEventListener('mousemove', function(e) {
+      const data = loadLocal();
+      const pts  = data.slice().reverse();
+      if (!pts.length) { hideTip(); return; }
+
+      const wrap = canvas.parentElement;
+      if (!wrap) return;
+      const W    = wrap.getBoundingClientRect ? wrap.getBoundingClientRect().width : wrap.offsetWidth;
+      const H    = 150;
+      const PAD  = { t:20, r:20, b:40, l:44 };
+      const cW   = W - PAD.l - PAD.r;
+      const step = pts.length > 1 ? cW / (pts.length - 1) : cW;
+
+      const rect = canvas.getBoundingClientRect();
+      const mx   = e.clientX - rect.left - PAD.l;
+
+      // Find nearest point
+      let hit = 0, minD = Infinity;
+      for (let i = 0; i < pts.length; i++) {
+        const d = Math.abs(mx - i * step);
+        if (d < minD) { minD = d; hit = i; }
+      }
+
+      const r = pts[hit];
+      showTip(e, r.score, r.date, getZone(+(r.score) || 0));
+    });
+
+    canvas.addEventListener('mouseleave', hideTip);
+    canvas.style.cursor = 'crosshair';
+  }
+
+  // Re-wire after every render (canvases may be recreated)
+  const _origA1 = window.renderA1Sparkline;
+  window.renderA1Sparkline = function(records) {
+    _origA1 && _origA1(records);
+    setTimeout(wireBarChart, 0);
+  };
+  const _origChart = window.renderChart;
+  window.renderChart = function(data) {
+    _origChart && _origChart(data);
+    setTimeout(wireLineChart, 0);
+  };
+
+  // Wire on initial load too
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => { wireBarChart(); wireLineChart(); }, 500);
+  });
+})();
 
 function renderAnalysisFTD() {
   const el = id => document.getElementById(id) || {textContent:'',innerHTML:'',style:{},className:'',classList:{add:()=>{},remove:()=>{},contains:()=>false},value:'',offsetWidth:0,offsetHeight:0,getBoundingClientRect:()=>({width:0,height:0,top:0,left:0,right:0,bottom:0})};
@@ -6400,6 +6556,14 @@ document.addEventListener('keydown', e => {
     </div><!-- /cp-body -->
   </div><!-- /cp-panel -->
 </div><!-- /cp-overlay -->
+
+<!-- ── CHART HOVER TOOLTIP ────────────────────────────────────────── -->
+<div id="chart-hover-tip">
+  <div class="cht-date" id="cht-date"></div>
+  <div class="cht-score" id="cht-score"></div>
+  <div class="cht-zone" id="cht-zone"></div>
+  <div class="cht-r" id="cht-r"></div>
+</div>
 
 <!-- ── INFO TOOLTIP ───────────────────────────────────────────────── -->
 <div id="info-tooltip">
