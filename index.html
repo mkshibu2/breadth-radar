@@ -3817,6 +3817,32 @@ function ftdManualVoid() {
   flash('Rally attempt manually voided.', 'var(--orange)');
 }
 
+function ftdRestoreVoid() {
+  const days = ftdLoad();
+  const hasAutoVoid = days.some(d => d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void');
+  if (!hasAutoVoid) { alert('No auto-voided attempt found to restore.'); return; }
+  if (!confirm('Restore the voided rally attempt?\n\nUse this only if you entered wrong intraday low data and have since corrected it in the EOD/Past Entry tab.\n\nThe undercut check will re-run automatically — if the corrected data still shows an undercut, it will be re-voided immediately.')) return;
+  const restored = days.map(d => {
+    if (d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void') {
+      const origType = d._origType || 'attempt';
+      const { voidedBy, voidReason, _origType, ...rest } = d;
+      return { ...rest, type: origType };
+    }
+    return d;
+  });
+  ftdSaveData(restored);
+  // Re-run undercut scan with corrected data
+  const recheck = ftdScanUndercutAll();
+  ftdRender();
+  renderAnalysisFTD();
+  pushToCloud();
+  if (recheck) {
+    flash('⚠ Re-voided: ' + recheck, 'var(--red)');
+  } else {
+    flash('✅ Rally attempt restored — no undercut found in corrected data.', 'var(--lime)');
+  }
+}
+
 function ftdReset() {
   if (!confirm('Reset current rally attempt? This clears all FTD log entries.')) return;
   ftdSaveData([]);
@@ -3897,14 +3923,32 @@ function ftdComputeState() {
 function ftdScanUndercutAll() {
   const ftdDays = ftdLoad();
 
-  // Find the most recent attempt entry (including ones previously voided by undercut,
-  // so we can un-void them if the EOD data was corrected)
-  const attemptEntry = ftdDays.find(d => d.type === 'attempt' || (d.type === 'void' && d.voidedBy));
+  // Find attempt entry — include auto-voided ones (voidedBy set) so we can re-evaluate
+  // after a user corrects wrong intraday low data.
+  // Entries manually voided (voidReason === 'Manual void') are left alone.
+  const attemptEntry = ftdDays.find(d =>
+    d.type === 'attempt' ||
+    (d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void')
+  );
   if (!attemptEntry) return null;
 
   // Day 1 intraday low must be recorded — otherwise skip (never use close as proxy)
   const day1Low = parseFloat(attemptEntry.low || 0);
-  if (!day1Low || day1Low <= 0) return null;
+  if (!day1Low || day1Low <= 0) {
+    // No Day 1 low available — if previously auto-voided, restore it
+    if (attemptEntry.type === 'void' && attemptEntry.voidedBy) {
+      const origType = attemptEntry._origType || 'attempt';
+      const restored = ftdDays.map(d => {
+        if (d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void') {
+          const { voidedBy, voidReason, _origType, ...rest } = d;
+          return { ...rest, type: origType };
+        }
+        return d;
+      });
+      ftdSaveData(restored);
+    }
+    return null;
+  }
 
   // Scan all breadth records AFTER Day 1, oldest first
   const records = loadLocal()
@@ -3922,12 +3966,11 @@ function ftdScanUndercutAll() {
   }
 
   if (!undercutDate) {
-    // No undercut found — restore any entries that were previously voided by undercut
-    const hasVoidedByUndercut = ftdDays.some(d => d.type === 'void' && d.voidedBy);
-    if (hasVoidedByUndercut) {
+    // No undercut found — restore any entries that were previously auto-voided by undercut
+    const hasAutoVoided = ftdDays.some(d => d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void');
+    if (hasAutoVoided) {
       const restored = ftdDays.map(d => {
-        if (d.type === 'void' && d.voidedBy) {
-          // Restore to original type (attempt or followthrough) stored before voiding
+        if (d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void') {
           const origType = d._origType || 'attempt';
           const { voidedBy, voidReason, _origType, ...rest } = d;
           return { ...rest, type: origType };
@@ -3936,13 +3979,13 @@ function ftdScanUndercutAll() {
       });
       ftdSaveData(restored);
     }
-    return null; // no undercut in any saved record
+    return null;
   }
 
-  // Void all active attempt/followthrough entries up to the undercut date
+  // Undercut confirmed — void all active attempt/followthrough entries up to the undercut date
   const updated = ftdDays.map(d => {
     if ((d.type === 'attempt' || d.type === 'followthrough') && d.date <= undercutDate) {
-      return { ...d, type:'void', _origType: d.type, voidedBy: undercutDate,
+      return { ...d, type: 'void', _origType: d.type, voidedBy: undercutDate,
                voidReason: 'Low undercut (' + undercutValue + ' < Day 1 low ' + day1Low + ' on ' + undercutDate + ')' };
     }
     return d;
@@ -6449,6 +6492,7 @@ document.addEventListener('keydown', e => {
             <div style="font-size:10px;color:var(--dim);padding-left:23px;line-height:1.5">Tick only on the day the market makes a clear intraday low and closes up — marking the start of a potential rally. Everything else is auto-detected. <b style="color:var(--orange)">Ensure Nifty Intraday Low is filled above</b> — it is used to auto-void this attempt if undercut on a future day.</div>
           </div>
           <button class="btn btn-sec" onclick="ftdManualVoid()" style="font-size:11px;padding:6px 12px;color:var(--red);border-color:rgba(248,113,113,.3);white-space:nowrap;align-self:center">⚠ Void Attempt</button>
+          <button class="btn btn-sec" onclick="ftdRestoreVoid()" style="font-size:11px;padding:6px 12px;color:var(--teal);border-color:rgba(45,212,191,.3);white-space:nowrap;align-self:center">↩ Restore Attempt</button>
           <div class="ef" style="flex:1;border:none;padding:0;background:none;min-width:0">
             <input type="text" id="i-notes" placeholder="Notes: FII activity, budget day, key support…" style="font-size:12px;font-weight:400;width:100%">
           </div>
