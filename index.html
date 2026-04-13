@@ -3897,11 +3897,9 @@ function ftdComputeState() {
 function ftdScanUndercutAll() {
   const ftdDays = ftdLoad();
 
-  // No active attempt or already voided → nothing to do
-  const recentSignificant = ftdDays.find(d => d.type !== 'distribution');
-  if (!recentSignificant || recentSignificant.type === 'void') return null;
-
-  const attemptEntry = ftdDays.find(d => d.type === 'attempt');
+  // Find the most recent attempt entry (including ones previously voided by undercut,
+  // so we can un-void them if the EOD data was corrected)
+  const attemptEntry = ftdDays.find(d => d.type === 'attempt' || (d.type === 'void' && d.voidedBy));
   if (!attemptEntry) return null;
 
   // Day 1 intraday low must be recorded — otherwise skip (never use close as proxy)
@@ -3923,12 +3921,28 @@ function ftdScanUndercutAll() {
     }
   }
 
-  if (!undercutDate) return null; // no undercut in any saved record
+  if (!undercutDate) {
+    // No undercut found — restore any entries that were previously voided by undercut
+    const hasVoidedByUndercut = ftdDays.some(d => d.type === 'void' && d.voidedBy);
+    if (hasVoidedByUndercut) {
+      const restored = ftdDays.map(d => {
+        if (d.type === 'void' && d.voidedBy) {
+          // Restore to original type (attempt or followthrough) stored before voiding
+          const origType = d._origType || 'attempt';
+          const { voidedBy, voidReason, _origType, ...rest } = d;
+          return { ...rest, type: origType };
+        }
+        return d;
+      });
+      ftdSaveData(restored);
+    }
+    return null; // no undercut in any saved record
+  }
 
   // Void all active attempt/followthrough entries up to the undercut date
   const updated = ftdDays.map(d => {
     if ((d.type === 'attempt' || d.type === 'followthrough') && d.date <= undercutDate) {
-      return { ...d, type:'void', voidedBy: undercutDate,
+      return { ...d, type:'void', _origType: d.type, voidedBy: undercutDate,
                voidReason: 'Low undercut (' + undercutValue + ' < Day 1 low ' + day1Low + ' on ' + undercutDate + ')' };
     }
     return d;
