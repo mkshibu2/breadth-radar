@@ -2358,8 +2358,7 @@ async function pullFromCloud(key, bin) {
     [...cloudFtd,...localFtd].forEach(d=>{ if(d&&d.id) ftdById[d.id]=d; });
     const mergedFtd = Object.values(ftdById).sort((a,b)=>b.date.localeCompare(a.date));
     ftdSaveData(mergedFtd);
-    // Re-run undercut scan after merge — corrected EOD data may differ from cloud FTD void state
-    ftdScanUndercutAll();
+    ftdScanUndercutAll(); // re-evaluate after merge
     setSyncStatus('ok','Synced');
     setupFlash(`✓ Pulled — ${merged.length} breadth + ${Object.values(bsrById).length} BSR + ${Object.values(mpmByDate).length} MPM records`, 'var(--lime)');
     renderAll();
@@ -3821,34 +3820,76 @@ function ftdManualVoid() {
 
 function ftdRestoreVoid() {
   const days = ftdLoad();
-  const hasAutoVoid = days.some(d => d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void');
-  if (!hasAutoVoid) {
-    alert('No auto-voided attempt found.\n\nNote: Manually voided attempts cannot be auto-restored — use Reset FTD to start fresh.');
-    return;
-  }
-  if (!confirm('Restore the voided rally attempt and re-run the undercut check?\n\nDo this after correcting a wrong Nifty Intraday Low in the Past Entry tab.\n\nIf the corrected data still shows an undercut the attempt will be re-voided immediately.')) return;
-
-  // Restore auto-voided entries to their original type
+  if (!days.length) { alert('No FTD data found.'); return; }
+  const voidEntry = days.find(d => d.type === 'void');
+  if (!voidEntry) { alert('No voided entry found — attempt is already active.'); return; }
+  if (!confirm('Restore voided rally attempt to ACTIVE?\n\nThis will clear the void flag and re-run the undercut check against your current EOD data.\n\nIf the intraday low data is correct and no undercut exists, the attempt will be restored.')) return;
+  // Restore ALL void entries that were auto-voided (not manually voided)
   const restored = days.map(d => {
-    if (d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void') {
+    if (d.type === 'void') {
       const origType = d._origType || 'attempt';
-      const { voidedBy, voidReason, _origType, ...rest } = d;
-      return { ...rest, type: origType };
+      const r = Object.assign({}, d);
+      delete r.voidedBy; delete r.voidReason; delete r._origType;
+      r.type = origType;
+      return r;
     }
     return d;
   });
   ftdSaveData(restored);
-
-  // Re-run undercut scan with the corrected EOD data
+  // Now re-run the undercut scan with corrected data
   const recheck = ftdScanUndercutAll();
   ftdRender();
   renderAnalysisFTD();
   pushToCloud();
   if (recheck) {
-    flash('⚠ Still voided: ' + recheck, 'var(--red)');
-    alert('⚠ Attempt re-voided.\n\n' + recheck + '\n\nPlease check the Nifty Intraday Low values in your Past Entry records — the undercut is still present in the data.');
+    flash('⚠ Re-voided: undercut still detected in EOD data', 'var(--red)');
+    alert('⚠ Attempt re-voided.\n\n' + recheck + '\n\nCheck your Nifty Intraday Low values in Past Entry — the undercut is still present.');
   } else {
-    flash('✅ Rally attempt restored — no undercut found.', 'var(--lime)');
+    flash('✅ Rally attempt restored successfully!', 'var(--lime)');
+  }
+}
+
+// Emergency fix — bypasses all logic, directly sets attempt type in localStorage
+function ftdEmergencyFix() {
+  const raw = localStorage.getItem('ftd_data');
+  const msg = document.getElementById('ftd-emergency-msg');
+  const setMsg = (txt, color) => { if(msg){ msg.textContent=txt; msg.style.color=color; msg.style.display='block'; } };
+
+  if (!raw) { setMsg('⚠ No FTD data in localStorage.', 'var(--orange)'); return; }
+  let days;
+  try { days = JSON.parse(raw); } catch(e) { setMsg('✗ FTD data is corrupt JSON: ' + e.message, 'var(--red)'); return; }
+
+  setMsg('📋 Current data: ' + days.map(d=>d.date+' → '+d.type).join(' | '), 'var(--sub)');
+
+  const hasVoid = days.some(d => d.type === 'void');
+  if (!hasVoid) { setMsg('✅ No void found — attempt is already active! Try Force Pull then Force Push.', 'var(--lime)'); return; }
+
+  if (!confirm('EMERGENCY FIX: Change all "void" entries to "attempt" type?\n\nCurrent entries:\n' + days.map(d=>d.date+' → '+d.type).join('\n') + '\n\nThis directly edits localStorage and re-runs the undercut scan.')) return;
+
+  const fixed = days.map(d => {
+    if (d.type === 'void') {
+      const origType = d._origType || 'attempt';
+      const r = Object.assign({}, d);
+      delete r.voidedBy; delete r.voidReason; delete r._origType;
+      r.type = origType;
+      return r;
+    }
+    return d;
+  });
+  localStorage.setItem('ftd_data', JSON.stringify(fixed));
+
+  // Re-run scan
+  const recheck = ftdScanUndercutAll();
+  const afterFix = ftdLoad();
+  setMsg('After fix: ' + afterFix.map(d=>d.date+' → '+d.type).join(' | ') + (recheck ? ' ⚠ Re-voided: '+recheck : ' ✅ No undercut found'), recheck ? 'var(--orange)' : 'var(--lime)');
+
+  ftdRender();
+  renderAnalysisFTD();
+  if (!recheck) {
+    pushToCloud();
+    flash('✅ FTD Emergency Fix applied — attempt restored!', 'var(--lime)');
+  } else {
+    flash('⚠ Fix applied but undercut still in data — check Intraday Low values', 'var(--red)');
   }
 }
 
@@ -3934,33 +3975,16 @@ function ftdScanUndercutAll() {
   const ftdDays = ftdLoad();
   if (!ftdDays.length) return null;
 
-  // Find the attempt entry — include auto-voided ones so we can re-evaluate
-  // after a user corrects wrong intraday low data.
-  // Only manually voided entries (voidReason === 'Manual void') are left untouched.
+  // Look for attempt entry OR auto-voided entry (so we can re-evaluate after data correction)
   const attemptEntry = ftdDays.find(d =>
     d.type === 'attempt' ||
     (d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void')
   );
   if (!attemptEntry) return null;
 
-  // Day 1 intraday low must be recorded — otherwise skip (never use close as proxy)
   const day1Low = parseFloat(attemptEntry.low || 0);
-  if (!day1Low || day1Low <= 0) {
-    // No Day 1 low on record — restore if previously auto-voided so user can re-enter
-    if (attemptEntry.type === 'void') {
-      const origType = attemptEntry._origType || 'attempt';
-      ftdSaveData(ftdDays.map(d => {
-        if (d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void') {
-          const { voidedBy, voidReason, _origType, ...rest } = d;
-          return { ...rest, type: origType };
-        }
-        return d;
-      }));
-    }
-    return null;
-  }
+  if (!day1Low || day1Low <= 0) return null;
 
-  // Scan all breadth records AFTER Day 1, oldest first
   const records = loadLocal()
     .filter(r => r.date > attemptEntry.date)
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -3976,14 +4000,16 @@ function ftdScanUndercutAll() {
   }
 
   if (!undercutDate) {
-    // No undercut — restore any auto-voided entries (data was corrected by user)
+    // No undercut — restore any auto-voided entries
     const hasAutoVoided = ftdDays.some(d => d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void');
     if (hasAutoVoided) {
       ftdSaveData(ftdDays.map(d => {
         if (d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void') {
           const origType = d._origType || 'attempt';
-          const { voidedBy, voidReason, _origType, ...rest } = d;
-          return { ...rest, type: origType };
+          const r = Object.assign({}, d);
+          delete r.voidedBy; delete r.voidReason; delete r._origType;
+          r.type = origType;
+          return r;
         }
         return d;
       }));
@@ -3991,7 +4017,7 @@ function ftdScanUndercutAll() {
     return null;
   }
 
-  // Undercut confirmed — void entries, preserving original type for future restore
+  // Undercut confirmed — void entries, save origType for future restore
   const updated = ftdDays.map(d => {
     if ((d.type === 'attempt' || d.type === 'followthrough') && d.date <= undercutDate) {
       return { ...d, type: 'void', _origType: d.type, voidedBy: undercutDate,
@@ -4792,8 +4818,7 @@ function seedHistoricalData() {
       const ftdMap = {};
       [...cFtd, ...ftdLoad()].forEach(d => { if(d&&d.id) ftdMap[d.id]=d; });
       ftdSaveData(Object.values(ftdMap));
-      // Re-run undercut scan after merge — corrected EOD data may differ from cloud FTD void state
-      ftdScanUndercutAll();
+      ftdScanUndercutAll(); // re-evaluate after merge — corrected EOD may differ from cloud void state
 
       const recCount = loadLocal().length;
       const bsrCount = bsrLoad().length;
@@ -6503,7 +6528,7 @@ document.addEventListener('keydown', e => {
             <div style="font-size:10px;color:var(--dim);padding-left:23px;line-height:1.5">Tick only on the day the market makes a clear intraday low and closes up — marking the start of a potential rally. Everything else is auto-detected. <b style="color:var(--orange)">Ensure Nifty Intraday Low is filled above</b> — it is used to auto-void this attempt if undercut on a future day.</div>
           </div>
           <button class="btn btn-sec" onclick="ftdManualVoid()" style="font-size:11px;padding:6px 12px;color:var(--red);border-color:rgba(248,113,113,.3);white-space:nowrap;align-self:center">⚠ Void Attempt</button>
-          <button class="btn btn-sec" onclick="ftdRestoreVoid()" style="font-size:11px;padding:6px 12px;color:var(--teal);border-color:rgba(45,212,191,.3);white-space:nowrap;align-self:center" title="Use after correcting a wrong Nifty Intraday Low in Past Entry">↩ Restore Attempt</button>
+          <button class="btn btn-sec" onclick="ftdRestoreVoid()" style="font-size:11px;padding:6px 12px;color:var(--teal);border-color:rgba(45,212,191,.3);white-space:nowrap;align-self:center">↩ Restore</button>
           <div class="ef" style="flex:1;border:none;padding:0;background:none;min-width:0">
             <input type="text" id="i-notes" placeholder="Notes: FII activity, budget day, key support…" style="font-size:12px;font-weight:400;width:100%">
           </div>
@@ -6585,6 +6610,13 @@ document.addEventListener('keydown', e => {
             <button class="cfg-btn-sec" id="cfg-make-public-btn" onclick="cfgMakePublic()" style="color:var(--teal);border-color:rgba(45,212,191,.3)">🌐 Make Public</button>
             <button class="cfg-btn-sec" id="cfg-make-private-btn" onclick="cfgMakePrivate()" style="color:var(--yellow);border-color:rgba(251,191,36,.3)">🔒 Make Private</button>
             <button class="cfg-btn-danger" onclick="cfgClearCreds()">🗑 Remove from device</button>
+          </div>
+          <div style="margin-top:14px;padding:12px;background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.2);border-radius:5px">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--red);margin-bottom:8px">🔧 FTD Emergency Fix</div>
+            <div style="font-size:11px;color:var(--sub);margin-bottom:8px">Use if FTD shows "Attempt Voided" incorrectly after syncing. Shows raw localStorage data and lets you force-restore the attempt.</div>
+            <button class="cfg-btn-sec" onclick="ftdEmergencyFix()" style="color:var(--red);border-color:rgba(248,113,113,.4);font-weight:700">🔧 Fix FTD Void Now</button>
+            <button class="cfg-btn-sec" onclick="ftdRestoreVoid()" style="color:var(--teal);border-color:rgba(45,212,191,.3);margin-left:6px">↩ Restore Attempt</button>
+            <div id="ftd-emergency-msg" style="display:none;margin-top:8px;font-size:11px;font-family:var(--mono);padding:8px;background:var(--bg);border-radius:4px;word-break:break-all;line-height:1.6"></div>
           </div>
         </div>
 
