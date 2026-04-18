@@ -2286,8 +2286,37 @@ function setupFlash(msg, color) {
   cfgBanner(msg, color === 'var(--lime)' ? 'ok' : color === 'var(--red)' ? 'err' : color === 'var(--orange)' ? 'warn' : 'inf', 'cfg-banner');
 }
 
-// Helper: build combined cloud payload
-function buildPayload() { return { records: loadLocal(), bsr: bsrLoad(), mpm: mpmLoad(), ftd: ftdLoad() }; }
+// Helper: build combined cloud payload — stamp with push timestamp so any device can resolve conflicts
+function buildPayload() {
+  const now = Date.now();
+  return {
+    _pushedAt: now,
+    records: loadLocal(),
+    bsr: bsrLoad(),
+    mpm: mpmLoad(),
+    ftd: ftdLoad()
+  };
+}
+
+// Merge helper: given two arrays keyed by a field, newest _updatedAt wins.
+// Falls back to: local wins if no timestamps (legacy data).
+function mergeByKey(cloudArr, localArr, keyFn) {
+  const map = {};
+  // Cloud first (lower priority)
+  (cloudArr||[]).forEach(d => { const k = keyFn(d); if(k) map[k] = d; });
+  // Local second — wins if same timestamp or no timestamp (legacy), OR if local is newer
+  (localArr||[]).forEach(d => {
+    const k = keyFn(d);
+    if (!k) return;
+    const existing = map[k];
+    if (!existing) { map[k] = d; return; }
+    // If both have _updatedAt, newest wins
+    const ct = existing._updatedAt || 0;
+    const lt = d._updatedAt || 0;
+    if (lt >= ct) map[k] = d; // local wins on tie (safe default)
+  });
+  return Object.values(map);
+}
 
 async function connectCloud() {
   const key = document.getElementById('cfg-key').value.trim();
@@ -2336,31 +2365,21 @@ async function pullFromCloud(key, bin) {
     const raw = await jbRead(cfg.key, cfg.bin);
     const cloudRecs = Array.isArray(raw) ? raw : (raw.records||[]);
     const cloudBsr  = Array.isArray(raw) ? [] : (raw.bsr||[]);
-    // Merge breadth records
-    const local = loadLocal();
-    const merged = Object.values([...cloudRecs,...local].reduce((m,r)=>{m[r.date]=r;return m;},{}));
-    saveLocal(merged);
-    // Merge BSR trades by id
-    const localBsr = bsrLoad();
-    const bsrById  = {};
-    [...cloudBsr,...localBsr].forEach(t=>{ if(t&&t.id) bsrById[t.id]=t; });
-    bsrSave(Object.values(bsrById));
-    // Merge MPM — use date as key (stable across devices)
-    const cloudMpm = Array.isArray(raw) ? [] : (raw.mpm||[]);
-    const localMpm = mpmLoad();
-    const mpmByDate = {};
-    [...cloudMpm,...localMpm].forEach(d=>{ if(d&&d.date) mpmByDate[d.date]=d; });
-    mpmSave(Object.values(mpmByDate));
-    // Merge FTD by id — local wins over cloud
-    const cloudFtd = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd||[]) : [];
-    const localFtd = ftdLoad();
-    const ftdById  = {};
-    [...cloudFtd,...localFtd].forEach(d=>{ if(d&&d.id) ftdById[d.id]=d; });
-    const mergedFtd = Object.values(ftdById).sort((a,b)=>b.date.localeCompare(a.date));
+    const cloudMpm  = Array.isArray(raw) ? [] : (raw.mpm||[]);
+    const cloudFtd  = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd||[]) : [];
+
+    // Merge all — newest _updatedAt wins per key
+    saveLocal(mergeByKey(cloudRecs, loadLocal(), r => r.date));
+    bsrSave(mergeByKey(cloudBsr, bsrLoad(), t => t.id));
+    mpmSave(mergeByKey(cloudMpm, mpmLoad(), d => d.date));
+    const mergedFtd = mergeByKey(cloudFtd, ftdLoad(), d => d.id)
+      .sort((a,b) => b.date.localeCompare(a.date));
     ftdSaveData(mergedFtd);
-    ftdScanUndercutAll(); // re-validate after merge — corrected EOD may differ from cloud void state
+    ftdScanUndercutAll(); // re-validate after merge
+
+    const merged = loadLocal();
     setSyncStatus('ok','Synced');
-    setupFlash(`✓ Pulled — ${merged.length} breadth + ${Object.values(bsrById).length} BSR + ${Object.values(mpmByDate).length} MPM records`, 'var(--lime)');
+    setupFlash(`✓ Pulled — ${merged.length} breadth + ${bsrLoad().length} BSR + ${mpmLoad().length} MPM records`, 'var(--lime)');
     renderAll();
     bsrRenderAll();
     mpmRenderAll();
@@ -2502,7 +2521,7 @@ async function saveToday() {
   const data=allData.filter(r=>r.date!==today);
   const vol = g('i-vol');
   const row={date:today,adv,dec,unc:g('i-unc'),hi:g('i-hi'),lo:g('i-lo'),e20,s50,s200,
-             nifty:g('i-nifty'),niftyLow:g('i-nifty-low'),vol,notes:g('i-notes')};
+             nifty:g('i-nifty'),niftyLow:g('i-nifty-low'),vol,notes:g('i-notes'),_updatedAt:Date.now()};
   row.score=calcScore(row);
   const z=getZone(row.score);
   row.zone=z.name; row.r=z.r;
@@ -2574,7 +2593,7 @@ async function saveToday() {
   if (autoType) {
     let ftdDays = ftdLoad().filter(d => d.date !== today); // re-read after undercut scan
     ftdDays.unshift({
-      id: Date.now(), date: today,
+      id: Date.now(), date: today, _updatedAt: Date.now(),
       close: nClose2||0, prev: prevClose2||0, low: nLow2||0,
       movePct, volUp, type: autoType,
       auto: autoType !== 'attempt'  // flag: was this auto-detected?
@@ -3789,7 +3808,7 @@ function ftdAddDay() {
   if (!date || isNaN(close) || isNaN(prev)) { alert('Please fill Date, Close and Prev Close'); return; }
   const movePct = ((close - prev) / prev * 100);
   const days = ftdLoad();
-  days.unshift({ date, close, prev, movePct: +movePct.toFixed(2), volUp, type, id: Date.now() });
+  days.unshift({ date, close, prev, movePct: +movePct.toFixed(2), volUp, type, id: Date.now(), _updatedAt: Date.now() });
   ftdSaveData(days);
   _ftdAddOpen = false;
   document.getElementById('ftd-add-panel').style.display = 'none';
@@ -3805,7 +3824,7 @@ function ftdManualVoid() {
   const days  = ftdLoad();
   const updated = days.map(d => {
     if (d.type === 'attempt' || d.type === 'followthrough') {
-      return { ...d, type: 'void', _origType: d.type, voidedBy: today, voidReason: 'Manual void' };
+      return { ...d, type: 'void', _origType: d.type, _updatedAt: Date.now(), voidedBy: today, voidReason: 'Manual void' };
     }
     return d;
   });
@@ -3814,7 +3833,6 @@ function ftdManualVoid() {
   flash('Rally attempt manually voided.', 'var(--orange)');
 }
 
-// Restore an auto-voided attempt — called by ↩ Restore button and emergency fix
 function ftdRestoreVoid() {
   const days = ftdLoad();
   const hasAutoVoid = days.some(d => d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void');
@@ -3829,6 +3847,7 @@ function ftdRestoreVoid() {
       const r = Object.assign({}, d);
       delete r.voidedBy; delete r.voidReason; delete r._origType;
       r.type = origType;
+      r._updatedAt = Date.now(); // stamp so restored state wins on sync
       return r;
     }
     return d;
@@ -3838,7 +3857,7 @@ function ftdRestoreVoid() {
   ftdRender(); renderAnalysisFTD(); pushToCloud();
   if (recheck) {
     flash('⚠ Undercut still present in data — check Intraday Low values', 'var(--red)');
-    alert('⚠ Attempt re-voided:\n\n' + recheck + '\n\nCheck the Nifty Intraday Low in your Past Entry records for dates after Day 1 — one of them is below the Day 1 low.');
+    alert('⚠ Attempt re-voided:\n\n' + recheck + '\n\nCheck the Nifty Intraday Low in Past Entry for dates after Day 1 — one is below the Day 1 low.');
   } else {
     flash('✅ Rally attempt restored — no undercut found!', 'var(--lime)');
   }
@@ -3924,20 +3943,16 @@ function ftdScanUndercutAll() {
   const ftdDays = ftdLoad();
   if (!ftdDays.length) return null;
 
-  // Find the attempt entry — ALSO look inside auto-voided entries (voidedBy set,
-  // voidReason !== 'Manual void') so we can re-evaluate after data correction.
-  // This is the critical fix: we never bail just because type === 'void'.
+  // Find attempt entry — also look inside auto-voided entries so we re-evaluate after data fixes
   const attemptEntry = ftdDays.find(d =>
     d.type === 'attempt' ||
     (d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void')
   );
   if (!attemptEntry) return null;
 
-  // Day 1 intraday low must be recorded — otherwise skip
   const day1Low = parseFloat(attemptEntry.low || 0);
   if (!day1Low || day1Low <= 0) return null;
 
-  // Scan all breadth records AFTER Day 1, oldest first
   const records = loadLocal()
     .filter(r => r.date > attemptEntry.date)
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -3945,18 +3960,12 @@ function ftdScanUndercutAll() {
   let undercutDate = null, undercutValue = null;
   for (const r of records) {
     const low = parseFloat(r.niftyLow || 0);
-    if (low > 0 && low < day1Low) {
-      undercutDate = r.date;
-      undercutValue = low;
-      break;
-    }
+    if (low > 0 && low < day1Low) { undercutDate = r.date; undercutValue = low; break; }
   }
 
   if (!undercutDate) {
-    // No undercut found — restore any auto-voided entries (data was corrected)
-    const hasAutoVoided = ftdDays.some(d =>
-      d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void'
-    );
+    // No undercut — restore any auto-voided entries
+    const hasAutoVoided = ftdDays.some(d => d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void');
     if (hasAutoVoided) {
       ftdSaveData(ftdDays.map(d => {
         if (d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void') {
@@ -3964,6 +3973,7 @@ function ftdScanUndercutAll() {
           const r = Object.assign({}, d);
           delete r.voidedBy; delete r.voidReason; delete r._origType;
           r.type = origType;
+          r._updatedAt = Date.now(); // stamp so this restored state wins on next sync
           return r;
         }
         return d;
@@ -3972,10 +3982,11 @@ function ftdScanUndercutAll() {
     return null;
   }
 
-  // Undercut confirmed — void entries, preserve _origType for future restore
+  // Undercut confirmed
   const updated = ftdDays.map(d => {
     if ((d.type === 'attempt' || d.type === 'followthrough') && d.date <= undercutDate) {
-      return { ...d, type: 'void', _origType: d.type, voidedBy: undercutDate,
+      return { ...d, type: 'void', _origType: d.type, _updatedAt: Date.now(),
+               voidedBy: undercutDate,
                voidReason: 'Low undercut (' + undercutValue + ' < Day 1 low ' + day1Low + ' on ' + undercutDate + ')' };
     }
     return d;
@@ -4750,31 +4761,23 @@ function seedHistoricalData() {
       const payload = await jbRead(cfg.key, cfg.bin);
       const isLegacy = Array.isArray(payload);
 
-      // Breadth records
+      // ── Breadth records — newest _updatedAt wins per date
       const cRec = isLegacy ? payload : (payload.records||[]);
-      const recMap = {};
-      [...cRec, ...loadLocal()].forEach(r => { if(r&&r.date) recMap[r.date]=r; });
-      saveLocal(Object.values(recMap));
+      saveLocal(mergeByKey(cRec, loadLocal(), r => r.date));
 
-      // BSR — pull cloud, merge with local, save
+      // ── BSR trades — newest _updatedAt wins per id
       const cBsr = isLegacy ? [] : (payload.bsr||[]);
-      const bsrMap = {};
-      [...cBsr, ...bsrLoad()].forEach(t => { if(t&&t.id) bsrMap[t.id]=t; });
-      bsrSave(Object.values(bsrMap));
+      bsrSave(mergeByKey(cBsr, bsrLoad(), t => t.id));
 
-      // MPM
+      // ── MPM — newest _updatedAt wins per date
       const cMpm = isLegacy ? [] : (payload.mpm||[]);
-      const mpmMap = {};
-      [...cMpm, ...mpmLoad()].forEach(d => { if(d&&d.date) mpmMap[d.date]=d; });
-      mpmSave(Object.values(mpmMap));
+      mpmSave(mergeByKey(cMpm, mpmLoad(), d => d.date));
 
-      // FTD — local wins over cloud: spread cloud first, then local overwrites.
-      // This ensures a locally-corrected attempt is never overwritten by a stale cloud void.
-      // After merge, always re-run ftdScanUndercutAll() to validate against current EOD data.
+      // ── FTD — newest _updatedAt wins per id, then re-validate undercut
       const cFtd = isLegacy ? [] : (payload.ftd||[]);
-      const ftdMap = {};
-      [...cFtd, ...ftdLoad()].forEach(d => { if(d&&d.id) ftdMap[d.id]=d; });
-      ftdSaveData(Object.values(ftdMap));
+      const mergedFtd = mergeByKey(cFtd, ftdLoad(), d => d.id)
+        .sort((a,b) => b.date.localeCompare(a.date));
+      ftdSaveData(mergedFtd);
       ftdScanUndercutAll(); // always re-validate after merge
 
       const recCount = loadLocal().length;
@@ -5878,7 +5881,7 @@ function loadPastRowIntoModal(date) {
   document.getElementById('p-nifty').value = row.nifty||'';
   const pnl = document.getElementById('p-nifty-low'); if(pnl) pnl.value = row.niftyLow||'';
   const pv  = document.getElementById('p-vol');       if(pv)  pv.value  = row.vol||'';
-  // Populate Day 1 checkbox — check if this date has an FTD attempt entry
+  // Populate Day 1 checkbox
   const pCb = document.getElementById('p-ftd-attempt');
   if (pCb) {
     const ftdEntry = ftdLoad().find(d => d.date === date);
@@ -5895,13 +5898,13 @@ function renderPastSeedList() {
     const z = getZone(r.score||0);
     const isSeed = r.notes&&r.notes.includes('ET seed');
     const ftdEntry = ftdDays.find(d => d.date === r.date);
-    const isDay1 = ftdEntry && (ftdEntry.type === 'attempt' || (ftdEntry.type === 'void' && ftdEntry._origType === 'attempt'));
-    return `<div onclick="loadPastRowIntoModal('${r.date}')" style="display:grid;grid-template-columns:100px 50px 90px 1fr auto;gap:6px;align-items:center;padding:5px 8px;border-radius:4px;cursor:pointer;border-bottom:1px solid var(--border);font-size:11px" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background='none'">
+    const isDay1 = !!(ftdEntry && (ftdEntry.type === 'attempt' || (ftdEntry.type === 'void' && ftdEntry._origType === 'attempt')));
+    return `<div onclick="loadPastRowIntoModal('${r.date}')" style="display:grid;grid-template-columns:100px 50px 90px 1fr 20px;gap:6px;align-items:center;padding:5px 8px;border-radius:4px;cursor:pointer;border-bottom:1px solid var(--border);font-size:11px" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background='none'">
       <span style="color:var(--text);font-family:var(--mono)">${r.date}</span>
       <span style="font-family:var(--disp);font-size:16px;font-weight:800;color:${z.color}">${r.score||'—'}</span>
       <span style="color:${z.color};font-size:10px">${r.zone||'—'}</span>
       <span style="color:var(--dim);font-size:10px">${isSeed?'<span style="color:var(--purple);font-size:9px">ET seed</span>':r.notes||''}</span>
-      <span style="font-size:10px">${isDay1?'<span style="color:var(--yellow)" title="Day 1 Rally Attempt">📍</span>':''}</span>
+      <span title="Day 1 Rally Attempt">${isDay1?'📍':''}</span>
     </div>`;
   }).join('');
 }
@@ -5914,14 +5917,14 @@ async function savePastEntry() {
   if(!adv&&!e20){showPastMsg('⚠ Enter at least Advances or SMA% values','var(--orange)');return;}
   const row={date, adv, dec:g('p-dec'), unc:g('p-unc'), hi:g('p-hi'), lo:g('p-lo'),
              e20, s50:g('p-s50'), s200:g('p-s200'), nifty:g('p-nifty'), niftyLow:g('p-nifty-low'), vol:g('p-vol'),
-             notes: (adv||g('p-dec')) ? '' : 'ET seed'};
+             notes: (adv||g('p-dec')) ? '' : 'ET seed', _updatedAt: Date.now()};
   row.score = calcScore(row);
   const z = getZone(row.score);
   row.zone=z.name; row.r=z.r;
   const existing = loadLocal().filter(r=>r.date!==date);
   saveLocal([...existing, row]);
 
-  // ── Handle Day 1 Rally Attempt checkbox ──────────────────────────
+  // ── Handle Day 1 Rally Attempt checkbox ─────────────────────────
   const pCb = document.getElementById('p-ftd-attempt');
   const isAttemptChecked = pCb && pCb.checked;
   const niftyLowVal = parseFloat(g('p-nifty-low'));
@@ -5929,35 +5932,40 @@ async function savePastEntry() {
 
   if (isAttemptChecked) {
     if (!niftyLowVal || niftyLowVal <= 0) {
-      showPastMsg('⚠ Saved EOD data, but Day 1 requires a Nifty Intraday Low — please fill it and save again.', 'var(--orange)');
+      showPastMsg('⚠ Saved EOD data, but Day 1 requires Nifty Intraday Low — fill it and save again.', 'var(--orange)');
     } else {
-      // Remove any existing attempt entry for this date, then add fresh
+      // Remove existing attempt/void for this date, insert fresh
       ftdDays = ftdDays.filter(d => d.date !== date);
-      const prevNifty = loadLocal().filter(r => r.date < date && r.nifty).sort((a,b)=>b.date.localeCompare(a.date));
-      const prevClose = prevNifty.length ? parseFloat(prevNifty[0].nifty) : 0;
+      const prevRec = loadLocal().filter(r => r.date < date && r.nifty)
+                                 .sort((a,b) => b.date.localeCompare(a.date));
+      const prevClose = prevRec.length ? parseFloat(prevRec[0].nifty) : 0;
       const curClose  = parseFloat(g('p-nifty'));
-      const movePct   = (curClose && prevClose) ? +((curClose - prevClose) / prevClose * 100).toFixed(2) : 0;
+      const movePct   = (curClose && prevClose) ? +((curClose-prevClose)/prevClose*100).toFixed(2) : 0;
       ftdDays.push({
-        id: Date.now(), date, close: curClose||0, prev: prevClose||0,
-        low: niftyLowVal, movePct, volUp: false, type: 'attempt', auto: false
+        id: Date.now(), date, _updatedAt: Date.now(),
+        close: curClose||0, prev: prevClose||0, low: niftyLowVal,
+        movePct, volUp: false, type: 'attempt', auto: false
       });
       ftdDays.sort((a,b) => b.date.localeCompare(a.date));
       ftdSaveData(ftdDays);
     }
   } else {
-    // Checkbox unchecked — remove any attempt entry for this date
-    const existingAttempt = ftdDays.find(d => d.date === date && (d.type === 'attempt' || (d.type === 'void' && d._origType === 'attempt')));
-    if (existingAttempt) {
-      ftdSaveData(ftdDays.filter(d => d.date !== date || (d.type !== 'attempt' && !(d.type === 'void' && d._origType === 'attempt'))));
+    // Unchecked — remove any attempt entry for this date
+    const hadAttempt = ftdDays.some(d => d.date === date &&
+      (d.type === 'attempt' || (d.type === 'void' && d._origType === 'attempt')));
+    if (hadAttempt) {
+      ftdSaveData(ftdDays.filter(d => !(d.date === date &&
+        (d.type === 'attempt' || (d.type === 'void' && d._origType === 'attempt')))));
     }
   }
 
-  // ── FTD undercut check — full scan ─────────────────────────────
+  // ── FTD undercut scan ────────────────────────────────────────────
   const voidMsg = ftdScanUndercutAll();
   if (voidMsg) {
     showPastMsg('✓ Saved ' + date + ' · ⚠ Rally VOIDED — ' + voidMsg, 'var(--red)');
   } else {
-    showPastMsg('✓ Saved ' + date + ' — Score: ' + row.score + ' (' + z.name + ')' + (isAttemptChecked ? ' · 📍 Day 1 logged' : ''), 'var(--lime)');
+    showPastMsg('✓ Saved ' + date + ' — Score: ' + row.score + ' (' + z.name + ')' +
+      (isAttemptChecked && niftyLowVal > 0 ? ' · 📍 Day 1 logged' : ''), 'var(--lime)');
   }
 
   cpUpdateHomeStatus();
@@ -6528,6 +6536,7 @@ document.addEventListener('keydown', e => {
             <div style="font-size:10px;color:var(--dim);padding-left:23px;line-height:1.5">Tick only on the day the market makes a clear intraday low and closes up — marking the start of a potential rally. Everything else is auto-detected. <b style="color:var(--orange)">Ensure Nifty Intraday Low is filled above</b> — it is used to auto-void this attempt if undercut on a future day.</div>
           </div>
           <button class="btn btn-sec" onclick="ftdManualVoid()" style="font-size:11px;padding:6px 12px;color:var(--red);border-color:rgba(248,113,113,.3);white-space:nowrap;align-self:center">⚠ Void Attempt</button>
+          <button class="btn btn-sec" onclick="ftdRestoreVoid()" style="font-size:11px;padding:6px 12px;color:var(--teal);border-color:rgba(45,212,191,.3);white-space:nowrap;align-self:center">↩ Restore</button>
           <div class="ef" style="flex:1;border:none;padding:0;background:none;min-width:0">
             <input type="text" id="i-notes" placeholder="Notes: FII activity, budget day, key support…" style="font-size:12px;font-weight:400;width:100%">
           </div>
@@ -6583,7 +6592,7 @@ document.addEventListener('keydown', e => {
               <input type="checkbox" id="p-ftd-attempt" style="width:15px;height:15px;cursor:pointer;accent-color:var(--yellow)">
               <span style="font-size:12px;color:var(--text);font-weight:600">📍 Day 1 of Rally Attempt</span>
             </label>
-            <div style="font-size:10px;color:var(--dim);padding-left:23px;line-height:1.5">Tick to mark this past date as Day 1. <b style="color:var(--orange)">Nifty Intraday Low above must be filled</b> — it is used for undercut detection. Unchecking and saving removes the Day 1 entry for this date.</div>
+            <div style="font-size:10px;color:var(--dim);padding-left:23px;line-height:1.5">Tick to mark this past date as Day 1. <b style="color:var(--orange)">Nifty Intraday Low must be filled above</b> — used for undercut detection. Unticking and saving removes the Day 1 entry for this date.</div>
           </div>
           <button class="btn btn-sec" onclick="ftdRestoreVoid()" style="font-size:11px;padding:6px 12px;color:var(--teal);border-color:rgba(45,212,191,.3);white-space:nowrap;align-self:center">↩ Restore Void</button>
         </div>
