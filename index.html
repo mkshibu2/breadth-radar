@@ -2299,21 +2299,24 @@ function buildPayload() {
 }
 
 // Merge helper: given two arrays keyed by a field, newest _updatedAt wins.
-// Falls back to: local wins if no timestamps (legacy data).
+// When both records have no _updatedAt (legacy), cloud wins — it holds the
+// version that was pushed from the editing device.
 function mergeByKey(cloudArr, localArr, keyFn) {
   const map = {};
-  // Cloud first (lower priority)
+  // Cloud first (lower priority when timestamps exist)
   (cloudArr||[]).forEach(d => { const k = keyFn(d); if(k) map[k] = d; });
-  // Local second — wins if same timestamp or no timestamp (legacy), OR if local is newer
+  // Local second — wins only if it is strictly newer
   (localArr||[]).forEach(d => {
     const k = keyFn(d);
     if (!k) return;
     const existing = map[k];
     if (!existing) { map[k] = d; return; }
-    // If both have _updatedAt, newest wins
     const ct = existing._updatedAt || 0;
     const lt = d._updatedAt || 0;
-    if (lt >= ct) map[k] = d; // local wins on tie (safe default)
+    // Local wins only when it is STRICTLY newer than cloud.
+    // On a true tie (both 0, i.e. legacy records with no timestamp) cloud wins
+    // because it holds whatever was pushed from the editing device.
+    if (lt > ct) map[k] = d;
   });
   return Object.values(map);
 }
@@ -4933,7 +4936,7 @@ function bsrAdd() {
   if(!sym || !pivot || !date) { bsrFlash('⚠ Symbol, Pivot Price and Date are required', 'var(--orange)'); return; }
   const trades = bsrLoad();
   const id = Date.now().toString();
-  trades.push({ id, sym, pivot, curr: curr || pivot, date });
+  trades.push({ id, sym, pivot, curr: curr || pivot, date, _updatedAt: Date.now() });
   bsrSave(trades);
   bsrFlash(`✓ Added ${sym} — pivot ₹${pivot}`, 'var(--lime)');
   // Clear form
@@ -4955,6 +4958,7 @@ function bsrUpdatePrice(id, newPrice) {
   if(!t) return;
   const prevStatus = bsrEval(t);
   t.curr = newPrice;
+  t._updatedAt = Date.now(); // ← mark as updated so mergeByKey picks this over any stale local copy on other devices
   const newStatus = bsrEval(t);
   bsrSave(trades);
   // Flash on status change
