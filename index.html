@@ -9,7 +9,7 @@
   <meta name="application-name" content="NSE Breadth Radar">
   <meta property="og:title" content="NSE Breadth Radar">
   <meta property="og:description" content="Clarity in every market cycle — built for the Indian swing trader">
-<title>NSE Breadth Radar</title>
+<title>NSE Breadth Radar v6</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -1851,7 +1851,7 @@ async function cfgMakePrivate() {
 function exportSnapshot() {
   const records = loadLocal();
   const mpm     = mpmLoad();
-  const bsr     = bsrLoad().filter(t => !t._deleted);
+  const bsr     = bsrLoad();
   const ftd     = ftdLoad();
 
   if (!records.length) {
@@ -2211,7 +2211,7 @@ const LS_MPM  = 'nse_mpm_v1';
 const LS_GUEST_BIN = 'nse_guest_bin';
 function isGuestMode() { return !!lsGet(LS_GUEST_BIN); }
 const mpmLoad = () => { try { return JSON.parse(lsGet(LS_MPM)) || []; } catch(e) { return []; } };
-const mpmSave = d => lsSet(LS_MPM, JSON.stringify(d.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,60)));
+const mpmSave = d => lsSet(LS_MPM, JSON.stringify(d.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,25)));
 const getCfg    = () => ({ key: lsGet(LS_KEY)||'', bin: lsGet(LS_BIN)||'' });
 const saveCfg   = (k,b) => { lsSet(LS_KEY,k); lsSet(LS_BIN,b); };
 
@@ -2286,19 +2286,34 @@ function setupFlash(msg, color) {
   cfgBanner(msg, color === 'var(--lime)' ? 'ok' : color === 'var(--red)' ? 'err' : color === 'var(--orange)' ? 'warn' : 'inf', 'cfg-banner');
 }
 
-// Helper: build combined cloud payload
-function buildPayload() { return { _pushedAt: Date.now(), records: loadLocal(), bsr: bsrLoad(), mpm: mpmLoad(), ftd: ftdLoad() }; }
+// Helper: build combined cloud payload — stamp with push timestamp so any device can resolve conflicts
+function buildPayload() {
+  const now = Date.now();
+  return {
+    _pushedAt: now,
+    records: loadLocal(),
+    bsr: bsrLoad(),
+    mpm: mpmLoad(),
+    ftd: ftdLoad()
+  };
+}
 
-// Merge two arrays by key — newest _updatedAt wins; local wins on tie (safe for legacy data)
+// Merge helper: given two arrays keyed by a field, newest _updatedAt wins.
+// Falls back to: local wins if no timestamps (legacy data).
 function mergeByKey(cloudArr, localArr, keyFn) {
   const map = {};
+  // Cloud first (lower priority)
   (cloudArr||[]).forEach(d => { const k = keyFn(d); if(k) map[k] = d; });
+  // Local second — wins if same timestamp or no timestamp (legacy), OR if local is newer
   (localArr||[]).forEach(d => {
     const k = keyFn(d);
     if (!k) return;
     const existing = map[k];
     if (!existing) { map[k] = d; return; }
-    if ((d._updatedAt||0) >= (existing._updatedAt||0)) map[k] = d;
+    // If both have _updatedAt, newest wins
+    const ct = existing._updatedAt || 0;
+    const lt = d._updatedAt || 0;
+    if (lt >= ct) map[k] = d; // local wins on tie (safe default)
   });
   return Object.values(map);
 }
@@ -2350,21 +2365,21 @@ async function pullFromCloud(key, bin) {
     const raw = await jbRead(cfg.key, cfg.bin);
     const cloudRecs = Array.isArray(raw) ? raw : (raw.records||[]);
     const cloudBsr  = Array.isArray(raw) ? [] : (raw.bsr||[]);
-    // Merge breadth records
-    const local = loadLocal();
-    const merged = Object.values([...cloudRecs,...local].reduce((m,r)=>{m[r.date]=r;return m;},{}));
-    saveLocal(merged);
-    // Merge BSR — newest _updatedAt wins per id
+    const cloudMpm  = Array.isArray(raw) ? [] : (raw.mpm||[]);
+    const cloudFtd  = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd||[]) : [];
+
+    // Merge all — newest _updatedAt wins per key
+    saveLocal(mergeByKey(cloudRecs, loadLocal(), r => r.date));
     bsrSave(mergeByKey(cloudBsr, bsrLoad(), t => t.id));
-    // Merge MPM — newest _updatedAt wins per date
-    const cloudMpm = Array.isArray(raw) ? [] : (raw.mpm||[]);
     mpmSave(mergeByKey(cloudMpm, mpmLoad(), d => d.date));
-    // Merge FTD — newest _updatedAt wins per id, then re-validate
-    const cloudFtd = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd||[]) : [];
-    ftdSaveData(mergeByKey(cloudFtd, ftdLoad(), d => d.id).sort((a,b)=>b.date.localeCompare(a.date)));
-    ftdScanUndercutAll();
+    const mergedFtd = mergeByKey(cloudFtd, ftdLoad(), d => d.id)
+      .sort((a,b) => b.date.localeCompare(a.date));
+    ftdSaveData(mergedFtd);
+    ftdScanUndercutAll(); // re-validate after merge
+
+    const merged = loadLocal();
     setSyncStatus('ok','Synced');
-    setupFlash('\u2713 Pulled — ' + loadLocal().length + ' breadth + ' + bsrLoad().filter(t=>!t._deleted).length + ' BSR + ' + mpmLoad().length + ' MPM records', 'var(--lime)');
+    setupFlash(`✓ Pulled — ${merged.length} breadth + ${bsrLoad().length} BSR + ${mpmLoad().length} MPM records`, 'var(--lime)');
     renderAll();
     bsrRenderAll();
     mpmRenderAll();
@@ -2581,7 +2596,7 @@ async function saveToday() {
       id: Date.now(), date: today, _updatedAt: Date.now(),
       close: nClose2||0, prev: prevClose2||0, low: nLow2||0,
       movePct, volUp, type: autoType,
-      auto: autoType !== 'attempt'
+      auto: autoType !== 'attempt'  // flag: was this auto-detected?
     });
     ftdSaveData(ftdDays);
 
@@ -2937,7 +2952,7 @@ function renderMarketCycle() {
 
   // ── Gather inputs from live data ──────────────────
   const records = loadLocal();           // breadth history newest-first
-  const bsrTrades = bsrLoad().filter(t => !t._deleted);
+  const bsrTrades = bsrLoad();
   const mpmDays   = mpmLoad();
 
   const breadthScore    = records.length ? records[0].score : null;
@@ -3803,23 +3818,18 @@ function ftdAddDay() {
 
 function ftdManualVoid() {
   const { status } = ftdComputeState();
-  if (status === 'none' || status === 'void') {
-    alert('No active rally attempt to void.');
-    return;
-  }
+  if (status === 'none' || status === 'void') { alert('No active rally attempt to void.'); return; }
   if (!confirm('Manually void the current rally attempt?\n\nUse this when you judge the attempt has failed (e.g. heavy selling, breadth collapse) even without a technical undercut.')) return;
   const today = todayISO();
   const days  = ftdLoad();
   const updated = days.map(d => {
     if (d.type === 'attempt' || d.type === 'followthrough') {
-      return { ...d, type:'void', _origType: d.type, _updatedAt: Date.now(), voidedBy: today, voidReason:'Manual void' };
+      return { ...d, type: 'void', _origType: d.type, _updatedAt: Date.now(), voidedBy: today, voidReason: 'Manual void' };
     }
     return d;
   });
   ftdSaveData(updated);
-  ftdRender();
-  renderAnalysisFTD();
-  pushToCloud();
+  ftdRender(); renderAnalysisFTD(); pushToCloud();
   flash('Rally attempt manually voided.', 'var(--orange)');
 }
 
@@ -3827,17 +3837,17 @@ function ftdRestoreVoid() {
   const days = ftdLoad();
   const hasAutoVoid = days.some(d => d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void');
   if (!hasAutoVoid) {
-    alert('No auto-voided attempt to restore.\n\nManually voided attempts are protected — use Reset FTD to start fresh.');
+    alert('No auto-voided attempt found to restore.\n\nNote: Manually voided attempts are protected — use Reset FTD to clear all entries and start fresh.');
     return;
   }
-  if (!confirm('Restore the voided rally attempt?\n\nThis removes the void flag and re-runs the undercut check against current EOD data. If the data still shows a genuine undercut it will be re-voided immediately.')) return;
+  if (!confirm('Restore voided rally attempt?\n\nThis removes the void flag and re-runs the undercut check against current EOD data.\nIf the data still shows a genuine undercut it will be re-voided immediately.')) return;
   const restored = days.map(d => {
     if (d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void') {
       const origType = d._origType || 'attempt';
       const r = Object.assign({}, d);
       delete r.voidedBy; delete r.voidReason; delete r._origType;
       r.type = origType;
-      r._updatedAt = Date.now();
+      r._updatedAt = Date.now(); // stamp so restored state wins on sync
       return r;
     }
     return d;
@@ -3846,15 +3856,15 @@ function ftdRestoreVoid() {
   const recheck = ftdScanUndercutAll();
   ftdRender(); renderAnalysisFTD(); pushToCloud();
   if (recheck) {
-    flash('\u26a0 Undercut still in data — check Intraday Low values', 'var(--red)');
-    alert('\u26a0 Attempt re-voided:\n\n' + recheck + '\n\nCheck Nifty Intraday Low in Past Entry for dates after Day 1.');
+    flash('⚠ Undercut still present in data — check Intraday Low values', 'var(--red)');
+    alert('⚠ Attempt re-voided:\n\n' + recheck + '\n\nCheck the Nifty Intraday Low in Past Entry for dates after Day 1 — one is below the Day 1 low.');
   } else {
-    flash('\u2705 Rally attempt restored — no undercut found!', 'var(--lime)');
+    flash('✅ Rally attempt restored — no undercut found!', 'var(--lime)');
   }
 }
 
 function ftdReset() {
-  if (!confirm('Reset current rally attempt? This clears ALL FTD log entries.')) return;
+  if (!confirm('Reset current rally attempt? This clears ALL FTD log entries.\n\nUse this to start tracking a completely fresh rally attempt.')) return;
   ftdSaveData([]);
   ftdRender(); renderAnalysisFTD(); pushToCloud();
 }
@@ -3932,24 +3942,29 @@ function ftdComputeState() {
 function ftdScanUndercutAll() {
   const ftdDays = ftdLoad();
   if (!ftdDays.length) return null;
-  // Include auto-voided entries so we re-evaluate after data correction
+
+  // Find attempt entry — also look inside auto-voided entries so we re-evaluate after data fixes
   const attemptEntry = ftdDays.find(d =>
     d.type === 'attempt' ||
     (d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void')
   );
   if (!attemptEntry) return null;
+
   const day1Low = parseFloat(attemptEntry.low || 0);
   if (!day1Low || day1Low <= 0) return null;
+
   const records = loadLocal()
     .filter(r => r.date > attemptEntry.date)
     .sort((a, b) => a.date.localeCompare(b.date));
+
   let undercutDate = null, undercutValue = null;
   for (const r of records) {
     const low = parseFloat(r.niftyLow || 0);
     if (low > 0 && low < day1Low) { undercutDate = r.date; undercutValue = low; break; }
   }
+
   if (!undercutDate) {
-    // No undercut — restore any auto-voided entries (data was corrected)
+    // No undercut — restore any auto-voided entries
     const hasAutoVoided = ftdDays.some(d => d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void');
     if (hasAutoVoided) {
       ftdSaveData(ftdDays.map(d => {
@@ -3957,7 +3972,8 @@ function ftdScanUndercutAll() {
           const origType = d._origType || 'attempt';
           const r = Object.assign({}, d);
           delete r.voidedBy; delete r.voidReason; delete r._origType;
-          r.type = origType; r._updatedAt = Date.now();
+          r.type = origType;
+          r._updatedAt = Date.now(); // stamp so this restored state wins on next sync
           return r;
         }
         return d;
@@ -3965,6 +3981,8 @@ function ftdScanUndercutAll() {
     }
     return null;
   }
+
+  // Undercut confirmed
   const updated = ftdDays.map(d => {
     if ((d.type === 'attempt' || d.type === 'followthrough') && d.date <= undercutDate) {
       return { ...d, type: 'void', _origType: d.type, _updatedAt: Date.now(),
@@ -4481,7 +4499,7 @@ function renderRPG() {
   // ── Gather inputs ─────────────────────────────────
   const records  = loadLocal();
   const mpmDays  = mpmLoad().slice(0, 25);
-  const bsrTrades = bsrLoad().filter(t => !t._deleted);
+  const bsrTrades = bsrLoad();
   const ftdDays  = ftdLoad();
 
   if (!records.length) {
@@ -4743,29 +4761,27 @@ function seedHistoricalData() {
       const payload = await jbRead(cfg.key, cfg.bin);
       const isLegacy = Array.isArray(payload);
 
-      // Breadth records
+      // ── Breadth records — newest _updatedAt wins per date
       const cRec = isLegacy ? payload : (payload.records||[]);
-      const recMap = {};
-      [...cRec, ...loadLocal()].forEach(r => { if(r&&r.date) recMap[r.date]=r; });
-      saveLocal(Object.values(recMap));
+      saveLocal(mergeByKey(cRec, loadLocal(), r => r.date));
 
-      // BSR — newest _updatedAt wins per id
+      // ── BSR trades — newest _updatedAt wins per id
       const cBsr = isLegacy ? [] : (payload.bsr||[]);
       bsrSave(mergeByKey(cBsr, bsrLoad(), t => t.id));
 
-      // MPM
+      // ── MPM — newest _updatedAt wins per date
       const cMpm = isLegacy ? [] : (payload.mpm||[]);
-      const mpmMap = {};
-      [...cMpm, ...mpmLoad()].forEach(d => { if(d&&d.date) mpmMap[d.date]=d; });
-      mpmSave(Object.values(mpmMap));
+      mpmSave(mergeByKey(cMpm, mpmLoad(), d => d.date));
 
-      // FTD — newest _updatedAt wins per id, then re-validate undercut
+      // ── FTD — newest _updatedAt wins per id, then re-validate undercut
       const cFtd = isLegacy ? [] : (payload.ftd||[]);
-      ftdSaveData(mergeByKey(cFtd, ftdLoad(), d => d.id).sort((a,b)=>b.date.localeCompare(a.date)));
-      ftdScanUndercutAll();
+      const mergedFtd = mergeByKey(cFtd, ftdLoad(), d => d.id)
+        .sort((a,b) => b.date.localeCompare(a.date));
+      ftdSaveData(mergedFtd);
+      ftdScanUndercutAll(); // always re-validate after merge
 
       const recCount = loadLocal().length;
-      const bsrCount = bsrLoad().filter(t=>!t._deleted).length;
+      const bsrCount = bsrLoad().length;
       const mpmCount = mpmLoad().length;
       setSyncStatus('ok', `Synced · ${recCount}rec · ${bsrCount}bsr · ${mpmCount}mpm`);
       console.log('[Init] Synced — Records:', recCount, 'BSR:', bsrCount, 'MPM:', mpmCount);
@@ -4864,9 +4880,13 @@ window.addEventListener('load', () => { setTimeout(() => { renderA1Sparkline(loa
 
 // ── EVALUATION ───────────────────────────────────────
 function bsrDaysSince(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
-  const now = new Date(); now.setHours(0,0,0,0);
-  return Math.floor((now - d) / 86400000);
+  // Use UTC midnight for both dates so the day count is identical on every
+  // device regardless of local timezone — this is what caused BSR% to show
+  // different values on different PCs (e.g. 100% vs 50%).
+  const d   = new Date(dateStr + 'T00:00:00Z');
+  const now = new Date();
+  const nowUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return Math.floor((nowUTC - d.getTime()) / 86400000);
 }
 
 function bsrEval(trade) {
@@ -4901,7 +4921,7 @@ function bsrSetFilter(f) {
     const btn = document.getElementById('bsr-f-' + k);
     if (btn) btn.classList.toggle('active', k === f);
   });
-  bsrRenderTable(bsrLoad().filter(t => !t._deleted));
+  bsrRenderTable(bsrLoad());
 }
 
 // ── ADD TRADE ─────────────────────────────────────────
@@ -4913,7 +4933,7 @@ function bsrAdd() {
   if(!sym || !pivot || !date) { bsrFlash('⚠ Symbol, Pivot Price and Date are required', 'var(--orange)'); return; }
   const trades = bsrLoad();
   const id = Date.now().toString();
-  trades.push({ id, sym, pivot, curr: curr || pivot, date, _updatedAt: Date.now() });
+  trades.push({ id, sym, pivot, curr: curr || pivot, date });
   bsrSave(trades);
   bsrFlash(`✓ Added ${sym} — pivot ₹${pivot}`, 'var(--lime)');
   // Clear form
@@ -4925,7 +4945,7 @@ function bsrAdd() {
 
 function bsrDelete(id) {
   if(!confirm('Remove this trade?')) return;
-  const trades = bsrLoad().map(t => t.id === id ? { ...t, _deleted: true, _updatedAt: Date.now() } : t);
+  const trades = bsrLoad().filter(t => t.id !== id);
   bsrSave(trades); bsrRenderAll(); pushToCloud();
 }
 
@@ -4935,7 +4955,6 @@ function bsrUpdatePrice(id, newPrice) {
   if(!t) return;
   const prevStatus = bsrEval(t);
   t.curr = newPrice;
-  t._updatedAt = Date.now();
   const newStatus = bsrEval(t);
   bsrSave(trades);
   // Flash on status change
@@ -5100,7 +5119,7 @@ function bsrRenderChart() {
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, W, H);
 
-  const trades = bsrLoad().filter(t => !t._deleted);
+  const trades = bsrLoad();
   if(trades.length < 2) {
     ctx.fillStyle = 'rgba(62,84,112,0.5)';
     ctx.font = '12px Inter, sans-serif'; ctx.textAlign = 'center';
@@ -5181,7 +5200,7 @@ function bsrRenderChart() {
 
 // ── EXPORT ────────────────────────────────────────────
 function bsrExport() {
-  const trades = bsrLoad().filter(t => !t._deleted);
+  const trades = bsrLoad();
   if(!trades.length){alert('No trades to export');return;}
   const hdr = ['Symbol','Breakout Date','Days','Pivot','Current Price','Change%','Target(+5%)','Status'];
   const rows = trades.map(t => {
@@ -5598,7 +5617,7 @@ function mpmAdd() {
   const dtype = (vol && pvol) ? mpmClassify(close, pclose, vol, pvol) : mpmClassifyNoVol(close, pclose);
   const days = mpmLoad().filter(d => d.date !== date);
   days.push({ id: Date.now().toString(), date, close, pclose, vol: vol||'', pvol: pvol||'', dtype });
-  mpmSave(days.sort((a,b) => b.date.localeCompare(a.date)).slice(0, 60));
+  mpmSave(days.sort((a,b) => b.date.localeCompare(a.date)).slice(0, 25));
   mpmFlash('Added ' + date + ' — ' + dtype.toUpperCase() + ' day', dtype==='acc'?'var(--lime)':dtype==='dist'?'var(--red)':'var(--sub)');
   // Advance to next date
   const nd = new Date(date + 'T00:00:00'); nd.setDate(nd.getDate()+1);
@@ -5760,7 +5779,7 @@ function mpmRenderAll() {
 }
 
 function bsrRenderAll() {
-  const trades = bsrLoad().filter(t => !t._deleted);
+  const trades = bsrLoad();
   bsrRenderHero(trades);
   bsrRenderTable(trades);
   bsrRenderChart();
@@ -5853,7 +5872,6 @@ function closePastEntry() {
 function loadPastRowIntoModal(date) {
   const row = loadLocal().find(r=>r.date===date);
   if(!row) return;
-  // Make sure CP Past tab is open
   cpSwitchTab('past');
   document.getElementById('p-date').value  = date;
   document.getElementById('p-adv').value   = row.adv||'';
@@ -5867,6 +5885,7 @@ function loadPastRowIntoModal(date) {
   document.getElementById('p-nifty').value = row.nifty||'';
   const pnl = document.getElementById('p-nifty-low'); if(pnl) pnl.value = row.niftyLow||'';
   const pv  = document.getElementById('p-vol');       if(pv)  pv.value  = row.vol||'';
+  // Populate Day 1 checkbox
   const pCb = document.getElementById('p-ftd-attempt');
   if (pCb) {
     const ftdEntry = ftdLoad().find(d => d.date === date);
@@ -5884,12 +5903,12 @@ function renderPastSeedList() {
     const isSeed = r.notes&&r.notes.includes('ET seed');
     const ftdEntry = ftdDays.find(d => d.date === r.date);
     const isDay1 = !!(ftdEntry && (ftdEntry.type === 'attempt' || (ftdEntry.type === 'void' && ftdEntry._origType === 'attempt')));
-    return `<div onclick="loadPastRowIntoModal('${r.date}')" style="display:grid;grid-template-columns:100px 50px 90px 1fr 18px;gap:6px;align-items:center;padding:5px 8px;border-radius:4px;cursor:pointer;border-bottom:1px solid var(--border);font-size:11px" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background='none'">
+    return `<div onclick="loadPastRowIntoModal('${r.date}')" style="display:grid;grid-template-columns:100px 50px 90px 1fr 20px;gap:6px;align-items:center;padding:5px 8px;border-radius:4px;cursor:pointer;border-bottom:1px solid var(--border);font-size:11px" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background='none'">
       <span style="color:var(--text);font-family:var(--mono)">${r.date}</span>
-      <span style="font-family:var(--disp);font-size:16px;font-weight:800;color:${z.color}">${r.score||'\u2014'}</span>
-      <span style="color:${z.color};font-size:10px">${r.zone||'\u2014'}</span>
+      <span style="font-family:var(--disp);font-size:16px;font-weight:800;color:${z.color}">${r.score||'—'}</span>
+      <span style="color:${z.color};font-size:10px">${r.zone||'—'}</span>
       <span style="color:var(--dim);font-size:10px">${isSeed?'<span style="color:var(--purple);font-size:9px">ET seed</span>':r.notes||''}</span>
-      <span title="Day 1 Rally Attempt">${isDay1?'\ud83d\udccd':''}</span>
+      <span title="Day 1 Rally Attempt">${isDay1?'📍':''}</span>
     </div>`;
   }).join('');
 }
@@ -5912,32 +5931,45 @@ async function savePastEntry() {
   // ── Handle Day 1 Rally Attempt checkbox ─────────────────────────
   const pCb = document.getElementById('p-ftd-attempt');
   const isAttemptChecked = pCb && pCb.checked;
-  const niftyLowVal = parseFloat(row.niftyLow);
+  const niftyLowVal = parseFloat(g('p-nifty-low'));
   let ftdDays = ftdLoad();
+
   if (isAttemptChecked) {
     if (!niftyLowVal || niftyLowVal <= 0) {
-      showPastMsg('\u26a0 Saved EOD, but Day 1 requires Nifty Intraday Low — fill it and save again.', 'var(--orange)');
+      showPastMsg('⚠ Saved EOD data, but Day 1 requires Nifty Intraday Low — fill it and save again.', 'var(--orange)');
     } else {
+      // Remove existing attempt/void for this date, insert fresh
       ftdDays = ftdDays.filter(d => d.date !== date);
-      const prevRec = loadLocal().filter(r => r.date < date && r.nifty).sort((a,b)=>b.date.localeCompare(a.date));
+      const prevRec = loadLocal().filter(r => r.date < date && r.nifty)
+                                 .sort((a,b) => b.date.localeCompare(a.date));
       const prevClose = prevRec.length ? parseFloat(prevRec[0].nifty) : 0;
-      const curClose  = parseFloat(row.nifty);
+      const curClose  = parseFloat(g('p-nifty'));
       const movePct   = (curClose && prevClose) ? +((curClose-prevClose)/prevClose*100).toFixed(2) : 0;
-      ftdDays.push({ id: Date.now(), date, _updatedAt: Date.now(), close: curClose||0, prev: prevClose||0, low: niftyLowVal, movePct, volUp: false, type: 'attempt', auto: false });
+      ftdDays.push({
+        id: Date.now(), date, _updatedAt: Date.now(),
+        close: curClose||0, prev: prevClose||0, low: niftyLowVal,
+        movePct, volUp: false, type: 'attempt', auto: false
+      });
       ftdDays.sort((a,b) => b.date.localeCompare(a.date));
       ftdSaveData(ftdDays);
     }
   } else {
-    const hadAttempt = ftdDays.some(d => d.date === date && (d.type === 'attempt' || (d.type === 'void' && d._origType === 'attempt')));
-    if (hadAttempt) ftdSaveData(ftdDays.filter(d => !(d.date === date && (d.type === 'attempt' || (d.type === 'void' && d._origType === 'attempt')))));
+    // Unchecked — remove any attempt entry for this date
+    const hadAttempt = ftdDays.some(d => d.date === date &&
+      (d.type === 'attempt' || (d.type === 'void' && d._origType === 'attempt')));
+    if (hadAttempt) {
+      ftdSaveData(ftdDays.filter(d => !(d.date === date &&
+        (d.type === 'attempt' || (d.type === 'void' && d._origType === 'attempt')))));
+    }
   }
 
   // ── FTD undercut scan ────────────────────────────────────────────
   const voidMsg = ftdScanUndercutAll();
   if (voidMsg) {
-    showPastMsg('\u2713 Saved ' + date + ' \u00b7 \u26a0 Rally VOIDED \u2014 ' + voidMsg, 'var(--red)');
+    showPastMsg('✓ Saved ' + date + ' · ⚠ Rally VOIDED — ' + voidMsg, 'var(--red)');
   } else {
-    showPastMsg('\u2713 Saved ' + date + ' \u2014 Score: ' + row.score + ' (' + z.name + ')' + (isAttemptChecked && niftyLowVal > 0 ? ' \u00b7 \ud83d\udccd Day 1 logged' : ''), 'var(--lime)');
+    showPastMsg('✓ Saved ' + date + ' — Score: ' + row.score + ' (' + z.name + ')' +
+      (isAttemptChecked && niftyLowVal > 0 ? ' · 📍 Day 1 logged' : ''), 'var(--lime)');
   }
 
   cpUpdateHomeStatus();
@@ -6227,7 +6259,10 @@ async function cfgConnect() {
       [...cRec,...local].forEach(r=>{ if(r&&r.date) recMap[r.date]=r; });
       saveLocal(Object.values(recMap));
 
-      bsrSave(mergeByKey(cBsr, bsrLoad(), t => t.id));
+      const lBsr = bsrLoad();
+      const bsrMap = {};
+      [...cBsr,...lBsr].forEach(t=>{ if(t&&t.id) bsrMap[t.id]=t; });
+      bsrSave(Object.values(bsrMap));
 
       const lMpm = mpmLoad();
       const mpmMap = {};
@@ -6240,7 +6275,7 @@ async function cfgConnect() {
       ftdSaveData(Object.values(ftdMap).sort((a,b)=>b.date.localeCompare(a.date)));
 
       setSyncStatus('ok', `Synced · ${Object.keys(recMap).length}rec · ${Object.keys(mpmMap).length}mpm`);
-      cfgBanner(`✅ Connected & data pulled!\n${Object.keys(recMap).length} breadth records · ${bsrLoad().filter(t=>!t._deleted).length} BSR trades · ${Object.keys(mpmMap).length} MPM entries synced.`, 'ok');
+      cfgBanner(`✅ Connected & data pulled!\n${Object.keys(recMap).length} breadth records · ${Object.keys(bsrMap).length} BSR trades · ${Object.keys(mpmMap).length} MPM entries synced.`, 'ok');
       renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender();
     }
   } catch(e) {
@@ -6552,19 +6587,20 @@ document.addEventListener('keydown', e => {
           <div class="ef" style="border-color:rgba(91,163,245,.3)"><div class="ef-lbl">% &gt; SMA200</div><input type="number" id="p-s200" placeholder="37" min="0" max="100" step="0.1"></div>
         </div>
 
-        <div class="ueg-label" style="margin-bottom:6px">&#x1F7E1; Rally Attempt
+        <div class="ueg-label" style="margin-bottom:6px">🟡 Rally Attempt
           <span style="font-size:10px;font-weight:400;color:var(--dim);margin-left:8px">Mark this date as Day 1 of a rally attempt</span>
         </div>
         <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px">
           <div style="display:flex;flex-direction:column;gap:6px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;flex:1">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none">
               <input type="checkbox" id="p-ftd-attempt" style="width:15px;height:15px;cursor:pointer;accent-color:var(--yellow)">
-              <span style="font-size:12px;color:var(--text);font-weight:600">&#x1F4CD; Day 1 of Rally Attempt</span>
+              <span style="font-size:12px;color:var(--text);font-weight:600">📍 Day 1 of Rally Attempt</span>
             </label>
-            <div style="font-size:10px;color:var(--dim);padding-left:23px;line-height:1.5">Tick to mark this past date as Day 1. <b style="color:var(--orange)">Nifty Intraday Low must be filled above</b>. Unticking and saving removes the Day 1 entry for this date.</div>
+            <div style="font-size:10px;color:var(--dim);padding-left:23px;line-height:1.5">Tick to mark this past date as Day 1. <b style="color:var(--orange)">Nifty Intraday Low must be filled above</b> — used for undercut detection. Unticking and saving removes the Day 1 entry for this date.</div>
           </div>
-          <button class="btn btn-sec" onclick="ftdRestoreVoid()" style="font-size:11px;padding:6px 12px;color:var(--teal);border-color:rgba(45,212,191,.3);white-space:nowrap;align-self:center">&#x21A9; Restore Void</button>
+          <button class="btn btn-sec" onclick="ftdRestoreVoid()" style="font-size:11px;padding:6px 12px;color:var(--teal);border-color:rgba(45,212,191,.3);white-space:nowrap;align-self:center">↩ Restore Void</button>
         </div>
+
         <div id="past-save-msg" style="font-size:12px;margin-bottom:8px;min-height:16px"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-primary" onclick="savePastEntry()" style="background:var(--purple)">💾 Save Past Entry</button>
