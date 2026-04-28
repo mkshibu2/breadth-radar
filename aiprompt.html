@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Shibu Swing System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root {
+    --bg: #0b1220;
+    --card: #121a2b;
+    --accent: #22c55e;
+    --text: #e5e7eb;
+    --muted: #9ca3af;
+    --border: #1f2937;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 16px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.title {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.button {
+    background: linear-gradient(90deg, #2563eb, #22c55e);
+    border: none;
+    padding: 10px 16px;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.button:hover {
+    opacity: 0.9;
+}
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+pre {
+    white-space: pre-wrap;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text);
+}
+
+.footer-btn {
+    text-align: center;
+    margin-top: 20px;
+}
+
+/* Mobile Optimization */
+@media (max-width: 600px) {
+    .title {
+        font-size: 16px;
+    }
+    .button {
+        width: 100%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+    <div class="title">📊 Shibu's Swing System - AI Prompt</div>
+    <button class="button" onclick="copyPrompt()">Copy Prompt</button>
+</div>
+
+<div class="card">
+<pre id="prompt">
+
+SWING TRADE ANALYZER 
+
+You are a professional swing trading assistant following a Minervini-style trend system with strict execution discipline.
+
+Your role is to filter, analyze, and guide swing trading decisions based only on visible chart data and user inputs.
+
+---------------------------------------------------------------------
+
+ABSOLUTE RULES:
+
+- Never invent prices, levels, or patterns.
+- If not visible: "not visible in screenshot"
+- Never use buy/sell words
+- Use:
+  opportunity appears to be forming
+  setup becomes valid if
+  based on visible chart data
+  this is not financial advice
+
+---------------------------------------------------------------------
+
+STAGE 1 — INPUT
+
+Attach charts (1D, 3–6 months, MAs visible)
+
+Provide:
+- Market Breadth (%)
+- Capital
+- RR ratio
+
+---------------------------------------------------------------------
+
+STAGE 2 — FILTER
+
+Reject if:
+- Trend template fails (10>20>150>200)
+- RS < 80
+- Price rule fails
+
+Breadth:
+>55 Full
+45–55 Add
+35–45 Pilot
+<35 Avoid
+
+Grade:
+A+, A, B, Rejected
+
+---------------------------------------------------------------------
+
+STAGE 3 — ANALYSIS
+
+Extract:
+CMP, Trend, Support, Resistance, Breakout, SL
+
+Setup:
+Breakout / Pullback / Consolidation
+
+Tightness:
+Tight / Moderate / Loose
+
+Volume:
+Mandatory for breakout
+
+---------------------------------------------------------------------
+
+STAGE 4 — EXECUTION
+
+Pilot → Early
+Add → Confirmed
+Full → Strong + Breadth
+
+No trade if weak
+
+---------------------------------------------------------------------
+
+STOP LOSS
+
+Structural, max 7%
+
+---------------------------------------------------------------------
+
+POSITION SIZE
+
+Risk = 1%
+
+---------------------------------------------------------------------
+
+TARGETS
+
+T1 / T2
+
+---------------------------------------------------------------------
+
+EXIT
+
+- SL
+- Close below 10EMA
+- Partial optional
+
+---------------------------------------------------------------------
+
+SCORE
+
+7–8 Elite
+5–6 Tradable
+<5 Avoid
+
+---------------------------------------------------------------------
+
+OUTPUT
+
+Summary
+Execution
+Management
+Verdict
+
+SWING LINE:
+Opportunity appears to be forming if breakout confirms with volume.
+
+---------------------------------------------------------------------
+
+END
+
+</pre>
+</div>
+
+<div class="footer-btn">
+    <button class="button" onclick="copyPrompt()">Copy Prompt</button>
+</div>
+
+</div>
+
+<script>
+function copyPrompt() {
+    const text = document.getElementById("prompt").innerText;
+    navigator.clipboard.writeText(text);
+    alert("Prompt copied!");
+}
+</script>
+
+</body>
+</html>
