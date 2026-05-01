@@ -338,6 +338,15 @@ canvas#bsr-chart{width:100%;height:100%;}
 
 /* ── MPM ─────────────────────────────────────────────────── */
 .mpm-hero{display:grid;grid-template-columns:90px 1fr 160px;overflow:hidden;border-top:2px solid var(--teal);}
+/* ── SRT HERO ───────────────────────────────────────────── */
+.srt-hero{display:grid;grid-template-columns:160px 1fr;gap:0;border-top:2px solid var(--purple);background:var(--bg2);padding:10px 14px;}
+.srt-hero-left{}
+.srt-hero-right{display:flex;flex-direction:column;gap:3px;justify-content:center;padding-left:10px;border-left:1px solid var(--border);}
+.srt-row{display:flex;align-items:center;gap:6px;font-size:10px;}
+.srt-rank{color:var(--dim);width:12px;text-align:right;}
+.srt-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.srt-sym{font-weight:600;color:var(--text);}
+.srt-badge{font-size:8px;padding:1px 4px;border-radius:2px;}
 .mpm-score-panel{padding:10px 10px;border-right:1px solid var(--border);}
 .mpm-score-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--sub);margin-bottom:2px;}
 .mpm-score-num{font-family:var(--disp);font-size:48px;font-weight:800;line-height:1;transition:color .4s;color:var(--dim);}
@@ -1648,6 +1657,19 @@ body.guest-mode #mpm-module-card { display:none !important; }
             </div>
           </div>
         </div>
+        <!-- SRT Hero -->
+        <div class="srt-hero" id="srt-hero-wrap">
+          <div class="srt-hero-left">
+            <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Sector Rotation</div>
+            <div style="display:flex;gap:10px;align-items:baseline">
+              <div><span id="srt-hero-lead" style="font-size:22px;font-weight:700;color:var(--lime)">-</span><span style="font-size:9px;color:var(--dim);margin-left:2px">Lead</span></div>
+              <div><span id="srt-hero-base" style="font-size:22px;font-weight:700;color:var(--accent)">-</span><span style="font-size:9px;color:var(--dim);margin-left:2px">Base</span></div>
+              <div><span id="srt-hero-weak" style="font-size:22px;font-weight:700;color:var(--red)">-</span><span style="font-size:9px;color:var(--dim);margin-left:2px">Weak</span></div>
+            </div>
+            <div id="srt-hero-sub" style="font-size:9px;color:var(--dim);margin-top:3px">No sector data yet</div>
+          </div>
+          <div class="srt-hero-right" id="srt-hero-rows"></div>
+        </div>
         <!-- MPM Form -->
         <div class="mpm-form">
           <div style="font-size:11px;color:var(--sub);background:rgba(45,212,191,.05);border:1px solid rgba(45,212,191,.15);border-radius:5px;padding:8px 12px;margin-bottom:8px;line-height:1.6">
@@ -2208,6 +2230,212 @@ const LS_BSR  = 'nse_bsr_v1';
 const bsrLoad = () => { try { return JSON.parse(lsGet(LS_BSR)) || []; } catch(e) { return []; } };
 const bsrSave = d => lsSet(LS_BSR, JSON.stringify(d));
 
+const LS_SRT  = 'nse_srt_v1';
+const srtLoad = () => { try { return JSON.parse(lsGet(LS_SRT)) || []; } catch(e) { return []; } };
+const srtSave = d => lsSet(LS_SRT, JSON.stringify(d));
+
+// ── SRT: Stage classification ─────────────────────────────────────────────
+function srtCalcStage(close, ma20, ma50) {
+  const above20 = close > ma20;
+  const above50 = close > ma50;
+  if (above20 && above50) return 'S2';           // above both → advancing
+  if (!above20 && above50) return 'S3';          // below 20 but above 50 → topping
+  if (above20 && !above50) return 'S1';          // above 20 but below 50 → basing/recovering
+  return 'S4';                                   // below both → declining
+}
+
+// RS = sector % vs nifty50 % — simple relative strength this week
+function srtCalcRS(secClose, secPrevClose, niftyClose, niftyPrevClose) {
+  if (!secPrevClose || !niftyPrevClose) return 0;
+  const secChg   = ((secClose - secPrevClose) / secPrevClose) * 100;
+  const niftyChg = ((niftyClose - niftyPrevClose) / niftyPrevClose) * 100;
+  return +(secChg - niftyChg).toFixed(2);
+}
+
+function srtSaveEntry() {
+  const selVal  = document.getElementById('srt-sel').value;
+  const close   = parseFloat(document.getElementById('srt-close').value);
+  const ma20    = parseFloat(document.getElementById('srt-ma20').value);
+  const ma50    = parseFloat(document.getElementById('srt-ma50').value);
+  const nifty   = parseFloat(document.getElementById('srt-nifty').value) || 0;
+  const msg     = document.getElementById('srt-msg');
+
+  if (!selVal || isNaN(close) || isNaN(ma20) || isNaN(ma50)) {
+    msg.style.display = 'block'; msg.style.color = 'var(--red)';
+    msg.textContent = 'Please fill Sector, Close, 20MA and 50MA.'; return;
+  }
+
+  const [fullName, shortName] = selVal.split('|');
+  const stage   = srtCalcStage(close, ma20, ma50);
+  const vs20    = +(((close - ma20) / ma20) * 100).toFixed(2);
+  const date    = new Date().toISOString().slice(0,10);
+
+  const sectors = srtLoad();
+  const existing = sectors.findIndex(s => s.id === fullName);
+
+  const entry = {
+    id: fullName,
+    name: shortName,
+    full: fullName,
+    close, ma20, ma50,
+    niftyClose: nifty,
+    stage, vs20,
+    date,
+    _updatedAt: Date.now()
+  };
+
+  // RS calc: compare with previous entry if available
+  if (existing >= 0) {
+    const prev = sectors[existing];
+    if (prev.close && prev.niftyClose && nifty) {
+      entry.rs = srtCalcRS(close, prev.close, nifty, prev.niftyClose);
+    } else {
+      entry.rs = 0;
+    }
+    sectors[existing] = entry;
+  } else {
+    entry.rs = 0;
+    sectors.push(entry);
+  }
+
+  srtSave(sectors);
+  pushToCloud();
+  srtRender();
+  srtClearForm();
+  msg.style.display = 'block'; msg.style.color = 'var(--lime)';
+  msg.textContent = shortName + ' saved. Push to sync across devices.';
+  setTimeout(() => { msg.style.display = 'none'; }, 3000);
+}
+
+function srtClearForm() {
+  ['srt-close','srt-ma20','srt-ma50','srt-nifty'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+}
+
+function srtDelete(id) {
+  if (!confirm('Remove ' + id + ' from tracker?')) return;
+  const sectors = srtLoad().filter(s => s.id !== id);
+  srtSave(sectors);
+  pushToCloud();
+  srtRender();
+}
+
+function srtEditLoad(id) {
+  const s = srtLoad().find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('srt-sel').value   = s.id + '|' + s.name;
+  document.getElementById('srt-close').value = s.close;
+  document.getElementById('srt-ma20').value  = s.ma20;
+  document.getElementById('srt-ma50').value  = s.ma50;
+  document.getElementById('srt-nifty').value = s.niftyClose || '';
+}
+
+function srtStageMeta(stage) {
+  if (stage === 'S2') return { label:'Stage 2', color:'var(--lime)',   bg:'rgba(74,222,128,.15)',  score: 4 };
+  if (stage === 'S1') return { label:'Stage 1', color:'var(--accent)', bg:'rgba(91,163,245,.12)',  score: 3 };
+  if (stage === 'S3') return { label:'Stage 3', color:'var(--yellow)', bg:'rgba(251,191,36,.12)',  score: 2 };
+                      return { label:'Stage 4', color:'var(--red)',    bg:'rgba(239,68,68,.12)',   score: 1 };
+}
+
+function srtMaDot(close, ma) {
+  const pct = ((close - ma) / ma) * 100;
+  if (pct > 1)   return '<span style="color:var(--lime);font-size:10px">●</span>';
+  if (pct >= -1) return '<span style="color:var(--yellow);font-size:10px">◐</span>';
+                 return '<span style="color:var(--red);font-size:10px">○</span>';
+}
+
+function srtRender() {
+  const sectors = srtLoad();
+  const tbody   = document.getElementById('srt-tbody');
+  const empty   = document.getElementById('srt-empty');
+  const cLead   = document.getElementById('srt-count-lead');
+  const cBase   = document.getElementById('srt-count-base');
+  const cWeak   = document.getElementById('srt-count-weak');
+
+  // Sort: stage score desc, then vs20 desc
+  const sorted = [...sectors].sort((a,b) => {
+    const sa = srtStageMeta(a.stage).score;
+    const sb = srtStageMeta(b.stage).score;
+    if (sb !== sa) return sb - sa;
+    return b.vs20 - a.vs20;
+  });
+
+  const lead = sorted.filter(s => s.stage === 'S2').length;
+  const base = sorted.filter(s => s.stage === 'S1').length;
+  const weak = sorted.filter(s => s.stage === 'S3' || s.stage === 'S4').length;
+  if (cLead) cLead.textContent = lead;
+  if (cBase) cBase.textContent = base;
+  if (cWeak) cWeak.textContent = weak;
+
+  // ── Update home hero card ──────────────────────────────
+  const hLead = document.getElementById('srt-hero-lead');
+  const hBase = document.getElementById('srt-hero-base');
+  const hWeak = document.getElementById('srt-hero-weak');
+  const hSub  = document.getElementById('srt-hero-sub');
+  const hRows = document.getElementById('srt-hero-rows');
+  if (hLead) hLead.textContent = sorted.length ? lead : '—';
+  if (hBase) hBase.textContent = sorted.length ? base : '—';
+  if (hWeak) hWeak.textContent = sorted.length ? weak : '—';
+  if (hSub && sorted.length) {
+    const topSec = sorted[0];
+    const topMeta = srtStageMeta(topSec.stage);
+    hSub.innerHTML = 'Top: <b style="color:' + topMeta.color + '">' + topSec.name + '</b> · ' + topMeta.label + ' · ' + (topSec.vs20 > 0 ? '+' : '') + topSec.vs20.toFixed(1) + '% vs 20MA';
+  } else if (hSub) {
+    hSub.textContent = 'No sector data yet — add via Control Panel';
+  }
+  if (hRows) {
+    const dotColor = s => srtStageMeta(s.stage).color;
+    hRows.innerHTML = sorted.slice(0,5).map((s,i) => {
+      const m = srtStageMeta(s.stage);
+      return '<div class="srt-row"><span class="srt-rank">' + (i+1) + '</span>'
+           + '<span class="srt-dot" style="background:' + m.color + '"></span>'
+           + '<span class="srt-sym">' + s.name + '</span>'
+           + '<span class="srt-badge" style="background:' + m.bg + ';color:' + m.color + '">' + m.label + '</span>'
+           + '<span style="font-size:9px;color:' + (s.vs20>=0?'var(--lime)':'var(--red)') + ';margin-left:auto">'
+           + (s.vs20>=0?'+':'') + s.vs20.toFixed(1) + '%</span>'
+           + '</div>';
+    }).join('');
+  }
+
+  // ── CP table (only when tab is visible) ───────────────
+  if (!tbody) return;
+
+  if (!sorted.length) {
+    tbody.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  tbody.innerHTML = sorted.map((s, i) => {
+    const m    = srtStageMeta(s.stage);
+    const rsStr = s.rs > 0 ? '<span style="color:var(--lime)">+' + s.rs.toFixed(1) + '</span>'
+                : s.rs < 0 ? '<span style="color:var(--red)">'  + s.rs.toFixed(1) + '</span>'
+                : '<span style="color:var(--dim)">—</span>';
+    const vs20Str = s.vs20 > 0
+      ? '<span style="color:var(--lime)">+' + s.vs20.toFixed(1) + '%</span>'
+      : '<span style="color:var(--red)">'  + s.vs20.toFixed(1) + '%</span>';
+    return `<tr style="border-bottom:1px solid var(--border);cursor:pointer" onclick="srtEditLoad('${s.id}')">
+      <td style="padding:5px 4px;color:var(--dim)">${i+1}</td>
+      <td style="padding:5px 4px">
+        <div style="font-weight:600;font-size:12px">${s.name}</div>
+        <div style="font-size:9px;color:var(--dim)">${s.date}</div>
+      </td>
+      <td style="padding:5px 4px;text-align:right">${vs20Str}</td>
+      <td style="padding:5px 4px;text-align:center">${srtMaDot(s.close, s.ma20)}${srtMaDot(s.close, s.ma50)}</td>
+      <td style="padding:5px 4px;text-align:center">
+        <span style="background:${m.bg};color:${m.color};padding:2px 5px;border-radius:3px;font-size:9px;font-weight:600">${m.label}</span>
+      </td>
+      <td style="padding:5px 4px;text-align:right">${rsStr}</td>
+      <td style="padding:5px 2px;text-align:right">
+        <button onclick="event.stopPropagation();srtDelete('${s.id}')" style="background:transparent;border:none;color:var(--dim);cursor:pointer;font-size:11px;padding:2px 4px" title="Remove">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
 const LS_MPM  = 'nse_mpm_v1';
 const LS_GUEST_BIN = 'nse_guest_bin';
 function isGuestMode() { return !!lsGet(LS_GUEST_BIN); }
@@ -2295,7 +2523,8 @@ function buildPayload() {
     records: loadLocal(),
     bsr: bsrLoad(),
     mpm: mpmLoad(),
-    ftd: ftdLoad()
+    ftd: ftdLoad(),
+    srt: srtLoad()
   };
 }
 
@@ -2371,11 +2600,13 @@ async function pullFromCloud(key, bin) {
     const cloudBsr  = Array.isArray(raw) ? [] : (raw.bsr||[]);
     const cloudMpm  = Array.isArray(raw) ? [] : (raw.mpm||[]);
     const cloudFtd  = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd||[]) : [];
+    const cloudSrt  = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.srt||[]) : [];
 
     // Merge all — newest _updatedAt wins per key
     saveLocal(mergeByKey(cloudRecs, loadLocal(), r => r.date));
     bsrSave(mergeByKey(cloudBsr, bsrLoad(), t => t.id));
     mpmSave(mergeByKey(cloudMpm, mpmLoad(), d => d.date));
+    srtSave(mergeByKey(cloudSrt, srtLoad(), s => s.id));
     const mergedFtd = mergeByKey(cloudFtd, ftdLoad(), d => d.id)
       .sort((a,b) => b.date.localeCompare(a.date));
     ftdSaveData(mergedFtd);
@@ -2383,12 +2614,13 @@ async function pullFromCloud(key, bin) {
 
     const merged = loadLocal();
     setSyncStatus('ok','Synced');
-    setupFlash(`✓ Pulled — ${merged.length} breadth + ${bsrLoad().length} BSR + ${mpmLoad().length} MPM records`, 'var(--lime)');
+    setupFlash(`✓ Pulled — ${merged.length} breadth + ${bsrLoad().length} BSR + ${mpmLoad().length} MPM + ${srtLoad().length} sectors`, 'var(--lime)');
     renderAll();
     bsrRenderAll();
     mpmRenderAll();
     ftdRender();
     renderAnalysisFTD();
+    srtRender();
   } catch(e) {
     setSyncStatus('err','Sync Error');
     setupFlash('✗ Pull failed: ' + e.message, 'var(--red)');
@@ -4670,6 +4902,7 @@ function renderAll() {
   safe(() => renderHistory(data),      'renderHistory');
   safe(() => bsrRenderAll(),           'bsrRenderAll');
   safe(() => mpmRenderAll(),           'mpmRenderAll');
+  safe(() => srtRender(),              'srtRender');
   // Always render chart — getBoundingClientRect works even before first paint
   renderChart(data);
 }
@@ -5814,7 +6047,7 @@ function closeControlPanel() {
   if (overlay) overlay.classList.remove('open');
 }
 function cpSwitchTab(tab) {
-  ['eod','past','sync'].forEach(t => {
+  ['eod','past','sync','srt'].forEach(t => {
     const tb = document.getElementById('cp-tab-' + t);
     const sc = document.getElementById('cp-sec-' + t);
     if (tb) tb.classList.toggle('active', t === tab);
@@ -5822,6 +6055,7 @@ function cpSwitchTab(tab) {
   });
   if (tab === 'past') renderPastSeedList();
   if (tab === 'sync') cpRefreshSyncState();
+  if (tab === 'srt')  srtRender();
 }
 function cpRefreshSyncState() {
   const cfg = getCfg();
@@ -6281,7 +6515,7 @@ async function cfgConnect() {
 
       setSyncStatus('ok', `Synced · ${Object.keys(recMap).length}rec · ${Object.keys(mpmMap).length}mpm`);
       cfgBanner(`✅ Connected & data pulled!\n${Object.keys(recMap).length} breadth records · ${Object.keys(bsrMap).length} BSR trades · ${Object.keys(mpmMap).length} MPM entries synced.`, 'ok');
-      renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender();
+      renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender();
     }
   } catch(e) {
     setSyncStatus('err', 'Sync Error');
@@ -6388,7 +6622,7 @@ async function cfgConnectGuest() {
     if (exitBtn) exitBtn.style.display = 'inline-block';
 
     applyGuestMode();
-    renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender();
+    renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender();
 
     // Auto-close modal after 2s
     setTimeout(closeCfgModal, 2000);
@@ -6423,7 +6657,7 @@ function cfgExitGuest() {
   // Clear data
   saveLocal([]); bsrSave([]); mpmSave([]); ftdSaveData([]);
   setSyncStatus('warn', 'Not Configured · Click to Setup');
-  renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender();
+  renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender();
   closeCfgModal();
 }
 
@@ -6452,7 +6686,7 @@ function initGuestMode() {
     saveLocal(recs); bsrSave(bsr); mpmSave(mpm);
     ftdSaveData(ftd.sort((a,b)=>b.date.localeCompare(a.date)));
     setSyncStatus('ok', `Guest · ${recs.length}rec · ${mpm.length}mpm`);
-    renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender();
+    renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender();
   }).catch(e => {
     setSyncStatus('err', 'Guest · Pull Failed');
     console.warn('[Guest] Refresh failed:', e.message);
@@ -6495,6 +6729,7 @@ document.addEventListener('keydown', e => {
       <div class="cp-tab active" id="cp-tab-eod"  onclick="cpSwitchTab('eod')">📋 EOD Entry</div>
       <div class="cp-tab"        id="cp-tab-past" onclick="cpSwitchTab('past')">📅 Past Entry</div>
       <div class="cp-tab"        id="cp-tab-sync" onclick="cpSwitchTab('sync')">☁ Sync</div>
+      <div class="cp-tab"        id="cp-tab-srt"  onclick="cpSwitchTab('srt')">📡 Sectors</div>
     </div>
 
     <div class="cp-body">
@@ -6677,6 +6912,102 @@ document.addEventListener('keydown', e => {
         </div>
 
       </div><!-- /sync -->
+
+      <!-- ── TAB 4: SECTOR ROTATION TRACKER ────────────────── -->
+      <div class="cp-section" id="cp-sec-srt">
+        <div class="cp-section-title">SECTOR ROTATION TRACKER — WEEKLY</div>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px">
+          <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center">
+            <div style="font-size:9px;color:var(--dim);margin-bottom:2px">LEADING</div>
+            <div id="srt-count-lead" style="font-size:20px;font-weight:600;color:var(--lime)">0</div>
+            <div style="font-size:9px;color:var(--dim)">Stage 2</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center">
+            <div style="font-size:9px;color:var(--dim);margin-bottom:2px">BASING</div>
+            <div id="srt-count-base" style="font-size:20px;font-weight:600;color:var(--accent)">0</div>
+            <div style="font-size:9px;color:var(--dim)">Stage 1</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center">
+            <div style="font-size:9px;color:var(--dim);margin-bottom:2px">AVOID</div>
+            <div id="srt-count-weak" style="font-size:20px;font-weight:600;color:var(--red)">0</div>
+            <div style="font-size:9px;color:var(--dim)">Stage 3-4</div>
+          </div>
+        </div>
+
+        <div style="background:var(--bg3);border-radius:6px;padding:12px;margin-bottom:14px">
+          <div style="font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.8px;margin-bottom:10px">WEEKLY ENTRY — 3 NUMBERS PER SECTOR</div>
+          <div style="margin-bottom:8px">
+            <label style="font-size:10px;color:var(--dim);display:block;margin-bottom:3px">Sector</label>
+            <select id="srt-sel" style="width:100%;font-size:12px;padding:5px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text)">
+              <option value="NIFTY IT|IT">Nifty IT</option>
+              <option value="NIFTY PHARMA|Pharma">Nifty Pharma</option>
+              <option value="NIFTY FMCG|FMCG">Nifty FMCG</option>
+              <option value="NIFTY BANK|Bank">Nifty Bank</option>
+              <option value="NIFTY AUTO|Auto">Nifty Auto</option>
+              <option value="NIFTY METAL|Metal">Nifty Metal</option>
+              <option value="NIFTY REALTY|Realty">Nifty Realty</option>
+              <option value="NIFTY INFRA|Infra">Nifty Infra</option>
+              <option value="NIFTY MEDIA|Media">Nifty Media</option>
+              <option value="NIFTY PSU BANK|PSU Bank">Nifty PSU Bank</option>
+              <option value="NIFTY ENERGY|Energy">Nifty Energy</option>
+              <option value="NIFTY HEALTHCARE|Healthcare">Nifty Healthcare</option>
+              <option value="NIFTY CONSUMPTION|Consumption">Nifty Consumption</option>
+            </select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+            <div>
+              <label style="font-size:10px;color:var(--dim);display:block;margin-bottom:3px">Close</label>
+              <input id="srt-close" type="number" placeholder="38250" step="0.01" style="width:100%;font-size:12px;padding:5px 6px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);box-sizing:border-box">
+            </div>
+            <div>
+              <label style="font-size:10px;color:var(--dim);display:block;margin-bottom:3px">20MA</label>
+              <input id="srt-ma20" type="number" placeholder="37100" step="0.01" style="width:100%;font-size:12px;padding:5px 6px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);box-sizing:border-box">
+            </div>
+            <div>
+              <label style="font-size:10px;color:var(--dim);display:block;margin-bottom:3px">50MA</label>
+              <input id="srt-ma50" type="number" placeholder="35800" step="0.01" style="width:100%;font-size:12px;padding:5px 6px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);box-sizing:border-box">
+            </div>
+          </div>
+          <div style="margin-bottom:8px">
+            <label style="font-size:10px;color:var(--dim);display:block;margin-bottom:3px">Nifty 50 Close (for RS)</label>
+            <input id="srt-nifty" type="number" placeholder="24450" step="0.01" style="width:100%;font-size:12px;padding:5px 6px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);box-sizing:border-box">
+          </div>
+          <div style="display:flex;gap:6px">
+            <button onclick="srtSaveEntry()" style="flex:1;font-size:11px;padding:6px;background:var(--accent);color:#000;border:none;border-radius:4px;cursor:pointer;font-weight:600">Save Sector</button>
+            <button onclick="srtClearForm()" style="font-size:11px;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--dim)">Clear</button>
+          </div>
+          <div id="srt-msg" style="font-size:10px;margin-top:6px;display:none"></div>
+        </div>
+
+        <div style="font-size:9px;color:var(--dim);margin-bottom:6px">RANKED BY STRENGTH</div>
+        <div id="srt-table-wrap" style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:11px">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border)">
+                <th style="text-align:left;padding:4px;color:var(--dim);font-weight:400">#</th>
+                <th style="text-align:left;padding:4px;color:var(--dim);font-weight:400">Sector</th>
+                <th style="text-align:right;padding:4px;color:var(--dim);font-weight:400">vs20MA</th>
+                <th style="text-align:center;padding:4px;color:var(--dim);font-weight:400">MAs</th>
+                <th style="text-align:center;padding:4px;color:var(--dim);font-weight:400">Stage</th>
+                <th style="text-align:right;padding:4px;color:var(--dim);font-weight:400">RS</th>
+                <th style="padding:4px 2px"></th>
+              </tr>
+            </thead>
+            <tbody id="srt-tbody"></tbody>
+          </table>
+          <div id="srt-empty" style="text-align:center;padding:20px;color:var(--dim);font-size:11px;display:none">No sectors logged yet. Enter data above.</div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;font-size:9px">
+          <span style="background:rgba(74,222,128,.15);color:var(--lime);padding:2px 6px;border-radius:3px">S2 = advancing</span>
+          <span style="background:rgba(91,163,245,.12);color:var(--accent);padding:2px 6px;border-radius:3px">S1 = basing</span>
+          <span style="background:rgba(251,191,36,.12);color:var(--yellow);padding:2px 6px;border-radius:3px">S3 = topping</span>
+          <span style="background:rgba(239,68,68,.12);color:var(--red);padding:2px 6px;border-radius:3px">S4 = declining</span>
+        </div>
+        <div style="margin-top:8px;font-size:9px;color:var(--dim);line-height:1.5">MAs dots: filled=above, half=within 1%, empty=below &nbsp;|&nbsp; RS = sector vs Nifty 50 this week &nbsp;|&nbsp; Update every Sunday</div>
+
+      </div><!-- /srt -->
 
     </div><!-- /cp-body -->
   </div><!-- /cp-panel -->
