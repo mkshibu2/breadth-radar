@@ -5184,10 +5184,15 @@ function seedHistoricalData() {
       ftdSaveData(mergedFtd);
       ftdScanUndercutAll(); // always re-validate after merge
 
+      // ── SRT — newest _updatedAt wins per sector id
+      const cSrt = isLegacy ? [] : (payload.srt||[]);
+      srtSave(mergeByKey(cSrt, srtLoad(), s => s.id));
+
       const recCount = loadLocal().length;
       const bsrCount = bsrLoad().length;
       const mpmCount = mpmLoad().length;
-      setSyncStatus('ok', `Synced · ${recCount}rec · ${bsrCount}bsr · ${mpmCount}mpm`);
+      const srtCount = srtLoad().filter(s => s.id !== 'NIFTY50').length;
+      setSyncStatus('ok', `Synced · ${recCount}rec · ${bsrCount}bsr · ${mpmCount}mpm · ${srtCount}sec`);
       console.log('[Init] Synced — Records:', recCount, 'BSR:', bsrCount, 'MPM:', mpmCount);
 
     } catch(e) {
