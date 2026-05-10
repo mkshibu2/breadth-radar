@@ -1488,7 +1488,7 @@ body.guest-mode #mpm-module-card { display:none !important; }
           <span style="font-size:8px;background:rgba(91,163,245,.12);color:var(--accent);padding:2px 5px;border-radius:3px">S1 basing</span>
           <span style="font-size:8px;background:rgba(251,191,36,.12);color:var(--yellow);padding:2px 5px;border-radius:3px">S3 topping</span>
           <span style="font-size:8px;background:rgba(239,68,68,.12);color:var(--red);padding:2px 5px;border-radius:3px">S4 declining</span>
-          <span style="font-size:8px;color:var(--dim);margin-left:2px">● above MA &nbsp;◐ near &nbsp;○ below &nbsp;|&nbsp; RS vs Nifty50 &nbsp;|&nbsp; Wks = history</span>
+          <span style="font-size:8px;color:var(--dim);margin-left:2px">● above MA &nbsp;◐ near &nbsp;○ below &nbsp;|&nbsp; RS vs Nifty50 &nbsp;|&nbsp; Wks = history &nbsp;|&nbsp; <b>Tap row → NSE India ↗</b></span>
         </div>
       </div>
 
@@ -2355,6 +2355,23 @@ const SRT_SHORT_MAP = {
   'NIFTY HEALTHCARE':'Healthcare','NIFTY CONSUMPTION':'Consumption'
 };
 
+// NSE India index tracker pages — live constituent stocks + performance
+const SRT_LINKS = {
+  'NIFTY IT':          'https://www.nseindia.com/index-tracker/NIFTY%20IT',
+  'NIFTY PHARMA':      'https://www.nseindia.com/index-tracker/NIFTY%20PHARMA',
+  'NIFTY FMCG':        'https://www.nseindia.com/index-tracker/NIFTY%20FMCG',
+  'NIFTY BANK':        'https://www.nseindia.com/index-tracker/NIFTY%20BANK',
+  'NIFTY AUTO':        'https://www.nseindia.com/index-tracker/NIFTY%20AUTO',
+  'NIFTY METAL':       'https://www.nseindia.com/index-tracker/NIFTY%20METAL',
+  'NIFTY REALTY':      'https://www.nseindia.com/index-tracker/NIFTY%20REALTY',
+  'NIFTY INFRA':       'https://www.nseindia.com/index-tracker/NIFTY%20INFRA',
+  'NIFTY MEDIA':       'https://www.nseindia.com/index-tracker/NIFTY%20MEDIA',
+  'NIFTY PSU BANK':    'https://www.nseindia.com/index-tracker/NIFTY%20PSU%20BANK',
+  'NIFTY ENERGY':      'https://www.nseindia.com/index-tracker/NIFTY%20ENERGY',
+  'NIFTY HEALTHCARE':  'https://www.nseindia.com/index-tracker/NIFTY%20MIDSML%20HLTH',
+  'NIFTY CONSUMPTION': 'https://www.nseindia.com/index-tracker/NIFTY%20CONSUMPTION'
+};
+
 // ── Nifty 50 session store — one per week, reused for all sectors ────────
 function srtGetSessionNifty() {
   // stored as {date, close} in localStorage under 'nse_srt_nifty'
@@ -2506,14 +2523,29 @@ function srtBuildRow(s, i, opts) {
   const maDots = s.ma20 ? srtMaDot(s.close, s.ma20) : '<span style="color:var(--dim)">·</span>';
   const maDots50 = s.ma50 ? srtMaDot(s.close, s.ma50) : '<span style="color:var(--dim)">·</span>';
   const weeksStr = s.weeks ? s.weeks : '—';
+  const trendlyneUrl = SRT_LINKS[s.id] || '';
   const deleteBtn = opts.deletable
-    ? `<button onclick="event.stopPropagation();srtDelete('${s.id}')" style="background:transparent;border:none;color:var(--dim);cursor:pointer;font-size:11px;padding:2px 4px" title="Remove">✕</button>`
+    ? `<div style="display:flex;flex-direction:column;gap:2px;align-items:center">
+        <button onclick="event.stopPropagation();srtEditLoad('${s.id}')" style="background:transparent;border:none;color:var(--dim);cursor:pointer;font-size:10px;padding:1px 4px" title="Edit">✎</button>
+        <button onclick="event.stopPropagation();srtDelete('${s.id}')" style="background:transparent;border:none;color:var(--dim);cursor:pointer;font-size:10px;padding:1px 4px" title="Remove">✕</button>
+      </div>`
     : '';
-  return `<tr style="border-bottom:1px solid var(--border);cursor:${opts.clickable?'pointer':'default'}" ${opts.clickable ? `onclick="srtEditLoad('${s.id}')"` : ''}>
+  // Home card rows: open NSE India link. CP rows: load into edit form.
+  const rowClick = opts.clickable
+    ? `onclick="srtEditLoad('${s.id}')"`
+    : (trendlyneUrl ? `onclick="window.open('${trendlyneUrl}','_blank')"` : '');
+  const nameArrow = (!opts.clickable && trendlyneUrl)
+    ? `<span style="font-size:9px;color:var(--dim);opacity:.5;margin-left:3px">↗</span>`
+    : '';
+  return `<tr style="border-bottom:1px solid var(--border);cursor:pointer" ${rowClick}>
     <td style="padding:6px 4px;color:var(--dim);font-size:10px;font-family:var(--mono)">${i+1}</td>
     <td style="padding:6px 4px">
-      <div style="font-weight:700;font-size:13px;font-family:var(--disp);letter-spacing:.3px">${s.name}</div>
-      <div style="font-size:9px;color:var(--dim);font-family:var(--mono)">${s.date||''}</div>
+      <div style="display:flex;align-items:center">
+        <div>
+          <div style="font-weight:700;font-size:13px;font-family:var(--disp);letter-spacing:.3px">${s.name}${nameArrow}</div>
+          <div style="font-size:9px;color:var(--dim);font-family:var(--mono)">${s.date||''}</div>
+        </div>
+      </div>
     </td>
     <td style="padding:6px 4px;text-align:right;font-family:var(--mono);font-size:11px">${vs20Str}</td>
     <td style="padding:6px 4px;text-align:center;font-size:12px">${maDots}${maDots50}</td>
@@ -6974,7 +7006,7 @@ document.addEventListener('keydown', e => {
       <!-- ── TAB 2: Past Entry ──────────────────── -->
       <div class="cp-section" id="cp-sec-past">
         <div class="cp-section-title">PAST DATE ENTRY</div>
-        <p style="font-size:12px;color:var(--sub);margin-bottom:14px">Enter historical data for any past trading day. Source: <a href="https://economictimes.indiatimes.com/markets/stock-market-mood" target="_blank" style="color:var(--accent)">ET Market Mood ↗</a>. Existing entries for the same date will be overwritten.</p>
+        <p style="font-size:12px;color:var(--sub);margin-bottom:14px">Enter historical data for any past trading day. &nbsp;<a href="https://www.nseindia.com/market-data/advance" target="_blank" style="color:var(--accent)">NSE India ↗</a> &nbsp;·&nbsp; <a href="https://trendlyne.com/equity/market-bullish-bearish-breadth/equi-weighted/" target="_blank" style="color:var(--accent)">Trendlyne ↗</a>. Existing entries for the same date will be overwritten.</p>
 
         <div class="past-date-row">
           <label>Date</label>
@@ -7115,7 +7147,7 @@ document.addEventListener('keydown', e => {
 
         <!-- ── WEEKLY ENTRY ───────────────────────────────────── -->
         <div style="background:var(--bg3);border-radius:6px;padding:12px;margin-bottom:10px">
-          <div style="font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.8px;margin-bottom:8px">THIS WEEK'S ENTRY</div>
+          <div style="font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.8px;margin-bottom:8px">THIS WEEK'S ENTRY &nbsp;<a href="https://docs.google.com/spreadsheets/d/1FbPh8eVfe57o8zlU1KmGZ6bYT-2AvChTx-YyOg3YWFA/edit?usp=sharing" target="_blank" style="font-size:9px;color:var(--lime);text-decoration:none;font-weight:400">📊 My Sheet ↗</a> &nbsp;<a href="https://www.nseindia.com/reports-indices-historical-index-data" target="_blank" style="font-size:9px;color:var(--accent);text-decoration:none;font-weight:400">NSE ↗</a></div>
 
           <!-- Step 1: Nifty 50 — once per week -->
           <div style="background:rgba(91,163,245,.07);border:1px solid rgba(91,163,245,.2);border-radius:4px;padding:8px 10px;margin-bottom:10px">
@@ -7186,12 +7218,16 @@ document.addEventListener('keydown', e => {
 
         <!-- ── HISTORICAL BULK IMPORT ──────────────────────────── -->
         <div style="background:var(--bg3);border-radius:6px;padding:10px 12px;margin-top:14px;margin-bottom:10px">
-          <div style="font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.8px;margin-bottom:4px">HISTORICAL BULK IMPORT — backfill up to 20 weeks</div>
-          <div style="font-size:9px;color:var(--dim);margin-bottom:6px;line-height:1.7">
-            Get Friday closing prices from <b style="color:var(--text)">Google Finance</b> or <b style="color:var(--text)">NSE India historical data</b>.<br>
-            Format — one row per week, all sectors on same row:<br>
-            <code style="background:var(--bg2);padding:2px 5px;border-radius:2px;color:var(--teal);font-size:9px">DATE, NIFTY50, IT, Pharma, FMCG, Bank, Auto, Metal, Realty, Infra, Media, PSUBank, Energy, Healthcare, Consumption</code><br>
-            <span style="color:var(--dim)">Date format: YYYY-MM-DD &nbsp;|&nbsp; Oldest week first</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div style="font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.8px">HISTORICAL BULK IMPORT — backfill up to 20 weeks</div>
+            <div style="display:flex;gap:8px">
+              <a href="https://docs.google.com/spreadsheets/d/1FbPh8eVfe57o8zlU1KmGZ6bYT-2AvChTx-YyOg3YWFA/edit?usp=sharing" target="_blank" style="font-size:9px;color:var(--lime);text-decoration:none">📊 My Sheet ↗</a>
+              <a href="https://www.nseindia.com/reports-indices-historical-index-data" target="_blank" style="font-size:9px;color:var(--accent);text-decoration:none">NSE ↗</a>
+            </div>
+          </div>
+          <div style="font-size:9px;color:var(--dim);margin-bottom:6px;line-height:1.6">
+            Format: <code style="background:var(--bg2);padding:2px 5px;border-radius:2px;color:var(--teal);font-size:9px">DATE, NIFTY50, IT, Pharma, FMCG, Bank, Auto, Metal, Realty, Infra, Media, PSUBank, Energy, Healthcare, Consumption</code><br>
+            <span style="color:var(--dim)">Date: YYYY-MM-DD &nbsp;|&nbsp; Oldest week first</span>
           </div>
           <textarea id="srt-bulk-txt" rows="6"
             placeholder="2025-01-03, 23644, 42100, 22300, 58900, 52800, 24100, 9200, 7800, 4300, 1580, 54100, 29800, 43200, 10200&#10;2025-01-10, 23431, 41800, 22100, 58600, 52400, 23900, 9050, 7650, 4210, 1560, 53800, 29400, 42900, 10100&#10;..."
@@ -7201,10 +7237,6 @@ document.addEventListener('keydown', e => {
             <button onclick="document.getElementById('srt-bulk-txt').value=''" style="font-size:11px;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--dim)">Clear</button>
           </div>
           <div id="srt-bulk-msg" style="font-size:10px;margin-top:5px;display:none"></div>
-          <div style="margin-top:8px;font-size:9px;color:var(--dim);line-height:1.6">
-            Tip: On <b>NSE India</b> website search each index → Historical Data → download CSV → copy Friday rows.<br>
-            On <b>Google</b> search "Nifty IT historical data" → pick any financial site with weekly data.
-          </div>
         </div>
 
         <!-- Legend -->
