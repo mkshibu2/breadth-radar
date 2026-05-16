@@ -1436,7 +1436,10 @@ body.guest-mode #mpm-module-card { display:none !important; }
       <div class="card" id="srt-home-card" style="border-top:2px solid var(--purple)">
         <div class="card-head">
           <div class="card-title">📡 Sector Rotation</div>
-          <button class="info-btn" onclick="showInfoTip('sector-rotation',this)" title="About this indicator">i</button>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button id="srt-rrg-btn" onclick="srtToggleRRG()" style="font-size:9px;padding:3px 8px;background:rgba(167,139,250,.12);color:var(--purple);border:1px solid rgba(167,139,250,.3);border-radius:4px;cursor:pointer;font-weight:600;letter-spacing:.4px">RRG</button>
+            <button class="info-btn" onclick="showInfoTip('sector-rotation',this)" title="About this indicator">i</button>
+          </div>
         </div>
 
         <!-- Summary strip -->
@@ -1489,6 +1492,32 @@ body.guest-mode #mpm-module-card { display:none !important; }
           <span style="font-size:8px;background:rgba(251,191,36,.12);color:var(--yellow);padding:2px 5px;border-radius:3px">S3 topping</span>
           <span style="font-size:8px;background:rgba(239,68,68,.12);color:var(--red);padding:2px 5px;border-radius:3px">S4 declining</span>
           <span style="font-size:8px;color:var(--dim);margin-left:2px">● above MA &nbsp;◐ near &nbsp;○ below &nbsp;|&nbsp; RS vs Nifty50 &nbsp;|&nbsp; Wks = history &nbsp;|&nbsp; <b>Tap row → NSE India ↗</b></span>
+        </div>
+
+        <!-- RRG Panel (hidden by default) -->
+        <div id="srt-rrg-panel" style="display:none;border-top:1px solid var(--border);padding:12px 14px 14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+            <div style="font-size:9px;color:var(--purple);font-weight:600;letter-spacing:.8px;text-transform:uppercase">Relative Rotation Graph</div>
+            <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+              <span style="font-size:9px;color:var(--dim)">Tail:</span>
+              <button onclick="srtRRGSetTail(4)"  id="rrg-tail-4"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--purple);color:#fff;cursor:pointer">4w</button>
+              <button onclick="srtRRGSetTail(8)"  id="rrg-tail-8"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">8w</button>
+              <button onclick="srtRRGSetTail(12)" id="rrg-tail-12" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12w</button>
+              <span style="font-size:9px;color:var(--dim);margin-left:4px">Filter:</span>
+              <button onclick="srtRRGSetFilter('all')"  id="rrg-f-all"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer">All</button>
+              <button onclick="srtRRGSetFilter('s2')"   id="rrg-f-s2"   style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">S2</button>
+            </div>
+          </div>
+          <div style="position:relative">
+            <canvas id="srt-rrg-canvas" style="width:100%;border-radius:6px;display:block"></canvas>
+          </div>
+          <div style="margin-top:8px;font-size:9px;color:var(--dim);line-height:1.6">
+            <b style="color:var(--lime)">Leading</b> = strong &amp; improving &nbsp;
+            <b style="color:var(--accent)">Improving</b> = gaining momentum &nbsp;
+            <b style="color:var(--yellow)">Weakening</b> = slowing down &nbsp;
+            <b style="color:var(--red)">Lagging</b> = weak &amp; deteriorating<br>
+            Dot = current · tail = last N weeks of movement. Clockwise rotation is bullish.
+          </div>
         </div>
       </div>
 
@@ -2557,6 +2586,230 @@ function srtBuildRow(s, i, opts) {
     ${opts.deletable ? `<td style="padding:6px 2px;text-align:right">${deleteBtn}</td>` : ''}
   </tr>`;
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+//  RELATIVE ROTATION GRAPH (RRG)
+//  Method: JdK RS-Ratio & RS-Momentum approximation from weekly history
+//  RS-Ratio  = smoothed(sector/nifty ratio), normalised to 100
+//  RS-Momentum = smoothed rate-of-change of RS-Ratio, normalised to 100
+// ══════════════════════════════════════════════════════════════════════════
+
+let _rrgTailWeeks  = 4;
+let _rrgFilter     = 'all';
+let _rrgHighlight  = null;
+
+// Sector colours for RRG dots/tails
+const RRG_COLORS = [
+  '#4ade80','#5ba3f5','#fbbf24','#f87171','#a78bfa',
+  '#2dd4bf','#fb923c','#e879f9','#34d399','#60a5fa',
+  '#f472b6','#facc15','#94a3b8'
+];
+
+function srtToggleRRG() {
+  const panel = document.getElementById('srt-rrg-panel');
+  const btn   = document.getElementById('srt-rrg-btn');
+  if (!panel) return;
+  const visible = panel.style.display !== 'none';
+  panel.style.display = visible ? 'none' : 'block';
+  btn.style.background = visible ? 'rgba(167,139,250,.12)' : 'var(--purple)';
+  btn.style.color      = visible ? 'var(--purple)' : '#fff';
+  if (!visible) srtDrawRRG();
+}
+
+function srtRRGSetTail(n) {
+  _rrgTailWeeks = n;
+  [4,8,12].forEach(w => {
+    const b = document.getElementById('rrg-tail-' + w);
+    if (b) { b.style.background = w===n ? 'var(--purple)' : 'transparent'; b.style.color = w===n ? '#fff' : 'var(--dim)'; }
+  });
+  srtDrawRRG();
+}
+
+function srtRRGSetFilter(f) {
+  _rrgFilter = f;
+  ['all','s2'].forEach(k => {
+    const b = document.getElementById('rrg-f-' + k);
+    if (b) { b.style.background = k===f ? 'var(--accent)' : 'transparent'; b.style.color = k===f ? '#000' : 'var(--dim)'; b.style.borderColor = k===f ? 'var(--accent)' : 'var(--border)'; }
+  });
+  srtDrawRRG();
+}
+
+// Compute EMA of an array
+function rrgEMA(arr, period) {
+  if (!arr.length) return [];
+  const k = 2 / (period + 1);
+  const out = [arr[0]];
+  for (let i = 1; i < arr.length; i++) out.push(arr[i] * k + out[i-1] * (1-k));
+  return out;
+}
+
+// Build RS-Ratio and RS-Momentum series for one sector
+// Returns array of {date, rsRatio, rsMom} — one per week
+function rrgComputeSeries(sector) {
+  const h = sector.history;
+  if (!h || h.length < 3) return [];
+
+  // Build ratio series: sector close / nifty close, indexed to first=100
+  const validH = h.filter(e => e.close && e.niftyClose);
+  if (validH.length < 3) return [];
+
+  const ratios = validH.map(e => e.close / e.niftyClose);
+  const base   = ratios[0];
+  const normRatios = ratios.map(r => (r / base) * 100);
+
+  // Smooth with 10-period EMA → RS-Ratio, normalise so mean=100
+  const smoothed = rrgEMA(normRatios, 10);
+
+  // RS-Momentum = 14-period EMA of RS-Ratio
+  const momentum = rrgEMA(smoothed, 14);
+
+  // Now express both as deviation from 100
+  // RS-Ratio: already centred near 100 by construction
+  // RS-Momentum: rate of change of smoothed, centred at 100
+  const result = smoothed.map((rs, i) => {
+    const mom = i > 0 ? (smoothed[i] / smoothed[i-1]) * 100 : 100;
+    return { date: validH[i].date, rsRatio: rs, rsMom: mom };
+  });
+
+  return result;
+}
+
+function srtDrawRRG() {
+  const canvas = document.getElementById('srt-rrg-canvas');
+  if (!canvas) return;
+
+  // Set canvas pixel dimensions
+  const W = canvas.offsetWidth || 340;
+  const H = Math.round(W * 0.85);
+  canvas.width  = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  const sectors = srtLoad().filter(s => s.id !== 'NIFTY50');
+  const filtered = _rrgFilter === 's2' ? sectors.filter(s => s.stage === 'S2') : sectors;
+
+  // Compute series for all sectors
+  const seriesAll = filtered.map((s, ci) => ({
+    sector: s,
+    color:  RRG_COLORS[ci % RRG_COLORS.length],
+    points: rrgComputeSeries(s)
+  })).filter(s => s.points.length >= 2);
+
+  // Find data range — last _rrgTailWeeks+1 points per sector
+  const tailPoints = seriesAll.map(s => s.points.slice(-(_rrgTailWeeks + 1)));
+  const allX = tailPoints.flat().map(p => p.rsRatio);
+  const allY = tailPoints.flat().map(p => p.rsMom);
+
+  // Axis bounds: centre=100, symmetric, at least ±3
+  const padX = Math.max(3, Math.max(...allX.map(x => Math.abs(x-100))) + 1.5);
+  const padY = Math.max(2, Math.max(...allY.map(y => Math.abs(y-100))) + 1);
+  const xMin = 100 - padX, xMax = 100 + padX;
+  const yMin = 100 - padY, yMax = 100 + padY;
+
+  // Layout
+  const PAD = { l: 28, r: 12, t: 12, b: 22 };
+  const cW = W - PAD.l - PAD.r;
+  const cH = H - PAD.t - PAD.b;
+
+  const toX = v => PAD.l + ((v - xMin) / (xMax - xMin)) * cW;
+  const toY = v => PAD.t + ((yMax - v) / (yMax - yMin)) * cH;
+  const cx  = toX(100), cy = toY(100);
+
+  // ── Background quadrants ────────────────────────────────────────────
+  const Q = [
+    { x: PAD.l, y: PAD.t, w: cx-PAD.l,    h: cy-PAD.t,    color:'rgba(91,163,245,.07)',  label:'Improving', lx: PAD.l+6,  ly: PAD.t+14, lc:'#5ba3f5' },
+    { x: cx,    y: PAD.t, w: W-PAD.r-cx,  h: cy-PAD.t,    color:'rgba(74,222,128,.07)',  label:'Leading',   lx: cx+6,     ly: PAD.t+14, lc:'#4ade80' },
+    { x: PAD.l, y: cy,    w: cx-PAD.l,    h: H-PAD.b-cy,  color:'rgba(248,113,113,.07)', label:'Lagging',   lx: PAD.l+6,  ly: cy+14,    lc:'#f87171' },
+    { x: cx,    y: cy,    w: W-PAD.r-cx,  h: H-PAD.b-cy,  color:'rgba(251,191,36,.07)',  label:'Weakening', lx: cx+6,     ly: cy+14,    lc:'#fbbf24' },
+  ];
+  Q.forEach(q => {
+    ctx.fillStyle = q.color;
+    ctx.fillRect(q.x, q.y, q.w, q.h);
+    ctx.font = `bold 9px sans-serif`;
+    ctx.fillStyle = q.lc;
+    ctx.globalAlpha = 0.7;
+    ctx.fillText(q.label, q.lx, q.ly);
+    ctx.globalAlpha = 1;
+  });
+
+  // ── Grid lines ──────────────────────────────────────────────────────
+  ctx.strokeStyle = 'rgba(255,255,255,.05)';
+  ctx.lineWidth = 1;
+  for (let v = Math.ceil(xMin); v <= xMax; v++) {
+    const x = toX(v);
+    ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, H-PAD.b); ctx.stroke();
+  }
+  for (let v = Math.ceil(yMin*2)/2; v <= yMax; v += 0.5) {
+    const y = toY(v);
+    ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(W-PAD.r, y); ctx.stroke();
+  }
+
+  // ── Centre axes ─────────────────────────────────────────────────────
+  ctx.strokeStyle = 'rgba(255,255,255,.18)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(cx, PAD.t); ctx.lineTo(cx, H-PAD.b); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PAD.l, cy); ctx.lineTo(W-PAD.r, cy); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // ── Axis labels ─────────────────────────────────────────────────────
+  ctx.font = '8px sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.3)';
+  ctx.textAlign = 'center';
+  ctx.fillText('RS-Ratio →', W/2, H - 4);
+  ctx.save(); ctx.translate(10, H/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('RS-Momentum ↑', 0, 0); ctx.restore();
+
+  // ── Sector tails and dots ────────────────────────────────────────────
+  seriesAll.forEach(({ sector, color, points }) => {
+    const tail = points.slice(-(_rrgTailWeeks + 1));
+    if (tail.length < 2) return;
+
+    // Tail line
+    ctx.beginPath();
+    tail.forEach((p, i) => {
+      const px = toX(p.rsRatio), py = toY(p.rsMom);
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.45;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Tail dots (small)
+    tail.slice(0, -1).forEach((p, i) => {
+      const px = toX(p.rsRatio), py = toY(p.rsMom);
+      const alpha = 0.2 + (i / tail.length) * 0.5;
+      ctx.beginPath(); ctx.arc(px, py, 2.5, 0, Math.PI*2);
+      ctx.fillStyle = color; ctx.globalAlpha = alpha; ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+
+    // Current dot (larger)
+    const cur = tail[tail.length-1];
+    const dx = toX(cur.rsRatio), dy = toY(cur.rsMom);
+    ctx.beginPath(); ctx.arc(dx, dy, 5, 0, Math.PI*2);
+    ctx.fillStyle = color; ctx.fill();
+    ctx.strokeStyle = '#0d1520'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // Label
+    ctx.font = `bold 9px sans-serif`;
+    ctx.fillStyle = color;
+    ctx.textAlign = dx > W*0.7 ? 'right' : 'left';
+    ctx.fillText(sector.name, dx + (dx > W*0.7 ? -7 : 7), dy + 3);
+  });
+
+  if (!seriesAll.length) {
+    ctx.font = '12px sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,.3)';
+    ctx.textAlign = 'center';
+    ctx.fillText('Not enough history — need 3+ weeks per sector', W/2, H/2);
+  }
+}
+
 
 function srtRender() {
   const sectors = srtLoad();
