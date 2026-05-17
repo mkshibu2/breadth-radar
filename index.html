@@ -1380,17 +1380,17 @@ body.guest-mode #mpm-module-card { display:none !important; }
     <!-- A9: Market Exposure -->
     <div class="as-cell" style="border-top:2px solid var(--teal);border-right:none;">
       <div class="as-lbl" style="color:var(--teal)">📈 Mkt Exposure</div>
-      <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:4px">
+      <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:6px">
         <div style="font-family:var(--disp);font-size:28px;font-weight:900;line-height:1;transition:color .4s" id="as-exp-pct">—</div>
         <div style="font-size:11px;color:var(--sub)" id="as-exp-label"></div>
       </div>
-      <div style="height:6px;border-radius:3px;background:var(--bg4);overflow:hidden;margin-bottom:3px">
+      <div style="height:6px;border-radius:3px;background:var(--bg4);overflow:hidden;margin-bottom:4px">
         <div id="as-exp-fill" style="height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1);width:0%"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim);margin-bottom:3px">
+      <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim)">
         <span>0%</span><span>100%</span>
       </div>
-      <div style="font-size:10px;color:var(--sub)" id="as-exp-range">—</div>
+      <div style="font-size:10px;color:var(--sub);margin-top:4px" id="as-exp-range"></div>
       <div style="font-size:9px;color:var(--dim);margin-top:2px;line-height:1.4" id="as-exp-note"></div>
       <button class="info-btn" onclick="showInfoTip('exposure',this)" title="About this indicator">i</button>
     </div>
@@ -1498,25 +1498,66 @@ body.guest-mode #mpm-module-card { display:none !important; }
         <div id="srt-rrg-panel" style="display:none;border-top:1px solid var(--border);padding:12px 14px 14px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
             <div style="font-size:9px;color:var(--purple);font-weight:600;letter-spacing:.8px;text-transform:uppercase">Relative Rotation Graph</div>
-            <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
-              <span style="font-size:9px;color:var(--dim)">Tail:</span>
-              <button onclick="srtRRGSetTail(4)"  id="rrg-tail-4"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--purple);color:#fff;cursor:pointer">4w</button>
-              <button onclick="srtRRGSetTail(8)"  id="rrg-tail-8"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">8w</button>
-              <button onclick="srtRRGSetTail(12)" id="rrg-tail-12" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12w</button>
-              <span style="font-size:9px;color:var(--dim);margin-left:4px">Filter:</span>
-              <button onclick="srtRRGSetFilter('all')"  id="rrg-f-all"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer">All</button>
-              <button onclick="srtRRGSetFilter('s2')"   id="rrg-f-s2"   style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">S2</button>
+          </div>
+
+          <!-- Controls row 1: Sectors (Top N) -->
+          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:6px">
+            <span style="font-size:9px;color:var(--dim);min-width:44px">Sectors:</span>
+            <button onclick="rrgAdjustTop(-1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">&#8722;</button>
+            <span id="rrg-top-display" style="font-size:10px;font-weight:600;color:var(--text);min-width:24px;text-align:center">8</span>
+            <button onclick="rrgAdjustTop(+1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">+</button>
+            <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
+            <button onclick="srtRRGSetTop(4)"  id="rrg-top-4"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">4</button>
+            <button onclick="srtRRGSetTop(8)"  id="rrg-top-8"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer">8</button>
+            <button onclick="srtRRGSetTop(12)" id="rrg-top-12" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12</button>
+            <button onclick="srtRRGSetTop(0)"  id="rrg-top-0"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">All</button>
+          </div>
+
+          <!-- Controls row 2: Tail Weeks + Filter + Animate -->
+          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:6px">
+            <span style="font-size:9px;color:var(--dim);min-width:44px">Weeks:</span>
+            <button onclick="rrgAdjustTail(-1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">&#8722;</button>
+            <span id="rrg-tail-display" style="font-size:10px;font-weight:600;color:var(--purple);min-width:24px;text-align:center">8w</span>
+            <button onclick="rrgAdjustTail(+1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">+</button>
+            <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
+            <button onclick="srtRRGSetTail(4)"  id="rrg-tail-4"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">4w</button>
+            <button onclick="srtRRGSetTail(8)"  id="rrg-tail-8"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--purple);color:#fff;cursor:pointer">8w</button>
+            <button onclick="srtRRGSetTail(12)" id="rrg-tail-12" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12w</button>
+            <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
+            <span style="font-size:9px;color:var(--dim)">Filter:</span>
+            <button onclick="srtRRGSetFilter('all')" id="rrg-f-all" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer">All</button>
+            <button onclick="srtRRGSetFilter('s2')"  id="rrg-f-s2"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">S2</button>
+            <button onclick="srtRRGAnimate()" id="rrg-anim-btn" style="font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.1);color:var(--yellow);cursor:pointer;font-weight:600;margin-left:2px">&#9654; Play</button>
+          </div>
+
+          <!-- Sector multi-select chips (populated by JS) -->
+          <div id="rrg-sector-chips" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;min-height:30px;align-items:center">
+            <span style="font-size:9px;color:var(--dim);margin-right:2px">Highlight:</span>
+          </div>
+
+          <!-- Animation progress bar (hidden until playing) -->
+          <div id="rrg-anim-bar-wrap" style="display:none;margin-bottom:6px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+              <span id="rrg-anim-week-label" style="font-size:9px;color:var(--yellow);font-weight:600">Week 1</span>
+              <button onclick="srtRRGStopAnim()" style="font-size:9px;padding:1px 6px;border-radius:3px;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.1);color:var(--red);cursor:pointer">&#9632; Stop</button>
+            </div>
+            <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+              <div id="rrg-anim-bar" style="height:100%;width:0%;background:var(--yellow);border-radius:2px;transition:width .25s"></div>
             </div>
           </div>
+
+          <!-- Canvas with i button overlaid bottom-right -->
           <div style="position:relative">
             <canvas id="srt-rrg-canvas" style="width:100%;border-radius:6px;display:block"></canvas>
+            <button class="info-btn" onclick="showInfoTip('rrg',this)" title="How to use RRG"
+              style="position:absolute;bottom:8px;right:8px;z-index:3;opacity:.7">i</button>
           </div>
           <div style="margin-top:8px;font-size:9px;color:var(--dim);line-height:1.6">
             <b style="color:var(--lime)">Leading</b> = strong &amp; improving &nbsp;
             <b style="color:var(--accent)">Improving</b> = gaining momentum &nbsp;
             <b style="color:var(--yellow)">Weakening</b> = slowing down &nbsp;
             <b style="color:var(--red)">Lagging</b> = weak &amp; deteriorating<br>
-            Dot = current · tail = last N weeks of movement. Clockwise rotation is bullish.
+            Dot = current &middot; tail = last N weeks of movement. Clockwise rotation is bullish.
           </div>
         </div>
       </div>
@@ -2307,7 +2348,31 @@ const LS_BSR  = 'nse_bsr_v1';
 const bsrLoad = () => { try { return JSON.parse(lsGet(LS_BSR)) || []; } catch(e) { return []; } };
 const bsrSave = d => lsSet(LS_BSR, JSON.stringify(d));
 
-const LS_SRT  = 'nse_srt_v1';
+const LS_SRT      = 'nse_srt_v1';
+const LS_CAPITAL  = 'nse_capital_v1';
+const getCapital  = () => { const v = parseInt(localStorage.getItem(LS_CAPITAL)); return (!isNaN(v) && v > 0) ? v : 500000; };
+const setCapital  = v  => localStorage.setItem(LS_CAPITAL, v);
+
+function capitalSave() {
+  const inp = document.getElementById('capital-input');
+  if (!inp) return;
+  const val = parseInt(inp.value);
+  if (isNaN(val) || val < 10000) {
+    inp.style.borderColor = 'var(--red)';
+    setTimeout(() => { inp.style.borderColor = 'var(--border)'; }, 1500);
+    return;
+  }
+  setCapital(val);
+  inp.style.borderColor = 'var(--teal)';
+  setTimeout(() => { inp.style.borderColor = 'var(--border)'; }, 1500);
+  // Re-render exposure with new capital
+  renderMarketSummary();
+}
+
+function capitalInputInit() {
+  const inp = document.getElementById('capital-input');
+  if (inp) inp.value = getCapital();
+}
 const srtLoad = () => { try { return JSON.parse(lsGet(LS_SRT)) || []; } catch(e) { return []; } };
 const srtSave = d => lsSet(LS_SRT, JSON.stringify(d));
 
@@ -2372,33 +2437,46 @@ function srtUpsertSector(fullName, shortName, close, niftyClose, date) {
 const SRT_NAME_MAP = {
   'it':'NIFTY IT','pharma':'NIFTY PHARMA','fmcg':'NIFTY FMCG',
   'bank':'NIFTY BANK','auto':'NIFTY AUTO','metal':'NIFTY METAL',
-  'realty':'NIFTY REALTY','infra':'NIFTY INFRA','media':'NIFTY MEDIA',
+  'realty':'NIFTY REALTY','infra':'NIFTY INFRA',
+  'chemicals':'NIFTY COMMODITIES','chem':'NIFTY COMMODITIES',
   'psu bank':'NIFTY PSU BANK','psub':'NIFTY PSU BANK','energy':'NIFTY ENERGY',
-  'healthcare':'NIFTY HEALTHCARE','consumption':'NIFTY CONSUMPTION'
+  'financial services':'NIFTY FINANCIAL SERVICES','fin services':'NIFTY FINANCIAL SERVICES','finserv':'NIFTY FINANCIAL SERVICES',
+  'india manufacturing':'NIFTY INDIA MANUFACTURING','manufacturing':'NIFTY INDIA MANUFACTURING',
+  'capital market':'NIFTY CAPITAL MARKETS','cap market':'NIFTY CAPITAL MARKETS',
+  'defence':'NIFTY INDIA DEFENCE','defense':'NIFTY INDIA DEFENCE',
+  'pse':'NIFTY CPSE','cpse':'NIFTY CPSE'
 };
 const SRT_SHORT_MAP = {
   'NIFTY IT':'IT','NIFTY PHARMA':'Pharma','NIFTY FMCG':'FMCG',
   'NIFTY BANK':'Bank','NIFTY AUTO':'Auto','NIFTY METAL':'Metal',
-  'NIFTY REALTY':'Realty','NIFTY INFRA':'Infra','NIFTY MEDIA':'Media',
+  'NIFTY REALTY':'Realty','NIFTY INFRA':'Infra',
+  'NIFTY COMMODITIES':'Chemicals',
   'NIFTY PSU BANK':'PSU Bank','NIFTY ENERGY':'Energy',
-  'NIFTY HEALTHCARE':'Healthcare','NIFTY CONSUMPTION':'Consumption'
+  'NIFTY FINANCIAL SERVICES':'Fin Services',
+  'NIFTY INDIA MANUFACTURING':'India Mfg',
+  'NIFTY CAPITAL MARKETS':'Cap Market',
+  'NIFTY INDIA DEFENCE':'Defence',
+  'NIFTY CPSE':'PSE'
 };
 
 // NSE India index tracker pages — live constituent stocks + performance
 const SRT_LINKS = {
-  'NIFTY IT':          'https://www.nseindia.com/index-tracker/NIFTY%20IT',
-  'NIFTY PHARMA':      'https://www.nseindia.com/index-tracker/NIFTY%20PHARMA',
-  'NIFTY FMCG':        'https://www.nseindia.com/index-tracker/NIFTY%20FMCG',
-  'NIFTY BANK':        'https://www.nseindia.com/index-tracker/NIFTY%20BANK',
-  'NIFTY AUTO':        'https://www.nseindia.com/index-tracker/NIFTY%20AUTO',
-  'NIFTY METAL':       'https://www.nseindia.com/index-tracker/NIFTY%20METAL',
-  'NIFTY REALTY':      'https://www.nseindia.com/index-tracker/NIFTY%20REALTY',
-  'NIFTY INFRA':       'https://www.nseindia.com/index-tracker/NIFTY%20INFRA',
-  'NIFTY MEDIA':       'https://www.nseindia.com/index-tracker/NIFTY%20MEDIA',
-  'NIFTY PSU BANK':    'https://www.nseindia.com/index-tracker/NIFTY%20PSU%20BANK',
-  'NIFTY ENERGY':      'https://www.nseindia.com/index-tracker/NIFTY%20ENERGY',
-  'NIFTY HEALTHCARE':  'https://www.nseindia.com/index-tracker/NIFTY%20MIDSML%20HLTH',
-  'NIFTY CONSUMPTION': 'https://www.nseindia.com/index-tracker/NIFTY%20CONSUMPTION'
+  'NIFTY IT':                   'https://www.nseindia.com/index-tracker/NIFTY%20IT',
+  'NIFTY PHARMA':               'https://www.nseindia.com/index-tracker/NIFTY%20PHARMA',
+  'NIFTY FMCG':                 'https://www.nseindia.com/index-tracker/NIFTY%20FMCG',
+  'NIFTY BANK':                 'https://www.nseindia.com/index-tracker/NIFTY%20BANK',
+  'NIFTY AUTO':                 'https://www.nseindia.com/index-tracker/NIFTY%20AUTO',
+  'NIFTY METAL':                'https://www.nseindia.com/index-tracker/NIFTY%20METAL',
+  'NIFTY REALTY':               'https://www.nseindia.com/index-tracker/NIFTY%20REALTY',
+  'NIFTY INFRA':                'https://www.nseindia.com/index-tracker/NIFTY%20INFRA',
+  'NIFTY COMMODITIES':          'https://www.nseindia.com/index-tracker/NIFTY%20CHEMICALS',
+  'NIFTY PSU BANK':             'https://www.nseindia.com/index-tracker/NIFTY%20PSU%20BANK',
+  'NIFTY ENERGY':               'https://www.nseindia.com/index-tracker/NIFTY%20ENERGY',
+  'NIFTY FINANCIAL SERVICES':   'https://www.nseindia.com/index-tracker/NIFTY%20FIN%20SERVICE',
+  'NIFTY INDIA MANUFACTURING':  'https://www.nseindia.com/index-tracker/NIFTY%20INDIA%20MFG',
+  'NIFTY CAPITAL MARKETS':      'https://www.nseindia.com/index-tracker/NIFTY%20CAPITAL%20MKT',
+  'NIFTY INDIA DEFENCE':        'https://www.nseindia.com/index-tracker/NIFTY%20IND%20DEFENCE',
+  'NIFTY CPSE':                 'https://www.nseindia.com/index-tracker/NIFTY%20PSE'
 };
 
 // ── Nifty 50 session store — one per week, reused for all sectors ────────
@@ -2460,13 +2538,14 @@ function srtSaveEntry() {
 }
 
 // ── Bulk historical import ────────────────────────────────────────────────
-// Format per row: DATE, NIFTY50, IT, Pharma, FMCG, Bank, Auto, Metal, Realty, Infra, Media, PSUBank, Energy, Healthcare, Consumption
+// Format per row: DATE, NIFTY50, IT, Pharma, FMCG, Bank, Auto, Metal, Realty, Infra, Chemicals, PSUBank, Energy, FinServices, IndiaMfg, CapMarket, Defence, PSE
 const SRT_BULK_ORDER = [
   'NIFTY IT','NIFTY PHARMA','NIFTY FMCG','NIFTY BANK','NIFTY AUTO','NIFTY METAL',
-  'NIFTY REALTY','NIFTY INFRA','NIFTY MEDIA','NIFTY PSU BANK','NIFTY ENERGY',
-  'NIFTY HEALTHCARE','NIFTY CONSUMPTION'
+  'NIFTY REALTY','NIFTY INFRA','NIFTY COMMODITIES','NIFTY PSU BANK','NIFTY ENERGY',
+  'NIFTY FINANCIAL SERVICES','NIFTY INDIA MANUFACTURING','NIFTY CAPITAL MARKETS',
+  'NIFTY INDIA DEFENCE','NIFTY CPSE'
 ];
-const SRT_BULK_NAMES = ['IT','Pharma','FMCG','Bank','Auto','Metal','Realty','Infra','Media','PSU Bank','Energy','Healthcare','Consumption'];
+const SRT_BULK_NAMES = ['IT','Pharma','FMCG','Bank','Auto','Metal','Realty','Infra','Chemicals','PSU Bank','Energy','Fin Services','India Mfg','Cap Market','Defence','PSE'];
 
 function srtBulkImport() {
   const txt = (document.getElementById('srt-bulk-txt').value||'').trim();
@@ -2594,9 +2673,46 @@ function srtBuildRow(s, i, opts) {
 //  RS-Momentum = smoothed rate-of-change of RS-Ratio, normalised to 100
 // ══════════════════════════════════════════════════════════════════════════
 
-let _rrgTailWeeks  = 4;
+let _rrgTailWeeks  = 8;   // default 8 weeks
 let _rrgFilter     = 'all';
-let _rrgHighlight  = null;
+let _rrgTopN       = 8;   // default 8 sectors
+let _rrgSectorSel  = {};  // sector id -> true/false highlight override (empty = show all)
+let _rrgAnimTimer  = null;
+let _rrgAnimStep   = 0;
+
+// ── +/− adjusters ────────────────────────────────────────────────────────
+function rrgAdjustTop(delta) {
+  const sectors = srtLoad().filter(s => s.id !== 'NIFTY50');
+  const total   = sectors.length;
+  // 0 = All means total; treat that specially
+  let cur = _rrgTopN === 0 ? total : _rrgTopN;
+  cur = Math.max(1, Math.min(total, cur + delta));
+  if (cur >= total) cur = 0;   // wrap back to All
+  srtRRGSetTop(cur);
+}
+
+function rrgAdjustTail(delta) {
+  const next = Math.max(1, Math.min(52, _rrgTailWeeks + delta));
+  srtRRGSetTail(next);
+}
+
+function srtRRGSetTop(n) {
+  _rrgTopN = n;
+  // Update +/- display
+  const disp = document.getElementById('rrg-top-display');
+  if (disp) disp.textContent = n === 0 ? 'All' : n;
+  // Update preset buttons
+  [4, 8, 12, 0].forEach(v => {
+    const b = document.getElementById('rrg-top-' + v);
+    if (!b) return;
+    const active = v === n;
+    b.style.background  = active ? 'var(--accent)' : 'transparent';
+    b.style.color       = active ? '#000' : 'var(--dim)';
+    b.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
+  });
+  rrgRebuildChips();
+  srtDrawRRG();
+}
 
 // Sector colours for RRG dots/tails
 const RRG_COLORS = [
@@ -2613,11 +2729,13 @@ function srtToggleRRG() {
   panel.style.display = visible ? 'none' : 'block';
   btn.style.background = visible ? 'rgba(167,139,250,.12)' : 'var(--purple)';
   btn.style.color      = visible ? 'var(--purple)' : '#fff';
-  if (!visible) srtDrawRRG();
+  if (!visible) { rrgRebuildChips(); srtDrawRRG(); }
 }
 
 function srtRRGSetTail(n) {
   _rrgTailWeeks = n;
+  const disp = document.getElementById('rrg-tail-display');
+  if (disp) disp.textContent = n + 'w';
   [4,8,12].forEach(w => {
     const b = document.getElementById('rrg-tail-' + w);
     if (b) { b.style.background = w===n ? 'var(--purple)' : 'transparent'; b.style.color = w===n ? '#fff' : 'var(--dim)'; }
@@ -2631,7 +2749,116 @@ function srtRRGSetFilter(f) {
     const b = document.getElementById('rrg-f-' + k);
     if (b) { b.style.background = k===f ? 'var(--accent)' : 'transparent'; b.style.color = k===f ? '#000' : 'var(--dim)'; b.style.borderColor = k===f ? 'var(--accent)' : 'var(--border)'; }
   });
+  _rrgSectorSel = {};  // reset individual selection when filter changes
+  rrgRebuildChips();
   srtDrawRRG();
+}
+
+// ── Sector chip selector ──────────────────────────────────────────────────
+function rrgRebuildChips() {
+  const wrap = document.getElementById('rrg-sector-chips');
+  if (!wrap) return;
+  // Remove old chips (keep the label span)
+  const chips = wrap.querySelectorAll('.rrg-chip');
+  chips.forEach(c => c.remove());
+
+  const sectors = srtLoad().filter(s => s.id !== 'NIFTY50');
+  const stageF  = _rrgFilter === 's2' ? sectors.filter(s => s.stage === 'S2') : sectors;
+  const topF    = _rrgTopN > 0
+    ? [...stageF].sort((a,b) => (b.vs20||0) - (a.vs20||0)).slice(0, _rrgTopN)
+    : stageF;
+
+  topF.forEach((s, ci) => {
+    const color = RRG_COLORS[ci % RRG_COLORS.length];
+    const sel   = _rrgSectorSel[s.id];     // undefined = all shown; true = highlighted; false = hidden
+    const chip  = document.createElement('button');
+    chip.className = 'rrg-chip';
+    chip.textContent = s.name;
+    chip.title = 'Click: highlight · Right-click: hide/show';
+    chip.style.cssText = `font-size:9px;padding:2px 7px;border-radius:10px;border:1.5px solid ${color};cursor:pointer;font-weight:600;transition:all .15s;` +
+      (sel === false
+        ? `background:transparent;color:var(--dim);opacity:.4;border-style:dashed`
+        : sel === true
+        ? `background:${color};color:#0e1420`
+        : `background:rgba(0,0,0,.2);color:${color}`);
+
+    chip.addEventListener('click', () => {
+      const cur = _rrgSectorSel[s.id];
+      // cycle: undefined → true (highlight) → undefined (normal)
+      _rrgSectorSel[s.id] = cur === true ? undefined : true;
+      rrgRebuildChips();
+      srtDrawRRG();
+    });
+    chip.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      const cur = _rrgSectorSel[s.id];
+      _rrgSectorSel[s.id] = cur === false ? undefined : false;
+      rrgRebuildChips();
+      srtDrawRRG();
+    });
+    wrap.appendChild(chip);
+  });
+
+  // "Clear" link if any selection active
+  const hasAny = Object.keys(_rrgSectorSel).some(k => _rrgSectorSel[k] !== undefined);
+  if (hasAny) {
+    const clr = document.createElement('button');
+    clr.className = 'rrg-chip';
+    clr.textContent = '✕ Clear';
+    clr.style.cssText = 'font-size:9px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);cursor:pointer;color:var(--dim);background:transparent;';
+    clr.addEventListener('click', () => { _rrgSectorSel = {}; rrgRebuildChips(); srtDrawRRG(); });
+    wrap.appendChild(clr);
+  }
+}
+
+// ── Animation ─────────────────────────────────────────────────────────────
+function srtRRGAnimate() {
+  if (_rrgAnimTimer !== null) { srtRRGStopAnim(); return; }
+  const barWrap = document.getElementById('rrg-anim-bar-wrap');
+  const animBtn = document.getElementById('rrg-anim-btn');
+  if (barWrap) barWrap.style.display = 'block';
+  if (animBtn) { animBtn.textContent = '⏸ Pause'; animBtn.style.color = 'var(--yellow)'; }
+
+  // Precompute: gather all series, find minimum points across sectors
+  const sectors = srtLoad().filter(s => s.id !== 'NIFTY50');
+  const stageF  = _rrgFilter === 's2' ? sectors.filter(s => s.stage === 'S2') : sectors;
+  const topF    = _rrgTopN > 0
+    ? [...stageF].sort((a,b) => (b.vs20||0) - (a.vs20||0)).slice(0, _rrgTopN)
+    : stageF;
+  const allSeries = topF.map(s => rrgComputeSeries(s)).filter(p => p.length >= 2);
+  if (!allSeries.length) { srtRRGStopAnim(); return; }
+
+  const totalPts = Math.max(...allSeries.map(p => p.length));
+  // Start from max(1, totalPts - _rrgTailWeeks) to "build up" tail
+  const startIdx = Math.max(1, totalPts - _rrgTailWeeks);
+  let step = startIdx;
+
+  _rrgAnimStep = step;
+
+  _rrgAnimTimer = setInterval(() => {
+    if (step > totalPts) { srtRRGStopAnim(); return; }
+
+    // Update progress bar + label
+    const pct = Math.round(((step - startIdx) / (totalPts - startIdx)) * 100);
+    const bar = document.getElementById('rrg-anim-bar');
+    const lbl = document.getElementById('rrg-anim-week-label');
+    if (bar) bar.style.width = pct + '%';
+    if (lbl) lbl.textContent = 'Week ' + step + ' / ' + totalPts;
+
+    // Draw with tail capped at step
+    srtDrawRRG(step);
+    step++;
+    _rrgAnimStep = step;
+  }, 500);
+}
+
+function srtRRGStopAnim() {
+  if (_rrgAnimTimer !== null) { clearInterval(_rrgAnimTimer); _rrgAnimTimer = null; }
+  const barWrap = document.getElementById('rrg-anim-bar-wrap');
+  const animBtn = document.getElementById('rrg-anim-btn');
+  if (barWrap) barWrap.style.display = 'none';
+  if (animBtn) { animBtn.textContent = '▶ Play'; animBtn.style.color = 'var(--yellow)'; }
+  srtDrawRRG();   // redraw with full tail
 }
 
 // Compute EMA of an array
@@ -2649,7 +2876,6 @@ function rrgComputeSeries(sector) {
   const h = sector.history;
   if (!h || h.length < 3) return [];
 
-  // Build ratio series: sector close / nifty close, indexed to first=100
   const validH = h.filter(e => e.close && e.niftyClose);
   if (validH.length < 3) return [];
 
@@ -2657,28 +2883,19 @@ function rrgComputeSeries(sector) {
   const base   = ratios[0];
   const normRatios = ratios.map(r => (r / base) * 100);
 
-  // Smooth with 10-period EMA → RS-Ratio, normalise so mean=100
   const smoothed = rrgEMA(normRatios, 10);
-
-  // RS-Momentum = 14-period EMA of RS-Ratio
-  const momentum = rrgEMA(smoothed, 14);
-
-  // Now express both as deviation from 100
-  // RS-Ratio: already centred near 100 by construction
-  // RS-Momentum: rate of change of smoothed, centred at 100
   const result = smoothed.map((rs, i) => {
     const mom = i > 0 ? (smoothed[i] / smoothed[i-1]) * 100 : 100;
     return { date: validH[i].date, rsRatio: rs, rsMom: mom };
   });
-
   return result;
 }
 
-function srtDrawRRG() {
+// animUpTo: if set, only show series up to that index (for animation)
+function srtDrawRRG(animUpTo) {
   const canvas = document.getElementById('srt-rrg-canvas');
   if (!canvas) return;
 
-  // Set canvas pixel dimensions
   const W = canvas.offsetWidth || 340;
   const H = Math.round(W * 0.85);
   canvas.width  = W * window.devicePixelRatio;
@@ -2687,85 +2904,91 @@ function srtDrawRRG() {
   const ctx = canvas.getContext('2d');
   ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
-  const sectors = srtLoad().filter(s => s.id !== 'NIFTY50');
-  const filtered = _rrgFilter === 's2' ? sectors.filter(s => s.stage === 'S2') : sectors;
+  const sectors    = srtLoad().filter(s => s.id !== 'NIFTY50');
+  const stageFiltered = _rrgFilter === 's2' ? sectors.filter(s => s.stage === 'S2') : sectors;
+  const topFiltered   = _rrgTopN > 0
+    ? [...stageFiltered].sort((a,b) => (b.vs20||0) - (a.vs20||0)).slice(0, _rrgTopN)
+    : stageFiltered;
 
-  // Compute series for all sectors
-  const seriesAll = filtered.map((s, ci) => ({
-    sector: s,
-    color:  RRG_COLORS[ci % RRG_COLORS.length],
-    points: rrgComputeSeries(s)
-  })).filter(s => s.points.length >= 2);
+  // Determine which sectors are highlighted / hidden
+  const anyHighlighted = Object.values(_rrgSectorSel).some(v => v === true);
 
-  // Find data range — last _rrgTailWeeks+1 points per sector
+  const seriesAll = topFiltered.map((s, ci) => {
+    const hidden      = _rrgSectorSel[s.id] === false;
+    const highlighted = anyHighlighted ? _rrgSectorSel[s.id] === true : true;
+    let pts = rrgComputeSeries(s);
+    if (animUpTo !== undefined) pts = pts.slice(0, animUpTo);
+    return {
+      sector: s,
+      color:  RRG_COLORS[ci % RRG_COLORS.length],
+      points: pts,
+      hidden,
+      highlighted
+    };
+  }).filter(s => !s.hidden && s.points.length >= 2);
+
+  // Axis bounds from tail
   const tailPoints = seriesAll.map(s => s.points.slice(-(_rrgTailWeeks + 1)));
   const allX = tailPoints.flat().map(p => p.rsRatio);
   const allY = tailPoints.flat().map(p => p.rsMom);
+  if (!allX.length) {
+    ctx.font = '12px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.textAlign = 'center';
+    ctx.fillText('Not enough history — need 3+ weeks per sector', W/2, H/2);
+    return;
+  }
 
-  // Axis bounds: centre=100, symmetric, at least ±3
   const padX = Math.max(3, Math.max(...allX.map(x => Math.abs(x-100))) + 1.5);
   const padY = Math.max(2, Math.max(...allY.map(y => Math.abs(y-100))) + 1);
   const xMin = 100 - padX, xMax = 100 + padX;
   const yMin = 100 - padY, yMax = 100 + padY;
 
-  // Layout
   const PAD = { l: 28, r: 12, t: 12, b: 22 };
-  const cW = W - PAD.l - PAD.r;
-  const cH = H - PAD.t - PAD.b;
-
+  const cW  = W - PAD.l - PAD.r;
+  const cH  = H - PAD.t - PAD.b;
   const toX = v => PAD.l + ((v - xMin) / (xMax - xMin)) * cW;
   const toY = v => PAD.t + ((yMax - v) / (yMax - yMin)) * cH;
   const cx  = toX(100), cy = toY(100);
 
-  // ── Background quadrants ────────────────────────────────────────────
+  // Background quadrants
   const Q = [
-    { x: PAD.l, y: PAD.t, w: cx-PAD.l,    h: cy-PAD.t,    color:'rgba(91,163,245,.07)',  label:'Improving', lx: PAD.l+6,  ly: PAD.t+14, lc:'#5ba3f5' },
-    { x: cx,    y: PAD.t, w: W-PAD.r-cx,  h: cy-PAD.t,    color:'rgba(74,222,128,.07)',  label:'Leading',   lx: cx+6,     ly: PAD.t+14, lc:'#4ade80' },
-    { x: PAD.l, y: cy,    w: cx-PAD.l,    h: H-PAD.b-cy,  color:'rgba(248,113,113,.07)', label:'Lagging',   lx: PAD.l+6,  ly: cy+14,    lc:'#f87171' },
-    { x: cx,    y: cy,    w: W-PAD.r-cx,  h: H-PAD.b-cy,  color:'rgba(251,191,36,.07)',  label:'Weakening', lx: cx+6,     ly: cy+14,    lc:'#fbbf24' },
+    { x: PAD.l, y: PAD.t, w: cx-PAD.l,   h: cy-PAD.t,   color:'rgba(91,163,245,.07)',  label:'Improving', lx: PAD.l+6, ly: PAD.t+14, lc:'#5ba3f5' },
+    { x: cx,    y: PAD.t, w: W-PAD.r-cx, h: cy-PAD.t,   color:'rgba(74,222,128,.07)',  label:'Leading',   lx: cx+6,    ly: PAD.t+14, lc:'#4ade80' },
+    { x: PAD.l, y: cy,    w: cx-PAD.l,   h: H-PAD.b-cy, color:'rgba(248,113,113,.07)', label:'Lagging',   lx: PAD.l+6, ly: cy+14,    lc:'#f87171' },
+    { x: cx,    y: cy,    w: W-PAD.r-cx, h: H-PAD.b-cy, color:'rgba(251,191,36,.07)',  label:'Weakening', lx: cx+6,    ly: cy+14,    lc:'#fbbf24' },
   ];
   Q.forEach(q => {
-    ctx.fillStyle = q.color;
-    ctx.fillRect(q.x, q.y, q.w, q.h);
-    ctx.font = `bold 9px sans-serif`;
-    ctx.fillStyle = q.lc;
-    ctx.globalAlpha = 0.7;
-    ctx.fillText(q.label, q.lx, q.ly);
-    ctx.globalAlpha = 1;
+    ctx.fillStyle = q.color; ctx.fillRect(q.x, q.y, q.w, q.h);
+    ctx.font = 'bold 9px sans-serif'; ctx.fillStyle = q.lc;
+    ctx.globalAlpha = 0.7; ctx.fillText(q.label, q.lx, q.ly); ctx.globalAlpha = 1;
   });
 
-  // ── Grid lines ──────────────────────────────────────────────────────
-  ctx.strokeStyle = 'rgba(255,255,255,.05)';
-  ctx.lineWidth = 1;
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 1;
   for (let v = Math.ceil(xMin); v <= xMax; v++) {
-    const x = toX(v);
-    ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, H-PAD.b); ctx.stroke();
+    const x = toX(v); ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, H-PAD.b); ctx.stroke();
   }
   for (let v = Math.ceil(yMin*2)/2; v <= yMax; v += 0.5) {
-    const y = toY(v);
-    ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(W-PAD.r, y); ctx.stroke();
+    const y = toY(v); ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(W-PAD.r, y); ctx.stroke();
   }
 
-  // ── Centre axes ─────────────────────────────────────────────────────
-  ctx.strokeStyle = 'rgba(255,255,255,.18)';
-  ctx.lineWidth = 1;
-  ctx.setLineDash([3,3]);
+  // Centre axes
+  ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
   ctx.beginPath(); ctx.moveTo(cx, PAD.t); ctx.lineTo(cx, H-PAD.b); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(PAD.l, cy); ctx.lineTo(W-PAD.r, cy); ctx.stroke();
   ctx.setLineDash([]);
 
-  // ── Axis labels ─────────────────────────────────────────────────────
-  ctx.font = '8px sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,.3)';
-  ctx.textAlign = 'center';
-  ctx.fillText('RS-Ratio →', W/2, H - 4);
+  // Axis labels
+  ctx.font = '8px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.textAlign = 'center';
+  ctx.fillText('RS-Ratio \u2192', W/2, H - 4);
   ctx.save(); ctx.translate(10, H/2); ctx.rotate(-Math.PI/2);
-  ctx.fillText('RS-Momentum ↑', 0, 0); ctx.restore();
+  ctx.fillText('RS-Momentum \u2191', 0, 0); ctx.restore();
 
-  // ── Sector tails and dots ────────────────────────────────────────────
-  seriesAll.forEach(({ sector, color, points }) => {
-    const tail = points.slice(-(_rrgTailWeeks + 1));
+  // Draw sectors (dim non-highlighted when any are highlighted)
+  seriesAll.forEach(({ sector, color, points, highlighted }) => {
+    const tail    = points.slice(-(_rrgTailWeeks + 1));
     if (tail.length < 2) return;
+    const dimmed  = anyHighlighted && !highlighted;
+    const opacity = dimmed ? 0.18 : 1;
 
     // Tail line
     ctx.beginPath();
@@ -2773,43 +2996,44 @@ function srtDrawRRG() {
       const px = toX(p.rsRatio), py = toY(p.rsMom);
       if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
     });
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1.5;
-    ctx.globalAlpha = 0.45;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
+    ctx.strokeStyle = color; ctx.lineWidth = dimmed ? 1 : 1.5;
+    ctx.globalAlpha = dimmed ? 0.18 : 0.45; ctx.stroke(); ctx.globalAlpha = 1;
 
-    // Tail dots (small)
+    // Tail dots (small, fading)
     tail.slice(0, -1).forEach((p, i) => {
       const px = toX(p.rsRatio), py = toY(p.rsMom);
-      const alpha = 0.2 + (i / tail.length) * 0.5;
+      const alpha = (0.2 + (i / tail.length) * 0.5) * opacity;
       ctx.beginPath(); ctx.arc(px, py, 2.5, 0, Math.PI*2);
-      ctx.fillStyle = color; ctx.globalAlpha = alpha; ctx.fill();
-      ctx.globalAlpha = 1;
+      ctx.fillStyle = color; ctx.globalAlpha = alpha; ctx.fill(); ctx.globalAlpha = 1;
     });
 
-    // Current dot (larger)
+    // Current dot (larger, with ring for highlighted)
     const cur = tail[tail.length-1];
     const dx = toX(cur.rsRatio), dy = toY(cur.rsMom);
+    ctx.globalAlpha = opacity;
+    if (highlighted && anyHighlighted) {
+      ctx.beginPath(); ctx.arc(dx, dy, 8, 0, Math.PI*2);
+      ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.4; ctx.stroke();
+      ctx.globalAlpha = opacity;
+    }
     ctx.beginPath(); ctx.arc(dx, dy, 5, 0, Math.PI*2);
     ctx.fillStyle = color; ctx.fill();
     ctx.strokeStyle = '#0d1520'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.globalAlpha = 1;
 
     // Label
-    ctx.font = `bold 9px sans-serif`;
-    ctx.fillStyle = color;
+    ctx.font = highlighted && anyHighlighted ? 'bold 10px sans-serif' : 'bold 9px sans-serif';
+    ctx.fillStyle = color; ctx.globalAlpha = opacity;
     ctx.textAlign = dx > W*0.7 ? 'right' : 'left';
     ctx.fillText(sector.name, dx + (dx > W*0.7 ? -7 : 7), dy + 3);
+    ctx.globalAlpha = 1;
   });
 
   if (!seriesAll.length) {
-    ctx.font = '12px sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,.3)';
-    ctx.textAlign = 'center';
-    ctx.fillText('Not enough history — need 3+ weeks per sector', W/2, H/2);
+    ctx.font = '12px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.textAlign = 'center';
+    ctx.fillText('Not enough history \u2014 need 3+ weeks per sector', W/2, H/2);
   }
 }
-
 
 function srtRender() {
   const sectors = srtLoad();
@@ -5156,15 +5380,10 @@ function renderMarketSummary() {
     expColor = 'var(--lime)';
   }
 
-  // ₹ amount at ₹5L capital
-  const capital = 500000;
-  const rupees  = Math.round(capital * exposure / 100 / 1000) * 1000;
-  const rupeesStr = '₹' + (rupees >= 100000 ? (rupees/100000).toFixed(1)+'L' : (rupees/1000).toFixed(0)+'K');
-
   // msem-exp-* elements are optional (exposure meter lives in analysis strip)
   el('msem-exp-pct').textContent   = exposure + '%';
   el('msem-exp-pct').style.color   = expColor;
-  el('msem-exp-range').textContent = 'Range: ' + expRange + '  ·  On ₹5L capital: ' + rupeesStr;
+  el('msem-exp-range').textContent = 'Range: ' + expRange;
   el('msem-exp-note').textContent  = expNote;
   el('msem-exp-fill').style.width  = exposure + '%';
   el('msem-exp-fill').style.background = expColor;
@@ -5299,14 +5518,12 @@ function renderRPG() {
   if(hasFTD)_exp+=5;
   _exp = Math.min(100,Math.max(0,Math.round(_exp)));
   const _expColor = _exp<=10?'var(--red)':_exp<=25?'var(--orange)':_exp<=50?'var(--yellow)':_exp<=75?'var(--green)':'var(--lime)';
-  const _rupees = Math.round(500000*_exp/100/1000)*1000;
-  const _rupeesStr = '₹'+((_rupees>=100000)?(_rupees/100000).toFixed(1)+'L':(_rupees/1000).toFixed(0)+'K');
   const _expNote = _exp<=10?'Capital preservation':_exp<=25?'Pilot entries only':_exp<=50?'Selective entries':_exp<=75?'Normal sizing':'Full sizing';
   if(asExpPct)  { asExpPct.textContent=_exp+'%'; asExpPct.style.color=_expColor; }
   if(asExpFill) { asExpFill.style.width=_exp+'%'; asExpFill.style.background=_expColor; }
-  if(asExpLabel){ asExpLabel.textContent=_rupeesStr; asExpLabel.style.color='var(--sub)'; }
-  if(asExpRange){ asExpRange.textContent='Range: '+(_exp<=10?'0–10%':_exp<=25?'10–25%':_exp<=50?'25–50%':_exp<=75?'50–75%':'75–100%'); }
-  if(asExpNote) { asExpNote.textContent=_expNote; }
+  if(asExpLabel){ asExpLabel.textContent=''; }
+  if(asExpRange){ asExpRange.textContent=''; }
+  if(asExpNote) { asExpNote.textContent=''; }
 
   // ── Update the ss-rpg arc ────────────────────────
   const arcLen = 94.2;
@@ -5355,6 +5572,7 @@ function renderAll() {
   safe(() => bsrRenderAll(),           'bsrRenderAll');
   safe(() => mpmRenderAll(),           'mpmRenderAll');
   safe(() => srtRender(),              'srtRender');
+  safe(() => capitalInputInit(),       'capitalInputInit');
   // Always render chart — getBoundingClientRect works even before first paint
   renderChart(data);
 }
@@ -6776,8 +6994,14 @@ const INFO = {
   'sector-rotation': {
     title: 'Sector Rotation Tracker',
     what: 'Ranks all 13 NSE sector indices by trend strength every week. Uses your manually entered weekly closing prices to auto-calculate 20-week and 50-week moving averages, then classifies each sector into a Stage (1-4) based on where price sits relative to those MAs.',
-    how: '<b>Stage 2</b> = above both MAs - advancing trend, hunt breakouts here. <b>Stage 1</b> = above 20MA but below 50MA - basing, add to watchlist. <b>Stage 3</b> = below 20MA but above 50MA - topping, avoid new entries. <b>Stage 4</b> = below both MAs - declining, skip entirely. <b>RS</b> = sector weekly % minus Nifty 50 weekly % - positive means outperforming.',
-    use: 'Before scanning for stocks, check this card first. Only scan stocks in Stage 2 sectors with positive RS. If IT and Pharma are the only Stage 2 sectors, your entire scan universe is just those two sectors - a focused, high-probability list. Update every Friday evening. MAs become reliable after ~20 weeks of history.'
+    how: '<b>Stage 2</b> = above both MAs - advancing trend, hunt breakouts here. <b>Stage 1</b> = above 20MA but below 50MA - basing, add to watchlist. <b>Stage 3</b> = below 20MA but above 50MA - topping, avoid new entries. <b>Stage 4</b> = below both MAs - declining, skip entirely. <b>RS</b> = sector weekly % minus Nifty 50 weekly % - positive means outperforming. Tap RRG button to see the Relative Rotation Graph.',
+    use: 'Before scanning for stocks, check this card first. Only scan stocks in Stage 2 sectors with positive RS. Update every Friday evening. MAs become reliable after ~20 weeks of history.'
+  },
+  'rrg': {
+    title: 'Relative Rotation Graph (RRG)',
+    what: 'A 4-quadrant chart that plots every sector by two metrics: RS-Ratio (X-axis) = is the sector stronger or weaker than Nifty 50? RS-Momentum (Y-axis) = is that relative strength improving or deteriorating? The tail shows the last N weeks of movement so you can see direction, not just position.',
+    how: '<b>Leading</b> (top-right, green) = strong AND improving - best breakout hunting ground. <b>Improving</b> (top-left, blue) = gaining momentum, rotating into leadership - early entry zone. <b>Weakening</b> (bottom-right, yellow) = still strong but momentum slowing - consider exits or tighter stops. <b>Lagging</b> (bottom-left, red) = weak AND deteriorating - avoid completely. Clockwise rotation is the natural cycle: Leading → Weakening → Lagging → Improving → Leading.',
+    use: 'Use tail direction, not just dot position. A sector in Lagging but moving right and upward is recovering - worth watching. A sector in Leading but tail curving down is topping - reduce exposure. Combine with Stage: Stage 2 + Leading quadrant = highest conviction. Use 4w tail for recent momentum, 12w tail for the bigger trend picture.'
   },
   'score-trend': {
     what: 'A canvas line chart showing how the Breadth Score has moved over the last 30 trading sessions, giving historical context to the current reading.',
@@ -7429,11 +7653,14 @@ document.addEventListener('keydown', e => {
               <option value="NIFTY METAL|Metal">Nifty Metal</option>
               <option value="NIFTY REALTY|Realty">Nifty Realty</option>
               <option value="NIFTY INFRA|Infra">Nifty Infra</option>
-              <option value="NIFTY MEDIA|Media">Nifty Media</option>
+              <option value="NIFTY COMMODITIES|Chemicals">Nifty Commodities (Chemicals)</option>
               <option value="NIFTY PSU BANK|PSU Bank">Nifty PSU Bank</option>
               <option value="NIFTY ENERGY|Energy">Nifty Energy</option>
-              <option value="NIFTY HEALTHCARE|Healthcare">Nifty Healthcare</option>
-              <option value="NIFTY CONSUMPTION|Consumption">Nifty Consumption</option>
+              <option value="NIFTY FINANCIAL SERVICES|Fin Services">Nifty Financial Services</option>
+              <option value="NIFTY INDIA MANUFACTURING|India Mfg">Nifty India Manufacturing</option>
+              <option value="NIFTY CAPITAL MARKETS|Cap Market">Nifty Capital Markets</option>
+              <option value="NIFTY INDIA DEFENCE|Defence">Nifty India Defence</option>
+              <option value="NIFTY CPSE|PSE">Nifty CPSE (PSE)</option>
             </select>
           </div>
           <div style="margin-bottom:8px">
@@ -7479,7 +7706,7 @@ document.addEventListener('keydown', e => {
             </div>
           </div>
           <div style="font-size:9px;color:var(--dim);margin-bottom:6px;line-height:1.6">
-            Format: <code style="background:var(--bg2);padding:2px 5px;border-radius:2px;color:var(--teal);font-size:9px">DATE, NIFTY50, IT, Pharma, FMCG, Bank, Auto, Metal, Realty, Infra, Media, PSUBank, Energy, Healthcare, Consumption</code><br>
+            Format: <code style="background:var(--bg2);padding:2px 5px;border-radius:2px;color:var(--teal);font-size:9px">DATE, NIFTY50, IT, Pharma, FMCG, Bank, Auto, Metal, Realty, Infra, Chemicals, PSUBank, Energy, FinServices, IndiaMfg, CapMarket, Defence, PSE</code><br>
             <span style="color:var(--dim)">Date: YYYY-MM-DD &nbsp;|&nbsp; Oldest week first</span>
           </div>
           <textarea id="srt-bulk-txt" rows="6"
