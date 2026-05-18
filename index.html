@@ -1600,6 +1600,120 @@ body.guest-mode #mpm-module-card { display:none !important; }
         </div>
       </div>
 
+
+      <!-- ── FOLLOW-THROUGH DAY TRACKER ─────────────────────── -->
+      <div class="card" id="ftd-module-card" style="border-top:2px solid var(--lime)">
+        <div class="card-head">
+          <div class="card-title" style="color:var(--lime)">🚀 Follow-Through Day Tracker</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="info-btn" onclick="showInfoTip('ftd',this)" title="About FTD">i</button>
+            <button onclick="ftdReset()" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid rgba(248,113,113,.3);background:transparent;color:var(--red);cursor:pointer" title="Reset all FTD data">↺ Reset</button>
+          </div>
+        </div>
+
+        <!-- Status banner -->
+        <div id="ftd-banner" style="display:none;padding:9px 14px;margin:10px 12px 0;border-radius:5px;font-size:12px;font-weight:600;text-align:center"></div>
+
+        <!-- Hero grid: Status | Rally Day | Last Move -->
+        <div class="ftd-grid">
+          <div class="ftd-cell" id="ftd-status-cell">
+            <div class="ftd-lbl">Status</div>
+            <div class="ftd-val" id="ftd-status" style="color:var(--dim)">No Data</div>
+            <div class="ftd-sub" id="ftd-status-sub">Log Day 1 of a rally attempt to begin tracking</div>
+          </div>
+          <div class="ftd-cell">
+            <div class="ftd-lbl">Rally Day</div>
+            <div class="ftd-val" id="ftd-rally-day" style="color:var(--text)">—</div>
+            <div class="ftd-sub">FTD valid on Day 4+</div>
+          </div>
+          <div class="ftd-cell">
+            <div class="ftd-lbl">Last Move</div>
+            <div class="ftd-val" id="ftd-move" style="color:var(--text)">—</div>
+            <div class="ftd-sub">Need ≥+1.5% on vol↑</div>
+          </div>
+        </div>
+
+        <!-- Add Day form (toggle) -->
+        <div style="padding:8px 12px 0;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <button onclick="ftdToggleAdd()" style="font-size:11px;font-weight:600;padding:5px 14px;background:rgba(74,222,128,.12);color:var(--lime);border:1px solid rgba(74,222,128,.3);border-radius:4px;cursor:pointer">+ Log Day</button>
+          <button onclick="ftdManualVoid()" style="font-size:10px;padding:4px 10px;background:transparent;color:var(--red);border:1px solid rgba(248,113,113,.25);border-radius:4px;cursor:pointer">⚠ Void Attempt</button>
+          <button onclick="ftdRestoreVoid()" style="font-size:10px;padding:4px 10px;background:transparent;color:var(--teal);border:1px solid rgba(45,212,191,.25);border-radius:4px;cursor:pointer">↩ Restore</button>
+        </div>
+        <div id="ftd-add-panel" style="display:none;padding:10px 12px;background:var(--bg3);margin:8px 12px;border-radius:5px;border:1px solid var(--border)">
+          <div style="font-size:10px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Log Rally Day</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+            <div>
+              <div style="font-size:10px;color:var(--sub);margin-bottom:3px">Date</div>
+              <input type="date" id="ftd-date" style="width:100%;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 7px;border-radius:3px;outline:none">
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--sub);margin-bottom:3px">Nifty Close</div>
+              <input type="number" id="ftd-close" placeholder="23150" step="0.05" style="width:100%;background:var(--bg);border:1px solid var(--bdr2);color:var(--accent);font-family:var(--mono);font-size:11px;padding:5px 7px;border-radius:3px;outline:none">
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--sub);margin-bottom:3px">Prev Close</div>
+              <input type="number" id="ftd-prev" placeholder="22900" step="0.05" style="width:100%;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 7px;border-radius:3px;outline:none">
+            </div>
+          </div>
+          <div class="ftd-type-row">
+            <span style="font-size:10px;color:var(--sub);font-weight:600">Day type:</span>
+            <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="ftd-type" id="ftd-type" value="attempt" checked> Rally Day 1</label>
+            <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="ftd-type" value="followthrough"> FTD Confirmed</label>
+            <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="ftd-type" value="distribution"> Distribution Day</label>
+            <span style="font-size:10px;color:var(--sub);font-weight:600;margin-left:8px">Vol higher:</span>
+            <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="ftd-vol" id="ftd-vol" value="yes" checked> Yes</label>
+            <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="ftd-vol" value="no"> No</label>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <button onclick="ftdAddDay()" style="flex:1;font-size:11px;font-weight:600;padding:6px;background:var(--lime);color:#0e1420;border:none;border-radius:4px;cursor:pointer">Save Entry</button>
+            <button onclick="ftdToggleAdd()" style="font-size:11px;padding:6px 12px;background:transparent;border:1px solid var(--border);color:var(--dim);border-radius:4px;cursor:pointer">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Log table (collapsible) -->
+        <div id="ftd-log-wrap" style="display:none">
+          <div style="padding:8px 14px 4px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleCollapse('ftd-log','ftd-log-icon')">
+            <div style="font-size:10px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.5px">Rally Log</div>
+            <span id="ftd-log-icon" style="font-size:11px;color:var(--dim)">&#9660;</span>
+          </div>
+          <div id="ftd-log" class="ftd-log" style="display:none">
+            <div class="ftd-row">
+              <span class="ftd-col-hdr">Date</span>
+              <span class="ftd-col-hdr">Type</span>
+              <span class="ftd-col-hdr">Close</span>
+              <span class="ftd-col-hdr">Move</span>
+              <span class="ftd-col-hdr">Vol ↑</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTOR LEADERSHIP HEATMAP ────────────────────────── -->
+      <div class="card" id="srt-heatmap-card" style="border-top:2px solid var(--teal)">
+        <div class="card-head" style="cursor:pointer" onclick="toggleCollapse('slh-body','slh-toggle')">
+          <div class="card-title" style="color:var(--teal)">🌡 Sector Leadership Heatmap</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="display:flex;gap:3px">
+              <button onclick="event.stopPropagation();slhSetWeeks(8)"  id="slh-w-8"  style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:var(--teal);color:#0e1420;cursor:pointer;font-weight:600">8w</button>
+              <button onclick="event.stopPropagation();slhSetWeeks(12)" id="slh-w-12" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12w</button>
+              <button onclick="event.stopPropagation();slhSetWeeks(20)" id="slh-w-20" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">20w</button>
+            </div>
+            <span id="slh-toggle" style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block">&#9660;</span>
+          </div>
+        </div>
+        <div id="slh-body">
+          <div style="padding:6px 14px 4px;font-size:9px;color:var(--dim);line-height:1.5">
+            Each cell = sector RS vs Nifty 50 that week. <b style="color:var(--lime)">Green</b> = outperforming · <b style="color:var(--red)">Red</b> = underperforming · Newest week on right.
+            <br>Click any sector row to open its NSE page.
+          </div>
+          <div id="slh-wrap" style="overflow-x:auto;padding:0 12px 12px">
+            <div id="slh-grid" style="font-size:11px;min-width:320px">
+              <div style="color:var(--dim);padding:20px;text-align:center;font-size:11px">No sector history yet — add weekly data via Control Panel → Sectors tab</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 30-Day History -->
       <div class="card">
         <div class="card-head" style="cursor:pointer" onclick="toggleCollapse('hist-body-wrap','hist-toggle-icon')">
@@ -3058,6 +3172,182 @@ function srtDrawRRG(animUpTo) {
     ctx.font = '12px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.textAlign = 'center';
     ctx.fillText('Not enough history \u2014 need 3+ weeks per sector', W/2, H/2);
   }
+}
+
+
+// ════════════════════════════════════════════════════════════════════════
+//  SECTOR LEADERSHIP HEATMAP
+//  Renders a weeks × sectors colour grid of RS vs Nifty 50, per week.
+//  Color: green = outperforming, red = underperforming, intensity = magnitude.
+// ════════════════════════════════════════════════════════════════════════
+
+let _slhWeeks = 8;  // default weeks to show
+
+function slhSetWeeks(n) {
+  _slhWeeks = n;
+  [8, 12, 20].forEach(w => {
+    const b = document.getElementById('slh-w-' + w);
+    if (!b) return;
+    const active = w === n;
+    b.style.background  = active ? 'var(--teal)' : 'transparent';
+    b.style.color       = active ? '#0e1420'     : 'var(--dim)';
+    b.style.borderColor = active ? 'var(--teal)' : 'var(--border)';
+    b.style.fontWeight  = active ? '600' : '400';
+  });
+  slhRender();
+}
+
+function slhRsColor(rs) {
+  // Map RS value to a background color
+  // rs > 0 = green, rs < 0 = red, magnitude drives opacity (capped at ±5%)
+  if (rs === null || rs === undefined) return { bg: 'rgba(72,85,102,.2)', text: 'var(--dim)', label: '—' };
+  const abs = Math.min(Math.abs(rs), 5);
+  const intensity = abs / 5; // 0–1
+  if (rs > 0) {
+    const a = (0.15 + intensity * 0.65).toFixed(2);
+    return { bg: `rgba(74,222,128,${a})`, text: rs > 2 ? '#0e1420' : 'var(--lime)', label: '+' + rs.toFixed(1) };
+  } else if (rs < 0) {
+    const a = (0.15 + intensity * 0.65).toFixed(2);
+    return { bg: `rgba(248,113,113,${a})`, text: rs < -2 ? '#0e1420' : 'var(--red)', label: rs.toFixed(1) };
+  } else {
+    return { bg: 'rgba(148,163,184,.12)', text: 'var(--sub)', label: '0.0' };
+  }
+}
+
+function slhRender() {
+  const grid = document.getElementById('slh-grid');
+  if (!grid) return;
+
+  const sectors = srtLoad().filter(s => s.id !== 'NIFTY50' && s.history && s.history.length >= 2);
+  if (!sectors.length) {
+    grid.innerHTML = '<div style="color:var(--dim);padding:20px;text-align:center;font-size:11px">No sector history yet — add weekly data via Control Panel → Sectors tab</div>';
+    return;
+  }
+
+  // Build RS series per sector: week-by-week RS vs Nifty 50
+  // rs[i] = ((sectorClose[i] - sectorClose[i-1]) / sectorClose[i-1] * 100) - ((niftyClose[i] - niftyClose[i-1]) / niftyClose[i-1] * 100)
+  const sectorSeries = sectors.map(s => {
+    const h = s.history.filter(e => e.close && e.niftyClose);
+    const rsSeries = [];
+    for (let i = 1; i < h.length; i++) {
+      const sChg = (h[i].close - h[i-1].close) / h[i-1].close * 100;
+      const nChg = (h[i].niftyClose - h[i-1].niftyClose) / h[i-1].niftyClose * 100;
+      rsSeries.push({ date: h[i].date, rs: +(sChg - nChg).toFixed(2) });
+    }
+    return { sector: s, rs: rsSeries };
+  }).filter(s => s.rs.length > 0);
+
+  if (!sectorSeries.length) {
+    grid.innerHTML = '<div style="color:var(--dim);padding:20px;text-align:center;font-size:11px">Need at least 2 weeks of data per sector</div>';
+    return;
+  }
+
+  // Collect all unique dates across all sectors, sorted, take last N
+  const allDates = [...new Set(sectorSeries.flatMap(s => s.rs.map(r => r.date)))].sort();
+  const showDates = allDates.slice(-_slhWeeks);
+
+  // Abbreviated date: "Jan 5" style
+  const fmtDate = iso => {
+    const d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+  };
+
+  // Sort sectors by average RS over shown dates (best on top)
+  sectorSeries.sort((a, b) => {
+    const avgRs = arr => {
+      const vals = showDates.map(dt => {
+        const entry = arr.rs.find(r => r.date === dt);
+        return entry ? entry.rs : null;
+      }).filter(v => v !== null);
+      return vals.length ? vals.reduce((s,v) => s+v, 0) / vals.length : -999;
+    };
+    return avgRs(b) - avgRs(a);
+  });
+
+  // Build table
+  const CELL_W = 42, CELL_H = 26, LABEL_W = 78;
+  const totalW = LABEL_W + showDates.length * CELL_W;
+
+  let html = `<div style="display:inline-block;min-width:${totalW}px;font-family:var(--mono)">`;
+
+  // Header row: dates
+  html += `<div style="display:flex;align-items:center;border-bottom:1px solid var(--border);padding-bottom:4px;margin-bottom:2px">`;
+  html += `<div style="width:${LABEL_W}px;font-size:9px;color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.4px;padding-left:4px">Sector</div>`;
+  showDates.forEach(dt => {
+    html += `<div style="width:${CELL_W}px;text-align:center;font-size:8px;color:var(--dim);white-space:nowrap;overflow:hidden">${fmtDate(dt)}</div>`;
+  });
+  // Avg column
+  html += `<div style="width:${CELL_W}px;text-align:center;font-size:8px;color:var(--sub);font-weight:600">Avg</div>`;
+  html += `</div>`;
+
+  // Data rows
+  const nseLink = name => {
+    const links = {
+      'IT':'https://www.nseindia.com/index-tracker/NIFTY%20IT',
+      'Pharma':'https://www.nseindia.com/index-tracker/NIFTY%20PHARMA',
+      'FMCG':'https://www.nseindia.com/index-tracker/NIFTY%20FMCG',
+      'Bank':'https://www.nseindia.com/index-tracker/NIFTY%20BANK',
+      'Auto':'https://www.nseindia.com/index-tracker/NIFTY%20AUTO',
+      'Metal':'https://www.nseindia.com/index-tracker/NIFTY%20METAL',
+      'Realty':'https://www.nseindia.com/index-tracker/NIFTY%20REALTY',
+      'Infra':'https://www.nseindia.com/index-tracker/NIFTY%20INFRA',
+      'Chemicals':'https://www.nseindia.com/index-tracker/NIFTY%20CHEMICALS',
+      'PSU Bank':'https://www.nseindia.com/index-tracker/NIFTY%20PSU%20BANK',
+      'Energy':'https://www.nseindia.com/index-tracker/NIFTY%20ENERGY',
+      'Fin Services':'https://www.nseindia.com/index-tracker/NIFTY%20FIN%20SERVICE',
+      'India Mfg':'https://www.nseindia.com/index-tracker/NIFTY%20INDIA%20MFG',
+      'Cap Market':'https://www.nseindia.com/index-tracker/NIFTY%20CAPITAL%20MKT',
+      'Defence':'https://www.nseindia.com/index-tracker/NIFTY%20IND%20DEFENCE',
+      'PSE':'https://www.nseindia.com/index-tracker/NIFTY%20PSE',
+    };
+    return links[name] || '#';
+  };
+
+  sectorSeries.forEach(({ sector, rs }) => {
+    // Compute avg RS over shown dates
+    const vals = showDates.map(dt => {
+      const e = rs.find(r => r.date === dt);
+      return e ? e.rs : null;
+    });
+    const nonNull = vals.filter(v => v !== null);
+    const avg = nonNull.length ? nonNull.reduce((s,v) => s+v, 0) / nonNull.length : null;
+    const avgStyle = slhRsColor(avg);
+    const link = nseLink(sector.name);
+
+    html += `<div style="display:flex;align-items:center;margin-bottom:2px">`;
+    // Sector label - clickable
+    html += `<a href="${link}" target="_blank" title="Open NSE: ${sector.name}"
+      style="width:${LABEL_W}px;font-size:10px;font-weight:600;color:var(--text);text-decoration:none;
+             white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;
+             display:block;line-height:${CELL_H}px"
+      onmouseover="this.style.color='var(--teal)'" onmouseout="this.style.color='var(--text)'"
+    >${sector.name}</a>`;
+    // Week cells
+    vals.forEach(rs => {
+      const c = slhRsColor(rs);
+      html += `<div style="width:${CELL_W}px;height:${CELL_H}px;background:${c.bg};
+                color:${c.text};font-size:8.5px;font-weight:600;text-align:center;
+                line-height:${CELL_H}px;border-radius:2px;margin:0 1px;
+                transition:opacity .15s" title="${rs !== null ? rs.toFixed(2)+'%' : 'No data'}">${c.label}</div>`;
+    });
+    // Avg cell
+    html += `<div style="width:${CELL_W}px;height:${CELL_H}px;background:${avgStyle.bg};
+              color:${avgStyle.text};font-size:9px;font-weight:700;text-align:center;
+              line-height:${CELL_H}px;border-radius:2px;border:1px solid rgba(255,255,255,.08)">${avg !== null ? (avg > 0 ? '+' : '') + avg.toFixed(1) : '—'}</div>`;
+    html += `</div>`;
+  });
+
+  // Footer legend
+  html += `<div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:9px;color:var(--dim)">`;
+  [[-4,'Strong Under'],[-2,'Under'],[0,'Neutral'],[2,'Out'],[4,'Strong Out']].forEach(([v,lbl]) => {
+    const c = slhRsColor(v === 0 ? 0.001 : v);
+    html += `<span style="display:flex;align-items:center;gap:3px"><span style="width:14px;height:10px;background:${c.bg};border-radius:2px;display:inline-block"></span>${lbl}</span>`;
+  });
+  html += `<span style="margin-left:auto">Numbers = RS% vs Nifty 50</span>`;
+  html += `</div>`;
+
+  html += `</div>`;
+  grid.innerHTML = html;
 }
 
 function srtRender() {
@@ -4740,8 +5030,10 @@ function ftdAddDay() {
   const date  = document.getElementById('ftd-date').value;
   const close = parseFloat(document.getElementById('ftd-close').value);
   const prev  = parseFloat(document.getElementById('ftd-prev').value);
-  const volUp = document.getElementById('ftd-vol').value === 'yes';
-  const type  = document.getElementById('ftd-type').value;
+  const volRadio = document.querySelector('input[name="ftd-vol"]:checked');
+  const typeRadio = document.querySelector('input[name="ftd-type"]:checked');
+  const volUp = volRadio ? volRadio.value === 'yes' : true;
+  const type  = typeRadio ? typeRadio.value : 'attempt';
   if (!date || isNaN(close) || isNaN(prev)) { alert('Please fill Date, Close and Prev Close'); return; }
   const movePct = ((close - prev) / prev * 100);
   const days = ftdLoad();
@@ -5033,10 +5325,15 @@ function ftdRender() {
   sty('ftd-log-wrap', 'display', 'block');
   const typeLabel = { attempt:'Rally Day 1', followthrough:'Follow-Through ✅', distribution:'Distribution', void:'⚠ Voided (Undercut)' };
   const typeColor = { attempt:'var(--yellow)', followthrough:'var(--lime)', distribution:'var(--red)', void:'var(--red)' };
-  el('ftd-log').innerHTML = days.slice(0,15).map(d => {
+  // Append rows after the header row
+  const logEl = el('ftd-log');
+  // Remove old data rows (keep header .ftd-col-hdr row)
+  const existingRows = logEl.querySelectorAll ? logEl.querySelectorAll('.ftd-data-row') : [];
+  existingRows.forEach(r => r.remove());
+  const rowsHtml = days.slice(0,15).map(d => {
     const isVoid = d.type === 'void';
     const autoTag = d.auto ? '<span style="font-size:9px;color:var(--dim);margin-left:4px">auto</span>' : '';
-    return `<div class="ftd-row" style="${isVoid ? 'opacity:.5;' : ''}">
+    return `<div class="ftd-row ftd-data-row" style="${isVoid ? 'opacity:.5;' : ''}">
       <span style="color:var(--sub)">${d.date}</span>
       <span style="color:${typeColor[d.type]||'var(--sub)'};font-weight:600;${isVoid?'text-decoration:line-through':''}">${typeLabel[d.type]||d.type}${autoTag}</span>
       <span style="font-family:var(--mono)">${d.close||'—'}</span>
@@ -5044,6 +5341,11 @@ function ftdRender() {
       <span style="color:${d.volUp?'var(--lime)':'var(--dim)'}">${d.volUp?'↑ Yes':'— No'}</span>
     </div>`;
   }).join('');
+  if (logEl.insertAdjacentHTML) {
+    logEl.insertAdjacentHTML('beforeend', rowsHtml);
+  } else {
+    logEl.innerHTML += rowsHtml;
+  }
 }
 
 // ════════════════════════════════════════════════════
@@ -5597,6 +5899,7 @@ function renderAll() {
   safe(() => bsrRenderAll(),           'bsrRenderAll');
   safe(() => mpmRenderAll(),           'mpmRenderAll');
   safe(() => srtRender(),              'srtRender');
+  safe(() => slhRender(),              'slhRender');
   safe(() => capitalInputInit(),       'capitalInputInit');
   // Always render chart — getBoundingClientRect works even before first paint
   renderChart(data);
@@ -6755,7 +7058,7 @@ function cpSwitchTab(tab) {
   });
   if (tab === 'past') renderPastSeedList();
   if (tab === 'sync') cpRefreshSyncState();
-  if (tab === 'srt')  { srtRender(); srtNiftyStatusRefresh(); }
+  if (tab === 'srt')  { srtRender(); srtNiftyStatusRefresh(); slhRender(); }
 }
 function cpRefreshSyncState() {
   const cfg = getCfg();
@@ -7226,7 +7529,7 @@ async function cfgConnect() {
 
       setSyncStatus('ok', `Synced · ${Object.keys(recMap).length}rec · ${Object.keys(mpmMap).length}mpm`);
       cfgBanner(`✅ Connected & data pulled!\n${Object.keys(recMap).length} breadth records · ${Object.keys(bsrMap).length} BSR trades · ${Object.keys(mpmMap).length} MPM entries synced.`, 'ok');
-      renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender();
+      renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender(); slhRender();
     }
   } catch(e) {
     setSyncStatus('err', 'Sync Error');
@@ -7333,7 +7636,7 @@ async function cfgConnectGuest() {
     if (exitBtn) exitBtn.style.display = 'inline-block';
 
     applyGuestMode();
-    renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender();
+    renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender(); slhRender();
 
     // Auto-close modal after 2s
     setTimeout(closeCfgModal, 2000);
@@ -7368,7 +7671,7 @@ function cfgExitGuest() {
   // Clear data
   saveLocal([]); bsrSave([]); mpmSave([]); ftdSaveData([]);
   setSyncStatus('warn', 'Not Configured · Click to Setup');
-  renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender();
+  renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender(); slhRender();
   closeCfgModal();
 }
 
@@ -7397,7 +7700,7 @@ function initGuestMode() {
     saveLocal(recs); bsrSave(bsr); mpmSave(mpm);
     ftdSaveData(ftd.sort((a,b)=>b.date.localeCompare(a.date)));
     setSyncStatus('ok', `Guest · ${recs.length}rec · ${mpm.length}mpm`);
-    renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender();
+    renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender(); slhRender();
   }).catch(e => {
     setSyncStatus('err', 'Guest · Pull Failed');
     console.warn('[Guest] Refresh failed:', e.message);
