@@ -1602,10 +1602,14 @@ body.guest-mode #mpm-module-card { display:none !important; }
 
       <!-- 30-Day History -->
       <div class="card">
-        <div class="card-head">
+        <div class="card-head" style="cursor:pointer" onclick="toggleCollapse('hist-body-wrap','hist-toggle-icon')">
           <div class="card-title">30-Day History</div>
-          <button class="card-action btn-export" onclick="exportCSV()">&#8595; Export CSV</button>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button class="card-action btn-export" onclick="event.stopPropagation();exportCSV()">&#8595; Export CSV</button>
+            <span id="hist-toggle-icon" style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block">&#9660;</span>
+          </div>
         </div>
+        <div id="hist-body-wrap" style="display:none">
         <div class="hist-wrap">
           <table class="hist-table">
             <thead>
@@ -1622,6 +1626,7 @@ body.guest-mode #mpm-module-card { display:none !important; }
             </tbody>
           </table>
         </div>
+        </div><!-- /hist-body-wrap -->
       </div>
 
     </div><!-- /col left -->
@@ -1716,11 +1721,15 @@ body.guest-mode #mpm-module-card { display:none !important; }
           <div style="font-size:11px;opacity:0;transition:opacity .4s;margin-top:4px;min-height:16px" id="bsr-msg"></div>
         </div>
         <!-- BSR Table -->
-        <div class="card-head" style="border-top:1px solid var(--border)">
-          <div class="card-title">Trade Log</div>
-          <button class="info-btn" onclick="showInfoTip('bsr-tracker',this)" title="About this indicator">i</button>
-          <button class="card-action btn-export" onclick="bsrExport()" style="border-color:rgba(167,139,250,.28);color:var(--purple)">&#8595; Export CSV</button>
+        <div class="card-head" style="border-top:1px solid var(--border);cursor:pointer" onclick="toggleCollapse('bsr-table-collapsible','bsr-toggle-icon')">
+          <div class="card-title">BSR Trade Log</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="info-btn" onclick="event.stopPropagation();showInfoTip('bsr-tracker',this)" title="About this indicator">i</button>
+            <button class="card-action btn-export" onclick="event.stopPropagation();bsrExport()" style="border-color:rgba(167,139,250,.28);color:var(--purple)">&#8595; Export CSV</button>
+            <span id="bsr-toggle-icon" style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block">&#9660;</span>
+          </div>
         </div>
+        <div id="bsr-table-collapsible" style="display:none">
         <div class="bsr-table-wrap">
           <table class="bsr-table">
             <thead>
@@ -1745,6 +1754,7 @@ body.guest-mode #mpm-module-card { display:none !important; }
             <span><span class="ldot" style="background:var(--yellow)"></span>Mixed 50%</span>
           </div>
         </div>
+        </div><!-- /bsr-table-collapsible -->
       </div>
 
       <!-- MPM Module -->
@@ -1861,11 +1871,15 @@ body.guest-mode #mpm-module-card { display:none !important; }
         </div>
 
         <!-- MPM Table -->
-        <div class="card-head" style="border-top:1px solid var(--border)">
+        <div class="card-head" style="border-top:1px solid var(--border);cursor:pointer" onclick="toggleCollapse('mpm-table-wrap','mpm-toggle-icon')">
           <div class="card-title">Pressure Day Log — Last 25d</div>
-          <button class="info-btn" onclick="showInfoTip('mpm-tracker',this)" title="About this indicator">i</button>
-          <button class="card-action btn-export" onclick="mpmExport()" style="border-color:rgba(45,212,191,.28);color:var(--teal)">&#8595; Export CSV</button>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="info-btn" onclick="event.stopPropagation();showInfoTip('mpm-tracker',this)" title="About this indicator">i</button>
+            <button class="card-action btn-export" onclick="event.stopPropagation();mpmExport()" style="border-color:rgba(45,212,191,.28);color:var(--teal)">&#8595; Export CSV</button>
+            <span id="mpm-toggle-icon" style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block">&#9660;</span>
+          </div>
         </div>
+        <div id="mpm-table-wrap" style="display:none" class="mpm-table-wrap-collapsible">
         <div class="mpm-table-wrap">
           <table class="mpm-table">
             <thead>
@@ -1887,6 +1901,7 @@ body.guest-mode #mpm-module-card { display:none !important; }
             </tbody>
           </table>
         </div>
+        </div><!-- /mpm-table-wrap-collapsible -->
       </div>
 
       <!-- SRT Card -->
@@ -1916,7 +1931,7 @@ body.guest-mode #mpm-module-card { display:none !important; }
   <div class="footer-right">
     <div class="footer-credit">
       Designed &amp; built by <b>Shibu M K</b><br>
-      <a href="/cdn-cgi/l/email-protection#e99a81808b9c9f909a8187889f8884a98e84888085c78a8684"><span class="__cf_email__" data-cfemail="215249484354575852494f4057404c61464c40484d0f424e4c">[email&#160;protected]</span></a>
+      <a href="mailto:shibuvyshnavam@gmail.com" style="color:var(--accent)">shibuvyshnavam@gmail.com</a>
     </div>
     <button class="footer-about-btn" onclick="openAboutModal()">ℹ About</button>
   </div>
@@ -1927,8 +1942,18 @@ body.guest-mode #mpm-module-card { display:none !important; }
 </div>
 
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
 <script>
+// ── COLLAPSIBLE SECTION TOGGLE ────────────────────────────────────────────
+function toggleCollapse(bodyId, iconId) {
+  const body = document.getElementById(bodyId);
+  const icon = document.getElementById(iconId);
+  if (!body) return;
+  const isHidden = body.style.display === 'none';
+  body.style.display = isHidden ? 'block' : 'none';
+  if (icon) {
+    icon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+  }
+}
 async function cfgMakePublic() {
   const cfg = getCfg();
   if (!cfg.key || !cfg.bin) {
@@ -5583,7 +5608,7 @@ function renderAll() {
 //  HISTORICAL SEED DATA (ET Market Mood — Nifty 500)
 //  Seeded once. Will not overwrite existing entries.
 // ════════════════════════════════════════════════════
-function seedHistoricalData() {
+async function seedHistoricalData() {
   // Seed only when there is genuinely no data — no flag needed
   // This handles fresh installs, cleared localStorage, and new devices
   if (loadLocal().length > 0) return; // already have data, skip
@@ -7779,7 +7804,7 @@ document.addEventListener('keydown', e => {
         <div class="about-contact">
           <div class="about-contact-row">
             <div class="about-contact-icon">✉</div>
-            <a href="/cdn-cgi/l/email-protection#c9baa1a0abbcbfb0baa1a7a8bfa8a489aea4a8a0a5e7aaa6a4"><span class="__cf_email__" data-cfemail="3b485352594e4d424853555a4d5a567b5c565a525715585456">[email&#160;protected]</span></a>
+            <a href="mailto:shibuvyshnavam@gmail.com" style="color:var(--accent)">shibuvyshnavam@gmail.com</a>
           </div>
         </div>
       </div>
@@ -7799,6 +7824,58 @@ document.addEventListener('keydown', e => {
           <span class="about-pill">Client-side · No server</span>
           <span class="about-pill">JSONBin cloud sync</span>
           <span class="about-pill">© 2026 Shibu M K</span>
+        </div>
+      </div>
+
+      <!-- Sector Rotation & RRG -->
+      <div class="about-section">
+        <div class="about-section-title">Sector Rotation Module</div>
+        <div class="about-tool-desc">
+          The <b>Sector Rotation Module</b> tracks 16 NSE sectoral indices — from IT and Pharma to Defence,
+          Capital Markets, and PSE — and classifies each into one of four Weinstein-style stages based on
+          its position relative to its 20-week and 50-week moving averages.<br><br>
+          <b>How to read it:</b> Every sector row shows its % above/below the 20-week MA (<b>vs20</b>),
+          MA dot indicators (● above · ◐ within 1% · ○ below), stage badge
+          (<span style="color:var(--lime)">S2 Advancing</span> · <span style="color:var(--accent)">S1 Basing</span> ·
+          <span style="color:var(--yellow)">S3 Topping</span> · <span style="color:var(--red)">S4 Declining</span>),
+          relative strength vs Nifty 50 (RS%), and weeks in the current stage.<br><br>
+          <b>Trading edge:</b> Focus new breakout entries on <b>S2 sectors</b> — they are above both MAs and
+          in an advancing trend. S1 sectors are basing and warrant watchlist attention. Avoid S3/S4 for new longs.<br><br>
+          Click any sector name to open its live NSE index tracker page with constituent stocks and performance data.
+          Data is updated weekly (Friday/Sunday). Use the bulk import to enter historical weekly closes for up to 16 sectors at once.
+        </div>
+        <div class="about-version-row" style="margin-top:8px">
+          <span class="about-pill accent">16 NSE Sectors</span>
+          <span class="about-pill">Weinstein Stage Analysis</span>
+          <span class="about-pill">Weekly Data</span>
+          <span class="about-pill">RS vs Nifty 50</span>
+        </div>
+      </div>
+
+      <!-- RRG -->
+      <div class="about-section">
+        <div class="about-section-title">Relative Rotation Graph (RRG)</div>
+        <div class="about-tool-desc">
+          The <b>RRG</b> is a four-quadrant scatter chart that plots every sector simultaneously using two metrics:
+          <b>RS-Ratio</b> (X-axis) measures whether the sector is stronger or weaker than Nifty 50 on a smoothed
+          basis, and <b>RS-Momentum</b> (Y-axis) measures whether that relative strength is improving or deteriorating.<br><br>
+          <b>The four quadrants:</b>
+          <span style="color:var(--lime)">Leading</span> (strong &amp; improving, top-right) →
+          <span style="color:var(--yellow)">Weakening</span> (strong but slowing, bottom-right) →
+          <span style="color:var(--red)">Lagging</span> (weak &amp; deteriorating, bottom-left) →
+          <span style="color:var(--accent)">Improving</span> (gaining momentum, top-left). Clockwise rotation is the natural bullish path.<br><br>
+          <b>Tail:</b> Each sector plots a coloured trail showing its last N weeks of movement — you can visually see <i>direction</i>, not just position.
+          Sectors with long tails moving toward the Leading quadrant are the strongest candidates.<br><br>
+          <b>Controls:</b> Use <b>+ / −</b> or preset buttons (4 · 8 · 12 · All) to control how many sectors appear.
+          The <b>Weeks stepper</b> controls tail length (1–52 weeks). <b>Filter: S2</b> shows only advancing sectors.
+          <b>Highlight chips</b> (left-click = spotlight, right-click = hide) let you isolate one or more sectors.
+          The <b>▶ Play</b> animation replays each sector's journey week-by-week so you can see momentum build up over time.
+        </div>
+        <div class="about-version-row" style="margin-top:8px">
+          <span class="about-pill accent">JdK RS-Ratio Methodology</span>
+          <span class="about-pill">Tail Animation</span>
+          <span class="about-pill">Sector Spotlight</span>
+          <span class="about-pill">S2 Filter</span>
         </div>
       </div>
 
