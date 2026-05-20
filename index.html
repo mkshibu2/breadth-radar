@@ -1437,7 +1437,7 @@ body.guest-mode #mpm-module-card { display:none !important; }
         <div class="card-head">
           <div class="card-title">📡 Sector Rotation</div>
           <div style="display:flex;gap:6px;align-items:center">
-            <button id="srt-rrg-btn" onclick="srtToggleRRG()" style="font-size:9px;padding:3px 8px;background:rgba(167,139,250,.12);color:var(--purple);border:1px solid rgba(167,139,250,.3);border-radius:4px;cursor:pointer;font-weight:600;letter-spacing:.4px">RRG</button>
+            <button id="srt-rrg-btn" onclick="srtToggleRRG()" style="font-size:9px;padding:3px 8px;background:var(--purple);color:#fff;border:1px solid rgba(167,139,250,.3);border-radius:4px;cursor:pointer;font-weight:600;letter-spacing:.4px">RRG</button>
             <button class="info-btn" onclick="showInfoTip('sector-rotation',this)" title="About this indicator">i</button>
           </div>
         </div>
@@ -1494,8 +1494,8 @@ body.guest-mode #mpm-module-card { display:none !important; }
           <span style="font-size:8px;color:var(--dim);margin-left:2px">● above MA &nbsp;◐ near &nbsp;○ below &nbsp;|&nbsp; RS vs Nifty50 &nbsp;|&nbsp; Wks = history &nbsp;|&nbsp; <b>Tap row → NSE India ↗</b></span>
         </div>
 
-        <!-- RRG Panel (hidden by default) -->
-        <div id="srt-rrg-panel" style="display:none;border-top:1px solid var(--border);padding:12px 14px 14px">
+        <!-- RRG Panel (visible by default) -->
+        <div id="srt-rrg-panel" style="display:block;border-top:1px solid var(--border);padding:12px 14px 14px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
             <div style="font-size:9px;color:var(--purple);font-weight:600;letter-spacing:.8px;text-transform:uppercase">Relative Rotation Graph</div>
           </div>
@@ -1579,7 +1579,14 @@ body.guest-mode #mpm-module-card { display:none !important; }
 
       <!-- Snapshot -->
       <div class="card">
-        <div class="card-head"><div class="card-title">Detailed Metrics Snapshot</div></div>
+        <div class="card-head" style="cursor:pointer" onclick="toggleCollapse('snap-body-wrap','snap-toggle-icon')">
+          <div class="card-title">Detailed Metrics Snapshot</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="info-btn" onclick="event.stopPropagation();showInfoTip('snapshot',this)" title="About Snapshot">i</button>
+            <span id="snap-toggle-icon" style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block;transform:rotate(-90deg)">&#9660;</span>
+          </div>
+        </div>
+        <div id="snap-body-wrap" style="display:none">
         <div class="snap-wrap">
           <table class="snap-table">
             <thead>
@@ -1598,10 +1605,44 @@ body.guest-mode #mpm-module-card { display:none !important; }
             </tbody>
           </table>
         </div>
+        </div>
       </div>
 
+      <!-- 30-Day History -->
+      <div class="card">
+        <div class="card-head" style="cursor:pointer" onclick="toggleCollapse('hist-body-wrap','hist-toggle-icon')">
+          <div class="card-title">30-Day History</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button class="card-action btn-export" onclick="event.stopPropagation();exportCSV()">&#8595; Export CSV</button>
+            <span id="hist-toggle-icon" style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block">&#9660;</span>
+          </div>
+        </div>
+        <div id="hist-body-wrap" style="display:none">
+        <div class="hist-wrap">
+          <table class="hist-table">
+            <thead>
+              <tr>
+                <th>Date</th><th>ADV</th><th>DEC</th><th>UNC</th>
+                <th>A/D</th><th>52W-H</th><th>52W-L</th><th>H/L%</th>
+                <th>&gt;E20%</th><th>&gt;S50%</th><th>&gt;S200%</th>
+                <th>Nifty</th><th>Score</th><th>Zone</th><th>R</th>
+                <th>Notes</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="hist-body">
+              <tr><td colspan="17" style="color:var(--dim);padding:20px;text-align:center;font-size:11px">NO HISTORY YET</td></tr>
+            </tbody>
+          </table>
+        </div>
+        </div><!-- /hist-body-wrap -->
+      </div>
 
-      <!-- ── FOLLOW-THROUGH DAY TRACKER ─────────────────────── -->
+    </div><!-- /col left -->
+
+    <!-- ═══ RIGHT COLUMN ════════════════════════════════════ -->
+    <div class="col">
+
+      <!-- ── FOLLOW-THROUGH DAY TRACKER (TOP) ──────────────────── -->
       <div class="card" id="ftd-module-card" style="border-top:2px solid var(--lime)">
         <div class="card-head">
           <div class="card-title" style="color:var(--lime)">🚀 Follow-Through Day Tracker</div>
@@ -1688,17 +1729,342 @@ body.guest-mode #mpm-module-card { display:none !important; }
         </div>
       </div>
 
+
+      <!-- MPM Module -->
+      <div class="card" id="mpm-module-card" style="border-top:2px solid var(--teal)">
+        <div class="card-head" style="cursor:pointer" onclick="toggleCollapse('mpm-card-body','mpm-card-toggle-icon')">
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <div class="card-title"><span style="color:var(--teal)">Market Pressure Meter (MPM)</span></div>
+            <div style="font-size:9px;color:var(--sub)">Acc = Close↑+Vol↑ · Dist = Close↓+Vol↑ · Last 25d</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="info-btn" onclick="event.stopPropagation();showInfoTip('market-pressure',this)" title="About MPM">i</button>
+            <span id="mpm-card-toggle-icon" style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block;transform:rotate(-90deg)">&#9660;</span>
+          </div>
+        </div>
+
+        <!-- ── ALWAYS VISIBLE: Score + Gauge + Bar Chart ── -->
+        <div style="display:grid;grid-template-columns:90px 1fr;gap:0;border-top:1px solid var(--border)">
+          <div class="mpm-score-panel" style="border-right:1px solid var(--border)">
+            <div class="mpm-score-lbl">Pressure</div>
+            <div class="mpm-score-num" id="mpm-score">—</div>
+            <div class="mpm-score-sub">Acc − Dist</div>
+            <div class="mpm-counts" style="margin-top:6px">
+              <span><b id="mpm-acc-n" style="color:var(--lime);font-size:11px">0</b> <span style="color:var(--sub);font-size:9px">Acc</span></span>
+              <span><b id="mpm-dist-n" style="color:var(--red);font-size:11px">0</b> <span style="color:var(--sub);font-size:9px">Dist</span></span>
+            </div>
+          </div>
+          <div style="padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:5px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+              <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px">25-Day Pressure Chart</div>
+              <div class="mpm-cond-name" id="mpm-cond" style="font-size:11px">No Data</div>
+            </div>
+            <div class="mpm-bars" id="mpm-bars" style="height:36px"></div>
+            <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim);margin-top:1px">
+              <span style="color:var(--lime)">▲ Acc</span>
+              <span id="mpm-window" style="color:var(--sub)">last 25d</span>
+              <span style="color:var(--red)">▼ Dist</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── COLLAPSIBLE: Full gauge + form + table ── -->
+        <div id="mpm-card-body" style="display:none">
+        <!-- MPM Hero (gauge + condition detail) -->
+        <div class="mpm-hero" style="border-top:1px solid var(--border)">
+          <div class="mpm-gauge-panel" style="grid-column:1/3">
+            <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px">Pressure Gauge</div>
+            <div class="mpm-gauge-wrap">
+              <div class="mpm-gauge-fill"></div>
+              <div class="mpm-needle" id="mpm-needle" style="left:50%"></div>
+            </div>
+            <div class="mpm-gauge-labels">
+              <span style="color:var(--red)">Heavy Sell</span>
+              <span style="color:var(--orange)">Weak</span>
+              <span style="color:var(--yellow)">Neutral</span>
+              <span style="color:var(--green)">Healthy</span>
+              <span style="color:var(--lime)">Strong Buy</span>
+            </div>
+          </div>
+          <div class="mpm-cond-panel">
+            <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Condition</div>
+            <div class="mpm-cond-hint" id="mpm-hint">Enter Nifty data to see pressure.</div>
+            <div class="mpm-counts" style="margin-top:6px">
+              <span><b style="color:var(--dim);font-size:13px" id="mpm-neut-n">0</b> <span style="color:var(--sub)">Neu</span></span>
+            </div>
+          </div>
+        </div>
+        <!-- MPM Form -->
+        <div class="mpm-form">
+          <div style="font-size:11px;color:var(--sub);background:rgba(45,212,191,.05);border:1px solid rgba(45,212,191,.15);border-radius:5px;padding:8px 12px;margin-bottom:8px;line-height:1.6">
+            <b style="color:var(--teal)">Auto-fill from EOD Entry:</b> Nifty Close &amp; Volume are pulled automatically from your saved EOD breadth records for the selected date — no need to re-enter them here.
+            <span id="mpm-eod-status" style="display:block;font-size:10px;color:var(--dim);margin-top:3px">Select a date to see auto-fill preview.</span>
+          </div>
+          <div class="mpm-form-grid">
+            <div class="bsr-field">
+              <label>Date</label>
+              <input type="date" id="mpm-date" oninput="mpmPreviewEOD()">
+            </div>
+            <div class="bsr-field" id="mpm-close-field" style="opacity:.45">
+              <label>Nifty Close <span style="font-size:9px;color:var(--teal)">(auto)</span></label>
+              <input type="number" id="mpm-close" placeholder="auto-filled" step="0.05" min="0" readonly style="background:var(--bg3);cursor:not-allowed;color:var(--teal)">
+            </div>
+            <div class="bsr-field" id="mpm-pclose-field" style="opacity:.45">
+              <label>Prev Close <span style="font-size:9px;color:var(--dim)">(auto)</span></label>
+              <input type="number" id="mpm-pclose" placeholder="auto-filled" step="0.05" min="0" readonly style="background:var(--bg3);cursor:not-allowed">
+              <div class="ef-hint">From previous EOD record</div>
+            </div>
+            <div class="bsr-field" id="mpm-vol-field" style="opacity:.45">
+              <label>Volume (Cr) <span style="font-size:9px;color:var(--teal)">(auto)</span></label>
+              <input type="number" id="mpm-vol" placeholder="auto-filled" step="0.01" min="0" readonly style="background:var(--bg3);cursor:not-allowed;color:var(--teal)">
+            </div>
+            <div class="bsr-field" id="mpm-pvol-field" style="opacity:.45">
+              <label>Prev Vol (Cr) <span style="font-size:9px;color:var(--dim)">(auto)</span></label>
+              <input type="number" id="mpm-pvol" placeholder="auto-filled" step="0.01" min="0" readonly style="background:var(--bg3);cursor:not-allowed">
+              <div class="ef-hint">From previous EOD record</div>
+            </div>
+            <div style="display:flex;align-items:flex-end">
+              <button class="btn-mpm-add" onclick="mpmAdd()">+ Add Day</button>
+            </div>
+          </div>
+          <div style="font-size:9px;color:var(--sub);margin-top:7px">
+            &#9432;&nbsp;<b style="color:var(--lime)">Acc:</b> Close&gt;Prev AND Vol&gt;Prev &nbsp;|&nbsp;
+            <b style="color:var(--red)">Dist:</b> Close&lt;Prev AND Vol&gt;Prev &nbsp;|&nbsp; Score = Acc−Dist (last 25d)
+          </div>
+          <div style="font-size:11px;opacity:0;transition:opacity .4s;margin-top:4px;min-height:16px" id="mpm-msg"></div>
+              <div id="mpm-sync-msg" style="font-size:11px;margin-top:6px;display:none;padding:6px 10px;border-radius:4px;background:rgba(45,212,191,.06);border:1px solid rgba(45,212,191,.15)"></div>
+
+          <!-- NSE CSV Import -->
+          <div class="mpm-import-panel">
+            <div class="mpm-import-title">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Import from NSE CSV — Two steps, ~30 seconds
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid rgba(45,212,191,.18);border-radius:3px;padding:8px 10px;margin-bottom:8px">
+              <div style="flex:1">
+                <div style="font-size:11px;color:var(--text);font-weight:600;margin-bottom:2px">Step 1 — Open NSE download page</div>
+                <div style="font-size:9px;color:var(--dim)">Select <b style="color:var(--text)">Nifty 50</b> · From = 35 days ago · Get Data · Download CSV</div>
+              </div>
+              <button onclick="mpmOpenNSE()" style="background:var(--teal);color:#0e1420;font-size:11px;font-weight:600;padding:7px 12px;border:none;border-radius:3px;cursor:pointer;white-space:nowrap">&#10132; Open NSE</button>
+            </div>
+            <div style="font-size:10px;color:var(--text);font-weight:600;margin-bottom:5px">Step 2 — Drop CSV here</div>
+            <div class="mpm-drop-zone" id="mpm-drop-zone"
+                 ondragover="event.preventDefault();this.classList.add('drag-over')"
+                 ondragleave="this.classList.remove('drag-over')"
+                 ondrop="mpmHandleDrop(event)">
+              <input type="file" accept=".csv" onchange="mpmHandleFile(this.files[0])">
+              <div class="mpm-drop-lbl">
+                <b>Click to browse</b> or drag &amp; drop NSE CSV
+                <small>Auto-detects date format · Acc/Dist calculated instantly</small>
+              </div>
+            </div>
+            <div class="mpm-preview" id="mpm-preview">
+              <div class="mpm-preview-title" id="mpm-preview-title">Preview</div>
+              <div class="mpm-preview-rows" id="mpm-preview-rows"></div>
+              <button class="btn-mpm-import" id="btn-mpm-import" onclick="mpmImportConfirm()" disabled>Import All Days</button>
+              <button class="btn btn-sec" style="font-size:11px;padding:4px 10px;margin-left:4px;color:var(--teal);border-color:rgba(45,212,191,.3)" onclick="forcePushMpm()" title="Push MPM data to cloud now">☁ Push to Cloud</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MPM Table -->
+        <div class="card-head" style="border-top:1px solid var(--border);cursor:pointer" onclick="toggleCollapse('mpm-table-wrap','mpm-toggle-icon')">
+          <div class="card-title">Pressure Day Log — Last 25d</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="info-btn" onclick="event.stopPropagation();showInfoTip('mpm-tracker',this)" title="About this indicator">i</button>
+            <button class="card-action btn-export" onclick="event.stopPropagation();mpmExport()" style="border-color:rgba(45,212,191,.28);color:var(--teal)">&#8595; Export CSV</button>
+            <span id="mpm-toggle-icon" style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block">&#9660;</span>
+          </div>
+        </div>
+        <div id="mpm-table-wrap" style="display:none" class="mpm-table-wrap-collapsible">
+        <div class="mpm-table-wrap">
+          <table class="mpm-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Day Type</th>
+                <th>Nifty Close</th>
+                <th>Prev Close</th>
+                <th>Close Chg%</th>
+                <th>Volume (Cr)</th>
+                <th>Prev Vol</th>
+                <th>Vol Chg%</th>
+                <th>Running Score</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="mpm-tbody">
+              <tr><td colspan="10" style="color:var(--dim);padding:16px;text-align:center;font-size:10px">NO DATA YET — ADD NIFTY DAILY DATA ABOVE</td></tr>
+            </tbody>
+          </table>
+        </div>
+        </div><!-- /mpm-table-wrap-collapsible -->
+        </div><!-- /mpm-card-body -->
+      </div>
+
+      <!-- ── FOLLOW-THROUGH DAY TRACKER ─────────────────────── -->
+      <!-- ── PERSONAL EXPOSURE TRACKER ─────────────────────────── -->
+      <div class="card" id="pet-card" style="border-top:2px solid var(--accent)">
+        <div class="card-head" style="cursor:pointer" onclick="toggleCollapse('pet-body','pet-toggle-icon')">
+          <div class="card-title" style="color:var(--accent)">📈 Personal Exposure Tracker</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="info-btn" onclick="event.stopPropagation();showInfoTip('exposure',this)" title="About Exposure">i</button>
+            <span id="pet-toggle-icon" style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block">&#9660;</span>
+          </div>
+        </div>
+        <div id="pet-body">
+          <!-- Capital input row -->
+          <div style="padding:10px 14px;border-top:1px solid var(--border);background:var(--bg3);display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+            <div>
+              <div style="font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;font-weight:600">Total Capital (₹)</div>
+              <input type="number" id="pet-total-capital" placeholder="500000" min="0" step="1000"
+                oninput="petUpdate()"
+                style="width:130px;background:var(--bg);border:1px solid var(--bdr2);color:var(--accent);font-family:var(--mono);font-size:12px;padding:5px 8px;border-radius:4px;outline:none">
+            </div>
+            <div>
+              <div style="font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;font-weight:600">Currently Invested (₹)</div>
+              <input type="number" id="pet-invested" placeholder="150000" min="0" step="1000"
+                oninput="petUpdate()"
+                style="width:130px;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:12px;padding:5px 8px;border-radius:4px;outline:none">
+            </div>
+            <button onclick="petSave()" style="font-size:11px;font-weight:600;padding:5px 14px;background:rgba(91,163,245,.12);color:var(--accent);border:1px solid rgba(91,163,245,.3);border-radius:4px;cursor:pointer;height:30px">Save</button>
+            <div style="font-size:10px;color:var(--dim);align-self:center;margin-left:4px" id="pet-saved-note"></div>
+          </div>
+          <!-- Hero grid -->
+          <div style="display:grid;grid-template-columns:100px 1fr;gap:0;border-top:1px solid var(--border)">
+            <div style="padding:14px 12px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center">
+              <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-bottom:4px">Suggested</div>
+              <div style="font-family:var(--disp);font-size:42px;font-weight:800;line-height:1;transition:color .4s" id="msem-exp-pct">—</div>
+              <div style="font-size:10px;color:var(--sub);margin-top:4px" id="msem-exp-range">—</div>
+            </div>
+            <div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+              <!-- ₹ status row -->
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+                <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;border:1px solid var(--border)">
+                  <div style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Suggested ₹</div>
+                  <div style="font-family:var(--disp);font-size:16px;font-weight:800;color:var(--accent)" id="pet-suggested-inr">—</div>
+                </div>
+                <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;border:1px solid var(--border)">
+                  <div style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Invested ₹</div>
+                  <div style="font-family:var(--disp);font-size:16px;font-weight:800;color:var(--text)" id="pet-invested-inr">—</div>
+                </div>
+                <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;border:1px solid var(--border)">
+                  <div style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Gap / Headroom</div>
+                  <div style="font-family:var(--disp);font-size:16px;font-weight:800" id="pet-gap-inr">—</div>
+                </div>
+              </div>
+              <!-- Status banner -->
+              <div id="pet-status-banner" style="font-size:11px;font-weight:600;padding:6px 10px;border-radius:4px;line-height:1.4;display:none"></div>
+              <!-- Gauge bar -->
+              <div>
+                <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px;margin-bottom:4px">
+                  <div style="flex:1;background:rgba(248,113,113,.45);border-radius:2px"></div>
+                  <div style="flex:1;background:rgba(251,146,60,.45);border-radius:2px"></div>
+                  <div style="flex:2;background:rgba(250,204,21,.45);border-radius:2px"></div>
+                  <div style="flex:2;background:rgba(52,211,153,.45);border-radius:2px"></div>
+                  <div style="flex:2;background:rgba(74,222,128,.45);border-radius:2px"></div>
+                </div>
+                <div class="msem-exp-track"><div class="msem-exp-fill" id="msem-exp-fill" style="width:0%"></div></div>
+                <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim);margin-top:2px"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+              </div>
+              <div style="font-size:11px;color:var(--sub);line-height:1.5" id="msem-exp-note">Save EOD data to calculate exposure.</div>
+            </div>
+          </div>
+          <!-- Zone reference -->
+          <div style="padding:8px 14px 10px;border-top:1px solid var(--border)">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-bottom:6px">Zone Reference</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">
+              <div style="background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.18);border-radius:4px;padding:5px 6px;text-align:center">
+                <div style="font-size:8px;color:var(--red);font-weight:600;text-transform:uppercase;margin-bottom:2px">Danger</div>
+                <div style="font-family:var(--disp);font-size:12px;font-weight:800;color:var(--red)">0–10%</div>
+                <div style="font-size:8px;color:var(--dim);margin-top:2px">No trades</div>
+              </div>
+              <div style="background:rgba(251,146,60,.08);border:1px solid rgba(251,146,60,.18);border-radius:4px;padding:5px 6px;text-align:center">
+                <div style="font-size:8px;color:var(--orange);font-weight:600;text-transform:uppercase;margin-bottom:2px">Caution</div>
+                <div style="font-family:var(--disp);font-size:12px;font-weight:800;color:var(--orange)">10–25%</div>
+                <div style="font-size:8px;color:var(--dim);margin-top:2px">0.25R pilot</div>
+              </div>
+              <div style="background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.18);border-radius:4px;padding:5px 6px;text-align:center">
+                <div style="font-size:8px;color:var(--yellow);font-weight:600;text-transform:uppercase;margin-bottom:2px">Selective</div>
+                <div style="font-family:var(--disp);font-size:12px;font-weight:800;color:var(--yellow)">25–50%</div>
+                <div style="font-size:8px;color:var(--dim);margin-top:2px">0.5–1R</div>
+              </div>
+              <div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.18);border-radius:4px;padding:5px 6px;text-align:center">
+                <div style="font-size:8px;color:var(--green);font-weight:600;text-transform:uppercase;margin-bottom:2px">Normal</div>
+                <div style="font-family:var(--disp);font-size:12px;font-weight:800;color:var(--green)">50–75%</div>
+                <div style="font-size:8px;color:var(--dim);margin-top:2px">Full size</div>
+              </div>
+              <div style="background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.18);border-radius:4px;padding:5px 6px;text-align:center">
+                <div style="font-size:8px;color:var(--lime);font-weight:600;text-transform:uppercase;margin-bottom:2px">Aggressive</div>
+                <div style="font-family:var(--disp);font-size:12px;font-weight:800;color:var(--lime)">75–100%</div>
+                <div style="font-size:8px;color:var(--dim);margin-top:2px">Let run</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── WEEKLY BREADTH DIVERGENCE ALERT ───────────────────── -->
+      <div class="card" id="wbd-card" style="border-top:2px solid var(--orange)">
+        <div class="card-head">
+          <div class="card-title" style="color:var(--orange)">🔄 Weekly Breadth Divergence Alert</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="info-btn" onclick="showInfoTip('breadth-div',this)" title="About Divergence">i</button>
+            <button onclick="toggleCollapse('wbd-details','wbd-toggle-icon')" style="font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid rgba(251,146,60,.3);background:rgba(251,146,60,.08);color:var(--orange);cursor:pointer;font-weight:600">Details</button>
+            <span id="wbd-toggle-icon" style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block;transform:rotate(-90deg)">&#9660;</span>
+          </div>
+        </div>
+        <!-- Always visible: signal hero -->
+        <div style="display:grid;grid-template-columns:120px 1fr auto;gap:0;border-top:2px solid var(--orange)">
+          <div style="padding:12px 12px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-bottom:4px">Signal</div>
+            <div style="font-family:var(--disp);font-size:22px;font-weight:800;line-height:1.1;transition:color .4s" id="wbd-status">—</div>
+            <div style="font-size:10px;margin-top:4px;font-weight:600;color:var(--sub)" id="wbd-status-sub">5+ records needed</div>
+          </div>
+          <div style="padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:5px">
+            <div style="display:flex;gap:16px">
+              <div>
+                <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin-bottom:1px">Price 5d</div>
+                <div style="font-family:var(--disp);font-size:22px;font-weight:800;line-height:1" id="wbd-price-chg">—</div>
+              </div>
+              <div>
+                <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin-bottom:1px">Breadth 5d</div>
+                <div style="font-family:var(--disp);font-size:22px;font-weight:800;line-height:1" id="wbd-breadth-chg">—</div>
+              </div>
+            </div>
+            <div id="wbd-pills" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+          </div>
+          <div style="padding:10px 12px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;gap:4px">
+            <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px">Action</div>
+            <div style="font-size:11px;color:var(--sub);line-height:1.4;text-align:right;max-width:120px" id="wbd-desc">Save 5+ EOD records.</div>
+          </div>
+        </div>
+        <!-- Collapsible: history table + legend -->
+        <div id="wbd-details" style="display:none">
+          <div style="padding:10px 14px;border-top:1px solid var(--border)">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-bottom:8px">Recent Divergence History</div>
+            <div id="wbd-history" style="font-size:11px;color:var(--dim);text-align:center;padding:10px 0">No records yet.</div>
+          </div>
+          <div style="padding:8px 14px 10px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">
+            <span style="font-size:9px;background:rgba(74,222,128,.12);color:var(--lime);padding:2px 6px;border-radius:3px;border:1px solid rgba(74,222,128,.2)">Confirmed ↑</span>
+            <span style="font-size:9px;background:rgba(248,113,113,.12);color:var(--red);padding:2px 6px;border-radius:3px;border:1px solid rgba(248,113,113,.2)">Confirmed ↓</span>
+            <span style="font-size:9px;background:rgba(251,146,60,.12);color:var(--orange);padding:2px 6px;border-radius:3px;border:1px solid rgba(251,146,60,.2)">⚠ Bear Diverge</span>
+            <span style="font-size:9px;background:rgba(45,212,191,.10);color:var(--teal);padding:2px 6px;border-radius:3px;border:1px solid rgba(45,212,191,.2)">✦ Bull Diverge</span>
+          </div>
+        </div>
+      </div>
+
       <!-- ── SECTOR LEADERSHIP HEATMAP ────────────────────────── -->
       <div class="card" id="srt-heatmap-card" style="border-top:2px solid var(--teal)">
-        <div class="card-head" style="cursor:pointer" onclick="toggleCollapse('slh-body','slh-toggle')">
+        <div class="card-head">
           <div class="card-title" style="color:var(--teal)">🌡 Sector Leadership Heatmap</div>
           <div style="display:flex;align-items:center;gap:6px">
+            <button class="info-btn" onclick="showInfoTip('sector-heatmap',this)" title="About Sector Heatmap">i</button>
             <div style="display:flex;gap:3px">
-              <button onclick="event.stopPropagation();slhSetWeeks(8)"  id="slh-w-8"  style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:var(--teal);color:#0e1420;cursor:pointer;font-weight:600">8w</button>
-              <button onclick="event.stopPropagation();slhSetWeeks(12)" id="slh-w-12" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12w</button>
-              <button onclick="event.stopPropagation();slhSetWeeks(20)" id="slh-w-20" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">20w</button>
+              <button onclick="slhSetWeeks(8)"  id="slh-w-8"  style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:var(--teal);color:#0e1420;cursor:pointer;font-weight:600">8w</button>
+              <button onclick="slhSetWeeks(12)" id="slh-w-12" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12w</button>
+              <button onclick="slhSetWeeks(20)" id="slh-w-20" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">20w</button>
             </div>
-            <span id="slh-toggle" style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block">&#9660;</span>
           </div>
         </div>
         <div id="slh-body">
@@ -1714,41 +2080,9 @@ body.guest-mode #mpm-module-card { display:none !important; }
         </div>
       </div>
 
-      <!-- 30-Day History -->
-      <div class="card">
-        <div class="card-head" style="cursor:pointer" onclick="toggleCollapse('hist-body-wrap','hist-toggle-icon')">
-          <div class="card-title">30-Day History</div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <button class="card-action btn-export" onclick="event.stopPropagation();exportCSV()">&#8595; Export CSV</button>
-            <span id="hist-toggle-icon" style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block">&#9660;</span>
-          </div>
-        </div>
-        <div id="hist-body-wrap" style="display:none">
-        <div class="hist-wrap">
-          <table class="hist-table">
-            <thead>
-              <tr>
-                <th>Date</th><th>ADV</th><th>DEC</th><th>UNC</th>
-                <th>A/D</th><th>52W-H</th><th>52W-L</th><th>H/L%</th>
-                <th>&gt;E20%</th><th>&gt;S50%</th><th>&gt;S200%</th>
-                <th>Nifty</th><th>Score</th><th>Zone</th><th>R</th>
-                <th>Notes</th><th></th>
-              </tr>
-            </thead>
-            <tbody id="hist-body">
-              <tr><td colspan="17" style="color:var(--dim);padding:20px;text-align:center;font-size:11px">NO HISTORY YET</td></tr>
-            </tbody>
-          </table>
-        </div>
-        </div><!-- /hist-body-wrap -->
-      </div>
+      <!-- SRT Card -->
 
-    </div><!-- /col left -->
-
-    <!-- ═══ RIGHT COLUMN ════════════════════════════════════ -->
-    <div class="col">
-
-      <!-- BSR Module -->
+      <!-- BSR Module (last card) -->
       <div class="card" id="bsr-module-card" style="border-top:2px solid var(--purple)">
         <div class="card-head">
           <div class="card-title"><span style="color:var(--purple)">Breakout Trade Log (BSR)</span></div>
@@ -1871,154 +2205,6 @@ body.guest-mode #mpm-module-card { display:none !important; }
         </div><!-- /bsr-table-collapsible -->
       </div>
 
-      <!-- MPM Module -->
-      <div class="card" id="mpm-module-card" style="border-top:2px solid var(--teal)">
-        <div class="card-head">
-          <div class="card-title"><span style="color:var(--teal)">Market Pressure Meter (MPM)</span></div>
-          <span style="font-size:9px;color:var(--sub)">Acc = Close↑+Vol↑ · Dist = Close↓+Vol↑ · Last 25d</span>
-        </div>
-        <!-- MPM Hero -->
-        <div class="mpm-hero">
-          <div class="mpm-score-panel">
-            <div class="mpm-score-lbl">Pressure</div>
-            <div class="mpm-score-num" id="mpm-score">—</div>
-            <div class="mpm-score-sub">Acc − Dist</div>
-          </div>
-          <div class="mpm-gauge-panel">
-            <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px">Pressure Gauge</div>
-            <div class="mpm-gauge-wrap">
-              <div class="mpm-gauge-fill"></div>
-              <div class="mpm-needle" id="mpm-needle" style="left:50%"></div>
-            </div>
-            <div class="mpm-gauge-labels">
-              <span style="color:var(--red)">Heavy Sell</span>
-              <span style="color:var(--orange)">Weak</span>
-              <span style="color:var(--yellow)">Neutral</span>
-              <span style="color:var(--green)">Healthy</span>
-              <span style="color:var(--lime)">Strong Buy</span>
-            </div>
-            <div class="mpm-bars" id="mpm-bars"></div>
-            <div style="font-size:9px;color:var(--sub);margin-top:3px" id="mpm-window">Showing last 25 trading days</div>
-          </div>
-          <div class="mpm-cond-panel">
-            <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Condition</div>
-            <div class="mpm-cond-name" id="mpm-cond">No Data</div>
-            <div class="mpm-cond-hint" id="mpm-hint">Enter Nifty data to see pressure.</div>
-            <div class="mpm-counts">
-              <span><b id="mpm-acc-n" style="color:var(--lime);font-size:13px">0</b> <span style="color:var(--sub)">Acc</span></span>
-              <span><b id="mpm-dist-n" style="color:var(--red);font-size:13px">0</b> <span style="color:var(--sub)">Dist</span></span>
-              <span><b id="mpm-neut-n" style="color:var(--dim);font-size:13px">0</b> <span style="color:var(--sub)">Neu</span></span>
-            </div>
-          </div>
-        </div>
-        <!-- MPM Form -->
-        <div class="mpm-form">
-          <div style="font-size:11px;color:var(--sub);background:rgba(45,212,191,.05);border:1px solid rgba(45,212,191,.15);border-radius:5px;padding:8px 12px;margin-bottom:8px;line-height:1.6">
-            <b style="color:var(--teal)">Auto-fill from EOD Entry:</b> Nifty Close &amp; Volume are pulled automatically from your saved EOD breadth records for the selected date — no need to re-enter them here.
-            <span id="mpm-eod-status" style="display:block;font-size:10px;color:var(--dim);margin-top:3px">Select a date to see auto-fill preview.</span>
-          </div>
-          <div class="mpm-form-grid">
-            <div class="bsr-field">
-              <label>Date</label>
-              <input type="date" id="mpm-date" oninput="mpmPreviewEOD()">
-            </div>
-            <div class="bsr-field" id="mpm-close-field" style="opacity:.45">
-              <label>Nifty Close <span style="font-size:9px;color:var(--teal)">(auto)</span></label>
-              <input type="number" id="mpm-close" placeholder="auto-filled" step="0.05" min="0" readonly style="background:var(--bg3);cursor:not-allowed;color:var(--teal)">
-            </div>
-            <div class="bsr-field" id="mpm-pclose-field" style="opacity:.45">
-              <label>Prev Close <span style="font-size:9px;color:var(--dim)">(auto)</span></label>
-              <input type="number" id="mpm-pclose" placeholder="auto-filled" step="0.05" min="0" readonly style="background:var(--bg3);cursor:not-allowed">
-              <div class="ef-hint">From previous EOD record</div>
-            </div>
-            <div class="bsr-field" id="mpm-vol-field" style="opacity:.45">
-              <label>Volume (Cr) <span style="font-size:9px;color:var(--teal)">(auto)</span></label>
-              <input type="number" id="mpm-vol" placeholder="auto-filled" step="0.01" min="0" readonly style="background:var(--bg3);cursor:not-allowed;color:var(--teal)">
-            </div>
-            <div class="bsr-field" id="mpm-pvol-field" style="opacity:.45">
-              <label>Prev Vol (Cr) <span style="font-size:9px;color:var(--dim)">(auto)</span></label>
-              <input type="number" id="mpm-pvol" placeholder="auto-filled" step="0.01" min="0" readonly style="background:var(--bg3);cursor:not-allowed">
-              <div class="ef-hint">From previous EOD record</div>
-            </div>
-            <div style="display:flex;align-items:flex-end">
-              <button class="btn-mpm-add" onclick="mpmAdd()">+ Add Day</button>
-            </div>
-          </div>
-          <div style="font-size:9px;color:var(--sub);margin-top:7px">
-            &#9432;&nbsp;<b style="color:var(--lime)">Acc:</b> Close&gt;Prev AND Vol&gt;Prev &nbsp;|&nbsp;
-            <b style="color:var(--red)">Dist:</b> Close&lt;Prev AND Vol&gt;Prev &nbsp;|&nbsp; Score = Acc−Dist (last 25d)
-          </div>
-          <div style="font-size:11px;opacity:0;transition:opacity .4s;margin-top:4px;min-height:16px" id="mpm-msg"></div>
-              <div id="mpm-sync-msg" style="font-size:11px;margin-top:6px;display:none;padding:6px 10px;border-radius:4px;background:rgba(45,212,191,.06);border:1px solid rgba(45,212,191,.15)"></div>
-
-          <!-- NSE CSV Import -->
-          <div class="mpm-import-panel">
-            <div class="mpm-import-title">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Import from NSE CSV — Two steps, ~30 seconds
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid rgba(45,212,191,.18);border-radius:3px;padding:8px 10px;margin-bottom:8px">
-              <div style="flex:1">
-                <div style="font-size:11px;color:var(--text);font-weight:600;margin-bottom:2px">Step 1 — Open NSE download page</div>
-                <div style="font-size:9px;color:var(--dim)">Select <b style="color:var(--text)">Nifty 50</b> · From = 35 days ago · Get Data · Download CSV</div>
-              </div>
-              <button onclick="mpmOpenNSE()" style="background:var(--teal);color:#0e1420;font-size:11px;font-weight:600;padding:7px 12px;border:none;border-radius:3px;cursor:pointer;white-space:nowrap">&#10132; Open NSE</button>
-            </div>
-            <div style="font-size:10px;color:var(--text);font-weight:600;margin-bottom:5px">Step 2 — Drop CSV here</div>
-            <div class="mpm-drop-zone" id="mpm-drop-zone"
-                 ondragover="event.preventDefault();this.classList.add('drag-over')"
-                 ondragleave="this.classList.remove('drag-over')"
-                 ondrop="mpmHandleDrop(event)">
-              <input type="file" accept=".csv" onchange="mpmHandleFile(this.files[0])">
-              <div class="mpm-drop-lbl">
-                <b>Click to browse</b> or drag &amp; drop NSE CSV
-                <small>Auto-detects date format · Acc/Dist calculated instantly</small>
-              </div>
-            </div>
-            <div class="mpm-preview" id="mpm-preview">
-              <div class="mpm-preview-title" id="mpm-preview-title">Preview</div>
-              <div class="mpm-preview-rows" id="mpm-preview-rows"></div>
-              <button class="btn-mpm-import" id="btn-mpm-import" onclick="mpmImportConfirm()" disabled>Import All Days</button>
-              <button class="btn btn-sec" style="font-size:11px;padding:4px 10px;margin-left:4px;color:var(--teal);border-color:rgba(45,212,191,.3)" onclick="forcePushMpm()" title="Push MPM data to cloud now">☁ Push to Cloud</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- MPM Table -->
-        <div class="card-head" style="border-top:1px solid var(--border);cursor:pointer" onclick="toggleCollapse('mpm-table-wrap','mpm-toggle-icon')">
-          <div class="card-title">Pressure Day Log — Last 25d</div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <button class="info-btn" onclick="event.stopPropagation();showInfoTip('mpm-tracker',this)" title="About this indicator">i</button>
-            <button class="card-action btn-export" onclick="event.stopPropagation();mpmExport()" style="border-color:rgba(45,212,191,.28);color:var(--teal)">&#8595; Export CSV</button>
-            <span id="mpm-toggle-icon" style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block">&#9660;</span>
-          </div>
-        </div>
-        <div id="mpm-table-wrap" style="display:none" class="mpm-table-wrap-collapsible">
-        <div class="mpm-table-wrap">
-          <table class="mpm-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Day Type</th>
-                <th>Nifty Close</th>
-                <th>Prev Close</th>
-                <th>Close Chg%</th>
-                <th>Volume (Cr)</th>
-                <th>Prev Vol</th>
-                <th>Vol Chg%</th>
-                <th>Running Score</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="mpm-tbody">
-              <tr><td colspan="10" style="color:var(--dim);padding:16px;text-align:center;font-size:10px">NO DATA YET — ADD NIFTY DAILY DATA ABOVE</td></tr>
-            </tbody>
-          </table>
-        </div>
-        </div><!-- /mpm-table-wrap-collapsible -->
-      </div>
-
-      <!-- SRT Card -->
     </div><!-- /col right -->
   </div><!-- /dash-grid -->
 
@@ -4803,6 +4989,66 @@ function renderAnalysisDivergence(data) {
   el('as-div-status').style.color = color;
   el('as-div-desc').textContent   = desc;
   el('as-div-pills').innerHTML = pills;
+
+  // ── Also feed the WBD card ────────────────────────────────
+  const wbdStatus = document.getElementById('wbd-status');
+  if (wbdStatus) {
+    wbdStatus.textContent   = status;
+    wbdStatus.style.color   = color;
+    const wbdSub = document.getElementById('wbd-status-sub');
+    if (wbdSub) { wbdSub.textContent = desc; wbdSub.style.color = color; }
+    const wbdPc  = document.getElementById('wbd-price-chg');
+    if (wbdPc)  { wbdPc.textContent  = priceLabel;   wbdPc.style.color  = priceDir > 0 ? 'var(--lime)' : priceDir < 0 ? 'var(--red)' : 'var(--sub)'; }
+    const wbdBc  = document.getElementById('wbd-breadth-chg');
+    if (wbdBc)  { const bd = breadthDiff; wbdBc.textContent = bd !== null ? (bd >= 0 ? '+' : '') + bd + ' pts' : '—'; wbdBc.style.color = breadthDir > 0 ? 'var(--lime)' : breadthDir < 0 ? 'var(--red)' : 'var(--sub)'; }
+    const wbdDesc= document.getElementById('wbd-desc');
+    if (wbdDesc) wbdDesc.textContent = desc;
+    const wbdPills = document.getElementById('wbd-pills');
+    if (wbdPills) {
+      const pill = status.includes('Bear') ? '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:3px;background:rgba(251,146,60,.12);color:var(--orange);border:1px solid rgba(251,146,60,.25)">⚠ Reduce Exposure</span>'
+                 : status.includes('Bull') ? '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:3px;background:rgba(45,212,191,.10);color:var(--teal);border:1px solid rgba(45,212,191,.25)">✦ Watch for Reversal</span>'
+                 : status.includes('↑')   ? '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:3px;background:rgba(74,222,128,.12);color:var(--lime);border:1px solid rgba(74,222,128,.25)">✓ Uptrend Confirmed</span>'
+                 : status.includes('↓')   ? '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:3px;background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.25)">✗ Downtrend Confirmed</span>'
+                 : '';
+      wbdPills.innerHTML = pill;
+    }
+    // Build rolling history table (5-day windows, last 6 periods if enough data)
+    const wbdHist = document.getElementById('wbd-history');
+    if (wbdHist && data.length >= 5) {
+      let rows = '';
+      const maxPeriods = Math.min(6, Math.floor(data.length / 5));
+      for (let i = 0; i < maxPeriods; i++) {
+        const sliceNew = data[i * 5];
+        const sliceOld = data[Math.min(i * 5 + 4, data.length - 1)];
+        const pN = getNifty(sliceNew), pO = getNifty(sliceOld);
+        const sN = sliceNew.score, sO = sliceOld.score;
+        if (pN == null || pO == null || sN == null || sO == null) continue;
+        const pDir = pN > pO ? 1 : pN < pO ? -1 : 0;
+        const bDir = sN > sO ? 1 : sN < sO ? -1 : 0;
+        const pPct = pO > 0 ? (((pN - pO) / pO) * 100).toFixed(1) : '—';
+        const bDiff = (sN - sO).toFixed(1);
+        let rowStatus, rowColor;
+        if (pDir > 0 && bDir > 0)       { rowStatus = 'Confirmed ↑'; rowColor = 'var(--lime)'; }
+        else if (pDir < 0 && bDir < 0)  { rowStatus = 'Confirmed ↓'; rowColor = 'var(--red)'; }
+        else if (pDir > 0 && bDir < 0)  { rowStatus = 'Bear Diverge ⚠'; rowColor = 'var(--orange)'; }
+        else if (pDir < 0 && bDir > 0)  { rowStatus = 'Bull Diverge ✦'; rowColor = 'var(--teal)'; }
+        else                             { rowStatus = 'Neutral'; rowColor = 'var(--sub)'; }
+        rows += `<tr style="border-bottom:1px solid rgba(39,52,71,.4)">
+          <td style="padding:5px 8px;font-size:10px;color:var(--sub)">${sliceNew.date || '—'}</td>
+          <td style="padding:5px 8px;font-size:10px;font-weight:600;color:${rowColor}">${rowStatus}</td>
+          <td style="padding:5px 8px;font-size:10px;color:${pDir > 0 ? 'var(--lime)' : pDir < 0 ? 'var(--red)' : 'var(--sub)'}">${pDir >= 0 ? '+' : ''}${pPct}%</td>
+          <td style="padding:5px 8px;font-size:10px;color:${bDir > 0 ? 'var(--lime)' : bDir < 0 ? 'var(--red)' : 'var(--sub)'}">${bDir >= 0 ? '+' : ''}${bDiff} pts</td>
+        </tr>`;
+      }
+      wbdHist.innerHTML = rows ? `<table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="text-align:left;padding:4px 8px;font-size:9px;color:var(--dim);font-weight:600;text-transform:uppercase;border-bottom:1px solid var(--border)">Period End</th>
+          <th style="text-align:left;padding:4px 8px;font-size:9px;color:var(--dim);font-weight:600;text-transform:uppercase;border-bottom:1px solid var(--border)">Signal</th>
+          <th style="text-align:left;padding:4px 8px;font-size:9px;color:var(--dim);font-weight:600;text-transform:uppercase;border-bottom:1px solid var(--border)">Price Δ</th>
+          <th style="text-align:left;padding:4px 8px;font-size:9px;color:var(--dim);font-weight:600;text-transform:uppercase;border-bottom:1px solid var(--border)">Breadth Δ</th>
+        </tr></thead><tbody>${rows}</tbody></table>` : '<div style="color:var(--dim);font-size:10px;text-align:center;padding:8px">Not enough data for history.</div>';
+    }
+  }
 }
 
 // A5: MARKET TREND BIAS
@@ -5536,81 +5782,123 @@ function renderMarketSummary() {
     el('msem-updated').textContent = 'As of ' + fmtLong(r.date);
   }
 
-  // ── MARKET SUMMARY (3–5 sentences, rule-based) ───────────────
+  // ── MARKET SUMMARY (precise, value-embedded sentences) ──────
   const summaryParts = [];
+  const hlVal = r.hlRatio !== undefined ? Math.round(r.hlRatio * 100) : null;
+  const ema20 = r.ema20 !== undefined  ? Math.round(r.ema20)  : null;
+  const sma50 = r.sma50 !== undefined  ? Math.round(r.sma50)  : null;
 
-  // Sentence 1: Overall condition
+  // Sentence 1: Score + zone
   if (score >= 55) {
-    summaryParts.push('Market breadth is healthy with strong participation across Nifty 500 stocks.');
+    summaryParts.push(`Breadth Score ${score} — Healthy Bull. Strong participation: most Nifty 500 stocks above short and medium MAs.`);
   } else if (score >= 45) {
-    summaryParts.push('Market breadth is expanding with improving participation across the index.');
+    summaryParts.push(`Breadth Score ${score} — Expansion. Participation is improving; majority above EMA20 and SMA50.`);
   } else if (score >= 35) {
-    summaryParts.push('Market breadth remains in caution territory — participation is mixed and uneven.');
+    summaryParts.push(`Breadth Score ${score} — Caution zone. Participation is mixed; market is healing but not confirmed.`);
   } else if (score >= 20) {
-    summaryParts.push('Market breadth is weak, reflecting broad selling pressure across the index.');
+    summaryParts.push(`Breadth Score ${score} — Correction. Broad weakness across Nifty 500; most stocks below key MAs.`);
   } else {
-    summaryParts.push('Market breadth is in deep correction — widespread selling across Nifty 500.');
+    summaryParts.push(`Breadth Score ${score} — Deep Correction. Widespread selling; stand aside.`);
   }
 
-  // Sentence 2: Momentum context
+  // Sentence 2: Momentum with actual delta
   if (momentum !== null) {
-    if (momentum >= 10) summaryParts.push('Breadth momentum is strongly positive, suggesting a sharp improvement in participation.');
-    else if (momentum >= 3) summaryParts.push('Breadth momentum is improving gradually, a positive early sign.');
-    else if (momentum >= 0) summaryParts.push('Breadth momentum is flat — no meaningful deterioration but no recovery signal yet.');
-    else if (momentum >= -5) summaryParts.push('Breadth momentum is slipping, suggesting further near-term weakness.');
-    else summaryParts.push('Breadth momentum is declining sharply — avoid new entries.');
+    const mSign = momentum >= 0 ? '+' : '';
+    if (Math.abs(momentum) >= 10)     summaryParts.push(`Breadth momentum ${mSign}${momentum} pts (day-over-day) — sharp ${momentum>0?'expansion':'deterioration'}, act accordingly.`);
+    else if (Math.abs(momentum) >= 3) summaryParts.push(`Momentum ${mSign}${momentum} pts — gradual ${momentum>0?'improvement':'weakening'}.`);
+    else if (momentum === 0)           summaryParts.push('Momentum flat — no directional change; wait for conviction.');
+    else                               summaryParts.push(`Momentum ${mSign}${momentum} pts — minor ${momentum>0?'uptick':'drift lower'}; watch for follow-through.`);
   }
 
-  // Sentence 3: Institutional pressure
+  // Sentence 3: Institutional pressure with actual score
   if (mpmScore !== null) {
-    if (mpmScore >= 4) summaryParts.push('Institutional accumulation is dominant — volume confirms buying interest.');
-    else if (mpmScore >= 1) summaryParts.push('Mild accumulation is present but not yet convincing enough to confirm a trend.');
-    else if (mpmScore === 0) summaryParts.push('Accumulation and distribution are balanced — institutions are neutral.');
-    else if (mpmScore >= -3) summaryParts.push('Distribution is slightly elevated — institutional selling pressure persists.');
-    else summaryParts.push('Heavy institutional distribution is active — smart money is selling into strength.');
+    if (mpmScore >= 4)       summaryParts.push(`MPM +${mpmScore}: institutions accumulating — volume confirms buying interest. Institutional backdrop is supportive.`);
+    else if (mpmScore >= 1)  summaryParts.push(`MPM +${mpmScore}: mild accumulation. Institutions leaning bullish but not yet decisive.`);
+    else if (mpmScore === 0) summaryParts.push('MPM 0: accumulation and distribution balanced. Institutions are sidelined — wait for tilt.');
+    else                     summaryParts.push(`MPM ${mpmScore}: distribution exceeds accumulation. Institutions are selling; do not fight the tape.`);
   }
 
-  // Sentence 4: FTD / confirmation status
+  // Sentence 4: MA breadth context if available
+  if (ema20 !== null && sma50 !== null) {
+    summaryParts.push(`${ema20}% of stocks above EMA20, ${sma50}% above SMA50${hlVal !== null ? `, H/L ratio ${hlVal}%` : ''}.`);
+  }
+
+  // Sentence 5: FTD / confirmation status
   if (hasFTD) {
-    summaryParts.push('A Follow-Through Day has been confirmed — breakout entries with pilot size are justified.');
+    summaryParts.push('Follow-Through Day confirmed ✓ — O\'Neil uptrend signal active. Breakout entries are justified.');
   } else if (hasAttempt) {
-    summaryParts.push('A rally attempt is underway but no Follow-Through Day confirmed yet — wait for Day 4+ confirmation before adding exposure.');
+    summaryParts.push('Rally attempt underway — no FTD yet. Wait for Day 4+ move of ≥1.5% on rising volume before adding exposure.');
   } else if (score < 35) {
-    summaryParts.push('No rally attempt logged — market is not yet showing signs of a recovery.');
+    summaryParts.push('No rally attempt logged. Market showing no base-building signs yet.');
   }
 
   el('msem-summary').textContent = summaryParts.join(' ');
 
-  // ── TRADING GUIDANCE ─────────────────────────────────────────
+  // ── TRADING GUIDANCE — pre-session checklist ─────────────────
   const guidance = [];
-  if (score < 30) {
-    guidance.push({ text: 'Avoid all new swing trade entries', cls: 'bad' });
-    guidance.push({ text: 'Focus entirely on capital preservation', cls: 'bad' });
-    guidance.push({ text: 'Close or tighten stops on existing positions', cls: 'warn' });
-    guidance.push({ text: 'Wait for score to recover above 35 before re-engaging', cls: '' });
-  } else if (score < 40) {
-    guidance.push({ text: 'Pilot entries only at 0.25R per position', cls: '' });
-    guidance.push({ text: 'Focus exclusively on highest RS-rated stocks', cls: 'good' });
-    guidance.push({ text: 'Maximum total portfolio exposure: 1–2 positions', cls: 'warn' });
-    guidance.push({ text: 'Do not chase extended breakouts', cls: 'bad' });
-    if (!hasFTD) guidance.push({ text: 'Wait for FTD confirmation before scaling up', cls: 'warn' });
-  } else if (score < 50) {
-    guidance.push({ text: 'Entries allowed at 0.5R–1R per position', cls: '' });
-    guidance.push({ text: 'Focus on early-stage base breakouts (Stage 2)', cls: 'good' });
-    guidance.push({ text: 'Keep total exposure at 2–3 positions maximum', cls: 'warn' });
-    guidance.push({ text: 'Use tighter-than-normal stop losses (5–7%)', cls: 'warn' });
-    if (hasFTD) guidance.push({ text: 'FTD confirmed — increase size gradually on follow-up', cls: 'good' });
-  } else if (score < 60) {
-    guidance.push({ text: 'Normal entries at 1R–2R per position', cls: 'good' });
-    guidance.push({ text: 'Breakouts from proper bases should be actioned', cls: 'good' });
-    guidance.push({ text: 'Gradually build exposure as positions prove themselves', cls: '' });
-    guidance.push({ text: 'Standard stop losses (7–8% from pivot)', cls: '' });
-  } else {
-    guidance.push({ text: 'Full position sizing allowed (2R–3R per trade)', cls: 'good' });
-    guidance.push({ text: 'Breakouts highly likely to succeed — act decisively', cls: 'good' });
-    guidance.push({ text: 'Can hold through normal pullbacks with confidence', cls: 'good' });
-    guidance.push({ text: 'Trail stops but allow room for leaders to run', cls: '' });
+
+  // Read divergence signal from WBD card
+  const wbdStatusEl = document.getElementById('wbd-status');
+  const wbdSignal   = wbdStatusEl ? wbdStatusEl.textContent.trim() : '';
+  const bearDiv     = wbdSignal.includes('Bear');
+  const bullDiv     = wbdSignal.includes('Bull');
+
+  // Read personal exposure
+  const tcEl = document.getElementById('pet-total-capital');
+  const ivEl = document.getElementById('pet-invested');
+  const tc   = tcEl ? parseFloat(tcEl.value || 0) : 0;
+  const iv   = ivEl ? parseFloat(ivEl.value || 0) : 0;
+
+  // Divergence overrides everything
+  if (bearDiv) {
+    guidance.push({ text: '⛔ Bearish divergence active — no new longs today regardless of score', cls: 'bad' });
   }
+
+  if (score < 30) {
+    guidance.push({ text: `Score ${score} — Stand aside. Capital preservation only`, cls: 'bad' });
+    guidance.push({ text: 'Close weakest positions; raise cash above 70%', cls: 'bad' });
+    guidance.push({ text: 'No new entries until score recovers above 35', cls: 'warn' });
+  } else if (score < 40) {
+    guidance.push({ text: `Score ${score} — Pilot mode: max 0.25R per trade, 1–2 positions only`, cls: 'warn' });
+    guidance.push({ text: 'Only stocks with RS > 90 qualify for entry', cls: '' });
+    if (!hasFTD) guidance.push({ text: 'Wait for FTD confirmation before adding any exposure', cls: 'warn' });
+    if (hasFTD)  guidance.push({ text: 'FTD logged ✓ — pilot entries permitted, keep size tight', cls: 'good' });
+  } else if (score < 50) {
+    guidance.push({ text: `Score ${score} — Selective: 0.5–1R per trade, max 3 concurrent positions`, cls: '' });
+    guidance.push({ text: 'Target early-stage Stage 2 bases only; no extended stocks', cls: 'good' });
+    guidance.push({ text: 'Use tight stops 5–7% from pivot; do not give back gains', cls: 'warn' });
+    if (hasFTD) guidance.push({ text: 'FTD confirmed ✓ — scale up gradually as positions prove', cls: 'good' });
+    else        guidance.push({ text: 'No FTD yet — size half until confirmation arrives', cls: 'warn' });
+  } else if (score < 60) {
+    guidance.push({ text: `Score ${score} — Normal: 1–2R per trade, standard stop 7–8% from pivot`, cls: 'good' });
+    guidance.push({ text: 'Act on clean breakouts from flat/cup bases; confirm volume', cls: 'good' });
+    guidance.push({ text: 'Add to winners on follow-through days; trim laggards', cls: '' });
+  } else {
+    guidance.push({ text: `Score ${score} — Aggressive: 2–3R per trade, let leaders run`, cls: 'good' });
+    guidance.push({ text: 'Trail stops; buy pullbacks to 21-EMA in leading stocks', cls: 'good' });
+    guidance.push({ text: 'New breakouts have high follow-through probability — act decisively', cls: 'good' });
+  }
+
+  // MPM-specific guidance
+  if (mpmScore !== null) {
+    if (mpmScore <= -3) {
+      guidance.push({ text: `MPM ${mpmScore} — distribution dominates, reduce all adds until MPM turns positive`, cls: 'bad' });
+    } else if (mpmScore >= 4) {
+      guidance.push({ text: `MPM +${mpmScore} — strong accumulation, institutional backdrop supports entries`, cls: 'good' });
+    }
+  }
+
+  // BSR-specific guidance
+  if (bsrPct !== null && bsrPct < 40) {
+    guidance.push({ text: `BSR ${bsrPct}% — breakouts failing >60% of the time. Skip breakout chasing, wait for BSR > 50%`, cls: 'bad' });
+  } else if (bsrPct !== null && bsrPct >= 65) {
+    guidance.push({ text: `BSR ${bsrPct}% — breakout environment healthy. Setups meeting your criteria should be actioned`, cls: 'good' });
+  }
+
+  if (bullDiv) {
+    guidance.push({ text: '✦ Bullish divergence — breadth improving faster than price; watch for reversal entries', cls: '' });
+  }
+
   el('msem-guidance').innerHTML = guidance.map(g =>
     `<li class="${g.cls}">${g.text}</li>`).join('');
 
@@ -5653,6 +5941,28 @@ function renderMarketSummary() {
   // FTD warning
   if (!hasFTD && score >= 35) {
     risks.push({ color: 'var(--yellow)', text: 'No Follow-Through Day confirmed. Per O\u2019Neil method, new uptrend is <strong>unconfirmed</strong>. Size accordingly.' });
+  }
+
+  // Breadth Divergence signal from WBD card
+  if (bearDiv) {
+    risks.push({ color: 'var(--orange)', text: '<strong>Bearish Breadth Divergence active</strong> — Nifty is rising but Breadth Score is falling. Hidden weakness. Reduce exposure, tighten stops.' });
+  } else if (bullDiv) {
+    risks.push({ color: 'var(--teal)', text: '<strong>Bullish Breadth Divergence active</strong> — Nifty is falling but Breadth Score is rising. Hidden strength. Watch for reversal entry.' });
+  }
+
+  // Personal Exposure gap advisory
+  if (tc > 0 && iv > 0) {
+    const sugInr   = tc * exposure / 100;
+    const gap      = sugInr - iv;
+    const actualPct = (iv / tc) * 100;
+    const diff      = actualPct - exposure;
+    if (diff > 15) {
+      risks.push({ color: 'var(--red)', text: `<strong>Personal Exposure alert</strong>: You are ${Math.round(diff)}% over-deployed vs market-suggested ceiling (${petFmtInr(iv)} invested vs ${petFmtInr(sugInr)} suggested). Reduce positions to manage risk.` });
+    } else if (diff > 5) {
+      risks.push({ color: 'var(--orange)', text: `<strong>Slightly over-deployed</strong>: ${petFmtInr(iv)} invested vs ${petFmtInr(sugInr)} suggested for current conditions. Monitor and trim on weakness.` });
+    } else if (gap > 0 && gap > tc * 0.10) {
+      risks.push({ color: 'var(--lime)', text: `<strong>Exposure headroom: ${petFmtInr(gap)}</strong> available within current market ceiling. New setups meeting your criteria can be considered.` });
+    }
   }
 
   el('msem-risk').innerHTML = risks.map(r =>
@@ -5718,8 +6028,84 @@ function renderMarketSummary() {
 
 
 // ════════════════════════════════════════════════════
-//  RALLY PROBABILITY GAUGE
+//  PERSONAL EXPOSURE TRACKER — capital inputs
 // ════════════════════════════════════════════════════
+function petFmtInr(val) {
+  if (val >= 100000) return '₹' + (val/100000).toFixed(2) + 'L';
+  if (val >= 1000)   return '₹' + (val/1000).toFixed(1) + 'K';
+  return '₹' + Math.round(val);
+}
+function petLoad() {
+  try { return JSON.parse(localStorage.getItem('pet_capital') || '{}'); } catch(e) { return {}; }
+}
+function petSave() {
+  const tc = parseFloat(document.getElementById('pet-total-capital')?.value || 0);
+  const iv = parseFloat(document.getElementById('pet-invested')?.value || 0);
+  localStorage.setItem('pet_capital', JSON.stringify({ totalCapital: tc, invested: iv }));
+  const note = document.getElementById('pet-saved-note');
+  if (note) { note.textContent = '✓ Saved'; setTimeout(() => { note.textContent = ''; }, 2000); }
+  petUpdate();
+}
+function petUpdate() {
+  const tc = parseFloat(document.getElementById('pet-total-capital')?.value || 0) || 0;
+  const iv = parseFloat(document.getElementById('pet-invested')?.value || 0) || 0;
+  // Get suggested exposure% from msem-exp-pct (already computed by renderMarketSummary)
+  const expPctEl = document.getElementById('msem-exp-pct');
+  const expPct = expPctEl ? parseFloat(expPctEl.textContent) : NaN;
+
+  const sugInrEl  = document.getElementById('pet-suggested-inr');
+  const invInrEl  = document.getElementById('pet-invested-inr');
+  const gapInrEl  = document.getElementById('pet-gap-inr');
+  const bannerEl  = document.getElementById('pet-status-banner');
+  if (!sugInrEl) return;
+
+  if (!tc) { sugInrEl.textContent='Enter capital'; invInrEl.textContent='—'; gapInrEl.textContent='—'; if(bannerEl) bannerEl.style.display='none'; return; }
+
+  invInrEl.textContent = petFmtInr(iv);
+
+  if (isNaN(expPct)) { sugInrEl.textContent='—'; gapInrEl.textContent='—'; if(bannerEl) bannerEl.style.display='none'; return; }
+
+  const sugInr = tc * expPct / 100;
+  const gap    = sugInr - iv;
+  sugInrEl.textContent = petFmtInr(sugInr);
+  gapInrEl.textContent = (gap >= 0 ? '+' : '') + petFmtInr(Math.abs(gap));
+  gapInrEl.style.color  = gap >= 0 ? 'var(--lime)' : 'var(--red)';
+
+  if (bannerEl) {
+    bannerEl.style.display = 'block';
+    const actualPct = tc > 0 ? (iv / tc * 100) : 0;
+    const diff = actualPct - expPct;
+    let msg, bg, color;
+    if (diff > 15) {
+      msg = `⚠ Overexposed by ${Math.abs(Math.round(diff))}% — You are deployed ${petFmtInr(iv)} vs suggested ${petFmtInr(sugInr)}. Consider reducing ${petFmtInr(Math.abs(gap))} to align with market conditions.`;
+      bg = 'rgba(248,113,113,.08)'; color = 'var(--red)';
+    } else if (diff > 5) {
+      msg = `↑ Slightly overexposed (${Math.round(diff)}% above suggested). Monitor closely — tighten stops on weaker positions.`;
+      bg = 'rgba(251,146,60,.08)'; color = 'var(--orange)';
+    } else if (diff < -20) {
+      msg = `→ Under-deployed by ${petFmtInr(Math.abs(gap))}. Market environment supports more exposure — consider new setups.`;
+      bg = 'rgba(74,222,128,.08)'; color = 'var(--lime)';
+    } else {
+      msg = `✓ Exposure aligned. ${petFmtInr(iv)} deployed vs ${petFmtInr(sugInr)} suggested (${Math.round(expPct)}%). On track.`;
+      bg = 'rgba(52,211,153,.08)'; color = 'var(--green)';
+    }
+    bannerEl.textContent = msg;
+    bannerEl.style.background = bg;
+    bannerEl.style.color = color;
+    const borderMap = {'var(--red)':'rgba(248,113,113,.25)','var(--orange)':'rgba(251,146,60,.25)','var(--lime)':'rgba(74,222,128,.25)','var(--green)':'rgba(52,211,153,.25)','var(--yellow)':'rgba(250,204,21,.25)'};
+    bannerEl.style.border = '1px solid ' + (borderMap[color] || 'rgba(91,163,245,.25)');
+  }
+}
+function petInit() {
+  const d = petLoad();
+  const tcEl = document.getElementById('pet-total-capital');
+  const ivEl = document.getElementById('pet-invested');
+  if (tcEl && d.totalCapital) tcEl.value = d.totalCapital;
+  if (ivEl && d.invested)    ivEl.value  = d.invested;
+  petUpdate();
+}
+
+
 function renderRPG() {
   // Primary arc is now in status strip (ss-rpg-*)
   // null-safe helper for optional elements
@@ -5891,6 +6277,7 @@ function renderAll() {
   safe(() => renderMarketCycle(),      'renderMarketCycle');
   safe(() => renderRPG(),              'renderRPG');
   safe(() => renderMarketSummary(),    'renderMarketSummary');
+  safe(() => petInit(),               'petInit');
   safe(() => ftdRender(),              'ftdRender');
   safe(() => ddcRender(),              'ddcRender');
   // nhnlRender removed — replaced by new analysis strip cells
@@ -6046,7 +6433,7 @@ async function seedHistoricalData() {
 
 window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal()); bsrRenderChart(); renderA1Sparkline(loadLocal()); },100); });
 // Re-render chart after fonts/layout settle on mobile
-window.addEventListener('load', () => { setTimeout(() => { renderA1Sparkline(loadLocal()); renderChart(loadLocal()); }, 300); });
+window.addEventListener('load', () => { setTimeout(() => { renderA1Sparkline(loadLocal()); renderChart(loadLocal()); rrgRebuildChips(); srtDrawRRG(); }, 300); });
 
 // ResizeObserver — debounced via rAF to prevent "loop" console warnings
 // rAF defers the render until after the browser has finished its layout pass,
@@ -7308,16 +7695,16 @@ const INFO = {
     use: '<b>Above 50%</b> — more stocks making highs than lows = healthy leadership breadth. <b>25–50%</b> — mixed. <b>Below 25%</b> — deteriorating leadership, broad weakness. A falling H/L ratio even as the index holds up = internal distribution, a leading warning signal.'
   },
   'exposure': {
-    title: 'Recommended Market Exposure',
-    what: 'The suggested percentage of your ₹5L trading capital to have deployed in active positions at any given time, adjusted dynamically to market conditions.',
-    how: '<b>Base</b> from Breadth Score (0–10% → 75–87% in steps). Then: <b>MPM Pressure</b> ±4–8%, <b>Distribution Days</b> −5 to −10%, <b>FTD confirmed</b> +5%. Final value clamped to 0–100%. Rupee amount = Exposure% × ₹5,00,000.',
-    use: 'This is your capital allocation ceiling — never exceed it. In Correction: ₹0–50K deployed. Recovery: ₹50K–1.25L. Expansion: ₹1.25L–2.5L. Healthy Bull: up to ₹5L fully deployed. Adjust individual trade size within this ceiling using your 1% risk rule.'
+    title: 'Personal Exposure Tracker — Market-Adjusted Capital',
+    what: 'Calculates the exact ₹ amount you should have deployed in active positions given current market conditions. Enter your total capital and current invested amount — the tracker shows your suggested ceiling in rupees, your actual deployment, and whether you are over- or under-exposed vs what the market supports.',
+    how: '<b>Suggested Exposure%</b> is computed from: Breadth Score (base 0–87%), MPM Pressure (±4–8%), Distribution Days (−5 to −10%), FTD status (+5%). Suggested ₹ = Exposure% × Your Capital. Gap = Suggested ₹ − Currently Invested.',
+    use: 'If gap is positive → you have headroom to deploy. If gap is negative → you are overexposed, reduce before adding new positions. The status banner in the card provides direct contextual advice. This value also feeds directly into the Risk Advisory section of Market Summary — any overexposure triggers an automatic alert there.'
   },
   'market-summary': {
     title: 'Market Summary & Trading Guidance',
-    what: 'A rule-based natural language synthesis of all dashboard signals into plain-English guidance — market summary, actionable trading rules, and risk advisory.',
-    how: 'The engine reads Breadth Score, Momentum, Pressure, Distribution Days, FTD status, and H/L Ratio. It applies a decision tree to generate: <b>Market Summary</b> (current phase narrative), <b>Trading Guidance</b> (specific rules for today), and <b>Risk Advisory</b> (what to watch and avoid).',
-    use: 'Read this card every session morning in under 30 seconds. It tells you exactly what posture to take today. If the guidance conflicts with your instinct, trust the guidance — it\'s driven by the same O\'Neil / Minervini rules you follow anyway, applied mechanically without emotion.'
+    what: 'A rule-based plain-English synthesis of <b>all</b> dashboard signals into one unified morning briefing — covering market phase, trading rules for today, and risk warnings. Now integrates Breadth Divergence (WBD), Personal Exposure gap, Sector Heatmap trend, and FTD status for a complete picture.',
+    how: 'The engine reads: Breadth Score, Momentum, MPM Pressure, Distribution Days, FTD status, H/L Ratio, Breadth Divergence (from WBD card), and your Personal Exposure gap (from Exposure Tracker). It applies a multi-signal decision tree to generate three sections: <b>Market Summary</b> (phase narrative + MPM + divergence context), <b>Trading Guidance</b> (size rules, divergence actions), <b>Risk Advisory</b> (all red flags in one place).',
+    use: 'Read this card every session morning in under 60 seconds. It tells you exactly what posture to take today. Key integration points: if Breadth Divergence is Bear → guidance automatically adds a no-new-longs rule. If you are overexposed vs the exposure ceiling → Risk Advisory alerts you. If sector heatmap shows broad rotation out → guidance reflects that. Trust this over your instincts on high-conviction days — it applies O\'Neil / Minervini rules mechanically without emotion.'
   },
   'sector-rotation': {
     title: 'Sector Rotation Tracker',
@@ -7372,6 +7759,31 @@ const INFO = {
     how: 'From your MPM log: counts Accumulation, Distribution and Neutral days in the last 10 sessions. Net = Acc − Dist. The mini bar chart shows the day-by-day pattern (teal=acc, red=dist, grey=neutral).',
     use: 'Net ≥+2 = Institutions accumulating — safe to hold and add. Net 0 to −1 = Neutral — hold, no new adds. Net ≤−2 = Institutions distributing — tighten stops, reduce exposure.'
   },
+  'snapshot': {
+    title: 'Detailed Metrics Snapshot',
+    what: 'A compact table showing every key breadth metric for the latest session and previous session side-by-side, with the 10-day trend sparkline, direction arrow, and a signal label. Covers all 7 indicators: EMA20%, SMA50%, SMA200%, Advance/Decline ratio, H/L Ratio, Score, and Momentum.',
+    how: 'Data is pulled from your saved EOD entries. The Change column = Latest − Prev. The 10-Day Trend sparkline is a mini line chart of the last 10 values. Direction = ↑ if improving, ↓ if deteriorating. Signal labels follow the same thresholds used in the Analysis Strip.',
+    use: 'Use this for a quick cross-check when a signal in the status strip surprises you. If Score says Expansion but SMA200% is still low, breadth is improving on short-term MAs only — be selective. If EMA20% and SMA50% are both rising but SMA200% is lagging, the market is recovering from a correction but longer-term structure is not yet repaired. Expand this card only when you want deeper context — the Analysis Strip covers daily use.'
+  },
+  'sector-heatmap': {
+    title: 'Sector Leadership Heatmap',
+    what: 'A weekly colour-coded grid showing which NSE sectors are outperforming or underperforming Nifty 50. Green = sector beat the index that week. Red = sector lagged. Reveals which sectors are leading and which are rotating out.',
+    how: 'Each row is a sector. Each column is one week, newest on the right. Colour intensity reflects the degree of outperformance/underperformance. Enter weekly sector close prices in the Control Panel → Sectors tab.',
+    use: 'Your single fastest sector rotation read. Consistently green rows = institutional money is flowing into that sector — prioritise stocks from those sectors for breakout entries. Consecutive red rows = distribution underway in that sector — avoid new longs regardless of individual stock setup quality. Use alongside the RRG for confirmation.'
+  },
+  'personal-exposure': {
+    title: 'Personal Exposure Tracker',
+    what: 'Translates the dashboard\'s market-environment exposure percentage into an actual ₹ amount against your real trading capital. Tells you exactly how much money should be deployed right now — and whether you are over- or under-invested vs what current conditions justify.',
+    how: 'Enter your total trading capital and current invested amount. The tracker computes the market-suggested ₹ ceiling (Exposure% × Total Capital), compares it to your actual invested amount, and flags whether you are aligned, overexposed, or have headroom to deploy.',
+    use: 'Check this every morning before placing orders. If you are overexposed, reduce before adding new positions. If you have headroom and the market score is rising, that gap = new setup budget. Never use this as a reason to force-deploy — headroom is an upper limit, not a target.'
+  },
+  'wbd-alert': {
+    title: 'Weekly Breadth Divergence Alert',
+    what: 'Detects the most dangerous (and most rewarding) early warning in market analysis: when price and breadth move in opposite directions. A Bear Divergence (price up, breadth down) often precedes corrections. A Bull Divergence (price down, breadth up) often precedes recoveries.',
+    how: 'Compares Nifty 50 price direction and Breadth Score direction over the last 5 trading sessions. Four states: <b style="color:var(--lime)">Confirmed ↑</b> (both up), <b style="color:var(--red)">Confirmed ↓</b> (both down), <b style="color:var(--orange)">Bear Diverge ⚠</b> (price up but breadth falling), <b style="color:var(--teal)">Bull Diverge ✦</b> (price down but breadth improving).',
+    use: '<b>Bear Diverge</b> → Reduce exposure, tighten stop losses, avoid new entries even if price looks bullish. Smart money is not participating. <b>Bull Diverge</b> → Watch for reversal — accumulate pilot positions in strongest RS stocks. <b>Confirmed ↑</b> → Green light, proceed per your zone guidance. This card directly feeds the Risk Advisory in Market Summary — any divergence triggers an automatic alert there too.'
+  },
+
   'breadth-expansion': {
     title: 'Breadth Expansion Rate',
     what: 'Measures how fast breadth is improving or deteriorating — the velocity of change in the Breadth Score over the last 5 sessions. A market can have the same score two weeks apart but the rate of change tells a completely different story.',
