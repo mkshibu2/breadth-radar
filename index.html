@@ -63,7 +63,35 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
 .src-btn:hover{border-color:var(--accent);background:rgba(91,163,245,.10);}
 .src-btn .dot{width:4px;height:4px;border-radius:50%;background:var(--accent);}
 
-/* ── SETUP PANEL ─────────────────────────────────────────── */
+/* ── DHAN INTEGRATION ─────────────────────────────── */
+.dhan-ltp-up{color:var(--lime)!important;transition:color .3s;}
+.dhan-ltp-dn{color:var(--red)!important;transition:color .3s;}
+.dhan-quick-trade{font-size:9px;padding:2px 7px;background:rgba(45,212,191,.1);color:var(--teal);border:1px solid rgba(45,212,191,.25);border-radius:3px;cursor:pointer;white-space:nowrap;}
+.dhan-quick-trade:hover{background:rgba(45,212,191,.2);}
+.dhan-wl-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(39,52,71,.3);}
+.dhan-wl-row:last-child{border-bottom:none;}
+.dhan-auto-dot{width:7px;height:7px;border-radius:50%;background:var(--dim);display:inline-block;margin-right:4px;}
+.dhan-auto-dot.live{background:var(--lime);box-shadow:0 0 5px var(--lime);animation:dhan-pulse 2s infinite;}
+@keyframes dhan-pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.dhan-sub-tab{background:none;border:none;border-bottom:2px solid transparent;color:var(--sub);font-size:11px;font-weight:600;padding:6px 14px;cursor:pointer;transition:all .15s;font-family:var(--body);}
+.dhan-sub-tab:hover{color:var(--text);}
+.dhan-sub-tab.active{color:var(--teal);border-bottom-color:var(--teal);}
+.dhan-section{display:block;}
+.dhan-tbl{width:100%;border-collapse:collapse;}
+.dhan-tbl th{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);padding:4px 8px;text-align:left;border-bottom:1px solid var(--border);}
+.dhan-tbl td{font-size:11px;padding:6px 8px;border-bottom:1px solid rgba(39,52,71,.3);color:var(--text);vertical-align:middle;}
+.dhan-tbl tr:last-child td{border-bottom:none;}
+.dhan-tbl tr:hover td{background:rgba(91,163,245,.04);}
+.dhan-pos{color:var(--lime);font-weight:600;}
+.dhan-neg{color:var(--red);font-weight:600;}
+.dhan-badge{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:2px;text-transform:uppercase;}
+.dhan-badge.buy{background:rgba(74,222,128,.15);color:var(--lime);}
+.dhan-badge.sell{background:rgba(248,113,113,.15);color:var(--red);}
+.dhan-badge.open{background:rgba(91,163,245,.12);color:var(--accent);}
+.dhan-badge.traded{background:rgba(74,222,128,.12);color:var(--green);}
+.dhan-badge.rejected{background:rgba(248,113,113,.12);color:var(--red);}
+.dhan-badge.transit{background:rgba(251,191,36,.12);color:var(--yellow);}
+
 .setup-panel{background:rgba(91,163,245,.05);border:1px solid rgba(91,163,245,.18);border-radius:6px;padding:12px 16px;margin:10px 16px;display:none;}
 .setup-panel.visible{display:block;}
 .setup-title{font-size:12px;font-weight:600;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:7px;}
@@ -89,7 +117,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
 
 /* ── TOP STATUS STRIP — single full-width bar, 6 cells ── */
 .status-strip{display:grid;grid-template-columns:110px 155px 1fr 120px 120px 120px 110px 125px 155px;background:var(--bg2);border:1px solid var(--border);border-radius:6px 6px 0 0;overflow:hidden;}
-.analysis-strip{display:grid;grid-template-columns:minmax(160px,1fr) 175px 145px 155px 135px 135px 155px 140px 150px;background:var(--bg3);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;overflow-x:auto;overflow-y:hidden;margin-bottom:0;}
+.analysis-strip{display:grid;grid-template-columns:minmax(160px,1fr) 175px 145px 155px 135px 135px 155px 140px 150px 155px;background:var(--bg3);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;overflow-x:auto;overflow-y:hidden;margin-bottom:0;}
 .as-cell{padding:12px 16px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:flex-start;position:relative;min-width:0;}
 .as-cell:last-child{border-right:none;}
 .as-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--sub);margin-bottom:4px;}
@@ -1393,6 +1421,18 @@ body.guest-mode #mpm-module-card { display:none !important; }
       <div style="font-size:10px;color:var(--sub);margin-top:4px" id="as-exp-range"></div>
       <div style="font-size:9px;color:var(--dim);margin-top:2px;line-height:1.4" id="as-exp-note"></div>
       <button class="info-btn" onclick="showInfoTip('exposure',this)" title="About this indicator">i</button>
+    </div>
+
+    <!-- A10: Dhan Portfolio P&L -->
+    <div class="as-cell" id="dhan-hero-card" style="border-top:2px solid var(--teal);border-left:1px solid var(--border);border-right:none;cursor:pointer;display:none;min-width:150px" onclick="openControlPanel('dhan')" title="Click to open Dhan panel">
+      <div class="as-lbl" style="color:var(--teal)">🏦 Portfolio</div>
+      <div style="font-family:var(--disp);font-size:26px;font-weight:800;line-height:1;transition:color .4s" id="dhan-hero-pnl">—</div>
+      <div style="font-size:11px;font-weight:600;margin-top:3px" id="dhan-hero-pnlpct">P&amp;L</div>
+      <div style="font-size:10px;color:var(--sub);margin-top:2px" id="dhan-hero-cur">—</div>
+      <div style="margin-top:5px;display:flex;align-items:center;gap:4px">
+        <span class="dhan-auto-dot" id="dhan-hero-dot"></span>
+        <span id="dhan-hero-status" style="font-size:9px;color:var(--dim)">Not connected</span>
+      </div>
     </div>
 
   </div>
@@ -4831,6 +4871,932 @@ function renderA1Sparkline(records) {
   });
 })();
 
+
+// ══════════════════════════════════════════════════════════════
+//  DHAN INTEGRATION — Portfolio & Trading
+//  Uses DhanHQ v2 REST API via local proxy on http://localhost:9099
+//  (Dhan API does not support direct browser CORS requests)
+// ══════════════════════════════════════════════════════════════
+
+const DHAN_PROXY = 'http://localhost:9099'; // local proxy target
+const DHAN_LS_CRED = 'nse_dhan_cred_v1';
+const DHAN_LS_SIDE = 'dhan_order_side';
+const DHAN_LS_MODE = 'nse_dhan_mode_v1';       // 'token' | 'apikey'
+const DHAN_LS_APIKEY = 'nse_dhan_apikey_v1';   // { clientId, key, secret, cachedToken, tokenTs }
+
+// ── Mode switcher ────────────────────────────────────────────
+function dhanSwitchMode(mode) {
+  localStorage.setItem(DHAN_LS_MODE, mode);
+  document.getElementById('dhan-panel-token').style.display  = mode === 'token'  ? 'block' : 'none';
+  document.getElementById('dhan-panel-apikey').style.display = mode === 'apikey' ? 'block' : 'none';
+  const btnToken  = document.getElementById('dhan-mode-token');
+  const btnApiKey = document.getElementById('dhan-mode-apikey');
+  if (mode === 'token') {
+    btnToken.style.background  = 'var(--teal)'; btnToken.style.color  = '#0e1420';
+    btnApiKey.style.background = 'transparent'; btnApiKey.style.color = 'var(--sub)';
+  } else {
+    btnApiKey.style.background = 'var(--teal)'; btnApiKey.style.color = '#0e1420';
+    btnToken.style.background  = 'transparent'; btnToken.style.color  = 'var(--sub)';
+    // Restore saved API key fields
+    const saved = dhanGetApiKeyCreds();
+    if (saved) {
+      const el = id => document.getElementById(id);
+      if (el('dhan-apikey-clientid') && !el('dhan-apikey-clientid').value) el('dhan-apikey-clientid').value = saved.clientId || '';
+      if (el('dhan-apikey-key')      && !el('dhan-apikey-key').value)      el('dhan-apikey-key').value      = saved.key      || '';
+      if (el('dhan-apikey-secret')   && !el('dhan-apikey-secret').value)   el('dhan-apikey-secret').value   = saved.secret   || '';
+      dhanUpdateTokenAge(saved);
+    }
+  }
+}
+
+function dhanGetMode() {
+  return localStorage.getItem(DHAN_LS_MODE) || 'token';
+}
+
+// ── Token-mode credential helpers ────────────────────────────
+function dhanSaveCreds(clientId, token) {
+  localStorage.setItem(DHAN_LS_CRED, JSON.stringify({ clientId, token }));
+}
+function dhanGetCreds() {
+  try { return JSON.parse(localStorage.getItem(DHAN_LS_CRED) || 'null'); } catch { return null; }
+}
+
+// ── API Key mode helpers ──────────────────────────────────────
+function dhanSaveApiKeyCreds(clientId, key, secret, cachedToken, tokenTs) {
+  localStorage.setItem(DHAN_LS_APIKEY, JSON.stringify({ clientId, key, secret, cachedToken: cachedToken||'', tokenTs: tokenTs||0 }));
+}
+function dhanGetApiKeyCreds() {
+  try { return JSON.parse(localStorage.getItem(DHAN_LS_APIKEY) || 'null'); } catch { return null; }
+}
+
+function dhanUpdateTokenAge(saved) {
+  const el = document.getElementById('dhan-token-age');
+  if (!el) return;
+  if (!saved || !saved.tokenTs) { el.textContent = 'Not generated'; el.style.color = 'var(--dim)'; return; }
+  const ageH = ((Date.now() - saved.tokenTs) / 3600000).toFixed(1);
+  const isStale = ageH >= 23;
+  el.textContent = isStale ? `Stale (${ageH}h old) — will refresh on Connect` : `Fresh (${ageH}h old)`;
+  el.style.color = isStale ? 'var(--yellow)' : 'var(--lime)';
+}
+
+// ── API Key mode: Step 1 — generate consent via proxy, then open browser ─
+async function dhanApiKeyOpenLogin() {
+  const clientId = (document.getElementById('dhan-apikey-clientid').value || '').trim();
+  const key      = (document.getElementById('dhan-apikey-key').value      || '').trim();
+  const secret   = (document.getElementById('dhan-apikey-secret').value   || '').trim();
+  if (!clientId || !key || !secret) { dhanMsg('⚠ Enter Client ID, API Key, and API Secret first.', 'var(--orange)'); return; }
+  dhanSaveApiKeyCreds(clientId, key, secret, '', 0);
+  dhanMsg('🔄 Step 1: Generating consent session via proxy…', 'var(--yellow)');
+  try {
+    const res = await fetch(`${DHAN_PROXY}/generate-consent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId, apiKey: key, apiSecret: secret })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const consentAppId = data.consentAppId;
+    if (!consentAppId) throw new Error('No consentAppId returned — check your API Key & Secret.');
+    const loginUrl = `https://auth.dhan.co/login/consentApp-login?consentAppId=${consentAppId}`;
+    dhanMsg(`✅ Step 1 done! Opening Dhan login… After login, copy the tokenId from the redirect URL and paste it in Step 2 below.`, 'var(--teal)');
+    window.open(loginUrl, '_blank');
+  } catch(e) {
+    dhanMsg('✗ Step 1 failed: ' + e.message + ' — is the proxy running? (node dhan_proxy.js)', 'var(--red)');
+  }
+}
+
+// ── API Key mode: Step 3 — consume tokenId → get access token ─
+async function dhanApiKeyConsumeToken() {
+  const tokenId = (document.getElementById('dhan-apikey-tokenid').value || '').trim();
+  const saved   = dhanGetApiKeyCreds();
+  if (!tokenId)  { dhanMsg('⚠ Paste the tokenId from the redirect URL.', 'var(--orange)'); return; }
+  if (!saved || !saved.key || !saved.secret) { dhanMsg('⚠ Enter API Key & Secret first and click Step 1.', 'var(--orange)'); return; }
+  dhanMsg('🔄 Exchanging tokenId for access token via proxy…', 'var(--yellow)');
+  try {
+    const res = await fetch(`${DHAN_PROXY}/consume-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tokenId, apiKey: saved.key, apiSecret: saved.secret })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || err.errorMessage || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const accessToken = data.accessToken || data.access_token || data.token;
+    if (!accessToken) throw new Error('No access token in response — check tokenId and credentials.');
+    dhanSaveApiKeyCreds(saved.clientId, saved.key, saved.secret, accessToken, Date.now());
+    dhanUpdateTokenAge({ tokenTs: Date.now() });
+    dhanMsg('✅ Token generated! Connecting…', 'var(--teal)');
+    await dhanFetchAll();
+    dhanMsg('✅ Connected via API Key!', 'var(--teal)');
+    dhanUpdateCredSummary();
+  } catch(e) {
+    dhanMsg('✗ ' + e.message, 'var(--red)');
+  }
+}
+
+// ── Generate access token via proxy (legacy, not used in API Key flow) ─
+async function dhanGenerateToken(clientId, apiKey, secret) {
+  throw new Error('Silent token generation not supported by Dhan. Use the 3-step login flow or Access Token mode.');
+}
+
+// ── Unified: get active access token ────────────────────────
+async function dhanGetActiveToken() {
+  if (dhanGetMode() === 'apikey') {
+    const saved = dhanGetApiKeyCreds();
+    if (!saved || !saved.key || !saved.secret) throw new Error('API Key credentials not saved.');
+    // Check if cached token is still fresh (< 23h old)
+    const ageH = saved.tokenTs ? (Date.now() - saved.tokenTs) / 3600000 : 99;
+    if (saved.cachedToken && ageH < 23) return saved.cachedToken;
+    // Refresh token
+    dhanMsg('🔄 Refreshing access token via API Key…', 'var(--yellow)');
+    const newToken = await dhanGenerateToken(saved.clientId, saved.key, saved.secret);
+    dhanSaveApiKeyCreds(saved.clientId, saved.key, saved.secret, newToken, Date.now());
+    dhanUpdateTokenAge({ tokenTs: Date.now() });
+    return newToken;
+  } else {
+    const creds = dhanGetCreds();
+    if (!creds || !creds.token) throw new Error('No access token. Enter credentials and connect.');
+    return creds.token;
+  }
+}
+
+function dhanGetActiveClientId() {
+  if (dhanGetMode() === 'apikey') {
+    const saved = dhanGetApiKeyCreds();
+    return saved ? saved.clientId : null;
+  } else {
+    const creds = dhanGetCreds();
+    return creds ? creds.clientId : null;
+  }
+}
+
+function dhanClearCreds() {
+  localStorage.removeItem(DHAN_LS_CRED);
+  localStorage.removeItem(DHAN_LS_APIKEY);
+  ['dhan-client-id','dhan-access-token','dhan-apikey-clientid','dhan-apikey-key','dhan-apikey-secret'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const ageEl = document.getElementById('dhan-token-age');
+  if (ageEl) { ageEl.textContent = 'Not generated'; ageEl.style.color = 'var(--dim)'; }
+  dhanSetStatus(false);
+  dhanMsg('Credentials cleared.', 'var(--dim)');
+}
+
+function dhanDisconnect() {
+  dhanAutoRefreshStop();
+  if (_dhanWlTimer) { clearInterval(_dhanWlTimer); _dhanWlTimer = null; }
+  dhanSetStatus(false);
+  const heroCard = document.getElementById('dhan-hero-card');
+  if (heroCard) heroCard.style.display = 'none';
+  dhanMsg('Disconnected.', 'var(--dim)');
+}
+function dhanSetStatus(ok, label) {
+  const dot   = document.getElementById('dhan-status-dot');
+  const lbl   = document.getElementById('dhan-status-label');
+  const bar   = document.getElementById('dhan-status-bar');
+  const main  = document.getElementById('dhan-main');
+  if (!dot) return;
+  if (ok) {
+    dot.style.background = 'var(--green)';
+    dot.style.boxShadow  = '0 0 5px var(--green)';
+    lbl.textContent = label || 'Connected';
+    bar.style.display = 'block';
+    main.style.display = 'block';
+  } else {
+    dot.style.background = 'var(--dim)';
+    dot.style.boxShadow  = 'none';
+    lbl.textContent = 'Not connected';
+    bar.style.display = 'none';
+    if (main) main.style.display = 'none';
+  }
+}
+
+function dhanMsg(msg, color) {
+  const el = document.getElementById('dhan-connect-msg');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = color || 'var(--sub)';
+}
+
+// ── Core fetch wrapper ────────────────────────────────────────
+async function dhanFetch(path, method, body) {
+  const token    = await dhanGetActiveToken();
+  const clientId = dhanGetActiveClientId();
+  if (!clientId) throw new Error('Client ID not found — open credentials and reconnect.');
+  const clientIdStr = String(clientId).trim();
+
+  // Auto-inject dhanClientId into every POST/PUT body — must be a string per Dhan API
+  let finalBody = body;
+  if (body && (method === 'POST' || method === 'PUT')) {
+    finalBody = { dhanClientId: clientIdStr, ...body };
+  }
+
+  const opts = {
+    method: method || 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'access-token': token,
+      'client-id':    clientIdStr,
+    }
+  };
+  if (finalBody) opts.body = JSON.stringify(finalBody);
+  // Try direct first, fallback to proxy
+  const urls = [
+    `https://api.dhan.co/v2${path}`,
+    `${DHAN_PROXY}${path}`
+  ];
+  let lastErr;
+  for (const url of urls) {
+    try {
+      const r = await fetch(url, opts);
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        throw new Error(err.errorMessage || err.error || `HTTP ${r.status}`);
+      }
+      return await r.json();
+    } catch(e) {
+      lastErr = e;
+      if (url === urls[0] && (e.name === 'TypeError' || e.message.includes('Failed to fetch') || e.message.includes('CORS'))) {
+        continue; // retry via proxy
+      }
+      throw e;
+    }
+  }
+  throw lastErr;
+}
+
+// ── Connect ───────────────────────────────────────────────────
+async function dhanConnect() {
+  const mode = dhanGetMode();
+  if (mode === 'apikey') {
+    const clientId = (document.getElementById('dhan-apikey-clientid').value || '').trim();
+    const key      = (document.getElementById('dhan-apikey-key').value      || '').trim();
+    const secret   = (document.getElementById('dhan-apikey-secret').value   || '').trim();
+    if (!clientId || !key || !secret) { dhanMsg('⚠ Enter Client ID, API Key and API Secret.', 'var(--orange)'); return; }
+    const saved = dhanGetApiKeyCreds();
+    if (!saved || !saved.cachedToken) {
+      dhanMsg('⚠ No token yet — complete Steps 1→3 above to generate one first.', 'var(--orange)');
+      return;
+    }
+    dhanMsg('🔄 Connecting with saved token…', 'var(--yellow)');
+    dhanSaveApiKeyCreds(clientId, key, secret, saved.cachedToken, saved.tokenTs);
+    try {
+      await dhanFetchAll();
+      dhanMsg('✅ Connected via API Key!', 'var(--teal)');
+      dhanUpdateCredSummary();
+    } catch(e) {
+      dhanMsg('✗ ' + e.message + ' — token may be expired. Complete Steps 1→3 to refresh.', 'var(--red)');
+      dhanSetStatus(false);
+    }
+  } else {
+    const clientId = (document.getElementById('dhan-client-id').value    || '').trim();
+    const token    = (document.getElementById('dhan-access-token').value  || '').trim();
+    if (!clientId || !token) { dhanMsg('⚠ Enter both Client ID and Access Token.', 'var(--orange)'); return; }
+    dhanMsg('🔄 Connecting…', 'var(--yellow)');
+    dhanSaveCreds(clientId, token);
+    try {
+      await dhanFetchAll();
+      dhanMsg('✅ Connected to Dhan!', 'var(--teal)');
+      dhanUpdateCredSummary();
+    } catch(e) {
+      dhanMsg('✗ ' + e.message, 'var(--red)');
+      dhanSetStatus(false);
+    }
+  }
+}
+
+// ── Fetch all data ────────────────────────────────────────────
+async function dhanFetchAll() {
+  const btn = document.getElementById('dhan-refresh-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+  try {
+    await Promise.all([dhanFetchHoldings(), dhanFetchPositions(), dhanFetchOrders(), dhanFetchFunds()]);
+    dhanSetStatus(true, 'Connected · ' + new Date().toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'}));
+    dhanAutoRefreshStart(60000); // auto-refresh every 60s
+  } catch(e) {
+    dhanMsg('✗ ' + e.message, 'var(--red)');
+    dhanSetStatus(false);
+    throw e;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh'; }
+  }
+}
+
+// ── Holdings ──────────────────────────────────────────────────
+async function dhanFetchHoldings() {
+  const data = await dhanFetch('/holdings');
+  const holdings = Array.isArray(data) ? data : (data.data || []);
+  let totalInv = 0, totalCur = 0;
+  const rows = holdings.map(h => {
+    const inv = (h.avgCostPrice || h.averageTradedPrice || 0) * (h.totalQty || h.quantity || 0);
+    const cur = (h.lastTradedPrice || h.ltp || 0) * (h.totalQty || h.quantity || 0);
+    const pnl = cur - inv;
+    const pct = inv > 0 ? (pnl / inv * 100).toFixed(2) : 0;
+    totalInv += inv; totalCur += cur;
+    const clr = pnl >= 0 ? 'var(--lime)' : 'var(--red)';
+    const sym = h.tradingSymbol || h.symbol || '—';
+    const secId = h.securityId || h.isin || '';
+    return `<tr>
+      <td style="font-weight:700">${sym}</td>
+      <td style="color:var(--sub)">${h.totalQty || h.quantity || 0}</td>
+      <td style="font-family:var(--mono)">₹${fmtNum(h.avgCostPrice || h.averageTradedPrice)}</td>
+      <td style="font-family:var(--mono)">₹${fmtNum(h.lastTradedPrice || h.ltp)}</td>
+      <td style="font-family:var(--mono);color:${clr}">${pnl >= 0 ? '+' : ''}₹${fmtNum(Math.abs(pnl))} <span style="font-size:9px">(${pnl>=0?'+':''}${pct}%)</span></td>
+      <td><button class="dhan-quick-trade" onclick="dhanQuickTrade('${secId||sym}','SELL','${sym}',${h.lastTradedPrice||0})">Sell</button></td>
+    </tr>`;
+  });
+  const totalPnl = totalCur - totalInv;
+  const totalPct = totalInv > 0 ? (totalPnl / totalInv * 100).toFixed(2) : 0;
+  const pnlColor = totalPnl >= 0 ? 'var(--lime)' : 'var(--red)';
+  document.getElementById('dhan-inv-val').textContent = '₹' + fmtNum(totalInv);
+  document.getElementById('dhan-cur-val').textContent = '₹' + fmtNum(totalCur);
+  document.getElementById('dhan-pnl-val').textContent = (totalPnl >= 0 ? '+' : '') + '₹' + fmtNum(Math.abs(totalPnl));
+  document.getElementById('dhan-pnl-val').style.color = pnlColor;
+  document.getElementById('dhan-pnl-pct').textContent = (totalPnl >= 0 ? '+' : '') + totalPct + '%';
+  document.getElementById('dhan-pnl-pct').style.color = pnlColor;
+  // Update hero card
+  const heroCard = document.getElementById('dhan-hero-card');
+  if (heroCard) {
+    heroCard.style.display = 'flex';
+    const pnlStr = (totalPnl >= 0 ? '+' : '') + '₹' + fmtNum(Math.abs(totalPnl));
+    const pctStr = (totalPnl >= 0 ? '+' : '') + totalPct + '%';
+    document.getElementById('dhan-hero-pnl').textContent    = pnlStr;
+    document.getElementById('dhan-hero-pnl').style.color    = pnlColor;
+    document.getElementById('dhan-hero-pnlpct').textContent = pctStr + '  P&L';
+    document.getElementById('dhan-hero-pnlpct').style.color = pnlColor;
+    document.getElementById('dhan-hero-cur').textContent    = '₹' + fmtNum(totalCur) + ' current';
+    document.getElementById('dhan-hero-dot').classList.add('live');
+    document.getElementById('dhan-hero-status').textContent = holdings.length + ' holdings';
+  }
+  const tbody = rows.length
+    ? `<table class="dhan-tbl"><thead><tr><th>Symbol</th><th>Qty</th><th>Avg Cost</th><th>LTP</th><th>P&L</th><th></th></tr></thead><tbody>${rows.join('')}</tbody></table>`
+    : '<div style="color:var(--dim);text-align:center;padding:20px">No holdings found</div>';
+  document.getElementById('dhan-holdings-table').innerHTML = tbody;
+}
+
+// ── Positions ─────────────────────────────────────────────────
+async function dhanFetchPositions() {
+  const data = await dhanFetch('/positions');
+  const positions = Array.isArray(data) ? data : (data.data || []);
+  let dayPnl = 0, realised = 0;
+  const rows = positions.map(p => {
+    const pnl = p.unrealizedProfit || p.unrealisedProfit || 0;
+    const clr = pnl >= 0 ? 'var(--lime)' : 'var(--red)';
+    dayPnl += pnl;
+    realised += (p.realizedProfit || p.realisedProfit || 0);
+    const side = (p.positionType || p.netQty > 0 ? 'LONG' : 'SHORT');
+    return `<tr>
+      <td style="font-weight:700">${p.tradingSymbol || p.symbol || '—'}</td>
+      <td><span class="dhan-badge ${p.netQty >= 0 ? 'buy' : 'sell'}">${side}</span></td>
+      <td style="font-family:var(--mono)">${Math.abs(p.netQty || 0)}</td>
+      <td style="font-family:var(--mono)">₹${fmtNum(p.buyAvg || p.averageBuyPrice)}</td>
+      <td style="font-family:var(--mono)">₹${fmtNum(p.lastTradedPrice || p.ltp)}</td>
+      <td style="font-family:var(--mono);color:${clr}">${pnl >= 0 ? '+' : ''}₹${fmtNum(Math.abs(pnl))}</td>
+    </tr>`;
+  });
+  const summaryHtml = `
+    <div style="background:var(--bg3);border-radius:4px;padding:8px 10px">
+      <div style="font-size:9px;color:var(--dim);margin-bottom:2px">DAY P&L</div>
+      <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:${dayPnl>=0?'var(--lime)':'var(--red)'}">${dayPnl>=0?'+':''}₹${fmtNum(Math.abs(dayPnl))}</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:4px;padding:8px 10px">
+      <div style="font-size:9px;color:var(--dim);margin-bottom:2px">REALISED P&L</div>
+      <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:${realised>=0?'var(--lime)':'var(--red)'}">${realised>=0?'+':''}₹${fmtNum(Math.abs(realised))}</div>
+    </div>`;
+  document.getElementById('dhan-pos-summary').innerHTML = summaryHtml;
+  const tbody = rows.length
+    ? `<table class="dhan-tbl"><thead><tr><th>Symbol</th><th>Side</th><th>Qty</th><th>Avg Buy</th><th>LTP</th><th>Unreal. P&L</th></tr></thead><tbody>${rows.join('')}</tbody></table>`
+    : '<div style="color:var(--dim);text-align:center;padding:20px">No open positions</div>';
+  document.getElementById('dhan-positions-table').innerHTML = tbody;
+}
+
+// ── Orders ────────────────────────────────────────────────────
+async function dhanFetchOrders() {
+  const data = await dhanFetch('/orders');
+  const orders = Array.isArray(data) ? data : (data.data || []);
+  const statusBadge = s => {
+    const m = { TRADED:'traded', TRANSIT:'transit', REJECTED:'rejected', PENDING:'open', OPEN:'open', CANCELLED:'rejected' };
+    const k = (s||'').toUpperCase();
+    return `<span class="dhan-badge ${m[k]||'open'}">${s||'—'}</span>`;
+  };
+  const rows = [...orders].reverse().map(o => `<tr>
+    <td style="font-size:9px;color:var(--dim)">${(o.createTime||o.orderTime||'').substring(0,16)}</td>
+    <td style="font-weight:700">${o.tradingSymbol || o.symbol || '—'}</td>
+    <td><span class="dhan-badge ${(o.transactionType||'').toLowerCase()==='buy'?'buy':'sell'}">${o.transactionType||'—'}</span></td>
+    <td style="font-family:var(--mono)">${o.quantity||0} <span style="font-size:9px;color:var(--dim)">/ ${o.filledQty||0} filled</span></td>
+    <td style="font-family:var(--mono)">₹${fmtNum(o.price || o.limitPrice)}</td>
+    <td style="color:var(--sub);font-size:10px">${o.orderType||'—'}</td>
+    <td>${statusBadge(o.orderStatus || o.status)}</td>
+    ${(o.orderStatus||o.status||'').toUpperCase() === 'TRANSIT' || (o.orderStatus||o.status||'').toUpperCase() === 'OPEN'
+      ? `<td><button onclick="dhanCancelOrder('${o.orderId}')" style="font-size:9px;padding:2px 6px;background:rgba(248,113,113,.15);color:var(--red);border:1px solid rgba(248,113,113,.25);border-radius:2px;cursor:pointer">Cancel</button></td>`
+      : '<td></td>'}
+  </tr>`);
+  const tbody = rows.length
+    ? `<table class="dhan-tbl"><thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Price</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody>${rows.join('')}</tbody></table>`
+    : '<div style="color:var(--dim);text-align:center;padding:20px">No orders today</div>';
+  document.getElementById('dhan-orders-table').innerHTML = tbody;
+}
+
+// ── Cancel Order ──────────────────────────────────────────────
+async function dhanCancelOrder(orderId) {
+  if (!confirm(`Cancel order ${orderId}?`)) return;
+  try {
+    await dhanFetch(`/orders/${orderId}`, 'DELETE');
+    dhanFetchOrders();
+  } catch(e) {
+    alert('Cancel failed: ' + e.message);
+  }
+}
+
+// ── Funds ─────────────────────────────────────────────────────
+async function dhanFetchFunds() {
+  try {
+    const data = await dhanFetch('/fundlimit');
+    const funds = Array.isArray(data) ? data[0] : (data.data || data);
+    const avail = funds.availabelBalance || funds.availableBalance || funds.net || 0;
+    const used  = funds.utilizedAmount  || funds.usedMargin || 0;
+    const total = funds.totalBalance    || funds.grossCollateral || (avail + used) || 0;
+    const span  = funds.spanMargin || 0;
+    const expo  = funds.exposureMargin || 0;
+    document.getElementById('dhan-margin-val').textContent = '₹' + fmtNum(avail);
+    // Detailed funds breakdown
+    const fd = document.getElementById('dhan-funds-detail');
+    if (fd) fd.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px">
+        <div style="background:var(--bg3);border-radius:4px;padding:10px 12px;border-left:3px solid var(--lime)">
+          <div style="font-size:9px;color:var(--dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.6px">Available</div>
+          <div style="font-size:22px;font-weight:800;font-family:var(--mono);color:var(--lime)">₹${fmtNum(avail)}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:4px;padding:10px 12px;border-left:3px solid var(--red)">
+          <div style="font-size:9px;color:var(--dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.6px">Utilized</div>
+          <div style="font-size:22px;font-weight:800;font-family:var(--mono);color:var(--red)">₹${fmtNum(used)}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:4px;padding:10px 12px">
+          <div style="font-size:9px;color:var(--dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.6px">Total Balance</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--text)">₹${fmtNum(total)}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:4px;padding:10px 12px">
+          <div style="font-size:9px;color:var(--dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.6px">SPAN + Exposure</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--sub)">₹${fmtNum(span+expo)}</div>
+        </div>
+      </div>
+      ${total > 0 ? `
+      <div style="margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--dim);margin-bottom:4px">
+          <span>Margin Utilization</span>
+          <span>${total > 0 ? ((used/total)*100).toFixed(1) : 0}%</span>
+        </div>
+        <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${Math.min(100,(used/total*100)).toFixed(1)}%;background:${used/total > 0.8 ? 'var(--red)' : used/total > 0.5 ? 'var(--yellow)' : 'var(--lime)'};border-radius:3px;transition:width .6s"></div>
+        </div>
+      </div>` : ''}
+      <div style="font-size:10px;color:var(--dim);text-align:right">
+        <button onclick="dhanFetchFunds()" style="font-size:10px;padding:3px 10px;background:rgba(91,163,245,.1);color:var(--accent);border:1px solid rgba(91,163,245,.2);border-radius:3px;cursor:pointer">↻ Refresh Funds</button>
+      </div>`;
+  } catch(e) {
+    document.getElementById('dhan-margin-val').textContent = '—';
+  }
+}
+
+// ── Place Order ───────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+//  TRADE FORM — clean rewrite
+// ══════════════════════════════════════════════════════════
+let _dhanSide = 'BUY';
+
+function dhanSetSide(side) {
+  _dhanSide = side;
+  const buy  = document.getElementById('dhan-btn-buy');
+  const sell = document.getElementById('dhan-btn-sell');
+  if (!buy || !sell) return;
+  if (side === 'BUY') {
+    buy.style.cssText  += ';background:rgba(74,222,128,.2);color:var(--lime);border:2px solid rgba(74,222,128,.5)';
+    sell.style.cssText += ';background:transparent;color:var(--sub);border:1px solid var(--border)';
+  } else {
+    sell.style.cssText += ';background:rgba(248,113,113,.2);color:var(--red);border:2px solid rgba(248,113,113,.5)';
+    buy.style.cssText  += ';background:transparent;color:var(--sub);border:1px solid var(--border)';
+  }
+  dhanTradeFormUpdate();
+}
+
+function dhanTradeFormUpdate() {
+  const typeEl    = document.getElementById('dhan-ord-type');
+  const priceDiv  = document.getElementById('dhan-price-field');
+  const trigDiv   = document.getElementById('dhan-trigger-field');
+  const gttBadge  = document.getElementById('dhan-gtt-badge');
+  const prodSel   = document.getElementById('dhan-ord-prod');
+  if (!typeEl) return;
+
+  const type      = typeEl.value;
+  const isGTT     = type.startsWith('GTT_');
+  const isMkt     = type === 'MARKET';
+  const needTrig  = type === 'STOP_LOSS' || type === 'STOP_LOSS_MARKET' || isGTT; // GTT always needs trigger
+
+  if (priceDiv) priceDiv.style.display = isMkt ? 'none' : 'block';
+  if (trigDiv)  trigDiv.style.display  = needTrig ? 'block' : 'none';
+  if (gttBadge) gttBadge.style.display = isGTT ? 'flex' : 'none';
+
+  // GTT only supports CNC/MTF — hide INTRADAY/MARGIN options
+  if (prodSel) {
+    Array.from(prodSel.options).forEach(opt => {
+      if (isGTT) {
+        opt.style.display = (opt.value === 'CNC' || opt.value === 'MTF') ? '' : 'none';
+      } else {
+        opt.style.display = '';
+      }
+    });
+    if (isGTT && prodSel.value !== 'CNC' && prodSel.value !== 'MTF') {
+      prodSel.value = 'CNC';
+    }
+  }
+
+  dhanBuildPreview();
+}
+
+function dhanBuildPreview() {
+  const sym  = (document.getElementById('dhan-ord-sym')?.value   || '').trim();
+  const qty  =  document.getElementById('dhan-ord-qty')?.value   || '';
+  const prc  =  document.getElementById('dhan-ord-price')?.value || '';
+  const trig =  document.getElementById('dhan-ord-trigger')?.value || '';
+  const type =  document.getElementById('dhan-ord-type')?.value  || '';
+  const prod =  document.getElementById('dhan-ord-prod')?.value  || '';
+  const exch =  document.getElementById('dhan-ord-exch')?.value  || '';
+  const prev =  document.getElementById('dhan-order-preview');
+  if (!prev) return;
+  if (!sym || !qty) { prev.textContent = 'Fill in Security ID and Quantity to preview.'; return; }
+  const sc = _dhanSide === 'BUY' ? 'var(--lime)' : 'var(--red)';
+  const priceStr = type === 'MARKET' ? 'MARKET' : (prc ? '₹' + prc : '—');
+  const trigStr  = trig ? ' · Trigger ₹' + trig : '';
+  prev.innerHTML = `<span style="color:${sc};font-weight:800">${_dhanSide}</span> · <b style="color:var(--text)">${qty}</b> × <b style="color:var(--text)">${sym}</b> · ${type} @ ${priceStr}${trigStr} · ${prod} · ${exch}`;
+}
+
+// Attach live preview to inputs — using named function to avoid duplicate listeners
+function _dhanPreviewHandler() { dhanBuildPreview(); }
+(function attachTradeListeners() {
+  // Called once on first sub-tab open via dhanSubTab('trade')
+  window._dhanTradeListenersAttached = false;
+})();
+
+function dhanAttachTradeListeners() {
+  if (window._dhanTradeListenersAttached) return;
+  window._dhanTradeListenersAttached = true;
+  ['dhan-ord-sym','dhan-ord-qty','dhan-ord-price','dhan-ord-trigger'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', _dhanPreviewHandler);
+  });
+  ['dhan-ord-exch','dhan-ord-prod'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', _dhanPreviewHandler);
+  });
+}
+
+async function dhanPlaceOrder() {
+  const sym      = (document.getElementById('dhan-ord-sym')?.value     || '').trim();
+  const qty      = parseInt(document.getElementById('dhan-ord-qty')?.value    || '0');
+  const price    = parseFloat(document.getElementById('dhan-ord-price')?.value   || '0');
+  const trigger  = parseFloat(document.getElementById('dhan-ord-trigger')?.value || '0');
+  const orderType = document.getElementById('dhan-ord-type')?.value  || 'LIMIT';
+  const prodType  = document.getElementById('dhan-ord-prod')?.value  || 'CNC';
+  const exchSeg   = document.getElementById('dhan-ord-exch')?.value  || 'NSE_EQ';
+  const msgEl     = document.getElementById('dhan-order-msg');
+  const isGTT     = orderType.startsWith('GTT_');
+  const isMkt     = orderType === 'MARKET';
+  const isSL      = orderType === 'STOP_LOSS' || orderType === 'STOP_LOSS_MARKET';
+
+  // Validate
+  if (!sym)            { msgEl.textContent = '⚠ Enter a Security ID.'; msgEl.style.color='var(--orange)'; return; }
+  if (!qty || qty < 1) { msgEl.textContent = '⚠ Enter a valid Quantity.'; msgEl.style.color='var(--orange)'; return; }
+  if (!isMkt && price <= 0) { msgEl.textContent = '⚠ Enter a valid Price.'; msgEl.style.color='var(--orange)'; return; }
+  if (isSL && trigger <= 0) { msgEl.textContent = '⚠ Trigger Price required for Stop Loss orders.'; msgEl.style.color='var(--orange)'; return; }
+  if (isGTT && trigger <= 0) { msgEl.textContent = '⚠ Trigger Price required for GTT orders.'; msgEl.style.color='var(--orange)'; return; }
+
+  const typeLabel = isGTT ? 'GTT ' + orderType.replace('GTT_','') : orderType;
+  const confirmed = confirm(
+    `Confirm ${typeLabel} ORDER\n\n` +
+    `${_dhanSide}  ${qty} × ${sym}\n` +
+    `Price: ${isMkt ? 'MARKET' : '₹' + price}` +
+    (trigger ? `  |  Trigger: ₹${trigger}` : '') + `\n` +
+    `Product: ${prodType}  |  Exchange: ${exchSeg}\n\n` +
+    `Proceed?`
+  );
+  if (!confirmed) return;
+
+  const btn = document.getElementById('dhan-place-btn');
+  btn.disabled = true; btn.textContent = '⏳ Placing…';
+  msgEl.textContent = ''; msgEl.style.color = 'var(--sub)';
+
+  try {
+    let res;
+
+    if (isGTT) {
+      // Forever Order — exact fields per DhanHQ v2 spec
+      // orderType for GTT must be LIMIT or MARKET only
+      const gttOrderType = orderType === 'GTT_STOP_LOSS' ? 'LIMIT' : 'LIMIT';
+      // GTT productType only CNC or MTF
+      const gttProd = (prodType === 'CNC' || prodType === 'MTF') ? prodType : 'CNC';
+      res = await dhanFetch('/forever/orders', 'POST', {
+        correlationId:     '',
+        orderFlag:         'SINGLE',
+        transactionType:   _dhanSide,
+        exchangeSegment:   exchSeg,
+        productType:       gttProd,
+        orderType:         gttOrderType,
+        validity:          'DAY',
+        securityId:        sym,
+        quantity:          qty,               // int
+        disclosedQuantity: 0,                 // int
+        price:             price,             // float
+        triggerPrice:      trigger || price,  // float — required, use price if not set
+      });
+
+    } else {
+      // Regular Order — exact fields per DhanHQ v2 spec
+      res = await dhanFetch('/orders', 'POST', {
+        correlationId:     '',
+        transactionType:   _dhanSide,
+        exchangeSegment:   exchSeg,
+        productType:       prodType,
+        orderType:         orderType,
+        validity:          'DAY',
+        securityId:        sym,
+        quantity:          qty,                    // int
+        disclosedQuantity: 0,                      // int
+        price:             isMkt ? 0 : price,      // float, 0 for MARKET
+        triggerPrice:      isSL  ? trigger : 0,    // float, 0 if not SL
+        afterMarketOrder:  false,
+        amoTime:           '',
+        boProfitValue:     '',
+        boStopLossValue:   '',
+      });
+    }
+
+    const oid = res.orderId || res.foreverOrderId || res.data?.orderId || '—';
+    msgEl.textContent = `✅ ${isGTT ? 'GTT ' : ''}Order placed! ID: ${oid}`;
+    msgEl.style.color = 'var(--lime)';
+    dhanClearOrder();
+    setTimeout(() => dhanFetchOrders(), 1800);
+
+  } catch(e) {
+    let errMsg = e.message || 'Unknown error';
+    if (errMsg.toLowerCase().includes('invalid ip')) {
+      errMsg = 'Invalid IP — Go to web.dhan.co → API Key → Static IP Setting → add your public IP or remove the whitelist.';
+    }
+    msgEl.textContent = '✗ ' + errMsg;
+    msgEl.style.color = 'var(--red)';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✓ PLACE ORDER';
+  }
+}
+
+function dhanClearOrder() {
+  ['dhan-ord-sym','dhan-ord-qty','dhan-ord-price','dhan-ord-trigger'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  dhanBuildPreview();
+}
+
+// ── Credentials block collapse/expand ────────────────────────
+function dhanToggleCreds() {
+  const block   = document.getElementById('dhan-cred-block');
+  const chevron = document.getElementById('dhan-cred-chevron');
+  const summary = document.getElementById('dhan-cred-summary');
+  if (!block) return;
+  const open = block.style.display === 'none' || block.style.display === '';
+  block.style.display   = open ? 'block' : 'none';
+  chevron.style.transform = open ? 'rotate(90deg)' : 'rotate(0deg)';
+  if (!open) {
+    // Rebuild summary line when collapsing
+    const mode = dhanGetMode();
+    const creds = dhanGetCreds();
+    const apiSaved = dhanGetApiKeyCreds();
+    if (mode === 'apikey' && apiSaved && apiSaved.clientId) {
+      const ageH = apiSaved.tokenTs ? ((Date.now()-apiSaved.tokenTs)/3600000).toFixed(0) : null;
+      summary.textContent = `— ${apiSaved.clientId} · API Key · Token ${ageH ? ageH+'h old' : 'not generated'}`;
+    } else if (mode === 'token' && creds && creds.clientId) {
+      summary.textContent = `— ${creds.clientId} · Access Token`;
+    } else {
+      summary.textContent = '— tap to configure';
+    }
+  } else {
+    summary.textContent = '';
+  }
+}
+
+// Auto-update cred summary after successful connect
+function dhanUpdateCredSummary() {
+  const block = document.getElementById('dhan-cred-block');
+  if (block && block.style.display !== 'none') return; // only update when collapsed
+  const summary = document.getElementById('dhan-cred-summary');
+  if (!summary) return;
+  const mode = dhanGetMode();
+  const creds = dhanGetCreds();
+  const apiSaved = dhanGetApiKeyCreds();
+  if (mode === 'apikey' && apiSaved && apiSaved.clientId) {
+    const ageH = apiSaved.tokenTs ? ((Date.now()-apiSaved.tokenTs)/3600000).toFixed(0) : null;
+    summary.textContent = `— ${apiSaved.clientId} · API Key · Token ${ageH ? ageH+'h old' : 'not generated'}`;
+  } else if (mode === 'token' && creds && creds.clientId) {
+    summary.textContent = `— ${creds.clientId} · Access Token`;
+  }
+}
+function dhanQuickTrade(secId, side, symbol, ltp) {
+  dhanSubTab('trade');
+  const sf = document.getElementById('dhan-ord-sym');
+  const pf = document.getElementById('dhan-ord-price');
+  if (sf) sf.value = secId || symbol;
+  if (pf && ltp) pf.value = parseFloat(ltp).toFixed(2);
+  dhanSetSide(side || 'BUY');
+  dhanTradeFormUpdate();
+}
+
+// ── Watchlist ─────────────────────────────────────────────────
+const DHAN_WL_LS = 'nse_dhan_watchlist_v1';
+let _dhanWlTimer = null;
+let _dhanWlPrevLtp = {};
+
+function dhanWlLoad() {
+  try { return JSON.parse(localStorage.getItem(DHAN_WL_LS) || '[]'); } catch { return []; }
+}
+function dhanWlSave(list) { localStorage.setItem(DHAN_WL_LS, JSON.stringify(list)); }
+
+function dhanWlAdd() {
+  const secId = (document.getElementById('dhan-wl-input').value || '').trim();
+  const exch  = document.getElementById('dhan-wl-exch').value;
+  if (!secId) return;
+  const list = dhanWlLoad();
+  if (list.find(x => x.secId === secId && x.exch === exch)) {
+    document.getElementById('dhan-wl-input').value = '';
+    return;
+  }
+  list.push({ secId, exch, sym: secId, ltp: null, chg: null, addedAt: Date.now() });
+  dhanWlSave(list);
+  document.getElementById('dhan-wl-input').value = '';
+  dhanWlRender();
+  dhanWlRefresh();
+}
+
+function dhanWlRemove(secId, exch) {
+  const list = dhanWlLoad().filter(x => !(x.secId === secId && x.exch === exch));
+  dhanWlSave(list);
+  dhanWlRender();
+}
+
+async function dhanWlRefresh() {
+  const list = dhanWlLoad();
+  if (!list.length) return;
+  const dot = document.getElementById('dhan-wl-dot');
+  if (dot) { dot.style.background = 'var(--yellow)'; dot.style.animation = 'none'; }
+  for (const item of list) {
+    try {
+      const data = await dhanFetch(`/quotes/${item.exch}/${item.secId}`);
+      const q = data.data || data;
+      const ltp  = q.lastPrice || q.ltp || q.close || null;
+      const open = q.open || 0;
+      item.ltp  = ltp;
+      item.sym  = q.tradingSymbol || q.symbol || item.secId;
+      item.chg  = (open && ltp) ? (((ltp - open) / open) * 100).toFixed(2) : null;
+      item.high = q.dayHigh || q.high || null;
+      item.low  = q.dayLow  || q.low  || null;
+      item.vol  = q.volume  || null;
+    } catch(e) { /* keep old data */ }
+  }
+  dhanWlSave(list);
+  dhanWlRender();
+  if (dot) { dot.style.background = 'var(--lime)'; dot.style.animation = 'dhan-pulse 2s infinite'; }
+}
+
+function dhanWlRender() {
+  const list = dhanWlLoad();
+  const el   = document.getElementById('dhan-wl-list');
+  if (!el) return;
+  if (!list.length) {
+    el.innerHTML = '<div style="color:var(--dim);text-align:center;padding:16px">Watchlist empty — add a Security ID above</div>';
+    return;
+  }
+  const rows = list.map(item => {
+    const ltpStr = item.ltp != null ? '₹' + fmtNum(item.ltp) : '—';
+    const prev = _dhanWlPrevLtp[item.secId];
+    const chgColor = item.chg == null ? 'var(--sub)' : item.chg >= 0 ? 'var(--lime)' : 'var(--red)';
+    const ltpColor = item.ltp == null ? 'var(--sub)' : prev == null ? 'var(--text)' : item.ltp > prev ? 'var(--lime)' : item.ltp < prev ? 'var(--red)' : 'var(--text)';
+    if (item.ltp != null) _dhanWlPrevLtp[item.secId] = item.ltp;
+    return `<div class="dhan-wl-row">
+      <div style="flex:1;font-weight:700;font-size:12px">${item.sym}</div>
+      <div style="font-size:9px;color:var(--dim);margin-right:4px">${item.exch.replace('_EQ','').replace('_FNO','F')}</div>
+      <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:${ltpColor};min-width:70px;text-align:right">${ltpStr}</div>
+      <div style="font-size:10px;color:${chgColor};min-width:52px;text-align:right">${item.chg != null ? (item.chg >= 0 ? '+' : '') + item.chg + '%' : ''}</div>
+      <div style="font-size:9px;color:var(--dim);min-width:80px;text-align:right">${item.high ? 'H:₹'+fmtNum(item.high)+' L:₹'+fmtNum(item.low) : ''}</div>
+      <button class="dhan-quick-trade" onclick="dhanQuickTrade('${item.secId}','BUY','${item.sym}',${item.ltp||0})" style="margin-left:8px">🛒 Buy</button>
+      <button class="dhan-quick-trade" onclick="dhanQuickTrade('${item.secId}','SELL','${item.sym}',${item.ltp||0})" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);margin-left:4px">Sell</button>
+      <button onclick="dhanWlRemove('${item.secId}','${item.exch}')" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:12px;padding:2px 4px;margin-left:4px">✕</button>
+    </div>`;
+  });
+  el.innerHTML = rows.join('');
+}
+
+function dhanWlToggleAuto() {
+  const btn   = document.getElementById('dhan-wl-auto-btn');
+  const label = document.getElementById('dhan-wl-refresh-label');
+  const dot   = document.getElementById('dhan-wl-dot');
+  if (_dhanWlTimer) {
+    clearInterval(_dhanWlTimer); _dhanWlTimer = null;
+    btn.textContent = 'Auto ↻'; btn.style.color = 'var(--dim)';
+    label.textContent = 'Manual';
+    dot.classList.remove('live'); dot.style.background = 'var(--dim)'; dot.style.animation = 'none';
+  } else {
+    _dhanWlTimer = setInterval(dhanWlRefresh, 30000);
+    btn.textContent = 'Stop ↻'; btn.style.color = 'var(--lime)';
+    label.textContent = 'Live 30s';
+    dot.classList.add('live'); dot.style.background = 'var(--lime)'; dot.style.animation = 'dhan-pulse 2s infinite';
+    dhanWlRefresh();
+  }
+}
+
+// ── Auto-refresh holdings (configurable) ─────────────────────
+let _dhanAutoTimer = null;
+function dhanAutoRefreshStart(intervalMs) {
+  if (_dhanAutoTimer) clearInterval(_dhanAutoTimer);
+  _dhanAutoTimer = setInterval(() => {
+    dhanFetchHoldings().catch(() => {});
+    dhanFetchPositions().catch(() => {});
+    dhanFetchFunds().catch(() => {});
+  }, intervalMs || 60000);
+}
+function dhanAutoRefreshStop() {
+  if (_dhanAutoTimer) { clearInterval(_dhanAutoTimer); _dhanAutoTimer = null; }
+}
+
+// ── Sub-tab switcher (updated) ────────────────────────────────
+function dhanSubTab(name) {
+  const tabs = ['holdings','positions','orders','watchlist','funds','trade'];
+  tabs.forEach(t => {
+    const tab = document.getElementById('dhan-tab-'+t);
+    const sec = document.getElementById('dhan-sec-'+t);
+    if (tab) tab.classList.toggle('active', t === name);
+    if (sec) sec.style.display = t === name ? 'block' : 'none';
+  });
+  if (name === 'watchlist') dhanWlRender();
+  if (name === 'trade') { dhanAttachTradeListeners(); dhanTradeFormUpdate(); }
+}
+
+// ── Number formatter ──────────────────────────────────────────
+function fmtNum(n) {
+  const v = parseFloat(n) || 0;
+  return v.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// ── Extend cpSwitchTab to support dhan ───────────────────────
+(function() {
+  const _orig = window.cpSwitchTab;
+  window.cpSwitchTab = function(tab) {
+    if (_orig) _orig(tab);
+    const dhanSec = document.getElementById('cp-sec-dhan');
+    const dhanTabBtn = document.getElementById('cp-tab-dhan');
+    if (!dhanSec) return;
+    if (tab === 'dhan') {
+      // Show dhan section, hide others
+      ['eod','past','sync','srt'].forEach(t => {
+        const s = document.getElementById('cp-sec-'+t);
+        const b = document.getElementById('cp-tab-'+t);
+        if (s) s.classList.remove('active');
+        if (b) b.classList.remove('active');
+      });
+      dhanSec.classList.add('active');
+      dhanTabBtn && dhanTabBtn.classList.add('active');
+      // Restore saved creds into fields
+      const mode = dhanGetMode();
+      dhanSwitchMode(mode);
+      if (mode === 'token') {
+        const creds = dhanGetCreds();
+        if (creds) {
+          const cidEl = document.getElementById('dhan-client-id');
+          const tokEl = document.getElementById('dhan-access-token');
+          if (cidEl && !cidEl.value) cidEl.value = creds.clientId;
+          if (tokEl && !tokEl.value) tokEl.value = creds.token;
+          dhanSetStatus(true);
+        }
+      } else {
+        const saved = dhanGetApiKeyCreds();
+        if (saved && saved.cachedToken) dhanSetStatus(true);
+      }
+    } else {
+      dhanSec.classList.remove('active');
+      dhanTabBtn && dhanTabBtn.classList.remove('active');
+    }
+  };
+})();
+
+// Auto-restore Dhan session on page load if creds exist
+document.addEventListener('DOMContentLoaded', () => {
+  const creds = dhanGetCreds();
+  if (creds) dhanSetStatus(true, 'Credentials saved — click Dhan tab to refresh');
+});
+
 function renderAnalysisFTD() {
   const el = id => document.getElementById(id) || {textContent:'',innerHTML:'',style:{},className:'',classList:{add:()=>{},remove:()=>{},contains:()=>false},value:'',offsetWidth:0,offsetHeight:0,getBoundingClientRect:()=>({width:0,height:0,top:0,left:0,right:0,bottom:0})};
   if (!el('as-ftd-status')) return;
@@ -8140,8 +9106,8 @@ document.addEventListener('keydown', e => {
 </script>
 
 <!-- ── CONTROL PANEL ─────────────────────────────────────────────── -->
-<div id="cp-overlay" onclick="if(event.target===this)closeControlPanel()">
-  <div id="cp-panel">
+<div id="cp-overlay" onclick="if(event.target===this&&!window.getSelection().toString())closeControlPanel()">
+  <div id="cp-panel" onclick="event.stopPropagation()">
 
     <div class="cp-head">
       <div class="cp-title">
@@ -8156,6 +9122,7 @@ document.addEventListener('keydown', e => {
       <div class="cp-tab"        id="cp-tab-past" onclick="cpSwitchTab('past')">📅 Past Entry</div>
       <div class="cp-tab"        id="cp-tab-sync" onclick="cpSwitchTab('sync')">☁ Sync</div>
       <div class="cp-tab"        id="cp-tab-srt"  onclick="cpSwitchTab('srt')">📡 Sectors</div>
+      <div class="cp-tab"        id="cp-tab-dhan" onclick="cpSwitchTab('dhan')" style="color:var(--teal)">🏦 Dhan</div>
     </div>
 
     <div class="cp-body">
@@ -8338,6 +9305,325 @@ document.addEventListener('keydown', e => {
         </div>
 
       </div><!-- /sync -->
+
+      <!-- ── TAB 5: DHAN PORTFOLIO & TRADING ──────────────── -->
+      <div class="cp-section" id="cp-sec-dhan">
+        <div class="cp-section-title">DHAN PORTFOLIO &amp; TRADING</div>
+
+        <!-- Credentials -->
+        <div style="margin-bottom:12px">
+          <!-- Collapsible header -->
+          <div onclick="dhanToggleCreds()" style="display:flex;align-items:center;justify-content:space-between;background:rgba(45,212,191,.05);border:1px solid rgba(45,212,191,.18);border-radius:5px;padding:9px 12px;cursor:pointer;user-select:none;" id="dhan-cred-header">
+            <div style="display:flex;align-items:center;gap:7px">
+              <span style="font-size:12px">🔑</span>
+              <span style="font-size:10px;color:var(--teal);font-weight:700;letter-spacing:.6px">DHAN CREDENTIALS</span>
+              <span id="dhan-cred-summary" style="font-size:10px;color:var(--dim)">— tap to configure</span>
+            </div>
+            <span id="dhan-cred-chevron" style="font-size:11px;color:var(--teal);transition:transform .2s">▸</span>
+          </div>
+
+          <!-- Collapsible body — hidden by default -->
+          <div id="dhan-cred-block" style="display:none;background:rgba(45,212,191,.04);border:1px solid rgba(45,212,191,.15);border-top:none;border-radius:0 0 5px 5px;padding:12px;">
+            <div style="font-size:9px;color:var(--dim);margin-bottom:10px">Stored locally only — never sent anywhere except api.dhan.co</div>
+
+          <!-- Mode toggle -->
+          <div style="display:flex;gap:0;margin-bottom:12px;border:1px solid var(--border);border-radius:4px;overflow:hidden;width:fit-content">
+            <button id="dhan-mode-token" onclick="dhanSwitchMode('token')"
+              style="font-size:10px;font-weight:700;padding:5px 14px;border:none;cursor:pointer;background:var(--teal);color:#0e1420;transition:all .15s">
+              Access Token
+            </button>
+            <button id="dhan-mode-apikey" onclick="dhanSwitchMode('apikey')"
+              style="font-size:10px;font-weight:700;padding:5px 14px;border:none;cursor:pointer;background:transparent;color:var(--sub);transition:all .15s">
+              API Key ⭐
+            </button>
+          </div>
+
+          <!-- Mode: Access Token (daily paste) -->
+          <div id="dhan-panel-token">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <div>
+                <label style="font-size:10px;color:var(--sub);display:block;margin-bottom:3px">Client ID</label>
+                <input id="dhan-client-id" type="text" placeholder="Your Dhan Client ID" autocomplete="off"
+                  style="width:100%;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 9px;outline:none;border-radius:4px">
+              </div>
+              <div>
+                <label style="font-size:10px;color:var(--sub);display:block;margin-bottom:3px">Access Token <span style="color:var(--dim);font-weight:400">(valid 24h)</span></label>
+                <input id="dhan-access-token" type="password" placeholder="Paste from web.dhan.co → Generate Access Token" autocomplete="off"
+                  style="width:100%;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 9px;outline:none;border-radius:4px">
+              </div>
+            </div>
+            <div style="font-size:9px;color:var(--dim);margin-bottom:8px;line-height:1.6">
+              ℹ Paste a fresh token each day. Token expires at midnight.
+            </div>
+          </div>
+
+          <!-- Mode: API Key (3-step browser flow) -->
+          <div id="dhan-panel-apikey" style="display:none">
+            <div style="background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.18);border-radius:4px;padding:10px 12px;margin-bottom:10px;font-size:10px;color:var(--sub);line-height:1.7">
+              <b style="color:var(--yellow)">ℹ API Key mode requires a 3-step browser login</b> — Dhan does not allow silent token generation from key+secret alone (SEBI requirement).<br>
+              <b>How it works:</b> Enter your API Key below → click <b>Open Login</b> → log in on Dhan's page → copy the <b>tokenId</b> from the redirect URL → paste it below → click <b>Generate Token</b>.
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <div>
+                <label style="font-size:10px;color:var(--sub);display:block;margin-bottom:3px">Client ID</label>
+                <input id="dhan-apikey-clientid" type="text" placeholder="Your Dhan Client ID" autocomplete="off"
+                  style="width:100%;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 9px;outline:none;border-radius:4px">
+              </div>
+              <div>
+                <label style="font-size:10px;color:var(--sub);display:block;margin-bottom:3px">API Key <span style="color:var(--dim);font-weight:400">(from web.dhan.co)</span></label>
+                <input id="dhan-apikey-key" type="password" placeholder="Your API Key" autocomplete="off"
+                  style="width:100%;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 9px;outline:none;border-radius:4px">
+              </div>
+              <div style="grid-column:1/-1">
+                <label style="font-size:10px;color:var(--sub);display:block;margin-bottom:3px">API Secret</label>
+                <input id="dhan-apikey-secret" type="password" placeholder="Your API Secret" autocomplete="off"
+                  style="width:100%;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 9px;outline:none;border-radius:4px">
+              </div>
+            </div>
+            <!-- Step 2: Open login -->
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+              <button onclick="dhanApiKeyOpenLogin()" style="font-size:11px;font-weight:700;padding:6px 14px;background:rgba(91,163,245,.15);color:var(--accent);border:1px solid rgba(91,163,245,.3);border-radius:4px;cursor:pointer">Step 1 → Open Dhan Login ↗</button>
+              <span style="font-size:10px;color:var(--dim)">Log in on Dhan, then copy the tokenId from the redirect URL</span>
+            </div>
+            <!-- Step 3: Paste tokenId -->
+            <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:flex-end;margin-bottom:6px">
+              <div>
+                <label style="font-size:10px;color:var(--sub);display:block;margin-bottom:3px">Step 2 → Paste tokenId from redirect URL</label>
+                <input id="dhan-apikey-tokenid" type="text" placeholder="tokenId=xxxxxxxx — paste value after = sign" autocomplete="off"
+                  style="width:100%;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 9px;outline:none;border-radius:4px">
+              </div>
+              <button onclick="dhanApiKeyConsumeToken()" style="font-size:11px;font-weight:700;padding:7px 14px;background:var(--teal);color:#0e1420;border:none;border-radius:4px;cursor:pointer;white-space:nowrap">Step 3 → Get Token</button>
+            </div>
+            <div id="dhan-token-status" style="font-size:10px;color:var(--dim);padding:4px 0">
+              Token: <span id="dhan-token-age" style="color:var(--sub)">Not generated</span>
+            </div>
+            <div style="font-size:9px;color:var(--dim);margin-top:4px;line-height:1.6">
+              💡 <b>Easier alternative:</b> Just use <b>Access Token mode</b> — generate a token on web.dhan.co (30 sec), paste it here. Same result, no redirect needed.
+            </div>
+          </div>
+
+          <!-- Buttons row -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button onclick="dhanConnect()" style="background:var(--teal);color:#0e1420;font-size:11px;font-weight:700;padding:7px 16px;border:none;border-radius:4px;cursor:pointer">⚡ Connect</button>
+            <button onclick="dhanClearCreds()" style="background:transparent;color:var(--dim);font-size:11px;padding:7px 12px;border:1px solid var(--border);border-radius:4px;cursor:pointer">Clear</button>
+            <a href="https://web.dhan.co" target="_blank" style="font-size:10px;color:var(--accent);margin-left:auto">web.dhan.co ↗</a>
+          </div>
+          <div id="dhan-connect-msg" style="font-size:11px;margin-top:8px;min-height:16px"></div>
+        </div><!-- /dhan-cred-block -->
+        </div><!-- /credentials wrapper -->
+
+        <!-- Status bar -->
+        <div id="dhan-status-bar" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:8px 12px;margin-bottom:10px;display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div id="dhan-status-dot" style="width:8px;height:8px;border-radius:50%;background:var(--dim)"></div>
+              <span id="dhan-status-label" style="font-size:11px;color:var(--sub)">Not connected</span>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button onclick="dhanFetchAll()" id="dhan-refresh-btn" style="font-size:10px;padding:4px 10px;background:rgba(91,163,245,.12);color:var(--accent);border:1px solid rgba(91,163,245,.25);border-radius:3px;cursor:pointer">↻ Refresh</button>
+              <span style="font-size:9px;color:var(--dim);display:flex;align-items:center;gap:3px"><span class="dhan-auto-dot live" style="background:var(--lime);animation:dhan-pulse 2s infinite"></span>Auto 60s</span>
+              <button onclick="dhanDisconnect()" style="font-size:10px;padding:4px 10px;background:transparent;color:var(--dim);border:1px solid var(--border);border-radius:3px;cursor:pointer">Disconnect</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabs: Holdings | Positions | Orders | Place Order -->
+        <div id="dhan-main" style="display:none">
+          <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:10px">
+            <button onclick="dhanSubTab('holdings')" id="dhan-tab-holdings" class="dhan-sub-tab active">Holdings</button>
+            <button onclick="dhanSubTab('positions')" id="dhan-tab-positions" class="dhan-sub-tab">Positions</button>
+            <button onclick="dhanSubTab('orders')" id="dhan-tab-orders" class="dhan-sub-tab">Orders</button>
+            <button onclick="dhanSubTab('watchlist')" id="dhan-tab-watchlist" class="dhan-sub-tab">👁 Watchlist</button>
+            <button onclick="dhanSubTab('funds')" id="dhan-tab-funds" class="dhan-sub-tab">Funds</button>
+            <button onclick="dhanSubTab('trade')" id="dhan-tab-trade" class="dhan-sub-tab" style="color:var(--lime)">+ Trade</button>
+          </div>
+
+          <!-- Holdings -->
+          <div id="dhan-sec-holdings" class="dhan-section">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
+              <div style="background:var(--bg3);border-radius:4px;padding:8px 10px">
+                <div style="font-size:9px;color:var(--dim);margin-bottom:2px">INVESTED</div>
+                <div id="dhan-inv-val" style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--text)">—</div>
+              </div>
+              <div style="background:var(--bg3);border-radius:4px;padding:8px 10px">
+                <div style="font-size:9px;color:var(--dim);margin-bottom:2px">CURRENT</div>
+                <div id="dhan-cur-val" style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--text)">—</div>
+              </div>
+              <div style="background:var(--bg3);border-radius:4px;padding:8px 10px">
+                <div style="font-size:9px;color:var(--dim);margin-bottom:2px">P&amp;L</div>
+                <div id="dhan-pnl-val" style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--sub)">—</div>
+                <div id="dhan-pnl-pct" style="font-size:10px;color:var(--dim)"></div>
+              </div>
+            </div>
+            <div id="dhan-holdings-table" style="font-size:11px">
+              <div style="color:var(--dim);text-align:center;padding:20px">Connect to load holdings</div>
+            </div>
+          </div>
+
+          <!-- Positions -->
+          <div id="dhan-sec-positions" class="dhan-section" style="display:none">
+            <div id="dhan-pos-summary" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:10px"></div>
+            <div id="dhan-positions-table" style="font-size:11px">
+              <div style="color:var(--dim);text-align:center;padding:20px">Connect to load positions</div>
+            </div>
+          </div>
+
+          <!-- Orders -->
+          <div id="dhan-sec-orders" class="dhan-section" style="display:none">
+            <div id="dhan-orders-table" style="font-size:11px">
+              <div style="color:var(--dim);text-align:center;padding:20px">Connect to load orders</div>
+            </div>
+          </div>
+
+          <!-- Watchlist -->
+          <div id="dhan-sec-watchlist" class="dhan-section" style="display:none">
+            <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center">
+              <input id="dhan-wl-input" type="text" placeholder="Security ID (e.g. 1333 for HDFCBANK)" autocomplete="off"
+                style="flex:1;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 9px;outline:none;border-radius:4px"
+                onkeydown="if(event.key==='Enter')dhanWlAdd()">
+              <select id="dhan-wl-exch" style="background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-size:11px;padding:6px 8px;outline:none;border-radius:4px">
+                <option value="NSE_EQ">NSE</option><option value="BSE_EQ">BSE</option>
+                <option value="NSE_FNO">F&amp;O</option><option value="MCX_COMM">MCX</option>
+              </select>
+              <button onclick="dhanWlAdd()" style="font-size:11px;padding:6px 12px;background:var(--teal);color:#0e1420;border:none;border-radius:4px;cursor:pointer;font-weight:700">+ Add</button>
+              <div style="display:flex;align-items:center;gap:5px;margin-left:4px">
+                <span class="dhan-auto-dot" id="dhan-wl-dot"></span>
+                <span id="dhan-wl-refresh-label" style="font-size:9px;color:var(--dim)">Manual</span>
+              </div>
+              <button onclick="dhanWlToggleAuto()" id="dhan-wl-auto-btn" style="font-size:9px;padding:3px 8px;background:transparent;color:var(--dim);border:1px solid var(--border);border-radius:3px;cursor:pointer">Auto ↻</button>
+              <button onclick="dhanWlRefresh()" style="font-size:9px;padding:3px 8px;background:rgba(91,163,245,.1);color:var(--accent);border:1px solid rgba(91,163,245,.2);border-radius:3px;cursor:pointer">↻</button>
+            </div>
+            <div id="dhan-wl-list" style="font-size:11px">
+              <div style="color:var(--dim);text-align:center;padding:16px">Add a Security ID above to watch live prices</div>
+            </div>
+            <div style="font-size:9px;color:var(--dim);margin-top:6px">Auto-refresh polls every 30s. Prices via Dhan Quote API. Click 🛒 to pre-fill Trade form.</div>
+          </div>
+
+          <!-- Funds -->
+          <div id="dhan-sec-funds" class="dhan-section" style="display:none">
+            <div id="dhan-funds-detail" style="font-size:11px">
+              <div style="color:var(--dim);text-align:center;padding:20px">Connect to load fund details</div>
+            </div>
+          </div>
+
+          <!-- Place Order (Trade) -->
+          <div id="dhan-sec-trade" class="dhan-section" style="display:none">
+            <div style="background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.15);border-radius:5px;padding:12px;margin-bottom:10px">
+              <div style="font-size:9px;font-weight:700;letter-spacing:.8px;color:var(--lime);margin-bottom:12px">⚡ PLACE ORDER — Verify on Dhan app before confirming</div>
+
+              <!-- Row 1: Security ID + Exchange -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                <div>
+                  <label style="font-size:10px;color:var(--sub);display:block;margin-bottom:3px">Security ID <span style="color:var(--dim);font-size:9px">(Dhan numeric ID)</span></label>
+                  <input id="dhan-ord-sym" type="text" placeholder="e.g. 1333 for HDFCBANK" autocomplete="off" spellcheck="false"
+                    style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:13px;font-weight:700;padding:7px 10px;outline:none;border-radius:4px">
+                  <div style="font-size:9px;color:var(--dim);margin-top:3px"><a href="https://api.dhan.co/v2/instruments" target="_blank" style="color:var(--accent)">Find Security ID ↗</a></div>
+                </div>
+                <div>
+                  <label style="font-size:10px;color:var(--sub);display:block;margin-bottom:3px">Exchange</label>
+                  <select id="dhan-ord-exch" style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-size:12px;padding:7px 10px;outline:none;border-radius:4px">
+                    <option value="NSE_EQ">NSE Equity</option>
+                    <option value="BSE_EQ">BSE Equity</option>
+                    <option value="NSE_FNO">NSE F&amp;O</option>
+                    <option value="BSE_FNO">BSE F&amp;O</option>
+                    <option value="NSE_CURRENCY">NSE Currency</option>
+                    <option value="MCX_COMM">MCX Commodity</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Row 2: BUY/SELL + Order Type -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                <div>
+                  <label style="font-size:10px;color:var(--sub);display:block;margin-bottom:3px">Side</label>
+                  <div style="display:flex;gap:6px">
+                    <button id="dhan-btn-buy" type="button" onclick="dhanSetSide('BUY')"
+                      style="flex:1;padding:9px;font-size:14px;font-weight:800;background:rgba(74,222,128,.2);color:var(--lime);border:2px solid rgba(74,222,128,.5);border-radius:4px;cursor:pointer">BUY</button>
+                    <button id="dhan-btn-sell" type="button" onclick="dhanSetSide('SELL')"
+                      style="flex:1;padding:9px;font-size:14px;font-weight:800;background:transparent;color:var(--sub);border:1px solid var(--border);border-radius:4px;cursor:pointer">SELL</button>
+                  </div>
+                </div>
+                <div>
+                  <label style="font-size:10px;color:var(--sub);display:block;margin-bottom:3px">Order Type</label>
+                  <select id="dhan-ord-type" onchange="dhanTradeFormUpdate()"
+                    style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-size:12px;padding:7px 10px;outline:none;border-radius:4px">
+                    <option value="LIMIT">LIMIT</option>
+                    <option value="MARKET">MARKET</option>
+                    <option value="STOP_LOSS">STOP LOSS</option>
+                    <option value="STOP_LOSS_MARKET">STOP LOSS MARKET</option>
+                    <option value="GTT_LIMIT">♾ GTT — LIMIT (Forever)</option>
+                    <option value="GTT_STOP_LOSS">♾ GTT — STOP LOSS (Forever)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Row 3: Qty + Price -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                <div>
+                  <label style="font-size:10px;color:var(--sub);display:block;margin-bottom:3px">Quantity</label>
+                  <input id="dhan-ord-qty" type="number" placeholder="1" min="1" step="1" autocomplete="off"
+                    style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:16px;font-weight:800;padding:7px 10px;outline:none;border-radius:4px">
+                </div>
+                <div id="dhan-price-field">
+                  <label style="font-size:10px;color:var(--sub);display:block;margin-bottom:3px">Price (₹)</label>
+                  <input id="dhan-ord-price" type="number" placeholder="0.00" step="0.05" min="0" autocomplete="off"
+                    style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:16px;font-weight:800;padding:7px 10px;outline:none;border-radius:4px">
+                </div>
+              </div>
+
+              <!-- Row 4: Product + Trigger (trigger shown only for SL/GTT-SL) -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+                <div>
+                  <label style="font-size:10px;color:var(--sub);display:block;margin-bottom:3px">Product Type</label>
+                  <select id="dhan-ord-prod"
+                    style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-size:12px;padding:7px 10px;outline:none;border-radius:4px">
+                    <option value="CNC">CNC (Delivery)</option>
+                    <option value="INTRADAY">INTRADAY / MIS</option>
+                    <option value="MARGIN">MARGIN</option>
+                    <option value="MTF">MTF</option>
+                  </select>
+                </div>
+                <div id="dhan-trigger-field">
+                  <label style="font-size:10px;color:var(--sub);display:block;margin-bottom:3px">Trigger Price (₹)</label>
+                  <input id="dhan-ord-trigger" type="number" placeholder="0.00" step="0.05" min="0" autocomplete="off"
+                    style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid rgba(251,191,36,.4);color:var(--text);font-family:var(--mono);font-size:16px;font-weight:800;padding:7px 10px;outline:none;border-radius:4px">
+                </div>
+              </div>
+
+              <!-- GTT notice -->
+              <div id="dhan-gtt-badge" style="display:none;align-items:center;gap:8px;background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);border-radius:4px;padding:8px 10px;margin-bottom:10px;font-size:10px;color:var(--lime)">
+                ♾ <b>GTT (Forever Order)</b> — stays active until price is hit or cancelled. No daily expiry.
+              </div>
+
+              <!-- Order preview -->
+              <div id="dhan-order-preview" style="background:var(--bg3);border-radius:4px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:var(--sub);font-family:var(--mono);min-height:32px;line-height:1.6">
+                Fill in details above to preview order.
+              </div>
+
+              <div style="display:flex;gap:8px;align-items:center">
+                <button type="button" onclick="dhanPlaceOrder()" id="dhan-place-btn"
+                  style="background:var(--lime);color:#0e1420;font-size:13px;font-weight:800;padding:10px 24px;border:none;border-radius:4px;cursor:pointer;letter-spacing:.5px">✓ PLACE ORDER</button>
+                <button type="button" onclick="dhanClearOrder()"
+                  style="background:transparent;color:var(--dim);font-size:11px;padding:9px 14px;border:1px solid var(--border);border-radius:4px;cursor:pointer">Clear</button>
+                <div style="margin-left:auto;font-size:10px;color:var(--sub)">
+                  Margin: <span id="dhan-margin-val" style="color:var(--text);font-family:var(--mono);font-weight:600">—</span>
+                  <button type="button" onclick="dhanFetchFunds()" style="margin-left:4px;font-size:9px;padding:2px 6px;background:none;color:var(--accent);border:1px solid rgba(91,163,245,.25);border-radius:3px;cursor:pointer">↻</button>
+                </div>
+              </div>
+              <div id="dhan-order-msg" style="font-size:12px;margin-top:10px;min-height:18px;font-weight:700"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- IP / CORS notice -->
+        <div style="margin-top:10px;padding:10px 12px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.18);border-radius:4px;font-size:10px;color:var(--sub);line-height:1.7">
+          ⚠ <b style="color:var(--yellow)">If you see "Invalid IP" errors:</b> Go to
+          <a href="https://web.dhan.co" target="_blank" style="color:var(--accent)">web.dhan.co</a>
+          → API Key settings → <b>Static IP Setting</b> → remove or disable the IP whitelist.
+          Dhan blocks API calls from unrecognised IPs including localhost.<br>
+          ⚠ <b style="color:var(--yellow)">If you see "Failed to fetch":</b> Run <code style="background:var(--bg3);padding:1px 5px;border-radius:3px">node dhan_proxy.js</code> in a terminal alongside this file.
+        </div>
+      </div><!-- /dhan -->
 
       <!-- ── TAB 4: SECTOR ROTATION TRACKER ────────────────── -->
       <div class="cp-section" id="cp-sec-srt">
