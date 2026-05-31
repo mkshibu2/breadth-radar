@@ -2,14 +2,14 @@
 """
 ╔══════════════════════════════════════════════════════════════════════╗
 ║  NSE VCP SCREENER — Minervini / O'Neil / Stage-2 Method              ║
-║  Version 3.0  |  Data: Yahoo Finance + NSE CSV  |  by Shibu          ║
+║  Version 3.1  |  Data: Yahoo Finance + NSE CSV  |  by Shibu          ║
 ║                                                                      ║
 ║  Scores every stock on:                                              ║
 ║    • Minervini Trend Template (Stage 2 confirmation)                 ║
 ║    • Prior Advance (momentum qualification)                          ║
 ║    • VCP: Drawdown, Volume dry-up, ATR contraction, Tightness        ║
 ║    • True VCP pullback sequence detection                            ║
-║    • NSE-Specific Sector/Industry Breadth & Health Tracking          ║
+║    • Smart Thematic Breadth (Railways, Defense, Pharma splits)       ║
 ║    • Potential BO & Pull Back Setup Detection                        ║
 ║    • Final Composite Score + Grade + Setup Type                      ║
 ║                                                                      ║
@@ -123,6 +123,10 @@ def fetch_data(symbol, days=400):
         try:
             raw        = tk.fast_info
             info['market_cap'] = safe(getattr(raw, 'market_cap', 0)) / 1e7  # → crore
+            
+            # Fetch YF sector/industry for smart routing
+            raw2 = tk.info
+            info['industry'] = raw2.get('industry', '—')
         except: pass
         return df, info
     except: return None, {}
@@ -474,7 +478,7 @@ def analyse(symbol, df, info, nse_comp, nse_ind):
     return {
         'symbol':       symbol,
         'company':      nse_comp,          # Using NSE Mapping
-        'sector':       nse_ind,           # Using NSE Mapping
+        'sector':       nse_ind,           # Using SMart Split NSE Mapping
         'market_cap':   mktcap,
         'current':      round(c.iloc[-1], 2),
         'h52':          h52,
@@ -705,7 +709,7 @@ TH = lambda t, i: (f'<th data-col="{i}" onclick="sortTable(this)" '
                    f'title="Click to sort">{t} <span class=\'sort-arrow\'>⇅</span></th>')
 
 HEADERS = ''.join(TH(h, i) for i, h in enumerate([
-    'SYMBOL','COMPANY','NSE INDUSTRY','MKTCAP(Cr)','PRICE',
+    'SYMBOL','COMPANY','NSE THEME/IND.','MKTCAP(Cr)','PRICE',
     '30D%','60D%','90D%','DIST 52W','DRAWDOWN',
     'VOL CONTR','ATR RATIO','TIGHTNESS','VCP PULLS',
     'RS SCORE','VCP SCORE','LEAD SCORE',
@@ -758,13 +762,13 @@ def generate_html(results, scan_time, total_scanned, errors, rejects, sector_sta
 
     sec_table = f'''<div style="background:#0d1929;border:1px solid #1e2d45;border-radius:6px;overflow:hidden;height:100%">
         <div style="padding:10px 16px;background:#0a1220;border-bottom:1px solid #1e2d45;font-size:11px;font-weight:800;color:#2dd4bf;letter-spacing:1px;text-transform:uppercase">
-            📊 NSE Industry Breadth & Health
+            📊 Thematic Breadth & Health
         </div>
         <div style="max-height:220px;overflow-y:auto;">
             <table style="width:100%;border-collapse:collapse;text-align:left">
                 <thead style="position:sticky;top:0;background:#0f1c30;box-shadow:0 1px 0 #1e2d45">
                     <tr>
-                        <th style="padding:8px 10px;font-size:9px;color:#64748b">NSE INDUSTRY</th>
+                        <th style="padding:8px 10px;font-size:9px;color:#64748b">NSE THEME/INDUSTRY</th>
                         <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">N500 UNIVERSE</th>
                         <th style="padding:8px 10px;font-size:9px;color:#2dd4bf;text-align:center">VCP CANDIDATES</th>
                         <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">% > 20 EMA</th>
@@ -823,7 +827,7 @@ def generate_html(results, scan_time, total_scanned, errors, rejects, sector_sta
     <div style="text-align:right;font-size:11px;color:#64748b;line-height:1.9">
       <div>Run: <b style="color:#94a3b8">{scan_time}</b></div>
       <div>Qualified:<b style="color:#4ade80"> {len(results)}</b> &nbsp;|&nbsp; Rejected:<b style="color:#f87171"> {rejects}</b> &nbsp;|&nbsp; Errors:<b style="color:#fb923c"> {errors}</b></div>
-      <div style="color:#334155">Data: Yahoo Finance + NSE CSV List</div>
+      <div style="color:#334155">Data: Yahoo Finance + NSE Smart Split</div>
     </div>
   </div>
 
@@ -847,7 +851,7 @@ def generate_html(results, scan_time, total_scanned, errors, rejects, sector_sta
         <button class="tab-btn" onclick="switchTab('all',this)">&#128203; All Results</button>
     </div>
     <div>
-        <input type="text" id="searchBox" class="search-box" placeholder="&#128269; Filter Symbol, Company, Industry..." onkeyup="filterTable()">
+        <input type="text" id="searchBox" class="search-box" placeholder="&#128269; Filter Symbol, Company, Theme..." onkeyup="filterTable()">
     </div>
   </div>
 
@@ -876,7 +880,7 @@ def main():
     interrupter = GracefulInterruptHandler()
 
     print('\n╔══════════════════════════════════════════════════════════════╗')
-    print('║  VCP SCANNER  v3.0  —  Minervini · O\'Neil · Stage-2        ║')
+    print('║  VCP SCANNER  v3.1  —  Minervini · O\'Neil · Stage-2        ║')
     print('╚══════════════════════════════════════════════════════════════╝\n')
     
     # 1. Load the NSE CSV dynamically
@@ -920,6 +924,45 @@ def main():
                 print(f'  [{i:3d}/{total}] {sym:<15} — skip (no data)')
                 continue
 
+            # --- SMART INDUSTRY/THEME SPLIT ---
+            yf_ind = info.get('industry', '')
+            
+            # 1. Railway Super-Theme (Overrides everything else)
+            railway_tickers = ['IRFC', 'IRCTC', 'RVNL', 'IRCON', 'RITES', 'TITAGARH', 'TEXMACO', 'RAILTEL', 'JWL']
+            if sym in railway_tickers or 'Railway' in nse_comp:
+                nse_ind = 'Railways'
+            
+            # 2. Pharma vs Hospitals
+            elif nse_ind == 'Healthcare':
+                if 'Drug' in yf_ind or 'Biotechnology' in yf_ind or 'Pharma' in nse_comp or 'Lab' in nse_comp:
+                    nse_ind = 'Pharma'
+                else:
+                    nse_ind = 'Hospitals & Healthcare'
+            
+            # 3. Defense Split
+            elif nse_ind == 'Capital Goods' or nse_ind == 'Services':
+                defense_keywords = ['Aerospace', 'Defense', 'Defence']
+                defense_tickers = ['HAL', 'BEL', 'MAZDOCK', 'COCHINSHIP', 'BDL', 'BEML', 'DATAPATTNS', 'GRSE', 'PARAS', 'MTARTECH']
+                if any(kw in yf_ind for kw in defense_keywords) or any(kw in nse_comp for kw in defense_keywords) or sym in defense_tickers:
+                    nse_ind = 'Defense'
+                    
+            # 4. Breaking up Financial Services (101 stocks is too many)
+            elif nse_ind == 'Financial Services':
+                if 'Bank' in nse_comp or 'Banks -' in yf_ind:
+                    nse_ind = 'Banks'
+                else:
+                    nse_ind = 'NBFCs & Finance'
+                    
+            # 5. Specialty Chemicals vs Agrochemicals
+            elif nse_ind == 'Chemicals':
+                agro_keywords = ['Agricultural', 'Fertilizer', 'Agri']
+                agro_tickers = ['CHAMBLFERT', 'FACT', 'COROMANDEL', 'GNFC', 'GSFC', 'RCF', 'UPL']
+                if any(kw in yf_ind for kw in agro_keywords) or sym in agro_tickers:
+                    nse_ind = 'Agrochemicals & Fertilizers'
+                else:
+                    nse_ind = 'Specialty Chemicals'
+            # ----------------------------------
+
             if nse_ind not in sector_stats:
                 sector_stats[nse_ind] = {'total': 0, 'vcp': 0, 'a20': 0, 'a50': 0, 'a200': 0}
 
@@ -935,7 +978,7 @@ def main():
             if c0 > s50: sector_stats[nse_ind]['a50'] += 1
             if c0 > s200: sector_stats[nse_ind]['a200'] += 1
 
-            # Pass NSE mappings directly to the analysis engine
+            # Pass SMART NSE mappings directly to the analysis engine
             result, reason = analyse(sym, df, info, nse_comp, nse_ind)
 
             if result is None:
@@ -1004,6 +1047,12 @@ def main():
     html = generate_html(results, scan_time, total, errors, rejects, sector_stats)
     html_out.write_text(html, encoding='utf-8')
     print(f'✅ HTML saved: {html_out}')
+
+    # --- DISABLED FOR GITHUB ACTIONS TO SAVE REPO SPACE ---
+    # xlsx_out = out_dir / 'vcp_scanner_results.xlsx'
+    # print(f'Generating Excel report...')
+    # if export_excel(results, xlsx_out):
+    #     print(f'✅ Excel saved: {xlsx_out}')
 
 if __name__ == '__main__':
     main()
