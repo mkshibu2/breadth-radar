@@ -2,7 +2,7 @@
 """
 ╔══════════════════════════════════════════════════════════════════════╗
 ║  NSE VCP SCREENER — Minervini / O'Neil / Stage-2 Method              ║
-║  Version 2.4  |  Free data via Yahoo Finance  |  by Shibu            ║
+║  Version 2.6  |  Free data via Yahoo Finance  |  by Shibu            ║
 ║                                                                      ║
 ║  Scores every Nifty 500 stock on:                                    ║
 ║    • Minervini Trend Template (Stage 2 confirmation)                 ║
@@ -10,12 +10,11 @@
 ║    • VCP: Drawdown, Volume dry-up, ATR contraction, Tightness        ║
 ║    • True VCP pullback sequence detection                            ║
 ║    • Relative Strength Proxy (vs universe)                           ║
-║    • Pocket Pivot detection                                          ║
-║    • Breakout Readiness Score                                        ║
+║    • Potential BO & Pull Back Setup Detection                        ║
 ║    • Final Composite Score + Grade + Setup Type                      ║
 ║                                                                      ║
 ║  Install: pip install yfinance pandas openpyxl                       ║
-║  Run:     python dhan_scanner.py                                     ║
+║  Run:     python vcp_scanner.py                                      ║
 ║  Output:  scanner_results.html  - to NSE Breadth Radar               ║
 ╚══════════════════════════════════════════════════════════════════════╝
 """
@@ -156,7 +155,6 @@ def safe(v, default=0.0):
     except: return default
 
 def atr(df, period):
-    """Average True Range over `period` days."""
     h, l, c = df['High'], df['Low'], df['Close']
     tr = pd.concat([h - l,
                     (h - c.shift()).abs(),
@@ -173,7 +171,6 @@ def sma(series, period):
 #  DATA FETCH
 # ═══════════════════════════════════════════════════════════════════════
 def fetch_data(symbol, days=400):
-    """Fetch daily OHLCV + basic info from Yahoo Finance."""
     try:
         tk    = yf.Ticker(symbol + '.NS')
         end   = datetime.now()
@@ -200,7 +197,7 @@ def fetch_data(symbol, days=400):
 # ═══════════════════════════════════════════════════════════════════════
 def check_liquidity(df, info):
     avg_vol      = df['Volume'].iloc[-30:].mean()
-    avg_turnover = (df['Close'].iloc[-30:] * df['Volume'].iloc[-30:]).mean() / 1e7  # crore
+    avg_turnover = (df['Close'].iloc[-30:] * df['Volume'].iloc[-30:]).mean() / 1e7
     market_cap   = safe(info.get('market_cap', 0))
     ok = (avg_vol      >= CFG['min_avg_volume_30d'] and
           avg_turnover >= CFG['min_avg_turnover_crore'] and
@@ -220,15 +217,15 @@ def trend_template(df):
     close  = c.iloc[-1]
 
     conds = [
-        close  > e10,    # Price above EMA10
-        e10    > e20,    # EMA10 > EMA20
-        e20    > e50,    # EMA20 > EMA50
-        e50    > s150,   # EMA50 > SMA150
-        s150   > s200,   # SMA150 > SMA200 (uptrend)
-        close  > s150,   # Price > SMA150
-        close  > s200,   # Price > SMA200
+        close  > e10,
+        e10    > e20,
+        e20    > e50,
+        e50    > s150,
+        s150   > s200,
+        close  > s150,
+        close  > s200,
     ]
-    score = sum(conds) / len(conds) * 35  # max 35 pts
+    score = sum(conds) / len(conds) * 35
     passed = sum(conds)
     return round(score, 1), passed, len(conds)
 
@@ -243,9 +240,9 @@ def prior_advance(df):
         p   = c.iloc[idx]
         return round((cur / p - 1) * 100, 1) if p > 0 else 0.0
 
-    r30 = ret(21)   # ~1 month trading days
-    r60 = ret(42)   # ~2 months
-    r90 = ret(63)   # ~3 months
+    r30 = ret(21)
+    r60 = ret(42)
+    r90 = ret(63)
 
     if   r90 >= 100: pts = 20
     elif r90 >= 70:  pts = 18
@@ -394,7 +391,7 @@ def vcp_pullbacks(df):
     return bonus, pullbacks
 
 # ═══════════════════════════════════════════════════════════════════════
-#  PART 11 — RS PROXY (computed after all stocks are scored)
+#  PART 11 — RS PROXY
 # ═══════════════════════════════════════════════════════════════════════
 def rs_proxy_raw(df):
     c   = df['Close']
@@ -419,18 +416,16 @@ def compute_rs_scores(results):
     return results
 
 # ═══════════════════════════════════════════════════════════════════════
-#  PART 12 — POCKET PIVOT DETECTION
+#  PART 12 — SETUP DETECTION (Pocket Pivot, Potential BO, Pull Back)
 # ═══════════════════════════════════════════════════════════════════════
 def pocket_pivot(df):
-    c      = df['Close']
-    v      = df['Volume']
-    e10_s  = ema(c, 10)
-
     if len(df) < 12: return False
-
-    today_vol  = v.iloc[-1]
-    today_cls  = c.iloc[-1]
-    today_e10  = e10_s.iloc[-1]
+    c = df['Close']
+    v = df['Volume']
+    e10_s = ema(c, 10)
+    today_vol = v.iloc[-1]
+    today_cls = c.iloc[-1]
+    today_e10 = e10_s.iloc[-1]
 
     prior = df.iloc[-11:-1]
     down_days = prior[prior['Close'] < prior['Close'].shift(1).fillna(prior['Close'])]
@@ -439,38 +434,69 @@ def pocket_pivot(df):
     max_down_vol = down_days['Volume'].max()
     return bool(today_cls > today_e10 and today_vol > max_down_vol)
 
+def potential_bo(df, r60, r90, dist52):
+    """
+    Looks for a stock setting up on the right side of a base.
+    Requires minimum 30% prior advance in 60-90 days, holding 50/200 SMA, 
+    and currently resting 2-12% below the 30-day high with drying volume.
+    """
+    if len(df) < 200: return False
+    c = df['Close']
+    v = df['Volume']
+    c0 = c.iloc[-1]
+    
+    s50 = sma(c, 50).iloc[-1]
+    s200 = sma(c, 200).iloc[-1]
+    h30 = df['High'].iloc[-30:].max()
+
+    # 1. Structural Uptrend
+    if not (c0 > s50 and s50 > s200): return False
+
+    # 2. Strong Momentum
+    if not (r60 >= 30 or r90 >= 30): return False
+
+    # 3. Orderly Cooldown
+    if dist52 < -25: return False
+
+    # 4. Consolidation (Parked below the pivot ceiling)
+    dist_to_h30 = (c0 - h30) / h30 * 100
+    if not (-12 <= dist_to_h30 <= -2): return False
+
+    # 5. Volume Contraction 
+    v3 = v.iloc[-3:].mean()
+    v20 = v.iloc[-20:].mean()
+    if v3 >= v20: return False
+
+    return True
+
+def pull_back_setup(df):
+    """
+    Ensures the stock recently moved away from a valid pivot/ATH (hit a new high
+    in the last 15-20 days), but has since pulled back 3-12% while holding the 50 EMA.
+    """
+    if len(df) < 252: return False
+    c = df['Close']
+    h = df['High']
+    c0 = c.iloc[-1]
+
+    h252 = h.iloc[-252:].max()
+    h_recent = h.iloc[-20:].max()
+
+    # Did it hit / break out to an all-time/52W high recently?
+    hit_ath_recently = (h_recent >= h252 * 0.98)
+
+    # Is it currently pulling back from that breakout point?
+    drawdown = (c0 - h_recent) / h_recent * 100
+
+    # Ensure it hasn't broken structurally (must hold 50 EMA)
+    e50 = ema(c, 50).iloc[-1]
+
+    if hit_ath_recently and (-12 <= drawdown <= -3) and (c0 > e50):
+        return True
+    return False
+
 # ═══════════════════════════════════════════════════════════════════════
-#  PART 13 — BREAKOUT READINESS SCORE
-# ═══════════════════════════════════════════════════════════════════════
-def breakout_readiness(df, dist_52w, tight_pct, atr_ratio, dryup, vol_contr):
-    score  = 0
-    c      = df['Close']
-    v      = df['Volume']
-
-    h30    = df['High'].iloc[-30:].max()
-    cur    = c.iloc[-1]
-    to_piv = (cur - h30) / h30 * 100
-    if   to_piv >= -3:  score += 30
-    elif to_piv >= -5:  score += 20
-    elif to_piv >= -8:  score += 10
-
-    v3_avg  = v.iloc[-3:].mean()
-    v10_avg = v.iloc[-13:-3].mean()
-    if v10_avg > 0 and v3_avg > v10_avg: score += 20
-
-    if atr_ratio < 0.80: score += 20
-    elif atr_ratio < 0.85: score += 10
-
-    if   tight_pct <= 5: score += 20
-    elif tight_pct <= 8: score += 14
-    elif tight_pct <= 10: score += 7
-
-    if dryup: score += 10
-
-    return min(100, score)
-
-# ═══════════════════════════════════════════════════════════════════════
-#  PARTS 14-17 — SCORING & GRADING
+#  PARTS 13-16 — SCORING & GRADING
 # ═══════════════════════════════════════════════════════════════════════
 def leadership_score(prox_pts, trend_pts, rs_score, avg_turnover):
     liq = min(15, avg_turnover / 10 * 15) if avg_turnover < 10 else 15
@@ -492,21 +518,6 @@ def grade(score):
     else:             return 'REJECT'
 
 # ═══════════════════════════════════════════════════════════════════════
-#  PART 18 — SETUP TYPE CLASSIFICATION
-# ═══════════════════════════════════════════════════════════════════════
-def setup_type(drawdown, tight_pct, atr_ratio, dist_52w, dryup, bos):
-    if bos >= 60 and dist_52w >= -3 and tight_pct <= 8:
-        return '🚀 Breakout Ready'
-    elif drawdown >= -10 and tight_pct <= 8 and dryup:
-        return '🎯 Mature VCP'
-    elif drawdown >= -5:
-        return '🌱 Early VCP'
-    elif atr_ratio < 0.80:
-        return '📐 Contraction'
-    else:
-        return '👀 Watch'
-
-# ═══════════════════════════════════════════════════════════════════════
 #  MAIN ANALYSIS FUNCTION
 # ═══════════════════════════════════════════════════════════════════════
 def analyse(symbol, df, info):
@@ -524,15 +535,28 @@ def analyse(symbol, df, info):
     atr_ratio, atr_pts, atr_ok = atr_contraction(df)
     tight_pct, tight_pts = tightness(df)
     vcp_bonus, pullbacks = vcp_pullbacks(df)
-    pp = pocket_pivot(df)
+    
+    pp     = pocket_pivot(df)
+    pot_bo = potential_bo(df, r60, r90, dist52)
+    pb     = pull_back_setup(df)
+    
     rs_comp, rs63, rs126, rs252 = rs_proxy_raw(df)
 
     vcp_s  = vcp_score(adv_pts, dd_pts, vol_pts, atr_pts, tight_pts) + vcp_bonus
     vcp_s  = min(100, vcp_s)
-    lead_s = 0
 
-    bos = breakout_readiness(df, dist52, tight_pct, atr_ratio, dryup, vol_contr)
-    stype = setup_type(drawdown, tight_pct, atr_ratio, dist52, dryup, bos)
+    # Setup Hierarchy Logic
+    stype = '👀 Watch'
+    if pb: 
+        stype = '🧲 Pull Back'
+    elif pot_bo: 
+        stype = '🔮 Potential BO'
+    elif drawdown >= -10 and tight_pct <= 8 and dryup:
+        stype = '🎯 Mature VCP'
+    elif drawdown >= -5:
+        stype = '🌱 Early VCP'
+    elif atr_ratio < 0.80:
+        stype = '📐 Contraction'
 
     return {
         'symbol':       symbol,
@@ -557,13 +581,14 @@ def analyse(symbol, df, info):
         'trend_passed': f'{trend_passed}/{trend_total}',
         'pullbacks':    ' → '.join(str(p)+'%' for p in pullbacks) or '—',
         'pocket_pivot': '✅ YES' if pp else '—',
+        'pot_bo':       '✅ YES' if pot_bo else '—',
+        'pull_back':    '✅ YES' if pb else '—',
         'vcp_score':    vcp_s,
         'lead_score':   0,
         'rs_score':     0,
         'final_score':  0,
         'grade':        '—',
         'setup':        stype,
-        'bos':          bos,
         'adv_pts':      adv_pts,
         'prox_pts':     prox_pts,
         'trend_pts':    trend_pts,
@@ -599,7 +624,6 @@ th:hover .sort-arrow{color:#2dd4bf}
 
 UI_SCRIPT = r"""
 <script>
-// Filter table rows across Symbol, Company, and Sector (cells 0, 1, 2)
 function filterTable() {
   var input = document.getElementById("searchBox").value.toLowerCase();
   var activeTab = document.querySelector('.tab.active');
@@ -619,7 +643,7 @@ function switchTab(name, btn) {
   var el = document.getElementById('tab-' + name);
   if (el) el.classList.add('active');
   btn.classList.add('active');
-  filterTable(); // Re-apply global search to the new tab
+  filterTable(); 
 }
 
 var _ss = {};
@@ -642,7 +666,6 @@ function sortTable(th) {
     var cmp = (!isNaN(an)&&!isNaN(bn)) ? an-bn : av.localeCompare(bv,'en',{numeric:true});
     return next==='asc' ? cmp : -cmp;
   });
-  // Strip zebra striping class handling to allow search filter logic to manage display
   rows.forEach(function(r,i){ r.style.background=i%2===0?'#0d1929':'#0f1c30'; tb.appendChild(r); });
 }
 
@@ -712,7 +735,11 @@ def build_table_rows(stocks, bg1='#0d1929', bg2='#0f1c30'):
         vc   = '#4ade80' if r['vol_contr'] <= -20 else '#fbbf24' if r['vol_contr'] < 0 else '#f87171'
         ac   = '#4ade80' if r['atr_ratio'] < 0.75 else '#fbbf24' if r['atr_ratio'] < 0.85 else '#f87171'
         tc   = '#4ade80' if r['tight_pct'] <= 8 else '#fbbf24' if r['tight_pct'] <= 12 else '#f87171'
-        pp   = '<span style="color:#2dd4bf">✅</span>' if '✅' in r['pocket_pivot'] else '—'
+        
+        pp    = '<span style="color:#2dd4bf">✅</span>' if '✅' in r.get('pocket_pivot', '') else '—'
+        potbo = '<span style="color:#a855f7">✅</span>' if '✅' in r.get('pot_bo', '') else '—'
+        pb    = '<span style="color:#f43f5e">✅</span>' if '✅' in r.get('pull_back', '') else '—'
+        
         tv_link = f"{CFG['tv_chart_url']}?symbol=NSE:{r['symbol']}"
 
         rows.append(f"""<tr style="background:{bg};border-bottom:1px solid #1e2d45">
@@ -745,7 +772,6 @@ def build_table_rows(stocks, bg1='#0d1929', bg2='#0f1c30'):
   <td style="padding:9px 8px;font-family:monospace;font-size:11px;color:#fb923c">{r['rs_score']:.0f}</td>
   <td style="padding:9px 8px;font-family:monospace;font-size:11px;color:#60a5fa">{r['vcp_score']:.0f}</td>
   <td style="padding:9px 8px;font-family:monospace;font-size:11px;color:#a78bfa">{r['lead_score']:.0f}</td>
-  <td style="padding:9px 8px;font-family:monospace;font-size:11px;color:#2dd4bf">{r['bos']}</td>
   <td style="padding:9px 12px;text-align:center">
     <span style="font-size:18px;font-weight:900;color:{gc}">{r['final_score']:.0f}</span>
   </td>
@@ -754,6 +780,8 @@ def build_table_rows(stocks, bg1='#0d1929', bg2='#0f1c30'):
                  font-size:11px;font-weight:800;border:1px solid {gc}44">{r['grade']}</span>
   </td>
   <td style="padding:9px 8px;font-size:11px;white-space:nowrap">{r['setup']}</td>
+  <td style="padding:9px 8px;text-align:center">{potbo}</td>
+  <td style="padding:9px 8px;text-align:center">{pb}</td>
   <td style="padding:9px 8px;text-align:center">{pp}</td>
 </tr>""")
     return '\n'.join(rows)
@@ -768,17 +796,18 @@ HEADERS = ''.join(TH(h, i) for i, h in enumerate([
     'SYMBOL','COMPANY','SECTOR','MKTCAP(Cr)','PRICE',
     '30D%','60D%','90D%','DIST 52W','DRAWDOWN',
     'VOL CONTR','ATR RATIO','TIGHTNESS','VCP PULLS',
-    'RS SCORE','VCP SCORE','LEAD SCORE','BREAKOUT RDY',
-    'FINAL','GRADE','SETUP','PP'
+    'RS SCORE','VCP SCORE','LEAD SCORE',
+    'FINAL','GRADE','SETUP','POTENTIAL BO','PULL BACK','PP'
 ]))
 
 def generate_html(results, scan_time, total_scanned, errors, rejects):
     import json as _json
-    elite   = [r for r in results if r['grade'] in ('A+','A')][:20]
-    brk     = sorted([r for r in results if r['setup'] and 'Breakout' in r['setup']], key=lambda x: -x['final_score'])[:20]
-    pp_list = [r for r in results if r['pocket_pivot'] and 'YES' in r['pocket_pivot']][:20]
-    watch   = [r for r in results if r['grade'] == 'B'][:20]
-    emerge  = [r for r in results if r['grade'] == 'C'][:20]
+    elite      = [r for r in results if r['grade'] in ('A+','A')][:20]
+    potbo_list = [r for r in results if r.get('pot_bo') and 'YES' in r['pot_bo']][:20]
+    pb_list    = [r for r in results if r.get('pull_back') and 'YES' in r['pull_back']][:20]
+    pp_list    = [r for r in results if r['pocket_pivot'] and 'YES' in r['pocket_pivot']][:20]
+    watch      = [r for r in results if r['grade'] == 'B'][:20]
+    emerge     = [r for r in results if r['grade'] == 'C'][:20]
 
     def card(lbl, val, clr, sub):
         return (f'<div style="background:#0d1929;border:1px solid #1e2d45;border-radius:6px;padding:14px 16px">'
@@ -786,10 +815,10 @@ def generate_html(results, scan_time, total_scanned, errors, rejects):
                 f'<div style="font-size:26px;font-weight:900;color:{clr}">{val}</div>'
                 f'<div style="font-size:10px;color:#64748b;margin-top:2px">{sub}</div></div>')
 
-    cards = (card('Elite (A+/A)',    len(elite),   '#2dd4bf', 'Score &ge; 80') +
-             card('Breakout Ready',  len(brk),     '#4ade80', 'Near pivot') +
-             card('Pocket Pivots',   len(pp_list), '#fbbf24', "O'Neil confirmed") +
-             card('Total Qualified', len(results), '#60a5fa', 'Passed all filters'))
+    cards = (card('Elite (A+/A)',    len(elite),      '#2dd4bf', 'Score &ge; 80') +
+             card('Potential BO',    len(potbo_list), '#a855f7', 'Resting near pivot') +
+             card('Pull Backs',      len(pb_list),    '#f43f5e', 'Retesting support') +
+             card('Pocket Pivots',   len(pp_list),    '#fbbf24', "O'Neil confirmed"))
 
     def tab_section(title, color, stocks, tid):
         if not stocks:
@@ -807,15 +836,16 @@ def generate_html(results, scan_time, total_scanned, errors, rejects):
                 f'border-radius:5px;padding:7px 16px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">'
                 f'&#128203; Export TradingView Watchlist</button></div>'
                 f'<div style="overflow-x:auto;border:1px solid #1e2d45;border-radius:6px">'
-                f'<table id="tbl-{tid}" style="width:100%;border-collapse:collapse;font-family:system-ui;min-width:1400px">'
+                f'<table id="tbl-{tid}" style="width:100%;border-collapse:collapse;font-family:system-ui;min-width:1450px">'
                 f'<thead><tr>{HEADERS}</tr></thead><tbody>{rows}</tbody></table></div></div>')
 
-    s_elite  = tab_section('Elite VCP Candidates (A+ / A)', '#2dd4bf', elite,   'elite')
-    s_brk    = tab_section('Breakout Ready',                '#4ade80', brk,     'brk')
-    s_pp     = tab_section('Pocket Pivot Candidates',       '#fbbf24', pp_list, 'pp')
-    s_watch  = tab_section('Watchlist (Grade B)',           '#a78bfa', watch,   'watch')
-    s_emerge = tab_section('Emerging (Grade C)',            '#fb923c', emerge,  'emerge')
-    s_all    = tab_section('All Qualified Stocks',          '#60a5fa', results, 'all')
+    s_elite  = tab_section('Elite VCP Candidates (A+ / A)', '#2dd4bf', elite,      'elite')
+    s_potbo  = tab_section('Potential Breakouts',           '#a855f7', potbo_list, 'potbo')
+    s_pb     = tab_section('Pull Back Setups',              '#f43f5e', pb_list,    'pb')
+    s_pp     = tab_section('Pocket Pivot Candidates',       '#fbbf24', pp_list,    'pp')
+    s_watch  = tab_section('Watchlist (Grade B)',           '#a78bfa', watch,      'watch')
+    s_emerge = tab_section('Emerging (Grade C)',            '#fb923c', emerge,     'emerge')
+    s_all    = tab_section('All Qualified Stocks',          '#60a5fa', results,    'all')
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -831,7 +861,7 @@ def generate_html(results, scan_time, total_scanned, errors, rejects):
       margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid #1e2d45;flex-wrap:wrap;gap:12px">
     <div>
       <h1 style="font-size:26px;font-weight:900;color:#2dd4bf;letter-spacing:-0.5px">&#128225; VCP SCANNER</h1>
-      <p style="font-size:12px;color:#64748b;margin-top:4px">Minervini Trend Template &middot; Stage-2 &middot; VCP &middot; Pocket Pivot &middot; Breakout Ready</p>
+      <p style="font-size:12px;color:#64748b;margin-top:4px">Minervini Trend Template &middot; Stage-2 &middot; VCP &middot; Pocket Pivot &middot; Potential BO</p>
     </div>
     <div style="text-align:right;font-size:11px;color:#64748b;line-height:1.9">
       <div>Run: <b style="color:#94a3b8">{scan_time}</b></div>
@@ -844,7 +874,8 @@ def generate_html(results, scan_time, total_scanned, errors, rejects):
   <div style="border-bottom:1px solid #1e2d45;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding-bottom:8px">
     <div style="display:flex;gap:0;flex-wrap:wrap">
         <button class="tab-btn active" onclick="switchTab('elite',this)">&#127942; Elite (A+/A)</button>
-        <button class="tab-btn" onclick="switchTab('brk',this)">&#128640; Breakout Ready</button>
+        <button class="tab-btn" onclick="switchTab('potbo',this)">&#128302; Potential BO</button>
+        <button class="tab-btn" onclick="switchTab('pb',this)">&#129682; Pull Backs</button>
         <button class="tab-btn" onclick="switchTab('pp',this)">&#9889; Pocket Pivots</button>
         <button class="tab-btn" onclick="switchTab('watch',this)">&#128064; Watchlist (B)</button>
         <button class="tab-btn" onclick="switchTab('emerge',this)">&#127807; Emerging (C)</button>
@@ -856,7 +887,8 @@ def generate_html(results, scan_time, total_scanned, errors, rejects):
   </div>
 
   <div id="tab-elite"  class="tab active">{s_elite}</div>
-  <div id="tab-brk"    class="tab">{s_brk}</div>
+  <div id="tab-potbo"  class="tab">{s_potbo}</div>
+  <div id="tab-pb"     class="tab">{s_pb}</div>
   <div id="tab-pp"     class="tab">{s_pp}</div>
   <div id="tab-watch"  class="tab">{s_watch}</div>
   <div id="tab-emerge" class="tab">{s_emerge}</div>
@@ -879,20 +911,23 @@ def export_excel(results, outfile):
         cols = ['symbol','company','sector','market_cap','current',
                 'r30','r60','r90','dist52','drawdown','vol_contr',
                 'atr_ratio','tight_pct','pullbacks','rs_score',
-                'vcp_score','lead_score','bos','final_score','grade','setup','pocket_pivot']
+                'vcp_score','lead_score','final_score','grade','setup','pot_bo','pull_back','pocket_pivot']
+        
         df = pd.DataFrame([{c: r[c] for c in cols} for r in results])
         df.columns = ['Symbol','Company','Sector','MktCap(Cr)','Price',
                       '30D%','60D%','90D%','Dist52W%','Drawdown%','VolContr%',
                       'ATR Ratio','Tightness%','VCP Pulls','RS Score',
-                      'VCP Score','Lead Score','Breakout Rdy','Final Score',
-                      'Grade','Setup','Pocket Pivot']
+                      'VCP Score','Lead Score','Final Score',
+                      'Grade','Setup','Potential BO','Pull Back','Pocket Pivot']
 
-        brk_syms = set(r['symbol'] for r in results if r['setup'] and 'Breakout' in r['setup'])
-        pp_syms  = set(r['symbol'] for r in results if r['pocket_pivot'] and 'YES' in r['pocket_pivot'])
+        potbo_syms = set(r['symbol'] for r in results if r.get('pot_bo') and 'YES' in r['pot_bo'])
+        pb_syms    = set(r['symbol'] for r in results if r.get('pull_back') and 'YES' in r['pull_back'])
+        pp_syms    = set(r['symbol'] for r in results if r.get('pocket_pivot') and 'YES' in r['pocket_pivot'])
 
         tabs = [
             ('Elite (A+A)',     df[df['Grade'].isin(['A+','A'])]),
-            ('Breakout Ready',  df[df['Symbol'].isin(brk_syms)]),
+            ('Potential BO',    df[df['Symbol'].isin(potbo_syms)]),
+            ('Pull Backs',      df[df['Symbol'].isin(pb_syms)]),
             ('Pocket Pivots',   df[df['Symbol'].isin(pp_syms)]),
             ('Watchlist (B)',   df[df['Grade'] == 'B']),
             ('Emerging (C)',    df[df['Grade'] == 'C']),
@@ -907,7 +942,8 @@ def export_excel(results, outfile):
             wb = writer.book
             tab_colors = {
                 'Elite (A+A)':    '2DD4BF',
-                'Breakout Ready': '4ADE80',
+                'Potential BO':   'A855F7',
+                'Pull Backs':     'F43F5E',
                 'Pocket Pivots':  'FBBF24',
                 'Watchlist (B)':  'A78BFA',
                 'Emerging (C)':   'FB923C',
@@ -944,7 +980,7 @@ def main():
     interrupter = GracefulInterruptHandler()
 
     print('\n╔══════════════════════════════════════════════════════════════╗')
-    print('║  VCP SCANNER  v2.4  —  Minervini · O\'Neil · Stage-2        ║')
+    print('║  VCP SCANNER  v2.6  —  Minervini · O\'Neil · Stage-2        ║')
     print('╚══════════════════════════════════════════════════════════════╝\n')
     print('💡 TIP: Press Ctrl+C at any time to instantly stop scanning and generate')
     print('the output HTML/Excel files for the stocks processed up to that point.\n')
@@ -1008,8 +1044,7 @@ def main():
     results.sort(key=lambda x: -x['final_score'])
 
     elite = [r for r in results if r['grade'] in ('A+','A')]
-    watch = [r for r in results if r['grade'] == 'B']
-    pps   = [r for r in results if '✅' in r['pocket_pivot']]
+    pot_bos = [r for r in results if '✅' in r.get('pot_bo', '')]
 
     print(f'\n╔══════════════════════════════════════════════════════════════╗')
     print(f'║  SCAN COMPLETE                                               ║')
@@ -1022,27 +1057,24 @@ def main():
             print(f'   {r["symbol"]:<14} score:{r["final_score"]:5.1f}  '
                   f'grade:{r["grade"]}  vcp:{r["vcp_score"]:4.0f}  '
                   f'rs:{r["rs_score"]:4.0f}  {r["setup"]}')
-
-    if pps:
-        print(f'\n⚡ POCKET PIVOTS ({len(pps)}):')
-        for r in pps[:10]:
+                  
+    if pot_bos:
+        print(f'\n🔮 POTENTIAL BREAKOUTS ({len(pot_bos)}):')
+        for r in pot_bos[:10]:
             print(f'   {r["symbol"]:<14} score:{r["final_score"]:5.1f}')
 
     out_dir  = Path(__file__).resolve().parent
     html_out = out_dir / 'vcp_scanner_results.html'
-    xlsx_out = out_dir / 'vcp_scanner_results.xlsx'
+    #xlsx_out = out_dir / 'vcp_scanner_results.xlsx'
 
     print(f'\nGenerating HTML report...')
     html = generate_html(results, scan_time, total, errors, rejects)
     html_out.write_text(html, encoding='utf-8')
     print(f'✅ HTML saved: {html_out}')
 
-    print(f'Generating Excel report...')
-    if export_excel(results, xlsx_out):
-        print(f'✅ Excel saved: {xlsx_out}')
-
-    # print(f'\nOpening browser...\n')
-    # webbrowser.open(html_out.as_uri())
+    #print(f'Generating Excel report...')
+    #if export_excel(results, xlsx_out):
+     #   print(f'✅ Excel saved: {xlsx_out}')
 
 
 if __name__ == '__main__':
