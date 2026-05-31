@@ -2,16 +2,15 @@
 """
 ╔══════════════════════════════════════════════════════════════════════╗
 ║  NSE VCP SCREENER — Minervini / O'Neil / Stage-2 Method              ║
-║  Version 2.7  |  Free data via Yahoo Finance  |  by Shibu            ║
+║  Version 3.0  |  Data: Yahoo Finance + NSE CSV  |  by Shibu          ║
 ║                                                                      ║
-║  Scores every Nifty 500 stock on:                                    ║
+║  Scores every stock on:                                              ║
 ║    • Minervini Trend Template (Stage 2 confirmation)                 ║
 ║    • Prior Advance (momentum qualification)                          ║
 ║    • VCP: Drawdown, Volume dry-up, ATR contraction, Tightness        ║
 ║    • True VCP pullback sequence detection                            ║
-║    • Relative Strength Proxy (vs universe)                           ║
+║    • NSE-Specific Sector/Industry Breadth & Health Tracking          ║
 ║    • Potential BO & Pull Back Setup Detection                        ║
-║    • Sector Breadth & Health Tracking                                ║
 ║    • Final Composite Score + Grade + Setup Type                      ║
 ║                                                                      ║
 ║  Install: pip install yfinance pandas openpyxl                       ║
@@ -87,66 +86,6 @@ CFG = {
 }
 
 # ═══════════════════════════════════════════════════════════════════════
-#  NIFTY 500 SYMBOLS
-# ═══════════════════════════════════════════════════════════════════════
-NIFTY500 = [
-    "360ONE","3MINDIA","ABB","ABBOTINDIA","ABCAPITAL","ABFRL","ACC",
-    "AARTIIND","ADANIENT","ADANIGREEN","ADANIPORTS","ADANIPOWER",
-    "AFFLE","AJANTPHARM","ALKEM","ALKYLAMINE","ALLCARGO",
-    "AMBUJACEM","ANANDRATHI","ANGELONE","ANURAS","APARINDS",
-    "APOLLOHOSP","APOLLOTYRE","APTUS","ARVINDFASN","ASAHIINDIA",
-    "ASHOKLEY","ASIANPAINT","ASTRAL","ATGL","ATUL","AUROPHARMA",
-    "AVANTIFEED","AXISBANK","BAJAJ-AUTO","BAJAJFINSV","BAJAJHLDNG",
-    "BAJFINANCE","BALKRISIND","BALRAMCHIN","BANDHANBNK","BANKBARODA",
-    "BANKINDIA","BATAINDIA","BEL","BERGEPAINT","BHARATFORG",
-    "BHARTIARTL","BHEL","BIOCON","BIRLACORPN","BLUEDART",
-    "BOSCHLTD","BPCL","BRIGADE","BSE","BSOFT","CAMS","CANFINHOME",
-    "CANBK","CAPLIPOINT","CARBORUNIV","CASTROLIND","CCL","CDSL",
-    "CENTURYPLY","CESC","CHAMBLFERT","CHOLAFIN","CIPLA",
-    "COALINDIA","COCHINSHIP","COFORGE","COLPAL","CONCOR",
-    "COROMANDEL","CREDITACC","CROMPTON","CSBBANK","CUB",
-    "CUMMINSIND","CYIENT","DATAPATTNS","DBREALTY","DCMSHRIRAM",
-    "DEEPAKNTR","DELHIVERY","DEVYANI","DIVISLAB","DIXON","DLF",
-    "DMART","DODLA","DRREDDY","EIDPARRY","ELGIEQUIP","EMAMILTD",
-    "ENDURANCE","ENGINERSIN","ESCORTS","EXIDEIND","FACT",
-    "FINCABLES","FLUOROCHEM","FORTIS","FSL","GAIL","GALAXYSURF",
-    "GILLETTE","GLAXO","GLENMARK","GNFC","GODFRYPHLP","GODREJCP",
-    "GODREJIND","GODREJPROP","GRANULES","GRAPHITE","GRASIM",
-    "GREENPANEL","GRINDWELL","GUJGASLTD","HAL","HAPPSTMNDS",
-    "HAVELLS","HCLTECH","HDFCAMC","HDFCBANK","HDFCLIFE","HFCL",
-    "HIKAL","HINDCOPPER","HINDPETRO","HINDUNILVR","HONAUT","HUDCO",
-    "IBREALEST","ICICIBANK","ICICIGI","ICICIPRULI","IDBI",
-    "IDFCFIRSTB","IEX","IGL","IIFL","INDHOTEL","INDIAMART",
-    "INDIANB","INDIGO","INDUSINDBK","INDUSTOWER","INFY","IOB",
-    "IOC","IPCALAB","IRB","IRCTC","IRFC","ITC","ITI","J&KBANK",
-    "JBCHEPHARM","JKCEMENT","JKLAKSHMI","JMFINANCIL","JSWENERGY",
-    "JSWSTEEL","JUBLFOOD","JUBLINGREA","JUSTDIAL","JYOTHYLAB",
-    "KAJARIACER","KANSAINER","KEC","KFINTECH","KNRCON","KOTAKBANK",
-    "KPIL","KRBL","KSCL","LATENTVIEW","LAURUSLABS","LICI",
-    "LICHSGFIN","LINDEINDIA","LT","LTTS","LUPIN","LUXIND",
-    "M&M","M&MFIN","MARICO","MARUTI","MASTEK","MAXHEALTH","MCX",
-    "MEDANTA","METROPOLIS","MFSL","MGL","MPHASIS","MRF","MRPL",
-    "MUTHOOTFIN","NATCOPHARM","NAUKRI","NAVINFLUOR","NBCC","NCC",
-    "NESTLEIND","NHPC","NIACL","NLCINDIA","NMDC","NOCIL","NTPC",
-    "NUVOCO","OBEROIRLTY","OIL","ONGC","ORIENTELEC","PAGEIND",
-    "PERSISTENT","PETRONET","PFC","PGHH","PHOENIXLTD","PIDILITIND",
-    "PIIND","PNBHOUSING","POLICYBZR","POLYCAB","POLYMED",
-    "POONAWALLA","POWERGRID","RADICO","RAILTEL","RAINBOW",
-    "RAJESHEXPO","RAMCOCEM","RATNAMANI","RAYMOND","RECLTD",
-    "REDINGTON","RELIANCE","RITES","RKFORGE","RPOWER","SAFARI",
-    "SANOFI","SCI","SHREECEM","SHRIRAMFIN","SIEMENS","SJVN",
-    "SKFINDIA","SOBHA","SOLARA","SONACOMS","SRF","STARHEALTH",
-    "STCINDIA","SUNPHARMA","SUNTV","SUPREMEIND","SUZLON",
-    "SYMPHONY","TANLA","TATACOMM","TATACONSUM","TATAELXSI",
-    "TATAPOWER","TATASTEEL","TATATECH","TCI","TEAMLEASE","TIINDIA",
-    "TIMKEN","TITAGARH","TITAN","TORNTPHARM","TORNTPOWER","TRENT",
-    "TRIDENT","TRIVENI","UCOBANK","UJJIVANSFB","ULTRACEMCO",
-    "UNIONBANK","UPL","UTIAMC","VAIBHAVGBL","VBL","VEDL",
-    "VINATIORGA","VOLTAS","VSTIND","WABAG","WELCORP","WESTLIFE",
-    "WHIRLPOOL","WIPRO","YESBANK","ZEEL","ZYDUSLIFE",
-]
-
-# ═══════════════════════════════════════════════════════════════════════
 #  HELPERS
 # ═══════════════════════════════════════════════════════════════════════
 def safe(v, default=0.0):
@@ -169,7 +108,7 @@ def sma(series, period):
     return series.rolling(period).mean()
 
 # ═══════════════════════════════════════════════════════════════════════
-#  DATA FETCH
+#  DATA FETCH (Yahoo Finance)
 # ═══════════════════════════════════════════════════════════════════════
 def fetch_data(symbol, days=400):
     try:
@@ -184,11 +123,6 @@ def fetch_data(symbol, days=400):
         try:
             raw        = tk.fast_info
             info['market_cap'] = safe(getattr(raw, 'market_cap', 0)) / 1e7  # → crore
-            info['company']    = getattr(raw, 'quote_type', symbol)
-            raw2               = tk.info
-            info['sector']     = raw2.get('sector', '—')
-            info['industry']   = raw2.get('industry', '—')
-            info['company']    = raw2.get('shortName', symbol)
         except: pass
         return df, info
     except: return None, {}
@@ -500,7 +434,7 @@ def grade(score):
 # ═══════════════════════════════════════════════════════════════════════
 #  MAIN ANALYSIS FUNCTION
 # ═══════════════════════════════════════════════════════════════════════
-def analyse(symbol, df, info):
+def analyse(symbol, df, info, nse_comp, nse_ind):
     c = df['Close']
     liq_ok, avg_vol, avg_turn, mktcap = check_liquidity(df, info)
     trend_pts, trend_passed, trend_total = trend_template(df)
@@ -539,9 +473,8 @@ def analyse(symbol, df, info):
 
     return {
         'symbol':       symbol,
-        'company':      info.get('company', symbol),
-        'sector':       info.get('sector', '—'),
-        'industry':     info.get('industry', '—'),
+        'company':      nse_comp,          # Using NSE Mapping
+        'sector':       nse_ind,           # Using NSE Mapping
         'market_cap':   mktcap,
         'current':      round(c.iloc[-1], 2),
         'h52':          h52,
@@ -772,7 +705,7 @@ TH = lambda t, i: (f'<th data-col="{i}" onclick="sortTable(this)" '
                    f'title="Click to sort">{t} <span class=\'sort-arrow\'>⇅</span></th>')
 
 HEADERS = ''.join(TH(h, i) for i, h in enumerate([
-    'SYMBOL','COMPANY','SECTOR','MKTCAP(Cr)','PRICE',
+    'SYMBOL','COMPANY','NSE INDUSTRY','MKTCAP(Cr)','PRICE',
     '30D%','60D%','90D%','DIST 52W','DRAWDOWN',
     'VOL CONTR','ATR RATIO','TIGHTNESS','VCP PULLS',
     'RS SCORE','VCP SCORE','LEAD SCORE',
@@ -825,13 +758,13 @@ def generate_html(results, scan_time, total_scanned, errors, rejects, sector_sta
 
     sec_table = f'''<div style="background:#0d1929;border:1px solid #1e2d45;border-radius:6px;overflow:hidden;height:100%">
         <div style="padding:10px 16px;background:#0a1220;border-bottom:1px solid #1e2d45;font-size:11px;font-weight:800;color:#2dd4bf;letter-spacing:1px;text-transform:uppercase">
-            📊 Sector Breadth & Health
+            📊 NSE Industry Breadth & Health
         </div>
         <div style="max-height:220px;overflow-y:auto;">
             <table style="width:100%;border-collapse:collapse;text-align:left">
                 <thead style="position:sticky;top:0;background:#0f1c30;box-shadow:0 1px 0 #1e2d45">
                     <tr>
-                        <th style="padding:8px 10px;font-size:9px;color:#64748b">SECTOR</th>
+                        <th style="padding:8px 10px;font-size:9px;color:#64748b">NSE INDUSTRY</th>
                         <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">N500 UNIVERSE</th>
                         <th style="padding:8px 10px;font-size:9px;color:#2dd4bf;text-align:center">VCP CANDIDATES</th>
                         <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">% > 20 EMA</th>
@@ -890,7 +823,7 @@ def generate_html(results, scan_time, total_scanned, errors, rejects, sector_sta
     <div style="text-align:right;font-size:11px;color:#64748b;line-height:1.9">
       <div>Run: <b style="color:#94a3b8">{scan_time}</b></div>
       <div>Qualified:<b style="color:#4ade80"> {len(results)}</b> &nbsp;|&nbsp; Rejected:<b style="color:#f87171"> {rejects}</b> &nbsp;|&nbsp; Errors:<b style="color:#fb923c"> {errors}</b></div>
-      <div style="color:#334155">Yahoo Finance &middot; NSE &middot; Free &middot; No API Key</div>
+      <div style="color:#334155">Data: Yahoo Finance + NSE CSV List</div>
     </div>
   </div>
 
@@ -914,7 +847,7 @@ def generate_html(results, scan_time, total_scanned, errors, rejects, sector_sta
         <button class="tab-btn" onclick="switchTab('all',this)">&#128203; All Results</button>
     </div>
     <div>
-        <input type="text" id="searchBox" class="search-box" placeholder="&#128269; Filter Symbol, Company, Sector..." onkeyup="filterTable()">
+        <input type="text" id="searchBox" class="search-box" placeholder="&#128269; Filter Symbol, Company, Industry..." onkeyup="filterTable()">
     </div>
   </div>
 
@@ -943,12 +876,25 @@ def main():
     interrupter = GracefulInterruptHandler()
 
     print('\n╔══════════════════════════════════════════════════════════════╗')
-    print('║  VCP SCANNER  v2.7  —  Minervini · O\'Neil · Stage-2        ║')
+    print('║  VCP SCANNER  v3.0  —  Minervini · O\'Neil · Stage-2        ║')
     print('╚══════════════════════════════════════════════════════════════╝\n')
-    print('💡 TIP: Press Ctrl+C at any time to instantly stop scanning and generate')
-    print('the output HTML/Excel files for the stocks processed up to that point.\n')
+    
+    # 1. Load the NSE CSV dynamically
+    try:
+        csv_path = Path(__file__).resolve().parent / 'ind_nifty500list.csv'
+        nse_df = pd.read_csv(csv_path)
+        nse_map = nse_df.set_index('Symbol').to_dict('index')
+        symbols_to_scan = list(nse_map.keys())
+        print(f"✅ Successfully loaded {len(symbols_to_scan)} symbols from ind_nifty500list.csv")
+    except Exception as e:
+        print(f"❌ Error loading 'ind_nifty500list.csv'. Ensure the file is placed in the exact same folder as this script.")
+        print(f"Details: {e}")
+        sys.exit(1)
 
-    total     = len(NIFTY500)
+    print('\n💡 TIP: Press Ctrl+C at any time to instantly stop scanning and generate')
+    print('the output HTML files for the stocks processed up to that point.\n')
+
+    total     = len(symbols_to_scan)
     results   = []
     errors    = 0
     rejects   = 0
@@ -958,21 +904,24 @@ def main():
 
     print(f'Scanning {total} NSE stocks via Yahoo Finance...\n')
 
-    for i, sym in enumerate(NIFTY500, 1):
+    for i, sym in enumerate(symbols_to_scan, 1):
         if interrupter.interrupted:
             print(f'\nProceeding to generate report with the {len(results)} valid stocks found so far...\n')
             break
 
         try:
+            # Look up specific NSE data from the CSV map
+            nse_info = nse_map.get(sym, {})
+            nse_ind  = nse_info.get('Industry', 'Unknown')
+            nse_comp = nse_info.get('Company Name', sym)
+
             df, info = fetch_data(sym)
             if df is None:
                 print(f'  [{i:3d}/{total}] {sym:<15} — skip (no data)')
                 continue
 
-            sec = info.get('sector', '—')
-            if sec == '—': sec = 'Unknown'
-            if sec not in sector_stats:
-                sector_stats[sec] = {'total': 0, 'vcp': 0, 'a20': 0, 'a50': 0, 'a200': 0}
+            if nse_ind not in sector_stats:
+                sector_stats[nse_ind] = {'total': 0, 'vcp': 0, 'a20': 0, 'a50': 0, 'a200': 0}
 
             # Safely capture Universe MAs before filtering
             c = df['Close']
@@ -981,12 +930,13 @@ def main():
             s50 = sma(c, 50).iloc[-1]
             s200 = sma(c, 200).iloc[-1]
 
-            sector_stats[sec]['total'] += 1
-            if c0 > e20: sector_stats[sec]['a20'] += 1
-            if c0 > s50: sector_stats[sec]['a50'] += 1
-            if c0 > s200: sector_stats[sec]['a200'] += 1
+            sector_stats[nse_ind]['total'] += 1
+            if c0 > e20: sector_stats[nse_ind]['a20'] += 1
+            if c0 > s50: sector_stats[nse_ind]['a50'] += 1
+            if c0 > s200: sector_stats[nse_ind]['a200'] += 1
 
-            result, reason = analyse(sym, df, info)
+            # Pass NSE mappings directly to the analysis engine
+            result, reason = analyse(sym, df, info, nse_comp, nse_ind)
 
             if result is None:
                 rejects += 1
@@ -994,7 +944,7 @@ def main():
                 continue
 
             results.append(result)
-            sector_stats[sec]['vcp'] += 1
+            sector_stats[nse_ind]['vcp'] += 1
             
             print(f'  [{i:3d}/{total}] {sym:<15} — vcp:{result["vcp_score"]:3.0f}'
                   f'  adv:{result["r90"]:+.0f}%'
@@ -1049,17 +999,11 @@ def main():
 
     out_dir  = Path(__file__).resolve().parent
     html_out = out_dir / 'vcp_scanner_results.html'
-    xlsx_out = out_dir / 'vcp_scanner_results.xlsx'
 
     print(f'\nGenerating HTML report...')
     html = generate_html(results, scan_time, total, errors, rejects, sector_stats)
     html_out.write_text(html, encoding='utf-8')
     print(f'✅ HTML saved: {html_out}')
-
-    # --- DISABLED FOR GITHUB ACTIONS TO SAVE REPO SPACE ---
-    # print(f'Generating Excel report...')
-    # if export_excel(results, xlsx_out):
-    #     print(f'✅ Excel saved: {xlsx_out}')
 
 if __name__ == '__main__':
     main()
