@@ -2,7 +2,7 @@
 """
 ╔══════════════════════════════════════════════════════════════════════╗
 ║  NSE VCP SCREENER — Minervini / O'Neil / Stage-2 Method              ║
-║  Version 2.6  |  Free data via Yahoo Finance  |  by Shibu            ║
+║  Version 2.7  |  Free data via Yahoo Finance  |  by Shibu            ║
 ║                                                                      ║
 ║  Scores every Nifty 500 stock on:                                    ║
 ║    • Minervini Trend Template (Stage 2 confirmation)                 ║
@@ -11,6 +11,7 @@
 ║    • True VCP pullback sequence detection                            ║
 ║    • Relative Strength Proxy (vs universe)                           ║
 ║    • Potential BO & Pull Back Setup Detection                        ║
+║    • Sector Breadth & Health Tracking                                ║
 ║    • Final Composite Score + Grade + Setup Type                      ║
 ║                                                                      ║
 ║  Install: pip install yfinance pandas openpyxl                       ║
@@ -435,11 +436,6 @@ def pocket_pivot(df):
     return bool(today_cls > today_e10 and today_vol > max_down_vol)
 
 def potential_bo(df, r60, r90, dist52):
-    """
-    Looks for a stock setting up on the right side of a base.
-    Requires minimum 30% prior advance in 60-90 days, holding 50/200 SMA, 
-    and currently resting 2-12% below the 30-day high with drying volume.
-    """
     if len(df) < 200: return False
     c = df['Close']
     v = df['Volume']
@@ -449,20 +445,13 @@ def potential_bo(df, r60, r90, dist52):
     s200 = sma(c, 200).iloc[-1]
     h30 = df['High'].iloc[-30:].max()
 
-    # 1. Structural Uptrend
     if not (c0 > s50 and s50 > s200): return False
-
-    # 2. Strong Momentum
     if not (r60 >= 30 or r90 >= 30): return False
-
-    # 3. Orderly Cooldown
     if dist52 < -25: return False
 
-    # 4. Consolidation (Parked below the pivot ceiling)
     dist_to_h30 = (c0 - h30) / h30 * 100
     if not (-12 <= dist_to_h30 <= -2): return False
 
-    # 5. Volume Contraction 
     v3 = v.iloc[-3:].mean()
     v20 = v.iloc[-20:].mean()
     if v3 >= v20: return False
@@ -470,10 +459,6 @@ def potential_bo(df, r60, r90, dist52):
     return True
 
 def pull_back_setup(df):
-    """
-    Ensures the stock recently moved away from a valid pivot/ATH (hit a new high
-    in the last 15-20 days), but has since pulled back 3-12% while holding the 50 EMA.
-    """
     if len(df) < 252: return False
     c = df['Close']
     h = df['High']
@@ -482,13 +467,8 @@ def pull_back_setup(df):
     h252 = h.iloc[-252:].max()
     h_recent = h.iloc[-20:].max()
 
-    # Did it hit / break out to an all-time/52W high recently?
     hit_ath_recently = (h_recent >= h252 * 0.98)
-
-    # Is it currently pulling back from that breakout point?
     drawdown = (c0 - h_recent) / h_recent * 100
-
-    # Ensure it hasn't broken structurally (must hold 50 EMA)
     e50 = ema(c, 50).iloc[-1]
 
     if hit_ath_recently and (-12 <= drawdown <= -3) and (c0 > e50):
@@ -545,7 +525,6 @@ def analyse(symbol, df, info):
     vcp_s  = vcp_score(adv_pts, dd_pts, vol_pts, atr_pts, tight_pts) + vcp_bonus
     vcp_s  = min(100, vcp_s)
 
-    # Setup Hierarchy Logic
     stype = '👀 Watch'
     if pb: 
         stype = '🧲 Pull Back'
@@ -800,7 +779,7 @@ HEADERS = ''.join(TH(h, i) for i, h in enumerate([
     'FINAL','GRADE','SETUP','POTENTIAL BO','PULL BACK','PP'
 ]))
 
-def generate_html(results, scan_time, total_scanned, errors, rejects):
+def generate_html(results, scan_time, total_scanned, errors, rejects, sector_stats):
     import json as _json
     elite      = [r for r in results if r['grade'] in ('A+','A')][:20]
     potbo_list = [r for r in results if r.get('pot_bo') and 'YES' in r['pot_bo']][:20]
@@ -819,6 +798,51 @@ def generate_html(results, scan_time, total_scanned, errors, rejects):
              card('Potential BO',    len(potbo_list), '#a855f7', 'Resting near pivot') +
              card('Pull Backs',      len(pb_list),    '#f43f5e', 'Retesting support') +
              card('Pocket Pivots',   len(pp_list),    '#fbbf24', "O'Neil confirmed"))
+
+    # Generate Sector Health Table
+    sec_rows = []
+    sorted_secs = sorted(sector_stats.items(), key=lambda x: (-x[1]['vcp'], -x[1]['total']))
+    for sec, st in sorted_secs:
+        if st['total'] == 0: continue
+        tot, vcp = st['total'], st['vcp']
+        p20  = int((st['a20'] / tot) * 100)
+        p50  = int((st['a50'] / tot) * 100)
+        p200 = int((st['a200'] / tot) * 100)
+        
+        c20  = '#4ade80' if p20 >= 60 else '#fbbf24' if p20 >= 40 else '#f87171'
+        c50  = '#4ade80' if p50 >= 60 else '#fbbf24' if p50 >= 40 else '#f87171'
+        c200 = '#4ade80' if p200 >= 60 else '#fbbf24' if p200 >= 40 else '#f87171'
+        vcp_c = '#2dd4bf' if vcp > 0 else '#64748b'
+
+        sec_rows.append(f'''<tr style="border-bottom:1px solid #1e2d45;background:#0d1929">
+            <td style="padding:6px 10px;font-size:11px;font-weight:700;color:#e2e8f5">{sec}</td>
+            <td style="padding:6px 10px;font-size:11px;text-align:center;color:#94a3b8">{tot}</td>
+            <td style="padding:6px 10px;font-size:12px;font-weight:800;text-align:center;color:{vcp_c}">{vcp}</td>
+            <td style="padding:6px 10px;font-size:11px;text-align:center;color:{c20}">{p20}%</td>
+            <td style="padding:6px 10px;font-size:11px;text-align:center;color:{c50}">{p50}%</td>
+            <td style="padding:6px 10px;font-size:11px;text-align:center;color:{c200}">{p200}%</td>
+        </tr>''')
+
+    sec_table = f'''<div style="background:#0d1929;border:1px solid #1e2d45;border-radius:6px;overflow:hidden;height:100%">
+        <div style="padding:10px 16px;background:#0a1220;border-bottom:1px solid #1e2d45;font-size:11px;font-weight:800;color:#2dd4bf;letter-spacing:1px;text-transform:uppercase">
+            📊 Sector Breadth & Health
+        </div>
+        <div style="max-height:220px;overflow-y:auto;">
+            <table style="width:100%;border-collapse:collapse;text-align:left">
+                <thead style="position:sticky;top:0;background:#0f1c30;box-shadow:0 1px 0 #1e2d45">
+                    <tr>
+                        <th style="padding:8px 10px;font-size:9px;color:#64748b">SECTOR</th>
+                        <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">N500 UNIVERSE</th>
+                        <th style="padding:8px 10px;font-size:9px;color:#2dd4bf;text-align:center">VCP CANDIDATES</th>
+                        <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">% > 20 EMA</th>
+                        <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">% > 50 SMA</th>
+                        <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">% > 200 SMA</th>
+                    </tr>
+                </thead>
+                <tbody>{''.join(sec_rows)}</tbody>
+            </table>
+        </div>
+    </div>'''
 
     def tab_section(title, color, stocks, tid):
         if not stocks:
@@ -869,7 +893,15 @@ def generate_html(results, scan_time, total_scanned, errors, rejects):
       <div style="color:#334155">Yahoo Finance &middot; NSE &middot; Free &middot; No API Key</div>
     </div>
   </div>
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">{cards}</div>
+
+  <div style="display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;align-items:stretch">
+    <div style="flex:1;min-width:300px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px;align-content:start;">
+        {cards}
+    </div>
+    <div style="flex:2;min-width:500px;">
+        {sec_table}
+    </div>
+  </div>
   
   <div style="border-bottom:1px solid #1e2d45;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding-bottom:8px">
     <div style="display:flex;gap:0;flex-wrap:wrap">
@@ -904,75 +936,6 @@ def generate_html(results, scan_time, total_scanned, errors, rejects):
 </body>
 </html>"""
 
-def export_excel(results, outfile):
-    try:
-        import openpyxl
-        from openpyxl.styles import PatternFill, Font, Alignment
-        cols = ['symbol','company','sector','market_cap','current',
-                'r30','r60','r90','dist52','drawdown','vol_contr',
-                'atr_ratio','tight_pct','pullbacks','rs_score',
-                'vcp_score','lead_score','final_score','grade','setup','pot_bo','pull_back','pocket_pivot']
-        
-        df = pd.DataFrame([{c: r[c] for c in cols} for r in results])
-        df.columns = ['Symbol','Company','Sector','MktCap(Cr)','Price',
-                      '30D%','60D%','90D%','Dist52W%','Drawdown%','VolContr%',
-                      'ATR Ratio','Tightness%','VCP Pulls','RS Score',
-                      'VCP Score','Lead Score','Final Score',
-                      'Grade','Setup','Potential BO','Pull Back','Pocket Pivot']
-
-        potbo_syms = set(r['symbol'] for r in results if r.get('pot_bo') and 'YES' in r['pot_bo'])
-        pb_syms    = set(r['symbol'] for r in results if r.get('pull_back') and 'YES' in r['pull_back'])
-        pp_syms    = set(r['symbol'] for r in results if r.get('pocket_pivot') and 'YES' in r['pocket_pivot'])
-
-        tabs = [
-            ('Elite (A+A)',     df[df['Grade'].isin(['A+','A'])]),
-            ('Potential BO',    df[df['Symbol'].isin(potbo_syms)]),
-            ('Pull Backs',      df[df['Symbol'].isin(pb_syms)]),
-            ('Pocket Pivots',   df[df['Symbol'].isin(pp_syms)]),
-            ('Watchlist (B)',   df[df['Grade'] == 'B']),
-            ('Emerging (C)',    df[df['Grade'] == 'C']),
-            ('All Results',     df),
-        ]
-
-        with pd.ExcelWriter(str(outfile), engine='openpyxl') as writer:
-            for sheet_name, data in tabs:
-                if not data.empty:
-                    data.to_excel(writer, sheet_name=sheet_name, index=False)
-
-            wb = writer.book
-            tab_colors = {
-                'Elite (A+A)':    '2DD4BF',
-                'Potential BO':   'A855F7',
-                'Pull Backs':     'F43F5E',
-                'Pocket Pivots':  'FBBF24',
-                'Watchlist (B)':  'A78BFA',
-                'Emerging (C)':   'FB923C',
-                'All Results':    '60A5FA',
-            }
-            for ws in wb.worksheets:
-                ws.freeze_panes = 'C2'
-                clr = tab_colors.get(ws.title, '60A5FA')
-                ws.sheet_properties.tabColor = clr
-                
-                ws.auto_filter.ref = ws.dimensions
-
-                for col in ws.columns:
-                    ws.column_dimensions[col[0].column_letter].width = 14
-                ws.column_dimensions['A'].width = 16
-                ws.column_dimensions['B'].width = 22
-                ws.column_dimensions['C'].width = 18
-                for cell in ws[1]:
-                    cell.font      = Font(bold=True, color='FFFFFF', size=9)
-                    cell.fill      = PatternFill('solid', fgColor='0D1929')
-                    cell.alignment = Alignment(horizontal='center', wrap_text=True)
-        return True
-    except ImportError:
-        print('  Warning: openpyxl not installed - skipping Excel (pip install openpyxl)')
-        return False
-    except Exception as e:
-        print(f'  Warning: Excel export failed: {e}')
-        return False
-
 # ═══════════════════════════════════════════════════════════════════════
 #  MAIN
 # ═══════════════════════════════════════════════════════════════════════
@@ -980,7 +943,7 @@ def main():
     interrupter = GracefulInterruptHandler()
 
     print('\n╔══════════════════════════════════════════════════════════════╗')
-    print('║  VCP SCANNER  v2.6  —  Minervini · O\'Neil · Stage-2        ║')
+    print('║  VCP SCANNER  v2.7  —  Minervini · O\'Neil · Stage-2        ║')
     print('╚══════════════════════════════════════════════════════════════╝\n')
     print('💡 TIP: Press Ctrl+C at any time to instantly stop scanning and generate')
     print('the output HTML/Excel files for the stocks processed up to that point.\n')
@@ -990,6 +953,8 @@ def main():
     errors    = 0
     rejects   = 0
     scan_time = datetime.now().strftime('%d %b %Y  %I:%M %p')
+    
+    sector_stats = {}
 
     print(f'Scanning {total} NSE stocks via Yahoo Finance...\n')
 
@@ -1004,6 +969,23 @@ def main():
                 print(f'  [{i:3d}/{total}] {sym:<15} — skip (no data)')
                 continue
 
+            sec = info.get('sector', '—')
+            if sec == '—': sec = 'Unknown'
+            if sec not in sector_stats:
+                sector_stats[sec] = {'total': 0, 'vcp': 0, 'a20': 0, 'a50': 0, 'a200': 0}
+
+            # Safely capture Universe MAs before filtering
+            c = df['Close']
+            c0 = c.iloc[-1]
+            e20 = ema(c, 20).iloc[-1]
+            s50 = sma(c, 50).iloc[-1]
+            s200 = sma(c, 200).iloc[-1]
+
+            sector_stats[sec]['total'] += 1
+            if c0 > e20: sector_stats[sec]['a20'] += 1
+            if c0 > s50: sector_stats[sec]['a50'] += 1
+            if c0 > s200: sector_stats[sec]['a200'] += 1
+
             result, reason = analyse(sym, df, info)
 
             if result is None:
@@ -1012,6 +994,8 @@ def main():
                 continue
 
             results.append(result)
+            sector_stats[sec]['vcp'] += 1
+            
             print(f'  [{i:3d}/{total}] {sym:<15} — vcp:{result["vcp_score"]:3.0f}'
                   f'  adv:{result["r90"]:+.0f}%'
                   f'  dd:{result["drawdown"]:+.0f}%'
@@ -1065,17 +1049,17 @@ def main():
 
     out_dir  = Path(__file__).resolve().parent
     html_out = out_dir / 'vcp_scanner_results.html'
-    #xlsx_out = out_dir / 'vcp_scanner_results.xlsx'
+    xlsx_out = out_dir / 'vcp_scanner_results.xlsx'
 
     print(f'\nGenerating HTML report...')
-    html = generate_html(results, scan_time, total, errors, rejects)
+    html = generate_html(results, scan_time, total, errors, rejects, sector_stats)
     html_out.write_text(html, encoding='utf-8')
     print(f'✅ HTML saved: {html_out}')
 
-    #print(f'Generating Excel report...')
-    #if export_excel(results, xlsx_out):
-     #   print(f'✅ Excel saved: {xlsx_out}')
-
+    # --- DISABLED FOR GITHUB ACTIONS TO SAVE REPO SPACE ---
+    # print(f'Generating Excel report...')
+    # if export_excel(results, xlsx_out):
+    #     print(f'✅ Excel saved: {xlsx_out}')
 
 if __name__ == '__main__':
     main()
