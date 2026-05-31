@@ -1,42 +1,55 @@
-name: Daily VCP Screener Update
+name: Daily VCP Scanner
 
 on:
-  # Runs automatically at 11:30 AM UTC (5:00 PM IST) Monday through Friday
   schedule:
+    # Runs at 5:00 PM IST (11:30 PM UTC) Monday-Friday.
     - cron: '30 11 * * 1-5'
-  
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+  workflow_dispatch: # Allows you to manually click "Run workflow"
+
+# FIX 1: Explicitly grant write permissions so it can push the HTML file (Prevents 128)
+permissions:
+  contents: write
 
 jobs:
   run-scanner:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
+    
+    # FIX 2: Opt into Node.js 24 to clear the deprecation warning
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      # FIX 3: Bump setup-python to v5 (which natively supports newer Node versions)
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10' 
+          python-version: '3.10'
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install yfinance pandas openpyxl
+          pip install yfinance pandas numpy openpyxl
 
-      - name: Execute VCP Scanner
+      - name: Run VCP Scanner Script
         run: python vcp_scanner.py
 
       - name: Commit and Push Results
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add vcp_scanner_results.html vcp_scanner_results.xlsx
-          # Only commit if there are changes to avoid failing the workflow
-          git diff-index --quiet HEAD || git commit -m "Automated Daily VCP Screener Update"
-          git push
+          # Configure the Git bot identity
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Stage the newly generated HTML file
+          git add vcp_scanner_results.html
+          
+          # FIX 4: Only commit and push IF there are actual changes (Prevents 128)
+          if ! git diff --cached --quiet; then
+            git commit -m "📊 Auto-updated VCP Scanner Results"
+            git push
+            echo "✅ Changes pushed to GitHub successfully."
+          else
+            echo "⏸️ No changes detected in the watchlist today. Skipping commit."
+          fi
