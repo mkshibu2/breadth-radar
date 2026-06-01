@@ -1603,6 +1603,101 @@ body.guest-mode #mpm-module-card { display:none !important; }
         </div>
       </div>
 
+      <!-- ── VCP SECTOR BREADTH CARD ──────────────────────────── -->
+      <div class="card" id="vcpb-card" style="border-top:2px solid var(--teal)">
+        <div class="card-head">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="card-title" style="color:var(--teal)">⚡ VCP Sector Breadth</div>
+            <span id="vcpb-scan-badge" style="display:none;font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(45,212,191,.12);color:var(--teal);font-family:var(--mono);white-space:nowrap"></span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button onclick="vcpbFetch(true)" id="vcpb-refresh-btn" title="Refresh from GitHub"
+              style="font-size:9px;padding:3px 8px;background:rgba(45,212,191,.1);color:var(--teal);border:1px solid rgba(45,212,191,.25);border-radius:4px;cursor:pointer;font-weight:600;letter-spacing:.4px">↻ Refresh</button>
+            <button class="info-btn" onclick="showInfoTip('vcpb',this)" title="About VCP Sector Breadth">i</button>
+          </div>
+        </div>
+
+        <!-- Source line -->
+        <div id="vcpb-source-row" style="padding:4px 14px 0;font-size:9px;color:var(--dim);font-family:var(--mono);display:none">
+          Source: <span id="vcpb-source-url" style="color:var(--accent)"></span>
+          &nbsp;·&nbsp; Scanned: <span id="vcpb-scan-time"></span>
+          &nbsp;·&nbsp; <span id="vcpb-qualified" style="color:var(--teal)"></span> qualified
+        </div>
+
+        <!-- State: loading -->
+        <div id="vcpb-loading" style="padding:20px 14px;text-align:center;font-size:11px;color:var(--dim)">
+          <span style="opacity:.6">Fetching sector breadth from VCP Scanner…</span>
+        </div>
+
+        <!-- State: needs config -->
+        <div id="vcpb-needs-config" style="display:none;padding:16px 14px">
+          <div style="font-size:11px;color:var(--dim);line-height:1.6">
+            Enter your GitHub Pages URL below to auto-load daily sector breadth from the VCP Scanner.<br>
+            Format: <code style="color:var(--accent);font-size:10px">https://&lt;username&gt;.github.io/&lt;repo&gt;</code>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
+            <input id="vcpb-url-input" type="text" placeholder="https://yourusername.github.io/breadth-radar"
+              style="flex:1;min-width:220px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px 10px;font-size:11px;font-family:var(--mono)">
+            <button onclick="vcpbSaveUrl()"
+              style="padding:6px 14px;background:var(--teal);color:#0e1420;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">Save &amp; Load</button>
+          </div>
+          <div id="vcpb-url-msg" style="font-size:10px;margin-top:6px;min-height:14px"></div>
+        </div>
+
+        <!-- State: error -->
+        <div id="vcpb-error" style="display:none;padding:12px 14px">
+          <div style="font-size:11px;color:var(--red)" id="vcpb-error-msg"></div>
+          <div style="font-size:10px;color:var(--dim);margin-top:4px">
+            Make sure the VCP scanner has run at least once today and <code>sector_breadth.json</code> is in your GitHub repo root.
+            <button onclick="vcpbShowConfig()" style="background:none;border:none;color:var(--accent);font-size:10px;cursor:pointer;text-decoration:underline;padding:0 0 0 6px">Change URL</button>
+          </div>
+        </div>
+
+        <!-- State: data loaded -->
+        <div id="vcpb-data" style="display:none">
+
+          <!-- Top 3 summary row -->
+          <div id="vcpb-hero" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:10px 14px 0"></div>
+
+          <!-- Sort controls -->
+          <div style="display:flex;gap:5px;align-items:center;padding:8px 14px 4px;flex-wrap:wrap">
+            <span style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px">Sort:</span>
+            <button onclick="vcpbSetSort('vcp')"   id="vcpb-s-vcp"   style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--teal);color:#0e1420;cursor:pointer;font-weight:600">VCP Count</button>
+            <button onclick="vcpbSetSort('a20')"   id="vcpb-s-a20"   style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">%&gt;20EMA</button>
+            <button onclick="vcpbSetSort('a200')"  id="vcpb-s-a200"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">%&gt;200SMA</button>
+            <button onclick="vcpbSetSort('vcp_pct')" id="vcpb-s-vcp_pct" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">VCP%</button>
+          </div>
+
+          <!-- Table -->
+          <div style="overflow-x:auto;padding:0 14px 12px">
+            <table style="width:100%;border-collapse:collapse" id="vcpb-table">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border)">
+                  <th style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">#</th>
+                  <th style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Sector / Theme</th>
+                  <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Universe</th>
+                  <th style="text-align:center;padding:5px 4px;color:var(--teal);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">VCP ✦</th>
+                  <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">VCP%</th>
+                  <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">&gt;20EMA</th>
+                  <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">&gt;50SMA</th>
+                  <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">&gt;200SMA</th>
+                  <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Trend Bar</th>
+                </tr>
+              </thead>
+              <tbody id="vcpb-tbody"></tbody>
+            </table>
+          </div>
+
+          <!-- Legend -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;padding:4px 14px 10px;border-top:1px solid var(--border);font-size:9px;color:var(--dim)">
+            <span><b style="color:var(--teal)">VCP ✦</b> = Stage-2 VCP candidates from today's scan</span>
+            <span><b>Trend Bar</b> = % above 20EMA · 50SMA · 200SMA (left→right)</span>
+            <span style="margin-left:auto"><span style="color:var(--lime)">■</span> ≥60% &nbsp;<span style="color:var(--yellow)">■</span> 40–59% &nbsp;<span style="color:var(--red)">■</span> &lt;40%</span>
+          </div>
+        </div>
+      </div>
+      <!-- /VCP Sector Breadth -->
+
       <!-- Score Chart -->
       <div class="card">
         <div class="card-head"><div class="card-title">30-Day Score Trend</div><button class="info-btn" onclick="showInfoTip('score-trend',this)" title="About this indicator">i</button></div>
@@ -3576,6 +3671,210 @@ function slhRender() {
   html += `</div>`;
   grid.innerHTML = html;
 }
+
+// ════════════════════════════════════════════════════════════════════════
+//  VCP SECTOR BREADTH — fetches sector_breadth.json from GitHub Pages
+//  Written by Claude · integrates with vcp_scanner.py output
+// ════════════════════════════════════════════════════════════════════════
+
+const LS_VCPB_URL  = 'nse_vcpb_url_v1';
+const LS_VCPB_DATA = 'nse_vcpb_data_v1';
+let _vcpbSort = 'vcp';
+
+function vcpbGetUrl() {
+  return (localStorage.getItem(LS_VCPB_URL) || '').trim().replace(/\/$/, '');
+}
+function vcpbSetStoredUrl(url) {
+  localStorage.setItem(LS_VCPB_URL, url.trim().replace(/\/$/, ''));
+}
+function vcpbGetCached() {
+  try { return JSON.parse(localStorage.getItem(LS_VCPB_DATA)) || null; } catch(e) { return null; }
+}
+function vcpbSetCached(data) {
+  try { localStorage.setItem(LS_VCPB_DATA, JSON.stringify(data)); } catch(e) {}
+}
+
+function vcpbShowState(state) {
+  ['vcpb-loading','vcpb-needs-config','vcpb-error','vcpb-data','vcpb-source-row'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const show = document.getElementById(state);
+  if (show) show.style.display = state === 'vcpb-data' ? 'block' : 'block';
+}
+
+function vcpbShowConfig() {
+  vcpbShowState('vcpb-needs-config');
+}
+
+function vcpbSaveUrl() {
+  const inp = document.getElementById('vcpb-url-input');
+  const msg = document.getElementById('vcpb-url-msg');
+  if (!inp) return;
+  const raw = inp.value.trim();
+  if (!raw || !raw.startsWith('http')) {
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Enter a valid URL starting with https://'; }
+    return;
+  }
+  vcpbSetStoredUrl(raw);
+  if (msg) { msg.style.color = 'var(--lime)'; msg.textContent = 'Saved — fetching…'; }
+  vcpbFetch(true);
+}
+
+async function vcpbFetch(force) {
+  const baseUrl = vcpbGetUrl();
+
+  // If no URL configured, try to render from cache or show config
+  if (!baseUrl) {
+    const cached = vcpbGetCached();
+    if (cached) { vcpbRender(cached); return; }
+    vcpbShowState('vcpb-needs-config');
+    // Pre-fill the input with a placeholder if empty
+    const inp = document.getElementById('vcpb-url-input');
+    if (inp && !inp.value) inp.placeholder = 'https://yourusername.github.io/breadth-radar';
+    return;
+  }
+
+  // Show cached immediately while re-fetching in background
+  if (!force) {
+    const cached = vcpbGetCached();
+    if (cached) { vcpbRender(cached); }
+    else { vcpbShowState('vcpb-loading'); }
+  } else {
+    vcpbShowState('vcpb-loading');
+  }
+
+  const jsonUrl = baseUrl + '/sector_breadth.json?_=' + Date.now();
+  const srcEl = document.getElementById('vcpb-source-url');
+  if (srcEl) srcEl.textContent = baseUrl + '/sector_breadth.json';
+
+  try {
+    const resp = await fetch(jsonUrl, { cache: 'no-store' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status + ' — file not found. Has the scanner run today?');
+    const data = await resp.json();
+    if (!data.sectors || !Array.isArray(data.sectors)) throw new Error('Unexpected JSON format.');
+    vcpbSetCached(data);
+    vcpbRender(data);
+  } catch(e) {
+    // Fall back to cache if available
+    const cached = vcpbGetCached();
+    if (cached && !force) { vcpbRender(cached); return; }
+    vcpbShowState('vcpb-error');
+    const errEl = document.getElementById('vcpb-error-msg');
+    if (errEl) errEl.textContent = '⚠ ' + e.message;
+  }
+}
+
+function vcpbSetSort(key) {
+  _vcpbSort = key;
+  ['vcp','a20','a200','vcp_pct'].forEach(k => {
+    const b = document.getElementById('vcpb-s-' + k);
+    if (!b) return;
+    const active = k === key;
+    b.style.background  = active ? 'var(--teal)'  : 'transparent';
+    b.style.color       = active ? '#0e1420'       : 'var(--dim)';
+    b.style.borderColor = active ? 'var(--teal)'   : 'var(--border)';
+    b.style.fontWeight  = active ? '600' : '400';
+  });
+  // Re-render table only (data already stored on the card element)
+  const card = document.getElementById('vcpb-card');
+  if (card && card._vcpbData) vcpbRenderTable(card._vcpbData.sectors);
+}
+
+function vcpbBarColor(pct) {
+  if (pct >= 60) return 'var(--lime)';
+  if (pct >= 40) return 'var(--yellow)';
+  return 'var(--red)';
+}
+
+function vcpbTrendBar(a20, a50, a200) {
+  const segs = [
+    { v: a20,  label: '20E' },
+    { v: a50,  label: '50S' },
+    { v: a200, label: '200S' },
+  ];
+  return '<div style="display:flex;gap:2px;align-items:flex-end;height:22px">' +
+    segs.map(s => {
+      const h = Math.max(4, Math.round(s.v / 100 * 22));
+      return `<div title="${s.label}: ${s.v}%" style="width:12px;height:${h}px;background:${vcpbBarColor(s.v)};border-radius:1px 1px 0 0;opacity:.85"></div>`;
+    }).join('') +
+  '</div>';
+}
+
+function vcpbRenderTable(sectors) {
+  const tbody = document.getElementById('vcpb-tbody');
+  if (!tbody) return;
+
+  const sorted = [...sectors].sort((a, b) => b[_vcpbSort] - a[_vcpbSort]);
+
+  tbody.innerHTML = sorted.map((s, i) => {
+    const vcpC    = s.vcp > 0  ? 'var(--teal)'   : 'var(--dim)';
+    const a20C    = vcpbBarColor(s.a20_pct);
+    const a50C    = vcpbBarColor(s.a50_pct);
+    const a200C   = vcpbBarColor(s.a200_pct);
+    const vcpPctC = s.vcp_pct >= 20 ? 'var(--lime)' : s.vcp_pct >= 10 ? 'var(--yellow)' : 'var(--dim)';
+    const rowBg   = i === 0 ? 'rgba(45,212,191,.04)' : 'transparent';
+    return `<tr style="border-bottom:1px solid var(--border);background:${rowBg}">
+      <td style="padding:5px 4px;color:var(--dim);font-size:10px;font-family:var(--mono)">${i+1}</td>
+      <td style="padding:5px 4px;font-weight:700;font-size:12px;font-family:var(--disp);letter-spacing:.2px">${s.sector}</td>
+      <td style="padding:5px 4px;text-align:center;color:var(--sub);font-size:10px;font-family:var(--mono)">${s.universe}</td>
+      <td style="padding:5px 4px;text-align:center;font-family:var(--disp);font-size:18px;font-weight:800;color:${vcpC}">${s.vcp}</td>
+      <td style="padding:5px 4px;text-align:center;font-size:10px;font-family:var(--mono);color:${vcpPctC}">${s.vcp_pct}%</td>
+      <td style="padding:5px 4px;text-align:right;font-size:11px;font-family:var(--mono);color:${a20C}">${s.a20_pct}%</td>
+      <td style="padding:5px 4px;text-align:right;font-size:11px;font-family:var(--mono);color:${a50C}">${s.a50_pct}%</td>
+      <td style="padding:5px 4px;text-align:right;font-size:11px;font-family:var(--mono);color:${a200C}">${s.a200_pct}%</td>
+      <td style="padding:5px 4px;text-align:center">${vcpbTrendBar(s.a20_pct, s.a50_pct, s.a200_pct)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function vcpbRender(data) {
+  // Store on card for sort re-renders
+  const card = document.getElementById('vcpb-card');
+  if (card) card._vcpbData = data;
+
+  vcpbShowState('vcpb-data');
+
+  // Source row
+  const srcRow = document.getElementById('vcpb-source-row');
+  if (srcRow) srcRow.style.display = 'block';
+  const timeEl = document.getElementById('vcpb-scan-time');
+  const qualEl = document.getElementById('vcpb-qualified');
+  const badgeEl = document.getElementById('vcpb-scan-badge');
+  if (timeEl) timeEl.textContent = data.scan_time || data.scan_date || '—';
+  if (qualEl) qualEl.textContent = (data.qualified || 0) + ' / ' + (data.total_scanned || '?') + ' scanned';
+  if (badgeEl) { badgeEl.textContent = data.scan_date || ''; badgeEl.style.display = 'inline'; }
+
+  // Hero strip — top 3 VCP sectors
+  const hero = document.getElementById('vcpb-hero');
+  if (hero) {
+    const top3 = [...data.sectors].sort((a,b) => b.vcp - a.vcp).slice(0,3);
+    hero.innerHTML = top3.map((s, idx) => {
+      const hdrColor = idx === 0 ? 'var(--teal)' : idx === 1 ? 'var(--accent)' : 'var(--sub)';
+      const rank = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
+      return `<div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center;border:1px solid var(--border)">
+        <div style="font-size:9px;color:var(--dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px">${rank} Top VCP Sector</div>
+        <div style="font-family:var(--disp);font-size:13px;font-weight:800;color:${hdrColor};line-height:1.2;letter-spacing:.3px">${s.sector}</div>
+        <div style="font-family:var(--disp);font-size:22px;font-weight:800;color:var(--teal);line-height:1.1;margin-top:2px">${s.vcp}</div>
+        <div style="font-size:9px;color:var(--dim);margin-top:2px">${s.vcp_pct}% of ${s.universe} stocks</div>
+      </div>`;
+    }).join('');
+  }
+
+  vcpbRenderTable(data.sectors);
+}
+
+function vcpbInit() {
+  // Pre-fill URL input if already saved
+  const saved = vcpbGetUrl();
+  const inp = document.getElementById('vcpb-url-input');
+  if (inp && saved) inp.value = saved;
+  vcpbFetch(false);
+}
+
+// ── Info tip for VCP breadth card ─────────────────────────────────────────
+// (Registered in the showInfoTip switch — handled by the generic tip system)
+
 
 function srtRender() {
   const sectors = srtLoad();
@@ -7254,6 +7553,7 @@ function renderAll() {
   safe(() => mpmRenderAll(),           'mpmRenderAll');
   safe(() => srtRender(),              'srtRender');
   safe(() => slhRender(),              'slhRender');
+  safe(() => vcpbInit(),               'vcpbInit');
   safe(() => capitalInputInit(),       'capitalInputInit');
   // Always render chart — getBoundingClientRect works even before first paint
   renderChart(data);
@@ -8756,6 +9056,13 @@ const INFO = {
     what: 'Measures how fast breadth is improving or deteriorating — the velocity of change in the Breadth Score over the last 5 sessions. A market can have the same score two weeks apart but the rate of change tells a completely different story.',
     how: 'Takes the last 5 breadth score readings and calculates the average daily change (pts/day). Positive = expanding, Negative = contracting. Also shows total change over the 5-day window.',
     use: 'Rapid expansion (+3 to +5 pts/day) = high-quality rally, act on breakouts. Slow (+1 to +2) = improving but unconvincing. Stalling (0) = caution. Contracting = avoid new entries regardless of absolute score level.'
+  },
+
+  'vcpb': {
+    title: 'VCP Sector Breadth',
+    what: 'Auto-loaded daily sector breadth data from your VCP Scanner (vcp_scanner.py). For every NSE sector/theme in the Nifty 500 universe it shows: how many stocks are in Stage-2 VCP patterns today, what percentage of that sector is above key moving averages, and a 3-bar trend health visual. Uses your scanner\'s smart NSE sector mapping — Railways, Defense, Pharma vs Hospitals, Banks vs NBFCs etc.',
+    how: 'The scanner runs daily via GitHub Actions at 6 PM IST. It writes sector_breadth.json to your GitHub Pages repo. This card fetches that file on load (no manual entry needed). Enter your GitHub Pages URL once and it auto-refreshes every day. Data includes: VCP count, VCP% of sector universe, % > 20 EMA, % > 50 SMA, % > 200 SMA per sector.',
+    use: '<b>VCP Count</b>: sectors with more VCP candidates = most leadership concentration today. Hunt breakout setups there first. <b>%&gt;20EMA ≥ 60%</b> (green) = sector in momentum — breadth is supporting price. <b>%&gt;200SMA</b> shows structural health (Stage-2 base). <b>Trend Bar</b>: when all 3 bars are green, the whole sector is in sync — ideal for new entries. Sort by VCP% to find sectors where leadership is most dense relative to universe size.'
   }
 
 };

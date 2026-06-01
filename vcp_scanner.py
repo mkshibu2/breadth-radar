@@ -1048,6 +1048,34 @@ def main():
     html_out.write_text(html, encoding='utf-8')
     print(f'✅ HTML saved: {html_out}')
 
+    # ── Export sector_breadth.json for NSE Breadth Radar dashboard ─────────
+    import json as _json
+    json_out = out_dir / 'sector_breadth.json'
+    sorted_secs = sorted(sector_stats.items(), key=lambda x: (-x[1]['vcp'], -x[1]['total']))
+    sectors_payload = []
+    for sec, st in sorted_secs:
+        if st['total'] == 0:
+            continue
+        tot = st['total']
+        sectors_payload.append({
+            'sector':   sec,
+            'universe': tot,
+            'vcp':      st['vcp'],
+            'vcp_pct':  round(st['vcp'] / tot * 100, 1),
+            'a20_pct':  round(st['a20'] / tot * 100, 1),
+            'a50_pct':  round(st['a50'] / tot * 100, 1),
+            'a200_pct': round(st['a200'] / tot * 100, 1),
+        })
+    json_payload = {
+        'scan_time':   scan_time,
+        'scan_date':   datetime.now().strftime('%Y-%m-%d'),
+        'total_scanned': total,
+        'qualified':   len(results),
+        'sectors':     sectors_payload,
+    }
+    json_out.write_text(_json.dumps(json_payload, indent=2), encoding='utf-8')
+    print(f'✅ JSON saved: {json_out}')
+
     # --- DISABLED FOR GITHUB ACTIONS TO SAVE REPO SPACE ---
     # xlsx_out = out_dir / 'vcp_scanner_results.xlsx'
     # print(f'Generating Excel report...')
