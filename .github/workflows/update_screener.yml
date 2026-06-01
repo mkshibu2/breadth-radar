@@ -2,8 +2,8 @@ name: Daily VCP Scanner
 
 on:
   schedule:
-    # Runs at 5:00 PM IST (11:30 PM UTC) Monday-Friday.
-    - cron: '30 11 * * 1-5'
+    # Runs at 6:00 PM IST (12:30 PM UTC) Monday-Friday. Adjust if needed!
+    - cron: '30 12 * * 1-5'
   workflow_dispatch: # Allows you to manually click "Run workflow"
 
 # FIX 1: Explicitly grant write permissions so it can push the HTML file (Prevents 128)
@@ -42,9 +42,10 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Stage the newly generated HTML file
+          # Stage both the HTML report AND the sector breadth JSON sidecar
           git add vcp_scanner_results.html
-          
+          git add sector_breadth.json
+
           # FIX 4: Only commit and push IF there are actual changes (Prevents 128)
           if ! git diff --cached --quiet; then
             git commit -m "📊 Auto-updated VCP Scanner Results"
