@@ -1,15 +1,15 @@
 {
-  "scan_time": "01 Jun 2026  06:23 PM",
-  "scan_date": "2026-06-01",
+  "scan_time": "02 Jun 2026  03:21 AM",
+  "scan_date": "2026-06-02",
   "total_scanned": 504,
-  "qualified": 85,
+  "qualified": 89,
   "sectors": [
     {
       "sector": "Capital Goods",
       "universe": 48,
-      "vcp": 19,
-      "vcp_pct": 39.6,
-      "a20_pct": 56.2,
+      "vcp": 22,
+      "vcp_pct": 45.8,
+      "a20_pct": 54.2,
       "a50_pct": 70.8,
       "a200_pct": 72.9
     },
@@ -33,12 +33,12 @@
     },
     {
       "sector": "Automobile and Auto Components",
-      "universe": 36,
+      "universe": 37,
       "vcp": 8,
-      "vcp_pct": 22.2,
-      "a20_pct": 52.8,
-      "a50_pct": 61.1,
-      "a200_pct": 47.2
+      "vcp_pct": 21.6,
+      "a20_pct": 54.1,
+      "a50_pct": 62.2,
+      "a200_pct": 48.6
     },
     {
       "sector": "Metals & Mining",
@@ -59,6 +59,15 @@
       "a200_pct": 35.7
     },
     {
+      "sector": "Banks",
+      "universe": 26,
+      "vcp": 4,
+      "vcp_pct": 15.4,
+      "a20_pct": 23.1,
+      "a50_pct": 34.6,
+      "a200_pct": 46.2
+    },
+    {
       "sector": "Power",
       "universe": 17,
       "vcp": 4,
@@ -68,22 +77,13 @@
       "a200_pct": 76.5
     },
     {
-      "sector": "Banks",
-      "universe": 26,
-      "vcp": 3,
-      "vcp_pct": 11.5,
-      "a20_pct": 23.1,
-      "a50_pct": 34.6,
-      "a200_pct": 46.2
-    },
-    {
       "sector": "Information Technology",
-      "universe": 26,
+      "universe": 27,
       "vcp": 3,
-      "vcp_pct": 11.5,
-      "a20_pct": 65.4,
-      "a50_pct": 65.4,
-      "a200_pct": 19.2
+      "vcp_pct": 11.1,
+      "a20_pct": 66.7,
+      "a50_pct": 63.0,
+      "a200_pct": 18.5
     },
     {
       "sector": "Specialty Chemicals",
