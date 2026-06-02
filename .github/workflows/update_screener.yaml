@@ -2,8 +2,8 @@ name: Daily VCP Scanner
 
 on:
   schedule:
-    # Runs at 6:00 PM IST (12:30 PM UTC) Monday-Friday. Adjust if needed!
-    - cron: '30 12 * * 1-5'
+    # Runs at 5:00 PM IST (11:30 AM UTC) Monday-Friday.
+    - cron: '30 11 * * 1-5'
   workflow_dispatch: # Allows you to manually click "Run workflow"
 
 # FIX 1: Explicitly grant write permissions so it can push the HTML file (Prevents 128)
