@@ -45,7 +45,6 @@ jobs:
           # Stage both the HTML report AND the sector breadth JSON sidecar
           git add vcp_scanner_results.html
           git add sector_breadth.json
-          git add sector_stocks.json
 
           # FIX 4: Only commit and push IF there are actual changes (Prevents 128)
           if ! git diff --cached --quiet; then
