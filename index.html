@@ -1529,8 +1529,8 @@ body.guest-mode #mpm-module-card { display:none !important; }
             <!-- Sort controls -->
             <div style="display:flex;gap:5px;align-items:center;padding:10px 14px 4px;flex-wrap:wrap">
               <span style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px">Sort:</span>
-              <button onclick="vcpbSetSort('composite')" id="vcpb-s-composite" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--teal);color:#0e1420;cursor:pointer;font-weight:600">Score</button>
-              <button onclick="vcpbSetSort('universe')"  id="vcpb-s-universe"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">Universe</button>
+              <button onclick="vcpbSetSort('composite')" id="vcpb-s-composite" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">Score</button>
+              <button onclick="vcpbSetSort('universe')"  id="vcpb-s-universe"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--teal);color:#0e1420;cursor:pointer;font-weight:600">Universe</button>
               <button onclick="vcpbSetSort('a20_pct')"   id="vcpb-s-a20_pct"   style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">%&gt;20EMA</button>
               <button onclick="vcpbSetSort('a200_pct')"  id="vcpb-s-a200_pct"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">%&gt;200SMA</button>
             </div>
@@ -1568,129 +1568,79 @@ body.guest-mode #mpm-module-card { display:none !important; }
         <!-- ── TAB: RRG ─────────────────────────────────── -->
         <div id="scc-pane-rrg" style="display:none">
 
-          <!-- Leading/Basing/Avoid hero row (kept from original) -->
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:10px 14px 0">
-            <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center">
-              <div style="font-size:9px;color:var(--dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.6px">Leading</div>
-              <div id="srt-hero-lead" style="font-family:var(--disp);font-size:32px;font-weight:800;color:var(--lime);line-height:1">—</div>
-              <div style="font-size:9px;color:var(--dim);margin-top:2px">Stage 2 · hunt here</div>
-            </div>
-            <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center">
-              <div style="font-size:9px;color:var(--dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.6px">Basing</div>
-              <div id="srt-hero-base" style="font-family:var(--disp);font-size:32px;font-weight:800;color:var(--accent);line-height:1">—</div>
-              <div style="font-size:9px;color:var(--dim);margin-top:2px">Stage 1 · watchlist</div>
-            </div>
-            <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center">
-              <div style="font-size:9px;color:var(--dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.6px">Avoid</div>
-              <div id="srt-hero-weak" style="font-family:var(--disp);font-size:32px;font-weight:800;color:var(--red);line-height:1">—</div>
-              <div style="font-size:9px;color:var(--dim);margin-top:2px">Stage 3–4 · skip</div>
+          <!-- Breadth RRG header + controls -->
+          <div style="padding:10px 14px 0">
+            <div style="font-size:9px;color:var(--purple);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">Breadth Relative Rotation Graph</div>
+            <div style="font-size:9px;color:var(--dim);margin-bottom:8px">
+              X = Momentum-Weighted Score · Y = Week-on-week score change · Auto from scanner — no manual entry
             </div>
           </div>
 
-          <!-- Top sector subtitle -->
-          <div id="srt-hero-sub" style="font-size:10px;color:var(--sub);padding:7px 14px 4px;font-family:var(--mono)">No sector data — add via Control Panel → Sectors tab</div>
-
-          <!-- Full ranked RS table (collapsible) -->
-          <div style="padding:0 14px 4px">
-            <div style="cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:4px" onclick="toggleCollapse('srt-table-wrap','srt-table-icon')">
-              <span style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px">Sector RS Table</span>
-              <span id="srt-table-icon" style="font-size:11px;color:var(--dim);transition:transform .2s;display:inline-block;transform:rotate(-90deg)">▾</span>
+          <!-- Quadrant hero summary -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:0 14px 8px">
+            <div style="background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);border-radius:4px;padding:6px 8px;text-align:center">
+              <div style="font-size:8px;color:var(--lime);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">🟢 Leading</div>
+              <div id="brrg-q-lead" style="font-family:var(--disp);font-size:20px;font-weight:800;color:var(--lime)">—</div>
+              <div style="font-size:8px;color:var(--dim)">High score · rising</div>
             </div>
-            <div id="srt-table-wrap" style="display:none;overflow-x:auto">
-              <table style="width:100%;border-collapse:collapse" id="srt-home-table">
-                <thead>
-                  <tr style="border-bottom:1px solid var(--border)">
-                    <th style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">#</th>
-                    <th style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Sector</th>
-                    <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">vs 20MA</th>
-                    <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">MAs</th>
-                    <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Stage</th>
-                    <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">RS</th>
-                    <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Wks</th>
-                  </tr>
-                </thead>
-                <tbody id="srt-hero-rows"></tbody>
-              </table>
-              <div id="srt-hero-empty" style="text-align:center;padding:14px;color:var(--dim);font-size:10px">
-                No sector data yet — go to Control Panel → 📡 Sectors tab
-              </div>
+            <div style="background:rgba(91,163,245,.07);border:1px solid rgba(91,163,245,.2);border-radius:4px;padding:6px 8px;text-align:center">
+              <div style="font-size:8px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">🔵 Improving</div>
+              <div id="brrg-q-impr" style="font-family:var(--disp);font-size:20px;font-weight:800;color:var(--accent)">—</div>
+              <div style="font-size:8px;color:var(--dim)">Low score · rising</div>
+            </div>
+            <div style="background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2);border-radius:4px;padding:6px 8px;text-align:center">
+              <div style="font-size:8px;color:var(--yellow);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">🟡 Weakening</div>
+              <div id="brrg-q-weak" style="font-family:var(--disp);font-size:20px;font-weight:800;color:var(--yellow)">—</div>
+              <div style="font-size:8px;color:var(--dim)">High score · falling</div>
+            </div>
+            <div style="background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.2);border-radius:4px;padding:6px 8px;text-align:center">
+              <div style="font-size:8px;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">🔴 Lagging</div>
+              <div id="brrg-q-lag" style="font-family:var(--disp);font-size:20px;font-weight:800;color:var(--red)">—</div>
+              <div style="font-size:8px;color:var(--dim)">Low score · falling</div>
             </div>
           </div>
+
+          <!-- Controls -->
+          <div style="display:flex;gap:5px;align-items:center;padding:0 14px 6px;flex-wrap:wrap">
+            <span style="font-size:9px;color:var(--dim);min-width:36px">Days:</span>
+            <button onclick="brrgSetTail(5)"  id="brrg-t-5"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">5d</button>
+            <button onclick="brrgSetTail(10)" id="brrg-t-10" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--purple);color:#fff;cursor:pointer;font-weight:600">10d</button>
+            <button onclick="brrgSetTail(20)" id="brrg-t-20" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">20d</button>
+            <button onclick="brrgSetTail(40)" id="brrg-t-40" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">40d</button>
+            <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
+            <span style="font-size:9px;color:var(--dim)">Top:</span>
+            <button onclick="brrgSetTopN(8)"  id="brrg-n-8"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer;font-weight:600">8</button>
+            <button onclick="brrgSetTopN(12)" id="brrg-n-12" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12</button>
+            <button onclick="brrgSetTopN(0)"  id="brrg-n-0"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">All</button>
+            <button onclick="brrgDraw()" title="Refresh"
+              style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid rgba(45,212,191,.25);background:rgba(45,212,191,.1);color:var(--teal);cursor:pointer;margin-left:4px">↻</button>
+          </div>
+
+          <!-- Canvas -->
+          <div style="padding:0 14px 4px;position:relative">
+            <canvas id="brrg-canvas" style="width:100%;border-radius:6px;display:block"></canvas>
+          </div>
+
+          <!-- Insufficient data notice -->
+          <div id="brrg-notice" style="display:none;padding:12px 14px;font-size:10px;color:var(--yellow)"></div>
 
           <!-- Legend -->
-          <div style="display:flex;gap:6px;flex-wrap:wrap;padding:4px 14px 8px;border-top:1px solid var(--border)">
-            <span style="font-size:8px;background:rgba(74,222,128,.15);color:var(--lime);padding:2px 5px;border-radius:3px">S2 advancing</span>
-            <span style="font-size:8px;background:rgba(91,163,245,.12);color:var(--accent);padding:2px 5px;border-radius:3px">S1 basing</span>
-            <span style="font-size:8px;background:rgba(251,191,36,.12);color:var(--yellow);padding:2px 5px;border-radius:3px">S3 topping</span>
-            <span style="font-size:8px;background:rgba(239,68,68,.12);color:var(--red);padding:2px 5px;border-radius:3px">S4 declining</span>
-            <span style="font-size:8px;color:var(--dim);margin-left:2px">● above MA &nbsp;◐ near &nbsp;○ below &nbsp;|&nbsp; RS vs Nifty50 &nbsp;|&nbsp; <b>Tap row → NSE India ↗</b></span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 14px 12px;border-top:1px solid var(--border);font-size:9px;color:var(--dim)">
+            <span><b style="color:var(--lime)">Leading</b> = high score + gaining &nbsp;</span>
+            <span><b style="color:var(--accent)">Improving</b> = low score + gaining &nbsp;</span>
+            <span><b style="color:var(--yellow)">Weakening</b> = high score + losing &nbsp;</span>
+            <span><b style="color:var(--red)">Lagging</b> = low score + losing</span>
+            <span style="margin-left:auto;opacity:.7">Dot = today · tail = history · clockwise rotation = bullish</span>
           </div>
 
-          <!-- RRG (always visible in this pane) -->
-          <div style="border-top:1px solid var(--border);padding:12px 14px 14px">
-            <div style="font-size:9px;color:var(--purple);font-weight:600;letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px">Relative Rotation Graph</div>
-
-            <!-- Controls row 1: Sectors (Top N) -->
-            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:6px">
-              <span style="font-size:9px;color:var(--dim);min-width:44px">Sectors:</span>
-              <button onclick="rrgAdjustTop(-1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">&#8722;</button>
-              <span id="rrg-top-display" style="font-size:10px;font-weight:600;color:var(--text);min-width:24px;text-align:center">8</span>
-              <button onclick="rrgAdjustTop(+1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">+</button>
-              <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
-              <button onclick="srtRRGSetTop(4)"  id="rrg-top-4"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">4</button>
-              <button onclick="srtRRGSetTop(8)"  id="rrg-top-8"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer">8</button>
-              <button onclick="srtRRGSetTop(12)" id="rrg-top-12" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12</button>
-              <button onclick="srtRRGSetTop(0)"  id="rrg-top-0"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">All</button>
-            </div>
-
-            <!-- Controls row 2: Tail Weeks + Filter + Animate -->
-            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:6px">
-              <span style="font-size:9px;color:var(--dim);min-width:44px">Weeks:</span>
-              <button onclick="rrgAdjustTail(-1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">&#8722;</button>
-              <span id="rrg-tail-display" style="font-size:10px;font-weight:600;color:var(--purple);min-width:24px;text-align:center">8w</span>
-              <button onclick="rrgAdjustTail(+1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">+</button>
-              <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
-              <button onclick="srtRRGSetTail(4)"  id="rrg-tail-4"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">4w</button>
-              <button onclick="srtRRGSetTail(8)"  id="rrg-tail-8"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--purple);color:#fff;cursor:pointer">8w</button>
-              <button onclick="srtRRGSetTail(12)" id="rrg-tail-12" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12w</button>
-              <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
-              <span style="font-size:9px;color:var(--dim)">Filter:</span>
-              <button onclick="srtRRGSetFilter('all')" id="rrg-f-all" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer">All</button>
-              <button onclick="srtRRGSetFilter('s2')"  id="rrg-f-s2"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">S2</button>
-              <button onclick="srtRRGAnimate()" id="rrg-anim-btn" style="font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.1);color:var(--yellow);cursor:pointer;font-weight:600;margin-left:2px">&#9654; Play</button>
-            </div>
-
-            <!-- Sector multi-select chips -->
-            <div id="rrg-sector-chips" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;min-height:30px;align-items:center">
-              <span style="font-size:9px;color:var(--dim);margin-right:2px">Highlight:</span>
-            </div>
-
-            <!-- Animation bar -->
-            <div id="rrg-anim-bar-wrap" style="display:none;margin-bottom:6px">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
-                <span id="rrg-anim-week-label" style="font-size:9px;color:var(--yellow);font-weight:600">Week 1</span>
-                <button onclick="srtRRGStopAnim()" style="font-size:9px;padding:1px 6px;border-radius:3px;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.1);color:var(--red);cursor:pointer">&#9632; Stop</button>
-              </div>
-              <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
-                <div id="rrg-anim-bar" style="height:100%;width:0%;background:var(--yellow);border-radius:2px;transition:width .25s"></div>
-              </div>
-            </div>
-
-            <!-- Canvas -->
-            <div style="position:relative">
-              <canvas id="srt-rrg-canvas" style="width:100%;border-radius:6px;display:block"></canvas>
-              <button class="info-btn" onclick="showInfoTip('rrg',this)" title="How to use RRG"
-                style="position:absolute;bottom:8px;right:8px;z-index:3;opacity:.7">i</button>
-            </div>
-            <div style="margin-top:8px;font-size:9px;color:var(--dim);line-height:1.6">
-              <b style="color:var(--lime)">Leading</b> = strong &amp; improving &nbsp;
-              <b style="color:var(--accent)">Improving</b> = gaining momentum &nbsp;
-              <b style="color:var(--yellow)">Weakening</b> = slowing down &nbsp;
-              <b style="color:var(--red)">Lagging</b> = weak &amp; deteriorating<br>
-              Dot = current &middot; tail = last N weeks of movement. Clockwise rotation is bullish.
-            </div>
+          <!-- History note -->
+          <div style="padding:4px 14px 10px;font-size:9px;color:var(--dim);font-style:italic;border-top:1px solid var(--border)">
+            History accumulates automatically each day the dashboard loads. More trading days = fuller tails.
+            <span id="brrg-hist-info" style="color:var(--teal);margin-left:6px"></span>
           </div>
+
         </div><!-- /pane-rrg -->
+
 
         <!-- ── TAB: HEATMAP ──────────────────────────────── -->
         <div id="scc-pane-heatmap" style="display:none">
@@ -3669,7 +3619,7 @@ function sccTab(tab) {
     }
     if (pane) pane.style.display = active ? 'block' : 'none';
   });
-  if (tab === 'rrg')     setTimeout(() => srtRender(), 50);
+  if (tab === 'rrg')     { setTimeout(() => brrgDraw(), 50); }
   if (tab === 'heatmap') setTimeout(() => slhRender(), 50);
 }
 
@@ -3678,17 +3628,56 @@ function sccTab(tab) {
 //  Primary signal: full N500 universe MA breadth. RS/Stage = optional overlay.
 // ════════════════════════════════════════════════════════════════════════
 
-const LS_VCPB_URL  = 'nse_vcpb_url_v1';
-const LS_VCPB_DATA = 'nse_vcpb_data_v1';
-let _vcpbSort = 'composite';
+const LS_VCPB_URL    = 'nse_vcpb_url_v1';
+const LS_VCPB_DATA   = 'nse_vcpb_data_v1';
+const LS_VCPB_HIST   = 'nse_vcpb_hist_v1';   // rolling daily score history per sector
+let _vcpbSort = 'universe';                    // default: largest sector first
 
 function vcpbGetUrl()          { return (localStorage.getItem(LS_VCPB_URL) || '').trim().replace(/\/$/, ''); }
 function vcpbSetStoredUrl(url) { localStorage.setItem(LS_VCPB_URL, url.trim().replace(/\/$/, '')); }
 function vcpbGetCached()       { try { return JSON.parse(localStorage.getItem(LS_VCPB_DATA)) || null; } catch(e) { return null; } }
 function vcpbSetCached(data)   { try { localStorage.setItem(LS_VCPB_DATA, JSON.stringify(data)); } catch(e) {} }
+function vcpbGetHist()         { try { return JSON.parse(localStorage.getItem(LS_VCPB_HIST)) || {}; } catch(e) { return {}; } }
+function vcpbSetHist(h)        { try { localStorage.setItem(LS_VCPB_HIST, JSON.stringify(h)); } catch(e) {} }
 
-function vcpbComposite(s) {
-  return Math.round((s.a20_pct + s.a50_pct + s.a200_pct) / 3);
+// ── Momentum-Weighted Score ──────────────────────────────────────────────
+// 20EMA ×50% (current momentum) + 50SMA ×30% (trend) + 200SMA ×20% (structure)
+// Higher 20EMA weight means accelerating sectors score higher immediately —
+// exactly when you want to be hunting stocks there.
+function vcpbScore(s) {
+  return Math.round(s.a20_pct * 0.50 + s.a50_pct * 0.30 + s.a200_pct * 0.20);
+}
+
+// ── History accumulator ──────────────────────────────────────────────────
+// Each day a new scan arrives, we store that day's scores per sector.
+// This builds a rolling history used by the breadth RRG.
+// Format: { 'Capital Goods': [ {date, score, a20, a50, a200}, ... ], ... }
+const VCPB_HIST_MAX_DAYS = 60; // keep last 60 trading days (~12 weeks)
+
+function vcpbAccumulateHistory(data) {
+  if (!data || !data.sectors) return;
+  const hist = vcpbGetHist();
+  const date = data.scan_date;
+  if (!date) return;
+
+  data.sectors.forEach(s => {
+    if (!hist[s.sector]) hist[s.sector] = [];
+    // Don't duplicate same date
+    if (hist[s.sector].some(e => e.date === date)) return;
+    hist[s.sector].push({
+      date,
+      score: vcpbScore(s),
+      a20:   s.a20_pct,
+      a50:   s.a50_pct,
+      a200:  s.a200_pct,
+    });
+    // Keep sorted oldest→newest, trim to max days
+    hist[s.sector].sort((a, b) => a.date.localeCompare(b.date));
+    if (hist[s.sector].length > VCPB_HIST_MAX_DAYS) {
+      hist[s.sector] = hist[s.sector].slice(-VCPB_HIST_MAX_DAYS);
+    }
+  });
+  vcpbSetHist(hist);
 }
 
 function vcpbShowState(state) {
@@ -3739,6 +3728,7 @@ async function vcpbFetch(force) {
     const data = await resp.json();
     if (!data.sectors || !Array.isArray(data.sectors)) throw new Error('Unexpected JSON format.');
     vcpbSetCached(data);
+    vcpbAccumulateHistory(data);  // build rolling history for breadth RRG
     vcpbRender(data);
   } catch(e) {
     const cached = vcpbGetCached();
@@ -3795,7 +3785,7 @@ function vcpbRenderTable(sectors) {
   const tbody = document.getElementById('vcpb-tbody');
   if (!tbody) return;
   const overlay = vcpbGetSrtOverlay();
-  const enriched = sectors.map(s => ({ ...s, composite: vcpbComposite(s) }));
+  const enriched = sectors.map(s => ({ ...s, composite: vcpbScore(s) }));
   const sorted = [...enriched].sort((a, b) => b[_vcpbSort] - a[_vcpbSort]);
 
   tbody.innerHTML = sorted.map((s, i) => {
@@ -3853,7 +3843,7 @@ function vcpbRender(data) {
   // Hero: top 3 by composite score
   const hero = document.getElementById('vcpb-hero');
   if (hero) {
-    const enriched = data.sectors.map(s => ({ ...s, composite: vcpbComposite(s) }));
+    const enriched = data.sectors.map(s => ({ ...s, composite: vcpbScore(s) }));
     const top3 = [...enriched].sort((a,b) => b.composite - a.composite).slice(0,3);
     const medals = ['🥇','🥈','🥉'];
     const colors = ['var(--lime)','var(--teal)','var(--accent)'];
@@ -3875,6 +3865,9 @@ function vcpbRender(data) {
   }
 
   vcpbRenderTable(data.sectors);
+  // If RRG pane is visible, redraw with fresh history
+  const rrgPane = document.getElementById('scc-pane-rrg');
+  if (rrgPane && rrgPane.style.display !== 'none') brrgDraw();
 }
 
 function vcpbInit() {
@@ -3883,6 +3876,334 @@ function vcpbInit() {
   if (inp && saved) inp.value = saved;
   vcpbFetch(false);
 }
+
+// ════════════════════════════════════════════════════════════════════════
+//  BREADTH RRG — fully automatic, driven by accumulated score history
+//
+//  Axes:
+//    X = normalised Momentum-Weighted Score (100 = market average)
+//        Higher X = stronger breadth than average → right side of chart
+//    Y = rate of change of score over last N days (smoothed)
+//        Higher Y = score improving → top of chart
+//
+//  Quadrants (same as classic RRG):
+//    Top-right  = LEADING   → high score AND improving  → hunt breakouts here
+//    Top-left   = IMPROVING → below avg but score rising → watch for rotation in
+//    Bottom-right = WEAKENING → above avg but score falling → tighten stops
+//    Bottom-left  = LAGGING  → below avg AND falling → avoid
+//
+//  History builds automatically in localStorage each time dashboard loads.
+//  After ~5 trading days you get visible tails; 20+ days gives full picture.
+// ════════════════════════════════════════════════════════════════════════
+
+let _brrgTailDays = 10;
+let _brrgTopN     = 8;
+const BRRG_SMOOTH = 3;   // EMA smoothing period for momentum calculation
+
+function brrgSetTail(d) {
+  _brrgTailDays = d;
+  [5, 10, 20, 40].forEach(n => {
+    const b = document.getElementById('brrg-t-' + n);
+    if (!b) return;
+    const active = n === d;
+    b.style.background  = active ? 'var(--purple)' : 'transparent';
+    b.style.color       = active ? '#fff'           : 'var(--dim)';
+    b.style.fontWeight  = active ? '600'            : '400';
+    b.style.borderColor = active ? 'var(--purple)'  : 'var(--border)';
+  });
+  brrgDraw();
+}
+
+function brrgSetTopN(n) {
+  _brrgTopN = n;
+  [8, 12, 0].forEach(v => {
+    const b = document.getElementById('brrg-n-' + v);
+    if (!b) return;
+    const active = v === n;
+    b.style.background  = active ? 'var(--accent)' : 'transparent';
+    b.style.color       = active ? '#000'           : 'var(--dim)';
+    b.style.fontWeight  = active ? '600'            : '400';
+    b.style.borderColor = active ? 'var(--accent)'  : 'var(--border)';
+  });
+  brrgDraw();
+}
+
+// Simple EMA helper
+function brrgEMA(arr, period) {
+  if (!arr.length) return [];
+  const k = 2 / (period + 1);
+  const out = [arr[0]];
+  for (let i = 1; i < arr.length; i++) out.push(arr[i] * k + out[i-1] * (1 - k));
+  return out;
+}
+
+// Compute normalised series for one sector from history
+// Returns array of { date, x (normalised score), y (momentum), score }
+function brrgComputeSeries(sectorName, allHist) {
+  const raw = allHist[sectorName];
+  if (!raw || raw.length < 3) return [];
+
+  // Need cross-sector average per date to normalise X
+  // We compute this outside and pass it in via brrgDraw
+  return raw;  // raw processing done in brrgDraw with full cross-sector context
+}
+
+function brrgDraw() {
+  const canvas = document.getElementById('brrg-canvas');
+  if (!canvas) return;
+
+  const hist   = vcpbGetHist();
+  const notice = document.getElementById('brrg-notice');
+  const histInfo = document.getElementById('brrg-hist-info');
+
+  // Gather all sectors with enough history
+  const allSectors = Object.keys(hist).filter(k => hist[k] && hist[k].length >= 3);
+  if (!allSectors.length) {
+    canvas.style.display = 'none';
+    if (notice) { notice.style.display = 'block'; notice.textContent = '⏳ Not enough history yet. The RRG builds automatically each day you load the dashboard. Come back after 3+ trading days for first tails.'; }
+    brrgUpdateHero([]);
+    return;
+  }
+  canvas.style.display = 'block';
+  if (notice) notice.style.display = 'none';
+
+  // Total history days available
+  const maxDays = Math.max(...allSectors.map(k => hist[k].length));
+  if (histInfo) histInfo.textContent = `${maxDays} days of history accumulated`;
+
+  // Build date union — all unique dates across sectors, sorted
+  const dateSet = new Set();
+  allSectors.forEach(sec => hist[sec].forEach(e => dateSet.add(e.date)));
+  const dates = [...dateSet].sort();
+
+  // Build per-sector score series aligned to date union (fill gaps with last known)
+  const sectorScores = {};
+  allSectors.forEach(sec => {
+    const map = {};
+    hist[sec].forEach(e => { map[e.date] = e.score; });
+    let last = null;
+    sectorScores[sec] = dates.map(d => {
+      if (map[d] !== undefined) last = map[d];
+      return last;
+    }).filter(v => v !== null);
+  });
+
+  // Cross-sector average score per date (for normalisation)
+  const avgByDate = dates.map((_, di) => {
+    const vals = allSectors.map(sec => {
+      const s = sectorScores[sec];
+      return s[di] !== undefined ? s[di] : null;
+    }).filter(v => v !== null);
+    return vals.length ? vals.reduce((a,b) => a+b,0) / vals.length : 50;
+  });
+
+  // For each sector compute normalised X and Y (momentum)
+  // X = score / avg * 100  (100 = market average)
+  // Y = EMA-smoothed rate of change of normalised X
+  const series = {};
+  allSectors.forEach(sec => {
+    const scores = sectorScores[sec];
+    if (scores.length < 3) return;
+
+    const normX = scores.map((s, i) => {
+      const avg = avgByDate[i] || 50;
+      return avg > 0 ? (s / avg) * 100 : 100;
+    });
+
+    const smoothedX = brrgEMA(normX, BRRG_SMOOTH);
+
+    // Y = momentum: current smoothed X vs N days ago
+    const WINDOW = 3;
+    const pts = smoothedX.map((x, i) => {
+      const prev  = i >= WINDOW ? smoothedX[i - WINDOW] : smoothedX[0];
+      const mom   = prev > 0 ? (x / prev) * 100 : 100;
+      return { date: dates[Math.min(i, dates.length-1)], x, y: mom, score: scores[i] };
+    });
+    series[sec] = pts;
+  });
+
+  // Select topN sectors — ranked by latest score
+  let displayed = allSectors.filter(sec => series[sec] && series[sec].length >= 3);
+  if (_brrgTopN > 0) {
+    displayed = displayed
+      .sort((a, b) => {
+        const la = series[a].at(-1).score;
+        const lb = series[b].at(-1).score;
+        return lb - la;
+      })
+      .slice(0, _brrgTopN);
+  }
+
+  if (!displayed.length) {
+    if (notice) { notice.style.display = 'block'; notice.textContent = 'Not enough history for selected sectors.'; }
+    return;
+  }
+
+  // Tail slice: last N days
+  const tailed = displayed.map(sec => ({
+    name:   sec,
+    color:  RRG_COLORS[displayed.indexOf(sec) % RRG_COLORS.length],
+    points: series[sec].slice(-(_brrgTailDays + 1)),
+  }));
+
+  // Axis bounds
+  const allX = tailed.flatMap(s => s.points.map(p => p.x));
+  const allY = tailed.flatMap(s => s.points.map(p => p.y));
+  const cx100 = 100, cy100 = 100;
+  const padX = Math.max(4, Math.max(...allX.map(x => Math.abs(x - 100))) + 2);
+  const padY = Math.max(2, Math.max(...allY.map(y => Math.abs(y - 100))) + 1);
+  const xMin = 100 - padX, xMax = 100 + padX;
+  const yMin = 100 - padY, yMax = 100 + padY;
+
+  // Canvas sizing
+  const W  = canvas.offsetWidth || 360;
+  const H  = Math.round(W * 0.82);
+  canvas.width  = W * devicePixelRatio;
+  canvas.height = H * devicePixelRatio;
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+
+  const PAD = { l: 32, r: 14, t: 14, b: 26 };
+  const cW  = W - PAD.l - PAD.r;
+  const cH  = H - PAD.t - PAD.b;
+  const toX = v => PAD.l + ((v - xMin) / (xMax - xMin)) * cW;
+  const toY = v => PAD.t + ((yMax - v) / (yMax - yMin)) * cH;
+  const ox = toX(cx100), oy = toY(cy100);
+
+  // Quadrant backgrounds
+  const Q = [
+    { x: PAD.l, y: PAD.t, w: ox-PAD.l,   h: oy-PAD.t,   bg:'rgba(91,163,245,.07)',  lbl:'Improving',  lx:PAD.l+5, ly:PAD.t+13, lc:'#5ba3f5' },
+    { x: ox,    y: PAD.t, w: W-PAD.r-ox,  h: oy-PAD.t,   bg:'rgba(74,222,128,.07)',  lbl:'Leading',    lx:ox+5,    ly:PAD.t+13, lc:'#4ade80' },
+    { x: PAD.l, y: oy,    w: ox-PAD.l,    h: H-PAD.b-oy,  bg:'rgba(248,113,113,.07)', lbl:'Lagging',    lx:PAD.l+5, ly:oy+13,    lc:'#f87171' },
+    { x: ox,    y: oy,    w: W-PAD.r-ox,  h: H-PAD.b-oy,  bg:'rgba(251,191,36,.07)',  lbl:'Weakening',  lx:ox+5,    ly:oy+13,    lc:'#fbbf24' },
+  ];
+  Q.forEach(q => {
+    ctx.fillStyle = q.bg; ctx.fillRect(q.x, q.y, q.w, q.h);
+    ctx.font = 'bold 9px sans-serif'; ctx.fillStyle = q.lc;
+    ctx.globalAlpha = 0.65; ctx.textAlign = 'left';
+    ctx.fillText(q.lbl, q.lx, q.ly); ctx.globalAlpha = 1;
+  });
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,.04)'; ctx.lineWidth = 1;
+  for (let v = Math.ceil(xMin); v <= xMax; v++) {
+    const x = toX(v); ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, H-PAD.b); ctx.stroke();
+  }
+  for (let v = Math.ceil(yMin*2)/2; v <= yMax; v += 0.5) {
+    const y = toY(v); ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(W-PAD.r, y); ctx.stroke();
+  }
+
+  // Centre axes
+  ctx.strokeStyle = 'rgba(255,255,255,.2)'; ctx.lineWidth = 1; ctx.setLineDash([3,4]);
+  ctx.beginPath(); ctx.moveTo(ox, PAD.t); ctx.lineTo(ox, H-PAD.b); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PAD.l, oy); ctx.lineTo(W-PAD.r, oy); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Axis labels
+  ctx.font = '8px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.3)';
+  ctx.textAlign = 'center'; ctx.fillText('Breadth Score (relative to market avg) →', W/2, H-6);
+  ctx.save(); ctx.translate(11, H/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('Score Momentum ↑', 0, 0); ctx.restore();
+
+  // Tick labels on axes
+  ctx.font = '7px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.25)';
+  for (let v = Math.ceil(xMin); v <= xMax; v++) {
+    if (v === 100) continue;
+    ctx.textAlign = 'center';
+    ctx.fillText(v, toX(v), H - PAD.b + 10);
+  }
+
+  // Draw each sector tail + dot + label
+  const quadCounts = { lead:[], impr:[], weak:[], lag:[] };
+
+  tailed.forEach(({ name, color, points }) => {
+    if (points.length < 2) return;
+
+    // Determine quadrant from current (last) point
+    const cur = points.at(-1);
+    if      (cur.x >= 100 && cur.y >= 100) quadCounts.lead.push(name);
+    else if (cur.x <  100 && cur.y >= 100) quadCounts.impr.push(name);
+    else if (cur.x >= 100 && cur.y <  100) quadCounts.weak.push(name);
+    else                                    quadCounts.lag.push(name);
+
+    // Tail line (fading from oldest to newest)
+    for (let i = 1; i < points.length; i++) {
+      const p0 = points[i-1], p1 = points[i];
+      const alpha = 0.15 + (i / points.length) * 0.55;
+      ctx.beginPath();
+      ctx.moveTo(toX(p0.x), toY(p0.y));
+      ctx.lineTo(toX(p1.x), toY(p1.y));
+      ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+      ctx.globalAlpha = alpha; ctx.stroke(); ctx.globalAlpha = 1;
+    }
+
+    // Historical dots (small, fading)
+    points.slice(0, -1).forEach((p, i) => {
+      const alpha = 0.1 + (i / points.length) * 0.35;
+      ctx.beginPath(); ctx.arc(toX(p.x), toY(p.y), 2, 0, Math.PI*2);
+      ctx.fillStyle = color; ctx.globalAlpha = alpha; ctx.fill(); ctx.globalAlpha = 1;
+    });
+
+    // Current dot (solid, larger)
+    const cx2 = toX(cur.x), cy2 = toY(cur.y);
+    ctx.beginPath(); ctx.arc(cx2, cy2, 5.5, 0, Math.PI*2);
+    ctx.fillStyle = color; ctx.globalAlpha = 1; ctx.fill();
+    ctx.strokeStyle = '#0d1520'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // Direction arrow (from previous point to current)
+    if (points.length >= 2) {
+      const pp = points.at(-2);
+      const dx = cur.x - pp.x, dy = -(cur.y - pp.y); // canvas Y is inverted
+      const len = Math.sqrt(dx*dx + dy*dy);
+      if (len > 0.05) {
+        const nx = dx/len * 5, ny = dy/len * 5;
+        const ax = cx2, ay = cy2;
+        ctx.beginPath();
+        ctx.moveTo(ax - ny*0.6, ay - nx*0.6);
+        ctx.lineTo(ax + nx, ay + ny);
+        ctx.lineTo(ax + ny*0.6, ay + nx*0.6);
+        ctx.fillStyle = color; ctx.globalAlpha = 0.85; ctx.fill(); ctx.globalAlpha = 1;
+      }
+    }
+
+    // Label — short name (first word)
+    const shortName = name.split(' ')[0].replace('&','');
+    ctx.font = 'bold 9px sans-serif'; ctx.fillStyle = color; ctx.globalAlpha = 0.95;
+    ctx.textAlign = cx2 > W * 0.72 ? 'right' : 'left';
+    ctx.fillText(shortName, cx2 + (cx2 > W * 0.72 ? -8 : 8), cy2 + 3);
+    ctx.globalAlpha = 1;
+
+    // Score badge next to dot
+    ctx.font = '7px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.4)';
+    ctx.textAlign = cx2 > W * 0.72 ? 'right' : 'left';
+    ctx.fillText(Math.round(cur.score), cx2 + (cx2 > W * 0.72 ? -8 : 8), cy2 + 12);
+  });
+
+  brrgUpdateHero(quadCounts);
+}
+
+function brrgUpdateHero(quadCounts) {
+  const set = (id, val, names) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = val;
+    el.title = names && names.length ? names.join(', ') : '';
+  };
+  if (Array.isArray(quadCounts)) {
+    // empty state
+    set('brrg-q-lead', '—', []);
+    set('brrg-q-impr', '—', []);
+    set('brrg-q-weak', '—', []);
+    set('brrg-q-lag',  '—', []);
+    return;
+  }
+  set('brrg-q-lead', quadCounts.lead.length, quadCounts.lead);
+  set('brrg-q-impr', quadCounts.impr.length, quadCounts.impr);
+  set('brrg-q-weak', quadCounts.weak.length, quadCounts.weak);
+  set('brrg-q-lag',  quadCounts.lag.length,  quadCounts.lag);
+}
+
 
 function srtRender() {
   const sectors = srtLoad();
@@ -7470,6 +7791,7 @@ function renderAll() {
   safe(() => srtRender(),              'srtRender');
   safe(() => slhRender(),              'slhRender');
   safe(() => vcpbInit(),               'vcpbInit');
+  safe(() => brrgDraw(),               'brrgDraw');
   safe(() => capitalInputInit(),       'capitalInputInit');
   // Always render chart — getBoundingClientRect works even before first paint
   renderChart(data);
