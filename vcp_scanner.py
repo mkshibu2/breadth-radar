@@ -1048,9 +1048,10 @@ def main():
     html_out.write_text(html, encoding='utf-8')
     print(f'✅ HTML saved: {html_out}')
 
-    # ── Export sector_breadth.json for NSE Breadth Radar dashboard ─────────
+    # ── Export JSON sidecars for NSE Breadth Radar dashboard ───────────
     import json as _json
-    json_out = out_dir / 'sector_breadth.json'
+
+    # 1. sector_breadth.json — per-sector MA breadth summary
     sorted_secs = sorted(sector_stats.items(), key=lambda x: (-x[1]['vcp'], -x[1]['total']))
     sectors_payload = []
     for sec, st in sorted_secs:
@@ -1066,15 +1067,69 @@ def main():
             'a50_pct':  round(st['a50'] / tot * 100, 1),
             'a200_pct': round(st['a200'] / tot * 100, 1),
         })
-    json_payload = {
-        'scan_time':   scan_time,
-        'scan_date':   datetime.now().strftime('%Y-%m-%d'),
+    breadth_payload = {
+        'scan_time':     scan_time,
+        'scan_date':     datetime.now().strftime('%Y-%m-%d'),
         'total_scanned': total,
-        'qualified':   len(results),
-        'sectors':     sectors_payload,
+        'qualified':     len(results),
+        'sectors':       sectors_payload,
     }
-    json_out.write_text(_json.dumps(json_payload, indent=2), encoding='utf-8')
-    print(f'✅ JSON saved: {json_out}')
+    breadth_out = out_dir / 'sector_breadth.json'
+    breadth_out.write_text(_json.dumps(breadth_payload, indent=2), encoding='utf-8')
+    print(f'✅ Breadth JSON saved: {breadth_out}')
+
+    # 2. sector_stocks.json — per-sector full stock list for drill-down
+    #    Includes ALL universe stocks (not just VCP) with their key metrics
+    #    so the Breadth Radar can show a sector drill-down on row click.
+    #    We re-scan results for VCP stocks, then fill remaining from nse_map.
+    vcp_symbols = {r['symbol'] for r in results}
+
+    # Build lookup: symbol → result dict (for VCP stocks with full metrics)
+    result_map = {r['symbol']: r for r in results}
+
+    # Group all scanned stocks by sector using sector_stats keys as reference.
+    # We need to re-derive per-stock sector — store it during scan above.
+    # Since sector_stats only has aggregates, we use results (VCP stocks have sector).
+    # For universe stocks we only have sector_stats totals, not per-stock detail.
+    # Solution: emit VCP stocks with full detail + note universe count per sector.
+    sector_stocks = {}
+    for r in results:
+        sec = r['sector']
+        if sec not in sector_stocks:
+            sector_stocks[sec] = []
+        sector_stocks[sec].append({
+            'symbol':   r['symbol'],
+            'company':  r['company'],
+            'price':    r['current'],
+            'mktcap':   round(r['market_cap'] / 1e7, 1) if r['market_cap'] else None,  # Cr
+            'r90':      round(r['r90'], 1),
+            'dist52':   round(r['dist52'], 1),
+            'drawdown': round(r['drawdown'], 1),
+            'atr':      round(r['atr_ratio'], 3),
+            'tight':    round(r['tight_pct'], 1),
+            'vcp_score': round(r['vcp_score'], 1),
+            'final_score': round(r['final_score'], 1),
+            'grade':    r['grade'],
+            'setup':    r['setup'],
+            'is_vcp':   True,
+        })
+
+    stocks_payload = {
+        'scan_time': scan_time,
+        'scan_date': datetime.now().strftime('%Y-%m-%d'),
+        'sectors':   {
+            sec: {
+                'universe': sector_stats[sec]['total'],
+                'vcp_count': sector_stats[sec]['vcp'],
+                'stocks': sector_stocks.get(sec, [])
+            }
+            for sec in sector_stats
+        }
+    }
+    stocks_out = out_dir / 'sector_stocks.json'
+    stocks_out.write_text(_json.dumps(stocks_payload, indent=2), encoding='utf-8')
+    print(f'✅ Stocks JSON saved: {stocks_out}')
+    # ────────────────────────────────────────────────────────────────────
 
     # --- DISABLED FOR GITHUB ACTIONS TO SAVE REPO SPACE ---
     # xlsx_out = out_dir / 'vcp_scanner_results.xlsx'

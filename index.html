@@ -116,8 +116,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
 .page{padding:10px 12px;display:flex;flex-direction:column;gap:8px;max-width:100%;overflow:hidden;}
 
 /* ── TOP STATUS STRIP — single full-width bar, 6 cells ── */
-.status-strip{display:grid;grid-template-columns:110px 155px 1fr 120px 120px 120px 110px 125px 155px;background:var(--bg2);border:1px solid var(--border);border-radius:6px 6px 0 0;overflow:hidden;}
-.analysis-strip{display:grid;grid-template-columns:minmax(160px,1fr) 175px 145px 155px 135px 135px 155px 140px 150px 155px;background:var(--bg3);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;overflow-x:auto;overflow-y:hidden;margin-bottom:0;}
+.status-strip{display:grid;grid-template-columns:110px 155px 1fr 120px 120px 120px 110px 155px;background:var(--bg2);border:1px solid var(--border);border-radius:6px 6px 0 0;overflow:hidden;}
+.analysis-strip{display:grid;grid-template-columns:minmax(160px,1fr) 175px 145px 155px 135px 155px 140px 150px 155px;background:var(--bg3);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;overflow-x:auto;overflow-y:hidden;margin-bottom:0;}
 .as-cell{padding:12px 16px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:flex-start;position:relative;min-width:0;}
 .as-cell:last-child{border-right:none;}
 .as-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--sub);margin-bottom:4px;}
@@ -455,31 +455,30 @@ canvas#bsr-chart{width:100%;height:100%;}
 
   /* Status strip: 3 rows
      Row1: Score | Zone | Meter (full width)
-     Row2: Last Saved | BSR | Pressure | Momentum | Thrust
-     Row3: Rally Prob */
+     Row2: Last Saved | BSR | Pressure
+     Row3: Momentum | Rally Prob */
   .status-strip{
     grid-template-columns:110px 155px 1fr;
     grid-template-rows:auto auto auto;
   }
   /* Meter on row1 takes remaining space */
   .ss-meter{ grid-column:3; }
-  /* Last Saved + 4 metrics on row2 */
+  /* Last Saved + metrics on row2 */
   .ss-cell:nth-child(4){ grid-column:1; grid-row:2; }
   .ss-cell:nth-child(5){ grid-column:2; grid-row:2; }
   .ss-cell:nth-child(6){ grid-column:3; grid-row:2; border-right:none; }
   .ss-cell:nth-child(7){ grid-column:1; grid-row:3; }
-  .ss-cell:nth-child(8){ grid-column:2; grid-row:3; border-right:1px solid var(--border); }
-  .ss-cell:nth-child(9){ grid-column:3; grid-row:3; border-right:none; }
+  .ss-cell:nth-child(8){ grid-column:2; grid-row:3; border-right:none; }
   /* Row borders */
   .ss-cell:nth-child(4),.ss-cell:nth-child(5),
   .ss-cell:nth-child(6),.ss-cell:nth-child(7),
-  .ss-cell:nth-child(8),.ss-cell:nth-child(9){
+  .ss-cell:nth-child(8){
     border-top:1px solid var(--border);
   }
 
   /* Analysis strip: scroll on tablet — keeps full layout intact */
   .analysis-strip{
-    grid-template-columns:minmax(160px,1fr) 175px 145px 155px 135px 135px 155px 140px 150px;
+    grid-template-columns:minmax(160px,1fr) 175px 145px 155px 135px 155px 140px 150px;
   }
 
   /* Market Summary: stack sections */
@@ -523,7 +522,6 @@ canvas#bsr-chart{width:100%;height:100%;}
   .ss-cell:nth-child(6){ grid-column:1; grid-row:4; border-top:1px solid var(--border); }
   .ss-cell:nth-child(7){ grid-column:2; grid-row:4; border-right:none; border-top:1px solid var(--border); }
   .ss-cell:nth-child(8){ grid-column:1; grid-row:5; border-top:1px solid var(--border); }
-  .ss-cell:nth-child(9){ grid-column:2; grid-row:5; border-right:none; border-top:1px solid var(--border); }
   .ss-cell{ padding:9px 10px; }
   .ss-big{ font-size:38px; }
   .ss-zone{ font-size:17px; }
@@ -1286,14 +1284,6 @@ body.guest-mode #mpm-module-card { display:none !important; }
       <button class="info-btn" onclick="showInfoTip('breadth-momentum',this)" title="About this indicator">i</button>
     </div>
 
-    <!-- 8: Breadth Thrust -->
-    <div class="ss-cell" id="thrust-cell" style="border-top:2px solid var(--orange)">
-      <div class="ss-lbl" style="color:var(--orange)">Breadth Thrust</div>
-      <div class="ss-thrust-val" id="h-thrust" style="color:var(--dim)">—</div>
-      <div class="ss-thrust-sig" id="h-thrust-signal" style="color:var(--dim)">3-day change</div>
-      <button class="info-btn" onclick="showInfoTip('breadth-thrust',this)" title="About this indicator">i</button>
-    </div>
-
     <!-- 9: Rally Probability Gauge (compact) -->
     <div class="ss-rpg" style="border-top:2px solid var(--purple);border-left:1px solid var(--border)">
       <div class="ss-lbl" style="color:var(--purple);text-align:center">Rally Prob</div>
@@ -1371,15 +1361,6 @@ body.guest-mode #mpm-module-card { display:none !important; }
       <div class="as-desc" id="as-bias-desc">Up vs Down days · 10d</div>
       <div class="as-pills" id="as-bias-pills"></div>
       <button class="info-btn" onclick="showInfoTip('trend-bias',this)" title="About this indicator">i</button>
-    </div>
-
-    <!-- A6: Thrust Quality -->
-    <div class="as-cell" style="border-top:2px solid var(--yellow)">
-      <div class="as-lbl">⚡ Thrust Quality</div>
-      <div class="as-phase" id="as-thrust-q" style="color:var(--dim)">—</div>
-      <div class="as-desc" id="as-thrust-q-desc">Bounce conviction</div>
-      <div class="as-pills" id="as-thrust-q-pills"></div>
-      <button class="info-btn" onclick="showInfoTip('thrust-quality',this)" title="About this indicator">i</button>
     </div>
 
     <!-- A7: Institutional Bias 10d -->
@@ -1473,230 +1454,267 @@ body.guest-mode #mpm-module-card { display:none !important; }
     <!-- ═══ LEFT COLUMN ════════════════════════════════════ -->
     <div class="col">
 
-      <!-- ── SECTOR ROTATION CARD ──────────────────────────── -->
+      <!-- ══ SECTOR COMMAND CENTRE ══════════════════════════ -->
       <div class="card" id="srt-home-card" style="border-top:2px solid var(--purple)">
         <div class="card-head">
-          <div class="card-title">📡 Sector Rotation</div>
-          <div style="display:flex;gap:6px;align-items:center">
-            <button id="srt-rrg-btn" onclick="srtToggleRRG()" style="font-size:9px;padding:3px 8px;background:var(--purple);color:#fff;border:1px solid rgba(167,139,250,.3);border-radius:4px;cursor:pointer;font-weight:600;letter-spacing:.4px">RRG</button>
-            <button class="info-btn" onclick="showInfoTip('sector-rotation',this)" title="About this indicator">i</button>
-          </div>
-        </div>
-
-        <!-- Summary strip -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:10px 14px 0">
-          <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center">
-            <div style="font-size:9px;color:var(--dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.6px">Leading</div>
-            <div id="srt-hero-lead" style="font-family:var(--disp);font-size:32px;font-weight:800;color:var(--lime);line-height:1">—</div>
-            <div style="font-size:9px;color:var(--dim);margin-top:2px">Stage 2 · hunt here</div>
-          </div>
-          <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center">
-            <div style="font-size:9px;color:var(--dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.6px">Basing</div>
-            <div id="srt-hero-base" style="font-family:var(--disp);font-size:32px;font-weight:800;color:var(--accent);line-height:1">—</div>
-            <div style="font-size:9px;color:var(--dim);margin-top:2px">Stage 1 · watchlist</div>
-          </div>
-          <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center">
-            <div style="font-size:9px;color:var(--dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.6px">Avoid</div>
-            <div id="srt-hero-weak" style="font-family:var(--disp);font-size:32px;font-weight:800;color:var(--red);line-height:1">—</div>
-            <div style="font-size:9px;color:var(--dim);margin-top:2px">Stage 3–4 · skip</div>
-          </div>
-        </div>
-
-        <!-- Top sector subtitle -->
-        <div id="srt-hero-sub" style="font-size:10px;color:var(--sub);padding:7px 14px 8px;font-family:var(--mono)">No sector data — add via Control Panel → Sectors tab</div>
-
-        <!-- Full ranked table -->
-        <div style="overflow-x:auto;padding:0 14px 12px">
-          <table style="width:100%;border-collapse:collapse" id="srt-home-table">
-            <thead>
-              <tr style="border-bottom:1px solid var(--border)">
-                <th style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">#</th>
-                <th style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Sector</th>
-                <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">vs 20MA</th>
-                <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">MAs</th>
-                <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Stage</th>
-                <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">RS</th>
-                <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Wks</th>
-              </tr>
-            </thead>
-            <tbody id="srt-hero-rows"></tbody>
-          </table>
-          <div id="srt-hero-empty" style="text-align:center;padding:18px;color:var(--dim);font-size:10px">
-            No sector data yet — go to Control Panel → 📡 Sectors tab
-          </div>
-        </div>
-
-        <!-- Legend -->
-        <div style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px 10px;border-top:1px solid var(--border)">
-          <span style="font-size:8px;background:rgba(74,222,128,.15);color:var(--lime);padding:2px 5px;border-radius:3px">S2 advancing</span>
-          <span style="font-size:8px;background:rgba(91,163,245,.12);color:var(--accent);padding:2px 5px;border-radius:3px">S1 basing</span>
-          <span style="font-size:8px;background:rgba(251,191,36,.12);color:var(--yellow);padding:2px 5px;border-radius:3px">S3 topping</span>
-          <span style="font-size:8px;background:rgba(239,68,68,.12);color:var(--red);padding:2px 5px;border-radius:3px">S4 declining</span>
-          <span style="font-size:8px;color:var(--dim);margin-left:2px">● above MA &nbsp;◐ near &nbsp;○ below &nbsp;|&nbsp; RS vs Nifty50 &nbsp;|&nbsp; Wks = history &nbsp;|&nbsp; <b>Tap row → NSE India ↗</b></span>
-        </div>
-
-        <!-- RRG Panel (visible by default) -->
-        <div id="srt-rrg-panel" style="display:block;border-top:1px solid var(--border);padding:12px 14px 14px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
-            <div style="font-size:9px;color:var(--purple);font-weight:600;letter-spacing:.8px;text-transform:uppercase">Relative Rotation Graph</div>
-          </div>
-
-          <!-- Controls row 1: Sectors (Top N) -->
-          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:6px">
-            <span style="font-size:9px;color:var(--dim);min-width:44px">Sectors:</span>
-            <button onclick="rrgAdjustTop(-1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">&#8722;</button>
-            <span id="rrg-top-display" style="font-size:10px;font-weight:600;color:var(--text);min-width:24px;text-align:center">8</span>
-            <button onclick="rrgAdjustTop(+1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">+</button>
-            <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
-            <button onclick="srtRRGSetTop(4)"  id="rrg-top-4"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">4</button>
-            <button onclick="srtRRGSetTop(8)"  id="rrg-top-8"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer">8</button>
-            <button onclick="srtRRGSetTop(12)" id="rrg-top-12" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12</button>
-            <button onclick="srtRRGSetTop(0)"  id="rrg-top-0"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">All</button>
-          </div>
-
-          <!-- Controls row 2: Tail Weeks + Filter + Animate -->
-          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:6px">
-            <span style="font-size:9px;color:var(--dim);min-width:44px">Weeks:</span>
-            <button onclick="rrgAdjustTail(-1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">&#8722;</button>
-            <span id="rrg-tail-display" style="font-size:10px;font-weight:600;color:var(--purple);min-width:24px;text-align:center">8w</span>
-            <button onclick="rrgAdjustTail(+1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">+</button>
-            <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
-            <button onclick="srtRRGSetTail(4)"  id="rrg-tail-4"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">4w</button>
-            <button onclick="srtRRGSetTail(8)"  id="rrg-tail-8"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--purple);color:#fff;cursor:pointer">8w</button>
-            <button onclick="srtRRGSetTail(12)" id="rrg-tail-12" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12w</button>
-            <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
-            <span style="font-size:9px;color:var(--dim)">Filter:</span>
-            <button onclick="srtRRGSetFilter('all')" id="rrg-f-all" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer">All</button>
-            <button onclick="srtRRGSetFilter('s2')"  id="rrg-f-s2"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">S2</button>
-            <button onclick="srtRRGAnimate()" id="rrg-anim-btn" style="font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.1);color:var(--yellow);cursor:pointer;font-weight:600;margin-left:2px">&#9654; Play</button>
-          </div>
-
-          <!-- Sector multi-select chips (populated by JS) -->
-          <div id="rrg-sector-chips" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;min-height:30px;align-items:center">
-            <span style="font-size:9px;color:var(--dim);margin-right:2px">Highlight:</span>
-          </div>
-
-          <!-- Animation progress bar (hidden until playing) -->
-          <div id="rrg-anim-bar-wrap" style="display:none;margin-bottom:6px">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
-              <span id="rrg-anim-week-label" style="font-size:9px;color:var(--yellow);font-weight:600">Week 1</span>
-              <button onclick="srtRRGStopAnim()" style="font-size:9px;padding:1px 6px;border-radius:3px;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.1);color:var(--red);cursor:pointer">&#9632; Stop</button>
-            </div>
-            <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
-              <div id="rrg-anim-bar" style="height:100%;width:0%;background:var(--yellow);border-radius:2px;transition:width .25s"></div>
-            </div>
-          </div>
-
-          <!-- Canvas with i button overlaid bottom-right -->
-          <div style="position:relative">
-            <canvas id="srt-rrg-canvas" style="width:100%;border-radius:6px;display:block"></canvas>
-            <button class="info-btn" onclick="showInfoTip('rrg',this)" title="How to use RRG"
-              style="position:absolute;bottom:8px;right:8px;z-index:3;opacity:.7">i</button>
-          </div>
-          <div style="margin-top:8px;font-size:9px;color:var(--dim);line-height:1.6">
-            <b style="color:var(--lime)">Leading</b> = strong &amp; improving &nbsp;
-            <b style="color:var(--accent)">Improving</b> = gaining momentum &nbsp;
-            <b style="color:var(--yellow)">Weakening</b> = slowing down &nbsp;
-            <b style="color:var(--red)">Lagging</b> = weak &amp; deteriorating<br>
-            Dot = current &middot; tail = last N weeks of movement. Clockwise rotation is bullish.
-          </div>
-        </div>
-      </div>
-
-      <!-- ── VCP SECTOR BREADTH CARD ──────────────────────────── -->
-      <div class="card" id="vcpb-card" style="border-top:2px solid var(--teal)">
-        <div class="card-head">
           <div style="display:flex;align-items:center;gap:8px">
-            <div class="card-title" style="color:var(--teal)">⚡ VCP Sector Breadth</div>
+            <div class="card-title">🗺 Sector Command</div>
             <span id="vcpb-scan-badge" style="display:none;font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(45,212,191,.12);color:var(--teal);font-family:var(--mono);white-space:nowrap"></span>
           </div>
           <div style="display:flex;gap:6px;align-items:center">
-            <button onclick="vcpbFetch(true)" id="vcpb-refresh-btn" title="Refresh from GitHub"
-              style="font-size:9px;padding:3px 8px;background:rgba(45,212,191,.1);color:var(--teal);border:1px solid rgba(45,212,191,.25);border-radius:4px;cursor:pointer;font-weight:600;letter-spacing:.4px">↻ Refresh</button>
-            <button class="info-btn" onclick="showInfoTip('vcpb',this)" title="About VCP Sector Breadth">i</button>
+            <button onclick="vcpbFetch(true)" title="Refresh breadth data"
+              style="font-size:9px;padding:3px 8px;background:rgba(45,212,191,.1);color:var(--teal);border:1px solid rgba(45,212,191,.25);border-radius:4px;cursor:pointer;font-weight:600;letter-spacing:.4px">↻</button>
+            <button class="info-btn" onclick="showInfoTip('sector-command',this)" title="About Sector Command">i</button>
           </div>
         </div>
 
-        <!-- Source line -->
-        <div id="vcpb-source-row" style="padding:4px 14px 0;font-size:9px;color:var(--dim);font-family:var(--mono);display:none">
-          Source: <span id="vcpb-source-url" style="color:var(--accent)"></span>
-          &nbsp;·&nbsp; Scanned: <span id="vcpb-scan-time"></span>
-          &nbsp;·&nbsp; <span id="vcpb-qualified" style="color:var(--teal)"></span> qualified
+        <!-- Tab bar -->
+        <div style="display:flex;border-bottom:1px solid var(--border);padding:0 14px;gap:0">
+          <button id="scc-tab-breadth" onclick="sccTab('breadth')"
+            style="font-size:10px;font-weight:700;padding:7px 12px;border:none;background:none;color:var(--teal);border-bottom:2px solid var(--teal);cursor:pointer;letter-spacing:.4px;text-transform:uppercase">📶 Breadth</button>
+          <button id="scc-tab-rrg" onclick="sccTab('rrg')"
+            style="font-size:10px;font-weight:600;padding:7px 12px;border:none;background:none;color:var(--dim);border-bottom:2px solid transparent;cursor:pointer;letter-spacing:.4px;text-transform:uppercase">📡 RRG</button>
+          <button id="scc-tab-heatmap" onclick="sccTab('heatmap')"
+            style="font-size:10px;font-weight:600;padding:7px 12px;border:none;background:none;color:var(--dim);border-bottom:2px solid transparent;cursor:pointer;letter-spacing:.4px;text-transform:uppercase">🌡 Heatmap</button>
         </div>
 
-        <!-- State: loading -->
-        <div id="vcpb-loading" style="padding:20px 14px;text-align:center;font-size:11px;color:var(--dim)">
-          <span style="opacity:.6">Fetching sector breadth from VCP Scanner…</span>
-        </div>
+        <!-- ── TAB: BREADTH ────────────────────────────── -->
+        <div id="scc-pane-breadth">
 
-        <!-- State: needs config -->
-        <div id="vcpb-needs-config" style="display:none;padding:16px 14px">
-          <div style="font-size:11px;color:var(--dim);line-height:1.6">
-            Enter your GitHub Pages URL below to auto-load daily sector breadth from the VCP Scanner.<br>
-            Format: <code style="color:var(--accent);font-size:10px">https://&lt;username&gt;.github.io/&lt;repo&gt;</code>
-          </div>
-          <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
-            <input id="vcpb-url-input" type="text" placeholder="https://yourusername.github.io/breadth-radar"
-              style="flex:1;min-width:220px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px 10px;font-size:11px;font-family:var(--mono)">
-            <button onclick="vcpbSaveUrl()"
-              style="padding:6px 14px;background:var(--teal);color:#0e1420;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">Save &amp; Load</button>
-          </div>
-          <div id="vcpb-url-msg" style="font-size:10px;margin-top:6px;min-height:14px"></div>
-        </div>
-
-        <!-- State: error -->
-        <div id="vcpb-error" style="display:none;padding:12px 14px">
-          <div style="font-size:11px;color:var(--red)" id="vcpb-error-msg"></div>
-          <div style="font-size:10px;color:var(--dim);margin-top:4px">
-            Make sure the VCP scanner has run at least once today and <code>sector_breadth.json</code> is in your GitHub repo root.
-            <button onclick="vcpbShowConfig()" style="background:none;border:none;color:var(--accent);font-size:10px;cursor:pointer;text-decoration:underline;padding:0 0 0 6px">Change URL</button>
-          </div>
-        </div>
-
-        <!-- State: data loaded -->
-        <div id="vcpb-data" style="display:none">
-
-          <!-- Top 3 summary row -->
-          <div id="vcpb-hero" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:10px 14px 0"></div>
-
-          <!-- Sort controls -->
-          <div style="display:flex;gap:5px;align-items:center;padding:8px 14px 4px;flex-wrap:wrap">
-            <span style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px">Sort:</span>
-            <button onclick="vcpbSetSort('vcp')"   id="vcpb-s-vcp"   style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--teal);color:#0e1420;cursor:pointer;font-weight:600">VCP Count</button>
-            <button onclick="vcpbSetSort('a20')"   id="vcpb-s-a20"   style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">%&gt;20EMA</button>
-            <button onclick="vcpbSetSort('a200')"  id="vcpb-s-a200"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">%&gt;200SMA</button>
-            <button onclick="vcpbSetSort('vcp_pct')" id="vcpb-s-vcp_pct" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">VCP%</button>
+          <!-- Source row -->
+          <div id="vcpb-source-row" style="padding:4px 14px 0;font-size:9px;color:var(--dim);font-family:var(--mono);display:none">
+            <span id="vcpb-source-url" style="color:var(--accent)"></span>
+            &nbsp;·&nbsp; <span id="vcpb-scan-time"></span>
+            &nbsp;·&nbsp; N500 universe: <span id="vcpb-qualified" style="color:var(--teal)"></span>
           </div>
 
-          <!-- Table -->
-          <div style="overflow-x:auto;padding:0 14px 12px">
-            <table style="width:100%;border-collapse:collapse" id="vcpb-table">
-              <thead>
-                <tr style="border-bottom:1px solid var(--border)">
-                  <th style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">#</th>
-                  <th style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Sector / Theme</th>
-                  <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Universe</th>
-                  <th style="text-align:center;padding:5px 4px;color:var(--teal);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">VCP ✦</th>
-                  <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">VCP%</th>
-                  <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">&gt;20EMA</th>
-                  <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">&gt;50SMA</th>
-                  <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">&gt;200SMA</th>
-                  <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Trend Bar</th>
-                </tr>
-              </thead>
-              <tbody id="vcpb-tbody"></tbody>
-            </table>
+          <!-- Loading -->
+          <div id="vcpb-loading" style="padding:20px 14px;text-align:center;font-size:11px;color:var(--dim)">
+            <span style="opacity:.6">Fetching sector breadth from VCP Scanner…</span>
+          </div>
+
+          <!-- Needs config -->
+          <div id="vcpb-needs-config" style="display:none;padding:16px 14px">
+            <div style="font-size:11px;color:var(--dim);line-height:1.7">
+              Enter your GitHub Pages base URL to auto-load daily sector breadth.<br>
+              <code style="color:var(--accent);font-size:10px">https://&lt;username&gt;.github.io/&lt;repo&gt;</code>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
+              <input id="vcpb-url-input" type="text" placeholder="https://yourusername.github.io/breadth-radar"
+                style="flex:1;min-width:220px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px 10px;font-size:11px;font-family:var(--mono)">
+              <button onclick="vcpbSaveUrl()"
+                style="padding:6px 14px;background:var(--teal);color:#0e1420;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">Save &amp; Load</button>
+            </div>
+            <div id="vcpb-url-msg" style="font-size:10px;margin-top:6px;min-height:14px"></div>
+          </div>
+
+          <!-- Error -->
+          <div id="vcpb-error" style="display:none;padding:12px 14px">
+            <div style="font-size:11px;color:var(--red)" id="vcpb-error-msg"></div>
+            <div style="font-size:10px;color:var(--dim);margin-top:4px">
+              Make sure <code>sector_breadth.json</code> is in your GitHub repo root.
+              <button onclick="vcpbShowConfig()" style="background:none;border:none;color:var(--accent);font-size:10px;cursor:pointer;text-decoration:underline;padding:0 0 0 6px">Change URL</button>
+            </div>
+          </div>
+
+          <!-- Data -->
+          <div id="vcpb-data" style="display:none">
+
+            <!-- Hero: top 3 by composite breadth -->
+            <div style="padding:10px 14px 0">
+              <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Top Breadth Leaders · Composite MA Score</div>
+              <div id="vcpb-hero" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px"></div>
+            </div>
+
+            <!-- Sort controls -->
+            <div style="display:flex;gap:5px;align-items:center;padding:10px 14px 4px;flex-wrap:wrap">
+              <span style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px">Sort:</span>
+              <button onclick="vcpbSetSort('composite')" id="vcpb-s-composite" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--teal);color:#0e1420;cursor:pointer;font-weight:600">Score</button>
+              <button onclick="vcpbSetSort('universe')"  id="vcpb-s-universe"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">Universe</button>
+              <button onclick="vcpbSetSort('a20_pct')"   id="vcpb-s-a20_pct"   style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">%&gt;20EMA</button>
+              <button onclick="vcpbSetSort('a200_pct')"  id="vcpb-s-a200_pct"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">%&gt;200SMA</button>
+            </div>
+
+            <!-- Table -->
+            <div style="overflow-x:auto;padding:0 14px 4px">
+              <table style="width:100%;border-collapse:collapse">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <th style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">#</th>
+                    <th style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Sector / Theme</th>
+                    <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">N500</th>
+                    <th style="text-align:center;padding:5px 4px;color:var(--teal);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Score</th>
+                    <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">&gt;20EMA</th>
+                    <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">&gt;50SMA</th>
+                    <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">&gt;200SMA</th>
+                    <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Trend</th>
+                    <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.5">RS wk</th>
+                    <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.5">Stage</th>
+                  </tr>
+                </thead>
+                <tbody id="vcpb-tbody"></tbody>
+              </table>
+            </div>
+
+            <!-- Legend -->
+            <div style="display:flex;gap:10px;flex-wrap:wrap;padding:6px 14px 10px;border-top:1px solid var(--border);font-size:9px;color:var(--dim)">
+              <span><b style="color:var(--teal)">Score</b> = avg(%&gt;20EMA + %&gt;50SMA + %&gt;200SMA) · auto-daily</span>
+              <span style="opacity:.6">RS wk &amp; Stage = manual overlay from Sectors tab</span>
+              <span style="margin-left:auto"><span style="color:var(--lime)">■</span> ≥60% &nbsp;<span style="color:var(--yellow)">■</span> 40–59% &nbsp;<span style="color:var(--red)">■</span> &lt;40%</span>
+            </div>
+          </div>
+        </div><!-- /pane-breadth -->
+
+        <!-- ── TAB: RRG ─────────────────────────────────── -->
+        <div id="scc-pane-rrg" style="display:none">
+
+          <!-- Leading/Basing/Avoid hero row (kept from original) -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:10px 14px 0">
+            <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center">
+              <div style="font-size:9px;color:var(--dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.6px">Leading</div>
+              <div id="srt-hero-lead" style="font-family:var(--disp);font-size:32px;font-weight:800;color:var(--lime);line-height:1">—</div>
+              <div style="font-size:9px;color:var(--dim);margin-top:2px">Stage 2 · hunt here</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center">
+              <div style="font-size:9px;color:var(--dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.6px">Basing</div>
+              <div id="srt-hero-base" style="font-family:var(--disp);font-size:32px;font-weight:800;color:var(--accent);line-height:1">—</div>
+              <div style="font-size:9px;color:var(--dim);margin-top:2px">Stage 1 · watchlist</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center">
+              <div style="font-size:9px;color:var(--dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.6px">Avoid</div>
+              <div id="srt-hero-weak" style="font-family:var(--disp);font-size:32px;font-weight:800;color:var(--red);line-height:1">—</div>
+              <div style="font-size:9px;color:var(--dim);margin-top:2px">Stage 3–4 · skip</div>
+            </div>
+          </div>
+
+          <!-- Top sector subtitle -->
+          <div id="srt-hero-sub" style="font-size:10px;color:var(--sub);padding:7px 14px 4px;font-family:var(--mono)">No sector data — add via Control Panel → Sectors tab</div>
+
+          <!-- Full ranked RS table (collapsible) -->
+          <div style="padding:0 14px 4px">
+            <div style="cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:4px" onclick="toggleCollapse('srt-table-wrap','srt-table-icon')">
+              <span style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px">Sector RS Table</span>
+              <span id="srt-table-icon" style="font-size:11px;color:var(--dim);transition:transform .2s;display:inline-block;transform:rotate(-90deg)">▾</span>
+            </div>
+            <div id="srt-table-wrap" style="display:none;overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse" id="srt-home-table">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <th style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">#</th>
+                    <th style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Sector</th>
+                    <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">vs 20MA</th>
+                    <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">MAs</th>
+                    <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Stage</th>
+                    <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">RS</th>
+                    <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Wks</th>
+                  </tr>
+                </thead>
+                <tbody id="srt-hero-rows"></tbody>
+              </table>
+              <div id="srt-hero-empty" style="text-align:center;padding:14px;color:var(--dim);font-size:10px">
+                No sector data yet — go to Control Panel → 📡 Sectors tab
+              </div>
+            </div>
           </div>
 
           <!-- Legend -->
-          <div style="display:flex;gap:8px;flex-wrap:wrap;padding:4px 14px 10px;border-top:1px solid var(--border);font-size:9px;color:var(--dim)">
-            <span><b style="color:var(--teal)">VCP ✦</b> = Stage-2 VCP candidates from today's scan</span>
-            <span><b>Trend Bar</b> = % above 20EMA · 50SMA · 200SMA (left→right)</span>
-            <span style="margin-left:auto"><span style="color:var(--lime)">■</span> ≥60% &nbsp;<span style="color:var(--yellow)">■</span> 40–59% &nbsp;<span style="color:var(--red)">■</span> &lt;40%</span>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;padding:4px 14px 8px;border-top:1px solid var(--border)">
+            <span style="font-size:8px;background:rgba(74,222,128,.15);color:var(--lime);padding:2px 5px;border-radius:3px">S2 advancing</span>
+            <span style="font-size:8px;background:rgba(91,163,245,.12);color:var(--accent);padding:2px 5px;border-radius:3px">S1 basing</span>
+            <span style="font-size:8px;background:rgba(251,191,36,.12);color:var(--yellow);padding:2px 5px;border-radius:3px">S3 topping</span>
+            <span style="font-size:8px;background:rgba(239,68,68,.12);color:var(--red);padding:2px 5px;border-radius:3px">S4 declining</span>
+            <span style="font-size:8px;color:var(--dim);margin-left:2px">● above MA &nbsp;◐ near &nbsp;○ below &nbsp;|&nbsp; RS vs Nifty50 &nbsp;|&nbsp; <b>Tap row → NSE India ↗</b></span>
           </div>
-        </div>
-      </div>
-      <!-- /VCP Sector Breadth -->
+
+          <!-- RRG (always visible in this pane) -->
+          <div style="border-top:1px solid var(--border);padding:12px 14px 14px">
+            <div style="font-size:9px;color:var(--purple);font-weight:600;letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px">Relative Rotation Graph</div>
+
+            <!-- Controls row 1: Sectors (Top N) -->
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:6px">
+              <span style="font-size:9px;color:var(--dim);min-width:44px">Sectors:</span>
+              <button onclick="rrgAdjustTop(-1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">&#8722;</button>
+              <span id="rrg-top-display" style="font-size:10px;font-weight:600;color:var(--text);min-width:24px;text-align:center">8</span>
+              <button onclick="rrgAdjustTop(+1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">+</button>
+              <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
+              <button onclick="srtRRGSetTop(4)"  id="rrg-top-4"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">4</button>
+              <button onclick="srtRRGSetTop(8)"  id="rrg-top-8"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer">8</button>
+              <button onclick="srtRRGSetTop(12)" id="rrg-top-12" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12</button>
+              <button onclick="srtRRGSetTop(0)"  id="rrg-top-0"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">All</button>
+            </div>
+
+            <!-- Controls row 2: Tail Weeks + Filter + Animate -->
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:6px">
+              <span style="font-size:9px;color:var(--dim);min-width:44px">Weeks:</span>
+              <button onclick="rrgAdjustTail(-1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">&#8722;</button>
+              <span id="rrg-tail-display" style="font-size:10px;font-weight:600;color:var(--purple);min-width:24px;text-align:center">8w</span>
+              <button onclick="rrgAdjustTail(+1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">+</button>
+              <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
+              <button onclick="srtRRGSetTail(4)"  id="rrg-tail-4"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">4w</button>
+              <button onclick="srtRRGSetTail(8)"  id="rrg-tail-8"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--purple);color:#fff;cursor:pointer">8w</button>
+              <button onclick="srtRRGSetTail(12)" id="rrg-tail-12" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12w</button>
+              <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
+              <span style="font-size:9px;color:var(--dim)">Filter:</span>
+              <button onclick="srtRRGSetFilter('all')" id="rrg-f-all" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer">All</button>
+              <button onclick="srtRRGSetFilter('s2')"  id="rrg-f-s2"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">S2</button>
+              <button onclick="srtRRGAnimate()" id="rrg-anim-btn" style="font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.1);color:var(--yellow);cursor:pointer;font-weight:600;margin-left:2px">&#9654; Play</button>
+            </div>
+
+            <!-- Sector multi-select chips -->
+            <div id="rrg-sector-chips" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;min-height:30px;align-items:center">
+              <span style="font-size:9px;color:var(--dim);margin-right:2px">Highlight:</span>
+            </div>
+
+            <!-- Animation bar -->
+            <div id="rrg-anim-bar-wrap" style="display:none;margin-bottom:6px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+                <span id="rrg-anim-week-label" style="font-size:9px;color:var(--yellow);font-weight:600">Week 1</span>
+                <button onclick="srtRRGStopAnim()" style="font-size:9px;padding:1px 6px;border-radius:3px;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.1);color:var(--red);cursor:pointer">&#9632; Stop</button>
+              </div>
+              <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+                <div id="rrg-anim-bar" style="height:100%;width:0%;background:var(--yellow);border-radius:2px;transition:width .25s"></div>
+              </div>
+            </div>
+
+            <!-- Canvas -->
+            <div style="position:relative">
+              <canvas id="srt-rrg-canvas" style="width:100%;border-radius:6px;display:block"></canvas>
+              <button class="info-btn" onclick="showInfoTip('rrg',this)" title="How to use RRG"
+                style="position:absolute;bottom:8px;right:8px;z-index:3;opacity:.7">i</button>
+            </div>
+            <div style="margin-top:8px;font-size:9px;color:var(--dim);line-height:1.6">
+              <b style="color:var(--lime)">Leading</b> = strong &amp; improving &nbsp;
+              <b style="color:var(--accent)">Improving</b> = gaining momentum &nbsp;
+              <b style="color:var(--yellow)">Weakening</b> = slowing down &nbsp;
+              <b style="color:var(--red)">Lagging</b> = weak &amp; deteriorating<br>
+              Dot = current &middot; tail = last N weeks of movement. Clockwise rotation is bullish.
+            </div>
+          </div>
+        </div><!-- /pane-rrg -->
+
+        <!-- ── TAB: HEATMAP ──────────────────────────────── -->
+        <div id="scc-pane-heatmap" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px 4px;flex-wrap:wrap;gap:6px">
+            <div style="font-size:9px;color:var(--dim);line-height:1.5">
+              Each cell = sector RS vs Nifty 50 that week. <b style="color:var(--lime)">Green</b> = outperforming · <b style="color:var(--red)">Red</b> = underperforming · Newest week on right. Click row → NSE page.
+            </div>
+            <div style="display:flex;gap:3px">
+              <button onclick="slhSetWeeks(8)"  id="slh-w-8"  style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:var(--teal);color:#0e1420;cursor:pointer;font-weight:600">8w</button>
+              <button onclick="slhSetWeeks(12)" id="slh-w-12" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12w</button>
+              <button onclick="slhSetWeeks(20)" id="slh-w-20" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">20w</button>
+              <button class="info-btn" onclick="showInfoTip('sector-heatmap',this)" title="About Sector Heatmap" style="margin-left:4px">i</button>
+            </div>
+          </div>
+          <div id="slh-body">
+            <div id="slh-wrap" style="overflow-x:auto;padding:0 12px 12px">
+              <div id="slh-grid" style="font-size:11px;min-width:320px">
+                <div style="color:var(--dim);padding:20px;text-align:center;font-size:11px">No sector history yet — add weekly data via Control Panel → Sectors tab</div>
+              </div>
+            </div>
+          </div>
+        </div><!-- /pane-heatmap -->
+
+      </div><!-- /Sector Command Centre -->
 
       <!-- Score Chart -->
       <div class="card">
@@ -2191,33 +2209,6 @@ body.guest-mode #mpm-module-card { display:none !important; }
       </div>
 
       <!-- ── SECTOR LEADERSHIP HEATMAP ────────────────────────── -->
-      <div class="card" id="srt-heatmap-card" style="border-top:2px solid var(--teal)">
-        <div class="card-head">
-          <div class="card-title" style="color:var(--teal)">🌡 Sector Leadership Heatmap</div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <button class="info-btn" onclick="showInfoTip('sector-heatmap',this)" title="About Sector Heatmap">i</button>
-            <div style="display:flex;gap:3px">
-              <button onclick="slhSetWeeks(8)"  id="slh-w-8"  style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:var(--teal);color:#0e1420;cursor:pointer;font-weight:600">8w</button>
-              <button onclick="slhSetWeeks(12)" id="slh-w-12" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12w</button>
-              <button onclick="slhSetWeeks(20)" id="slh-w-20" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">20w</button>
-            </div>
-          </div>
-        </div>
-        <div id="slh-body">
-          <div style="padding:6px 14px 4px;font-size:9px;color:var(--dim);line-height:1.5">
-            Each cell = sector RS vs Nifty 50 that week. <b style="color:var(--lime)">Green</b> = outperforming · <b style="color:var(--red)">Red</b> = underperforming · Newest week on right.
-            <br>Click any sector row to open its NSE page.
-          </div>
-          <div id="slh-wrap" style="overflow-x:auto;padding:0 12px 12px">
-            <div id="slh-grid" style="font-size:11px;min-width:320px">
-              <div style="color:var(--dim);padding:20px;text-align:center;font-size:11px">No sector history yet — add weekly data via Control Panel → Sectors tab</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SRT Card -->
-
       <!-- BSR Module (last card) -->
       <div class="card" id="bsr-module-card" style="border-top:2px solid var(--purple)">
         <div class="card-head">
@@ -3182,16 +3173,6 @@ const RRG_COLORS = [
   '#f472b6','#facc15','#94a3b8'
 ];
 
-function srtToggleRRG() {
-  const panel = document.getElementById('srt-rrg-panel');
-  const btn   = document.getElementById('srt-rrg-btn');
-  if (!panel) return;
-  const visible = panel.style.display !== 'none';
-  panel.style.display = visible ? 'none' : 'block';
-  btn.style.background = visible ? 'rgba(167,139,250,.12)' : 'var(--purple)';
-  btn.style.color      = visible ? 'var(--purple)' : '#fff';
-  if (!visible) { rrgRebuildChips(); srtDrawRRG(); }
-}
 
 function srtRRGSetTail(n) {
   _rrgTailWeeks = n;
@@ -3673,25 +3654,41 @@ function slhRender() {
 }
 
 // ════════════════════════════════════════════════════════════════════════
-//  VCP SECTOR BREADTH — fetches sector_breadth.json from GitHub Pages
-//  Written by Claude · integrates with vcp_scanner.py output
+//  SECTOR COMMAND CENTRE — tab switcher
+// ════════════════════════════════════════════════════════════════════════
+function sccTab(tab) {
+  const colors = { breadth: 'var(--teal)', rrg: 'var(--purple)', heatmap: 'var(--teal)' };
+  ['breadth','rrg','heatmap'].forEach(t => {
+    const btn  = document.getElementById('scc-tab-' + t);
+    const pane = document.getElementById('scc-pane-' + t);
+    const active = t === tab;
+    if (btn) {
+      btn.style.color        = active ? colors[tab] : 'var(--dim)';
+      btn.style.borderBottom = active ? `2px solid ${colors[tab]}` : '2px solid transparent';
+      btn.style.fontWeight   = active ? '700' : '600';
+    }
+    if (pane) pane.style.display = active ? 'block' : 'none';
+  });
+  if (tab === 'rrg')     setTimeout(() => srtRender(), 50);
+  if (tab === 'heatmap') setTimeout(() => slhRender(), 50);
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  SECTOR BREADTH & MOMENTUM — fetches sector_breadth.json from GitHub Pages
+//  Primary signal: full N500 universe MA breadth. RS/Stage = optional overlay.
 // ════════════════════════════════════════════════════════════════════════
 
 const LS_VCPB_URL  = 'nse_vcpb_url_v1';
 const LS_VCPB_DATA = 'nse_vcpb_data_v1';
-let _vcpbSort = 'vcp';
+let _vcpbSort = 'composite';
 
-function vcpbGetUrl() {
-  return (localStorage.getItem(LS_VCPB_URL) || '').trim().replace(/\/$/, '');
-}
-function vcpbSetStoredUrl(url) {
-  localStorage.setItem(LS_VCPB_URL, url.trim().replace(/\/$/, ''));
-}
-function vcpbGetCached() {
-  try { return JSON.parse(localStorage.getItem(LS_VCPB_DATA)) || null; } catch(e) { return null; }
-}
-function vcpbSetCached(data) {
-  try { localStorage.setItem(LS_VCPB_DATA, JSON.stringify(data)); } catch(e) {}
+function vcpbGetUrl()          { return (localStorage.getItem(LS_VCPB_URL) || '').trim().replace(/\/$/, ''); }
+function vcpbSetStoredUrl(url) { localStorage.setItem(LS_VCPB_URL, url.trim().replace(/\/$/, '')); }
+function vcpbGetCached()       { try { return JSON.parse(localStorage.getItem(LS_VCPB_DATA)) || null; } catch(e) { return null; } }
+function vcpbSetCached(data)   { try { localStorage.setItem(LS_VCPB_DATA, JSON.stringify(data)); } catch(e) {} }
+
+function vcpbComposite(s) {
+  return Math.round((s.a20_pct + s.a50_pct + s.a200_pct) / 3);
 }
 
 function vcpbShowState(state) {
@@ -3700,12 +3697,10 @@ function vcpbShowState(state) {
     if (el) el.style.display = 'none';
   });
   const show = document.getElementById(state);
-  if (show) show.style.display = state === 'vcpb-data' ? 'block' : 'block';
+  if (show) show.style.display = 'block';
 }
 
-function vcpbShowConfig() {
-  vcpbShowState('vcpb-needs-config');
-}
+function vcpbShowConfig() { vcpbShowState('vcpb-needs-config'); }
 
 function vcpbSaveUrl() {
   const inp = document.getElementById('vcpb-url-input');
@@ -3713,41 +3708,31 @@ function vcpbSaveUrl() {
   if (!inp) return;
   const raw = inp.value.trim();
   if (!raw || !raw.startsWith('http')) {
-    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Enter a valid URL starting with https://'; }
+    if (msg) { msg.style.color='var(--red)'; msg.textContent='Enter a valid URL starting with https://'; }
     return;
   }
   vcpbSetStoredUrl(raw);
-  if (msg) { msg.style.color = 'var(--lime)'; msg.textContent = 'Saved — fetching…'; }
+  if (msg) { msg.style.color='var(--lime)'; msg.textContent='Saved — fetching…'; }
   vcpbFetch(true);
 }
 
 async function vcpbFetch(force) {
   const baseUrl = vcpbGetUrl();
-
-  // If no URL configured, try to render from cache or show config
   if (!baseUrl) {
     const cached = vcpbGetCached();
     if (cached) { vcpbRender(cached); return; }
     vcpbShowState('vcpb-needs-config');
-    // Pre-fill the input with a placeholder if empty
-    const inp = document.getElementById('vcpb-url-input');
-    if (inp && !inp.value) inp.placeholder = 'https://yourusername.github.io/breadth-radar';
     return;
   }
-
-  // Show cached immediately while re-fetching in background
   if (!force) {
     const cached = vcpbGetCached();
-    if (cached) { vcpbRender(cached); }
-    else { vcpbShowState('vcpb-loading'); }
+    if (cached) { vcpbRender(cached); } else { vcpbShowState('vcpb-loading'); }
   } else {
     vcpbShowState('vcpb-loading');
   }
-
   const jsonUrl = baseUrl + '/sector_breadth.json?_=' + Date.now();
   const srcEl = document.getElementById('vcpb-source-url');
   if (srcEl) srcEl.textContent = baseUrl + '/sector_breadth.json';
-
   try {
     const resp = await fetch(jsonUrl, { cache: 'no-store' });
     if (!resp.ok) throw new Error('HTTP ' + resp.status + ' — file not found. Has the scanner run today?');
@@ -3756,7 +3741,6 @@ async function vcpbFetch(force) {
     vcpbSetCached(data);
     vcpbRender(data);
   } catch(e) {
-    // Fall back to cache if available
     const cached = vcpbGetCached();
     if (cached && !force) { vcpbRender(cached); return; }
     vcpbShowState('vcpb-error');
@@ -3767,114 +3751,138 @@ async function vcpbFetch(force) {
 
 function vcpbSetSort(key) {
   _vcpbSort = key;
-  ['vcp','a20','a200','vcp_pct'].forEach(k => {
+  ['composite','universe','a20_pct','a200_pct'].forEach(k => {
     const b = document.getElementById('vcpb-s-' + k);
     if (!b) return;
     const active = k === key;
-    b.style.background  = active ? 'var(--teal)'  : 'transparent';
-    b.style.color       = active ? '#0e1420'       : 'var(--dim)';
-    b.style.borderColor = active ? 'var(--teal)'   : 'var(--border)';
-    b.style.fontWeight  = active ? '600' : '400';
+    b.style.background  = active ? 'var(--teal)' : 'transparent';
+    b.style.color       = active ? '#0e1420'      : 'var(--dim)';
+    b.style.borderColor = active ? 'var(--teal)'  : 'var(--border)';
+    b.style.fontWeight  = active ? '600'          : '400';
   });
-  // Re-render table only (data already stored on the card element)
-  const card = document.getElementById('vcpb-card');
+  const card = document.getElementById('srt-home-card');
   if (card && card._vcpbData) vcpbRenderTable(card._vcpbData.sectors);
 }
 
-function vcpbBarColor(pct) {
+function vcpbPctColor(pct) {
   if (pct >= 60) return 'var(--lime)';
   if (pct >= 40) return 'var(--yellow)';
   return 'var(--red)';
 }
 
 function vcpbTrendBar(a20, a50, a200) {
-  const segs = [
-    { v: a20,  label: '20E' },
-    { v: a50,  label: '50S' },
-    { v: a200, label: '200S' },
-  ];
-  return '<div style="display:flex;gap:2px;align-items:flex-end;height:22px">' +
-    segs.map(s => {
-      const h = Math.max(4, Math.round(s.v / 100 * 22));
-      return `<div title="${s.label}: ${s.v}%" style="width:12px;height:${h}px;background:${vcpbBarColor(s.v)};border-radius:1px 1px 0 0;opacity:.85"></div>`;
-    }).join('') +
-  '</div>';
+  return '<div style="display:flex;gap:2px;align-items:flex-end;height:20px">' +
+    [{v:a20,l:'20E'},{v:a50,l:'50S'},{v:a200,l:'200S'}].map(s => {
+      const h = Math.max(3, Math.round(s.v / 100 * 20));
+      return `<div title="${s.l}: ${s.v}%" style="width:11px;height:${h}px;background:${vcpbPctColor(s.v)};border-radius:1px 1px 0 0;opacity:.85"></div>`;
+    }).join('') + '</div>';
+}
+
+// Merge N500 breadth rows with optional RS/Stage from srtLoad()
+function vcpbGetSrtOverlay() {
+  try {
+    const secs = srtLoad ? srtLoad() : [];
+    const map = {};
+    secs.forEach(s => {
+      if (s.id === 'NIFTY50') return;
+      map[s.name.toLowerCase()] = { rs: s.rs, stage: s.stage, vs20: s.vs20 };
+    });
+    return map;
+  } catch(e) { return {}; }
 }
 
 function vcpbRenderTable(sectors) {
   const tbody = document.getElementById('vcpb-tbody');
   if (!tbody) return;
-
-  const sorted = [...sectors].sort((a, b) => b[_vcpbSort] - a[_vcpbSort]);
+  const overlay = vcpbGetSrtOverlay();
+  const enriched = sectors.map(s => ({ ...s, composite: vcpbComposite(s) }));
+  const sorted = [...enriched].sort((a, b) => b[_vcpbSort] - a[_vcpbSort]);
 
   tbody.innerHTML = sorted.map((s, i) => {
-    const vcpC    = s.vcp > 0  ? 'var(--teal)'   : 'var(--dim)';
-    const a20C    = vcpbBarColor(s.a20_pct);
-    const a50C    = vcpbBarColor(s.a50_pct);
-    const a200C   = vcpbBarColor(s.a200_pct);
-    const vcpPctC = s.vcp_pct >= 20 ? 'var(--lime)' : s.vcp_pct >= 10 ? 'var(--yellow)' : 'var(--dim)';
-    const rowBg   = i === 0 ? 'rgba(45,212,191,.04)' : 'transparent';
-    return `<tr style="border-bottom:1px solid var(--border);background:${rowBg}">
+    const scoreC = vcpbPctColor(s.composite);
+    const a20C   = vcpbPctColor(s.a20_pct);
+    const a50C   = vcpbPctColor(s.a50_pct);
+    const a200C  = vcpbPctColor(s.a200_pct);
+    const rowBg  = i === 0 ? 'rgba(45,212,191,.04)' : 'transparent';
+
+    // RS/Stage optional overlay — fuzzy match sector name
+    const key  = s.sector.toLowerCase();
+    const over = overlay[key] || Object.entries(overlay).find(([k]) => key.includes(k.split(' ')[0].toLowerCase()))?.[1] || null;
+    const rsCell = over && over.rs != null
+      ? `<span style="color:${over.rs >= 0 ? 'var(--lime)' : 'var(--red)'}">${over.rs > 0 ? '+' : ''}${over.rs}</span>`
+      : '<span style="color:var(--border)">—</span>';
+    const stageInfo = over && over.stage ? (() => {
+      const si = { S2:{ c:'var(--lime)', l:'S2' }, S1:{ c:'var(--accent)', l:'S1' }, S3:{ c:'var(--yellow)', l:'S3' }, S4:{ c:'var(--red)', l:'S4' } };
+      return si[over.stage] || null;
+    })() : null;
+    const stageCell = stageInfo ? `<span style="font-size:9px;font-weight:700;color:${stageInfo.c};background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px">${stageInfo.l}</span>` : '<span style="color:var(--border)">—</span>';
+
+    return `<tr style="border-bottom:1px solid var(--border);background:${rowBg};cursor:pointer"
+      onmouseenter="this.style.background='rgba(45,212,191,.06)'"
+      onmouseleave="this.style.background='${rowBg}'"
+      onclick="sectorDrillOpen('${s.sector.replace(/'/g, "\\'")}')"
+      title="Click to see VCP candidates in ${s.sector.replace(/'/g, "\\'")}">
       <td style="padding:5px 4px;color:var(--dim);font-size:10px;font-family:var(--mono)">${i+1}</td>
-      <td style="padding:5px 4px;font-weight:700;font-size:12px;font-family:var(--disp);letter-spacing:.2px">${s.sector}</td>
-      <td style="padding:5px 4px;text-align:center;color:var(--sub);font-size:10px;font-family:var(--mono)">${s.universe}</td>
-      <td style="padding:5px 4px;text-align:center;font-family:var(--disp);font-size:18px;font-weight:800;color:${vcpC}">${s.vcp}</td>
-      <td style="padding:5px 4px;text-align:center;font-size:10px;font-family:var(--mono);color:${vcpPctC}">${s.vcp_pct}%</td>
+      <td style="padding:5px 4px;font-weight:700;font-size:12px;font-family:var(--disp)">${s.sector} <span style="font-size:8px;color:var(--teal);opacity:.6">↗</span></td>
+      <td style="padding:5px 4px;text-align:center;color:var(--sub);font-size:11px;font-family:var(--mono)">${s.universe}</td>
+      <td style="padding:5px 4px;text-align:center;font-family:var(--disp);font-size:16px;font-weight:800;color:${scoreC}">${s.composite}</td>
       <td style="padding:5px 4px;text-align:right;font-size:11px;font-family:var(--mono);color:${a20C}">${s.a20_pct}%</td>
       <td style="padding:5px 4px;text-align:right;font-size:11px;font-family:var(--mono);color:${a50C}">${s.a50_pct}%</td>
       <td style="padding:5px 4px;text-align:right;font-size:11px;font-family:var(--mono);color:${a200C}">${s.a200_pct}%</td>
       <td style="padding:5px 4px;text-align:center">${vcpbTrendBar(s.a20_pct, s.a50_pct, s.a200_pct)}</td>
+      <td style="padding:5px 4px;text-align:center;font-size:11px;font-family:var(--mono);opacity:.7">${rsCell}</td>
+      <td style="padding:5px 4px;text-align:center;opacity:.7">${stageCell}</td>
     </tr>`;
   }).join('');
 }
 
 function vcpbRender(data) {
-  // Store on card for sort re-renders
-  const card = document.getElementById('vcpb-card');
+  const card = document.getElementById('srt-home-card');
   if (card) card._vcpbData = data;
-
   vcpbShowState('vcpb-data');
 
-  // Source row
-  const srcRow = document.getElementById('vcpb-source-row');
-  if (srcRow) srcRow.style.display = 'block';
-  const timeEl = document.getElementById('vcpb-scan-time');
-  const qualEl = document.getElementById('vcpb-qualified');
+  const srcRow  = document.getElementById('vcpb-source-row');
+  const timeEl  = document.getElementById('vcpb-scan-time');
+  const qualEl  = document.getElementById('vcpb-qualified');
   const badgeEl = document.getElementById('vcpb-scan-badge');
-  if (timeEl) timeEl.textContent = data.scan_time || data.scan_date || '—';
-  if (qualEl) qualEl.textContent = (data.qualified || 0) + ' / ' + (data.total_scanned || '?') + ' scanned';
+  if (srcRow)  srcRow.style.display  = 'block';
+  if (timeEl)  timeEl.textContent    = data.scan_time || data.scan_date || '—';
+  if (qualEl)  qualEl.textContent    = data.total_scanned || '?';
   if (badgeEl) { badgeEl.textContent = data.scan_date || ''; badgeEl.style.display = 'inline'; }
 
-  // Hero strip — top 3 VCP sectors
+  // Hero: top 3 by composite score
   const hero = document.getElementById('vcpb-hero');
   if (hero) {
-    const top3 = [...data.sectors].sort((a,b) => b.vcp - a.vcp).slice(0,3);
-    hero.innerHTML = top3.map((s, idx) => {
-      const hdrColor = idx === 0 ? 'var(--teal)' : idx === 1 ? 'var(--accent)' : 'var(--sub)';
-      const rank = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
-      return `<div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center;border:1px solid var(--border)">
-        <div style="font-size:9px;color:var(--dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px">${rank} Top VCP Sector</div>
-        <div style="font-family:var(--disp);font-size:13px;font-weight:800;color:${hdrColor};line-height:1.2;letter-spacing:.3px">${s.sector}</div>
-        <div style="font-family:var(--disp);font-size:22px;font-weight:800;color:var(--teal);line-height:1.1;margin-top:2px">${s.vcp}</div>
-        <div style="font-size:9px;color:var(--dim);margin-top:2px">${s.vcp_pct}% of ${s.universe} stocks</div>
-      </div>`;
-    }).join('');
+    const enriched = data.sectors.map(s => ({ ...s, composite: vcpbComposite(s) }));
+    const top3 = [...enriched].sort((a,b) => b.composite - a.composite).slice(0,3);
+    const medals = ['🥇','🥈','🥉'];
+    const colors = ['var(--lime)','var(--teal)','var(--accent)'];
+    hero.innerHTML = top3.map((s, idx) => `
+      <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center;border:1px solid var(--border)">
+        <div style="font-size:9px;color:var(--dim);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px">${medals[idx]} Leader</div>
+        <div style="font-family:var(--disp);font-size:12px;font-weight:800;color:${colors[idx]};line-height:1.2">${s.sector}</div>
+        <div style="font-family:var(--disp);font-size:22px;font-weight:800;color:${vcpbPctColor(s.composite)};line-height:1.1;margin-top:2px">${s.composite}</div>
+        <div style="font-size:8px;color:var(--dim);margin-top:2px">${s.universe} stocks</div>
+        <div style="display:flex;justify-content:center;gap:5px;margin-top:4px;font-size:9px;font-family:var(--mono)">
+          <span style="color:${vcpbPctColor(s.a20_pct)}">${s.a20_pct}%</span>
+          <span style="color:var(--border)">·</span>
+          <span style="color:${vcpbPctColor(s.a50_pct)}">${s.a50_pct}%</span>
+          <span style="color:var(--border)">·</span>
+          <span style="color:${vcpbPctColor(s.a200_pct)}">${s.a200_pct}%</span>
+        </div>
+        <div style="font-size:8px;color:var(--dim);margin-top:1px">20E · 50S · 200S</div>
+      </div>`).join('');
   }
 
   vcpbRenderTable(data.sectors);
 }
 
 function vcpbInit() {
-  // Pre-fill URL input if already saved
   const saved = vcpbGetUrl();
   const inp = document.getElementById('vcpb-url-input');
   if (inp && saved) inp.value = saved;
   vcpbFetch(false);
 }
-
-// ── Info tip for VCP breadth card ─────────────────────────────────────────
-// (Registered in the showInfoTip switch — handled by the generic tip system)
-
 
 function srtRender() {
   const sectors = srtLoad();
@@ -4425,8 +4433,8 @@ function renderHero(data) {
     ['h-score','h-zone','h-r'].forEach(id=>{el(id).textContent='—';el(id).style.color='var(--dim)';});
     const hf0=el('h-fill'); if(hf0){hf0.style.width='0%';} el('h-lastdate').textContent='—';
     el('h-trend').innerHTML='—'; el('h-entries').textContent='0 entries stored'; el('score-bk').innerHTML='';
-    ['h-momentum','h-thrust'].forEach(id=>{el(id).textContent='—';el(id).style.color='var(--dim)';});
-    el('h-momentum-label').textContent='vs yesterday'; el('h-thrust-signal').textContent='3-day change';
+    ['h-momentum'].forEach(id=>{el(id).textContent='—';el(id).style.color='var(--dim)';});
+    el('h-momentum-label').textContent='vs yesterday';
     return;
   }
   const r=data[0],prev=data[1],s=r.score,z=getZone(s);
@@ -4497,34 +4505,6 @@ function renderMomentumThrust(data) {
     el('h-momentum-label').style.color = 'var(--dim)';
   }
 
-  // ── Breadth Thrust (today − 3 days ago) ──────────
-  const tCell = document.getElementById('thrust-cell');
-  if (data.length >= 4) {
-    const d = data[0].score - data[3].score;
-    const sign = d > 0 ? '+' : '';
-    const col = thrustColor(d);
-    const sig = thrustSignal(d);
-    el('h-thrust').textContent = sign + d;
-    el('h-thrust').style.color = col;
-    el('h-thrust-signal').textContent = sig;
-    el('h-thrust-signal').style.color = col;
-    if (tCell) tCell.style.background = d >= 15
-      ? 'rgba(74,222,128,.09)'
-      : 'transparent';
-  } else if (data.length >= 2) {
-    // show partial thrust with available data
-    const d = data[0].score - data[data.length-1].score;
-    const sign = d > 0 ? '+' : '';
-    el('h-thrust').textContent = sign + d;
-    el('h-thrust').style.color = thrustColor(d);
-    el('h-thrust-signal').textContent = `(${data.length}d) ${thrustSignal(d)}`;
-    el('h-thrust-signal').style.color = thrustColor(d);
-  } else {
-    el('h-thrust').textContent = '—';
-    el('h-thrust-signal').textContent = 'Need 4+ entries';
-    el('h-thrust').style.color = 'var(--dim)';
-    el('h-thrust-signal').style.color = 'var(--dim)';
-  }
 }
 
 // ════════════════════════════════════════════════════
@@ -4839,7 +4819,6 @@ function renderMarketCycle() {
   renderAnalysisDDC();
   renderAnalysisDivergence(records);
   renderAnalysisTrendBias(records);
-  renderAnalysisThrustQuality(records);
   renderAnalysisExpansionRate(records);
   renderAnalysisInstBias();
 }
@@ -6376,69 +6355,6 @@ function renderAnalysisTrendBias(data) {
   el('as-bias-label').textContent = '';
   el('as-bias-desc').textContent  = `${upDays}↑ ${downDays}↓ ${flatDays}→ of ${total} sessions`;
   el('as-bias-pills').innerHTML   = pills || `<span class="as-pill" style="color:var(--sub)">${upPct}% up days</span>`;
-}
-
-// A6: THRUST QUALITY
-// When breadth bounces (score goes up), was it on expanding SMA breadth?
-// Compares avg SMA breadth on positive-score days vs negative-score days (last 10)
-function renderAnalysisThrustQuality(data) {
-  const el = id => document.getElementById(id) || {textContent:'',innerHTML:'',style:{},className:'',classList:{add:()=>{},remove:()=>{},contains:()=>false},value:'',offsetWidth:0,offsetHeight:0,getBoundingClientRect:()=>({width:0,height:0,top:0,left:0,right:0,bottom:0})};
-  if (!el('as-thrust-q') || !data || data.length < 5) {
-    if(el('as-thrust-q')) { el('as-thrust-q').textContent='—'; el('as-thrust-q-desc').textContent='Need 5+ records'; }
-    return;
-  }
-  const window10 = data.slice(0, 10);
-
-  // Identify positive breadth days (score up vs prev) and negative days
-  const posDays = [], negDays = [];
-  for (let i = 0; i < window10.length - 1; i++) {
-    const curr = window10[i], prev = window10[i+1];
-    const scoreDiff = (curr.score || 0) - (prev.score || 0);
-    const smaBreadth = ((+curr.e20||0) + (+curr.s50||0) + (+curr.s200||0)) / 3;
-    if (scoreDiff > 0)      posDays.push(smaBreadth);
-    else if (scoreDiff < 0) negDays.push(smaBreadth);
-  }
-
-  const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
-  const posAvg = avg(posDays), negAvg = avg(negDays);
-
-  if (posAvg === null) {
-    el('as-thrust-q').textContent = '—';
-    el('as-thrust-q-desc').textContent = 'No up-days in window';
-    return;
-  }
-
-  // Quality = how much higher is SMA breadth on up-days vs down-days
-  const diff = negAvg !== null ? posAvg - negAvg : null;
-  let status, color, desc, pills = '';
-
-  if (diff === null) {
-    // Only up days — pure momentum
-    status = 'Strong ↑'; color = 'var(--lime)';
-    desc   = `Up-day breadth avg ${posAvg.toFixed(0)}% · No down days`;
-    pills  = '<span class="as-pill ok">High Conviction</span>';
-  } else if (diff >= 8) {
-    status = 'Strong ↑'; color = 'var(--lime)';
-    desc   = `Up-day SMA avg ${posAvg.toFixed(0)}% vs Down ${negAvg.toFixed(0)}%`;
-    pills  = '<span class="as-pill ok">High Conviction</span>';
-  } else if (diff >= 3) {
-    status = 'Moderate'; color = 'var(--yellow)';
-    desc   = `Up-day SMA avg ${posAvg.toFixed(0)}% vs Down ${negAvg.toFixed(0)}%`;
-    pills  = '<span class="as-pill warn">Normal Bounce</span>';
-  } else if (diff >= -2) {
-    status = 'Weak'; color = 'var(--orange)';
-    desc   = `Up-day SMA avg ${posAvg.toFixed(0)}% — barely above down days`;
-    pills  = '<span class="as-pill warn">Low Conviction</span>';
-  } else {
-    status = 'Narrow ↓'; color = 'var(--red)';
-    desc   = `Up-days on weaker breadth ${posAvg.toFixed(0)}% — suspicious bounce`;
-    pills  = '<span class="as-pill err">Avoid Entries</span>';
-  }
-
-  el('as-thrust-q').textContent = status;
-  el('as-thrust-q').style.color = color;
-  el('as-thrust-q-desc').textContent = desc;
-  el('as-thrust-q-pills').innerHTML  = pills;
 }
 
 // A8: BREADTH EXPANSION RATE
@@ -8712,7 +8628,7 @@ function cpSwitchTab(tab) {
   });
   if (tab === 'past') renderPastSeedList();
   if (tab === 'sync') cpRefreshSyncState();
-  if (tab === 'srt')  { srtRender(); srtNiftyStatusRefresh(); slhRender(); }
+  if (tab === 'srt')  { srtRender(); srtNiftyStatusRefresh(); slhRender(); vcpbInit(); }
 }
 function cpRefreshSyncState() {
   const cfg = getCfg();
@@ -9058,11 +8974,18 @@ const INFO = {
     use: 'Rapid expansion (+3 to +5 pts/day) = high-quality rally, act on breakouts. Slow (+1 to +2) = improving but unconvincing. Stalling (0) = caution. Contracting = avoid new entries regardless of absolute score level.'
   },
 
+  'sector-command': {
+    title: 'Sector Command Centre',
+    what: 'Three views in one card. Breadth tab: auto-populated daily from your VCP scanner — composite MA breadth score per sector across the full Nifty 500 universe. RRG tab: Relative Rotation Graph showing sector momentum trajectories. Heatmap tab: weekly RS vs Nifty 50 history grid.',
+    how: 'Breadth data loads automatically from sector_breadth.json on your GitHub Pages (configure URL once in the Breadth tab). RRG and Heatmap use weekly data entered via Control Panel → Sectors tab.',
+    use: 'Breadth tab: Sort by Score to instantly rank sectors by participation breadth. Green ≥60%, Yellow 40–59%, Red <40%. RRG tab: Leading quadrant = strong + improving, hunt breakouts there. Clockwise rotation = bullish. Heatmap: consistent green rows = durable multi-week leaders.'
+  },
+
   'vcpb': {
-    title: 'VCP Sector Breadth',
-    what: 'Auto-loaded daily sector breadth data from your VCP Scanner (vcp_scanner.py). For every NSE sector/theme in the Nifty 500 universe it shows: how many stocks are in Stage-2 VCP patterns today, what percentage of that sector is above key moving averages, and a 3-bar trend health visual. Uses your scanner\'s smart NSE sector mapping — Railways, Defense, Pharma vs Hospitals, Banks vs NBFCs etc.',
-    how: 'The scanner runs daily via GitHub Actions at 6 PM IST. It writes sector_breadth.json to your GitHub Pages repo. This card fetches that file on load (no manual entry needed). Enter your GitHub Pages URL once and it auto-refreshes every day. Data includes: VCP count, VCP% of sector universe, % > 20 EMA, % > 50 SMA, % > 200 SMA per sector.',
-    use: '<b>VCP Count</b>: sectors with more VCP candidates = most leadership concentration today. Hunt breakout setups there first. <b>%&gt;20EMA ≥ 60%</b> (green) = sector in momentum — breadth is supporting price. <b>%&gt;200SMA</b> shows structural health (Stage-2 base). <b>Trend Bar</b>: when all 3 bars are green, the whole sector is in sync — ideal for new entries. Sort by VCP% to find sectors where leadership is most dense relative to universe size.'
+    title: 'Sector Breadth — Breadth Tab',
+    what: 'Daily breadth across the full Nifty 500 universe per sector. Composite Score = avg(%>20EMA + %>50SMA + %>200SMA). Shows how broadly each sector participates in the rally across all 3 timeframes. RS wk and Stage columns are optional overlays from your manually-entered weekly sector data.',
+    how: 'Fetched automatically from sector_breadth.json generated by vcp_scanner.py at 6 PM IST daily via GitHub Actions. Enter your GitHub Pages base URL once to activate.',
+    use: 'Sectors with Score ≥60 = broad momentum — prioritise for new entries. Trend Bar (3 mini-bars): all green = healthy across all timeframes. High %>200SMA but low %>20EMA = structurally strong but momentum cooling — wait. Cross-check RS wk column against breadth score as a sanity check: if both are green, the sector is genuinely leading.'
   }
 
 };
@@ -9408,10 +9331,190 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeAboutModal();
     closeCfgModal();
+    sectorDrillClose();
   }
 });
 
+// ════════════════════════════════════════════════════════════════════════
+//  SECTOR DRILL-DOWN — fetches sector_stocks.json and shows modal
+// ════════════════════════════════════════════════════════════════════════
+
+const LS_SECTOR_STOCKS = 'nse_sector_stocks_v1';
+let _sectorStocksCache = null;
+
+function sectorDrillGetCached() {
+  if (_sectorStocksCache) return _sectorStocksCache;
+  try { _sectorStocksCache = JSON.parse(localStorage.getItem(LS_SECTOR_STOCKS)) || null; return _sectorStocksCache; } catch(e) { return null; }
+}
+function sectorDrillSetCached(data) {
+  _sectorStocksCache = data;
+  try { localStorage.setItem(LS_SECTOR_STOCKS, JSON.stringify(data)); } catch(e) {}
+}
+
+async function sectorDrillOpen(sectorName) {
+  const modal = document.getElementById('sector-drill-modal');
+  const overlay = document.getElementById('sector-drill-overlay');
+  const title = document.getElementById('sd-title');
+  const body = document.getElementById('sd-body');
+  if (!modal || !overlay) return;
+
+  title.textContent = sectorName;
+  body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--dim);font-size:11px">Loading…</div>';
+  overlay.style.display = 'flex';
+
+  // Try cache first
+  let data = sectorDrillGetCached();
+
+  // If no cache or stale (different date), re-fetch
+  const today = new Date().toISOString().slice(0,10);
+  if (!data || data.scan_date !== today) {
+    const baseUrl = vcpbGetUrl();
+    if (baseUrl) {
+      try {
+        const resp = await fetch(baseUrl + '/sector_stocks.json?_=' + Date.now(), { cache: 'no-store' });
+        if (resp.ok) {
+          const fresh = await resp.json();
+          sectorDrillSetCached(fresh);
+          data = fresh;
+        }
+      } catch(e) { /* use cache if available */ }
+    }
+  }
+
+  if (!data) {
+    body.innerHTML = `<div style="padding:24px;color:var(--red);font-size:11px">
+      ⚠ sector_stocks.json not found.<br>
+      <span style="color:var(--dim)">Make sure your updated vcp_scanner.py has run at least once and sector_stocks.json is committed to your GitHub repo.</span>
+    </div>`;
+    return;
+  }
+
+  const secData = data.sectors?.[sectorName];
+  if (!secData) {
+    body.innerHTML = `<div style="padding:24px;color:var(--dim);font-size:11px">No data found for <b>${sectorName}</b> in today's scan.</div>`;
+    return;
+  }
+
+  sectorDrillRender(sectorName, secData, data.scan_time || data.scan_date);
+}
+
+function sectorDrillClose() {
+  const overlay = document.getElementById('sector-drill-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function sectorDrillRender(sectorName, secData, scanTime) {
+  const body = document.getElementById('sd-body');
+  const stocks = secData.stocks || [];
+  const universe = secData.universe || 0;
+  const vcpCount = secData.vcp_count || 0;
+
+  // Summary bar
+  const summaryHtml = `
+    <div style="display:flex;gap:16px;flex-wrap:wrap;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:10px">
+      <span style="color:var(--dim)">Universe: <b style="color:var(--text)">${universe}</b> stocks</span>
+      <span style="color:var(--dim)">VCP Candidates: <b style="color:var(--teal)">${vcpCount}</b></span>
+      <span style="color:var(--dim)">Scan: <b style="color:var(--sub)">${scanTime}</b></span>
+      <span style="color:var(--dim);margin-left:auto;font-style:italic">Showing VCP-qualified stocks only · Click symbol → NSE India</span>
+    </div>`;
+
+  if (stocks.length === 0) {
+    body.innerHTML = summaryHtml + `<div style="padding:30px;text-align:center;color:var(--dim);font-size:11px">
+      No VCP candidates in <b>${sectorName}</b> today.<br>
+      <span style="font-size:10px;opacity:.7">(Universe of ${universe} stocks was scanned — none qualified.)</span>
+    </div>`;
+    return;
+  }
+
+  // Sort by final_score desc
+  const sorted = [...stocks].sort((a, b) => (b.final_score || b.vcp_score || 0) - (a.final_score || a.vcp_score || 0));
+
+  const gradeColor = g => ({ 'A+':'var(--lime)', A:'var(--lime)', B:'var(--yellow)', C:'var(--orange)', D:'var(--red)' }[g] || 'var(--dim)');
+
+  const rows = sorted.map(s => {
+    const nseUrl = `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(s.symbol)}`;
+    const tvUrl  = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(s.symbol)}`;
+    const r90C   = s.r90 >= 20 ? 'var(--lime)' : s.r90 >= 0 ? 'var(--yellow)' : 'var(--red)';
+    const ddC    = s.drawdown >= -10 ? 'var(--lime)' : s.drawdown >= -20 ? 'var(--yellow)' : 'var(--red)';
+    const dist52C = s.dist52 >= -5 ? 'var(--lime)' : s.dist52 >= -15 ? 'var(--yellow)' : 'var(--dim)';
+    const scoreC = (s.final_score || s.vcp_score || 0) >= 70 ? 'var(--lime)' : (s.final_score || s.vcp_score || 0) >= 50 ? 'var(--yellow)' : 'var(--dim)';
+    const score  = s.final_score > 0 ? s.final_score : s.vcp_score;
+    const grade  = s.grade && s.grade !== '—' ? s.grade : '—';
+    const mcap   = s.mktcap ? (s.mktcap >= 10000 ? `₹${(s.mktcap/100).toFixed(0)}kCr` : `₹${Math.round(s.mktcap)}Cr`) : '—';
+
+    return `<tr style="border-bottom:1px solid var(--border);cursor:pointer" onmouseenter="this.style.background='rgba(255,255,255,.03)'" onmouseleave="this.style.background='transparent'">
+      <td style="padding:7px 6px;white-space:nowrap">
+        <a href="${nseUrl}" target="_blank" rel="noopener"
+           style="font-weight:800;font-size:13px;color:var(--teal);text-decoration:none;font-family:var(--mono)"
+           onclick="event.stopPropagation()">${s.symbol}</a>
+        <a href="${tvUrl}" target="_blank" rel="noopener"
+           style="font-size:9px;color:var(--dim);text-decoration:none;margin-left:5px;opacity:.7"
+           onclick="event.stopPropagation()" title="Open on TradingView">TV↗</a>
+      </td>
+      <td style="padding:7px 6px;font-size:11px;color:var(--sub);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.company}</td>
+      <td style="padding:7px 6px;text-align:right;font-size:11px;font-family:var(--mono)">₹${s.price}</td>
+      <td style="padding:7px 6px;text-align:right;font-size:11px;font-family:var(--mono);color:var(--dim)">${mcap}</td>
+      <td style="padding:7px 6px;text-align:right;font-size:11px;font-family:var(--mono);color:${r90C}">${s.r90 > 0 ? '+' : ''}${s.r90}%</td>
+      <td style="padding:7px 6px;text-align:right;font-size:11px;font-family:var(--mono);color:${dist52C}">${s.dist52 > 0 ? '+' : ''}${s.dist52}%</td>
+      <td style="padding:7px 6px;text-align:right;font-size:11px;font-family:var(--mono);color:${ddC}">${s.drawdown}%</td>
+      <td style="padding:7px 6px;text-align:center;font-size:9px;color:var(--yellow);opacity:.85">${s.setup ? s.setup.replace(/[🎯🌱📐🔮🧲👀]/u,'').trim() : '—'}</td>
+      <td style="padding:7px 6px;text-align:center;font-family:var(--disp);font-size:15px;font-weight:800;color:${scoreC}">${Math.round(score)}</td>
+      <td style="padding:7px 6px;text-align:center">
+        ${grade !== '—' ? `<span style="font-size:10px;font-weight:800;color:${gradeColor(grade)};background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px">${grade}</span>` : '<span style="color:var(--border)">—</span>'}
+      </td>
+    </tr>`;
+  }).join('');
+
+  body.innerHTML = summaryHtml + `
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;min-width:640px">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg2);z-index:1">
+            <th style="padding:6px;text-align:left;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Symbol</th>
+            <th style="padding:6px;text-align:left;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Company</th>
+            <th style="padding:6px;text-align:right;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Price</th>
+            <th style="padding:6px;text-align:right;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">MCap</th>
+            <th style="padding:6px;text-align:right;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">90D%</th>
+            <th style="padding:6px;text-align:right;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">52W%</th>
+            <th style="padding:6px;text-align:right;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">DD%</th>
+            <th style="padding:6px;text-align:center;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Setup</th>
+            <th style="padding:6px;text-align:center;color:var(--teal);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Score</th>
+            <th style="padding:6px;text-align:center;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Grade</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+
+
 </script>
+
+<!-- ── SECTOR DRILL-DOWN MODAL ──────────────────────────────────── -->
+<div id="sector-drill-overlay"
+     style="display:none;position:fixed;inset:0;background:rgba(5,8,15,.88);z-index:5000;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)"
+     onclick="if(event.target===this)sectorDrillClose()">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;width:100%;max-width:900px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden">
+
+    <!-- Modal header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
+      <div>
+        <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">Sector Drill-Down · VCP Candidates</div>
+        <div id="sd-title" style="font-family:var(--disp);font-size:18px;font-weight:800;color:var(--teal)">—</div>
+      </div>
+      <button onclick="sectorDrillClose()"
+        style="font-size:18px;color:var(--dim);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:4px;line-height:1"
+        onmouseenter="this.style.color='var(--text)'" onmouseleave="this.style.color='var(--dim)'">✕</button>
+    </div>
+
+    <!-- Modal body (scrollable) -->
+    <div id="sd-body" style="overflow-y:auto;flex:1">
+      <div style="padding:30px;text-align:center;color:var(--dim);font-size:11px">Loading…</div>
+    </div>
+
+  </div>
+</div>
 
 <!-- ── CONTROL PANEL ─────────────────────────────────────────────── -->
 <div id="cp-overlay" onclick="if(event.target===this&&!window.getSelection().toString())closeControlPanel()">
