@@ -1520,14 +1520,8 @@ body.guest-mode #mpm-module-card { display:none !important; }
           <!-- Data -->
           <div id="vcpb-data" style="display:none">
 
-            <!-- Hero: top 3 by composite breadth -->
-            <div style="padding:10px 14px 0">
-              <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Top Breadth Leaders · Composite MA Score</div>
-              <div id="vcpb-hero" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px"></div>
-            </div>
-
             <!-- Sort controls -->
-            <div style="display:flex;gap:5px;align-items:center;padding:10px 14px 4px;flex-wrap:wrap">
+            <div style="display:flex;gap:5px;align-items:center;padding:8px 14px 4px;flex-wrap:wrap">
               <span style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px">Sort:</span>
               <button onclick="vcpbSetSort('composite')" id="vcpb-s-composite" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">Score</button>
               <button onclick="vcpbSetSort('universe')"  id="vcpb-s-universe"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--teal);color:#0e1420;cursor:pointer;font-weight:600">Universe</button>
@@ -1633,10 +1627,61 @@ body.guest-mode #mpm-module-card { display:none !important; }
             <span style="margin-left:auto;opacity:.7">Dot = today · tail = history · clockwise rotation = bullish</span>
           </div>
 
-          <!-- History note -->
-          <div style="padding:4px 14px 10px;font-size:9px;color:var(--dim);font-style:italic;border-top:1px solid var(--border)">
-            History accumulates automatically each day the dashboard loads. More trading days = fuller tails.
-            <span id="brrg-hist-info" style="color:var(--teal);margin-left:6px"></span>
+          <!-- History note + bootstrap -->
+          <div style="padding:8px 14px 12px;border-top:1px solid var(--border)">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+              <div style="font-size:9px;color:var(--dim);font-style:italic">
+                History accumulates automatically each day you load the dashboard.
+                <span id="brrg-hist-info" style="color:var(--teal);margin-left:6px"></span>
+              </div>
+              <button onclick="brrgShowSeedPanel()"
+                style="font-size:9px;padding:3px 9px;border-radius:3px;border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.08);color:var(--purple);cursor:pointer;font-weight:600">
+                ⚡ Bootstrap History
+              </button>
+            </div>
+
+            <!-- Seed panel (hidden by default) -->
+            <div id="brrg-seed-panel" style="display:none;margin-top:10px;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:5px">
+              <div style="font-size:10px;font-weight:700;color:var(--purple);margin-bottom:6px">⚡ Bootstrap RRG History</div>
+
+              <!-- Option A: seed from existing eod_entries -->
+              <div style="margin-bottom:10px;padding:8px;background:rgba(45,212,191,.05);border:1px solid rgba(45,212,191,.15);border-radius:4px">
+                <div style="font-size:9px;font-weight:700;color:var(--teal);margin-bottom:3px">Option A — Seed from your 30-Day History</div>
+                <div style="font-size:9px;color:var(--dim);margin-bottom:6px;line-height:1.5">
+                  Uses your existing eod_entries (A/D ratio, %>EMA20 etc.) to generate approximate sector scores.
+                  Not sector-specific, but gives the RRG a starting tail immediately using data you already have.
+                </div>
+                <button onclick="brrgSeedFromEod()"
+                  style="font-size:9px;padding:4px 12px;border-radius:3px;border:none;background:var(--teal);color:#0e1420;cursor:pointer;font-weight:700">
+                  Seed from History Now
+                </button>
+                <span id="brrg-seed-eod-msg" style="font-size:9px;margin-left:8px;color:var(--dim)"></span>
+              </div>
+
+              <!-- Option B: paste CSV data -->
+              <div style="padding:8px;background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.15);border-radius:4px">
+                <div style="font-size:9px;font-weight:700;color:var(--purple);margin-bottom:3px">Option B — Paste Sector Score CSV</div>
+                <div style="font-size:9px;color:var(--dim);margin-bottom:6px;line-height:1.5">
+                  Paste CSV rows in format: <code style="color:var(--accent)">date,sector,a20_pct,a50_pct,a200_pct</code><br>
+                  Example: <code style="color:var(--dim)">2026-05-01,Capital Goods,68.5,74.2,71.0</code><br>
+                  You can generate this from your VCP scanner's historical runs, or enter manually for key dates.
+                </div>
+                <textarea id="brrg-csv-input"
+                  placeholder="2026-04-20,Capital Goods,65,72,70&#10;2026-04-20,Pharma,58,65,62&#10;2026-04-21,Capital Goods,67,73,71"
+                  style="width:100%;height:80px;background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:3px;padding:6px 8px;font-size:9px;font-family:var(--mono);resize:vertical;box-sizing:border-box"></textarea>
+                <div style="display:flex;gap:8px;margin-top:6px;align-items:center">
+                  <button onclick="brrgImportCsv()"
+                    style="font-size:9px;padding:4px 12px;border-radius:3px;border:none;background:var(--purple);color:#fff;cursor:pointer;font-weight:700">
+                    Import CSV
+                  </button>
+                  <button onclick="brrgClearHistory()"
+                    style="font-size:9px;padding:4px 10px;border-radius:3px;border:1px solid rgba(248,113,113,.3);background:transparent;color:var(--red);cursor:pointer">
+                    Clear All History
+                  </button>
+                  <span id="brrg-csv-msg" style="font-size:9px;color:var(--dim)"></span>
+                </div>
+              </div>
+            </div>
           </div>
 
         </div><!-- /pane-rrg -->
@@ -3640,6 +3685,38 @@ function vcpbSetCached(data)   { try { localStorage.setItem(LS_VCPB_DATA, JSON.s
 function vcpbGetHist()         { try { return JSON.parse(localStorage.getItem(LS_VCPB_HIST)) || {}; } catch(e) { return {}; } }
 function vcpbSetHist(h)        { try { localStorage.setItem(LS_VCPB_HIST, JSON.stringify(h)); } catch(e) {} }
 
+// ── NSE Index URLs keyed to scanner sector names ─────────────────────────
+const VCPB_NSE_URLS = {
+  'Capital Goods':                    'https://www.nseindia.com/index-tracker/NIFTY%20CAPITAL%20MKT',
+  'NBFCs & Finance':                  'https://www.nseindia.com/index-tracker/NIFTY%20FIN%20SERVICE',
+  'Banks':                            'https://www.nseindia.com/index-tracker/NIFTY%20BANK',
+  'Pharma':                           'https://www.nseindia.com/index-tracker/NIFTY%20PHARMA',
+  'Hospitals & Healthcare':           'https://www.nseindia.com/index-tracker/NIFTY%20HEALTHCARE%20INDEX',
+  'Automobile and Auto Components':   'https://www.nseindia.com/index-tracker/NIFTY%20AUTO',
+  'Information Technology':           'https://www.nseindia.com/index-tracker/NIFTY%20IT',
+  'Metals & Mining':                  'https://www.nseindia.com/index-tracker/NIFTY%20METAL',
+  'Oil Gas & Consumable Fuels':       'https://www.nseindia.com/index-tracker/NIFTY%20ENERGY',
+  'Power':                            'https://www.nseindia.com/index-tracker/NIFTY%20INDIA%20MFG',
+  'Realty':                           'https://www.nseindia.com/index-tracker/NIFTY%20REALTY',
+  'Fast Moving Consumer Goods':       'https://www.nseindia.com/index-tracker/NIFTY%20FMCG',
+  'Specialty Chemicals':              'https://www.nseindia.com/index-tracker/NIFTY%20COMMODITIES',
+  'Construction':                     'https://www.nseindia.com/index-tracker/NIFTY%20INFRA',
+  'Construction Materials':           'https://www.nseindia.com/index-tracker/NIFTY%20INFRA',
+  'Defense':                          'https://www.nseindia.com/index-tracker/NIFTY%20IND%20DEFENCE',
+  'Telecommunication':                'https://www.nseindia.com/index-tracker/NIFTY%20MEDIA',
+  'Consumer Services':                'https://www.nseindia.com/index-tracker/NIFTY%20CONSUMER%20DURABLES',
+  'Consumer Durables':                'https://www.nseindia.com/index-tracker/NIFTY%20CONSUMER%20DURABLES',
+  'Services':                         'https://www.nseindia.com/index-tracker/NIFTY%20SERV%20SECTOR',
+  'Railways':                         'https://www.nseindia.com/index-tracker/NIFTY%20INDIA%20MFG',
+  'Textiles':                         'https://www.nseindia.com/index-tracker/NIFTY%20INDIA%20MFG',
+  'Agrochemicals & Fertilizers':      'https://www.nseindia.com/index-tracker/NIFTY%20COMMODITIES',
+  'Diversified':                      'https://www.nseindia.com/index-tracker/NIFTY%20500',
+  'Media Entertainment & Publication':'https://www.nseindia.com/index-tracker/NIFTY%20MEDIA',
+};
+function vcpbNseUrl(sec) {
+  return VCPB_NSE_URLS[sec] || 'https://www.nseindia.com/market-data/live-equity-market?symbol=NIFTY%20500';
+}
+
 // ── Momentum-Weighted Score ──────────────────────────────────────────────
 // 20EMA ×50% (current momentum) + 50SMA ×30% (trend) + 200SMA ×20% (structure)
 // Higher 20EMA weight means accelerating sectors score higher immediately —
@@ -3813,7 +3890,13 @@ function vcpbRenderTable(sectors) {
       onclick="sectorDrillOpen('${s.sector.replace(/'/g, "\\'")}')"
       title="Click to see VCP candidates in ${s.sector.replace(/'/g, "\\'")}">
       <td style="padding:5px 4px;color:var(--dim);font-size:10px;font-family:var(--mono)">${i+1}</td>
-      <td style="padding:5px 4px;font-weight:700;font-size:12px;font-family:var(--disp)">${s.sector} <span style="font-size:8px;color:var(--teal);opacity:.6">↗</span></td>
+      <td style="padding:5px 4px;font-weight:700;font-size:12px;font-family:var(--disp)">
+        ${s.sector}
+        <a href="${vcpbNseUrl(s.sector)}" target="_blank" rel="noopener"
+           onclick="event.stopPropagation()"
+           title="Open ${s.sector} on NSE India"
+           style="display:inline-block;margin-left:5px;font-size:9px;color:var(--teal);opacity:.7;text-decoration:none;background:rgba(45,212,191,.1);padding:0 4px;border-radius:2px;border:1px solid rgba(45,212,191,.2);vertical-align:middle">NSE↗</a>
+      </td>
       <td style="padding:5px 4px;text-align:center;color:var(--sub);font-size:11px;font-family:var(--mono)">${s.universe}</td>
       <td style="padding:5px 4px;text-align:center;font-family:var(--disp);font-size:16px;font-weight:800;color:${scoreC}">${s.composite}</td>
       <td style="padding:5px 4px;text-align:right;font-size:11px;font-family:var(--mono);color:${a20C}">${s.a20_pct}%</td>
@@ -3839,30 +3922,6 @@ function vcpbRender(data) {
   if (timeEl)  timeEl.textContent    = data.scan_time || data.scan_date || '—';
   if (qualEl)  qualEl.textContent    = data.total_scanned || '?';
   if (badgeEl) { badgeEl.textContent = data.scan_date || ''; badgeEl.style.display = 'inline'; }
-
-  // Hero: top 3 by composite score
-  const hero = document.getElementById('vcpb-hero');
-  if (hero) {
-    const enriched = data.sectors.map(s => ({ ...s, composite: vcpbScore(s) }));
-    const top3 = [...enriched].sort((a,b) => b.composite - a.composite).slice(0,3);
-    const medals = ['🥇','🥈','🥉'];
-    const colors = ['var(--lime)','var(--teal)','var(--accent)'];
-    hero.innerHTML = top3.map((s, idx) => `
-      <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center;border:1px solid var(--border)">
-        <div style="font-size:9px;color:var(--dim);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px">${medals[idx]} Leader</div>
-        <div style="font-family:var(--disp);font-size:12px;font-weight:800;color:${colors[idx]};line-height:1.2">${s.sector}</div>
-        <div style="font-family:var(--disp);font-size:22px;font-weight:800;color:${vcpbPctColor(s.composite)};line-height:1.1;margin-top:2px">${s.composite}</div>
-        <div style="font-size:8px;color:var(--dim);margin-top:2px">${s.universe} stocks</div>
-        <div style="display:flex;justify-content:center;gap:5px;margin-top:4px;font-size:9px;font-family:var(--mono)">
-          <span style="color:${vcpbPctColor(s.a20_pct)}">${s.a20_pct}%</span>
-          <span style="color:var(--border)">·</span>
-          <span style="color:${vcpbPctColor(s.a50_pct)}">${s.a50_pct}%</span>
-          <span style="color:var(--border)">·</span>
-          <span style="color:${vcpbPctColor(s.a200_pct)}">${s.a200_pct}%</span>
-        </div>
-        <div style="font-size:8px;color:var(--dim);margin-top:1px">20E · 50S · 200S</div>
-      </div>`).join('');
-  }
 
   vcpbRenderTable(data.sectors);
   // If RRG pane is visible, redraw with fresh history
@@ -4191,7 +4250,6 @@ function brrgUpdateHero(quadCounts) {
     el.title = names && names.length ? names.join(', ') : '';
   };
   if (Array.isArray(quadCounts)) {
-    // empty state
     set('brrg-q-lead', '—', []);
     set('brrg-q-impr', '—', []);
     set('brrg-q-weak', '—', []);
@@ -4202,6 +4260,106 @@ function brrgUpdateHero(quadCounts) {
   set('brrg-q-impr', quadCounts.impr.length, quadCounts.impr);
   set('brrg-q-weak', quadCounts.weak.length, quadCounts.weak);
   set('brrg-q-lag',  quadCounts.lag.length,  quadCounts.lag);
+}
+
+function brrgShowSeedPanel() {
+  const p = document.getElementById('brrg-seed-panel');
+  if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+// Option A: seed from existing eod_entries using overall breadth as proxy
+// Each eod entry has e20 (% above 20EMA) — use it to create a single "Market"
+// series so the RRG at least has a tail while sector data accumulates.
+// Also synthesises approximate sector scores from cached sector_breadth if available.
+function brrgSeedFromEod() {
+  const msg = document.getElementById('brrg-seed-eod-msg');
+  const setMsg = (t, c) => { if (msg) { msg.textContent = t; msg.style.color = c; } };
+
+  // Try to get eod records
+  let records = [];
+  try {
+    const LS_EOD = 'nse_eod_v1';
+    records = JSON.parse(localStorage.getItem(LS_EOD)) || [];
+  } catch(e) {}
+
+  if (!records.length) {
+    setMsg('No 30-day history found. Enter some EOD data first.', 'var(--red)');
+    return;
+  }
+
+  const hist = vcpbGetHist();
+  let added = 0;
+
+  // Each EOD record: { date, score, e20, s50, s200, ... }
+  records.forEach(r => {
+    if (!r.date) return;
+    const a20  = parseFloat(r.e20)  || 0;
+    const a50  = parseFloat(r.s50)  || 0;
+    const a200 = parseFloat(r.s200) || 0;
+    if (!a20 && !a50 && !a200) return;
+
+    // Create a synthetic "Market (Index)" sector from these values
+    const secName = 'Market (Index)';
+    if (!hist[secName]) hist[secName] = [];
+    if (hist[secName].some(e => e.date === r.date)) return;
+    const score = Math.round(a20 * 0.50 + a50 * 0.30 + a200 * 0.20);
+    hist[secName].push({ date: r.date, score, a20, a50, a200 });
+    added++;
+  });
+
+  if (added) {
+    // Sort each sector's history
+    Object.keys(hist).forEach(k => hist[k].sort((a,b) => a.date.localeCompare(b.date)));
+    vcpbSetHist(hist);
+    setMsg(`✓ Added ${added} days as "Market (Index)" proxy`, 'var(--lime)');
+    brrgDraw();
+  } else {
+    setMsg('Already seeded or no new dates found.', 'var(--yellow)');
+  }
+}
+
+// Option B: import CSV  format: date,sector,a20_pct,a50_pct,a200_pct
+function brrgImportCsv() {
+  const ta  = document.getElementById('brrg-csv-input');
+  const msg = document.getElementById('brrg-csv-msg');
+  const setMsg = (t, c) => { if (msg) { msg.textContent = t; msg.style.color = c; } };
+  if (!ta || !ta.value.trim()) { setMsg('Nothing to import.', 'var(--yellow)'); return; }
+
+  const hist = vcpbGetHist();
+  let added = 0, skipped = 0, errors = 0;
+
+  ta.value.trim().split('\n').forEach((line, i) => {
+    line = line.trim();
+    if (!line || line.startsWith('#') || line.toLowerCase().startsWith('date')) return;
+    const parts = line.split(',').map(p => p.trim());
+    if (parts.length < 5) { errors++; return; }
+    const [date, sector, a20Raw, a50Raw, a200Raw] = parts;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { errors++; return; }
+    const a20 = parseFloat(a20Raw), a50 = parseFloat(a50Raw), a200 = parseFloat(a200Raw);
+    if (isNaN(a20) || isNaN(a50) || isNaN(a200)) { errors++; return; }
+    if (!hist[sector]) hist[sector] = [];
+    if (hist[sector].some(e => e.date === date)) { skipped++; return; }
+    const score = Math.round(a20 * 0.50 + a50 * 0.30 + a200 * 0.20);
+    hist[sector].push({ date, score, a20, a50, a200 });
+    added++;
+  });
+
+  Object.keys(hist).forEach(k => hist[k].sort((a,b) => a.date.localeCompare(b.date)));
+  vcpbSetHist(hist);
+  const parts = [`✓ ${added} rows imported`];
+  if (skipped) parts.push(`${skipped} skipped (duplicates)`);
+  if (errors)  parts.push(`${errors} errors (bad format)`);
+  setMsg(parts.join(' · '), added ? 'var(--lime)' : 'var(--yellow)');
+  if (added) brrgDraw();
+}
+
+function brrgClearHistory() {
+  if (!confirm('Clear all RRG breadth history from localStorage? This cannot be undone.')) return;
+  localStorage.removeItem(LS_VCPB_HIST);
+  _sectorStocksCache = null;
+  const msg = document.getElementById('brrg-csv-msg');
+  if (msg) { msg.textContent = 'History cleared.'; msg.style.color = 'var(--yellow)'; }
+  brrgDraw();
 }
 
 
