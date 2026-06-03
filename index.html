@@ -9869,11 +9869,10 @@ function sectorDrillSetCached(data) {
 }
 
 async function sectorDrillOpen(sectorName) {
-  const modal = document.getElementById('sector-drill-modal');
   const overlay = document.getElementById('sector-drill-overlay');
-  const title = document.getElementById('sd-title');
-  const body = document.getElementById('sd-body');
-  if (!modal || !overlay) return;
+  const title   = document.getElementById('sd-title');
+  const body    = document.getElementById('sd-body');
+  if (!overlay || !title || !body) return;
 
   title.textContent = sectorName;
   body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--dim);font-size:11px">Loading…</div>';
