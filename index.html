@@ -1564,6 +1564,21 @@ body.guest-mode #mpm-module-card { display:none !important; }
         <!-- ── TAB: RRG ─────────────────────────────────── -->
         <div id="scc-pane-rrg" style="display:none">
 
+          <!-- RRG sub-tab bar -->
+          <div style="display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 14px">
+            <button id="rrg-sub-tab-breadth" onclick="rrgSubTab('breadth')"
+              style="font-size:10px;font-weight:700;padding:7px 12px;border:none;background:none;color:var(--teal);border-bottom:2px solid var(--teal);cursor:pointer;letter-spacing:.3px;text-transform:uppercase">
+              📶 Breadth RRG
+            </button>
+            <button id="rrg-sub-tab-price" onclick="rrgSubTab('price')"
+              style="font-size:10px;font-weight:600;padding:7px 12px;border:none;background:none;color:var(--dim);border-bottom:2px solid transparent;cursor:pointer;letter-spacing:.3px;text-transform:uppercase">
+              📡 Price RS RRG
+            </button>
+          </div>
+
+          <!-- ── SUB-PANE: BREADTH RRG ─────────────────────── -->
+          <div id="rrg-sub-breadth">
+
           <!-- Breadth RRG header + controls -->
           <div style="padding:10px 14px 0">
             <div style="font-size:9px;color:var(--purple);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">Breadth Relative Rotation Graph</div>
@@ -1665,26 +1680,95 @@ body.guest-mode #mpm-module-card { display:none !important; }
                 <div style="font-size:9px;font-weight:700;color:var(--purple);margin-bottom:3px">Option B — Paste Sector Score CSV</div>
                 <div style="font-size:9px;color:var(--dim);margin-bottom:6px;line-height:1.5">
                   Paste CSV rows in format: <code style="color:var(--accent)">date,sector,a20_pct,a50_pct,a200_pct</code><br>
-                  Example: <code style="color:var(--dim)">2026-05-01,Capital Goods,68.5,74.2,71.0</code><br>
-                  You can generate this from your VCP scanner's historical runs, or enter manually for key dates.
+                  Example: <code style="color:var(--dim)">2026-05-01,Capital Goods,68.5,74.2,71.0</code>
                 </div>
                 <textarea id="brrg-csv-input"
                   placeholder="2026-04-20,Capital Goods,65,72,70&#10;2026-04-20,Pharma,58,65,62&#10;2026-04-21,Capital Goods,67,73,71"
                   style="width:100%;height:80px;background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:3px;padding:6px 8px;font-size:9px;font-family:var(--mono);resize:vertical;box-sizing:border-box"></textarea>
                 <div style="display:flex;gap:8px;margin-top:6px;align-items:center">
                   <button onclick="brrgImportCsv()"
-                    style="font-size:9px;padding:4px 12px;border-radius:3px;border:none;background:var(--purple);color:#fff;cursor:pointer;font-weight:700">
-                    Import CSV
-                  </button>
+                    style="font-size:9px;padding:4px 12px;border-radius:3px;border:none;background:var(--purple);color:#fff;cursor:pointer;font-weight:700">Import CSV</button>
                   <button onclick="brrgClearHistory()"
-                    style="font-size:9px;padding:4px 10px;border-radius:3px;border:1px solid rgba(248,113,113,.3);background:transparent;color:var(--red);cursor:pointer">
-                    Clear All History
-                  </button>
+                    style="font-size:9px;padding:4px 10px;border-radius:3px;border:1px solid rgba(248,113,113,.3);background:transparent;color:var(--red);cursor:pointer">Clear History</button>
                   <span id="brrg-csv-msg" style="font-size:9px;color:var(--dim)"></span>
                 </div>
               </div>
             </div>
           </div>
+
+          </div><!-- /rrg-sub-breadth -->
+
+          <!-- ── SUB-PANE: PRICE RS RRG ─────────────────────── -->
+          <div id="rrg-sub-price" style="display:none">
+
+            <div style="padding:10px 14px 6px">
+              <div style="font-size:9px;color:var(--purple);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">Price RS Relative Rotation Graph</div>
+              <div style="font-size:9px;color:var(--dim)">
+                X = RS-Ratio vs Nifty 50 · Y = RS-Momentum · Uses weekly sector close data from Control Panel → Sectors tab
+              </div>
+            </div>
+
+            <!-- Controls: Top N sectors -->
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:0 14px 4px">
+              <span style="font-size:9px;color:var(--dim);min-width:44px">Sectors:</span>
+              <button onclick="rrgAdjustTop(-1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">&#8722;</button>
+              <span id="rrg-top-display" style="font-size:10px;font-weight:600;color:var(--text);min-width:24px;text-align:center">8</span>
+              <button onclick="rrgAdjustTop(+1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">+</button>
+              <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
+              <button onclick="srtRRGSetTop(4)"  id="rrg-top-4"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">4</button>
+              <button onclick="srtRRGSetTop(8)"  id="rrg-top-8"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer">8</button>
+              <button onclick="srtRRGSetTop(12)" id="rrg-top-12" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12</button>
+              <button onclick="srtRRGSetTop(0)"  id="rrg-top-0"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">All</button>
+            </div>
+
+            <!-- Controls: Tail weeks + Filter + Animate -->
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:0 14px 6px">
+              <span style="font-size:9px;color:var(--dim);min-width:44px">Weeks:</span>
+              <button onclick="rrgAdjustTail(-1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">&#8722;</button>
+              <span id="rrg-tail-display" style="font-size:10px;font-weight:600;color:var(--purple);min-width:24px;text-align:center">8w</span>
+              <button onclick="rrgAdjustTail(+1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">+</button>
+              <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
+              <button onclick="srtRRGSetTail(4)"  id="rrg-tail-4"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">4w</button>
+              <button onclick="srtRRGSetTail(8)"  id="rrg-tail-8"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--purple);color:#fff;cursor:pointer">8w</button>
+              <button onclick="srtRRGSetTail(12)" id="rrg-tail-12" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12w</button>
+              <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
+              <span style="font-size:9px;color:var(--dim)">Filter:</span>
+              <button onclick="srtRRGSetFilter('all')" id="rrg-f-all" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer">All</button>
+              <button onclick="srtRRGSetFilter('s2')"  id="rrg-f-s2"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">S2</button>
+              <button onclick="srtRRGAnimate()" id="rrg-anim-btn" style="font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.1);color:var(--yellow);cursor:pointer;font-weight:600;margin-left:2px">&#9654; Play</button>
+            </div>
+
+            <!-- Sector highlight chips -->
+            <div id="rrg-sector-chips" style="display:flex;gap:4px;flex-wrap:wrap;padding:4px 14px 6px;background:var(--bg3);border-top:1px solid var(--border);border-bottom:1px solid var(--border);min-height:30px;align-items:center">
+              <span style="font-size:9px;color:var(--dim);margin-right:2px">Highlight:</span>
+            </div>
+
+            <!-- Animation bar -->
+            <div id="rrg-anim-bar-wrap" style="display:none;padding:6px 14px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+                <span id="rrg-anim-week-label" style="font-size:9px;color:var(--yellow);font-weight:600">Week 1</span>
+                <button onclick="srtRRGStopAnim()" style="font-size:9px;padding:1px 6px;border-radius:3px;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.1);color:var(--red);cursor:pointer">&#9632; Stop</button>
+              </div>
+              <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+                <div id="rrg-anim-bar" style="height:100%;width:0%;background:var(--yellow);border-radius:2px;transition:width .25s"></div>
+              </div>
+            </div>
+
+            <!-- Canvas -->
+            <div style="padding:0 14px 4px;position:relative">
+              <canvas id="srt-rrg-canvas" style="width:100%;border-radius:6px;display:block"></canvas>
+            </div>
+
+            <!-- Legend -->
+            <div style="padding:6px 14px 10px;border-top:1px solid var(--border);font-size:9px;color:var(--dim);line-height:1.6">
+              <b style="color:var(--lime)">Leading</b> = strong &amp; improving &nbsp;
+              <b style="color:var(--accent)">Improving</b> = gaining momentum &nbsp;
+              <b style="color:var(--yellow)">Weakening</b> = slowing down &nbsp;
+              <b style="color:var(--red)">Lagging</b> = weak &amp; deteriorating<br>
+              Dot = current · tail = last N weeks · Clockwise rotation = bullish · Enter sector data via Control Panel → Sectors tab
+            </div>
+
+          </div><!-- /rrg-sub-price -->
 
         </div><!-- /pane-rrg -->
 
@@ -2896,15 +2980,16 @@ const SRT_NAME_MAP = {
   'pse':'NIFTY CPSE','cpse':'NIFTY CPSE'
 };
 const SRT_SHORT_MAP = {
-  'NIFTY IT':'IT','NIFTY PHARMA':'Pharma','NIFTY FMCG':'FMCG',
-  'NIFTY BANK':'Bank','NIFTY AUTO':'Auto','NIFTY METAL':'Metal',
-  'NIFTY REALTY':'Realty','NIFTY INFRA':'Infra',
-  'NIFTY COMMODITIES':'Chemicals',
-  'NIFTY PSU BANK':'PSU Bank','NIFTY ENERGY':'Energy',
-  'NIFTY FINANCIAL SERVICES':'Fin Services',
-  'NIFTY INDIA MANUFACTURING':'India Mfg',
-  'NIFTY CAPITAL MARKETS':'Cap Market',
-  'NIFTY INDIA DEFENCE':'Defence',
+  'NIFTY IT':'Information Technology','NIFTY PHARMA':'Pharma','NIFTY FMCG':'Fast Moving Consumer Goods',
+  'NIFTY BANK':'Banks','NIFTY AUTO':'Automobile and Auto Components','NIFTY METAL':'Metals & Mining',
+  'NIFTY REALTY':'Realty',
+  'NIFTY INFRA':'Construction',
+  'NIFTY COMMODITIES':'Specialty Chemicals',
+  'NIFTY PSU BANK':'PSU Bank','NIFTY ENERGY':'Oil Gas & Consumable Fuels',
+  'NIFTY FINANCIAL SERVICES':'NBFCs & Finance',
+  'NIFTY INDIA MANUFACTURING':'Capital Goods',
+  'NIFTY CAPITAL MARKETS':'Capital Goods',
+  'NIFTY INDIA DEFENCE':'Defense',
   'NIFTY CPSE':'PSE'
 };
 
@@ -2994,7 +3079,39 @@ const SRT_BULK_ORDER = [
   'NIFTY FINANCIAL SERVICES','NIFTY INDIA MANUFACTURING','NIFTY CAPITAL MARKETS',
   'NIFTY INDIA DEFENCE','NIFTY CPSE'
 ];
-const SRT_BULK_NAMES = ['IT','Pharma','FMCG','Bank','Auto','Metal','Realty','Infra','Chemicals','PSU Bank','Energy','Fin Services','India Mfg','Cap Market','Defence','PSE'];
+const SRT_BULK_NAMES = ['Information Technology','Pharma','Fast Moving Consumer Goods','Banks','Automobile and Auto Components','Metals & Mining','Realty','Construction','Specialty Chemicals','PSU Bank','Oil Gas & Consumable Fuels','NBFCs & Finance','Capital Goods','Capital Goods','Defense','PSE'];
+
+// Short labels for canvas/chart display — maps full scanner name → compact label
+const SRT_SHORT = {
+  'Information Technology':          'IT',
+  'Pharma':                          'Pharma',
+  'Fast Moving Consumer Goods':      'FMCG',
+  'Banks':                           'Banks',
+  'Automobile and Auto Components':  'Auto',
+  'Metals & Mining':                 'Metals',
+  'Realty':                          'Realty',
+  'Construction':                    'Infra',
+  'Construction Materials':          'Const Mat',
+  'Specialty Chemicals':             'Chemicals',
+  'PSU Bank':                        'PSU Bank',
+  'Oil Gas & Consumable Fuels':      'Energy',
+  'NBFCs & Finance':                 'NBFCs',
+  'Capital Goods':                   'Cap Goods',
+  'Defense':                         'Defense',
+  'PSE':                             'PSE',
+  'Hospitals & Healthcare':          'Healthcare',
+  'Railways':                        'Railways',
+  'Agrochemicals & Fertilizers':     'Agrochem',
+  'Consumer Services':               'Cons Svc',
+  'Consumer Durables':               'Cons Dur',
+  'Telecommunication':               'Telecom',
+  'Services':                        'Services',
+  'Power':                           'Power',
+  'Media Entertainment & Publication':'Media',
+  'Diversified':                     'Diversified',
+  'Textiles':                        'Textiles',
+  'Market (Index)':                  'Market',
+};
 
 function srtBulkImport() {
   const txt = (document.getElementById('srt-bulk-txt').value||'').trim();
@@ -3464,7 +3581,7 @@ function srtDrawRRG(animUpTo) {
     ctx.font = highlighted && anyHighlighted ? 'bold 10px sans-serif' : 'bold 9px sans-serif';
     ctx.fillStyle = color; ctx.globalAlpha = opacity;
     ctx.textAlign = dx > W*0.7 ? 'right' : 'left';
-    ctx.fillText(sector.name, dx + (dx > W*0.7 ? -7 : 7), dy + 3);
+    ctx.fillText(SRT_SHORT[sector.name] || sector.name, dx + (dx > W*0.7 ? -7 : 7), dy + 3);
     ctx.globalAlpha = 1;
   });
 
@@ -3583,22 +3700,21 @@ function slhRender() {
   // Data rows
   const nseLink = name => {
     const links = {
-      'IT':'https://www.nseindia.com/index-tracker/NIFTY%20IT',
-      'Pharma':'https://www.nseindia.com/index-tracker/NIFTY%20PHARMA',
-      'FMCG':'https://www.nseindia.com/index-tracker/NIFTY%20FMCG',
-      'Bank':'https://www.nseindia.com/index-tracker/NIFTY%20BANK',
-      'Auto':'https://www.nseindia.com/index-tracker/NIFTY%20AUTO',
-      'Metal':'https://www.nseindia.com/index-tracker/NIFTY%20METAL',
-      'Realty':'https://www.nseindia.com/index-tracker/NIFTY%20REALTY',
-      'Infra':'https://www.nseindia.com/index-tracker/NIFTY%20INFRA',
-      'Chemicals':'https://www.nseindia.com/index-tracker/NIFTY%20CHEMICALS',
-      'PSU Bank':'https://www.nseindia.com/index-tracker/NIFTY%20PSU%20BANK',
-      'Energy':'https://www.nseindia.com/index-tracker/NIFTY%20ENERGY',
-      'Fin Services':'https://www.nseindia.com/index-tracker/NIFTY%20FIN%20SERVICE',
-      'India Mfg':'https://www.nseindia.com/index-tracker/NIFTY%20INDIA%20MFG',
-      'Cap Market':'https://www.nseindia.com/index-tracker/NIFTY%20CAPITAL%20MKT',
-      'Defence':'https://www.nseindia.com/index-tracker/NIFTY%20IND%20DEFENCE',
-      'PSE':'https://www.nseindia.com/index-tracker/NIFTY%20PSE',
+      'Information Technology':          'https://www.nseindia.com/index-tracker/NIFTY%20IT',
+      'Pharma':                          'https://www.nseindia.com/index-tracker/NIFTY%20PHARMA',
+      'Fast Moving Consumer Goods':      'https://www.nseindia.com/index-tracker/NIFTY%20FMCG',
+      'Banks':                           'https://www.nseindia.com/index-tracker/NIFTY%20BANK',
+      'Automobile and Auto Components':  'https://www.nseindia.com/index-tracker/NIFTY%20AUTO',
+      'Metals & Mining':                 'https://www.nseindia.com/index-tracker/NIFTY%20METAL',
+      'Realty':                          'https://www.nseindia.com/index-tracker/NIFTY%20REALTY',
+      'Construction':                    'https://www.nseindia.com/index-tracker/NIFTY%20INFRA',
+      'Specialty Chemicals':             'https://www.nseindia.com/index-tracker/NIFTY%20CHEMICALS',
+      'PSU Bank':                        'https://www.nseindia.com/index-tracker/NIFTY%20PSU%20BANK',
+      'Oil Gas & Consumable Fuels':      'https://www.nseindia.com/index-tracker/NIFTY%20ENERGY',
+      'NBFCs & Finance':                 'https://www.nseindia.com/index-tracker/NIFTY%20FIN%20SERVICE',
+      'Capital Goods':                   'https://www.nseindia.com/index-tracker/NIFTY%20CAPITAL%20MKT',
+      'Defense':                         'https://www.nseindia.com/index-tracker/NIFTY%20IND%20DEFENCE',
+      'PSE':                             'https://www.nseindia.com/index-tracker/NIFTY%20PSE',
     };
     return links[name] || '#';
   };
@@ -3653,6 +3769,23 @@ function slhRender() {
 // ════════════════════════════════════════════════════════════════════════
 //  SECTOR COMMAND CENTRE — tab switcher
 // ════════════════════════════════════════════════════════════════════════
+// ── RRG sub-tab switcher ──────────────────────────────────────────────────
+function rrgSubTab(tab) {
+  ['breadth','price'].forEach(t => {
+    const btn  = document.getElementById('rrg-sub-tab-' + t);
+    const pane = document.getElementById('rrg-sub-' + t);
+    const active = t === tab;
+    if (btn) {
+      btn.style.color        = active ? 'var(--teal)' : 'var(--dim)';
+      btn.style.borderBottom = active ? '2px solid var(--teal)' : '2px solid transparent';
+      btn.style.fontWeight   = active ? '700' : '600';
+    }
+    if (pane) pane.style.display = active ? 'block' : 'none';
+  });
+  if (tab === 'breadth') setTimeout(() => brrgDraw(), 50);
+  if (tab === 'price')   setTimeout(() => { rrgRebuildChips(); srtDrawRRG(); }, 50);
+}
+
 function sccTab(tab) {
   const colors = { breadth: 'var(--teal)', rrg: 'var(--purple)', heatmap: 'var(--teal)' };
   ['breadth','rrg','heatmap'].forEach(t => {
@@ -3666,7 +3799,7 @@ function sccTab(tab) {
     }
     if (pane) pane.style.display = active ? 'block' : 'none';
   });
-  if (tab === 'rrg')     { setTimeout(() => brrgDraw(), 50); }
+  if (tab === 'rrg')     { setTimeout(() => { rrgSubTab('breadth'); brrgDraw(); }, 50); }
   if (tab === 'heatmap') setTimeout(() => slhRender(), 50);
 }
 
@@ -3848,13 +3981,15 @@ function vcpbTrendBar(a20, a50, a200) {
 }
 
 // Merge N500 breadth rows with optional RS/Stage from srtLoad()
+// Names are now aligned between scanner and SRT — exact match first, fuzzy fallback
 function vcpbGetSrtOverlay() {
   try {
     const secs = srtLoad ? srtLoad() : [];
     const map = {};
     secs.forEach(s => {
       if (s.id === 'NIFTY50') return;
-      map[s.name.toLowerCase()] = { rs: s.rs, stage: s.stage, vs20: s.vs20 };
+      // Store by exact name (now aligned with scanner names)
+      map[s.name] = { rs: s.rs, stage: s.stage, vs20: s.vs20 };
     });
     return map;
   } catch(e) { return {}; }
@@ -3872,10 +4007,12 @@ function vcpbRenderTable(sectors) {
 
   // Enrich each sector with composite score + overlay values for sorting
   const enriched = sectors.map(s => {
-    const key  = s.sector.toLowerCase();
-    const over = overlay[key] ||
-      Object.entries(overlay).find(([k]) => key.includes(k.split(' ')[0].toLowerCase()))?.[1] ||
-      null;
+    // Exact match first (names now aligned), then fuzzy fallback for edge cases
+    const over = overlay[s.sector] ||
+      Object.entries(overlay).find(([k]) =>
+        k.toLowerCase().includes(s.sector.toLowerCase().split(' ')[0]) ||
+        s.sector.toLowerCase().includes(k.toLowerCase().split(' ')[0])
+      )?.[1] || null;
     return {
       ...s,
       composite:    vcpbScore(s),
@@ -4264,7 +4401,7 @@ function brrgDraw() {
     }
 
     // Label — short name (first word)
-    const shortName = name.split(' ')[0].replace('&','');
+    const shortName = SRT_SHORT[name] || name.split(' ')[0].replace('&','');
     ctx.font = 'bold 9px sans-serif'; ctx.fillStyle = color; ctx.globalAlpha = 0.95;
     ctx.textAlign = cx2 > W * 0.72 ? 'right' : 'left';
     ctx.fillText(shortName, cx2 + (cx2 > W * 0.72 ? -8 : 8), cy2 + 3);
@@ -9857,7 +9994,11 @@ document.addEventListener('keydown', e => {
 // ════════════════════════════════════════════════════════════════════════
 
 const LS_SECTOR_STOCKS = 'nse_sector_stocks_v1';
+const LS_N500_CSV      = 'nse_n500csv_v1';
 let _sectorStocksCache = null;
+let _n500CsvCache      = null;
+let _sdCurrentSector   = '';
+let _sdCurrentData     = null;
 
 function sectorDrillGetCached() {
   if (_sectorStocksCache) return _sectorStocksCache;
@@ -9867,51 +10008,112 @@ function sectorDrillSetCached(data) {
   _sectorStocksCache = data;
   try { localStorage.setItem(LS_SECTOR_STOCKS, JSON.stringify(data)); } catch(e) {}
 }
+function n500CsvGetCached() {
+  if (_n500CsvCache) return _n500CsvCache;
+  try { _n500CsvCache = JSON.parse(localStorage.getItem(LS_N500_CSV)) || null; return _n500CsvCache; } catch(e) { return null; }
+}
+function n500CsvSetCached(data) {
+  _n500CsvCache = data;
+  try { localStorage.setItem(LS_N500_CSV, JSON.stringify(data)); } catch(e) {}
+}
 
+// ── Parse ind_nifty500list.csv into array of {symbol, company, industry} ──
+function parseN500Csv(text) {
+  const lines = text.trim().split('\n');
+  const out = [];
+  for (let i = 1; i < lines.length; i++) {   // skip header
+    const parts = lines[i].split(',');
+    if (parts.length < 3) continue;
+    const company  = parts[0].trim().replace(/^"|"$/g,'');
+    const industry = parts[1].trim().replace(/^"|"$/g,'');
+    const symbol   = parts[2].trim().replace(/^"|"$/g,'');
+    if (symbol) out.push({ symbol, company, industry });
+  }
+  return out;
+}
+
+// ── Same smart sector-split logic as vcp_scanner.py ──────────────────────
+const RAILWAY_TICKERS  = new Set(['IRFC','IRCTC','RVNL','IRCON','RITES','TITAGARH','TEXMACO','RAILTEL','JWL']);
+const DEFENSE_TICKERS  = new Set(['HAL','BEL','MAZDOCK','COCHINSHIP','BDL','BEML','DATAPATTNS','GRSE','PARAS','MTARTECH']);
+const AGRO_TICKERS     = new Set(['CHAMBLFERT','FACT','COROMANDEL','GNFC','GSFC','RCF','UPL']);
+// Symbols whose company names hint at their sub-sector
+const BANK_HINTS       = ['Bank','BANK'];
+const PHARMA_HINTS     = ['Pharma','Lab','Biotech'];
+const DEFENSE_HINTS    = ['Aerospace','Defence','Defense'];
+const AGRO_HINTS       = ['Agricultural','Fertilizer','Agri'];
+
+function csvSectorMap(symbol, company, industry) {
+  if (RAILWAY_TICKERS.has(symbol) || company.includes('Railway')) return 'Railways';
+  if (industry === 'Healthcare') {
+    if (PHARMA_HINTS.some(h => company.includes(h))) return 'Pharma';
+    return 'Hospitals & Healthcare';
+  }
+  if (industry === 'Capital Goods' || industry === 'Services') {
+    if (DEFENSE_TICKERS.has(symbol) || DEFENSE_HINTS.some(h => company.includes(h))) return 'Defense';
+    if (industry === 'Services') return 'Services';
+    return 'Capital Goods';
+  }
+  if (industry === 'Financial Services') {
+    if (BANK_HINTS.some(h => company.includes(h))) return 'Banks';
+    return 'NBFCs & Finance';
+  }
+  if (industry === 'Chemicals') {
+    if (AGRO_TICKERS.has(symbol) || AGRO_HINTS.some(h => company.includes(h))) return 'Agrochemicals & Fertilizers';
+    return 'Specialty Chemicals';
+  }
+  return industry;   // all others map 1:1
+}
+
+// ── Tab switcher inside the modal ─────────────────────────────────────────
+function sdSwitchTab(tab) {
+  ['vcp','universe'].forEach(t => {
+    const btn = document.getElementById('sd-tab-' + t);
+    if (!btn) return;
+    const active = t === tab;
+    btn.style.color       = active ? 'var(--teal)' : 'var(--dim)';
+    btn.style.borderBottom= active ? '2px solid var(--teal)' : '2px solid transparent';
+    btn.style.fontWeight  = active ? '700' : '600';
+  });
+  const body = document.getElementById('sd-body');
+  if (!body || !_sdCurrentSector) return;
+  if (tab === 'vcp')      sdRenderVcp(_sdCurrentSector, _sdCurrentData);
+  if (tab === 'universe') sdRenderUniverse(_sdCurrentSector);
+}
+
+// ── Open modal ────────────────────────────────────────────────────────────
 async function sectorDrillOpen(sectorName) {
   const overlay = document.getElementById('sector-drill-overlay');
   const title   = document.getElementById('sd-title');
   const body    = document.getElementById('sd-body');
   if (!overlay || !title || !body) return;
 
+  _sdCurrentSector = sectorName;
+  _sdCurrentData   = null;
   title.textContent = sectorName;
   body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--dim);font-size:11px">Loading…</div>';
   overlay.style.display = 'flex';
 
-  // Try cache first
-  let data = sectorDrillGetCached();
+  // Reset to VCP tab
+  sdSwitchTab('vcp');
 
-  // If no cache or stale (different date), re-fetch
+  // Try to get sector_stocks.json (scanner data)
+  let data = sectorDrillGetCached();
   const today = new Date().toISOString().slice(0,10);
   if (!data || data.scan_date !== today) {
     const baseUrl = vcpbGetUrl();
     if (baseUrl) {
       try {
         const resp = await fetch(baseUrl + '/sector_stocks.json?_=' + Date.now(), { cache: 'no-store' });
-        if (resp.ok) {
-          const fresh = await resp.json();
-          sectorDrillSetCached(fresh);
-          data = fresh;
-        }
-      } catch(e) { /* use cache if available */ }
+        if (resp.ok) { const fresh = await resp.json(); sectorDrillSetCached(fresh); data = fresh; }
+      } catch(e) {}
     }
   }
+  _sdCurrentData = data ? (data.sectors?.[sectorName] || null) : null;
 
-  if (!data) {
-    body.innerHTML = `<div style="padding:24px;color:var(--red);font-size:11px">
-      ⚠ sector_stocks.json not found.<br>
-      <span style="color:var(--dim)">Make sure your updated vcp_scanner.py has run at least once and sector_stocks.json is committed to your GitHub repo.</span>
-    </div>`;
-    return;
-  }
+  // Also kick off CSV fetch in background (for universe tab)
+  sdFetchCsv();
 
-  const secData = data.sectors?.[sectorName];
-  if (!secData) {
-    body.innerHTML = `<div style="padding:24px;color:var(--dim);font-size:11px">No data found for <b>${sectorName}</b> in today's scan.</div>`;
-    return;
-  }
-
-  sectorDrillRender(sectorName, secData, data.scan_time || data.scan_date);
+  sdRenderVcp(sectorName, _sdCurrentData);
 }
 
 function sectorDrillClose() {
@@ -9919,32 +10121,54 @@ function sectorDrillClose() {
   if (overlay) overlay.style.display = 'none';
 }
 
-function sectorDrillRender(sectorName, secData, scanTime) {
-  const body = document.getElementById('sd-body');
-  const stocks = secData.stocks || [];
-  const universe = secData.universe || 0;
-  const vcpCount = secData.vcp_count || 0;
+// ── Fetch ind_nifty500list.csv from GitHub (cached) ──────────────────────
+async function sdFetchCsv() {
+  if (n500CsvGetCached()) return;   // already have it
+  const baseUrl = vcpbGetUrl();
+  if (!baseUrl) return;
+  try {
+    const resp = await fetch(baseUrl + '/ind_nifty500list.csv?_=' + Date.now(), { cache: 'no-store' });
+    if (!resp.ok) return;
+    const text = await resp.text();
+    const parsed = parseN500Csv(text);
+    if (parsed.length > 100) n500CsvSetCached(parsed);
+  } catch(e) {}
+}
 
-  // Summary bar
+// ── VCP tab render ────────────────────────────────────────────────────────
+function sdRenderVcp(sectorName, secData) {
+  const body = document.getElementById('sd-body');
+  if (!body) return;
+
+  const stocks   = secData?.stocks   || [];
+  const universe = secData?.universe || '?';
+  const vcpCount = secData?.vcp_count || 0;
+  const scanTime = _sdCurrentData ? (_sdCurrentData.scan_time || '') : '';
+
   const summaryHtml = `
-    <div style="display:flex;gap:16px;flex-wrap:wrap;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:10px">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:10px;flex-shrink:0">
       <span style="color:var(--dim)">Universe: <b style="color:var(--text)">${universe}</b> stocks</span>
-      <span style="color:var(--dim)">VCP Candidates: <b style="color:var(--teal)">${vcpCount}</b></span>
-      <span style="color:var(--dim)">Scan: <b style="color:var(--sub)">${scanTime}</b></span>
-      <span style="color:var(--dim);margin-left:auto;font-style:italic">Showing VCP-qualified stocks only · Click symbol → NSE India</span>
+      <span style="color:var(--dim)">VCP today: <b style="color:var(--teal)">${vcpCount}</b></span>
+      ${scanTime ? `<span style="color:var(--dim)">Scan: <b style="color:var(--sub)">${scanTime}</b></span>` : ''}
     </div>`;
 
-  if (stocks.length === 0) {
-    body.innerHTML = summaryHtml + `<div style="padding:30px;text-align:center;color:var(--dim);font-size:11px">
-      No VCP candidates in <b>${sectorName}</b> today.<br>
-      <span style="font-size:10px;opacity:.7">(Universe of ${universe} stocks was scanned — none qualified.)</span>
+  if (!secData) {
+    body.innerHTML = summaryHtml + `<div style="padding:24px 16px;font-size:11px;color:var(--yellow)">
+      ⚠ sector_stocks.json not found or scanner hasn't run today.<br>
+      <span style="color:var(--dim);font-size:10px">Run the VCP scanner and push sector_stocks.json to your GitHub repo.</span>
     </div>`;
     return;
   }
 
-  // Sort by final_score desc
-  const sorted = [...stocks].sort((a, b) => (b.final_score || b.vcp_score || 0) - (a.final_score || a.vcp_score || 0));
+  if (stocks.length === 0) {
+    body.innerHTML = summaryHtml + `<div style="padding:30px;text-align:center;color:var(--dim);font-size:11px">
+      No VCP candidates in <b>${sectorName}</b> today.<br>
+      <span style="font-size:10px;opacity:.7">Universe of ${universe} stocks scanned — none qualified.</span>
+    </div>`;
+    return;
+  }
 
+  const sorted = [...stocks].sort((a, b) => (b.final_score || b.vcp_score || 0) - (a.final_score || a.vcp_score || 0));
   const gradeColor = g => ({ 'A+':'var(--lime)', A:'var(--lime)', B:'var(--yellow)', C:'var(--orange)', D:'var(--red)' }[g] || 'var(--dim)');
 
   const rows = sorted.map(s => {
@@ -9952,55 +10176,119 @@ function sectorDrillRender(sectorName, secData, scanTime) {
     const tvUrl  = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(s.symbol)}`;
     const r90C   = s.r90 >= 20 ? 'var(--lime)' : s.r90 >= 0 ? 'var(--yellow)' : 'var(--red)';
     const ddC    = s.drawdown >= -10 ? 'var(--lime)' : s.drawdown >= -20 ? 'var(--yellow)' : 'var(--red)';
-    const dist52C = s.dist52 >= -5 ? 'var(--lime)' : s.dist52 >= -15 ? 'var(--yellow)' : 'var(--dim)';
-    const scoreC = (s.final_score || s.vcp_score || 0) >= 70 ? 'var(--lime)' : (s.final_score || s.vcp_score || 0) >= 50 ? 'var(--yellow)' : 'var(--dim)';
+    const dist52C= s.dist52 >= -5 ? 'var(--lime)' : s.dist52 >= -15 ? 'var(--yellow)' : 'var(--dim)';
     const score  = s.final_score > 0 ? s.final_score : s.vcp_score;
+    const scoreC = score >= 70 ? 'var(--lime)' : score >= 50 ? 'var(--yellow)' : 'var(--dim)';
     const grade  = s.grade && s.grade !== '—' ? s.grade : '—';
     const mcap   = s.mktcap ? (s.mktcap >= 10000 ? `₹${(s.mktcap/100).toFixed(0)}kCr` : `₹${Math.round(s.mktcap)}Cr`) : '—';
-
-    return `<tr style="border-bottom:1px solid var(--border);cursor:pointer" onmouseenter="this.style.background='rgba(255,255,255,.03)'" onmouseleave="this.style.background='transparent'">
-      <td style="padding:7px 6px;white-space:nowrap">
-        <a href="${nseUrl}" target="_blank" rel="noopener"
-           style="font-weight:800;font-size:13px;color:var(--teal);text-decoration:none;font-family:var(--mono)"
-           onclick="event.stopPropagation()">${s.symbol}</a>
-        <a href="${tvUrl}" target="_blank" rel="noopener"
-           style="font-size:9px;color:var(--dim);text-decoration:none;margin-left:5px;opacity:.7"
-           onclick="event.stopPropagation()" title="Open on TradingView">TV↗</a>
+    return `<tr style="border-bottom:1px solid var(--border)" onmouseenter="this.style.background='rgba(255,255,255,.03)'" onmouseleave="this.style.background='transparent'">
+      <td style="padding:6px;white-space:nowrap">
+        <a href="${nseUrl}" target="_blank" rel="noopener" style="font-weight:800;font-size:13px;color:var(--teal);text-decoration:none;font-family:var(--mono)">${s.symbol}</a>
+        <a href="${tvUrl}"  target="_blank" rel="noopener" style="font-size:9px;color:var(--dim);text-decoration:none;margin-left:5px;opacity:.7" title="TradingView">TV↗</a>
       </td>
-      <td style="padding:7px 6px;font-size:11px;color:var(--sub);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.company}</td>
-      <td style="padding:7px 6px;text-align:right;font-size:11px;font-family:var(--mono)">₹${s.price}</td>
-      <td style="padding:7px 6px;text-align:right;font-size:11px;font-family:var(--mono);color:var(--dim)">${mcap}</td>
-      <td style="padding:7px 6px;text-align:right;font-size:11px;font-family:var(--mono);color:${r90C}">${s.r90 > 0 ? '+' : ''}${s.r90}%</td>
-      <td style="padding:7px 6px;text-align:right;font-size:11px;font-family:var(--mono);color:${dist52C}">${s.dist52 > 0 ? '+' : ''}${s.dist52}%</td>
-      <td style="padding:7px 6px;text-align:right;font-size:11px;font-family:var(--mono);color:${ddC}">${s.drawdown}%</td>
-      <td style="padding:7px 6px;text-align:center;font-size:9px;color:var(--yellow);opacity:.85">${s.setup ? s.setup.replace(/[🎯🌱📐🔮🧲👀]/u,'').trim() : '—'}</td>
-      <td style="padding:7px 6px;text-align:center;font-family:var(--disp);font-size:15px;font-weight:800;color:${scoreC}">${Math.round(score)}</td>
-      <td style="padding:7px 6px;text-align:center">
-        ${grade !== '—' ? `<span style="font-size:10px;font-weight:800;color:${gradeColor(grade)};background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px">${grade}</span>` : '<span style="color:var(--border)">—</span>'}
+      <td style="padding:6px;font-size:11px;color:var(--sub);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.company}</td>
+      <td style="padding:6px;text-align:right;font-size:11px;font-family:var(--mono)">₹${s.price}</td>
+      <td style="padding:6px;text-align:right;font-size:11px;font-family:var(--mono);color:var(--dim)">${mcap}</td>
+      <td style="padding:6px;text-align:right;font-size:11px;font-family:var(--mono);color:${r90C}">${s.r90 > 0?'+':''}${s.r90}%</td>
+      <td style="padding:6px;text-align:right;font-size:11px;font-family:var(--mono);color:${dist52C}">${s.dist52 > 0?'+':''}${s.dist52}%</td>
+      <td style="padding:6px;text-align:right;font-size:11px;font-family:var(--mono);color:${ddC}">${s.drawdown}%</td>
+      <td style="padding:6px;text-align:center;font-size:9px;color:var(--yellow)">${s.setup ? s.setup.replace(/[🎯🌱📐🔮🧲👀]/u,'').trim() : '—'}</td>
+      <td style="padding:6px;text-align:center;font-family:var(--disp);font-size:15px;font-weight:800;color:${scoreC}">${Math.round(score)}</td>
+      <td style="padding:6px;text-align:center">${grade !== '—' ? `<span style="font-size:9px;font-weight:800;color:${gradeColor(grade)};padding:1px 5px;border-radius:3px;background:rgba(0,0,0,.2)">${grade}</span>` : '<span style="color:var(--border)">—</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  body.innerHTML = summaryHtml + `<div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;min-width:600px">
+      <thead><tr style="border-bottom:1px solid var(--border);background:var(--bg2)">
+        <th style="padding:5px 6px;text-align:left;color:var(--sub);font-size:10px;text-transform:uppercase">Symbol</th>
+        <th style="padding:5px 6px;text-align:left;color:var(--sub);font-size:10px;text-transform:uppercase">Company</th>
+        <th style="padding:5px 6px;text-align:right;color:var(--sub);font-size:10px;text-transform:uppercase">Price</th>
+        <th style="padding:5px 6px;text-align:right;color:var(--sub);font-size:10px;text-transform:uppercase">MCap</th>
+        <th style="padding:5px 6px;text-align:right;color:var(--sub);font-size:10px;text-transform:uppercase">90D%</th>
+        <th style="padding:5px 6px;text-align:right;color:var(--sub);font-size:10px;text-transform:uppercase">52W%</th>
+        <th style="padding:5px 6px;text-align:right;color:var(--sub);font-size:10px;text-transform:uppercase">DD%</th>
+        <th style="padding:5px 6px;text-align:center;color:var(--sub);font-size:10px;text-transform:uppercase">Setup</th>
+        <th style="padding:5px 6px;text-align:center;color:var(--teal);font-size:10px;text-transform:uppercase">Score</th>
+        <th style="padding:5px 6px;text-align:center;color:var(--sub);font-size:10px;text-transform:uppercase">Grade</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// ── Universe tab render — from ind_nifty500list.csv ───────────────────────
+function sdRenderUniverse(sectorName) {
+  const body = document.getElementById('sd-body');
+  if (!body) return;
+
+  const csv = n500CsvGetCached();
+
+  if (!csv) {
+    body.innerHTML = `<div style="padding:24px 16px;font-size:11px;color:var(--yellow)">
+      ⏳ Loading stock list from GitHub…
+      <span style="color:var(--dim);font-size:10px;display:block;margin-top:4px">
+        Make sure your GitHub Pages URL is configured in the Breadth tab.
+      </span>
+    </div>`;
+    // Retry after fetch completes
+    sdFetchCsv().then(() => {
+      const fresh = n500CsvGetCached();
+      if (fresh) sdRenderUniverse(sectorName);
+    });
+    return;
+  }
+
+  // Filter stocks to this sector using the same smart split as vcp_scanner.py
+  const stocks = csv.filter(s => csvSectorMap(s.symbol, s.company, s.industry) === sectorName);
+  stocks.sort((a, b) => a.symbol.localeCompare(b.symbol));
+
+  if (!stocks.length) {
+    body.innerHTML = `<div style="padding:24px 16px;font-size:11px;color:var(--dim)">
+      No stocks found for <b>${sectorName}</b> in the Nifty 500 list.
+    </div>`;
+    return;
+  }
+
+  // Build a set of VCP symbols for this sector (badge them)
+  const vcpSymbols = new Set((_sdCurrentData?.stocks || []).map(s => s.symbol));
+
+  // Summary bar
+  const summaryHtml = `
+    <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:10px;align-items:center">
+      <span style="color:var(--dim)"><b style="color:var(--text)">${stocks.length}</b> stocks in Nifty 500</span>
+      ${vcpSymbols.size ? `<span style="color:var(--dim)"><b style="color:var(--teal)">${vcpSymbols.size}</b> VCP candidates today</span>` : ''}
+      <span style="color:var(--dim);margin-left:auto;font-size:9px;font-style:italic">TV↗ = TradingView chart &nbsp;·&nbsp; NSE↗ = NSE quote</span>
+    </div>`;
+
+  const rows = stocks.map(s => {
+    const tvUrl  = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(s.symbol)}`;
+    const nseUrl = `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(s.symbol)}`;
+    const isVcp  = vcpSymbols.has(s.symbol);
+    const symColor = isVcp ? 'var(--teal)' : 'var(--text)';
+    const vcpBadge = isVcp ? `<span style="font-size:8px;background:rgba(45,212,191,.15);color:var(--teal);padding:0 4px;border-radius:2px;margin-left:4px;border:1px solid rgba(45,212,191,.25)">VCP</span>` : '';
+    return `<tr style="border-bottom:1px solid var(--border)" onmouseenter="this.style.background='rgba(255,255,255,.03)'" onmouseleave="this.style.background='transparent'">
+      <td style="padding:7px 10px;font-weight:800;font-size:13px;font-family:var(--mono);color:${symColor};white-space:nowrap">
+        ${s.symbol}${vcpBadge}
+      </td>
+      <td style="padding:7px 10px;font-size:11px;color:var(--sub)">${s.company}</td>
+      <td style="padding:7px 10px;text-align:center;white-space:nowrap">
+        <a href="${tvUrl}" target="_blank" rel="noopener"
+           style="font-size:10px;font-weight:600;color:var(--accent);text-decoration:none;padding:2px 7px;border-radius:3px;border:1px solid rgba(91,163,245,.25);background:rgba(91,163,245,.08)">TV↗</a>
+        <a href="${nseUrl}" target="_blank" rel="noopener"
+           style="font-size:10px;font-weight:600;color:var(--teal);text-decoration:none;padding:2px 7px;border-radius:3px;border:1px solid rgba(45,212,191,.25);background:rgba(45,212,191,.08);margin-left:4px">NSE↗</a>
       </td>
     </tr>`;
   }).join('');
 
-  body.innerHTML = summaryHtml + `
-    <div style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;min-width:640px">
-        <thead>
-          <tr style="border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg2);z-index:1">
-            <th style="padding:6px;text-align:left;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Symbol</th>
-            <th style="padding:6px;text-align:left;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Company</th>
-            <th style="padding:6px;text-align:right;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Price</th>
-            <th style="padding:6px;text-align:right;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">MCap</th>
-            <th style="padding:6px;text-align:right;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">90D%</th>
-            <th style="padding:6px;text-align:right;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">52W%</th>
-            <th style="padding:6px;text-align:right;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">DD%</th>
-            <th style="padding:6px;text-align:center;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Setup</th>
-            <th style="padding:6px;text-align:center;color:var(--teal);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Score</th>
-            <th style="padding:6px;text-align:center;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Grade</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
+  body.innerHTML = summaryHtml + `<div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="border-bottom:1px solid var(--border);background:var(--bg2)">
+        <th style="padding:5px 10px;text-align:left;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Symbol</th>
+        <th style="padding:5px 10px;text-align:left;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Company</th>
+        <th style="padding:5px 10px;text-align:center;color:var(--sub);font-size:10px;text-transform:uppercase;letter-spacing:.4px">Links</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
 }
 
 
@@ -10598,21 +10886,21 @@ function sectorDrillRender(sectorName, secData, scanTime) {
           <div style="margin-bottom:6px">
             <label style="font-size:10px;color:var(--dim);display:block;margin-bottom:3px">Sector</label>
             <select id="srt-sel" style="width:100%;font-size:12px;padding:5px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text)">
-              <option value="NIFTY IT|IT">Nifty IT</option>
+              <option value="NIFTY IT|Information Technology">Nifty IT → Information Technology</option>
               <option value="NIFTY PHARMA|Pharma">Nifty Pharma</option>
-              <option value="NIFTY FMCG|FMCG">Nifty FMCG</option>
-              <option value="NIFTY BANK|Bank">Nifty Bank</option>
-              <option value="NIFTY AUTO|Auto">Nifty Auto</option>
-              <option value="NIFTY METAL|Metal">Nifty Metal</option>
+              <option value="NIFTY FMCG|Fast Moving Consumer Goods">Nifty FMCG → Fast Moving Consumer Goods</option>
+              <option value="NIFTY BANK|Banks">Nifty Bank → Banks</option>
+              <option value="NIFTY AUTO|Automobile and Auto Components">Nifty Auto → Automobile and Auto Components</option>
+              <option value="NIFTY METAL|Metals & Mining">Nifty Metal → Metals & Mining</option>
               <option value="NIFTY REALTY|Realty">Nifty Realty</option>
-              <option value="NIFTY INFRA|Infra">Nifty Infra</option>
-              <option value="NIFTY COMMODITIES|Chemicals">Nifty Commodities (Chemicals)</option>
+              <option value="NIFTY INFRA|Construction">Nifty Infra → Construction</option>
+              <option value="NIFTY COMMODITIES|Specialty Chemicals">Nifty Commodities → Specialty Chemicals</option>
               <option value="NIFTY PSU BANK|PSU Bank">Nifty PSU Bank</option>
-              <option value="NIFTY ENERGY|Energy">Nifty Energy</option>
-              <option value="NIFTY FINANCIAL SERVICES|Fin Services">Nifty Financial Services</option>
-              <option value="NIFTY INDIA MANUFACTURING|India Mfg">Nifty India Manufacturing</option>
-              <option value="NIFTY CAPITAL MARKETS|Cap Market">Nifty Capital Markets</option>
-              <option value="NIFTY INDIA DEFENCE|Defence">Nifty India Defence</option>
+              <option value="NIFTY ENERGY|Oil Gas & Consumable Fuels">Nifty Energy → Oil Gas & Consumable Fuels</option>
+              <option value="NIFTY FINANCIAL SERVICES|NBFCs & Finance">Nifty Fin Services → NBFCs & Finance</option>
+              <option value="NIFTY INDIA MANUFACTURING|Capital Goods">Nifty India Mfg → Capital Goods</option>
+              <option value="NIFTY CAPITAL MARKETS|Capital Goods">Nifty Capital Markets → Capital Goods</option>
+              <option value="NIFTY INDIA DEFENCE|Defense">Nifty India Defence → Defense</option>
               <option value="NIFTY CPSE|PSE">Nifty CPSE (PSE)</option>
             </select>
           </div>
@@ -10659,8 +10947,8 @@ function sectorDrillRender(sectorName, secData, scanTime) {
             </div>
           </div>
           <div style="font-size:9px;color:var(--dim);margin-bottom:6px;line-height:1.6">
-            Format: <code style="background:var(--bg2);padding:2px 5px;border-radius:2px;color:var(--teal);font-size:9px">DATE, NIFTY50, IT, Pharma, FMCG, Bank, Auto, Metal, Realty, Infra, Chemicals, PSUBank, Energy, FinServices, IndiaMfg, CapMarket, Defence, PSE</code><br>
-            <span style="color:var(--dim)">Date: YYYY-MM-DD &nbsp;|&nbsp; Oldest week first</span>
+            Format: <code style="background:var(--bg2);padding:2px 5px;border-radius:2px;color:var(--teal);font-size:9px">DATE, NIFTY50, InformationTech, Pharma, FMCG, Banks, Auto, MetalsMining, Realty, Construction, SpecialtyChemicals, PSUBank, OilGas, NBFCs, CapGoods, CapGoods, Defense, PSE</code><br>
+            <span style="color:var(--dim)">Date: YYYY-MM-DD &nbsp;|&nbsp; Oldest week first &nbsp;|&nbsp; Columns map to: IT · Pharma · FMCG · Banks · Auto · Metals &amp; Mining · Realty · Construction · Specialty Chemicals · PSU Bank · Oil Gas · NBFCs &amp; Finance · Capital Goods (×2) · Defense · PSE</span>
           </div>
           <textarea id="srt-bulk-txt" rows="6"
             placeholder="2025-01-03, 23644, 42100, 22300, 58900, 52800, 24100, 9200, 7800, 4300, 1580, 54100, 29800, 43200, 10200&#10;2025-01-10, 23431, 41800, 22100, 58600, 52400, 23900, 9050, 7650, 4210, 1560, 53800, 29400, 42900, 10100&#10;..."
