@@ -2924,7 +2924,32 @@ function capitalInputInit() {
   const inp = document.getElementById('capital-input');
   if (inp) inp.value = getCapital();
 }
-const srtLoad = () => { try { return JSON.parse(lsGet(LS_SRT)) || []; } catch(e) { return []; } };
+const srtLoad = () => {
+  try {
+    const data = JSON.parse(lsGet(LS_SRT)) || [];
+    // ── One-time migration: rename old short names to scanner-aligned names ──
+    const NAME_MIGRATION = {
+      'IT':           'Information Technology',
+      'FMCG':         'Fast Moving Consumer Goods',
+      'Bank':         'Banks',
+      'Auto':         'Automobile and Auto Components',
+      'Metal':        'Metals & Mining',
+      'Infra':        'Construction',
+      'Chemicals':    'Specialty Chemicals',
+      'Energy':       'Oil Gas & Consumable Fuels',
+      'Fin Services': 'NBFCs & Finance',
+      'India Mfg':    'Capital Goods',
+      'Cap Market':   'Capital Goods',
+      'Defence':      'Defense',
+    };
+    let migrated = false;
+    data.forEach(s => {
+      if (NAME_MIGRATION[s.name]) { s.name = NAME_MIGRATION[s.name]; migrated = true; }
+    });
+    if (migrated) lsSet(LS_SRT, JSON.stringify(data));
+    return data;
+  } catch(e) { return []; }
+};
 const srtSave = d => lsSet(LS_SRT, JSON.stringify(d));
 
 // ── SRT: MA from weekly close history ─────────────────────────────────────
@@ -3755,7 +3780,7 @@ function slhRender() {
              white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;
              display:block;line-height:${CELL_H}px"
       onmouseover="this.style.color='var(--teal)'" onmouseout="this.style.color='var(--text)'"
-    >${sector.name}</a>`;
+    >${SRT_SHORT[sector.name] || sector.name}</a>`;
     // Week cells
     vals.forEach(rs => {
       const c = slhRsColor(rs);
@@ -4167,8 +4192,14 @@ function vcpbRender(data) {
   const watching = enriched.filter(s => s.score >= THRESHOLD_LOW && s.score < THRESHOLD_HIGH && (s.trend === null || s.trend >= 0));
   const avoid    = enriched.filter(s => s.score < THRESHOLD_LOW).slice(-3).reverse();
 
-  const pill = (s, c, bg) =>
-    `<span style="display:inline-block;margin:1px 3px 1px 0;padding:2px 7px;border-radius:3px;background:${bg};color:${c};font-size:10px;font-weight:700;font-family:var(--mono)">${s.name.split(' ')[0] === 'Automobile' ? 'Auto' : SRT_SHORT[s.name] || s.name.split(' ')[0]} <span style="font-weight:400;opacity:.7">${s.score}</span></span>`;
+  const pill = (s, c, bg) => {
+    const label = s.name.split(' ')[0] === 'Automobile' ? 'Auto' : SRT_SHORT[s.name] || s.name.split(' ')[0];
+    const esc   = s.name.replace(/'/g, "\\'");
+    return `<span onclick="sectorDrillOpen('${esc}')"
+      style="display:inline-block;margin:1px 3px 1px 0;padding:2px 8px;border-radius:3px;background:${bg};color:${c};font-size:10px;font-weight:700;font-family:var(--mono);cursor:pointer;transition:opacity .15s"
+      onmouseenter="this.style.opacity='.75'" onmouseleave="this.style.opacity='1'"
+      title="Click to see stocks in ${s.name}">${label} <span style="font-weight:400;opacity:.75">${s.score}</span></span>`;
+  };
 
   const leadEl  = document.getElementById('vcpb-ls-lead');
   const watchEl = document.getElementById('vcpb-ls-watch');
@@ -10256,7 +10287,7 @@ function sdRenderVcp(sectorName, secData) {
   const rows = sorted.map(s => {
     const nseUrl = `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(s.symbol)}`;
     const tvUrl  = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(s.symbol)}`;
-    const msUrl  = `https://marketsmithindia.com/mstool/lite.jsp#symbol=${encodeURIComponent(s.symbol)}~NSE`;
+    const msUrl  = `https://marketsmithindia.com/mstool/eval/${s.symbol.toLowerCase()}/evaluation.jsp#/`;
     const r90C   = s.r90 >= 20 ? 'var(--lime)' : s.r90 >= 0 ? 'var(--yellow)' : 'var(--red)';
     const ddC    = s.drawdown >= -10 ? 'var(--lime)' : s.drawdown >= -20 ? 'var(--yellow)' : 'var(--red)';
     const dist52C= s.dist52 >= -5 ? 'var(--lime)' : s.dist52 >= -15 ? 'var(--yellow)' : 'var(--dim)';
@@ -10347,7 +10378,7 @@ function sdRenderUniverse(sectorName) {
   const rows = stocks.map(s => {
     const tvUrl  = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(s.symbol)}`;
     const nseUrl = `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(s.symbol)}`;
-    const msUrl  = `https://marketsmithindia.com/mstool/lite.jsp#symbol=${encodeURIComponent(s.symbol)}~NSE`;
+    const msUrl  = `https://marketsmithindia.com/mstool/eval/${s.symbol.toLowerCase()}/evaluation.jsp#/`;
     const isVcp  = vcpSymbols.has(s.symbol);
     const symColor = isVcp ? 'var(--teal)' : 'var(--text)';
     const vcpBadge = isVcp ? `<span style="font-size:8px;background:rgba(45,212,191,.15);color:var(--teal);padding:0 4px;border-radius:2px;margin-left:4px;border:1px solid rgba(45,212,191,.25)">VCP</span>` : '';
