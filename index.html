@@ -1520,6 +1520,22 @@ body.guest-mode #mpm-module-card { display:none !important; }
           <!-- Data -->
           <div id="vcpb-data" style="display:none">
 
+            <!-- ── SECTOR LEADER SUMMARY ─────────────────── -->
+            <div id="vcpb-leader-strip" style="padding:8px 14px 6px;border-bottom:1px solid var(--border)">
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:baseline">
+                <span style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Today:</span>
+                <span id="vcpb-ls-lead" style="font-size:10px;color:var(--dim)">—</span>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:baseline;margin-top:3px">
+                <span style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Watch:</span>
+                <span id="vcpb-ls-watch" style="font-size:10px;color:var(--dim)">—</span>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:baseline;margin-top:3px">
+                <span style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Avoid:</span>
+                <span id="vcpb-ls-avoid" style="font-size:10px;color:var(--dim)">—</span>
+              </div>
+            </div>
+
             <!-- Sort controls -->
             <div style="display:flex;gap:5px;align-items:center;padding:8px 14px 4px;flex-wrap:wrap">
               <span style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px">Sort:</span>
@@ -1527,8 +1543,9 @@ body.guest-mode #mpm-module-card { display:none !important; }
               <button onclick="vcpbSetSort('universe')"  id="vcpb-s-universe"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--teal);color:#0e1420;cursor:pointer;font-weight:600">Universe</button>
               <button onclick="vcpbSetSort('a20_pct')"   id="vcpb-s-a20_pct"   style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">%&gt;20EMA</button>
               <button onclick="vcpbSetSort('a200_pct')"  id="vcpb-s-a200_pct"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">%&gt;200SMA</button>
-              <button onclick="vcpbSetSort('_rs')"       id="vcpb-s-_rs"       style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">RS Wk</button>
-              <button onclick="vcpbSetSort('_stageScore')" id="vcpb-s-_stageScore" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">Stage</button>
+              <button onclick="vcpbSetSort('_rs')"          id="vcpb-s-_rs"          style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">RS Wk</button>
+              <button onclick="vcpbSetSort('_stageScore')"  id="vcpb-s-_stageScore"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">Stage</button>
+              <button onclick="vcpbSetSort('_daysAtTop')"   id="vcpb-s-_daysAtTop"   style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">@Top</button>
             </div>
 
             <!-- Table -->
@@ -1546,6 +1563,7 @@ body.guest-mode #mpm-module-card { display:none !important; }
                     <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Trend</th>
                     <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.5">RS wk</th>
                     <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.5">Stage</th>
+                    <th style="text-align:center;padding:5px 4px;color:var(--purple);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Consecutive trading days in top half of breadth scores">@Top</th>
                   </tr>
                 </thead>
                 <tbody id="vcpb-tbody"></tbody>
@@ -3953,7 +3971,7 @@ async function vcpbFetch(force) {
 
 function vcpbSetSort(key) {
   _vcpbSort = key;
-  ['composite','universe','a20_pct','a200_pct','_rs','_stageScore'].forEach(k => {
+  ['composite','universe','a20_pct','a200_pct','_rs','_stageScore','_daysAtTop'].forEach(k => {
     const b = document.getElementById('vcpb-s-' + k);
     if (!b) return;
     const active = k === key;
@@ -3980,22 +3998,52 @@ function vcpbTrendBar(a20, a50, a200) {
     }).join('') + '</div>';
 }
 
+// ── Consecutive weeks a sector has been in the top half of scores ─────────
+function vcpbDaysAtTop(sectorName) {
+  const hist = vcpbGetHist();
+  const sectorHist = hist[sectorName];
+  if (!sectorHist || sectorHist.length < 2) return 0;
+  const allSectors = Object.keys(hist);
+  const sorted = [...sectorHist].sort((a,b) => a.date.localeCompare(b.date));
+  let days = 0;
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    const date = sorted[i].date;
+    const scores = allSectors
+      .map(sec => (hist[sec] || []).find(e => e.date === date)?.score)
+      .filter(v => v != null);
+    if (!scores.length) break;
+    scores.sort((a,b) => a-b);
+    const median = scores[Math.floor(scores.length / 2)];
+    if (sorted[i].score >= median) days++;
+    else break;
+  }
+  return days;
+}
+
+// ── 5-day score trend ─────────────────────────────────────────────────────
+function vcpbScoreTrend(sectorName) {
+  const hist = vcpbGetHist();
+  const raw  = hist[sectorName];
+  if (!raw || raw.length < 2) return null;
+  const sorted = [...raw].sort((a,b) => a.date.localeCompare(b.date));
+  const cur  = sorted.at(-1).score;
+  const prev = sorted[Math.max(0, sorted.length - 6)].score;
+  return cur - prev;
+}
+
 // Merge N500 breadth rows with optional RS/Stage from srtLoad()
-// Names are now aligned between scanner and SRT — exact match first, fuzzy fallback
 function vcpbGetSrtOverlay() {
   try {
     const secs = srtLoad ? srtLoad() : [];
     const map = {};
     secs.forEach(s => {
       if (s.id === 'NIFTY50') return;
-      // Store by exact name (now aligned with scanner names)
       map[s.name] = { rs: s.rs, stage: s.stage, vs20: s.vs20 };
     });
     return map;
   } catch(e) { return {}; }
 }
 
-// Stage → numeric sort score: S2=4, S1=3, S3=2, S4=1, null=0
 function stageToScore(stage) {
   return { S2: 4, S1: 3, S3: 2, S4: 1 }[stage] || 0;
 }
@@ -4005,9 +4053,7 @@ function vcpbRenderTable(sectors) {
   if (!tbody) return;
   const overlay = vcpbGetSrtOverlay();
 
-  // Enrich each sector with composite score + overlay values for sorting
   const enriched = sectors.map(s => {
-    // Exact match first (names now aligned), then fuzzy fallback for edge cases
     const over = overlay[s.sector] ||
       Object.entries(overlay).find(([k]) =>
         k.toLowerCase().includes(s.sector.toLowerCase().split(' ')[0]) ||
@@ -4015,27 +4061,27 @@ function vcpbRenderTable(sectors) {
       )?.[1] || null;
     return {
       ...s,
-      composite:    vcpbScore(s),
-      _over:        over,
-      _rs:          (over && over.rs != null) ? over.rs : -9999,
-      _stageScore:  (over && over.stage)      ? stageToScore(over.stage) : -1,
+      composite:   vcpbScore(s),
+      _over:       over,
+      _rs:         (over && over.rs != null) ? over.rs : -9999,
+      _stageScore: (over && over.stage) ? stageToScore(over.stage) : -1,
+      _daysAtTop:  vcpbDaysAtTop(s.sector),
+      _trend:      vcpbScoreTrend(s.sector),
     };
   });
 
-  // Sort — nulls always go to bottom regardless of sort direction
   const sorted = [...enriched].sort((a, b) => {
     if (_vcpbSort === '_rs') {
       if (a._rs === -9999 && b._rs === -9999) return 0;
-      if (a._rs === -9999) return 1;
-      if (b._rs === -9999) return -1;
+      if (a._rs === -9999) return 1; if (b._rs === -9999) return -1;
       return b._rs - a._rs;
     }
     if (_vcpbSort === '_stageScore') {
       if (a._stageScore === -1 && b._stageScore === -1) return 0;
-      if (a._stageScore === -1) return 1;
-      if (b._stageScore === -1) return -1;
+      if (a._stageScore === -1) return 1; if (b._stageScore === -1) return -1;
       return b._stageScore - a._stageScore;
     }
+    if (_vcpbSort === '_daysAtTop') return b._daysAtTop - a._daysAtTop;
     return b[_vcpbSort] - a[_vcpbSort];
   });
 
@@ -4046,15 +4092,29 @@ function vcpbRenderTable(sectors) {
     const a200C  = vcpbPctColor(s.a200_pct);
     const rowBg  = i === 0 ? 'rgba(45,212,191,.04)' : 'transparent';
 
+    // Score trend arrow
+    const trendArrow = s._trend === null ? '' :
+      s._trend > 2  ? '<span style="color:var(--lime);font-size:10px;margin-left:2px">&#8593;</span>' :
+      s._trend < -2 ? '<span style="color:var(--red);font-size:10px;margin-left:2px">&#8595;</span>' :
+                      '<span style="color:var(--dim);font-size:10px;margin-left:2px">&#8594;</span>';
+
     const over = s._over;
     const rsCell = over && over.rs != null
       ? `<span style="color:${over.rs >= 0 ? 'var(--lime)' : 'var(--red)'}">${over.rs > 0 ? '+' : ''}${over.rs}</span>`
       : '<span style="color:var(--border)">—</span>';
     const stageInfo = over && over.stage
-      ? ({ S2:{ c:'var(--lime)', l:'S2' }, S1:{ c:'var(--accent)', l:'S1' }, S3:{ c:'var(--yellow)', l:'S3' }, S4:{ c:'var(--red)', l:'S4' } })[over.stage] || null
+      ? ({ S2:{c:'var(--lime)',l:'S2'}, S1:{c:'var(--accent)',l:'S1'}, S3:{c:'var(--yellow)',l:'S3'}, S4:{c:'var(--red)',l:'S4'} })[over.stage] || null
       : null;
     const stageCell = stageInfo
       ? `<span style="font-size:9px;font-weight:700;color:${stageInfo.c};background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px">${stageInfo.l}</span>`
+      : '<span style="color:var(--border)">—</span>';
+
+    // @Top cell
+    const dTop  = s._daysAtTop;
+    const dTopC = dTop >= 15 ? 'var(--lime)' : dTop >= 7 ? 'var(--yellow)' : 'var(--dim)';
+    const wks   = dTop > 0 ? Math.round(dTop / 5) : 0;
+    const dTopCell = dTop > 0
+      ? `<span style="font-size:10px;font-family:var(--mono);font-weight:600;color:${dTopC}">${wks}w</span>`
       : '<span style="color:var(--border)">—</span>';
 
     const secEsc = s.sector.replace(/'/g, "\\'");
@@ -4062,23 +4122,23 @@ function vcpbRenderTable(sectors) {
     return `<tr style="border-bottom:1px solid var(--border);background:${rowBg};cursor:pointer"
       onmouseenter="this.style.background='rgba(45,212,191,.06)'"
       onmouseleave="this.style.background='${rowBg}'"
-      title="Click sector name to see stocks · NSE↗ opens index page">
+      title="Click sector name to see stocks · NSE opens index page">
       <td style="padding:5px 4px;color:var(--dim);font-size:10px;font-family:var(--mono)">${i+1}</td>
       <td style="padding:5px 4px;font-weight:700;font-size:12px;font-family:var(--disp)">
-        <span onclick="sectorDrillOpen('${secEsc}')" style="cursor:pointer;text-decoration:underline;text-decoration-color:rgba(45,212,191,.3);text-underline-offset:3px">${s.sector}</span>
+        <span onclick="sectorDrillOpen('${s.sector.replace(/'/g, "\\'")}') " style="cursor:pointer;text-decoration:underline;text-decoration-color:rgba(45,212,191,.3);text-underline-offset:3px">${s.sector}</span>
         <a href="${vcpbNseUrl(s.sector)}" target="_blank" rel="noopener"
            onclick="event.stopPropagation()"
-           title="Open ${s.sector} on NSE India"
            style="display:inline-block;margin-left:5px;font-size:9px;color:var(--teal);opacity:.7;text-decoration:none;background:rgba(45,212,191,.1);padding:0 4px;border-radius:2px;border:1px solid rgba(45,212,191,.2);vertical-align:middle">NSE↗</a>
       </td>
       <td style="padding:5px 4px;text-align:center;color:var(--sub);font-size:11px;font-family:var(--mono)">${s.universe}</td>
-      <td style="padding:5px 4px;text-align:center;font-family:var(--disp);font-size:16px;font-weight:800;color:${scoreC}">${s.composite}</td>
+      <td style="padding:5px 4px;text-align:center;font-family:var(--disp);font-size:16px;font-weight:800;color:${scoreC}">${s.composite}${trendArrow}</td>
       <td style="padding:5px 4px;text-align:right;font-size:11px;font-family:var(--mono);color:${a20C}">${s.a20_pct}%</td>
       <td style="padding:5px 4px;text-align:right;font-size:11px;font-family:var(--mono);color:${a50C}">${s.a50_pct}%</td>
       <td style="padding:5px 4px;text-align:right;font-size:11px;font-family:var(--mono);color:${a200C}">${s.a200_pct}%</td>
       <td style="padding:5px 4px;text-align:center">${vcpbTrendBar(s.a20_pct, s.a50_pct, s.a200_pct)}</td>
       <td style="padding:5px 4px;text-align:center;font-size:11px;font-family:var(--mono);opacity:.7">${rsCell}</td>
       <td style="padding:5px 4px;text-align:center;opacity:.7">${stageCell}</td>
+      <td style="padding:5px 4px;text-align:center">${dTopCell}</td>
     </tr>`;
   }).join('');
 }
@@ -4096,6 +4156,28 @@ function vcpbRender(data) {
   if (timeEl)  timeEl.textContent    = data.scan_time || data.scan_date || '—';
   if (qualEl)  qualEl.textContent    = data.total_scanned || '?';
   if (badgeEl) { badgeEl.textContent = data.scan_date || ''; badgeEl.style.display = 'inline'; }
+
+  // ── Leader strip: synthesise Today / Watch / Avoid ───────────────────
+  const enriched = data.sectors
+    .map(s => ({ name: s.sector, score: vcpbScore(s), trend: vcpbScoreTrend(s.sector) }))
+    .sort((a, b) => b.score - a.score);
+
+  const THRESHOLD_HIGH = 55, THRESHOLD_LOW = 40;
+  const leaders  = enriched.filter(s => s.score >= THRESHOLD_HIGH).slice(0, 4);
+  const watching = enriched.filter(s => s.score >= THRESHOLD_LOW && s.score < THRESHOLD_HIGH && (s.trend === null || s.trend >= 0));
+  const avoid    = enriched.filter(s => s.score < THRESHOLD_LOW).slice(-3).reverse();
+
+  const pill = (s, c, bg) =>
+    `<span style="display:inline-block;margin:1px 3px 1px 0;padding:2px 7px;border-radius:3px;background:${bg};color:${c};font-size:10px;font-weight:700;font-family:var(--mono)">${s.name.split(' ')[0] === 'Automobile' ? 'Auto' : SRT_SHORT[s.name] || s.name.split(' ')[0]} <span style="font-weight:400;opacity:.7">${s.score}</span></span>`;
+
+  const leadEl  = document.getElementById('vcpb-ls-lead');
+  const watchEl = document.getElementById('vcpb-ls-watch');
+  const avoidEl = document.getElementById('vcpb-ls-avoid');
+
+  if (leadEl)  leadEl.innerHTML  = leaders.length  ? leaders.map(s  => pill(s,'#0e1420','var(--lime)')).join('')  : '<span style="color:var(--dim);font-size:10px">No sectors above 55 today</span>';
+  if (watchEl) watchEl.innerHTML = watching.length ? watching.slice(0,4).map(s => pill(s,'#0e1420','var(--yellow)')).join('') : '<span style="color:var(--dim);font-size:10px">—</span>';
+  if (avoidEl) avoidEl.innerHTML = avoid.length    ? avoid.map(s    => pill(s,'#fff','rgba(248,113,113,.25)')).join('')    : '<span style="color:var(--dim);font-size:10px">—</span>';
+  // ─────────────────────────────────────────────────────────────────────
 
   vcpbRenderTable(data.sectors);
   // If RRG pane is visible, redraw with fresh history
@@ -10174,6 +10256,7 @@ function sdRenderVcp(sectorName, secData) {
   const rows = sorted.map(s => {
     const nseUrl = `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(s.symbol)}`;
     const tvUrl  = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(s.symbol)}`;
+    const msUrl  = `https://marketsmithindia.com/mstool/lite.jsp#symbol=${encodeURIComponent(s.symbol)}~NSE`;
     const r90C   = s.r90 >= 20 ? 'var(--lime)' : s.r90 >= 0 ? 'var(--yellow)' : 'var(--red)';
     const ddC    = s.drawdown >= -10 ? 'var(--lime)' : s.drawdown >= -20 ? 'var(--yellow)' : 'var(--red)';
     const dist52C= s.dist52 >= -5 ? 'var(--lime)' : s.dist52 >= -15 ? 'var(--yellow)' : 'var(--dim)';
@@ -10184,7 +10267,8 @@ function sdRenderVcp(sectorName, secData) {
     return `<tr style="border-bottom:1px solid var(--border)" onmouseenter="this.style.background='rgba(255,255,255,.03)'" onmouseleave="this.style.background='transparent'">
       <td style="padding:6px;white-space:nowrap">
         <a href="${nseUrl}" target="_blank" rel="noopener" style="font-weight:800;font-size:13px;color:var(--teal);text-decoration:none;font-family:var(--mono)">${s.symbol}</a>
-        <a href="${tvUrl}"  target="_blank" rel="noopener" style="font-size:9px;color:var(--dim);text-decoration:none;margin-left:5px;opacity:.7" title="TradingView">TV↗</a>
+        <a href="${tvUrl}"  target="_blank" rel="noopener" style="font-size:9px;color:var(--accent);text-decoration:none;margin-left:5px;padding:1px 4px;border-radius:2px;border:1px solid rgba(91,163,245,.2);background:rgba(91,163,245,.08)" title="TradingView">TV↗</a>
+        <a href="${msUrl}"  target="_blank" rel="noopener" style="font-size:9px;color:#f59e0b;text-decoration:none;margin-left:3px;padding:1px 4px;border-radius:2px;border:1px solid rgba(245,158,11,.25);background:rgba(245,158,11,.08)" title="MarketSmith India">MS↗</a>
       </td>
       <td style="padding:6px;font-size:11px;color:var(--sub);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.company}</td>
       <td style="padding:6px;text-align:right;font-size:11px;font-family:var(--mono)">₹${s.price}</td>
@@ -10257,12 +10341,13 @@ function sdRenderUniverse(sectorName) {
     <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:10px;align-items:center">
       <span style="color:var(--dim)"><b style="color:var(--text)">${stocks.length}</b> stocks in Nifty 500</span>
       ${vcpSymbols.size ? `<span style="color:var(--dim)"><b style="color:var(--teal)">${vcpSymbols.size}</b> VCP candidates today</span>` : ''}
-      <span style="color:var(--dim);margin-left:auto;font-size:9px;font-style:italic">TV↗ = TradingView chart &nbsp;·&nbsp; NSE↗ = NSE quote</span>
+      <span style="color:var(--dim);margin-left:auto;font-size:9px;font-style:italic">TV↗ = TradingView &nbsp;·&nbsp; NSE↗ = NSE India &nbsp;·&nbsp; MS↗ = MarketSmith</span>
     </div>`;
 
   const rows = stocks.map(s => {
     const tvUrl  = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(s.symbol)}`;
     const nseUrl = `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(s.symbol)}`;
+    const msUrl  = `https://marketsmithindia.com/mstool/lite.jsp#symbol=${encodeURIComponent(s.symbol)}~NSE`;
     const isVcp  = vcpSymbols.has(s.symbol);
     const symColor = isVcp ? 'var(--teal)' : 'var(--text)';
     const vcpBadge = isVcp ? `<span style="font-size:8px;background:rgba(45,212,191,.15);color:var(--teal);padding:0 4px;border-radius:2px;margin-left:4px;border:1px solid rgba(45,212,191,.25)">VCP</span>` : '';
@@ -10276,6 +10361,8 @@ function sdRenderUniverse(sectorName) {
            style="font-size:10px;font-weight:600;color:var(--accent);text-decoration:none;padding:2px 7px;border-radius:3px;border:1px solid rgba(91,163,245,.25);background:rgba(91,163,245,.08)">TV↗</a>
         <a href="${nseUrl}" target="_blank" rel="noopener"
            style="font-size:10px;font-weight:600;color:var(--teal);text-decoration:none;padding:2px 7px;border-radius:3px;border:1px solid rgba(45,212,191,.25);background:rgba(45,212,191,.08);margin-left:4px">NSE↗</a>
+        <a href="${msUrl}" target="_blank" rel="noopener"
+           style="font-size:10px;font-weight:600;color:#f59e0b;text-decoration:none;padding:2px 7px;border-radius:3px;border:1px solid rgba(245,158,11,.25);background:rgba(245,158,11,.08);margin-left:4px">MS↗</a>
       </td>
     </tr>`;
   }).join('');
