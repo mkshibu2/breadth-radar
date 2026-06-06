@@ -1167,6 +1167,15 @@ body.guest-mode #mpm-module-card { display:none !important; }
   color:var(--sub); line-height:1.6;
 }
 .bsr-note-box b { color:var(--purple); }
+thead th[onclick] {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s, opacity 0.15s;
+}
+thead th[onclick]:hover {
+  color: var(--text) !important;
+  opacity: 1 !important;
+}
 </style>
 </head>
 <body>
@@ -1469,13 +1478,22 @@ body.guest-mode #mpm-module-card { display:none !important; }
         </div>
 
         <!-- Tab bar -->
-        <div style="display:flex;border-bottom:1px solid var(--border);padding:0 14px;gap:0">
-          <button id="scc-tab-breadth" onclick="sccTab('breadth')"
-            style="font-size:10px;font-weight:700;padding:7px 12px;border:none;background:none;color:var(--teal);border-bottom:2px solid var(--teal);cursor:pointer;letter-spacing:.4px;text-transform:uppercase">📶 Breadth</button>
-          <button id="scc-tab-rrg" onclick="sccTab('rrg')"
-            style="font-size:10px;font-weight:600;padding:7px 12px;border:none;background:none;color:var(--dim);border-bottom:2px solid transparent;cursor:pointer;letter-spacing:.4px;text-transform:uppercase">📡 RRG</button>
-          <button id="scc-tab-heatmap" onclick="sccTab('heatmap')"
-            style="font-size:10px;font-weight:600;padding:7px 12px;border:none;background:none;color:var(--dim);border-bottom:2px solid transparent;cursor:pointer;letter-spacing:.4px;text-transform:uppercase">🌡 Heatmap</button>
+        <div style="display:flex;border-bottom:1px solid var(--border);padding:0 14px;gap:16px;align-items:center">
+          <div style="display:flex;align-items:center;gap:4px">
+            <button id="scc-tab-breadth" onclick="sccTab('breadth')"
+              style="font-size:10px;font-weight:700;padding:7px 0;border:none;background:none;color:var(--teal);border-bottom:2px solid var(--teal);cursor:pointer;letter-spacing:.4px;text-transform:uppercase">📶 Breadth</button>
+            <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-breadth',this)" title="About Breadth tab features" style="position:static;opacity:.35;margin-left:4px;flex-shrink:0;margin-bottom:2px">i</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <button id="scc-tab-rrg" onclick="sccTab('rrg')"
+              style="font-size:10px;font-weight:600;padding:7px 0;border:none;background:none;color:var(--dim);border-bottom:2px solid transparent;cursor:pointer;letter-spacing:.4px;text-transform:uppercase">📡 RRG</button>
+            <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-rrg',this)" title="About RRG tab features" style="position:static;opacity:.35;margin-left:4px;flex-shrink:0;margin-bottom:2px">i</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <button id="scc-tab-heatmap" onclick="sccTab('heatmap')"
+              style="font-size:10px;font-weight:600;padding:7px 0;border:none;background:none;color:var(--dim);border-bottom:2px solid transparent;cursor:pointer;letter-spacing:.4px;text-transform:uppercase">🌡 Heatmap</button>
+            <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-heatmap',this)" title="About Heatmap tab features" style="position:static;opacity:.35;margin-left:4px;flex-shrink:0;margin-bottom:2px">i</button>
+          </div>
         </div>
 
         <!-- ── TAB: BREADTH ────────────────────────────── -->
@@ -1539,19 +1557,26 @@ body.guest-mode #mpm-module-card { display:none !important; }
               </div>
             </div>
 
-            <!-- Sort controls -->
-            <div style="display:flex;gap:5px;align-items:center;padding:8px 14px 4px;flex-wrap:wrap">
-              <span style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px">Sort:</span>
-              <button onclick="vcpbSetSort('composite')" id="vcpb-s-composite" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">Score</button>
-              <button onclick="vcpbSetSort('universe')"  id="vcpb-s-universe"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--teal);color:#0e1420;cursor:pointer;font-weight:600">Universe</button>
-              <button onclick="vcpbSetSort('a20_pct')"   id="vcpb-s-a20_pct"   style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">%&gt;20EMA</button>
-              <button onclick="vcpbSetSort('a200_pct')"  id="vcpb-s-a200_pct"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">%&gt;200SMA</button>
-              <button onclick="vcpbSetSort('_med90')"        id="vcpb-s-_med90"        style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">Med90%</button>
-              <button onclick="vcpbSetSort('_accel')"        id="vcpb-s-_accel"        style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">Accel</button>
-              <button onclick="vcpbSetSort('_adScore')"      id="vcpb-s-_adScore"      style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">A/D</button>
-              <button onclick="vcpbSetSort('_rs')"          id="vcpb-s-_rs"          style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">RS Wk</button>
-              <button onclick="vcpbSetSort('_stageScore')"  id="vcpb-s-_stageScore"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">Stage</button>
-              <button onclick="vcpbSetSort('_daysAtTop')"   id="vcpb-s-_daysAtTop"   style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">@Top</button>
+            <!-- Multi-Sort controls -->
+            <div style="display:flex;align-items:center;gap:4px;padding:6px 14px;background:var(--bg3);border-bottom:1px solid var(--border);flex-wrap:wrap;font-size:11px">
+              <span style="color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:9px">Multi-Sort:</span>
+              <select id="vcpb-sort-1" onchange="vcpbApplyMultiSort()" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:10px;padding:2px 3px;font-family:var(--body);outline:none;cursor:pointer;width:64px"></select>
+              <span style="color:var(--dim);font-size:9px;margin:0 1px">&gt;</span>
+              <select id="vcpb-sort-2" onchange="vcpbApplyMultiSort()" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:10px;padding:2px 3px;font-family:var(--body);outline:none;cursor:pointer;width:64px"></select>
+              <span style="color:var(--dim);font-size:9px;margin:0 1px">&gt;</span>
+              <select id="vcpb-sort-3" onchange="vcpbApplyMultiSort()" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:10px;padding:2px 3px;font-family:var(--body);outline:none;cursor:pointer;width:64px"></select>
+              <span style="color:var(--dim);font-size:9px;margin:0 1px">&gt;</span>
+              <select id="vcpb-sort-4" onchange="vcpbApplyMultiSort()" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:10px;padding:2px 3px;font-family:var(--body);outline:none;cursor:pointer;width:64px"></select>
+              <span style="color:var(--dim);font-size:9px;margin:0 1px">&gt;</span>
+              <select id="vcpb-sort-5" onchange="vcpbApplyMultiSort()" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:10px;padding:2px 3px;font-family:var(--body);outline:none;cursor:pointer;width:64px"></select>
+              <span style="color:var(--dim);font-size:9px;margin:0 1px">&gt;</span>
+              <select id="vcpb-sort-6" onchange="vcpbApplyMultiSort()" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:10px;padding:2px 3px;font-family:var(--body);outline:none;cursor:pointer;width:64px"></select>
+              
+              <div style="margin-left:auto;display:flex;gap:5px">
+                <button onclick="vcpbSetPreset('minervini')" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.05);color:var(--purple);cursor:pointer;font-weight:600" title="Load Mark Minervini's preset: Stage > RS wk > Score > Accel > @Top > Med90%">⚡ Minervini</button>
+                <button onclick="vcpbSetPreset('oneil')" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid rgba(45,212,191,.3);background:rgba(45,212,191,.05);color:var(--teal);cursor:pointer;font-weight:600" title="Load William O'Neil's preset: RS wk > A/D > Score > @Top > Accel > Med90%">📈 O'Neil</button>
+                <button onclick="vcpbSetPreset('zanger')" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid rgba(251,146,60,.3);background:rgba(251,146,60,.05);color:var(--orange);cursor:pointer;font-weight:600" title="Load Dan Zanger's preset: Med90% > Accel > RS wk > Stage > Score > @Top">🔥 Zanger</button>
+              </div>
             </div>
 
             <!-- Table -->
@@ -1559,20 +1584,20 @@ body.guest-mode #mpm-module-card { display:none !important; }
               <table style="width:100%;border-collapse:collapse">
                 <thead>
                   <tr style="border-bottom:1px solid var(--border)">
-                    <th style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">#</th>
-                    <th style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Sector / Theme</th>
-                    <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">N500</th>
-                    <th style="text-align:center;padding:5px 4px;color:var(--teal);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Score</th>
-                    <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">&gt;20EMA</th>
-                    <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">&gt;50SMA</th>
-                    <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">&gt;200SMA</th>
-                    <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Trend</th>
-                    <th style="text-align:right;padding:5px 4px;color:var(--orange,#fb923c);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Median 90-day price change of VCP stocks in sector — price momentum">Med90%</th>
-                    <th style="text-align:center;padding:5px 4px;color:var(--yellow);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Breadth acceleration: score gain last 5d vs prior 5d. Rising = breadth expanding faster">Accel</th>
-                    <th style="text-align:center;padding:5px 4px;color:var(--lime);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Breadth Accumulation vs. Distribution: Net daily score increases vs decreases (>=2.5 pts) over rolling 20 days">A/D</th>
-                    <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.5">RS wk</th>
-                    <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.5">Stage</th>
-                    <th style="text-align:center;padding:5px 4px;color:var(--purple);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Consecutive trading days in top half of breadth scores">@Top</th>
+                    <th style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Row number">#</th>
+                    <th id="vcpb-h-sector" onclick="vcpbSetSort('sector')" style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Sector or Theme name.">Sector / Theme</th>
+                    <th id="vcpb-h-universe" onclick="vcpbSetSort('universe')" style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Number of Nifty 500 stocks in this sector/theme.">N500</th>
+                    <th id="vcpb-h-composite" onclick="vcpbSetSort('composite')" style="text-align:center;padding:5px 4px;color:var(--teal);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Score = 20EMA × 50% + 50SMA × 30% + 200SMA × 20%. Indicates overall sector breadth strength.">Score</th>
+                    <th id="vcpb-h-a20_pct" onclick="vcpbSetSort('a20_pct')" style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Percentage of sector stocks trading above their 20-day Exponential Moving Average (EMA).">>20EMA</th>
+                    <th id="vcpb-h-a50_pct" onclick="vcpbSetSort('a50_pct')" style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Percentage of sector stocks trading above their 50-day Simple Moving Average (SMA).">>50SMA</th>
+                    <th id="vcpb-h-a200_pct" onclick="vcpbSetSort('a200_pct')" style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Percentage of sector stocks trading above their 200-day Simple Moving Average (SMA).">>200SMA</th>
+                    <th id="vcpb-h-_trend" onclick="vcpbSetSort('_trend')" style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="5-day breadth score trend direction (↑ improving, ↓ deteriorating, → flat).">Trend</th>
+                    <th id="vcpb-h-_med90" onclick="vcpbSetSort('_med90')" style="text-align:right;padding:5px 4px;color:var(--orange,#fb923c);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Median 90-day price change of VCP stocks in sector — price momentum.">Med90%</th>
+                    <th id="vcpb-h-_accel" onclick="vcpbSetSort('_accel')" style="text-align:center;padding:5px 4px;color:var(--yellow);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Breadth acceleration: score gain last 5d vs prior 5d. Rising = breadth expanding faster.">Accel</th>
+                    <th id="vcpb-h-_adScore" onclick="vcpbSetSort('_adScore')" style="text-align:center;padding:5px 4px;color:var(--lime);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Breadth Accumulation vs. Distribution: Net daily score increases vs decreases (>=2.5 pts) over rolling 20 days.">A/D</th>
+                    <th id="vcpb-h-_rs" onclick="vcpbSetSort('_rs')" style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.5" title="Weekly relative strength rating compared to Nifty 50.">RS wk</th>
+                    <th id="vcpb-h-_stageScore" onclick="vcpbSetSort('_stageScore')" style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.5" title="Current stage of the sector.">Stage</th>
+                    <th id="vcpb-h-_daysAtTop" onclick="vcpbSetSort('_daysAtTop')" style="text-align:center;padding:5px 4px;color:var(--purple);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Consecutive trading days in top half of breadth scores.">@Top</th>
                   </tr>
                 </thead>
                 <tbody id="vcpb-tbody"></tbody>
@@ -3863,6 +3888,7 @@ const LS_VCPB_URL    = 'nse_vcpb_url_v1';
 const LS_VCPB_DATA   = 'nse_vcpb_data_v1';
 const LS_VCPB_HIST   = 'nse_vcpb_hist_v1';   // rolling daily score history per sector
 let _vcpbSort = 'universe';                    // default: largest sector first
+let _vcpbSortAsc = false;                      // default: descending
 
 function vcpbGetUrl()          { return (localStorage.getItem(LS_VCPB_URL) || '').trim().replace(/\/$/, ''); }
 function vcpbSetStoredUrl(url) { localStorage.setItem(LS_VCPB_URL, url.trim().replace(/\/$/, '')); }
@@ -4067,18 +4093,103 @@ async function vcpbFetch(force) {
 }
 
 function vcpbSetSort(key) {
-  _vcpbSort = key;
-  ['composite','universe','a20_pct','a200_pct','_med90','_accel','_adScore','_rs','_stageScore','_daysAtTop'].forEach(k => {
-    const b = document.getElementById('vcpb-s-' + k);
-    if (!b) return;
-    const active = k === key;
-    b.style.background  = active ? 'var(--teal)' : 'transparent';
-    b.style.color       = active ? '#0e1420'      : 'var(--dim)';
-    b.style.borderColor = active ? 'var(--teal)'  : 'var(--border)';
-    b.style.fontWeight  = active ? '600'          : '400';
-  });
+  const s1 = document.getElementById('vcpb-sort-1');
+  if (_vcpbSort === key) {
+    _vcpbSortAsc = !_vcpbSortAsc;
+  } else {
+    _vcpbSort = key;
+    _vcpbSortAsc = (key === 'sector');
+    if (s1) s1.value = key;
+  }
   const card = document.getElementById('srt-home-card');
   if (card && card._vcpbData) vcpbRenderTable(card._vcpbData.sectors);
+}
+
+function vcpbPopulateSortDropdowns() {
+  const options = [
+    { value: 'none', text: 'None' },
+    { value: 'composite', text: 'Score' },
+    { value: 'universe', text: 'N500' },
+    { value: 'a20_pct', text: '>20EMA' },
+    { value: 'a50_pct', text: '>50SMA' },
+    { value: 'a200_pct', text: '>200SMA' },
+    { value: '_trend', text: 'Trend' },
+    { value: '_med90', text: 'Med90%' },
+    { value: '_accel', text: 'Accel' },
+    { value: '_adScore', text: 'A/D' },
+    { value: '_rs', text: 'RS wk' },
+    { value: '_stageScore', text: 'Stage' },
+    { value: '_daysAtTop', text: '@Top' },
+    { value: 'sector', text: 'Sector' }
+  ];
+
+  ['vcpb-sort-1', 'vcpb-sort-2', 'vcpb-sort-3', 'vcpb-sort-4', 'vcpb-sort-5', 'vcpb-sort-6'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = options.map(opt => {
+      if (id === 'vcpb-sort-1' && opt.value === 'none') return '';
+      return `<option value="${opt.value}">${opt.text}</option>`;
+    }).join('');
+  });
+
+  // Set default values on load safely
+  const s1 = document.getElementById('vcpb-sort-1');
+  const s2 = document.getElementById('vcpb-sort-2');
+  const s3 = document.getElementById('vcpb-sort-3');
+  const s4 = document.getElementById('vcpb-sort-4');
+  const s5 = document.getElementById('vcpb-sort-5');
+  const s6 = document.getElementById('vcpb-sort-6');
+
+  if (s1) s1.value = 'universe';
+  if (s2) s2.value = 'composite';
+  if (s3) s3.value = '_accel';
+  if (s4) s4.value = '_med90';
+  if (s5) s5.value = 'none';
+  if (s6) s6.value = 'none';
+}
+
+function vcpbApplyMultiSort() {
+  const s1 = document.getElementById('vcpb-sort-1');
+  if (s1) {
+    const key = s1.value;
+    if (_vcpbSort !== key) {
+      _vcpbSort = key;
+      _vcpbSortAsc = (key === 'sector');
+    }
+  }
+  const card = document.getElementById('srt-home-card');
+  if (card && card._vcpbData) vcpbRenderTable(card._vcpbData.sectors);
+}
+
+function vcpbSetPreset(presetName) {
+  if (presetName === 'minervini') {
+    const keys = ['_stageScore', '_rs', 'composite', '_accel', '_daysAtTop', '_med90'];
+    keys.forEach((key, idx) => {
+      const el = document.getElementById('vcpb-sort-' + (idx + 1));
+      if (el) el.value = key;
+    });
+    _vcpbSort = '_stageScore';
+    _vcpbSortAsc = false;
+    vcpbApplyMultiSort();
+  } else if (presetName === 'oneil') {
+    const keys = ['_rs', '_adScore', 'composite', '_daysAtTop', '_accel', '_med90'];
+    keys.forEach((key, idx) => {
+      const el = document.getElementById('vcpb-sort-' + (idx + 1));
+      if (el) el.value = key;
+    });
+    _vcpbSort = '_rs';
+    _vcpbSortAsc = false;
+    vcpbApplyMultiSort();
+  } else if (presetName === 'zanger') {
+    const keys = ['_med90', '_accel', '_rs', '_stageScore', 'composite', '_daysAtTop'];
+    keys.forEach((key, idx) => {
+      const el = document.getElementById('vcpb-sort-' + (idx + 1));
+      if (el) el.value = key;
+    });
+    _vcpbSort = '_med90';
+    _vcpbSortAsc = false;
+    vcpbApplyMultiSort();
+  }
 }
 
 function vcpbPctColor(pct) {
@@ -4185,9 +4296,50 @@ function stageToScore(stage) {
   return { S2: 4, S1: 3, S3: 2, S4: 1 }[stage] || 0;
 }
 
+function updateTableHeaderSortIndicators() {
+  const headers = {
+    'sector': { text: 'Sector / Theme' },
+    'universe': { text: 'N500' },
+    'composite': { text: 'Score' },
+    'a20_pct': { text: '>20EMA' },
+    'a50_pct': { text: '>50SMA' },
+    'a200_pct': { text: '>200SMA' },
+    '_trend': { text: 'Trend' },
+    '_med90': { text: 'Med90%' },
+    '_accel': { text: 'Accel' },
+    '_adScore': { text: 'A/D' },
+    '_rs': { text: 'RS wk' },
+    '_stageScore': { text: 'Stage' },
+    '_daysAtTop': { text: '@Top' }
+  };
+  
+  Object.keys(headers).forEach(k => {
+    const el = document.getElementById('vcpb-h-' + k);
+    if (!el) return;
+    let displayName = headers[k].text;
+    if (k === _vcpbSort) {
+      displayName += _vcpbSortAsc ? ' ▲' : ' ▼';
+      el.style.textDecoration = 'underline';
+      el.style.opacity = '1';
+    } else {
+      el.style.textDecoration = 'none';
+      if (k === '_rs' || k === '_stageScore') {
+        el.style.opacity = '0.5';
+      } else {
+        el.style.opacity = '0.85';
+      }
+    }
+    el.innerHTML = displayName;
+  });
+}
+
 function vcpbRenderTable(sectors) {
   const tbody = document.getElementById('vcpb-tbody');
   if (!tbody) return;
+  if (!sectors || !Array.isArray(sectors)) return;
+  
+  updateTableHeaderSortIndicators();
+  
   const overlay = vcpbGetSrtOverlay();
 
   const enriched = sectors.map(s => {
@@ -4217,21 +4369,49 @@ function vcpbRenderTable(sectors) {
     };
   });
 
-  const nullLast = (a, b, key) => {
-    if (a[key] === -9999 && b[key] === -9999) return 0;
-    if (a[key] === -9999) return 1;
-    if (b[key] === -9999) return -1;
-    return b[key] - a[key];
+  const compareFields = (a, b, key, asc) => {
+    let valA = a[key];
+    let valB = b[key];
+    
+    if (key === 'sector') {
+      const strA = valA || '';
+      const strB = valB || '';
+      return asc ? strA.localeCompare(strB) : strB.localeCompare(strA);
+    }
+
+    const isInvalidA = (valA === null || valA === undefined || valA === -9999 || valA === -1);
+    const isInvalidB = (valB === null || valB === undefined || valB === -9999 || valB === -1);
+
+    if (isInvalidA && isInvalidB) return 0;
+    if (isInvalidA) return 1;
+    if (isInvalidB) return -1;
+
+    return asc ? (valA - valB) : (valB - valA);
   };
 
   const sorted = [...enriched].sort((a, b) => {
-    if (_vcpbSort === '_rs')         return nullLast(a, b, '_rs');
-    if (_vcpbSort === '_stageScore') return nullLast(a, b, '_stageScore');
-    if (_vcpbSort === '_med90')      return nullLast(a, b, '_med90');
-    if (_vcpbSort === '_accel')      return nullLast(a, b, '_accel');
-    if (_vcpbSort === '_adScore')    return nullLast(a, b, '_adScore');
-    if (_vcpbSort === '_daysAtTop')  return b._daysAtTop - a._daysAtTop;
-    return b[_vcpbSort] - a[_vcpbSort];
+    const s1 = document.getElementById('vcpb-sort-1');
+    const s2 = document.getElementById('vcpb-sort-2');
+    const s3 = document.getElementById('vcpb-sort-3');
+    const s4 = document.getElementById('vcpb-sort-4');
+    const s5 = document.getElementById('vcpb-sort-5');
+    const s6 = document.getElementById('vcpb-sort-6');
+    const keys = [
+      s1 ? s1.value : _vcpbSort,
+      s2 ? s2.value : 'none',
+      s3 ? s3.value : 'none',
+      s4 ? s4.value : 'none',
+      s5 ? s5.value : 'none',
+      s6 ? s6.value : 'none'
+    ].filter(k => k && k !== 'none');
+
+    for (let index = 0; index < keys.length; index++) {
+      const key = keys[index];
+      const asc = (index === 0) ? _vcpbSortAsc : (key === 'sector');
+      const res = compareFields(a, b, key, asc);
+      if (res !== 0) return res;
+    }
+    return 0;
   });
 
   tbody.innerHTML = sorted.map((s, i) => {
@@ -4386,6 +4566,7 @@ function vcpbRender(data) {
 }
 
 function vcpbInit() {
+  vcpbPopulateSortDropdowns();
   const saved = vcpbGetUrl();
   const inp = document.getElementById('vcpb-url-input');
   if (inp && saved) inp.value = saved;
@@ -4911,10 +5092,11 @@ const saveCfg   = (k,b) => { lsSet(LS_KEY,k); lsSet(LS_BIN,b); };
 const JB = 'https://api.jsonbin.io/v3';
 
 async function jbCreate(key, data) {
+  const payload = Array.isArray(data) ? { records: data, bsr: [] } : data;
   const r = await fetch(`${JB}/b`, {
     method: 'POST',
     headers: { 'Content-Type':'application/json', 'X-Master-Key': key, 'X-Bin-Name':'NSE-Breadth-Radar', 'X-Bin-Private':'true' },
-    body: JSON.stringify({ records: data, bsr: [] })
+    body: JSON.stringify(payload)
   });
   if(!r.ok) throw new Error('Create failed: ' + r.status);
   const j = await r.json();
@@ -5242,7 +5424,7 @@ async function saveToday() {
       const alreadyHasMpm = mpmLoad().some(d => d.date === today);
       if (!alreadyHasMpm) {
         mpmDays.unshift({id: 'eod_'+today, date: today, close: niftyClose, pclose: prevClose,
-                         vol: niftyVol, pvol: prevVol, dtype, auto: true});
+                         vol: niftyVol, pvol: prevVol, dtype, auto: true, _updatedAt: Date.now()});
         mpmSave(mpmDays);
       }
     }
@@ -9255,7 +9437,8 @@ async function mpmImportConfirm() {
       pclose: d.pclose,
       vol:    d.vol,
       pvol:   d.pvol,
-      dtype:  mpmClassify(d.close, d.pclose, d.vol, d.pvol)
+      dtype:  mpmClassify(d.close, d.pclose, d.vol, d.pvol),
+      _updatedAt: Date.now()
     };
   });
 
@@ -9365,7 +9548,7 @@ function mpmAdd() {
   // Volume optional — classify as neutral if unavailable
   const dtype = (vol && pvol) ? mpmClassify(close, pclose, vol, pvol) : mpmClassifyNoVol(close, pclose);
   const days = mpmLoad().filter(d => d.date !== date);
-  days.push({ id: Date.now().toString(), date, close, pclose, vol: vol||'', pvol: pvol||'', dtype });
+  days.push({ id: Date.now().toString(), date, close, pclose, vol: vol||'', pvol: pvol||'', dtype, _updatedAt: Date.now() });
   mpmSave(days.sort((a,b) => b.date.localeCompare(a.date)).slice(0, 25));
   mpmFlash('Added ' + date + ' — ' + dtype.toUpperCase() + ' day', dtype==='acc'?'var(--lime)':dtype==='dist'?'var(--red)':'var(--sub)');
   // Advance to next date
@@ -9773,6 +9956,7 @@ const INFO = {
     how: '<b>Pressure = Accumulation Days − Distribution Days</b> (rolling 25-day window). An Accumulation Day = Nifty closes higher on above-average volume. A Distribution Day = closes lower on above-average volume. You log each in the Pressure Day Log.',
     use: '<b>+4 or above</b> — strong institutional backing, high confidence. <b>+1 to +3</b> — mild positive. <b>0 to −2</b> — caution. <b>Below −3</b> — institutional selling dominating, reduce exposure sharply. Always read alongside Breadth Score.'
   },
+
   'breadth-momentum': {
     title: 'Breadth Momentum',
     what: 'The day-over-day <i>change</i> in Breadth Score. Tells you whether market participation is improving or deteriorating right now.',
@@ -9924,6 +10108,27 @@ const INFO = {
     what: 'Daily breadth across the full Nifty 500 universe per sector. Composite Score = avg(%>20EMA + %>50SMA + %>200SMA). Shows how broadly each sector participates in the rally across all 3 timeframes. RS wk and Stage columns are optional overlays from your manually-entered weekly sector data.',
     how: 'Fetched automatically from sector_breadth.json generated by vcp_scanner.py at 6 PM IST daily via GitHub Actions. Enter your GitHub Pages base URL once to activate.',
     use: 'Sectors with Score ≥60 = broad momentum — prioritise for new entries. Trend Bar (3 mini-bars): all green = healthy across all timeframes. High %>200SMA but low %>20EMA = structurally strong but momentum cooling — wait. Cross-check RS wk column against breadth score as a sanity check: if both are green, the sector is genuinely leading.'
+  },
+
+  'scc-feature-breadth': {
+    title: 'Breadth Tab Features',
+    what: 'Provides daily market breadth analysis across the Nifty 500 index grouped by sector. Features:<ul><li><b>Dynamic Leaderboard:</b> Displays sector ranking with interactive bidirectional headers. Click any column header to sort; click it again to toggle direction (indicated by ▲/▼).</li><li><b>Multi-Sort Controls:</b> Sort sectors by up to six nested criteria sequentially (Sort 1 > Sort 2 > Sort 3 > Sort 4 > Sort 5 > Sort 6). Click "⚡ Minervini", "📈 O\'Neil", or "🔥 Zanger" to instantly load their presets.</li><li><b>Metric Definitions:</b> Point cursor on column headers for explanations.</li><li><b>Participant Drill-down:</b> Click any sector name to open a pop-up listing all constituent stocks and their VCP/EMA setup status.</li><li><b>NSE Index Links:</b> Click "NSE↗" next to any sector to open the live exchange tracking page.</li><li><b>Consensus Strip:</b> Auto-aggregates sectors into Leaders (top 25%), Watch (mid-ranking, improving), and Avoid (bottom 25%) at the top.</li></ul>',
+    how: '• <b>Composite Score:</b> Calculated daily as 50% × (percentage of stocks above 20EMA) + 30% × (percentage of stocks above 50SMA) + 20% × (percentage of stocks above 200SMA).<br>• <b>Med90%:</b> Median 90-day price return of all VCP scanner candidate stocks in that sector.<br>• <b>Accel:</b> Velocity change of breadth (rolling 5d net score gain minus prior 5d net score gain).<br>• <b>A/D:</b> Count of days where Breadth Score rose by ≥2.5 points (Accumulation) vs. fell by ≥2.5 points (Distribution) over the last 20 trading days.',
+    use: '• <b>Mark Minervini Preset (⚡):</b> Stage > RS wk > Score > Accel > @Top > Med90%. Ranks sectors strictly by Stage 2 markup first, then relative strength, then participation.<br>• <b>William O\'Neil Preset (📈):</b> RS wk > A/D > Score > @Top > Accel > Med90%. Ranks sectors by CANSLIM leadership and institutional sponsorship first.<br>• <b>Dan Zanger Preset (🔥):</b> Med90% > Accel > RS wk > Stage > Score > @Top. Ranks sectors by price velocity, momentum expansion, and relative strength first to catch explosive breakouts.'
+  },
+
+  'scc-feature-rrg': {
+    title: 'RRG Tab Features',
+    what: 'Relative Rotation Graph (RRG) visually modeling the relative strength and momentum of sectors vs. the Nifty 50. Features:<ul><li><b>Four-Quadrant Rotation Map:</b> Categorizes sectors into:<ul><li><i>Leading (Green):</i> Outperforming Nifty 50 with rising momentum.</li><li><i>Weakening (Yellow):</i> Outperforming Nifty 50 but momentum is slowing down.</li><li><i>Lagging (Red):</i> Underperforming Nifty 50 with falling momentum.</li><li><i>Improving (Blue):</i> Underperforming Nifty 50 but momentum is gaining speed.</li></ul></li><li><b>Sector Highlighter:</b> Click a tail or a sector label to dim all other sectors.</li><li><b>Time Tail Length Control:</b> Modify weekly history length from 5w to 40w.</li><li><b>Animation Control:</b> Play/pause controls to visualize historical rotation paths.</li></ul>',
+    how: '• <b>RS-Ratio (X-axis):</b> Calculated as the ratio of weekly sector prices vs. Nifty 50, normalized around a benchmark of 100.<br>• <b>RS-Momentum (Y-axis):</b> Calculated as the rate of change of the RS-Ratio over a smoothed period.<br>• A sector\'s position is updated using manual weekly closing prices entered in the Control Panel → Sectors tab.',
+    use: '• Natural rotation moves clockwise. Scan for sectors in the <b>Improving</b> quadrant curving upward and rightward, or established leaders in the <b>Leading</b> quadrant.<br>• Dim sectors to inspect individual trails. A longer tail suggests high velocity; a short tail indicates a tight base or consolidation.'
+  },
+
+  'scc-feature-heatmap': {
+    title: 'Heatmap Tab Features',
+    what: 'A weekly color-coded leadership grid tracking relative performance history. Features:<ul><li><b>Chronological Performance Grid:</b> Matrix showing weekly returns vs Nifty 50 (latest week on the right).</li><li><b>Intensity Color Scales:</b> Green blocks show positive outperformance (darker = stronger). Red blocks show underperformance. Grey blocks are neutral.</li><li><b>Sector Name Links:</b> Click any sector name on the left of the grid to drill down to constituent stocks.</li></ul>',
+    how: 'Calculates the performance spread weekly: <b>Sector Return % − Nifty 50 Return %</b> for each individual week. Colors are scaled dynamically based on the size of the spread.',
+    use: '• Scan for rows with a solid sequence of dark green cells over the last 3-6 weeks, indicating sustained institutional accumulation.<br>• Avoid sectors with consecutive red cells, signaling active distribution and capital flight.<br>• Use alongside RRG to confirm if a sector\'s rotation is supported by actual weekly outperformance.'
   }
 
 };
@@ -10045,38 +10250,18 @@ async function cfgConnect() {
       if (binEl) setTimeout(() => { binEl.style.borderColor = 'var(--lime)'; }, 300);
       cpRefreshSyncState();
     } else {
-      // New device with existing bin — pull data
-      const payload = await jbRead(key, bin);
+      // New device with existing bin — save config and run pull + push to merge fully
       saveCfg(key, bin);
-      const isLegacy = Array.isArray(payload);
-      const cRec = isLegacy ? payload : (payload.records||[]);
-      const cBsr = isLegacy ? [] : (payload.bsr||[]);
-      const cMpm = isLegacy ? [] : (payload.mpm||[]);
-      const cFtd = isLegacy ? [] : (payload.ftd||[]);
-
-      const local = loadLocal();
-      const recMap = {};
-      [...cRec,...local].forEach(r=>{ if(r&&r.date) recMap[r.date]=r; });
-      saveLocal(Object.values(recMap));
-
-      const lBsr = bsrLoad();
-      const bsrMap = {};
-      [...cBsr,...lBsr].forEach(t=>{ if(t&&t.id) bsrMap[t.id]=t; });
-      bsrSave(Object.values(bsrMap));
-
-      const lMpm = mpmLoad();
-      const mpmMap = {};
-      [...cMpm,...lMpm].forEach(d=>{ if(d&&d.date) mpmMap[d.date]=d; });
-      mpmSave(Object.values(mpmMap));
-
-      const lFtd = ftdLoad();
-      const ftdMap = {};
-      [...cFtd,...lFtd].forEach(d=>{ if(d&&d.id) ftdMap[d.id]=d; });
-      ftdSaveData(Object.values(ftdMap).sort((a,b)=>b.date.localeCompare(a.date)));
-
-      setSyncStatus('ok', `Synced · ${Object.keys(recMap).length}rec · ${Object.keys(mpmMap).length}mpm`);
-      cfgBanner(`✅ Connected & data pulled!\n${Object.keys(recMap).length} breadth records · ${Object.keys(bsrMap).length} BSR trades · ${Object.keys(mpmMap).length} MPM entries synced.`, 'ok');
-      renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender(); slhRender();
+      await pullFromCloud(key, bin);
+      await pushToCloud();
+      
+      const recCount = loadLocal().length;
+      const bsrCount = bsrLoad().length;
+      const mpmCount = mpmLoad().length;
+      const srtCount = srtLoad().filter(s => s.id !== 'NIFTY50').length;
+      
+      cfgBanner(`✅ Connected & data pulled!\n${recCount} breadth records · ${bsrCount} BSR trades · ${mpmCount} MPM entries · ${srtCount} sectors synced.`, 'ok');
+      cpRefreshSyncState();
     }
   } catch(e) {
     setSyncStatus('err', 'Sync Error');
@@ -10166,17 +10351,19 @@ async function cfgConnectGuest() {
     const bsr  = Array.isArray(payload) ? [] : (payload.bsr||[]);
     const mpm  = Array.isArray(payload) ? [] : (payload.mpm||[]);
     const ftd  = Array.isArray(payload) ? [] : (payload.ftd||[]);
+    const srt  = Array.isArray(payload) ? [] : (payload.srt||[]);
 
     // Save to local (view-only — will not be pushed back)
     saveLocal(recs);
     bsrSave(bsr);
     mpmSave(mpm);
     ftdSaveData(ftd.sort((a,b)=>b.date.localeCompare(a.date)));
+    srtSave(srt);
 
     // Persist guest bin
     lsSet(LS_GUEST_BIN, bin);
 
-    cfgBanner(`✅ Connected! ${recs.length} records · ${bsr.length} BSR · ${mpm.length} MPM loaded.`, 'ok', 'cfg-guest-msg');
+    cfgBanner(`✅ Connected! ${recs.length} records · ${bsr.length} BSR · ${mpm.length} MPM · ${srt.length} sectors loaded.`, 'ok', 'cfg-guest-msg');
 
     // Show exit button
     const exitBtn = document.getElementById('cfg-exit-guest-btn');
@@ -10193,10 +10380,8 @@ async function cfgConnectGuest() {
 }
 
 async function jbReadPublic(bin) {
-  // JSONBin public read — no X-Master-Key header needed for public bins
-  const r = await fetch(`${JB}/b/${bin}/latest`, {
-    headers: { 'X-Access-Key': '' }  // empty key for public bins
-  });
+  // JSONBin public read — no headers needed for public bins
+  const r = await fetch(`${JB}/b/${bin}/latest`);
   if (!r.ok) {
     if (r.status === 401) throw new Error('Bin is private. Ask the owner to make it Public on jsonbin.io.');
     throw new Error('Read failed: ' + r.status);
@@ -10244,9 +10429,11 @@ function initGuestMode() {
     const bsr  = Array.isArray(payload) ? [] : (payload.bsr||[]);
     const mpm  = Array.isArray(payload) ? [] : (payload.mpm||[]);
     const ftd  = Array.isArray(payload) ? [] : (payload.ftd||[]);
+    const srt  = Array.isArray(payload) ? [] : (payload.srt||[]);
     saveLocal(recs); bsrSave(bsr); mpmSave(mpm);
     ftdSaveData(ftd.sort((a,b)=>b.date.localeCompare(a.date)));
-    setSyncStatus('ok', `Guest · ${recs.length}rec · ${mpm.length}mpm`);
+    srtSave(srt);
+    setSyncStatus('ok', `Guest · ${recs.length}rec · ${mpm.length}mpm · ${srt.length}sec`);
     renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender(); slhRender();
   }).catch(e => {
     setSyncStatus('err', 'Guest · Pull Failed');
