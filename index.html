@@ -1597,122 +1597,112 @@ body.guest-mode #mpm-module-card { display:none !important; }
           <!-- ── SUB-PANE: BREADTH RRG ─────────────────────── -->
           <div id="rrg-sub-breadth">
 
-          <!-- Breadth RRG header + controls -->
-          <div style="padding:10px 14px 0">
-            <div style="font-size:9px;color:var(--purple);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">Breadth Relative Rotation Graph</div>
-            <div style="font-size:9px;color:var(--dim);margin-bottom:8px">
-              X = Momentum-Weighted Score · Y = Week-on-week score change · Auto from scanner — no manual entry
+            <!-- Header -->
+            <div style="padding:10px 14px 4px">
+              <div style="font-size:9px;color:var(--purple);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">Breadth Relative Rotation Graph</div>
+              <div style="font-size:9px;color:var(--dim)">X = Breadth Score relative to market avg · Y = Score momentum · Auto from scanner — no manual entry</div>
             </div>
-          </div>
 
-          <!-- Quadrant hero summary -->
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:0 14px 8px">
-            <div style="background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);border-radius:4px;padding:6px 8px;text-align:center">
-              <div style="font-size:8px;color:var(--lime);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">🟢 Leading</div>
-              <div id="brrg-q-lead" style="font-family:var(--disp);font-size:20px;font-weight:800;color:var(--lime)">—</div>
-              <div style="font-size:8px;color:var(--dim)">High score · rising</div>
+            <!-- Controls row 1: Sectors Top N -->
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:4px 14px">
+              <span style="font-size:9px;color:var(--dim);min-width:44px">Sectors:</span>
+              <button onclick="brrgAdjustTop(-1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">&#8722;</button>
+              <span id="brrg-top-display" style="font-size:10px;font-weight:600;color:var(--text);min-width:24px;text-align:center">8</span>
+              <button onclick="brrgAdjustTop(+1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">+</button>
+              <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
+              <button onclick="brrgSetTopN(4)"  id="brrg-n-4"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">4</button>
+              <button onclick="brrgSetTopN(8)"  id="brrg-n-8"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer;font-weight:600">8</button>
+              <button onclick="brrgSetTopN(12)" id="brrg-n-12" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12</button>
+              <button onclick="brrgSetTopN(0)"  id="brrg-n-0"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">All</button>
             </div>
-            <div style="background:rgba(91,163,245,.07);border:1px solid rgba(91,163,245,.2);border-radius:4px;padding:6px 8px;text-align:center">
-              <div style="font-size:8px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">🔵 Improving</div>
-              <div id="brrg-q-impr" style="font-family:var(--disp);font-size:20px;font-weight:800;color:var(--accent)">—</div>
-              <div style="font-size:8px;color:var(--dim)">Low score · rising</div>
+
+            <!-- Controls row 2: Tail days + Filter + Animate -->
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:2px 14px 4px">
+              <span style="font-size:9px;color:var(--dim);min-width:44px">Days:</span>
+              <button onclick="brrgAdjustTail(-1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">&#8722;</button>
+              <span id="brrg-tail-display" style="font-size:10px;font-weight:600;color:var(--purple);min-width:28px;text-align:center">10d</span>
+              <button onclick="brrgAdjustTail(+1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">+</button>
+              <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
+              <button onclick="brrgSetTail(5)"  id="brrg-t-5"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">5d</button>
+              <button onclick="brrgSetTail(10)" id="brrg-t-10" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--purple);color:#fff;cursor:pointer;font-weight:600">10d</button>
+              <button onclick="brrgSetTail(20)" id="brrg-t-20" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">20d</button>
+              <button onclick="brrgSetTail(40)" id="brrg-t-40" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">40d</button>
+              <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
+              <button onclick="brrgAnimate()" id="brrg-anim-btn"
+                style="font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.1);color:var(--yellow);cursor:pointer;font-weight:600">&#9654; Play</button>
             </div>
-            <div style="background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2);border-radius:4px;padding:6px 8px;text-align:center">
-              <div style="font-size:8px;color:var(--yellow);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">🟡 Weakening</div>
-              <div id="brrg-q-weak" style="font-family:var(--disp);font-size:20px;font-weight:800;color:var(--yellow)">—</div>
-              <div style="font-size:8px;color:var(--dim)">High score · falling</div>
+
+            <!-- Sector highlight chips -->
+            <div id="brrg-chips" style="display:flex;gap:4px;flex-wrap:wrap;padding:4px 14px 6px;background:var(--bg3);border-top:1px solid var(--border);border-bottom:1px solid var(--border);min-height:30px;align-items:center">
+              <span style="font-size:9px;color:var(--dim);margin-right:2px">Highlight:</span>
             </div>
-            <div style="background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.2);border-radius:4px;padding:6px 8px;text-align:center">
-              <div style="font-size:8px;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">🔴 Lagging</div>
-              <div id="brrg-q-lag" style="font-family:var(--disp);font-size:20px;font-weight:800;color:var(--red)">—</div>
-              <div style="font-size:8px;color:var(--dim)">Low score · falling</div>
-            </div>
-          </div>
 
-          <!-- Controls -->
-          <div style="display:flex;gap:5px;align-items:center;padding:0 14px 6px;flex-wrap:wrap">
-            <span style="font-size:9px;color:var(--dim);min-width:36px">Days:</span>
-            <button onclick="brrgSetTail(5)"  id="brrg-t-5"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">5d</button>
-            <button onclick="brrgSetTail(10)" id="brrg-t-10" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--purple);color:#fff;cursor:pointer;font-weight:600">10d</button>
-            <button onclick="brrgSetTail(20)" id="brrg-t-20" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">20d</button>
-            <button onclick="brrgSetTail(40)" id="brrg-t-40" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">40d</button>
-            <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
-            <span style="font-size:9px;color:var(--dim)">Top:</span>
-            <button onclick="brrgSetTopN(8)"  id="brrg-n-8"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer;font-weight:600">8</button>
-            <button onclick="brrgSetTopN(12)" id="brrg-n-12" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12</button>
-            <button onclick="brrgSetTopN(0)"  id="brrg-n-0"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">All</button>
-            <button onclick="brrgDraw()" title="Refresh"
-              style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid rgba(45,212,191,.25);background:rgba(45,212,191,.1);color:var(--teal);cursor:pointer;margin-left:4px">↻</button>
-          </div>
-
-          <!-- Canvas -->
-          <div style="padding:0 14px 4px;position:relative">
-            <canvas id="brrg-canvas" style="width:100%;border-radius:6px;display:block"></canvas>
-          </div>
-
-          <!-- Insufficient data notice -->
-          <div id="brrg-notice" style="display:none;padding:12px 14px;font-size:10px;color:var(--yellow)"></div>
-
-          <!-- Legend -->
-          <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 14px 12px;border-top:1px solid var(--border);font-size:9px;color:var(--dim)">
-            <span><b style="color:var(--lime)">Leading</b> = high score + gaining &nbsp;</span>
-            <span><b style="color:var(--accent)">Improving</b> = low score + gaining &nbsp;</span>
-            <span><b style="color:var(--yellow)">Weakening</b> = high score + losing &nbsp;</span>
-            <span><b style="color:var(--red)">Lagging</b> = low score + losing</span>
-            <span style="margin-left:auto;opacity:.7">Dot = today · tail = history · clockwise rotation = bullish</span>
-          </div>
-
-          <!-- History note + bootstrap -->
-          <div style="padding:8px 14px 12px;border-top:1px solid var(--border)">
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
-              <div style="font-size:9px;color:var(--dim);font-style:italic">
-                History accumulates automatically each day you load the dashboard.
-                <span id="brrg-hist-info" style="color:var(--teal);margin-left:6px"></span>
+            <!-- Animation progress bar -->
+            <div id="brrg-anim-bar-wrap" style="display:none;padding:6px 14px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+                <span id="brrg-anim-day-label" style="font-size:9px;color:var(--yellow);font-weight:600">Day 1</span>
+                <button onclick="brrgStopAnim()" style="font-size:9px;padding:1px 6px;border-radius:3px;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.1);color:var(--red);cursor:pointer">&#9632; Stop</button>
               </div>
-              <button onclick="brrgShowSeedPanel()"
-                style="font-size:9px;padding:3px 9px;border-radius:3px;border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.08);color:var(--purple);cursor:pointer;font-weight:600">
-                ⚡ Bootstrap History
-              </button>
+              <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+                <div id="brrg-anim-bar" style="height:100%;width:0%;background:var(--yellow);border-radius:2px;transition:width .2s"></div>
+              </div>
             </div>
 
-            <!-- Seed panel (hidden by default) -->
-            <div id="brrg-seed-panel" style="display:none;margin-top:10px;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:5px">
-              <div style="font-size:10px;font-weight:700;color:var(--purple);margin-bottom:6px">⚡ Bootstrap RRG History</div>
+            <!-- Canvas -->
+            <div style="padding:0 14px 4px;position:relative">
+              <canvas id="brrg-canvas" style="width:100%;border-radius:6px;display:block"></canvas>
+            </div>
 
-              <!-- Option A: seed from existing eod_entries -->
-              <div style="margin-bottom:10px;padding:8px;background:rgba(45,212,191,.05);border:1px solid rgba(45,212,191,.15);border-radius:4px">
-                <div style="font-size:9px;font-weight:700;color:var(--teal);margin-bottom:3px">Option A — Seed from your 30-Day History</div>
-                <div style="font-size:9px;color:var(--dim);margin-bottom:6px;line-height:1.5">
-                  Uses your existing eod_entries (A/D ratio, %>EMA20 etc.) to generate approximate sector scores.
-                  Not sector-specific, but gives the RRG a starting tail immediately using data you already have.
+            <!-- Insufficient data notice -->
+            <div id="brrg-notice" style="display:none;padding:12px 14px;font-size:10px;color:var(--yellow)"></div>
+
+            <!-- Legend -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 14px 8px;border-top:1px solid var(--border);font-size:9px;color:var(--dim)">
+              <span><b style="color:var(--lime)">Leading</b> = strong breadth + accelerating</span>
+              <span><b style="color:var(--accent)">Improving</b> = below avg + rising</span>
+              <span><b style="color:var(--yellow)">Weakening</b> = strong + decelerating</span>
+              <span><b style="color:var(--red)">Lagging</b> = weak + falling</span>
+              <span style="margin-left:auto;opacity:.7">Dot = today · tail = history · clockwise = bullish</span>
+            </div>
+
+            <!-- History note + bootstrap -->
+            <div style="padding:8px 14px 12px;border-top:1px solid var(--border)">
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+                <div style="font-size:9px;color:var(--dim);font-style:italic">
+                  History accumulates automatically each day you load the dashboard.
+                  <span id="brrg-hist-info" style="color:var(--teal);margin-left:6px"></span>
                 </div>
-                <button onclick="brrgSeedFromEod()"
-                  style="font-size:9px;padding:4px 12px;border-radius:3px;border:none;background:var(--teal);color:#0e1420;cursor:pointer;font-weight:700">
-                  Seed from History Now
+                <button onclick="brrgShowSeedPanel()"
+                  style="font-size:9px;padding:3px 9px;border-radius:3px;border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.08);color:var(--purple);cursor:pointer;font-weight:600">
+                  ⚡ Bootstrap History
                 </button>
-                <span id="brrg-seed-eod-msg" style="font-size:9px;margin-left:8px;color:var(--dim)"></span>
               </div>
 
-              <!-- Option B: paste CSV data -->
-              <div style="padding:8px;background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.15);border-radius:4px">
-                <div style="font-size:9px;font-weight:700;color:var(--purple);margin-bottom:3px">Option B — Paste Sector Score CSV</div>
-                <div style="font-size:9px;color:var(--dim);margin-bottom:6px;line-height:1.5">
-                  Paste CSV rows in format: <code style="color:var(--accent)">date,sector,a20_pct,a50_pct,a200_pct</code><br>
-                  Example: <code style="color:var(--dim)">2026-05-01,Capital Goods,68.5,74.2,71.0</code>
+              <div id="brrg-seed-panel" style="display:none;margin-top:10px;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:5px">
+                <div style="font-size:10px;font-weight:700;color:var(--purple);margin-bottom:6px">⚡ Bootstrap RRG History</div>
+                <div style="margin-bottom:10px;padding:8px;background:rgba(45,212,191,.05);border:1px solid rgba(45,212,191,.15);border-radius:4px">
+                  <div style="font-size:9px;font-weight:700;color:var(--teal);margin-bottom:3px">Option A — Seed from your 30-Day History</div>
+                  <div style="font-size:9px;color:var(--dim);margin-bottom:6px;line-height:1.5">Uses your existing EOD entries (A/D ratio, %>EMA20 etc.) to generate an approximate market proxy series immediately.</div>
+                  <button onclick="brrgSeedFromEod()" style="font-size:9px;padding:4px 12px;border-radius:3px;border:none;background:var(--teal);color:#0e1420;cursor:pointer;font-weight:700">Seed from History Now</button>
+                  <span id="brrg-seed-eod-msg" style="font-size:9px;margin-left:8px;color:var(--dim)"></span>
                 </div>
-                <textarea id="brrg-csv-input"
-                  placeholder="2026-04-20,Capital Goods,65,72,70&#10;2026-04-20,Pharma,58,65,62&#10;2026-04-21,Capital Goods,67,73,71"
-                  style="width:100%;height:80px;background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:3px;padding:6px 8px;font-size:9px;font-family:var(--mono);resize:vertical;box-sizing:border-box"></textarea>
-                <div style="display:flex;gap:8px;margin-top:6px;align-items:center">
-                  <button onclick="brrgImportCsv()"
-                    style="font-size:9px;padding:4px 12px;border-radius:3px;border:none;background:var(--purple);color:#fff;cursor:pointer;font-weight:700">Import CSV</button>
-                  <button onclick="brrgClearHistory()"
-                    style="font-size:9px;padding:4px 10px;border-radius:3px;border:1px solid rgba(248,113,113,.3);background:transparent;color:var(--red);cursor:pointer">Clear History</button>
-                  <span id="brrg-csv-msg" style="font-size:9px;color:var(--dim)"></span>
+                <div style="padding:8px;background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.15);border-radius:4px">
+                  <div style="font-size:9px;font-weight:700;color:var(--purple);margin-bottom:3px">Option B — Paste Sector Score CSV</div>
+                  <div style="font-size:9px;color:var(--dim);margin-bottom:6px;line-height:1.5">
+                    Format: <code style="color:var(--accent)">date,sector,a20_pct,a50_pct,a200_pct</code><br>
+                    Example: <code style="color:var(--dim)">2026-05-01,Capital Goods,68.5,74.2,71.0</code>
+                  </div>
+                  <textarea id="brrg-csv-input"
+                    placeholder="2026-04-20,Capital Goods,65,72,70&#10;2026-04-20,Pharma,58,65,62"
+                    style="width:100%;height:70px;background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:3px;padding:6px 8px;font-size:9px;font-family:var(--mono);resize:vertical;box-sizing:border-box"></textarea>
+                  <div style="display:flex;gap:8px;margin-top:6px;align-items:center">
+                    <button onclick="brrgImportCsv()" style="font-size:9px;padding:4px 12px;border-radius:3px;border:none;background:var(--purple);color:#fff;cursor:pointer;font-weight:700">Import CSV</button>
+                    <button onclick="brrgClearHistory()" style="font-size:9px;padding:4px 10px;border-radius:3px;border:1px solid rgba(248,113,113,.3);background:transparent;color:var(--red);cursor:pointer">Clear History</button>
+                    <span id="brrg-csv-msg" style="font-size:9px;color:var(--dim)"></span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
           </div><!-- /rrg-sub-breadth -->
 
@@ -3825,7 +3815,7 @@ function rrgSubTab(tab) {
     }
     if (pane) pane.style.display = active ? 'block' : 'none';
   });
-  if (tab === 'breadth') setTimeout(() => brrgDraw(), 50);
+  if (tab === 'breadth') { setTimeout(() => { brrgRebuildChips(); brrgDraw(); }, 50); }
   if (tab === 'price')   setTimeout(() => { rrgRebuildChips(); srtDrawRRG(); }, 50);
 }
 
@@ -3842,7 +3832,7 @@ function sccTab(tab) {
     }
     if (pane) pane.style.display = active ? 'block' : 'none';
   });
-  if (tab === 'rrg')     { setTimeout(() => { rrgSubTab('breadth'); brrgDraw(); }, 50); }
+  if (tab === 'rrg')     { setTimeout(() => { rrgSubTab('breadth'); brrgRebuildChips(); brrgDraw(); }, 50); }
   if (tab === 'heatmap') setTimeout(() => slhRender(), 50);
 }
 
@@ -4213,7 +4203,7 @@ function vcpbRender(data) {
   vcpbRenderTable(data.sectors);
   // If RRG pane is visible, redraw with fresh history
   const rrgPane = document.getElementById('scc-pane-rrg');
-  if (rrgPane && rrgPane.style.display !== 'none') brrgDraw();
+  if (rrgPane && rrgPane.style.display !== 'none') { brrgRebuildChips(); brrgDraw(); }
 }
 
 function vcpbInit() {
@@ -4244,11 +4234,16 @@ function vcpbInit() {
 
 let _brrgTailDays = 10;
 let _brrgTopN     = 8;
-const BRRG_SMOOTH = 3;   // EMA smoothing period for momentum calculation
+let _brrgHighlight = new Set();   // highlighted sector names
+let _brrgAnimTimer = null;
+const BRRG_SMOOTH  = 5;   // EMA smoothing — longer = smoother, less noise
 
+// ── Tail controls ────────────────────────────────────────────────────────
 function brrgSetTail(d) {
   _brrgTailDays = d;
-  [5, 10, 20, 40].forEach(n => {
+  const disp = document.getElementById('brrg-tail-display');
+  if (disp) disp.textContent = d + 'd';
+  [5,10,20,40].forEach(n => {
     const b = document.getElementById('brrg-t-' + n);
     if (!b) return;
     const active = n === d;
@@ -4259,10 +4254,19 @@ function brrgSetTail(d) {
   });
   brrgDraw();
 }
+function brrgAdjustTail(delta) {
+  const steps = [3,5,7,10,15,20,30,40,60];
+  const cur   = steps.indexOf(_brrgTailDays);
+  const next  = Math.max(0, Math.min(steps.length-1, (cur === -1 ? 3 : cur) + delta));
+  brrgSetTail(steps[next]);
+}
 
+// ── Top N controls ───────────────────────────────────────────────────────
 function brrgSetTopN(n) {
   _brrgTopN = n;
-  [8, 12, 0].forEach(v => {
+  const disp = document.getElementById('brrg-top-display');
+  if (disp) disp.textContent = n || 'All';
+  [4,8,12,0].forEach(v => {
     const b = document.getElementById('brrg-n-' + v);
     if (!b) return;
     const active = v === n;
@@ -4271,158 +4275,215 @@ function brrgSetTopN(n) {
     b.style.fontWeight  = active ? '600'            : '400';
     b.style.borderColor = active ? 'var(--accent)'  : 'var(--border)';
   });
+  brrgRebuildChips();
   brrgDraw();
 }
+function brrgAdjustTop(delta) {
+  const hist = vcpbGetHist();
+  const total = Object.keys(hist).filter(k => hist[k] && hist[k].length >= 3).length;
+  const cur = _brrgTopN === 0 ? total : _brrgTopN;
+  const next = Math.max(2, Math.min(total, cur + delta));
+  _brrgTopN = next === total ? 0 : next;
+  brrgSetTopN(_brrgTopN);
+}
 
-// Simple EMA helper
+// ── EMA helper ───────────────────────────────────────────────────────────
 function brrgEMA(arr, period) {
   if (!arr.length) return [];
-  const k = 2 / (period + 1);
+  const k   = 2 / (period + 1);
   const out = [arr[0]];
   for (let i = 1; i < arr.length; i++) out.push(arr[i] * k + out[i-1] * (1 - k));
   return out;
 }
 
-// Compute normalised series for one sector from history
-// Returns array of { date, x (normalised score), y (momentum), score }
-function brrgComputeSeries(sectorName, allHist) {
-  const raw = allHist[sectorName];
-  if (!raw || raw.length < 3) return [];
-
-  // Need cross-sector average per date to normalise X
-  // We compute this outside and pass it in via brrgDraw
-  return raw;  // raw processing done in brrgDraw with full cross-sector context
-}
-
-function brrgDraw() {
-  const canvas = document.getElementById('brrg-canvas');
-  if (!canvas) return;
-
-  const hist   = vcpbGetHist();
-  const notice = document.getElementById('brrg-notice');
-  const histInfo = document.getElementById('brrg-hist-info');
-
-  // Gather all sectors with enough history
+// ── Compute series for all sectors ───────────────────────────────────────
+function brrgComputeAll() {
+  const hist       = vcpbGetHist();
   const allSectors = Object.keys(hist).filter(k => hist[k] && hist[k].length >= 3);
-  if (!allSectors.length) {
-    canvas.style.display = 'none';
-    if (notice) { notice.style.display = 'block'; notice.textContent = '⏳ Not enough history yet. The RRG builds automatically each day you load the dashboard. Come back after 3+ trading days for first tails.'; }
-    brrgUpdateHero([]);
-    return;
-  }
-  canvas.style.display = 'block';
-  if (notice) notice.style.display = 'none';
+  if (!allSectors.length) return null;
 
-  // Total history days available
-  const maxDays = Math.max(...allSectors.map(k => hist[k].length));
-  if (histInfo) histInfo.textContent = `${maxDays} days of history accumulated`;
-
-  // Build date union — all unique dates across sectors, sorted
+  // Build date union
   const dateSet = new Set();
   allSectors.forEach(sec => hist[sec].forEach(e => dateSet.add(e.date)));
   const dates = [...dateSet].sort();
 
-  // Build per-sector score series aligned to date union (fill gaps with last known)
-  const sectorScores = {};
+  // Align scores to date union (fill gaps with last known value)
+  const rawScores = {};
   allSectors.forEach(sec => {
     const map = {};
     hist[sec].forEach(e => { map[e.date] = e.score; });
     let last = null;
-    sectorScores[sec] = dates.map(d => {
+    rawScores[sec] = dates.map(d => {
       if (map[d] !== undefined) last = map[d];
       return last;
     }).filter(v => v !== null);
   });
 
-  // Cross-sector average score per date (for normalisation)
+  // Cross-sector average per date
   const avgByDate = dates.map((_, di) => {
-    const vals = allSectors.map(sec => {
-      const s = sectorScores[sec];
-      return s[di] !== undefined ? s[di] : null;
-    }).filter(v => v !== null);
-    return vals.length ? vals.reduce((a,b) => a+b,0) / vals.length : 50;
+    const vals = allSectors.map(s => rawScores[s][di]).filter(v => v != null);
+    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 50;
   });
 
-  // For each sector compute normalised X and Y (momentum)
-  // X = score / avg * 100  (100 = market average)
-  // Y = EMA-smoothed rate of change of normalised X
+  // Compute normalised X + smoothed momentum Y per sector
+  // X = (score / cross-sector_avg) * 100   → 100 = market average
+  // Y = EMA(X)[today] / EMA(X)[WINDOW days ago] * 100  → 100 = flat
+  // WINDOW tied to tail length for consistency
   const series = {};
   allSectors.forEach(sec => {
-    const scores = sectorScores[sec];
+    const scores = rawScores[sec];
     if (scores.length < 3) return;
 
-    const normX = scores.map((s, i) => {
-      const avg = avgByDate[i] || 50;
-      return avg > 0 ? (s / avg) * 100 : 100;
-    });
+    const normX    = scores.map((s, i) => (avgByDate[i] > 0 ? (s / avgByDate[i]) * 100 : 100));
+    const smoothed = brrgEMA(normX, BRRG_SMOOTH);
+    const WINDOW   = Math.max(3, Math.round(_brrgTailDays / 4));  // adaptive window
 
-    const smoothedX = brrgEMA(normX, BRRG_SMOOTH);
-
-    // Y = momentum: current smoothed X vs N days ago
-    const WINDOW = 3;
-    const pts = smoothedX.map((x, i) => {
-      const prev  = i >= WINDOW ? smoothedX[i - WINDOW] : smoothedX[0];
-      const mom   = prev > 0 ? (x / prev) * 100 : 100;
+    series[sec] = smoothed.map((x, i) => {
+      const prev = i >= WINDOW ? smoothed[i - WINDOW] : smoothed[0];
+      const mom  = prev > 0 ? (x / prev) * 100 : 100;
       return { date: dates[Math.min(i, dates.length-1)], x, y: mom, score: scores[i] };
     });
-    series[sec] = pts;
   });
 
-  // Select topN sectors — ranked by latest score
-  let displayed = allSectors.filter(sec => series[sec] && series[sec].length >= 3);
+  return { series, dates };
+}
+
+// ── Sector highlight chips ────────────────────────────────────────────────
+function brrgRebuildChips() {
+  const container = document.getElementById('brrg-chips');
+  if (!container) return;
+  const hist    = vcpbGetHist();
+  const allSecs = Object.keys(hist).filter(k => hist[k] && hist[k].length >= 3);
+
+  // Determine displayed sectors same way brrgDraw does
+  let displayed = allSecs;
   if (_brrgTopN > 0) {
-    displayed = displayed
-      .sort((a, b) => {
-        const la = series[a].at(-1).score;
-        const lb = series[b].at(-1).score;
-        return lb - la;
-      })
-      .slice(0, _brrgTopN);
+    const computed = brrgComputeAll();
+    if (computed) {
+      displayed = allSecs
+        .filter(s => computed.series[s])
+        .sort((a,b) => computed.series[b].at(-1).score - computed.series[a].at(-1).score)
+        .slice(0, _brrgTopN);
+    }
   }
 
-  if (!displayed.length) {
-    if (notice) { notice.style.display = 'block'; notice.textContent = 'Not enough history for selected sectors.'; }
+  container.innerHTML = '<span style="font-size:9px;color:var(--dim);margin-right:2px">Highlight:</span>';
+  displayed.forEach((sec, idx) => {
+    const color   = RRG_COLORS[idx % RRG_COLORS.length];
+    const active  = _brrgHighlight.has(sec);
+    const chip    = document.createElement('span');
+    const label   = SRT_SHORT[sec] || sec.split(' ')[0];
+    chip.textContent = label;
+    chip.style.cssText = `font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid ${color};
+      background:${active ? color : 'transparent'};color:${active ? '#000' : color};
+      cursor:pointer;transition:all .15s;font-weight:600`;
+    chip.title  = sec;
+    chip.onclick = () => {
+      if (_brrgHighlight.has(sec)) _brrgHighlight.delete(sec);
+      else _brrgHighlight.add(sec);
+      brrgRebuildChips();
+      brrgDraw();
+    };
+    container.appendChild(chip);
+  });
+}
+
+// ── Animation ─────────────────────────────────────────────────────────────
+function brrgAnimate() {
+  if (_brrgAnimTimer) { brrgStopAnim(); return; }
+  const computed = brrgComputeAll();
+  if (!computed) return;
+  const totalPts = Math.max(...Object.values(computed.series).map(s => s.length));
+  const minStart = Math.max(3, totalPts - _brrgTailDays - 20);
+  let cur = minStart;
+  const btn   = document.getElementById('brrg-anim-btn');
+  const wrap  = document.getElementById('brrg-anim-bar-wrap');
+  const bar   = document.getElementById('brrg-anim-bar');
+  const label = document.getElementById('brrg-anim-day-label');
+  if (wrap) wrap.style.display = 'block';
+  if (btn)  { btn.textContent = '⏸ Pause'; btn.style.color = 'var(--yellow)'; }
+
+  _brrgAnimTimer = setInterval(() => {
+    if (cur > totalPts) { brrgStopAnim(); return; }
+    if (label) label.textContent = `Day ${cur - minStart + 1} / ${totalPts - minStart}`;
+    if (bar)   bar.style.width = `${((cur - minStart) / (totalPts - minStart)) * 100}%`;
+    brrgDraw(cur);
+    cur++;
+  }, 350);
+}
+function brrgStopAnim() {
+  if (_brrgAnimTimer) { clearInterval(_brrgAnimTimer); _brrgAnimTimer = null; }
+  const btn  = document.getElementById('brrg-anim-btn');
+  const wrap = document.getElementById('brrg-anim-bar-wrap');
+  if (btn)  { btn.textContent = '▶ Play'; btn.style.color = 'var(--yellow)'; }
+  if (wrap) wrap.style.display = 'none';
+  brrgDraw();
+}
+
+// ── Main draw function ────────────────────────────────────────────────────
+function brrgDraw(animUpTo) {
+  const canvas  = document.getElementById('brrg-canvas');
+  if (!canvas) return;
+  const notice  = document.getElementById('brrg-notice');
+  const histInfo= document.getElementById('brrg-hist-info');
+
+  const computed = brrgComputeAll();
+  if (!computed) {
+    canvas.style.display = 'none';
+    if (notice) { notice.style.display='block'; notice.textContent='⏳ Not enough history yet. The RRG builds automatically each day you load the dashboard. Come back after 3+ trading days for first tails.'; }
     return;
   }
+  canvas.style.display = 'block';
+  if (notice) notice.style.display = 'none';
+  const { series } = computed;
 
-  // Tail slice: last N days
-  const tailed = displayed.map(sec => ({
-    name:   sec,
-    color:  RRG_COLORS[displayed.indexOf(sec) % RRG_COLORS.length],
-    points: series[sec].slice(-(_brrgTailDays + 1)),
-  }));
+  const maxDays = Math.max(...Object.keys(series).map(k => series[k].length));
+  if (histInfo) histInfo.textContent = `${maxDays} trading days accumulated`;
 
-  // Axis bounds
+  // Select displayed sectors
+  let displayed = Object.keys(series).filter(s => series[s].length >= 3);
+  if (_brrgTopN > 0) {
+    displayed = displayed
+      .sort((a,b) => series[b].at(-1).score - series[a].at(-1).score)
+      .slice(0, _brrgTopN);
+  }
+  if (!displayed.length) return;
+
+  // Tail slice (respects animUpTo for animation)
+  const tailed = displayed.map((sec, idx) => {
+    const pts   = animUpTo ? series[sec].slice(0, animUpTo) : series[sec];
+    const tail  = pts.slice(-(_brrgTailDays + 1));
+    return { name: sec, color: RRG_COLORS[idx % RRG_COLORS.length], points: tail };
+  });
+
+  // Axis bounds — auto-scale with minimum padding
   const allX = tailed.flatMap(s => s.points.map(p => p.x));
   const allY = tailed.flatMap(s => s.points.map(p => p.y));
-  const cx100 = 100, cy100 = 100;
-  const padX = Math.max(4, Math.max(...allX.map(x => Math.abs(x - 100))) + 2);
-  const padY = Math.max(2, Math.max(...allY.map(y => Math.abs(y - 100))) + 1);
+  const padX = Math.max(3, Math.max(...allX.map(x => Math.abs(x - 100))) + 2);
+  const padY = Math.max(1.5, Math.max(...allY.map(y => Math.abs(y - 100))) + 1);
   const xMin = 100 - padX, xMax = 100 + padX;
   const yMin = 100 - padY, yMax = 100 + padY;
 
   // Canvas sizing
-  const W  = canvas.offsetWidth || 360;
-  const H  = Math.round(W * 0.82);
+  const W = canvas.offsetWidth || 360;
+  const H = Math.round(W * 0.82);
   canvas.width  = W * devicePixelRatio;
   canvas.height = H * devicePixelRatio;
   canvas.style.height = H + 'px';
   const ctx = canvas.getContext('2d');
   ctx.scale(devicePixelRatio, devicePixelRatio);
 
-  const PAD = { l: 32, r: 14, t: 14, b: 26 };
-  const cW  = W - PAD.l - PAD.r;
-  const cH  = H - PAD.t - PAD.b;
-  const toX = v => PAD.l + ((v - xMin) / (xMax - xMin)) * cW;
-  const toY = v => PAD.t + ((yMax - v) / (yMax - yMin)) * cH;
-  const ox = toX(cx100), oy = toY(cy100);
+  const PAD = { l:34, r:14, t:14, b:26 };
+  const toX = v => PAD.l + ((v - xMin) / (xMax - xMin)) * (W - PAD.l - PAD.r);
+  const toY = v => PAD.t + ((yMax - v) / (yMax - yMin)) * (H - PAD.t - PAD.b);
+  const ox = toX(100), oy = toY(100);
 
-  // Quadrant backgrounds
+  // Quadrant backgrounds + labels
   const Q = [
-    { x: PAD.l, y: PAD.t, w: ox-PAD.l,   h: oy-PAD.t,   bg:'rgba(91,163,245,.07)',  lbl:'Improving',  lx:PAD.l+5, ly:PAD.t+13, lc:'#5ba3f5' },
-    { x: ox,    y: PAD.t, w: W-PAD.r-ox,  h: oy-PAD.t,   bg:'rgba(74,222,128,.07)',  lbl:'Leading',    lx:ox+5,    ly:PAD.t+13, lc:'#4ade80' },
-    { x: PAD.l, y: oy,    w: ox-PAD.l,    h: H-PAD.b-oy,  bg:'rgba(248,113,113,.07)', lbl:'Lagging',    lx:PAD.l+5, ly:oy+13,    lc:'#f87171' },
-    { x: ox,    y: oy,    w: W-PAD.r-ox,  h: H-PAD.b-oy,  bg:'rgba(251,191,36,.07)',  lbl:'Weakening',  lx:ox+5,    ly:oy+13,    lc:'#fbbf24' },
+    { x:PAD.l, y:PAD.t, w:ox-PAD.l,    h:oy-PAD.t,    bg:'rgba(91,163,245,.07)',  lbl:'Improving', lx:PAD.l+6, ly:PAD.t+13, lc:'#5ba3f5' },
+    { x:ox,    y:PAD.t, w:W-PAD.r-ox,   h:oy-PAD.t,    bg:'rgba(74,222,128,.07)',  lbl:'Leading',   lx:ox+6,    ly:PAD.t+13, lc:'#4ade80' },
+    { x:PAD.l, y:oy,    w:ox-PAD.l,     h:H-PAD.b-oy,  bg:'rgba(248,113,113,.07)', lbl:'Lagging',   lx:PAD.l+6, ly:oy+13,    lc:'#f87171' },
+    { x:ox,    y:oy,    w:W-PAD.r-ox,   h:H-PAD.b-oy,  bg:'rgba(251,191,36,.07)',  lbl:'Weakening', lx:ox+6,    ly:oy+13,    lc:'#fbbf24' },
   ];
   Q.forEach(q => {
     ctx.fillStyle = q.bg; ctx.fillRect(q.x, q.y, q.w, q.h);
@@ -4431,122 +4492,83 @@ function brrgDraw() {
     ctx.fillText(q.lbl, q.lx, q.ly); ctx.globalAlpha = 1;
   });
 
-  // Grid
+  // Subtle grid
   ctx.strokeStyle = 'rgba(255,255,255,.04)'; ctx.lineWidth = 1;
-  for (let v = Math.ceil(xMin); v <= xMax; v++) {
+  [xMin, xMax].forEach(v => {
     const x = toX(v); ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, H-PAD.b); ctx.stroke();
-  }
-  for (let v = Math.ceil(yMin*2)/2; v <= yMax; v += 0.5) {
-    const y = toY(v); ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(W-PAD.r, y); ctx.stroke();
-  }
+  });
 
   // Centre axes
-  ctx.strokeStyle = 'rgba(255,255,255,.2)'; ctx.lineWidth = 1; ctx.setLineDash([3,4]);
+  ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 1; ctx.setLineDash([3,4]);
   ctx.beginPath(); ctx.moveTo(ox, PAD.t); ctx.lineTo(ox, H-PAD.b); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(PAD.l, oy); ctx.lineTo(W-PAD.r, oy); ctx.stroke();
   ctx.setLineDash([]);
 
   // Axis labels
-  ctx.font = '8px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.3)';
-  ctx.textAlign = 'center'; ctx.fillText('Breadth Score (relative to market avg) →', W/2, H-6);
+  ctx.font = '8px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.textAlign = 'center';
+  ctx.fillText('Breadth Strength (vs market avg) →', W/2, H - 6);
   ctx.save(); ctx.translate(11, H/2); ctx.rotate(-Math.PI/2);
-  ctx.fillText('Score Momentum ↑', 0, 0); ctx.restore();
+  ctx.fillText('Breadth Momentum ↑', 0, 0); ctx.restore();
 
-  // Tick labels on axes
-  ctx.font = '7px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.25)';
-  for (let v = Math.ceil(xMin); v <= xMax; v++) {
-    if (v === 100) continue;
-    ctx.textAlign = 'center';
-    ctx.fillText(v, toX(v), H - PAD.b + 10);
-  }
-
-  // Draw each sector tail + dot + label
-  const quadCounts = { lead:[], impr:[], weak:[], lag:[] };
-
+  // Draw each sector
+  const anyHighlighted = _brrgHighlight.size > 0;
   tailed.forEach(({ name, color, points }) => {
     if (points.length < 2) return;
+    const highlighted = _brrgHighlight.size === 0 || _brrgHighlight.has(name);
+    const opacity     = anyHighlighted && !highlighted ? 0.15 : 1;
 
-    // Determine quadrant from current (last) point
-    const cur = points.at(-1);
-    if      (cur.x >= 100 && cur.y >= 100) quadCounts.lead.push(name);
-    else if (cur.x <  100 && cur.y >= 100) quadCounts.impr.push(name);
-    else if (cur.x >= 100 && cur.y <  100) quadCounts.weak.push(name);
-    else                                    quadCounts.lag.push(name);
-
-    // Tail line (fading from oldest to newest)
+    // Fading tail line
     for (let i = 1; i < points.length; i++) {
       const p0 = points[i-1], p1 = points[i];
-      const alpha = 0.15 + (i / points.length) * 0.55;
-      ctx.beginPath();
-      ctx.moveTo(toX(p0.x), toY(p0.y));
-      ctx.lineTo(toX(p1.x), toY(p1.y));
-      ctx.strokeStyle = color; ctx.lineWidth = 1.5;
-      ctx.globalAlpha = alpha; ctx.stroke(); ctx.globalAlpha = 1;
+      const a  = (0.12 + (i / points.length) * 0.6) * opacity;
+      ctx.beginPath(); ctx.moveTo(toX(p0.x), toY(p0.y)); ctx.lineTo(toX(p1.x), toY(p1.y));
+      ctx.strokeStyle = color; ctx.lineWidth = highlighted ? 2 : 1.5;
+      ctx.globalAlpha = a; ctx.stroke(); ctx.globalAlpha = 1;
     }
 
-    // Historical dots (small, fading)
+    // Historical dots (small)
     points.slice(0, -1).forEach((p, i) => {
-      const alpha = 0.1 + (i / points.length) * 0.35;
+      const a = (0.08 + (i / points.length) * 0.3) * opacity;
       ctx.beginPath(); ctx.arc(toX(p.x), toY(p.y), 2, 0, Math.PI*2);
-      ctx.fillStyle = color; ctx.globalAlpha = alpha; ctx.fill(); ctx.globalAlpha = 1;
+      ctx.fillStyle = color; ctx.globalAlpha = a; ctx.fill(); ctx.globalAlpha = 1;
     });
 
-    // Current dot (solid, larger)
-    const cx2 = toX(cur.x), cy2 = toY(cur.y);
-    ctx.beginPath(); ctx.arc(cx2, cy2, 5.5, 0, Math.PI*2);
-    ctx.fillStyle = color; ctx.globalAlpha = 1; ctx.fill();
+    // Current dot
+    const cur  = points.at(-1);
+    const cx2  = toX(cur.x), cy2 = toY(cur.y);
+    ctx.globalAlpha = opacity;
+    ctx.beginPath(); ctx.arc(cx2, cy2, highlighted ? 6 : 5, 0, Math.PI*2);
+    ctx.fillStyle = color; ctx.fill();
     ctx.strokeStyle = '#0d1520'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.globalAlpha = 1;
 
-    // Direction arrow (from previous point to current)
+    // Direction arrow
     if (points.length >= 2) {
       const pp = points.at(-2);
-      const dx = cur.x - pp.x, dy = -(cur.y - pp.y); // canvas Y is inverted
+      const dx = cur.x - pp.x, dy = -(cur.y - pp.y);
       const len = Math.sqrt(dx*dx + dy*dy);
-      if (len > 0.05) {
-        const nx = dx/len * 5, ny = dy/len * 5;
-        const ax = cx2, ay = cy2;
+      if (len > 0.03) {
+        const nx = dx/len*6, ny = dy/len*6;
+        ctx.globalAlpha = 0.8 * opacity;
         ctx.beginPath();
-        ctx.moveTo(ax - ny*0.6, ay - nx*0.6);
-        ctx.lineTo(ax + nx, ay + ny);
-        ctx.lineTo(ax + ny*0.6, ay + nx*0.6);
-        ctx.fillStyle = color; ctx.globalAlpha = 0.85; ctx.fill(); ctx.globalAlpha = 1;
+        ctx.moveTo(cx2 - ny*0.5, cy2 - nx*0.5);
+        ctx.lineTo(cx2 + nx,      cy2 + ny);
+        ctx.lineTo(cx2 + ny*0.5,  cy2 + nx*0.5);
+        ctx.fillStyle = color; ctx.fill(); ctx.globalAlpha = 1;
       }
     }
 
-    // Label — short name (first word)
-    const shortName = SRT_SHORT[name] || name.split(' ')[0].replace('&','');
-    ctx.font = 'bold 9px sans-serif'; ctx.fillStyle = color; ctx.globalAlpha = 0.95;
-    ctx.textAlign = cx2 > W * 0.72 ? 'right' : 'left';
-    ctx.fillText(shortName, cx2 + (cx2 > W * 0.72 ? -8 : 8), cy2 + 3);
+    // Label
+    const lbl = SRT_SHORT[name] || name.split(' ')[0];
+    const side = cx2 > W * 0.72 ? 'right' : 'left';
+    ctx.font      = highlighted ? 'bold 10px sans-serif' : '9px sans-serif';
+    ctx.fillStyle = color; ctx.globalAlpha = highlighted ? 1 : 0.6 * opacity;
+    ctx.textAlign = side;
+    ctx.fillText(lbl,   cx2 + (side === 'right' ? -9 : 9), cy2 + 3);
+    ctx.font      = '8px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.35)';
+    ctx.fillText(Math.round(cur.score), cx2 + (side === 'right' ? -9 : 9), cy2 + 12);
     ctx.globalAlpha = 1;
-
-    // Score badge next to dot
-    ctx.font = '7px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.4)';
-    ctx.textAlign = cx2 > W * 0.72 ? 'right' : 'left';
-    ctx.fillText(Math.round(cur.score), cx2 + (cx2 > W * 0.72 ? -8 : 8), cy2 + 12);
   });
-
-  brrgUpdateHero(quadCounts);
-}
-
-function brrgUpdateHero(quadCounts) {
-  const set = (id, val, names) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = val;
-    el.title = names && names.length ? names.join(', ') : '';
-  };
-  if (Array.isArray(quadCounts)) {
-    set('brrg-q-lead', '—', []);
-    set('brrg-q-impr', '—', []);
-    set('brrg-q-weak', '—', []);
-    set('brrg-q-lag',  '—', []);
-    return;
-  }
-  set('brrg-q-lead', quadCounts.lead.length, quadCounts.lead);
-  set('brrg-q-impr', quadCounts.impr.length, quadCounts.impr);
-  set('brrg-q-weak', quadCounts.weak.length, quadCounts.weak);
-  set('brrg-q-lag',  quadCounts.lag.length,  quadCounts.lag);
 }
 
 function brrgShowSeedPanel() {
@@ -4554,101 +4576,70 @@ function brrgShowSeedPanel() {
   if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
 }
 
-// Option A: seed from existing eod_entries using overall breadth as proxy
-// Each eod entry has e20 (% above 20EMA) — use it to create a single "Market"
-// series so the RRG at least has a tail while sector data accumulates.
-// Also synthesises approximate sector scores from cached sector_breadth if available.
 function brrgSeedFromEod() {
-  const msg = document.getElementById('brrg-seed-eod-msg');
+  const msg    = document.getElementById('brrg-seed-eod-msg');
   const setMsg = (t, c) => { if (msg) { msg.textContent = t; msg.style.color = c; } };
-
-  // Try to get eod records
-  let records = [];
-  try {
-    const LS_EOD = 'nse_eod_v1';
-    records = JSON.parse(localStorage.getItem(LS_EOD)) || [];
-  } catch(e) {}
-
-  if (!records.length) {
-    setMsg('No 30-day history found. Enter some EOD data first.', 'var(--red)');
-    return;
-  }
-
+  let records  = [];
+  try { const LS_EOD = 'nse_eod_v1'; records = JSON.parse(localStorage.getItem(LS_EOD)) || []; } catch(e) {}
+  if (!records.length) { setMsg('No 30-day history found.', 'var(--red)'); return; }
   const hist = vcpbGetHist();
   let added = 0;
-
-  // Each EOD record: { date, score, e20, s50, s200, ... }
   records.forEach(r => {
     if (!r.date) return;
-    const a20  = parseFloat(r.e20)  || 0;
-    const a50  = parseFloat(r.s50)  || 0;
-    const a200 = parseFloat(r.s200) || 0;
+    const a20 = parseFloat(r.e20)||0, a50 = parseFloat(r.s50)||0, a200 = parseFloat(r.s200)||0;
     if (!a20 && !a50 && !a200) return;
-
-    // Create a synthetic "Market (Index)" sector from these values
-    const secName = 'Market (Index)';
-    if (!hist[secName]) hist[secName] = [];
-    if (hist[secName].some(e => e.date === r.date)) return;
-    const score = Math.round(a20 * 0.50 + a50 * 0.30 + a200 * 0.20);
-    hist[secName].push({ date: r.date, score, a20, a50, a200 });
+    const sec = 'Market (Index)';
+    if (!hist[sec]) hist[sec] = [];
+    if (hist[sec].some(e => e.date === r.date)) return;
+    hist[sec].push({ date: r.date, score: Math.round(a20*0.50+a50*0.30+a200*0.20), a20, a50, a200 });
     added++;
   });
-
   if (added) {
-    // Sort each sector's history
     Object.keys(hist).forEach(k => hist[k].sort((a,b) => a.date.localeCompare(b.date)));
     vcpbSetHist(hist);
-    setMsg(`✓ Added ${added} days as "Market (Index)" proxy`, 'var(--lime)');
-    brrgDraw();
+    setMsg(`✓ Added ${added} days as "Market (Index)"`, 'var(--lime)');
+    brrgRebuildChips(); brrgDraw();
   } else {
     setMsg('Already seeded or no new dates found.', 'var(--yellow)');
   }
 }
 
-// Option B: import CSV  format: date,sector,a20_pct,a50_pct,a200_pct
 function brrgImportCsv() {
   const ta  = document.getElementById('brrg-csv-input');
   const msg = document.getElementById('brrg-csv-msg');
   const setMsg = (t, c) => { if (msg) { msg.textContent = t; msg.style.color = c; } };
   if (!ta || !ta.value.trim()) { setMsg('Nothing to import.', 'var(--yellow)'); return; }
-
   const hist = vcpbGetHist();
   let added = 0, skipped = 0, errors = 0;
-
-  ta.value.trim().split('\n').forEach((line, i) => {
+  ta.value.trim().split('\n').forEach(line => {
     line = line.trim();
     if (!line || line.startsWith('#') || line.toLowerCase().startsWith('date')) return;
-    const parts = line.split(',').map(p => p.trim());
-    if (parts.length < 5) { errors++; return; }
-    const [date, sector, a20Raw, a50Raw, a200Raw] = parts;
+    const [date, sector, a20Raw, a50Raw, a200Raw] = line.split(',').map(p => p.trim());
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { errors++; return; }
     const a20 = parseFloat(a20Raw), a50 = parseFloat(a50Raw), a200 = parseFloat(a200Raw);
-    if (isNaN(a20) || isNaN(a50) || isNaN(a200)) { errors++; return; }
+    if (isNaN(a20)||isNaN(a50)||isNaN(a200)) { errors++; return; }
     if (!hist[sector]) hist[sector] = [];
     if (hist[sector].some(e => e.date === date)) { skipped++; return; }
-    const score = Math.round(a20 * 0.50 + a50 * 0.30 + a200 * 0.20);
-    hist[sector].push({ date, score, a20, a50, a200 });
+    hist[sector].push({ date, score: Math.round(a20*0.50+a50*0.30+a200*0.20), a20, a50, a200 });
     added++;
   });
-
   Object.keys(hist).forEach(k => hist[k].sort((a,b) => a.date.localeCompare(b.date)));
   vcpbSetHist(hist);
-  const parts = [`✓ ${added} rows imported`];
-  if (skipped) parts.push(`${skipped} skipped (duplicates)`);
-  if (errors)  parts.push(`${errors} errors (bad format)`);
+  const parts = [`✓ ${added} rows`];
+  if (skipped) parts.push(`${skipped} duplicates skipped`);
+  if (errors)  parts.push(`${errors} bad rows`);
   setMsg(parts.join(' · '), added ? 'var(--lime)' : 'var(--yellow)');
-  if (added) brrgDraw();
+  if (added) { brrgRebuildChips(); brrgDraw(); }
 }
 
 function brrgClearHistory() {
-  if (!confirm('Clear all RRG breadth history from localStorage? This cannot be undone.')) return;
+  if (!confirm('Clear all Breadth RRG history from localStorage?')) return;
   localStorage.removeItem(LS_VCPB_HIST);
   _sectorStocksCache = null;
   const msg = document.getElementById('brrg-csv-msg');
   if (msg) { msg.textContent = 'History cleared.'; msg.style.color = 'var(--yellow)'; }
-  brrgDraw();
+  brrgRebuildChips(); brrgDraw();
 }
-
 
 function srtRender() {
   const sectors = srtLoad();
@@ -8236,6 +8227,7 @@ function renderAll() {
   safe(() => srtRender(),              'srtRender');
   safe(() => slhRender(),              'slhRender');
   safe(() => vcpbInit(),               'vcpbInit');
+  safe(() => brrgRebuildChips(),       'brrgRebuildChips');
   safe(() => brrgDraw(),               'brrgDraw');
   safe(() => capitalInputInit(),       'capitalInputInit');
   // Always render chart — getBoundingClientRect works even before first paint
