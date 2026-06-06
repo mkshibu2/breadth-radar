@@ -1548,6 +1548,7 @@ body.guest-mode #mpm-module-card { display:none !important; }
               <button onclick="vcpbSetSort('a200_pct')"  id="vcpb-s-a200_pct"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">%&gt;200SMA</button>
               <button onclick="vcpbSetSort('_med90')"        id="vcpb-s-_med90"        style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">Med90%</button>
               <button onclick="vcpbSetSort('_accel')"        id="vcpb-s-_accel"        style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">Accel</button>
+              <button onclick="vcpbSetSort('_adScore')"      id="vcpb-s-_adScore"      style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">A/D</button>
               <button onclick="vcpbSetSort('_rs')"          id="vcpb-s-_rs"          style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">RS Wk</button>
               <button onclick="vcpbSetSort('_stageScore')"  id="vcpb-s-_stageScore"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">Stage</button>
               <button onclick="vcpbSetSort('_daysAtTop')"   id="vcpb-s-_daysAtTop"   style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">@Top</button>
@@ -1568,6 +1569,7 @@ body.guest-mode #mpm-module-card { display:none !important; }
                     <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Trend</th>
                     <th style="text-align:right;padding:5px 4px;color:var(--orange,#fb923c);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Median 90-day price change of VCP stocks in sector — price momentum">Med90%</th>
                     <th style="text-align:center;padding:5px 4px;color:var(--yellow);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Breadth acceleration: score gain last 5d vs prior 5d. Rising = breadth expanding faster">Accel</th>
+                    <th style="text-align:center;padding:5px 4px;color:var(--lime);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Breadth Accumulation vs. Distribution: Net daily score increases vs decreases (>=2.5 pts) over rolling 20 days">A/D</th>
                     <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.5">RS wk</th>
                     <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.5">Stage</th>
                     <th style="text-align:center;padding:5px 4px;color:var(--purple);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Consecutive trading days in top half of breadth scores">@Top</th>
@@ -1582,6 +1584,7 @@ body.guest-mode #mpm-module-card { display:none !important; }
               <span><b style="color:var(--teal)">Score</b> = 20EMA×50%+50SMA×30%+200SMA×20% · auto-daily</span>
               <span style="color:#fb923c;opacity:.9"><b>Med90%</b> = median 90d price return of VCP stocks · price momentum</span>
               <span style="color:var(--yellow);opacity:.9"><b>Accel</b> = score gain last 5d vs prior 5d · ↑ = accelerating</span>
+              <span style="color:var(--lime);opacity:.9"><b>A/D</b> = Net daily score increases vs decreases (&ge;2.5 pts) over rolling 20 days</span>
               <span style="opacity:.6">RS wk &amp; Stage = manual overlay from Sectors tab</span>
               <span style="margin-left:auto"><span style="color:var(--lime)">■</span> ≥60% &nbsp;<span style="color:var(--yellow)">■</span> 40–59% &nbsp;<span style="color:var(--red)">■</span> &lt;40%</span>
             </div>
@@ -3228,6 +3231,12 @@ function srtMaDot(close, ma) {
 // Shared row builder — used by both home card and CP table
 function srtBuildRow(s, i, opts) {
   const m = srtStageMeta(s.stage);
+  const isMinervini = srtCheckMinerviniTrend(s);
+  const isBlueSky = srtIsBlueSkyRS(s);
+  const starHtml = isBlueSky ? '<span style="color:var(--yellow);font-size:11px;margin-left:4px" title="Blue Sky RS: Weekly relative strength vs Nifty 50 at 52-week high">🌟</span>' : '';
+  const stageLabel = isMinervini ? m.label + ' ⚡' : m.label;
+  const stageTitle = isMinervini ? 'title="Minervini Stage 2 Trend Template Verified"' : '';
+
   const vs20Str = s.vs20 > 0
     ? '<span style="color:var(--lime)">+' + s.vs20.toFixed(1) + '%</span>'
     : '<span style="color:var(--red)">'   + s.vs20.toFixed(1) + '%</span>';
@@ -3258,7 +3267,7 @@ function srtBuildRow(s, i, opts) {
     <td style="padding:6px 4px">
       <div style="display:flex;align-items:center">
         <div>
-          <div style="font-weight:700;font-size:13px;font-family:var(--disp);letter-spacing:.3px">${s.name}${nameArrow}</div>
+          <div style="font-weight:700;font-size:13px;font-family:var(--disp);letter-spacing:.3px">${s.name}${starHtml}${nameArrow}</div>
           <div style="font-size:9px;color:var(--dim);font-family:var(--mono)">${s.date||''}</div>
         </div>
       </div>
@@ -3266,7 +3275,7 @@ function srtBuildRow(s, i, opts) {
     <td style="padding:6px 4px;text-align:right;font-family:var(--mono);font-size:11px">${vs20Str}</td>
     <td style="padding:6px 4px;text-align:center;font-size:12px">${maDots}${maDots50}</td>
     <td style="padding:6px 4px;text-align:center">
-      <span style="background:${m.bg};color:${m.color};padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700;font-family:var(--mono);letter-spacing:.3px">${m.label}</span>
+      <span style="background:${m.bg};color:${m.color};padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700;font-family:var(--mono);letter-spacing:.3px" ${stageTitle}>${stageLabel}</span>
     </td>
     <td style="padding:6px 4px;text-align:right;font-family:var(--mono);font-size:11px">${rsStr}</td>
     <td style="padding:6px 4px;text-align:right;color:var(--dim);font-size:10px;font-family:var(--mono)">${weeksStr}</td>
@@ -3902,6 +3911,70 @@ function vcpbScore(s) {
   return Math.round(s.a20_pct * 0.50 + s.a50_pct * 0.30 + s.a200_pct * 0.20);
 }
 
+// ── Minervini Sector Trend Template (Weekly Stage 2 Check) ────────────────
+function srtCheckMinerviniTrend(sector) {
+  const h = sector.history;
+  if (!h) return false;
+  const validH = h.filter(e => e.close && e.niftyClose);
+  if (validH.length < 40) return false;
+  const last = validH[validH.length - 1];
+  const close = last.close;
+  
+  const ma10 = srtMA(validH, 10);
+  const ma20 = srtMA(validH, 20);
+  const ma30 = srtMA(validH, 30);
+  const ma40 = srtMA(validH, 40);
+  
+  if (!ma10 || !ma20 || !ma30 || !ma40) return false;
+  
+  // 1. Close is above 30w and 40w MAs
+  const cond1 = close > ma30 && close > ma40;
+  // 2. 40w MA is sloping up (4w MA delta > 0)
+  const ma40_prev = srtMA(validH.slice(0, -4), 40);
+  const cond2 = ma40_prev ? ma40 > ma40_prev : true;
+  // 3. MAs are stacked (10w > 20w > 30w > 40w)
+  const cond3 = ma10 > ma20 && ma20 > ma30 && ma30 > ma40;
+  // 4. Close is above 10w and 20w MAs
+  const cond4 = close > ma10 && close > ma20;
+  
+  // 5. Close is within 25% of 52w high and >= 30% above 52w low
+  const recentCloses = validH.slice(-52).map(e => e.close);
+  const high52 = Math.max(...recentCloses);
+  const low52 = Math.min(...recentCloses);
+  const cond5 = close >= high52 * 0.75;
+  const cond6 = close >= low52 * 1.30;
+  
+  return cond1 && cond2 && cond3 && cond4 && cond5 && cond6;
+}
+
+// ── Blue Sky RS (Relative Strength 52-Week High Check) ────────────────────
+function srtIsBlueSkyRS(sector) {
+  const series = rrgComputeSeries(sector);
+  if (!series || series.length < 5) return false;
+  const current = series[series.length - 1].rsRatio;
+  const windowSize = Math.min(series.length, 52);
+  const recent = series.slice(-windowSize);
+  const max = Math.max(...recent.map(p => p.rsRatio));
+  return current >= max;
+}
+
+// ── Daily Breadth A/D Score (Rolling 20-Day Change) ──────────────────────
+function vcpbCalculateADScore(sectorName) {
+  const hist = vcpbGetHist();
+  const raw = hist[sectorName];
+  if (!raw || raw.length < 2) return { net: 0, acc: 0, dist: 0 };
+  const sorted = [...raw].sort((a,b) => a.date.localeCompare(b.date));
+  const recent = sorted.slice(-21); // need 21 days to compute 20 daily deltas
+  let acc = 0;
+  let dist = 0;
+  for (let i = 1; i < recent.length; i++) {
+    const change = recent[i].score - recent[i-1].score;
+    if (change >= 2.5) acc++;
+    else if (change <= -2.5) dist++;
+  }
+  return { net: acc - dist, acc, dist };
+}
+
 // ── History accumulator ──────────────────────────────────────────────────
 // Each day a new scan arrives, we store that day's scores per sector.
 // This builds a rolling history used by the breadth RRG.
@@ -3995,7 +4068,7 @@ async function vcpbFetch(force) {
 
 function vcpbSetSort(key) {
   _vcpbSort = key;
-  ['composite','universe','a20_pct','a200_pct','_med90','_accel','_rs','_stageScore','_daysAtTop'].forEach(k => {
+  ['composite','universe','a20_pct','a200_pct','_med90','_accel','_adScore','_rs','_stageScore','_daysAtTop'].forEach(k => {
     const b = document.getElementById('vcpb-s-' + k);
     if (!b) return;
     const active = k === key;
@@ -4096,7 +4169,13 @@ function vcpbGetSrtOverlay() {
     const map = {};
     secs.forEach(s => {
       if (s.id === 'NIFTY50') return;
-      map[s.name] = { rs: s.rs, stage: s.stage, vs20: s.vs20 };
+      map[s.name] = { 
+        rs: s.rs, 
+        stage: s.stage, 
+        vs20: s.vs20,
+        isMinervini: srtCheckMinerviniTrend(s),
+        isBlueSky: srtIsBlueSkyRS(s)
+      };
     });
     return map;
   } catch(e) { return {}; }
@@ -4119,16 +4198,22 @@ function vcpbRenderTable(sectors) {
       )?.[1] || null;
     const med90 = vcpbMedianR90(s.sector);
     const accel = vcpbAcceleration(s.sector);
+    const adInfo = vcpbCalculateADScore(s.sector);
     return {
       ...s,
       composite:   vcpbScore(s),
       _over:       over,
       _rs:         (over && over.rs != null) ? over.rs : -9999,
       _stageScore: (over && over.stage) ? stageToScore(over.stage) : -1,
+      _isMinervini: (over && over.isMinervini) ? 1 : 0,
+      _isBlueSky:  (over && over.isBlueSky) ? 1 : 0,
       _daysAtTop:  vcpbDaysAtTop(s.sector),
       _trend:      vcpbScoreTrend(s.sector),
       _med90:      med90 !== null ? med90 : -9999,
       _accel:      accel !== null ? accel : -9999,
+      _adScore:    adInfo.net,
+      _adAcc:      adInfo.acc,
+      _adDist:     adInfo.dist
     };
   });
 
@@ -4144,6 +4229,7 @@ function vcpbRenderTable(sectors) {
     if (_vcpbSort === '_stageScore') return nullLast(a, b, '_stageScore');
     if (_vcpbSort === '_med90')      return nullLast(a, b, '_med90');
     if (_vcpbSort === '_accel')      return nullLast(a, b, '_accel');
+    if (_vcpbSort === '_adScore')    return nullLast(a, b, '_adScore');
     if (_vcpbSort === '_daysAtTop')  return b._daysAtTop - a._daysAtTop;
     return b[_vcpbSort] - a[_vcpbSort];
   });
@@ -4181,6 +4267,12 @@ function vcpbRenderTable(sectors) {
       ? `<span style="font-size:10px;font-weight:700;color:${accC};font-family:var(--mono)">${accArrow}</span><span style="font-size:9px;color:${accC};opacity:.8;margin-left:2px">${accVal > 0 ? '+' : ''}${accVal}</span>`
       : '<span style="color:var(--border)">—</span>';
 
+    // A/D Cell
+    const adVal = s._adScore;
+    const adC   = adVal > 0 ? 'var(--lime)' : adVal < 0 ? 'var(--red)' : 'var(--dim)';
+    const adText = adVal > 0 ? `+${adVal}` : adVal;
+    const adCell = `<span style="font-size:11px;font-family:var(--mono);font-weight:700;color:${adC}" title="Breadth A/D over last 20 days: ${s._adAcc} Accumulation days vs ${s._adDist} Distribution days">${adText}</span>`;
+
     // RS / Stage overlay
     const over = s._over;
     const rsCell = over && over.rs != null
@@ -4189,8 +4281,9 @@ function vcpbRenderTable(sectors) {
     const stageInfo = over && over.stage
       ? ({ S2:{c:'var(--lime)',l:'S2'}, S1:{c:'var(--accent)',l:'S1'}, S3:{c:'var(--yellow)',l:'S3'}, S4:{c:'var(--red)',l:'S4'} })[over.stage] || null
       : null;
+    const isMinervini = s._isMinervini;
     const stageCell = stageInfo
-      ? `<span style="font-size:9px;font-weight:700;color:${stageInfo.c};background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px">${stageInfo.l}</span>`
+      ? `<span style="font-size:9px;font-weight:700;color:${stageInfo.c};background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px" ${isMinervini ? 'title="Minervini Stage 2 Trend Template Verified"' : ''}>${stageInfo.l}${isMinervini ? ' ⚡' : ''}</span>`
       : '<span style="color:var(--border)">—</span>';
 
     // @Top cell
@@ -4201,13 +4294,17 @@ function vcpbRenderTable(sectors) {
       ? `<span style="font-size:10px;font-family:var(--mono);font-weight:600;color:${dTopC}">${wks}w</span>`
       : '<span style="color:var(--border)">—</span>';
 
+    const starHtml = s._isBlueSky
+      ? '<span style="color:var(--yellow);font-size:11px;margin-left:4px" title="Blue Sky RS: Weekly relative strength vs Nifty 50 at 52-week high">🌟</span>'
+      : '';
+
     return `<tr style="border-bottom:1px solid var(--border);background:${rowBg};cursor:pointer"
       onmouseenter="this.style.background='rgba(45,212,191,.06)'"
       onmouseleave="this.style.background='${rowBg}'"
       title="Click sector name to see stocks · NSE opens index page">
       <td style="padding:5px 4px;color:var(--dim);font-size:10px;font-family:var(--mono)">${i+1}</td>
       <td style="padding:5px 4px;font-weight:700;font-size:12px;font-family:var(--disp)">
-        <span onclick="sectorDrillOpen('${s.sector.replace(/'/g, "\\'")}') " style="cursor:pointer;text-decoration:underline;text-decoration-color:rgba(45,212,191,.3);text-underline-offset:3px">${s.sector}</span>
+        <span onclick="sectorDrillOpen('${s.sector.replace(/'/g, "\\'")}')" style="cursor:pointer;text-decoration:underline;text-decoration-color:rgba(45,212,191,.3);text-underline-offset:3px">${s.sector}</span>${starHtml}
         <a href="${vcpbNseUrl(s.sector)}" target="_blank" rel="noopener"
            onclick="event.stopPropagation()"
            style="display:inline-block;margin-left:5px;font-size:9px;color:var(--teal);opacity:.7;text-decoration:none;background:rgba(45,212,191,.1);padding:0 4px;border-radius:2px;border:1px solid rgba(45,212,191,.2);vertical-align:middle">NSE↗</a>
@@ -4220,6 +4317,7 @@ function vcpbRenderTable(sectors) {
       <td style="padding:5px 4px;text-align:center">${vcpbTrendBar(s.a20_pct, s.a50_pct, s.a200_pct)}</td>
       <td style="padding:5px 4px;text-align:right">${m90Cell}</td>
       <td style="padding:5px 4px;text-align:center;white-space:nowrap">${accCell}</td>
+      <td style="padding:5px 4px;text-align:center;white-space:nowrap">${adCell}</td>
       <td style="padding:5px 4px;text-align:center;font-size:11px;font-family:var(--mono);opacity:.7">${rsCell}</td>
       <td style="padding:5px 4px;text-align:center;opacity:.7">${stageCell}</td>
       <td style="padding:5px 4px;text-align:center">${dTopCell}</td>
