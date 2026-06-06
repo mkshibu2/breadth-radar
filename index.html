@@ -1522,16 +1522,19 @@ body.guest-mode #mpm-module-card { display:none !important; }
 
             <!-- ── SECTOR LEADER SUMMARY ─────────────────── -->
             <div id="vcpb-leader-strip" style="padding:8px 14px 6px;border-bottom:1px solid var(--border)">
-              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:baseline">
-                <span style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Today:</span>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                <span style="font-size:9px;color:var(--lime);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;font-weight:700;min-width:44px">Leaders</span>
+                <span style="font-size:8px;color:var(--dim);white-space:nowrap">(top 25%)</span>
                 <span id="vcpb-ls-lead" style="font-size:10px;color:var(--dim)">—</span>
               </div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:baseline;margin-top:3px">
-                <span style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Watch:</span>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px">
+                <span style="font-size:9px;color:var(--yellow);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;font-weight:700;min-width:44px">Watch</span>
+                <span style="font-size:8px;color:var(--dim);white-space:nowrap">(mid · rising)</span>
                 <span id="vcpb-ls-watch" style="font-size:10px;color:var(--dim)">—</span>
               </div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:baseline;margin-top:3px">
-                <span style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Avoid:</span>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px">
+                <span style="font-size:9px;color:var(--red);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;font-weight:700;min-width:44px">Avoid</span>
+                <span style="font-size:8px;color:var(--dim);white-space:nowrap">(bottom 25%)</span>
                 <span id="vcpb-ls-avoid" style="font-size:10px;color:var(--dim)">—</span>
               </div>
             </div>
@@ -1543,6 +1546,8 @@ body.guest-mode #mpm-module-card { display:none !important; }
               <button onclick="vcpbSetSort('universe')"  id="vcpb-s-universe"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--teal);color:#0e1420;cursor:pointer;font-weight:600">Universe</button>
               <button onclick="vcpbSetSort('a20_pct')"   id="vcpb-s-a20_pct"   style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">%&gt;20EMA</button>
               <button onclick="vcpbSetSort('a200_pct')"  id="vcpb-s-a200_pct"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">%&gt;200SMA</button>
+              <button onclick="vcpbSetSort('_med90')"        id="vcpb-s-_med90"        style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">Med90%</button>
+              <button onclick="vcpbSetSort('_accel')"        id="vcpb-s-_accel"        style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">Accel</button>
               <button onclick="vcpbSetSort('_rs')"          id="vcpb-s-_rs"          style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">RS Wk</button>
               <button onclick="vcpbSetSort('_stageScore')"  id="vcpb-s-_stageScore"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">Stage</button>
               <button onclick="vcpbSetSort('_daysAtTop')"   id="vcpb-s-_daysAtTop"   style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">@Top</button>
@@ -1561,6 +1566,8 @@ body.guest-mode #mpm-module-card { display:none !important; }
                     <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">&gt;50SMA</th>
                     <th style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">&gt;200SMA</th>
                     <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Trend</th>
+                    <th style="text-align:right;padding:5px 4px;color:var(--orange,#fb923c);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Median 90-day price change of VCP stocks in sector — price momentum">Med90%</th>
+                    <th style="text-align:center;padding:5px 4px;color:var(--yellow);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Breadth acceleration: score gain last 5d vs prior 5d. Rising = breadth expanding faster">Accel</th>
                     <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.5">RS wk</th>
                     <th style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.5">Stage</th>
                     <th style="text-align:center;padding:5px 4px;color:var(--purple);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Consecutive trading days in top half of breadth scores">@Top</th>
@@ -1572,7 +1579,9 @@ body.guest-mode #mpm-module-card { display:none !important; }
 
             <!-- Legend -->
             <div style="display:flex;gap:10px;flex-wrap:wrap;padding:6px 14px 10px;border-top:1px solid var(--border);font-size:9px;color:var(--dim)">
-              <span><b style="color:var(--teal)">Score</b> = avg(%&gt;20EMA + %&gt;50SMA + %&gt;200SMA) · auto-daily</span>
+              <span><b style="color:var(--teal)">Score</b> = 20EMA×50%+50SMA×30%+200SMA×20% · auto-daily</span>
+              <span style="color:#fb923c;opacity:.9"><b>Med90%</b> = median 90d price return of VCP stocks · price momentum</span>
+              <span style="color:var(--yellow);opacity:.9"><b>Accel</b> = score gain last 5d vs prior 5d · ↑ = accelerating</span>
               <span style="opacity:.6">RS wk &amp; Stage = manual overlay from Sectors tab</span>
               <span style="margin-left:auto"><span style="color:var(--lime)">■</span> ≥60% &nbsp;<span style="color:var(--yellow)">■</span> 40–59% &nbsp;<span style="color:var(--red)">■</span> &lt;40%</span>
             </div>
@@ -3986,7 +3995,7 @@ async function vcpbFetch(force) {
 
 function vcpbSetSort(key) {
   _vcpbSort = key;
-  ['composite','universe','a20_pct','a200_pct','_rs','_stageScore','_daysAtTop'].forEach(k => {
+  ['composite','universe','a20_pct','a200_pct','_med90','_accel','_rs','_stageScore','_daysAtTop'].forEach(k => {
     const b = document.getElementById('vcpb-s-' + k);
     if (!b) return;
     const active = k === key;
@@ -4013,7 +4022,42 @@ function vcpbTrendBar(a20, a50, a200) {
     }).join('') + '</div>';
 }
 
-// ── Consecutive weeks a sector has been in the top half of scores ─────────
+// ── Median 90-day price return from cached sector_stocks.json VCP data ────
+// Uses r90 field already stored per VCP stock. Gives price momentum alongside breadth.
+function vcpbMedianR90(sectorName) {
+  try {
+    const data = sectorDrillGetCached();
+    if (!data) return null;
+    const secData = data.sectors?.[sectorName];
+    const stocks  = secData?.stocks || [];
+    if (!stocks.length) return null;
+    const r90s = stocks.map(s => s.r90).filter(v => v != null && !isNaN(v));
+    if (!r90s.length) return null;
+    r90s.sort((a,b) => a-b);
+    const mid = Math.floor(r90s.length / 2);
+    return r90s.length % 2 ? r90s[mid] : Math.round((r90s[mid-1] + r90s[mid]) / 2 * 10) / 10;
+  } catch(e) { return null; }
+}
+
+// ── Breadth acceleration: (score gain last 5d) - (score gain prior 5d) ───
+// Positive = breadth expanding faster than last week = institutional buying accelerating
+// Negative = momentum decelerating even if still strong
+function vcpbAcceleration(sectorName) {
+  const hist = vcpbGetHist();
+  const raw  = hist[sectorName];
+  if (!raw || raw.length < 11) return null;
+  const sorted = [...raw].sort((a,b) => a.date.localeCompare(b.date));
+  // last 5 days delta vs prior 5 days delta
+  const n    = sorted.length;
+  const cur  = sorted[n-1].score;
+  const mid  = sorted[n-6].score;   // 5 days ago
+  const old  = sorted[Math.max(0, n-11)].score;  // 10 days ago
+  const recentDelta = cur - mid;
+  const priorDelta  = mid - old;
+  return Math.round((recentDelta - priorDelta) * 10) / 10;
+}
+
+// ── Consecutive days in top half ─────────────────────────────────────────
 function vcpbDaysAtTop(sectorName) {
   const hist = vcpbGetHist();
   const sectorHist = hist[sectorName];
@@ -4046,7 +4090,6 @@ function vcpbScoreTrend(sectorName) {
   return cur - prev;
 }
 
-// Merge N500 breadth rows with optional RS/Stage from srtLoad()
 function vcpbGetSrtOverlay() {
   try {
     const secs = srtLoad ? srtLoad() : [];
@@ -4074,6 +4117,8 @@ function vcpbRenderTable(sectors) {
         k.toLowerCase().includes(s.sector.toLowerCase().split(' ')[0]) ||
         s.sector.toLowerCase().includes(k.toLowerCase().split(' ')[0])
       )?.[1] || null;
+    const med90 = vcpbMedianR90(s.sector);
+    const accel = vcpbAcceleration(s.sector);
     return {
       ...s,
       composite:   vcpbScore(s),
@@ -4082,21 +4127,24 @@ function vcpbRenderTable(sectors) {
       _stageScore: (over && over.stage) ? stageToScore(over.stage) : -1,
       _daysAtTop:  vcpbDaysAtTop(s.sector),
       _trend:      vcpbScoreTrend(s.sector),
+      _med90:      med90 !== null ? med90 : -9999,
+      _accel:      accel !== null ? accel : -9999,
     };
   });
 
+  const nullLast = (a, b, key) => {
+    if (a[key] === -9999 && b[key] === -9999) return 0;
+    if (a[key] === -9999) return 1;
+    if (b[key] === -9999) return -1;
+    return b[key] - a[key];
+  };
+
   const sorted = [...enriched].sort((a, b) => {
-    if (_vcpbSort === '_rs') {
-      if (a._rs === -9999 && b._rs === -9999) return 0;
-      if (a._rs === -9999) return 1; if (b._rs === -9999) return -1;
-      return b._rs - a._rs;
-    }
-    if (_vcpbSort === '_stageScore') {
-      if (a._stageScore === -1 && b._stageScore === -1) return 0;
-      if (a._stageScore === -1) return 1; if (b._stageScore === -1) return -1;
-      return b._stageScore - a._stageScore;
-    }
-    if (_vcpbSort === '_daysAtTop') return b._daysAtTop - a._daysAtTop;
+    if (_vcpbSort === '_rs')         return nullLast(a, b, '_rs');
+    if (_vcpbSort === '_stageScore') return nullLast(a, b, '_stageScore');
+    if (_vcpbSort === '_med90')      return nullLast(a, b, '_med90');
+    if (_vcpbSort === '_accel')      return nullLast(a, b, '_accel');
+    if (_vcpbSort === '_daysAtTop')  return b._daysAtTop - a._daysAtTop;
     return b[_vcpbSort] - a[_vcpbSort];
   });
 
@@ -4107,12 +4155,33 @@ function vcpbRenderTable(sectors) {
     const a200C  = vcpbPctColor(s.a200_pct);
     const rowBg  = i === 0 ? 'rgba(45,212,191,.04)' : 'transparent';
 
-    // Score trend arrow
+    // Trend arrow (5d score direction)
     const trendArrow = s._trend === null ? '' :
       s._trend > 2  ? '<span style="color:var(--lime);font-size:10px;margin-left:2px">&#8593;</span>' :
       s._trend < -2 ? '<span style="color:var(--red);font-size:10px;margin-left:2px">&#8595;</span>' :
                       '<span style="color:var(--dim);font-size:10px;margin-left:2px">&#8594;</span>';
 
+    // Median 90d return (price momentum)
+    const m90val = s._med90 !== -9999 ? s._med90 : null;
+    const m90C   = m90val === null ? 'var(--border)' :
+                   m90val >= 30 ? 'var(--lime)' : m90val >= 10 ? '#fb923c' : m90val >= 0 ? 'var(--yellow)' : 'var(--red)';
+    const m90Cell = m90val !== null
+      ? `<span style="color:${m90C};font-weight:600">${m90val > 0 ? '+' : ''}${m90val}%</span>`
+      : '<span style="color:var(--border)">—</span>';
+
+    // Acceleration cell
+    const accVal = s._accel !== -9999 ? s._accel : null;
+    const accC   = accVal === null ? 'var(--border)' :
+                   accVal >= 3  ? 'var(--lime)'   :
+                   accVal >= 0  ? 'var(--yellow)'  :
+                   accVal >= -3 ? '#fb923c'        : 'var(--red)';
+    const accArrow = accVal === null ? '' :
+                     accVal >= 3  ? '↑↑' : accVal >= 0 ? '↑' : accVal >= -3 ? '↓' : '↓↓';
+    const accCell = accVal !== null
+      ? `<span style="font-size:10px;font-weight:700;color:${accC};font-family:var(--mono)">${accArrow}</span><span style="font-size:9px;color:${accC};opacity:.8;margin-left:2px">${accVal > 0 ? '+' : ''}${accVal}</span>`
+      : '<span style="color:var(--border)">—</span>';
+
+    // RS / Stage overlay
     const over = s._over;
     const rsCell = over && over.rs != null
       ? `<span style="color:${over.rs >= 0 ? 'var(--lime)' : 'var(--red)'}">${over.rs > 0 ? '+' : ''}${over.rs}</span>`
@@ -4132,8 +4201,6 @@ function vcpbRenderTable(sectors) {
       ? `<span style="font-size:10px;font-family:var(--mono);font-weight:600;color:${dTopC}">${wks}w</span>`
       : '<span style="color:var(--border)">—</span>';
 
-    const secEsc = s.sector.replace(/'/g, "\\'");
-
     return `<tr style="border-bottom:1px solid var(--border);background:${rowBg};cursor:pointer"
       onmouseenter="this.style.background='rgba(45,212,191,.06)'"
       onmouseleave="this.style.background='${rowBg}'"
@@ -4151,6 +4218,8 @@ function vcpbRenderTable(sectors) {
       <td style="padding:5px 4px;text-align:right;font-size:11px;font-family:var(--mono);color:${a50C}">${s.a50_pct}%</td>
       <td style="padding:5px 4px;text-align:right;font-size:11px;font-family:var(--mono);color:${a200C}">${s.a200_pct}%</td>
       <td style="padding:5px 4px;text-align:center">${vcpbTrendBar(s.a20_pct, s.a50_pct, s.a200_pct)}</td>
+      <td style="padding:5px 4px;text-align:right">${m90Cell}</td>
+      <td style="padding:5px 4px;text-align:center;white-space:nowrap">${accCell}</td>
       <td style="padding:5px 4px;text-align:center;font-size:11px;font-family:var(--mono);opacity:.7">${rsCell}</td>
       <td style="padding:5px 4px;text-align:center;opacity:.7">${stageCell}</td>
       <td style="padding:5px 4px;text-align:center">${dTopCell}</td>
@@ -4172,32 +4241,44 @@ function vcpbRender(data) {
   if (qualEl)  qualEl.textContent    = data.total_scanned || '?';
   if (badgeEl) { badgeEl.textContent = data.scan_date || ''; badgeEl.style.display = 'inline'; }
 
-  // ── Leader strip: synthesise Today / Watch / Avoid ───────────────────
-  const enriched = data.sectors
-    .map(s => ({ name: s.sector, score: vcpbScore(s), trend: vcpbScoreTrend(s.sector) }))
+  // ── Leader strip: rank-based (top 25% / mid 50% / bottom 25%) ──────────
+  const enrichedStrip = data.sectors
+    .map(s => ({
+      name:  s.sector,
+      score: vcpbScore(s),
+      trend: vcpbScoreTrend(s.sector),
+      accel: vcpbAcceleration(s.sector),
+      med90: vcpbMedianR90(s.sector),
+    }))
     .sort((a, b) => b.score - a.score);
 
-  const THRESHOLD_HIGH = 55, THRESHOLD_LOW = 40;
-  const leaders  = enriched.filter(s => s.score >= THRESHOLD_HIGH).slice(0, 4);
-  const watching = enriched.filter(s => s.score >= THRESHOLD_LOW && s.score < THRESHOLD_HIGH && (s.trend === null || s.trend >= 0));
-  const avoid    = enriched.filter(s => s.score < THRESHOLD_LOW).slice(-3).reverse();
+  const n       = enrichedStrip.length;
+  const topCut  = Math.ceil(n * 0.25);   // top 25% = Leaders
+  const botCut  = Math.floor(n * 0.75);  // bottom 25% = Avoid
+
+  const leaders  = enrichedStrip.slice(0, topCut);
+  const watching = enrichedStrip.slice(topCut, botCut).filter(s => s.trend === null || s.trend >= 0);
+  const avoid    = enrichedStrip.slice(botCut);
 
   const pill = (s, c, bg) => {
-    const label = s.name.split(' ')[0] === 'Automobile' ? 'Auto' : SRT_SHORT[s.name] || s.name.split(' ')[0];
+    const label = SRT_SHORT[s.name] || s.name.split(' ')[0];
     const esc   = s.name.replace(/'/g, "\\'");
+    // Show acceleration indicator if available
+    const accelTip = s.accel !== null ? ` · Accel: ${s.accel > 0 ? '+' : ''}${s.accel}` : '';
+    const med90Tip = s.med90 !== null ? ` · Med90: ${s.med90 > 0 ? '+' : ''}${s.med90}%` : '';
     return `<span onclick="sectorDrillOpen('${esc}')"
       style="display:inline-block;margin:1px 3px 1px 0;padding:2px 8px;border-radius:3px;background:${bg};color:${c};font-size:10px;font-weight:700;font-family:var(--mono);cursor:pointer;transition:opacity .15s"
       onmouseenter="this.style.opacity='.75'" onmouseleave="this.style.opacity='1'"
-      title="Click to see stocks in ${s.name}">${label} <span style="font-weight:400;opacity:.75">${s.score}</span></span>`;
+      title="${s.name} · Score: ${s.score}${accelTip}${med90Tip} · Click for stocks">${label} <span style="font-weight:400;opacity:.75">${s.score}</span></span>`;
   };
 
   const leadEl  = document.getElementById('vcpb-ls-lead');
   const watchEl = document.getElementById('vcpb-ls-watch');
   const avoidEl = document.getElementById('vcpb-ls-avoid');
 
-  if (leadEl)  leadEl.innerHTML  = leaders.length  ? leaders.map(s  => pill(s,'#0e1420','var(--lime)')).join('')  : '<span style="color:var(--dim);font-size:10px">No sectors above 55 today</span>';
-  if (watchEl) watchEl.innerHTML = watching.length ? watching.slice(0,4).map(s => pill(s,'#0e1420','var(--yellow)')).join('') : '<span style="color:var(--dim);font-size:10px">—</span>';
-  if (avoidEl) avoidEl.innerHTML = avoid.length    ? avoid.map(s    => pill(s,'#fff','rgba(248,113,113,.25)')).join('')    : '<span style="color:var(--dim);font-size:10px">—</span>';
+  if (leadEl)  leadEl.innerHTML  = leaders.map(s  => pill(s,'#0e1420','var(--lime)')).join('');
+  if (watchEl) watchEl.innerHTML = watching.length ? watching.slice(0,5).map(s => pill(s,'#0e1420','var(--yellow)')).join('') : '<span style="color:var(--dim);font-size:10px">—</span>';
+  if (avoidEl) avoidEl.innerHTML = avoid.map(s    => pill(s,'#fff','rgba(248,113,113,.2)')).join('');
   // ─────────────────────────────────────────────────────────────────────
 
   vcpbRenderTable(data.sectors);
