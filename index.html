@@ -10665,6 +10665,8 @@ let _sectorStocksCache = null;
 let _n500CsvCache      = null;
 let _sdCurrentSector   = '';
 let _sdCurrentData     = null;
+let _sdActiveTab       = 'vcp';
+let _sdSearchQuery     = '';
 
 function sectorDrillGetCached() {
   if (_sectorStocksCache) return _sectorStocksCache;
@@ -10732,6 +10734,7 @@ function csvSectorMap(symbol, company, industry) {
 
 // ── Tab switcher inside the modal ─────────────────────────────────────────
 function sdSwitchTab(tab) {
+  _sdActiveTab = tab;
   ['vcp','universe'].forEach(t => {
     const btn = document.getElementById('sd-tab-' + t);
     if (!btn) return;
@@ -10744,6 +10747,26 @@ function sdSwitchTab(tab) {
   if (!body || !_sdCurrentSector) return;
   if (tab === 'vcp')      sdRenderVcp(_sdCurrentSector, _sdCurrentData);
   if (tab === 'universe') sdRenderUniverse(_sdCurrentSector);
+}
+
+function sdHandleSearch(val) {
+  _sdSearchQuery = val.trim().toLowerCase();
+  const clearBtn = document.getElementById('sd-search-clear');
+  if (clearBtn) {
+    clearBtn.style.display = val ? 'block' : 'none';
+  }
+  const body = document.getElementById('sd-body');
+  if (!body || !_sdCurrentSector) return;
+  if (_sdActiveTab === 'vcp')      sdRenderVcp(_sdCurrentSector, _sdCurrentData);
+  if (_sdActiveTab === 'universe') sdRenderUniverse(_sdCurrentSector);
+}
+
+function sdClearSearch() {
+  const input = document.getElementById('sd-search-input');
+  if (input) {
+    input.value = '';
+    sdHandleSearch('');
+  }
 }
 
 let _sdFilter = 'all';
@@ -10796,6 +10819,14 @@ async function sectorDrillOpen(sectorName) {
   _sdCurrentSector = sectorName;
   _sdCurrentData   = null;
   _sdFilter        = 'all';
+
+  // Reset search state
+  _sdSearchQuery = '';
+  const searchInput = document.getElementById('sd-search-input');
+  if (searchInput) searchInput.value = '';
+  const clearBtn = document.getElementById('sd-search-clear');
+  if (clearBtn) clearBtn.style.display = 'none';
+
   title.textContent = sectorName;
   body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--dim);font-size:11px">Loading…</div>';
   overlay.style.display = 'flex';
@@ -10923,6 +10954,14 @@ function sdRenderVcp(sectorName, secData) {
     });
   }
 
+  // Filter by search query
+  if (_sdSearchQuery) {
+    filtered = filtered.filter(s => 
+      (s.symbol && s.symbol.toLowerCase().includes(_sdSearchQuery)) ||
+      (s.company && s.company.toLowerCase().includes(_sdSearchQuery))
+    );
+  }
+
   // Filter Bar HTML
   const filterHtml = `
     <div style="display:flex;align-items:center;gap:6px;padding:6px 16px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:10px;flex-shrink:0;flex-wrap:wrap">
@@ -10934,9 +10973,13 @@ function sdRenderVcp(sectorName, secData) {
     </div>`;
 
   if (filtered.length === 0) {
-    body.innerHTML = summaryHtml + filterHtml + `<div style="padding:40px 16px;text-align:center;color:var(--dim);font-size:11px">
-      No candidates match the selected filter criteria today.
-    </div>`;
+    body.innerHTML = summaryHtml + filterHtml + `<div id="sd-no-results" style="padding:40px 16px;text-align:center;color:var(--dim);font-size:11px"></div>`;
+    const noResultsDiv = document.getElementById('sd-no-results');
+    if (noResultsDiv) {
+      noResultsDiv.textContent = _sdSearchQuery 
+        ? `No candidates found matching "${_sdSearchQuery}".` 
+        : 'No candidates match the selected filter criteria today.';
+    }
     return;
   }
 
@@ -11028,6 +11071,15 @@ function sdRenderUniverse(sectorName) {
     return;
   }
 
+  // Filter by search query
+  let filtered = [...stocks];
+  if (_sdSearchQuery) {
+    filtered = filtered.filter(s => 
+      (s.symbol && s.symbol.toLowerCase().includes(_sdSearchQuery)) ||
+      (s.company && s.company.toLowerCase().includes(_sdSearchQuery))
+    );
+  }
+
   // Build a set of VCP symbols for this sector (badge them)
   const vcpSymbols = new Set((_sdCurrentData?.stocks || []).map(s => s.symbol));
 
@@ -11039,7 +11091,16 @@ function sdRenderUniverse(sectorName) {
       <span style="color:var(--dim);margin-left:auto;font-size:9px;font-style:italic">TV↗ = TradingView &nbsp;·&nbsp; NSE↗ = NSE India &nbsp;·&nbsp; MS↗ = MarketSmith</span>
     </div>`;
 
-  const rows = stocks.map(s => {
+  if (!filtered.length) {
+    body.innerHTML = summaryHtml + `<div id="sd-universe-no-results" style="padding:40px 16px;text-align:center;color:var(--dim);font-size:11px"></div>`;
+    const noResultsDiv = document.getElementById('sd-universe-no-results');
+    if (noResultsDiv) {
+      noResultsDiv.textContent = `No stocks found matching "${_sdSearchQuery}".`;
+    }
+    return;
+  }
+
+  const rows = filtered.map(s => {
     const tvUrl  = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(s.symbol)}`;
     const nseUrl = `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(s.symbol)}`;
     const msUrl  = `https://marketsmithindia.com/mstool/eval/${s.symbol.toLowerCase()}/evaluation.jsp#/`;
@@ -11103,15 +11164,25 @@ function sdRenderUniverse(sectorName) {
     </div>
 
     <!-- Tabs -->
-    <div style="display:flex;background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0;padding:0 16px">
-      <button id="sd-tab-vcp" onclick="sdSwitchTab('vcp')"
-              style="background:none;border:none;color:var(--teal);padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;border-bottom:2px solid var(--teal);transition:all .15s;outline:none">
-        VCP Candidates
-      </button>
-      <button id="sd-tab-universe" onclick="sdSwitchTab('universe')"
-              style="background:none;border:none;color:var(--dim);padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;outline:none">
-        Sector Universe
-      </button>
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0;padding:0 16px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;gap:0">
+        <button id="sd-tab-vcp" onclick="sdSwitchTab('vcp')"
+                style="background:none;border:none;color:var(--teal);padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;border-bottom:2px solid var(--teal);transition:all .15s;outline:none">
+          VCP Candidates
+        </button>
+        <button id="sd-tab-universe" onclick="sdSwitchTab('universe')"
+                style="background:none;border:none;color:var(--dim);padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;outline:none">
+          Sector Universe
+        </button>
+      </div>
+      <div style="position:relative;display:flex;align-items:center;margin:6px 0;width:240px;max-width:100%">
+        <span style="position:absolute;left:8px;color:var(--dim);font-size:12px;pointer-events:none">🔍</span>
+        <input id="sd-search-input" type="text" placeholder="Search symbol or company..." oninput="sdHandleSearch(this.value)"
+               style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--body);font-size:11px;padding:5px 28px 5px 26px;outline:none;border-radius:4px;transition:all .15s;height:24px;box-sizing:border-box"
+               onfocus="this.style.borderColor='var(--teal)';" onblur="this.style.borderColor='var(--border)';">
+        <button id="sd-search-clear" onclick="sdClearSearch()" title="Clear search"
+                style="position:absolute;right:8px;background:none;border:none;color:var(--dim);cursor:pointer;font-size:10px;display:none;padding:2px 4px;line-height:1">✕</button>
+      </div>
     </div>
 
     <!-- Modal body (scrollable) -->
