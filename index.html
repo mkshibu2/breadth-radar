@@ -51,8 +51,6 @@
   background: var(--purple);
 }
 
-
-
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;font-size:14px;}
 body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:1.4;overflow-x:hidden;max-width:100vw;}
@@ -272,7 +270,56 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
   border: none !important;
 }
 
-
+/* ── Sector Drill Chart View Styles ── */
+.sd-charts-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  font-size: 11px;
+}
+.sd-charts-grid {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bg);
+  box-sizing: border-box;
+  width: 100%;
+}
+.sd-chart-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.sd-chart-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.sd-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.sd-chart-container {
+  flex: 1;
+  width: 100%;
+  background: #131722;
+  position: relative;
+  min-height: 0;
+}
 
 /* ── EOD ENTRY GRID ──────────────────────────────────────── */
 .entry-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:6px;}
@@ -454,7 +501,6 @@ canvas#bsr-chart{width:100%;height:100%;}
   flex-shrink: 0;
 }
 
-
 /* ── MPM ─────────────────────────────────────────────────── */
 .mpm-hero{display:grid;grid-template-columns:90px 1fr 160px;overflow:hidden;border-top:2px solid var(--teal);}
 /* ── SRT HERO ───────────────────────────────────────────── */
@@ -523,7 +569,6 @@ canvas#bsr-chart{width:100%;height:100%;}
 
 /* ── MOBILE ───────────────────────────────────────────────── */
 /* ── TABLET (≤960px) ─────────────────────────────────────── */
-
 
 /* ── MOBILE (≤600px) ─────────────────────────────────────── */
 /* ════════════════════════════════════════════════════
@@ -771,7 +816,6 @@ canvas#bsr-chart{width:100%;height:100%;}
 .msem-exp-note{font-size:11px;color:var(--sub);line-height:1.5;}
 @media(max-width:800px){.msem-grid{grid-template-columns:1fr 1fr 1fr;}.msem-section{border-right:none;border-bottom:1px solid var(--border);}}
 
-
 /* ── RALLY PROBABILITY GAUGE ──────────────────────────────── */
 .ss-rpg{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 8px;}
 .ss-rpg-signal{font-family:var(--disp);font-size:12px;font-weight:700;text-align:center;line-height:1.2;}
@@ -787,7 +831,6 @@ canvas#bsr-chart{width:100%;height:100%;}
 .rpg-row{display:flex;justify-content:space-between;align-items:center;font-size:9px;}
 .rpg-row-lbl{color:var(--dim);}
 .rpg-row-pts{font-weight:700;font-family:var(--mono);}
-
 
 /* ── INFO BUTTON & TOOLTIP ─────────────────────────────────────────── */
 .info-btn{
@@ -1313,7 +1356,6 @@ thead th[onclick]:hover {
 <!-- GUEST MODE BANNER -->
 <div class="guest-banner" id="guest-banner">👁 <b>Guest View Mode</b> — You are viewing read-only data. Entry forms are hidden. Pull latest data using the sync button.</div>
 
-
 <div class="page">
 
   <!-- ── SINGLE STATUS STRIP — all 6 metrics, full width ── -->
@@ -1521,7 +1563,6 @@ thead th[onclick]:hover {
   <!-- FTD banner (full width, below analysis strip, hidden until active) -->
   <div id="as-ftd-banner" class="as-ftd-banner card" style="display:none;border-radius:0;margin-top:-1px;border-top:none"></div>
 
-
   <!-- ── MARKET SUMMARY & EXPOSURE METER ──────────────────────── -->
   <div class="card msem-card" id="msem-card">
     <div class="card-head">
@@ -1663,7 +1704,7 @@ thead th[onclick]:hover {
               <select id="vcpb-sort-5" onchange="vcpbApplyMultiSort()" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:10px;padding:2px 3px;font-family:var(--body);outline:none;cursor:pointer;width:64px"></select>
               <span style="color:var(--dim);font-size:9px;margin:0 1px">&gt;</span>
               <select id="vcpb-sort-6" onchange="vcpbApplyMultiSort()" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:10px;padding:2px 3px;font-family:var(--body);outline:none;cursor:pointer;width:64px"></select>
-              
+
               <div style="margin-left:auto;display:flex;gap:5px">
                 <button onclick="vcpbSetPreset('minervini')" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.05);color:var(--purple);cursor:pointer;font-weight:600" title="Load Mark Minervini's preset: Stage > RS wk > Score > Accel > @Top > Med90%">⚡ Minervini</button>
                 <button onclick="vcpbSetPreset('oneil')" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid rgba(45,212,191,.3);background:rgba(45,212,191,.05);color:var(--teal);cursor:pointer;font-weight:600" title="Load William O'Neil's preset: RS wk > A/D > Score > @Top > Accel > Med90%">📈 O'Neil</button>
@@ -1909,7 +1950,6 @@ thead th[onclick]:hover {
 
         </div><!-- /pane-rrg -->
 
-
         <!-- ── TAB: HEATMAP ──────────────────────────────── -->
         <div id="scc-pane-heatmap" style="display:none">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px 4px;flex-wrap:wrap;gap:6px">
@@ -2100,7 +2140,6 @@ thead th[onclick]:hover {
           </div>
         </div>
       </div>
-
 
       <!-- MPM Module -->
       <div class="card" id="mpm-module-card" style="border-top:2px solid var(--teal)">
@@ -2559,7 +2598,6 @@ thead th[onclick]:hover {
   </div>
 </div>
 
-
 <script>
 // ── COLLAPSIBLE SECTION TOGGLE ────────────────────────────────────────────
 function toggleCollapse(bodyId, iconId) {
@@ -2627,7 +2665,6 @@ async function cfgMakePrivate() {
     cfgBanner('✗ ' + e.message, 'err', 'cp-sync-msg');
   }
 }
-
 
 // ═══════════════════════════════════════════════════════════════
 // SNAPSHOT EXPORT — read-only HTML for sharing
@@ -2929,10 +2966,7 @@ function exportSnapshot() {
   }
 }
 
-
-
 // ═══════════════════════════════════════════════
-
 
 // ════════════════════════════════════════════════════
 //  CONFIG & STORAGE
@@ -3303,7 +3337,6 @@ function srtEditLoad(id) {
   if (nEl && s.history && s.history.length) nEl.value = s.history[s.history.length-1].niftyClose||'';
 }
 
-
 function srtStageMeta(stage) {
   if (stage === 'S2') return { label:'Stage 2', color:'var(--lime)',   bg:'rgba(74,222,128,.15)',  score: 4 };
   if (stage === 'S1') return { label:'Stage 1', color:'var(--accent)', bg:'rgba(91,163,245,.12)',  score: 3 };
@@ -3427,7 +3460,6 @@ const RRG_COLORS = [
   '#2dd4bf','#fb923c','#e879f9','#34d399','#60a5fa',
   '#f472b6','#facc15','#94a3b8'
 ];
-
 
 function srtRRGSetTail(n) {
   _rrgTailWeeks = n;
@@ -3744,7 +3776,6 @@ function srtDrawRRG(animUpTo) {
   }
 }
 
-
 // ════════════════════════════════════════════════════════════════════════
 //  SECTOR LEADERSHIP HEATMAP
 //  Renders a weeks × sectors colour grid of RS vs Nifty 50, per week.
@@ -3967,7 +3998,7 @@ function toggleMaximizeSectorCommand() {
   const card = document.getElementById('srt-home-card');
   const btn = document.getElementById('srt-max-btn');
   if (!card) return;
-  
+
   const isMax = card.classList.toggle('maximized');
   if (btn) {
     if (isMax) {
@@ -3978,18 +4009,18 @@ function toggleMaximizeSectorCommand() {
       btn.title = 'Maximize Window';
     }
   }
-  
+
   // Toggle scroll lock on body
   if (isMax) {
     document.body.style.overflow = 'hidden';
   } else {
     document.body.style.overflow = '';
   }
-  
+
   // Re-draw active pane to fit maximized state layout
   const isRrgActive = document.getElementById('scc-pane-rrg').style.display !== 'none';
   const isHeatmapActive = document.getElementById('scc-pane-heatmap').style.display !== 'none';
-  
+
   if (isRrgActive) {
     const isPriceActive = document.getElementById('rrg-sub-price').style.display !== 'none';
     if (isPriceActive) {
@@ -4070,14 +4101,14 @@ function srtCheckMinerviniTrend(sector) {
   if (validH.length < 40) return false;
   const last = validH[validH.length - 1];
   const close = last.close;
-  
+
   const ma10 = srtMA(validH, 10);
   const ma20 = srtMA(validH, 20);
   const ma30 = srtMA(validH, 30);
   const ma40 = srtMA(validH, 40);
-  
+
   if (!ma10 || !ma20 || !ma30 || !ma40) return false;
-  
+
   // 1. Close is above 30w and 40w MAs
   const cond1 = close > ma30 && close > ma40;
   // 2. 40w MA is sloping up (4w MA delta > 0)
@@ -4087,14 +4118,14 @@ function srtCheckMinerviniTrend(sector) {
   const cond3 = ma10 > ma20 && ma20 > ma30 && ma30 > ma40;
   // 4. Close is above 10w and 20w MAs
   const cond4 = close > ma10 && close > ma20;
-  
+
   // 5. Close is within 25% of 52w high and >= 30% above 52w low
   const recentCloses = validH.slice(-52).map(e => e.close);
   const high52 = Math.max(...recentCloses);
   const low52 = Math.min(...recentCloses);
   const cond5 = close >= high52 * 0.75;
   const cond6 = close >= low52 * 1.30;
-  
+
   return cond1 && cond2 && cond3 && cond4 && cond5 && cond6;
 }
 
@@ -4405,9 +4436,9 @@ function vcpbGetSrtOverlay() {
     const map = {};
     secs.forEach(s => {
       if (s.id === 'NIFTY50') return;
-      map[s.name] = { 
-        rs: s.rs, 
-        stage: s.stage, 
+      map[s.name] = {
+        rs: s.rs,
+        stage: s.stage,
         vs20: s.vs20,
         isMinervini: srtCheckMinerviniTrend(s),
         isBlueSky: srtIsBlueSkyRS(s)
@@ -4437,7 +4468,7 @@ function updateTableHeaderSortIndicators() {
     '_stageScore': { text: 'Stage' },
     '_daysAtTop': { text: '@Top' }
   };
-  
+
   Object.keys(headers).forEach(k => {
     const el = document.getElementById('vcpb-h-' + k);
     if (!el) return;
@@ -4462,9 +4493,9 @@ function vcpbRenderTable(sectors) {
   const tbody = document.getElementById('vcpb-tbody');
   if (!tbody) return;
   if (!sectors || !Array.isArray(sectors)) return;
-  
+
   updateTableHeaderSortIndicators();
-  
+
   const overlay = vcpbGetSrtOverlay();
 
   const enriched = sectors.map(s => {
@@ -4497,7 +4528,7 @@ function vcpbRenderTable(sectors) {
   const compareFields = (a, b, key, asc) => {
     let valA = a[key];
     let valB = b[key];
-    
+
     if (key === 'sector') {
       const strA = valA || '';
       const strB = valB || '';
@@ -5331,8 +5362,6 @@ function mergeByKey(cloudArr, localArr, keyFn) {
   return Object.values(map);
 }
 
-
-
 async function testConnection() {
   const cfg = getCfg();
   if(!cfg.key||!cfg.bin) { setupFlash('Enter Key and Bin ID first', 'var(--orange)'); return; }
@@ -5924,25 +5953,25 @@ function exportCSV() {
 function countDistributionDays(mpmDays, attemptDate) {
   const allMpmDays = mpmLoad(); // Need full dataset for subsequent 5% rally checks
   const last25 = mpmDays.slice(0, 25);
-  
+
   const activeDds = last25.filter(d => {
     if (d.dtype !== 'dist') return false;
-    
+
     // Rule 1: Decline of 0.2% or more
     const movePct = d.pclose ? ((d.close - d.pclose) / d.pclose * 100) : 0;
     if (movePct > -0.2) return false;
-    
+
     // Rule 2: Must be on or after attemptDate of active rally attempt
     if (attemptDate && d.date < attemptDate) return false;
-    
+
     // Rule 3: 5% Reversal/Cancellation rule
     const subsequentDays = allMpmDays.filter(x => x.date > d.date && x.close > 0);
     const isCancelled = subsequentDays.some(x => x.close >= d.close * 1.05);
     if (isCancelled) return false;
-    
+
     return true;
   });
-  
+
   return activeDds.length;
 }
 
@@ -6456,14 +6485,13 @@ function renderA1Sparkline(records) {
   });
 })();
 
-
 // ══════════════════════════════════════════════════════════════
 //  DHAN INTEGRATION — Portfolio & Trading
-//  Uses DhanHQ v2 REST API via local proxy on http://localhost:9099
+//  Uses DhanHQ v2 REST API via local proxy on http://localhost:9090/dhan
 //  (Dhan API does not support direct browser CORS requests)
 // ══════════════════════════════════════════════════════════════
 
-const DHAN_PROXY = 'http://localhost:9099'; // local proxy target
+const DHAN_PROXY = 'http://localhost:9090/dhan'; // local proxy target
 const DHAN_LS_CRED = 'nse_dhan_cred_v1';
 const DHAN_LS_SIDE = 'dhan_order_side';
 const DHAN_LS_MODE = 'nse_dhan_mode_v1';       // 'token' | 'apikey'
@@ -6549,7 +6577,7 @@ async function dhanApiKeyOpenLogin() {
     dhanMsg(`✅ Step 1 done! Opening Dhan login… After login, copy the tokenId from the redirect URL and paste it in Step 2 below.`, 'var(--teal)');
     window.open(loginUrl, '_blank');
   } catch(e) {
-    dhanMsg('✗ Step 1 failed: ' + e.message + ' — is the proxy running? (node dhan_proxy.js)', 'var(--red)');
+    dhanMsg('✗ Step 1 failed: ' + e.message + ' — is the proxy running? (node proxy.js)', 'var(--red)');
   }
 }
 
@@ -7850,7 +7878,6 @@ function ftdReset() {
   ftdRender(); renderAnalysisFTD(); pushToCloud();
 }
 
-
 // ════════════════════════════════════════════════════
 //  FTD ENGINE — Compute State + Undercut Detection
 // ════════════════════════════════════════════════════
@@ -7980,7 +8007,6 @@ function ftdScanUndercutAll() {
 function ftdCheckUndercut(days, todayLow, todayClose, todayDate) {
   return ftdScanUndercutAll();
 }
-
 
 function ftdRender() {
   const el  = id => document.getElementById(id)||{textContent:'',innerHTML:'',style:{},className:'',classList:{add:()=>{},remove:()=>{},contains:()=>false},value:'',offsetWidth:0,offsetHeight:0,getBoundingClientRect:()=>({width:0,height:0,top:0,left:0,right:0,bottom:0})};
@@ -8235,7 +8261,6 @@ function nhnlRender(data) {
     return `<div class="nhnl-bar" style="background:${c};height:${h}px;flex:1"></div>`;
   }).join('');
 }
-
 
 // ════════════════════════════════════════════════════
 //  MARKET SUMMARY & EXPOSURE METER
@@ -8553,7 +8578,6 @@ function renderMarketSummary() {
   el('msem-exp-fill').style.background = expColor;
 }
 
-
 // ════════════════════════════════════════════════════
 //  PERSONAL EXPOSURE TRACKER — capital inputs
 // ════════════════════════════════════════════════════
@@ -8631,7 +8655,6 @@ function petInit() {
   if (ivEl && d.invested)    ivEl.value  = d.invested;
   petUpdate();
 }
-
 
 function renderRPG() {
   // Primary arc is now in status strip (ss-rpg-*)
@@ -8959,7 +8982,7 @@ async function seedHistoricalData() {
 
 })();
 
-window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal()); bsrRenderChart(); renderA1Sparkline(loadLocal()); if (typeof brrgDraw === 'function') brrgDraw(); if (typeof srtDrawRRG === 'function') srtDrawRRG(); },100); });
+window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal()); bsrRenderChart(); renderA1Sparkline(loadLocal()); if (typeof brrgDraw === 'function') brrgDraw(); if (typeof srtDrawRRG === 'function') srtDrawRRG(); if (document.getElementById('sector-drill-overlay') && document.getElementById('sector-drill-overlay').style.display !== 'none' && _sdActiveTab === 'charts' && _sdChartsLayout === 'auto') { sdRenderCharts(_sdCurrentSector, _sdCurrentData); } },100); });
 // Re-render chart after fonts/layout settle on mobile
 window.addEventListener('load', () => { setTimeout(() => { renderA1Sparkline(loadLocal()); renderChart(loadLocal()); rrgRebuildChips(); srtDrawRRG(); if (typeof brrgDraw === 'function') brrgDraw(); }, 300); });
 
@@ -9097,7 +9120,7 @@ function bsrAdd() {
   const curr  = document.getElementById('bsr-curr').value.trim();
   const date  = document.getElementById('bsr-date').value;
   if(!sym || !pivot || !date) { bsrFlash('⚠ Symbol, Pivot Price and Date are required', 'var(--orange)'); return; }
-  
+
   const pivotVal = parseFloat(pivot);
   const stopVal  = stopInput ? parseFloat(stopInput) : pivotVal * 0.95;
 
@@ -9439,7 +9462,6 @@ function mpmNeedlePos(score) {
   return ((c + 10) / 20 * 90 + 5).toFixed(1) + '%';
 }
 
-
 // ════════════════════════════════════════════════════
 //  MPM — YAHOO FINANCE CSV IMPORT
 // ════════════════════════════════════════════════════
@@ -9570,7 +9592,6 @@ function mpmParseCSV(text, filename) {
     // Skip blank/header repeat rows
     if(!dateRaw || dateRaw.toLowerCase().includes('date')) continue;
     if(!closeRaw || closeRaw === '-' || closeRaw === '') continue;
-
 
     // ── Parse date: DD-MMM-YYYY (06-MAR-2026), DD-MM-YYYY, DD/MM/YYYY, YYYY-MM-DD ──
     let date;
@@ -9745,8 +9766,6 @@ async function mpmImportConfirm() {
   }
 }
 
-
-
 // Classify using close direction only when volume data is absent
 function mpmClassifyNoVol(close, pclose) {
   const c = parseFloat(close), p = parseFloat(pclose);
@@ -9759,8 +9778,6 @@ function mpmDelete(id) {
   const days = mpmLoad().filter(d => d.id !== id);
   mpmSave(days); mpmRenderAll(); pushToCloud();
 }
-
-
 
 function mpmRenderHero(days) {
   const _d = {textContent:'',innerHTML:'',style:{},className:''};
@@ -9863,7 +9880,6 @@ function mpmExport() {
   const a = Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'mpm_'+todayISO()+'.csv'});
   a.click(); URL.revokeObjectURL(a.href);
 }
-
 
 async function forcePushMpm() {
   const cfg = getCfg();
@@ -10114,8 +10130,6 @@ function showPastMsg(msg,color) {
 function cpUpdateHomeStatus() {
   // eod-home-status element removed — no-op kept for compatibility
 }
-
-
 
 // ═══════════════════════════════════════════════════════════════════
 // ⓘ INFO SYSTEM — data + engine
@@ -10385,7 +10399,6 @@ document.addEventListener('keydown', e => {
   }
 });
 
-
 // ═══════════════════════════════════════════════════════════════════
 // CLOUD CONFIG MODAL ENGINE
 // ═══════════════════════════════════════════════════════════════════
@@ -10449,12 +10462,12 @@ async function cfgConnect() {
       saveCfg(key, bin);
       await pullFromCloud(key, bin);
       await pushToCloud();
-      
+
       const recCount = loadLocal().length;
       const bsrCount = bsrLoad().length;
       const mpmCount = mpmLoad().length;
       const srtCount = srtLoad().filter(s => s.id !== 'NIFTY50').length;
-      
+
       cfgBanner(`✅ Connected & data pulled!\n${recCount} breadth records · ${bsrCount} BSR trades · ${mpmCount} MPM entries · ${srtCount} sectors synced.`, 'ok');
       cpRefreshSyncState();
     }
@@ -10505,10 +10518,6 @@ function cfgClearCreds() {
   clearCredentials();
   closeCfgModal();
 }
-
-// Override the old showSetup to open new modal instead
-function showSetup() { openCfgModal(); }
-
 
 // ═══════════════════════════════════════════════════════════════════
 // GUEST / VIEW-ONLY MODE
@@ -10638,7 +10647,6 @@ function initGuestMode() {
   return true;
 }
 
-
 // ── ABOUT MODAL ─────────────────────────────────────────────────
 function openAboutModal() {
   document.getElementById('about-modal-overlay').classList.add('open');
@@ -10667,6 +10675,11 @@ let _sdCurrentSector   = '';
 let _sdCurrentData     = null;
 let _sdActiveTab       = 'vcp';
 let _sdSearchQuery     = '';
+let _sdChartsSource    = 'vcp';
+let _sdChartsPage      = 0;
+let _sdChartsPerPage   = 9;
+let _sdChartsInterval  = 'D';
+let _sdChartsLayout    = 'auto';
 
 function sectorDrillGetCached() {
   if (_sectorStocksCache) return _sectorStocksCache;
@@ -10735,7 +10748,7 @@ function csvSectorMap(symbol, company, industry) {
 // ── Tab switcher inside the modal ─────────────────────────────────────────
 function sdSwitchTab(tab) {
   _sdActiveTab = tab;
-  ['vcp','universe'].forEach(t => {
+  ['vcp','universe','charts'].forEach(t => {
     const btn = document.getElementById('sd-tab-' + t);
     if (!btn) return;
     const active = t === tab;
@@ -10747,6 +10760,7 @@ function sdSwitchTab(tab) {
   if (!body || !_sdCurrentSector) return;
   if (tab === 'vcp')      sdRenderVcp(_sdCurrentSector, _sdCurrentData);
   if (tab === 'universe') sdRenderUniverse(_sdCurrentSector);
+  if (tab === 'charts')   sdRenderCharts(_sdCurrentSector, _sdCurrentData);
 }
 
 function sdHandleSearch(val) {
@@ -10759,6 +10773,7 @@ function sdHandleSearch(val) {
   if (!body || !_sdCurrentSector) return;
   if (_sdActiveTab === 'vcp')      sdRenderVcp(_sdCurrentSector, _sdCurrentData);
   if (_sdActiveTab === 'universe') sdRenderUniverse(_sdCurrentSector);
+  if (_sdActiveTab === 'charts')   sdRenderCharts(_sdCurrentSector, _sdCurrentData);
 }
 
 function sdClearSearch() {
@@ -10773,7 +10788,11 @@ let _sdFilter = 'all';
 
 function sdSetFilter(f) {
   _sdFilter = f;
-  sdRenderVcp(_sdCurrentSector, _sdCurrentData);
+  if (_sdActiveTab === 'charts') {
+    sdRenderCharts(_sdCurrentSector, _sdCurrentData);
+  } else {
+    sdRenderVcp(_sdCurrentSector, _sdCurrentData);
+  }
 }
 
 function calculateRSRatings(data) {
@@ -10819,6 +10838,8 @@ async function sectorDrillOpen(sectorName) {
   _sdCurrentSector = sectorName;
   _sdCurrentData   = null;
   _sdFilter        = 'all';
+  _sdChartsSource  = 'vcp';
+  _sdChartsPage    = 0;
 
   // Reset search state
   _sdSearchQuery = '';
@@ -10846,11 +10867,11 @@ async function sectorDrillOpen(sectorName) {
       } catch(e) {}
     }
   }
-  
+
   if (data) {
     calculateRSRatings(data);
   }
-  
+
   _sdCurrentData = data ? (data.sectors?.[sectorName] || null) : null;
 
   // Also kick off CSV fetch in background (for universe tab)
@@ -10864,7 +10885,7 @@ function sectorDrillClose() {
   const modal = document.getElementById('sector-drill-modal');
   const btn = document.getElementById('sd-max-btn');
   if (overlay) overlay.style.display = 'none';
-  
+
   // Reset maximized states on close
   if (modal) modal.classList.remove('maximized');
   if (overlay) overlay.classList.remove('maximized');
@@ -10879,10 +10900,10 @@ function toggleMaximizeSectorDrill() {
   const overlay = document.getElementById('sector-drill-overlay');
   const btn = document.getElementById('sd-max-btn');
   if (!modal || !overlay) return;
-  
+
   const isMax = modal.classList.toggle('maximized');
   overlay.classList.toggle('maximized', isMax);
-  
+
   if (btn) {
     if (isMax) {
       btn.innerHTML = '<span style="font-size:12px;line-height:1;">🗗</span>';
@@ -10891,6 +10912,11 @@ function toggleMaximizeSectorDrill() {
       btn.innerHTML = '<span style="font-size:12px;line-height:1;">⛶</span>';
       btn.title = 'Maximize Window';
     }
+  }
+
+  // Re-calculate page size and re-render if in charts tab
+  if (_sdActiveTab === 'charts') {
+    sdRenderCharts(_sdCurrentSector, _sdCurrentData);
   }
 }
 
@@ -10956,7 +10982,7 @@ function sdRenderVcp(sectorName, secData) {
 
   // Filter by search query
   if (_sdSearchQuery) {
-    filtered = filtered.filter(s => 
+    filtered = filtered.filter(s =>
       (s.symbol && s.symbol.toLowerCase().includes(_sdSearchQuery)) ||
       (s.company && s.company.toLowerCase().includes(_sdSearchQuery))
     );
@@ -10970,14 +10996,15 @@ function sdRenderVcp(sectorName, secData) {
       <button onclick="sdSetFilter('rs90')" style="background:${_sdFilter==='rs90'?'rgba(34,197,94,.15)':'transparent'};border:1px solid ${_sdFilter==='rs90'?'var(--lime)':'var(--border)'};color:${_sdFilter==='rs90'?'var(--lime)':'var(--dim)'};padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">RS ≥ 90</button>
       <button onclick="sdSetFilter('rs80')" style="background:${_sdFilter==='rs80'?'rgba(34,197,94,.15)':'transparent'};border:1px solid ${_sdFilter==='rs80'?'var(--lime)':'var(--border)'};color:${_sdFilter==='rs80'?'var(--lime)':'var(--dim)'};padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">RS ≥ 80</button>
       <button onclick="sdSetFilter('score70')" style="background:${_sdFilter==='score70'?'rgba(45,212,191,.15)':'transparent'};border:1px solid ${_sdFilter==='score70'?'var(--teal)':'var(--border)'};color:${_sdFilter==='score70'?'var(--teal)':'var(--dim)'};padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">Score ≥ 70</button>
+      <button onclick="_sdChartsSource='vcp';sdSwitchTab('charts')" style="background:rgba(91,163,245,.12);border:1px solid rgba(91,163,245,.25);color:var(--accent);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s;margin-left:6px">📈 View Charts</button>
     </div>`;
 
   if (filtered.length === 0) {
     body.innerHTML = summaryHtml + filterHtml + `<div id="sd-no-results" style="padding:40px 16px;text-align:center;color:var(--dim);font-size:11px"></div>`;
     const noResultsDiv = document.getElementById('sd-no-results');
     if (noResultsDiv) {
-      noResultsDiv.textContent = _sdSearchQuery 
-        ? `No candidates found matching "${_sdSearchQuery}".` 
+      noResultsDiv.textContent = _sdSearchQuery
+        ? `No candidates found matching "${_sdSearchQuery}".`
         : 'No candidates match the selected filter criteria today.';
     }
     return;
@@ -11074,7 +11101,7 @@ function sdRenderUniverse(sectorName) {
   // Filter by search query
   let filtered = [...stocks];
   if (_sdSearchQuery) {
-    filtered = filtered.filter(s => 
+    filtered = filtered.filter(s =>
       (s.symbol && s.symbol.toLowerCase().includes(_sdSearchQuery)) ||
       (s.company && s.company.toLowerCase().includes(_sdSearchQuery))
     );
@@ -11088,7 +11115,10 @@ function sdRenderUniverse(sectorName) {
     <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:10px;align-items:center">
       <span style="color:var(--dim)"><b style="color:var(--text)">${stocks.length}</b> stocks in Nifty 500</span>
       ${vcpSymbols.size ? `<span style="color:var(--dim)"><b style="color:var(--teal)">${vcpSymbols.size}</b> VCP candidates today</span>` : ''}
-      <span style="color:var(--dim);margin-left:auto;font-size:9px;font-style:italic">TV↗ = TradingView &nbsp;·&nbsp; NSE↗ = NSE India &nbsp;·&nbsp; MS↗ = MarketSmith</span>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+        <button onclick="_sdChartsSource='universe';sdSwitchTab('charts')" style="background:rgba(91,163,245,.12);border:1px solid rgba(91,163,245,.25);color:var(--accent);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">📈 View Charts</button>
+        <span style="color:var(--dim);font-size:9px;font-style:italic">TV↗ = TradingView &nbsp;·&nbsp; NSE↗ = NSE India &nbsp;·&nbsp; MS↗ = MarketSmith</span>
+      </div>
     </div>`;
 
   if (!filtered.length) {
@@ -11136,7 +11166,507 @@ function sdRenderUniverse(sectorName) {
     </table></div>`;
 }
 
+function getChartsGridStyle(layout) {
+  if (layout === '1')  return 'grid-template-columns: 1fr;';
+  if (layout === '4')  return 'grid-template-columns: repeat(2, 1fr);';
+  if (layout === '6')  return 'grid-template-columns: repeat(3, 1fr);';
+  if (layout === '9')  return 'grid-template-columns: repeat(3, 1fr);';
+  if (layout === '12') return 'grid-template-columns: repeat(4, 1fr);';
+  if (layout === '16') return 'grid-template-columns: repeat(4, 1fr);';
+  if (layout === '20') return 'grid-template-columns: repeat(5, 1fr);';
+  if (layout === '24') return 'grid-template-columns: repeat(6, 1fr);';
+  if (layout === '30') return 'grid-template-columns: repeat(6, 1fr);';
+  if (layout === '36') return 'grid-template-columns: repeat(6, 1fr);';
+  if (layout === '48') return 'grid-template-columns: repeat(8, 1fr);';
+  return 'grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));';
+}
 
+function getChartsCardHeight(layout) {
+  if (layout === '1')  return '520px';
+  if (layout === '4')  return '380px';
+  if (layout === '6')  return '320px';
+  if (layout === '9')  return '300px';
+  if (layout === '12') return '260px';
+  if (layout === '16') return '240px';
+  if (layout === '20') return '220px';
+  if (layout === '24') return '200px';
+  if (layout === '30') return '180px';
+  if (layout === '36') return '180px';
+  if (layout === '48') return '160px';
+  return '350px';
+}
+
+function sdSetChartsSource(source) {
+  _sdChartsSource = source;
+  _sdChartsPage = 0;
+  sdRenderCharts(_sdCurrentSector, _sdCurrentData);
+}
+
+function sdSetLayout(layout) {
+  _sdChartsLayout = layout;
+  if (layout === 'auto') {
+    _sdChartsPerPage = 9;
+  } else {
+    _sdChartsPerPage = parseInt(layout);
+  }
+  _sdChartsPage = 0;
+  sdRenderCharts(_sdCurrentSector, _sdCurrentData);
+}
+
+function sdSetChartsInterval(interval) {
+  _sdChartsInterval = interval;
+  _sdChartsPage = 0;
+  sdRenderCharts(_sdCurrentSector, _sdCurrentData);
+}
+
+function sdChartsPrevPage() {
+  if (_sdChartsPage > 0) {
+    _sdChartsPage--;
+    sdRenderCharts(_sdCurrentSector, _sdCurrentData);
+  }
+}
+
+function sdChartsNextPage(totalPages) {
+  if (_sdChartsPage < totalPages - 1) {
+    _sdChartsPage++;
+    sdRenderCharts(_sdCurrentSector, _sdCurrentData);
+  }
+}
+
+const _yfDataCache = new Map();
+
+async function fetchYfData(symbol, range, interval) {
+  const yfSymbol = symbol + '.NS';
+  const cacheKey = `${yfSymbol}_${range}_${interval}`;
+  if (_yfDataCache.has(cacheKey)) {
+    return _yfDataCache.get(cacheKey);
+  }
+
+  const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`;
+  const currentOrigin = window.location.origin;
+  const proxies = [
+    url => {
+      if (!currentOrigin || currentOrigin.startsWith('file') || currentOrigin === 'null') {
+        return '';
+      }
+      return `${currentOrigin}/api/proxy?url=${encodeURIComponent(url)}`;
+    },
+    url => `http://localhost:9090/?url=${encodeURIComponent(url)}`,
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+  ];
+
+  for (const proxyFn of proxies) {
+    try {
+      const pUrl = proxyFn(targetUrl);
+      if (!pUrl) continue;
+      const resp = await fetch(pUrl);
+      if (resp.ok) {
+        let text = await resp.text();
+        if (text.trim().startsWith('{')) {
+          const parsed = JSON.parse(text);
+          if (parsed.contents) {
+            text = parsed.contents;
+          }
+        }
+        const data = JSON.parse(text);
+        const candles = parseYfData(data);
+        if (candles && candles.length > 0) {
+          _yfDataCache.set(cacheKey, candles);
+          return candles;
+        }
+      }
+    } catch (e) {
+      console.warn("Proxy attempt failed:", e);
+    }
+  }
+  throw new Error("Unable to load Yahoo Finance chart data");
+}
+
+function parseYfData(data) {
+  const result = data?.chart?.result?.[0];
+  if (!result) return null;
+  const timestamps = result.timestamp || [];
+  const quote = result.indicators?.quote?.[0] || {};
+  const opens = quote.open || [];
+  const highs = quote.high || [];
+  const lows = quote.low || [];
+  const closes = quote.close || [];
+  const volumes = quote.volume || [];
+
+  const candles = [];
+  for (let i = 0; i < timestamps.length; i++) {
+    if (opens[i] != null && highs[i] != null && lows[i] != null && closes[i] != null) {
+      candles.push({
+        time: timestamps[i] * 1000,
+        open: opens[i],
+        high: highs[i],
+        low: lows[i],
+        close: closes[i],
+        volume: volumes[i] || 0
+      });
+    }
+  }
+  return candles;
+}
+
+function drawCandlestickChart(canvasId, candles) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+
+  const width = rect.width;
+  const height = rect.height;
+
+  ctx.clearRect(0, 0, width, height);
+
+  if (!candles || candles.length === 0) {
+    ctx.fillStyle = '#64748b';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('No chart data found', width / 2, height / 2);
+    return;
+  }
+
+  let minPrice = Infinity;
+  let maxPrice = -Infinity;
+  let maxVolume = 0;
+
+  for (const c of candles) {
+    if (c.low < minPrice) minPrice = c.low;
+    if (c.high > maxPrice) maxPrice = c.high;
+    if (c.volume > maxVolume) maxVolume = c.volume;
+  }
+
+  const priceRange = maxPrice - minPrice;
+  minPrice -= priceRange * 0.05;
+  maxPrice += priceRange * 0.05;
+  const finalRange = maxPrice - minPrice;
+
+  const chartHeight = height - 16;
+  const candleCount = candles.length;
+  const candleWidth = width / candleCount;
+
+  // Draw Price Grid
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+  ctx.lineWidth = 1;
+  const gridLevels = 4;
+  for (let i = 0; i <= gridLevels; i++) {
+    const y = (chartHeight / gridLevels) * i;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.stroke();
+
+    const priceVal = maxPrice - (finalRange / gridLevels) * i;
+    ctx.fillStyle = '#64748b';
+    ctx.font = '8px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(priceVal.toFixed(1), width - 4, y - 2);
+  }
+
+  // Draw Candles
+  for (let i = 0; i < candleCount; i++) {
+    const c = candles[i];
+    const x = i * candleWidth + candleWidth / 2;
+
+    const yOpen = chartHeight - ((c.open - minPrice) / finalRange) * chartHeight;
+    const yClose = chartHeight - ((c.close - minPrice) / finalRange) * chartHeight;
+    const yHigh = chartHeight - ((c.high - minPrice) / finalRange) * chartHeight;
+    const yLow = chartHeight - ((c.low - minPrice) / finalRange) * chartHeight;
+
+    const isUp = c.close >= c.open;
+    const color = isUp ? '#10b981' : '#f87171';
+
+    // Wick
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, yHigh);
+    ctx.lineTo(x, yLow);
+    ctx.stroke();
+
+    // Body
+    ctx.fillStyle = color;
+    const bodyHeight = Math.abs(yClose - yOpen) || 1;
+    const bodyY = Math.min(yOpen, yClose);
+    const bodyWidth = Math.max(1, candleWidth * 0.7);
+
+    ctx.fillRect(x - bodyWidth / 2, bodyY, bodyWidth, bodyHeight);
+
+    // Volume
+    if (maxVolume > 0) {
+      const volHeight = (c.volume / maxVolume) * (chartHeight * 0.15);
+      ctx.fillStyle = isUp ? 'rgba(16, 185, 129, 0.12)' : 'rgba(248, 113, 113, 0.12)';
+      ctx.fillRect(x - bodyWidth / 2, chartHeight - volHeight, bodyWidth, volHeight);
+    }
+  }
+
+  // Draw Dates
+  let lastMonth = '';
+  ctx.fillStyle = '#64748b';
+  ctx.font = '8px sans-serif';
+  ctx.textAlign = 'center';
+  for (let i = 0; i < candleCount; i++) {
+    const date = new Date(candles[i].time);
+    const month = date.toLocaleString('default', { month: 'short' });
+    if (month !== lastMonth && i > 0 && i < candleCount - 4) {
+      const x = i * candleWidth + candleWidth / 2;
+      ctx.fillText(month, x, height - 4);
+      lastMonth = month;
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, chartHeight);
+      ctx.stroke();
+    }
+  }
+}
+
+function sdRenderCharts(sectorName, secData) {
+  const body = document.getElementById('sd-body');
+  if (!body) return;
+
+  let stocks = [];
+  if (_sdChartsSource === 'vcp') {
+    stocks = secData?.stocks || [];
+    if (_sdFilter === 'rs90') {
+      stocks = stocks.filter(s => (s.rs_rating || 0) >= 90);
+    } else if (_sdFilter === 'rs80') {
+      stocks = stocks.filter(s => (s.rs_rating || 0) >= 80);
+    } else if (_sdFilter === 'score70') {
+      stocks = stocks.filter(s => {
+        const score = s.final_score > 0 ? s.final_score : s.vcp_score;
+        return (score || 0) >= 70;
+      });
+    }
+    stocks = [...stocks].sort((a, b) => (b.final_score || b.vcp_score || 0) - (a.final_score || a.vcp_score || 0));
+  } else {
+    const csv = n500CsvGetCached();
+    if (!csv) {
+      body.innerHTML = `
+        <div class="sd-charts-controls">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="color:var(--dim)">Source:</span>
+            <select onchange="sdSetChartsSource(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:10px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
+              <option value="vcp" ${_sdChartsSource === 'vcp' ? 'selected' : ''}>VCP Candidates</option>
+              <option value="universe" ${_sdChartsSource === 'universe' ? 'selected' : ''}>Sector Universe</option>
+            </select>
+          </div>
+        </div>
+        <div style="padding:40px 16px;text-align:center;color:var(--yellow);font-size:11px">
+          ⏳ Loading sector stock list from GitHub…
+        </div>`;
+      sdFetchCsv().then(() => {
+        const fresh = n500CsvGetCached();
+        if (fresh) sdRenderCharts(sectorName, secData);
+      });
+      return;
+    }
+    stocks = csv.filter(s => csvSectorMap(s.symbol, s.company, s.industry) === sectorName);
+    stocks = [...stocks].sort((a, b) => a.symbol.localeCompare(b.symbol));
+  }
+
+  if (_sdSearchQuery) {
+    stocks = stocks.filter(s =>
+      (s.symbol && s.symbol.toLowerCase().includes(_sdSearchQuery)) ||
+      (s.company && s.company.toLowerCase().includes(_sdSearchQuery))
+    );
+  }
+
+  if (stocks.length === 0) {
+    body.innerHTML = `
+      <div class="sd-charts-controls">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="color:var(--dim)">Source:</span>
+          <select onchange="sdSetChartsSource(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:10px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
+            <option value="vcp" ${_sdChartsSource === 'vcp' ? 'selected' : ''}>VCP Candidates</option>
+            <option value="universe" ${_sdChartsSource === 'universe' ? 'selected' : ''}>Sector Universe</option>
+          </select>
+        </div>
+      </div>
+      <div style="padding:40px 16px;text-align:center;color:var(--dim);font-size:11px">
+        No stocks found matching the criteria. Try clearing the search bar or changing filters.
+      </div>`;
+    return;
+  }
+
+  if (_sdChartsLayout === 'auto') {
+    // Calculate how many columns and rows fit on the screen dynamically
+    const width = body.clientWidth || window.innerWidth;
+    const height = body.clientHeight || window.innerHeight;
+    
+    // Columns calculation: minmax(320px, 1fr)
+    const padding = 24; 
+    const gap = 10;
+    const colWidth = 320;
+    const cols = Math.max(1, Math.floor((width - padding + gap) / (colWidth + gap)));
+    
+    // Rows calculation: card height is 350px.
+    const controlsHeight = 48;
+    const rowHeight = 350;
+    const rows = Math.max(1, Math.floor((height - controlsHeight + gap) / (rowHeight + gap)));
+    
+    _sdChartsPerPage = cols * rows;
+    
+    // Fallback if clientHeight is 0 (not visible yet)
+    if (_sdChartsPerPage <= 0 || isNaN(_sdChartsPerPage)) {
+      _sdChartsPerPage = 9;
+    }
+  }
+
+  const totalCharts = stocks.length;
+  const totalPages = Math.ceil(totalCharts / _sdChartsPerPage);
+  if (_sdChartsPage >= totalPages) _sdChartsPage = Math.max(0, totalPages - 1);
+
+  const startIdx = _sdChartsPage * _sdChartsPerPage;
+  const endIdx = Math.min(startIdx + _sdChartsPerPage, totalCharts);
+  const pageStocks = stocks.slice(startIdx, endIdx);
+
+  const cardHeight = getChartsCardHeight(_sdChartsLayout);
+  const gridStyle = getChartsGridStyle(_sdChartsLayout);
+
+  const chartCardsHtml = pageStocks.map(s => {
+    const tvUrl  = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(s.symbol)}`;
+
+    let statsHtml = '';
+    if (_sdChartsSource === 'vcp') {
+      const rsVal = s.rs_rating != null ? s.rs_rating : '—';
+      const score = s.final_score > 0 ? s.final_score : s.vcp_score;
+      statsHtml = `
+        <span style="color:var(--dim);font-size:9px">
+          RS: <b style="color:var(--purple)">${rsVal}</b> | Score: <b style="color:var(--teal)">${Math.round(score)}</b>
+        </span>`;
+    } else {
+      const vcpData = (_sdCurrentData?.stocks || []).find(x => x.symbol === s.symbol);
+      if (vcpData) {
+        const rsVal = vcpData.rs_rating != null ? vcpData.rs_rating : '—';
+        statsHtml = `
+          <span style="font-size:8px;background:rgba(45,212,191,.15);color:var(--teal);padding:1px 4px;border-radius:2px;border:1px solid rgba(45,212,191,.25);font-weight:600">VCP</span>
+          <span style="font-size:8px;background:rgba(167,139,250,.15);color:var(--purple);padding:1px 4px;border-radius:2px;border:1px solid rgba(167,139,250,.25);font-weight:600;margin-left:2px">RS ${rsVal}</span>`;
+      }
+    }
+
+    return `
+      <div class="sd-chart-card" style="height:${cardHeight}">
+        <div class="sd-chart-header">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-weight:800;font-size:12px;color:var(--teal);font-family:var(--mono)">${s.symbol}</span>
+            <span style="color:var(--dim);font-size:9px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.company}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            ${statsHtml}
+            <a href="${tvUrl}" target="_blank" rel="noopener"
+               style="font-size:8px;color:var(--accent);text-decoration:none;padding:1px 4px;border-radius:2px;border:1px solid rgba(91,163,245,.2);background:rgba(91,163,245,.08)"
+               title="Open full chart on TradingView">TV↗</a>
+          </div>
+        </div>
+        <div class="sd-chart-container" style="background:#0c0d12;display:flex;flex-direction:column;justify-content:center;position:relative;">
+          <canvas id="yf-chart-${s.symbol}" style="width:100%;height:100%;display:block;"></canvas>
+          <div id="yf-loader-${s.symbol}" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#0c0d12;color:var(--dim);font-size:10px;">
+            Loading chart…
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  let vcpFiltersHtml = '';
+  if (_sdChartsSource === 'vcp') {
+    vcpFiltersHtml = `
+      <div style="display:flex;align-items:center;gap:4px;margin-left:4px;border-left:1px solid var(--border);padding-left:10px;">
+        <span style="color:var(--dim);margin-right:2px">Filter:</span>
+        <button onclick="sdSetFilter('all')" style="background:${_sdFilter==='all'?'var(--border)':'transparent'};border:1px solid var(--border);color:${_sdFilter==='all'?'var(--text)':'var(--dim)'};padding:2px 6px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">All</button>
+        <button onclick="sdSetFilter('rs90')" style="background:${_sdFilter==='rs90'?'rgba(34,197,94,.15)':'transparent'};border:1px solid ${_sdFilter==='rs90'?'var(--lime)':'var(--border)'};color:${_sdFilter==='rs90'?'var(--lime)':'var(--dim)'};padding:2px 6px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">RS≥90</button>
+        <button onclick="sdSetFilter('rs80')" style="background:${_sdFilter==='rs80'?'rgba(34,197,94,.15)':'transparent'};border:1px solid ${_sdFilter==='rs80'?'var(--lime)':'var(--border)'};color:${_sdFilter==='rs80'?'var(--lime)':'var(--dim)'};padding:2px 6px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">RS≥80</button>
+        <button onclick="sdSetFilter('score70')" style="background:${_sdFilter==='score70'?'rgba(45,212,191,.15)':'transparent'};border:1px solid ${_sdFilter==='score70'?'var(--teal)':'var(--border)'};color:${_sdFilter==='score70'?'var(--teal)':'var(--dim)'};padding:2px 6px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">Score≥70</button>
+      </div>`;
+  }
+
+  const controlsHtml = `
+    <div class="sd-charts-controls">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="color:var(--dim)">Source:</span>
+        <select onchange="sdSetChartsSource(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:10px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
+          <option value="vcp" ${_sdChartsSource === 'vcp' ? 'selected' : ''}>VCP Candidates</option>
+          <option value="universe" ${_sdChartsSource === 'universe' ? 'selected' : ''}>Sector Universe</option>
+        </select>
+      </div>
+
+      ${vcpFiltersHtml}
+
+      <div style="display:flex;align-items:center;gap:6px;margin-left:4px;border-left:1px solid var(--border);padding-left:10px;">
+        <span style="color:var(--dim)">Layout:</span>
+        <select onchange="sdSetLayout(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:10px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
+          <option value="auto" ${_sdChartsLayout === 'auto' ? 'selected' : ''}>Auto-Grid</option>
+          <option value="1" ${_sdChartsLayout === '1' ? 'selected' : ''}>1x1 (Single)</option>
+          <option value="4" ${_sdChartsLayout === '4' ? 'selected' : ''}>2x2 (4 Charts)</option>
+          <option value="6" ${_sdChartsLayout === '6' ? 'selected' : ''}>3x2 (6 Charts)</option>
+          <option value="9" ${_sdChartsLayout === '9' ? 'selected' : ''}>3x3 (9 Charts)</option>
+          <option value="12" ${_sdChartsLayout === '12' ? 'selected' : ''}>4x3 (12 Charts)</option>
+          <option value="16" ${_sdChartsLayout === '16' ? 'selected' : ''}>4x4 (16 Charts)</option>
+          <option value="20" ${_sdChartsLayout === '20' ? 'selected' : ''}>5x4 (20 Charts)</option>
+          <option value="24" ${_sdChartsLayout === '24' ? 'selected' : ''}>6x4 (24 Charts)</option>
+          <option value="30" ${_sdChartsLayout === '30' ? 'selected' : ''}>6x5 (30 Charts)</option>
+          <option value="36" ${_sdChartsLayout === '36' ? 'selected' : ''}>6x6 (36 Charts)</option>
+          <option value="48" ${_sdChartsLayout === '48' ? 'selected' : ''}>8x6 (48 Charts)</option>
+        </select>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:6px;margin-left:4px;border-left:1px solid var(--border);padding-left:10px;">
+        <span style="color:var(--dim)">Timeframe:</span>
+        <select onchange="sdSetChartsInterval(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:10px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
+          <option value="D" ${_sdChartsInterval === 'D' ? 'selected' : ''}>Daily</option>
+          <option value="W" ${_sdChartsInterval === 'W' ? 'selected' : ''}>Weekly</option>
+        </select>
+      </div>
+
+      <!-- Pagination controls -->
+      <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+        <span style="color:var(--dim)">Showing ${startIdx + 1}-${endIdx} of ${totalCharts}</span>
+        <button onclick="sdChartsPrevPage()" ${_sdChartsPage === 0 ? 'disabled' : ''}
+                style="background:var(--bg4);border:1px solid var(--border);color:${_sdChartsPage === 0 ? 'var(--dim)' : 'var(--text)'};padding:2px 8px;border-radius:3px;cursor:${_sdChartsPage === 0 ? 'not-allowed' : 'pointer'};font-weight:600;height:24px;font-size:8px;">◀</button>
+        <span style="font-family:var(--mono);color:var(--sub)">${_sdChartsPage + 1} / ${totalPages}</span>
+        <button onclick="sdChartsNextPage(${totalPages})" ${_sdChartsPage >= totalPages - 1 ? 'disabled' : ''}
+                style="background:var(--bg4);border:1px solid var(--border);color:${_sdChartsPage >= totalPages - 1 ? 'var(--dim)' : 'var(--text)'};padding:2px 8px;border-radius:3px;cursor:${_sdChartsPage >= totalPages - 1 ? 'not-allowed' : 'pointer'};font-weight:600;height:24px;font-size:8px;">▶</button>
+      </div>
+    </div>`;
+
+  body.innerHTML = controlsHtml + `
+    <div class="sd-charts-grid" style="display:grid;${gridStyle}">
+      ${chartCardsHtml}
+    </div>`;
+
+  const range = _sdChartsInterval === 'D' ? '3mo' : '1y';
+  const interval = _sdChartsInterval === 'D' ? '1d' : '1wk';
+
+  pageStocks.forEach(s => {
+    fetchYfData(s.symbol, range, interval)
+      .then(candles => {
+        const loader = document.getElementById(`yf-loader-${s.symbol}`);
+        if (loader) loader.style.display = 'none';
+        drawCandlestickChart(`yf-chart-${s.symbol}`, candles);
+      })
+      .catch(err => {
+        console.error("YF Chart Error for " + s.symbol, err);
+        const loader = document.getElementById(`yf-loader-${s.symbol}`);
+        if (loader) {
+          loader.innerHTML = `
+            <div style="color:var(--sub);font-size:10px;text-align:center;padding:12px;line-height:1.5;max-width:260px;margin:0 auto;">
+              <span style="color:var(--red);font-weight:600;display:block;margin-bottom:6px;">Failed to load chart data</span>
+              Run <code style="background:var(--bg4);padding:2px 4px;border-radius:3px;color:var(--accent);font-family:var(--mono);font-size:9px;white-space:nowrap;">node chart_proxy.js</code><br>in terminal to enable EOD charts.
+            </div>`;
+        }
+      });
+  });
+}
 
 </script>
 
@@ -11173,6 +11703,10 @@ function sdRenderUniverse(sectorName) {
         <button id="sd-tab-universe" onclick="sdSwitchTab('universe')"
                 style="background:none;border:none;color:var(--dim);padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;outline:none">
           Sector Universe
+        </button>
+        <button id="sd-tab-charts" onclick="sdSwitchTab('charts')"
+                style="background:none;border:none;color:var(--dim);padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;outline:none">
+          📈 Chart View
         </button>
       </div>
       <div style="position:relative;display:flex;align-items:center;margin:6px 0;width:240px;max-width:100%">
@@ -11283,7 +11817,6 @@ function sdRenderUniverse(sectorName) {
         </div>
       </div><!-- /eod -->
 
-
       <!-- ── TAB 2: Past Entry ──────────────────── -->
       <div class="cp-section" id="cp-sec-past">
         <div class="cp-section-title">PAST DATE ENTRY</div>
@@ -11352,7 +11885,6 @@ function sdRenderUniverse(sectorName) {
           <div id="past-seed-list" style="max-height:260px;overflow-y:auto"></div>
         </div>
       </div><!-- /past -->
-
 
       <!-- ── TAB 3: Sync ──────────────────────── -->
       <div class="cp-section" id="cp-sec-sync">
@@ -11727,7 +12259,7 @@ function sdRenderUniverse(sectorName) {
           <a href="https://web.dhan.co" target="_blank" style="color:var(--accent)">web.dhan.co</a>
           → API Key settings → <b>Static IP Setting</b> → remove or disable the IP whitelist.
           Dhan blocks API calls from unrecognised IPs including localhost.<br>
-          ⚠ <b style="color:var(--yellow)">If you see "Failed to fetch":</b> Run <code style="background:var(--bg3);padding:1px 5px;border-radius:3px">node dhan_proxy.js</code> in a terminal alongside this file.
+          ⚠ <b style="color:var(--yellow)">If you see "Failed to fetch":</b> Run <code style="background:var(--bg3);padding:1px 5px;border-radius:3px">node proxy.js</code> in a terminal alongside this file.
         </div>
       </div><!-- /dhan -->
 
@@ -11992,4 +12524,3 @@ function sdRenderUniverse(sectorName) {
         <div class="about-tool-desc">
           Breadth Score weights: <b>A/D Ratio 35%</b> · <b>%&gt;EMA20 20%</b> · <b>%&gt;SMA50 15%</b> ·
           <b>%&gt;SMA200 15%</b> · <b>52W H/L 15%</b>. Zones: Healthy ≥55 · Expanding 45–55 ·
-    
