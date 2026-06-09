@@ -321,6 +321,91 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
   min-height: 0;
 }
 
+/* ── Maximized Individual Chart Styles ── */
+#chart-max-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 3, 5, 0.9);
+  z-index: 6000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+#chart-max-content {
+  width: 100%;
+  max-width: 1100px;
+  height: 85vh;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8);
+}
+.sd-chart-max-btn {
+  background: none;
+  border: none;
+  color: var(--dim);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 11px;
+  line-height: 1;
+  border-radius: 3px;
+  transition: color 0.15s, background-color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sd-chart-max-btn:hover {
+  color: var(--teal);
+  background: rgba(45, 212, 191, 0.1);
+}
+.max-suggest-box {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--bdr2);
+  border-radius: 4px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+  z-index: 7000;
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+}
+.max-suggest-item {
+  padding: 8px 10px;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  text-align: left;
+}
+.max-suggest-item:last-child {
+  border-bottom: none;
+}
+.max-suggest-item:hover {
+  background: rgba(91, 163, 245, 0.1);
+  color: var(--accent);
+}
+.max-suggest-item .comp-name {
+  color: var(--dim);
+  font-family: var(--body);
+  font-size: 10px;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ── EOD ENTRY GRID ──────────────────────────────────────── */
 .entry-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:6px;}
 .ef{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:9px 10px;transition:border-color .15s;}
@@ -8982,7 +9067,7 @@ async function seedHistoricalData() {
 
 })();
 
-window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal()); bsrRenderChart(); renderA1Sparkline(loadLocal()); if (typeof brrgDraw === 'function') brrgDraw(); if (typeof srtDrawRRG === 'function') srtDrawRRG(); if (document.getElementById('sector-drill-overlay') && document.getElementById('sector-drill-overlay').style.display !== 'none' && _sdActiveTab === 'charts' && _sdChartsLayout === 'auto') { sdRenderCharts(_sdCurrentSector, _sdCurrentData); } },100); });
+window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal()); bsrRenderChart(); renderA1Sparkline(loadLocal()); if (typeof brrgDraw === 'function') brrgDraw(); if (typeof srtDrawRRG === 'function') srtDrawRRG(); if (document.getElementById('sector-drill-overlay') && document.getElementById('sector-drill-overlay').style.display !== 'none' && _sdActiveTab === 'charts' && _sdChartsLayout === 'auto') { sdRenderCharts(_sdCurrentSector, _sdCurrentData); } if (document.getElementById('chart-max-overlay') && document.getElementById('chart-max-overlay').style.display !== 'none' && _sdMaximizedChartSymbol) { const range = _sdChartsInterval === 'D' ? '6mo' : '2y'; const interval = _sdChartsInterval === 'D' ? '1d' : '1wk'; fetchYfData(_sdMaximizedChartSymbol, range, interval).then(candles => { drawAnyChart('max-chart-canvas', candles, _sdChartType); }).catch(() => {}); } },100); });
 // Re-render chart after fonts/layout settle on mobile
 window.addEventListener('load', () => { setTimeout(() => { renderA1Sparkline(loadLocal()); renderChart(loadLocal()); rrgRebuildChips(); srtDrawRRG(); if (typeof brrgDraw === 'function') brrgDraw(); }, 300); });
 
@@ -10657,6 +10742,7 @@ function closeAboutModal() {
 // Close on Escape
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
+    closeMaximizedChart();
     closeAboutModal();
     closeCfgModal();
     sectorDrillClose();
@@ -10683,6 +10769,9 @@ let _sdChartsLayout    = 'auto';
 let _sdAutoChartsLimit = 12;
 let _sdChartType       = 'candlestick';
 let _sdSortBy          = 'score';
+let _sdMaximizedChartSymbol = null;
+let _sdMaximizedChartCompany = null;
+let _sdMaximizedChartStats = '';
 
 function sectorDrillGetCached() {
   if (_sectorStocksCache) return _sectorStocksCache;
@@ -10833,6 +10922,178 @@ function calculateRSRatings(data) {
       s.rs_rating = rank;
     });
   });
+}
+
+// ── Open Maximized Chart overlay ──────────────────────────────────────────
+function openMaximizedChart(symbol) {
+  const overlay = document.getElementById('chart-max-overlay');
+  const maxSymbol = document.getElementById('max-chart-symbol');
+  const maxCompany = document.getElementById('max-chart-company');
+  const maxStats = document.getElementById('max-chart-stats');
+  const maxTvLink = document.getElementById('max-chart-tv-link');
+  const loader = document.getElementById('max-chart-loader');
+  
+  const tfSelect = document.getElementById('max-chart-timeframe');
+  const typeSelect = document.getElementById('max-chart-type');
+
+  if (!overlay) return;
+
+  _sdMaximizedChartSymbol = symbol;
+
+  // Sync controls to current global state
+  if (tfSelect) tfSelect.value = _sdChartsInterval;
+  if (typeSelect) typeSelect.value = _sdChartType;
+
+  let company = '';
+  let statsHtml = '';
+
+  // 1. Try to find in _sdCurrentData.stocks
+  let s = (_sdCurrentData?.stocks || []).find(x => x.symbol === symbol);
+  
+  if (!s && n500CsvGetCached()) {
+    // 2. Try to find in universe list
+    s = n500CsvGetCached().find(x => x.symbol === symbol);
+  }
+
+  if (s) {
+    company = s.company || '';
+    
+    // Build statsHtml using the same logic as sdRenderCharts
+    if (_sdChartsSource === 'vcp' || s.rs_rating != null || s.final_score != null || s.vcp_score != null) {
+      const rsVal = s.rs_rating != null ? s.rs_rating : '—';
+      const score = s.final_score > 0 ? s.final_score : s.vcp_score;
+      if (score != null) {
+        statsHtml = `RS: <b style="color:var(--purple)">${rsVal}</b> | Score: <b style="color:var(--teal)">${Math.round(score)}</b>`;
+      } else {
+        statsHtml = `RS: <b style="color:var(--purple)">${rsVal}</b>`;
+      }
+    } else {
+      const vcpData = (_sdCurrentData?.stocks || []).find(x => x.symbol === symbol);
+      if (vcpData) {
+        const rsVal = vcpData.rs_rating != null ? vcpData.rs_rating : '—';
+        statsHtml = `
+          <span style="font-size:9px;background:rgba(45,212,191,.15);color:var(--teal);padding:1px 4px;border-radius:2px;border:1px solid rgba(45,212,191,.25);font-weight:600">VCP</span>
+          <span style="font-size:9px;background:rgba(167,139,250,.15);color:var(--purple);padding:1px 4px;border-radius:2px;border:1px solid rgba(167,139,250,.25);font-weight:600;margin-left:2px">RS ${rsVal}</span>`;
+      }
+    }
+  }
+
+  _sdMaximizedChartCompany = company;
+  _sdMaximizedChartStats = statsHtml;
+
+  if (maxSymbol) maxSymbol.textContent = symbol;
+  if (maxCompany) maxCompany.textContent = company;
+  if (maxStats) maxStats.innerHTML = statsHtml ? `&nbsp;·&nbsp; ${statsHtml}` : '';
+  if (maxTvLink) maxTvLink.href = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(symbol)}`;
+  if (loader) {
+    loader.style.display = 'flex';
+    loader.innerHTML = 'Loading chart…';
+  }
+
+  overlay.style.display = 'flex';
+
+  const range = _sdChartsInterval === 'D' ? '6mo' : '2y';
+  const interval = _sdChartsInterval === 'D' ? '1d' : '1wk';
+
+  fetchYfData(symbol, range, interval)
+    .then(candles => {
+      if (loader) loader.style.display = 'none';
+      drawAnyChart('max-chart-canvas', candles, _sdChartType);
+    })
+    .catch(err => {
+      console.error("YF Maximized Chart Error for " + symbol, err);
+      if (loader) {
+        loader.innerHTML = `
+          <div style="color:var(--sub);font-size:11px;text-align:center;padding:12px;line-height:1.5;max-width:280px;margin:0 auto;">
+            <span style="color:var(--red);font-weight:600;display:block;margin-bottom:6px;">Failed to load chart data</span>
+            Run <code style="background:var(--bg4);padding:2px 4px;border-radius:3px;color:var(--accent);font-family:var(--mono);font-size:10px;white-space:nowrap;">node chart_proxy.js</code><br>in terminal to enable EOD charts.
+          </div>`;
+      }
+    });
+}
+
+function closeMaximizedChart() {
+  const overlay = document.getElementById('chart-max-overlay');
+  if (overlay) overlay.style.display = 'none';
+  _sdMaximizedChartSymbol = null;
+  _sdMaximizedChartCompany = null;
+  _sdMaximizedChartStats = '';
+}
+
+function maxChartChangeTimeframe(interval) {
+  _sdChartsInterval = interval;
+  const mainTfSelect = document.querySelector('.sd-charts-controls select[onchange="sdSetChartsInterval(this.value)"]');
+  if (mainTfSelect) mainTfSelect.value = interval;
+  
+  if (_sdMaximizedChartSymbol) {
+    openMaximizedChart(_sdMaximizedChartSymbol);
+  }
+}
+
+function maxChartChangeType(type) {
+  _sdChartType = type;
+  const mainTypeSelect = document.querySelector('.sd-charts-controls select[onchange="sdSetChartType(this.value)"]');
+  if (mainTypeSelect) mainTypeSelect.value = type;
+
+  if (_sdMaximizedChartSymbol) {
+    const range = _sdChartsInterval === 'D' ? '6mo' : '2y';
+    const interval = _sdChartsInterval === 'D' ? '1d' : '1wk';
+    const yfSymbol = _sdMaximizedChartSymbol + '.NS';
+    const cacheKey = `${yfSymbol}_${range}_${interval}`;
+    const candles = _yfDataCache.get(cacheKey);
+    if (candles) {
+      drawAnyChart('max-chart-canvas', candles, _sdChartType);
+    }
+  }
+}
+
+function maxChartSearchInput(val) {
+  const suggestBox = document.getElementById('max-chart-suggest');
+  if (!suggestBox) return;
+
+  const query = val.trim().toLowerCase();
+  if (!query) {
+    suggestBox.style.display = 'none';
+    suggestBox.innerHTML = '';
+    return;
+  }
+
+  let allStocks = n500CsvGetCached() || [];
+  if (allStocks.length === 0 && _sdCurrentData?.stocks) {
+    allStocks = _sdCurrentData.stocks;
+  }
+
+  const matches = [];
+  for (const s of allStocks) {
+    if ((s.symbol && s.symbol.toLowerCase().includes(query)) || 
+        (s.company && s.company.toLowerCase().includes(query))) {
+      matches.push(s);
+      if (matches.length >= 8) break;
+    }
+  }
+
+  if (matches.length === 0) {
+    suggestBox.style.display = 'none';
+    suggestBox.innerHTML = '';
+    return;
+  }
+
+  suggestBox.innerHTML = matches.map(s => {
+    return `
+      <div class="max-suggest-item" onclick="maxChartSelectStock('${s.symbol.replace(/'/g, "\\'")}')">
+        <span style="font-weight:700;color:var(--teal);">${s.symbol}</span>
+        <span class="comp-name">${s.company || ''}</span>
+      </div>`;
+  }).join('');
+  suggestBox.style.display = 'block';
+}
+
+function maxChartSelectStock(symbol) {
+  const searchInput = document.getElementById('max-chart-search');
+  if (searchInput) searchInput.value = '';
+  const suggestBox = document.getElementById('max-chart-suggest');
+  if (suggestBox) suggestBox.style.display = 'none';
+  openMaximizedChart(symbol);
 }
 
 // ── Open modal ────────────────────────────────────────────────────────────
@@ -11728,6 +11989,9 @@ function sdRenderCharts(sectorName, secData) {
             <a href="${tvUrl}" target="_blank" rel="noopener"
                style="font-size:8px;color:var(--accent);text-decoration:none;padding:1px 4px;border-radius:2px;border:1px solid rgba(91,163,245,.2);background:rgba(91,163,245,.08)"
                title="Open full chart on TradingView">TV↗</a>
+            <button onclick="openMaximizedChart('${s.symbol}')"
+               class="sd-chart-max-btn"
+               title="Enlarge Chart">⛶</button>
           </div>
         </div>
         <div class="sd-chart-container" style="background:#0c0d12;display:flex;flex-direction:column;justify-content:center;position:relative;">
@@ -11982,6 +12246,68 @@ document.addEventListener('click', () => {
       <div style="padding:30px;text-align:center;color:var(--dim);font-size:11px">Loading…</div>
     </div>
 
+  </div>
+</div>
+
+<!-- ── ENLARGED CHART MODAL ────────────────────────────────────── -->
+<div id="chart-max-overlay" onclick="if(event.target===this)closeMaximizedChart()">
+  <div id="chart-max-content" onclick="event.stopPropagation()">
+    <!-- Modal header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
+      <div style="display:flex;align-items:center;gap:12px;position:relative;">
+        <div>
+          <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">Enlarged Chart View</div>
+          <div id="max-chart-title" style="display:flex;align-items:baseline;gap:8px">
+            <span id="max-chart-symbol" style="font-family:var(--disp);font-size:20px;font-weight:800;color:var(--teal)">—</span>
+            <span id="max-chart-company" style="font-size:12px;color:var(--sub)">—</span>
+            <span id="max-chart-stats" style="font-size:11px;color:var(--dim);margin-left:8px">—</span>
+          </div>
+        </div>
+        
+        <!-- Autocomplete Stock Search Box inside Header -->
+        <div style="position:relative;width:170px;margin-left:16px;">
+          <input type="text" id="max-chart-search" placeholder="Search stock symbol..." oninput="maxChartSearchInput(this.value)" 
+                 style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--body);font-size:11px;padding:5px 8px;outline:none;border-radius:4px;height:24px;box-sizing:border-box" 
+                 onfocus="this.style.borderColor='var(--teal)';" onblur="setTimeout(()=>document.getElementById('max-chart-suggest').style.display='none', 200);">
+          <div id="max-chart-suggest" class="max-suggest-box"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <!-- Timeframe select -->
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="color:var(--dim);font-size:10px">TF:</span>
+          <select id="max-chart-timeframe" onchange="maxChartChangeTimeframe(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:10px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
+            <option value="D">Daily</option>
+            <option value="W">Weekly</option>
+          </select>
+        </div>
+
+        <!-- Candle Type select -->
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="color:var(--dim);font-size:10px">Type:</span>
+          <select id="max-chart-type" onchange="maxChartChangeType(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:10px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
+            <option value="candlestick">Candles</option>
+            <option value="ohlc">Bars</option>
+            <option value="volume_candles">Volume Candles</option>
+          </select>
+        </div>
+
+        <a id="max-chart-tv-link" href="#" target="_blank" rel="noopener"
+           style="font-size:11px;color:var(--accent);text-decoration:none;padding:3px 8px;border-radius:4px;border:1px solid rgba(91,163,245,.25);background:rgba(91,163,245,.08)">
+           TradingView ↗
+        </a>
+        <button onclick="closeMaximizedChart()"
+          style="font-size:18px;color:var(--dim);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:4px;line-height:1"
+          onmouseenter="this.style.color='var(--text)'" onmouseleave="this.style.color='var(--dim)'">✕</button>
+      </div>
+    </div>
+    <!-- Modal body -->
+    <div style="flex:1;background:#0c0d12;position:relative;display:flex;flex-direction:column;justify-content:center;">
+      <canvas id="max-chart-canvas" style="width:100%;height:100%;display:block;"></canvas>
+      <div id="max-chart-loader" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#0c0d12;color:var(--dim);font-size:11px;">
+        Loading chart…
+      </div>
+    </div>
   </div>
 </div>
 
