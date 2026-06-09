@@ -10680,6 +10680,7 @@ let _sdChartsPage      = 0;
 let _sdChartsPerPage   = 9;
 let _sdChartsInterval  = 'D';
 let _sdChartsLayout    = 'auto';
+let _sdAutoChartsLimit = 12;
 
 function sectorDrillGetCached() {
   if (_sectorStocksCache) return _sectorStocksCache;
@@ -10760,7 +10761,10 @@ function sdSwitchTab(tab) {
   if (!body || !_sdCurrentSector) return;
   if (tab === 'vcp')      sdRenderVcp(_sdCurrentSector, _sdCurrentData);
   if (tab === 'universe') sdRenderUniverse(_sdCurrentSector);
-  if (tab === 'charts')   sdRenderCharts(_sdCurrentSector, _sdCurrentData);
+  if (tab === 'charts')   {
+    _sdAutoChartsLimit = 12;
+    sdRenderCharts(_sdCurrentSector, _sdCurrentData);
+  }
 }
 
 function sdHandleSearch(val) {
@@ -10789,6 +10793,7 @@ let _sdFilter = 'all';
 function sdSetFilter(f) {
   _sdFilter = f;
   if (_sdActiveTab === 'charts') {
+    _sdAutoChartsLimit = 12;
     sdRenderCharts(_sdCurrentSector, _sdCurrentData);
   } else {
     sdRenderVcp(_sdCurrentSector, _sdCurrentData);
@@ -10840,6 +10845,7 @@ async function sectorDrillOpen(sectorName) {
   _sdFilter        = 'all';
   _sdChartsSource  = 'vcp';
   _sdChartsPage    = 0;
+  _sdAutoChartsLimit = 12;
 
   // Reset search state
   _sdSearchQuery = '';
@@ -11178,6 +11184,12 @@ function getChartsGridStyle(layout) {
   if (layout === '30') return 'grid-template-columns: repeat(6, 1fr);';
   if (layout === '36') return 'grid-template-columns: repeat(6, 1fr);';
   if (layout === '48') return 'grid-template-columns: repeat(8, 1fr);';
+  if (layout === 'auto') {
+    const w = window.innerWidth;
+    if (w >= 1400) return 'grid-template-columns: repeat(4, 1fr);';
+    if (w >= 900)  return 'grid-template-columns: repeat(3, 1fr);';
+    return 'grid-template-columns: repeat(2, 1fr);';
+  }
   return 'grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));';
 }
 
@@ -11199,6 +11211,7 @@ function getChartsCardHeight(layout) {
 function sdSetChartsSource(source) {
   _sdChartsSource = source;
   _sdChartsPage = 0;
+  _sdAutoChartsLimit = 12;
   sdRenderCharts(_sdCurrentSector, _sdCurrentData);
 }
 
@@ -11210,12 +11223,19 @@ function sdSetLayout(layout) {
     _sdChartsPerPage = parseInt(layout);
   }
   _sdChartsPage = 0;
+  _sdAutoChartsLimit = 12;
   sdRenderCharts(_sdCurrentSector, _sdCurrentData);
 }
 
 function sdSetChartsInterval(interval) {
   _sdChartsInterval = interval;
   _sdChartsPage = 0;
+  _sdAutoChartsLimit = 12;
+  sdRenderCharts(_sdCurrentSector, _sdCurrentData);
+}
+
+function sdChartsLoadMore() {
+  _sdAutoChartsLimit += 12;
   sdRenderCharts(_sdCurrentSector, _sdCurrentData);
 }
 
@@ -11499,37 +11519,25 @@ function sdRenderCharts(sectorName, secData) {
     return;
   }
 
-  if (_sdChartsLayout === 'auto') {
-    // Calculate how many columns and rows fit on the screen dynamically
-    const width = body.clientWidth || window.innerWidth;
-    const height = body.clientHeight || window.innerHeight;
-    
-    // Columns calculation: minmax(320px, 1fr)
-    const padding = 24; 
-    const gap = 10;
-    const colWidth = 320;
-    const cols = Math.max(1, Math.floor((width - padding + gap) / (colWidth + gap)));
-    
-    // Rows calculation: card height is 350px.
-    const controlsHeight = 48;
-    const rowHeight = 350;
-    const rows = Math.max(1, Math.floor((height - controlsHeight + gap) / (rowHeight + gap)));
-    
-    _sdChartsPerPage = cols * rows;
-    
-    // Fallback if clientHeight is 0 (not visible yet)
-    if (_sdChartsPerPage <= 0 || isNaN(_sdChartsPerPage)) {
-      _sdChartsPerPage = 9;
-    }
-  }
-
   const totalCharts = stocks.length;
-  const totalPages = Math.ceil(totalCharts / _sdChartsPerPage);
-  if (_sdChartsPage >= totalPages) _sdChartsPage = Math.max(0, totalPages - 1);
-
-  const startIdx = _sdChartsPage * _sdChartsPerPage;
-  const endIdx = Math.min(startIdx + _sdChartsPerPage, totalCharts);
-  const pageStocks = stocks.slice(startIdx, endIdx);
+  const isAuto = (_sdChartsLayout === 'auto');
+  
+  let pageStocks;
+  let startIdx = 0;
+  let endIdx = 0;
+  let totalPages = 1;
+  
+  if (isAuto) {
+    startIdx = 0;
+    endIdx = Math.min(_sdAutoChartsLimit, totalCharts);
+    pageStocks = stocks.slice(0, endIdx);
+  } else {
+    totalPages = Math.ceil(totalCharts / _sdChartsPerPage);
+    if (_sdChartsPage >= totalPages) _sdChartsPage = Math.max(0, totalPages - 1);
+    startIdx = _sdChartsPage * _sdChartsPerPage;
+    endIdx = Math.min(startIdx + _sdChartsPerPage, totalCharts);
+    pageStocks = stocks.slice(startIdx, endIdx);
+  }
 
   const cardHeight = getChartsCardHeight(_sdChartsLayout);
   const gridStyle = getChartsGridStyle(_sdChartsLayout);
@@ -11630,19 +11638,36 @@ function sdRenderCharts(sectorName, secData) {
 
       <!-- Pagination controls -->
       <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
-        <span style="color:var(--dim)">Showing ${startIdx + 1}-${endIdx} of ${totalCharts}</span>
-        <button onclick="sdChartsPrevPage()" ${_sdChartsPage === 0 ? 'disabled' : ''}
-                style="background:var(--bg4);border:1px solid var(--border);color:${_sdChartsPage === 0 ? 'var(--dim)' : 'var(--text)'};padding:2px 8px;border-radius:3px;cursor:${_sdChartsPage === 0 ? 'not-allowed' : 'pointer'};font-weight:600;height:24px;font-size:8px;">◀</button>
-        <span style="font-family:var(--mono);color:var(--sub)">${_sdChartsPage + 1} / ${totalPages}</span>
-        <button onclick="sdChartsNextPage(${totalPages})" ${_sdChartsPage >= totalPages - 1 ? 'disabled' : ''}
-                style="background:var(--bg4);border:1px solid var(--border);color:${_sdChartsPage >= totalPages - 1 ? 'var(--dim)' : 'var(--text)'};padding:2px 8px;border-radius:3px;cursor:${_sdChartsPage >= totalPages - 1 ? 'not-allowed' : 'pointer'};font-weight:600;height:24px;font-size:8px;">▶</button>
+        ${isAuto ? `
+          <span style="color:var(--dim)">Showing ${endIdx} of ${totalCharts} charts</span>
+        ` : `
+          <span style="color:var(--dim)">Showing ${startIdx + 1}-${endIdx} of ${totalCharts}</span>
+          <button onclick="sdChartsPrevPage()" ${_sdChartsPage === 0 ? 'disabled' : ''}
+                  style="background:var(--bg4);border:1px solid var(--border);color:${_sdChartsPage === 0 ? 'var(--dim)' : 'var(--text)'};padding:2px 8px;border-radius:3px;cursor:${_sdChartsPage === 0 ? 'not-allowed' : 'pointer'};font-weight:600;height:24px;font-size:8px;">◀</button>
+          <span style="font-family:var(--mono);color:var(--sub)">${_sdChartsPage + 1} / ${totalPages}</span>
+          <button onclick="sdChartsNextPage(${totalPages})" ${_sdChartsPage >= totalPages - 1 ? 'disabled' : ''}
+                  style="background:var(--bg4);border:1px solid var(--border);color:${_sdChartsPage >= totalPages - 1 ? 'var(--dim)' : 'var(--text)'};padding:2px 8px;border-radius:3px;cursor:${_sdChartsPage >= totalPages - 1 ? 'not-allowed' : 'pointer'};font-weight:600;height:24px;font-size:8px;">▶</button>
+        `}
       </div>
     </div>`;
+
+  let viewMoreHtml = '';
+  if (isAuto && endIdx < totalCharts) {
+    viewMoreHtml = `
+      <div style="text-align:center;padding:20px 0;background:var(--bg);">
+        <button onclick="sdChartsLoadMore()" 
+                style="background:var(--teal);color:#0e1420;border:none;padding:8px 20px;border-radius:4px;cursor:pointer;font-weight:700;font-size:12px;transition:all .15s;box-shadow:0 4px 10px rgba(45,212,191,.2);"
+                onmouseenter="this.style.opacity='0.9';this.style.transform='translateY(-1px)'"
+                onmouseleave="this.style.opacity='1';this.style.transform='none'">
+          View More Charts (${totalCharts - endIdx} remaining)
+        </button>
+      </div>`;
+  }
 
   body.innerHTML = controlsHtml + `
     <div class="sd-charts-grid" style="display:grid;${gridStyle}">
       ${chartCardsHtml}
-    </div>`;
+    </div>` + viewMoreHtml;
 
   const range = _sdChartsInterval === 'D' ? '3mo' : '1y';
   const interval = _sdChartsInterval === 'D' ? '1d' : '1wk';
