@@ -274,8 +274,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
 .sd-charts-controls {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
+  gap: 8px;
+  padding: 6px 12px;
   background: var(--bg3);
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
@@ -10682,6 +10682,7 @@ let _sdChartsInterval  = 'D';
 let _sdChartsLayout    = 'auto';
 let _sdAutoChartsLimit = 12;
 let _sdChartType       = 'candlestick';
+let _sdSortBy          = 'score';
 
 function sectorDrillGetCached() {
   if (_sectorStocksCache) return _sectorStocksCache;
@@ -10835,7 +10836,7 @@ function calculateRSRatings(data) {
 }
 
 // ── Open modal ────────────────────────────────────────────────────────────
-async function sectorDrillOpen(sectorName) {
+async function sectorDrillOpen(sectorName, tabToOpen = 'vcp') {
   const overlay = document.getElementById('sector-drill-overlay');
   const title   = document.getElementById('sd-title');
   const body    = document.getElementById('sd-body');
@@ -10859,9 +10860,6 @@ async function sectorDrillOpen(sectorName) {
   body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--dim);font-size:11px">Loading…</div>';
   overlay.style.display = 'flex';
 
-  // Reset to VCP tab
-  sdSwitchTab('vcp');
-
   // Try to get sector_stocks.json (scanner data)
   let data = sectorDrillGetCached();
   const today = new Date().toISOString().slice(0,10);
@@ -10877,6 +10875,7 @@ async function sectorDrillOpen(sectorName) {
 
   if (data) {
     calculateRSRatings(data);
+    sdPopulateSectorsDropdown(data);
   }
 
   _sdCurrentData = data ? (data.sectors?.[sectorName] || null) : null;
@@ -10884,7 +10883,8 @@ async function sectorDrillOpen(sectorName) {
   // Also kick off CSV fetch in background (for universe tab)
   sdFetchCsv();
 
-  sdRenderVcp(sectorName, _sdCurrentData);
+  // Render the requested active tab
+  sdSwitchTab(tabToOpen);
 }
 
 function sectorDrillClose() {
@@ -11003,7 +11003,16 @@ function sdRenderVcp(sectorName, secData) {
       <button onclick="sdSetFilter('rs90')" style="background:${_sdFilter==='rs90'?'rgba(34,197,94,.15)':'transparent'};border:1px solid ${_sdFilter==='rs90'?'var(--lime)':'var(--border)'};color:${_sdFilter==='rs90'?'var(--lime)':'var(--dim)'};padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">RS ≥ 90</button>
       <button onclick="sdSetFilter('rs80')" style="background:${_sdFilter==='rs80'?'rgba(34,197,94,.15)':'transparent'};border:1px solid ${_sdFilter==='rs80'?'var(--lime)':'var(--border)'};color:${_sdFilter==='rs80'?'var(--lime)':'var(--dim)'};padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">RS ≥ 80</button>
       <button onclick="sdSetFilter('score70')" style="background:${_sdFilter==='score70'?'rgba(45,212,191,.15)':'transparent'};border:1px solid ${_sdFilter==='score70'?'var(--teal)':'var(--border)'};color:${_sdFilter==='score70'?'var(--teal)':'var(--dim)'};padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">Score ≥ 70</button>
-      <button onclick="_sdChartsSource='vcp';sdSwitchTab('charts')" style="background:rgba(91,163,245,.12);border:1px solid rgba(91,163,245,.25);color:var(--accent);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s;margin-left:6px">📈 View Charts</button>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+        <span style="color:var(--dim);font-size:9px;">Sort:</span>
+        <select onchange="sdSetSortBy(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:9px;font-weight:600;padding:2px 4px;border-radius:3px;outline:none;height:20px;">
+          <option value="score" ${_sdSortBy === 'score' ? 'selected' : ''}>Score</option>
+          <option value="rs" ${_sdSortBy === 'rs' ? 'selected' : ''}>RS Rating</option>
+          <option value="stage" ${_sdSortBy === 'stage' ? 'selected' : ''}>Stage</option>
+          <option value="symbol" ${_sdSortBy === 'symbol' ? 'selected' : ''}>Symbol</option>
+        </select>
+        <button onclick="_sdChartsSource='vcp';sdSwitchTab('charts')" style="background:rgba(91,163,245,.12);border:1px solid rgba(91,163,245,.25);color:var(--accent);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s;margin-left:6px">📈 View Charts</button>
+      </div>
     </div>`;
 
   if (filtered.length === 0) {
@@ -11017,7 +11026,20 @@ function sdRenderVcp(sectorName, secData) {
     return;
   }
 
-  const sorted = [...filtered].sort((a, b) => (b.final_score || b.vcp_score || 0) - (a.final_score || a.vcp_score || 0));
+  const sorted = [...filtered].sort((a, b) => {
+    if (_sdSortBy === 'rs') {
+      return (b.rs_rating || 0) - (a.rs_rating || 0);
+    } else if (_sdSortBy === 'stage') {
+      const stageScore = s => ({ S2: 4, S1: 3, S3: 2, S4: 1 }[s.stage || s.setup] || 0);
+      return stageScore(b) - stageScore(a);
+    } else if (_sdSortBy === 'symbol') {
+      return a.symbol.localeCompare(b.symbol);
+    } else {
+      const scoreA = a.final_score > 0 ? a.final_score : a.vcp_score;
+      const scoreB = b.final_score > 0 ? b.final_score : b.vcp_score;
+      return (scoreB || 0) - (scoreA || 0);
+    }
+  });
   const gradeColor = g => ({ 'A+':'var(--lime)', A:'var(--lime)', B:'var(--yellow)', C:'var(--orange)', D:'var(--red)' }[g] || 'var(--dim)');
 
   const rows = sorted.map(s => {
@@ -11238,6 +11260,15 @@ function sdSetChartsInterval(interval) {
 function sdSetChartType(type) {
   _sdChartType = type;
   sdRenderCharts(_sdCurrentSector, _sdCurrentData);
+}
+
+function sdSetSortBy(val) {
+  _sdSortBy = val;
+  if (_sdActiveTab === 'charts') {
+    sdRenderCharts(_sdCurrentSector, _sdCurrentData);
+  } else if (_sdActiveTab === 'vcp') {
+    sdRenderVcp(_sdCurrentSector, _sdCurrentData);
+  }
 }
 
 function sdChartsLoadMore() {
@@ -11570,7 +11601,20 @@ function sdRenderCharts(sectorName, secData) {
         return (score || 0) >= 70;
       });
     }
-    stocks = [...stocks].sort((a, b) => (b.final_score || b.vcp_score || 0) - (a.final_score || a.vcp_score || 0));
+    stocks = [...stocks].sort((a, b) => {
+      if (_sdSortBy === 'rs') {
+        return (b.rs_rating || 0) - (a.rs_rating || 0);
+      } else if (_sdSortBy === 'stage') {
+        const stageScore = s => ({ S2: 4, S1: 3, S3: 2, S4: 1 }[s.stage || s.setup] || 0);
+        return stageScore(b) - stageScore(a);
+      } else if (_sdSortBy === 'symbol') {
+        return a.symbol.localeCompare(b.symbol);
+      } else {
+        const scoreA = a.final_score > 0 ? a.final_score : a.vcp_score;
+        const scoreB = b.final_score > 0 ? b.final_score : b.vcp_score;
+        return (scoreB || 0) - (scoreA || 0);
+      }
+    });
   } else {
     const csv = n500CsvGetCached();
     if (!csv) {
@@ -11698,12 +11742,14 @@ function sdRenderCharts(sectorName, secData) {
   let vcpFiltersHtml = '';
   if (_sdChartsSource === 'vcp') {
     vcpFiltersHtml = `
-      <div style="display:flex;align-items:center;gap:4px;margin-left:4px;border-left:1px solid var(--border);padding-left:10px;">
-        <span style="color:var(--dim);margin-right:2px">Filter:</span>
-        <button onclick="sdSetFilter('all')" style="background:${_sdFilter==='all'?'var(--border)':'transparent'};border:1px solid var(--border);color:${_sdFilter==='all'?'var(--text)':'var(--dim)'};padding:2px 6px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">All</button>
-        <button onclick="sdSetFilter('rs90')" style="background:${_sdFilter==='rs90'?'rgba(34,197,94,.15)':'transparent'};border:1px solid ${_sdFilter==='rs90'?'var(--lime)':'var(--border)'};color:${_sdFilter==='rs90'?'var(--lime)':'var(--dim)'};padding:2px 6px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">RS≥90</button>
-        <button onclick="sdSetFilter('rs80')" style="background:${_sdFilter==='rs80'?'rgba(34,197,94,.15)':'transparent'};border:1px solid ${_sdFilter==='rs80'?'var(--lime)':'var(--border)'};color:${_sdFilter==='rs80'?'var(--lime)':'var(--dim)'};padding:2px 6px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">RS≥80</button>
-        <button onclick="sdSetFilter('score70')" style="background:${_sdFilter==='score70'?'rgba(45,212,191,.15)':'transparent'};border:1px solid ${_sdFilter==='score70'?'var(--teal)':'var(--border)'};color:${_sdFilter==='score70'?'var(--teal)':'var(--dim)'};padding:2px 6px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">Score≥70</button>
+      <div style="display:flex;align-items:center;gap:6px;margin-left:2px;border-left:1px solid var(--border);padding-left:8px;">
+        <span style="color:var(--dim)">Filter:</span>
+        <select onchange="sdSetFilter(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:10px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
+          <option value="all" ${_sdFilter === 'all' ? 'selected' : ''}>All</option>
+          <option value="rs90" ${_sdFilter === 'rs90' ? 'selected' : ''}>RS ≥ 90</option>
+          <option value="rs80" ${_sdFilter === 'rs80' ? 'selected' : ''}>RS ≥ 80</option>
+          <option value="score70" ${_sdFilter === 'score70' ? 'selected' : ''}>Score ≥ 70</option>
+        </select>
       </div>`;
   }
 
@@ -11719,7 +11765,7 @@ function sdRenderCharts(sectorName, secData) {
 
       ${vcpFiltersHtml}
 
-      <div style="display:flex;align-items:center;gap:6px;margin-left:4px;border-left:1px solid var(--border);padding-left:10px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-left:2px;border-left:1px solid var(--border);padding-left:8px;">
         <span style="color:var(--dim)">Layout:</span>
         <select onchange="sdSetLayout(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:10px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
           <option value="auto" ${_sdChartsLayout === 'auto' ? 'selected' : ''}>Auto-Grid</option>
@@ -11737,7 +11783,7 @@ function sdRenderCharts(sectorName, secData) {
         </select>
       </div>
 
-      <div style="display:flex;align-items:center;gap:6px;margin-left:4px;border-left:1px solid var(--border);padding-left:10px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-left:2px;border-left:1px solid var(--border);padding-left:8px;">
         <span style="color:var(--dim)">Timeframe:</span>
         <select onchange="sdSetChartsInterval(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:10px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
           <option value="D" ${_sdChartsInterval === 'D' ? 'selected' : ''}>Daily</option>
@@ -11745,12 +11791,22 @@ function sdRenderCharts(sectorName, secData) {
         </select>
       </div>
 
-      <div style="display:flex;align-items:center;gap:6px;margin-left:4px;border-left:1px solid var(--border);padding-left:10px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-left:2px;border-left:1px solid var(--border);padding-left:8px;">
         <span style="color:var(--dim)">Type:</span>
         <select onchange="sdSetChartType(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:10px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
           <option value="candlestick" ${_sdChartType === 'candlestick' ? 'selected' : ''}>Candles</option>
           <option value="ohlc" ${_sdChartType === 'ohlc' ? 'selected' : ''}>Bars</option>
           <option value="volume_candles" ${_sdChartType === 'volume_candles' ? 'selected' : ''}>Volume Candles</option>
+        </select>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:6px;margin-left:2px;border-left:1px solid var(--border);padding-left:8px;">
+        <span style="color:var(--dim)">Sort:</span>
+        <select onchange="sdSetSortBy(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:10px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
+          <option value="score" ${_sdSortBy === 'score' ? 'selected' : ''}>Score</option>
+          <option value="rs" ${_sdSortBy === 'rs' ? 'selected' : ''}>RS Rating</option>
+          <option value="stage" ${_sdSortBy === 'stage' ? 'selected' : ''}>Stage</option>
+          <option value="symbol" ${_sdSortBy === 'symbol' ? 'selected' : ''}>Symbol</option>
         </select>
       </div>
 
@@ -11827,19 +11883,62 @@ function sdRenderCharts(sectorName, secData) {
   });
 }
 
+function sdToggleSectorDropdown(event) {
+  event.stopPropagation();
+  const dropdown = document.getElementById('sd-sector-dropdown');
+  if (!dropdown) return;
+  const isHidden = dropdown.style.display === 'none' || dropdown.style.display === '';
+  dropdown.style.display = isHidden ? 'block' : 'none';
+}
+
+function sdPopulateSectorsDropdown(data) {
+  const dropdown = document.getElementById('sd-sector-dropdown');
+  if (!dropdown || !data || !data.sectors) return;
+
+  const sectors = Object.keys(data.sectors).sort();
+  dropdown.innerHTML = sectors.map(sec => {
+    const isCurrent = sec === _sdCurrentSector;
+    return `
+      <div onclick="sdChangeSector('${sec.replace(/'/g, "\\'")}')" 
+           style="padding: 8px 14px; font-size: 12px; color: ${isCurrent ? 'var(--teal)' : 'var(--text)'}; font-weight: ${isCurrent ? '700' : 'normal'}; cursor: pointer; transition: background 0.15s; display: flex; align-items: center; justify-content: space-between;"
+           onmouseenter="this.style.background='rgba(255,255,255,0.05)'" 
+           onmouseleave="this.style.background='transparent'">
+        <span>${sec}</span>
+        ${isCurrent ? '<span>✓</span>' : ''}
+      </div>`;
+  }).join('');
+}
+
+function sdChangeSector(sec) {
+  const dropdown = document.getElementById('sd-sector-dropdown');
+  if (dropdown) dropdown.style.display = 'none';
+  sectorDrillOpen(sec, _sdActiveTab);
+}
+
+// Close sector dropdown when clicking outside
+document.addEventListener('click', () => {
+  const dropdown = document.getElementById('sd-sector-dropdown');
+  if (dropdown) dropdown.style.display = 'none';
+});
+
 </script>
 
 <!-- ── SECTOR DRILL-DOWN MODAL ──────────────────────────────────── -->
 <div id="sector-drill-overlay"
      style="display:none;position:fixed;inset:0;background:rgba(3,3,5,.85);z-index:5000;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)"
      onclick="if(event.target===this)sectorDrillClose()">
-  <div id="sector-drill-modal" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;width:100%;max-width:900px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden">
+  <div id="sector-drill-modal" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;width:100%;max-width:1100px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden">
 
     <!-- Modal header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;position:relative;">
       <div>
         <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">Sector Drill-Down · VCP Candidates</div>
-        <div id="sd-title" style="font-family:var(--disp);font-size:18px;font-weight:800;color:var(--teal)">—</div>
+        <div onclick="sdToggleSectorDropdown(event)" style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;width:fit-content" title="Click to switch Sector/Theme" onmouseenter="this.querySelector('#sd-title').style.textDecoration='underline'" onmouseleave="this.querySelector('#sd-title').style.textDecoration='none'">
+          <span id="sd-title" style="font-family:var(--disp);font-size:18px;font-weight:800;color:var(--teal)">—</span>
+          <span style="font-size:10px;color:var(--dim);margin-top:2px;">▼</span>
+        </div>
+        <!-- Custom Dropdown Menu -->
+        <div id="sd-sector-dropdown" style="display:none;position:absolute;top:54px;left:16px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;box-shadow:0 10px 25px rgba(0,0,0,0.6);z-index:6000;max-height:300px;overflow-y:auto;padding:6px 0;min-width:240px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)"></div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <button onclick="toggleMaximizeSectorDrill()" id="sd-max-btn" title="Maximize Window"
