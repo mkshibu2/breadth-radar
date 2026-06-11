@@ -131,7 +131,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
 
 /* ── TOP STATUS STRIP — single full-width bar, 6 cells ── */
 .status-strip{display:grid;grid-template-columns:110px 155px 1fr 120px 120px 120px 110px 155px;background:var(--bg2);border:1px solid var(--border);border-radius:6px 6px 0 0;overflow:hidden;}
-.analysis-strip{display:grid;grid-template-columns:minmax(160px,1fr) 175px 145px 155px 135px 155px 140px 150px 155px;background:var(--bg3);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;overflow-x:auto;overflow-y:hidden;margin-bottom:0;}
+.analysis-strip{display:grid;grid-template-columns:minmax(315px,1fr) 175px 145px 155px 135px 155px 140px 150px;background:var(--bg3);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;overflow-x:auto;overflow-y:hidden;margin-bottom:0;}
 .as-cell{padding:12px 16px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:flex-start;position:relative;min-width:0;}
 .as-cell:last-child{border-right:none;}
 .as-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--sub);margin-bottom:4px;}
@@ -174,7 +174,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
 .score-bk b{color:var(--text);font-weight:600;font-family:var(--mono);}
 
 /* ── MAIN TWO-COLUMN GRID ────────────────────────────────── */
-.dash-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:start;}
+.dash-grid{display:grid;grid-template-columns:minmax(0,7.3fr) minmax(0,2.7fr);gap:8px;align-items:start;}
 .col{display:flex;flex-direction:column;gap:8px;}
 
 /* ── FOLLOW-THROUGH DAY DETECTOR ───────────────────────── */
@@ -699,7 +699,7 @@ canvas#bsr-chart{width:100%;height:100%;}
 
   /* Analysis strip: scroll on tablet — keeps full layout intact */
   .analysis-strip{
-    grid-template-columns:minmax(160px,1fr) 175px 145px 155px 135px 155px 140px 150px;
+    grid-template-columns:minmax(315px,1fr) 175px 145px 155px 135px 155px 140px 150px;
   }
 
   /* Market Summary: stack sections */
@@ -1632,17 +1632,7 @@ thead th[onclick]:hover {
       <button class="info-btn" onclick="showInfoTip('exposure',this)" title="About this indicator">i</button>
     </div>
 
-    <!-- A10: Dhan Portfolio P&L -->
-    <div class="as-cell" id="dhan-hero-card" style="border-top:2px solid var(--teal);border-left:1px solid var(--border);border-right:none;cursor:pointer;display:none;min-width:150px" onclick="openControlPanel('dhan')" title="Click to open Dhan panel">
-      <div class="as-lbl" style="color:var(--teal)">🏦 Portfolio</div>
-      <div style="font-family:var(--disp);font-size:26px;font-weight:800;line-height:1;transition:color .4s" id="dhan-hero-pnl">—</div>
-      <div style="font-size:11px;font-weight:600;margin-top:3px" id="dhan-hero-pnlpct">P&amp;L</div>
-      <div style="font-size:10px;color:var(--sub);margin-top:2px" id="dhan-hero-cur">—</div>
-      <div style="margin-top:5px;display:flex;align-items:center;gap:4px">
-        <span class="dhan-auto-dot" id="dhan-hero-dot"></span>
-        <span id="dhan-hero-status" style="font-size:9px;color:var(--dim)">Not connected</span>
-      </div>
-    </div>
+
 
   </div>
   <!-- FTD banner (full width, below analysis strip, hidden until active) -->
@@ -4128,7 +4118,7 @@ function toggleMaximizeSectorCommand() {
 const LS_VCPB_URL    = 'nse_vcpb_url_v1';
 const LS_VCPB_DATA   = 'nse_vcpb_data_v1';
 const LS_VCPB_HIST   = 'nse_vcpb_hist_v1';   // rolling daily score history per sector
-let _vcpbSort = 'universe';                    // default: largest sector first
+let _vcpbSort = 'composite';                   // default: Score first
 let _vcpbSortAsc = false;                      // default: descending
 
 function vcpbGetUrl()          { return (localStorage.getItem(LS_VCPB_URL) || '').trim().replace(/\/$/, ''); }
@@ -4381,11 +4371,11 @@ function vcpbPopulateSortDropdowns() {
   const s5 = document.getElementById('vcpb-sort-5');
   const s6 = document.getElementById('vcpb-sort-6');
 
-  if (s1) s1.value = 'universe';
-  if (s2) s2.value = 'composite';
+  if (s1) s1.value = 'composite';
+  if (s2) s2.value = '_med90';
   if (s3) s3.value = '_accel';
-  if (s4) s4.value = '_med90';
-  if (s5) s5.value = 'none';
+  if (s4) s4.value = '_adScore';
+  if (s5) s5.value = '_rs';
   if (s6) s6.value = 'none';
 }
 
