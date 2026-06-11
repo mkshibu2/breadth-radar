@@ -1,17 +1,17 @@
 {
-  "scan_time": "10 Jun 2026  02:35 PM",
-  "scan_date": "2026-06-10",
+  "scan_time": "11 Jun 2026  03:02 PM",
+  "scan_date": "2026-06-11",
   "total_scanned": 504,
-  "qualified": 42,
+  "qualified": 38,
   "sectors": [
     {
       "sector": "Capital Goods",
       "universe": 48,
-      "vcp": 10,
-      "vcp_pct": 20.8,
-      "a20_pct": 37.5,
+      "vcp": 9,
+      "vcp_pct": 18.8,
+      "a20_pct": 27.1,
       "a50_pct": 56.2,
-      "a200_pct": 70.8
+      "a200_pct": 68.8
     },
     {
       "sector": "Pharma",
@@ -19,98 +19,98 @@
       "vcp": 5,
       "vcp_pct": 14.7,
       "a20_pct": 52.9,
-      "a50_pct": 76.5,
-      "a200_pct": 67.6
+      "a50_pct": 67.6,
+      "a200_pct": 64.7
     },
     {
-      "sector": "Power",
-      "universe": 17,
+      "sector": "Telecommunication",
+      "universe": 9,
       "vcp": 4,
-      "vcp_pct": 23.5,
-      "a20_pct": 17.6,
-      "a50_pct": 29.4,
-      "a200_pct": 70.6
+      "vcp_pct": 44.4,
+      "a20_pct": 33.3,
+      "a50_pct": 44.4,
+      "a200_pct": 55.6
     },
     {
       "sector": "Information Technology",
       "universe": 27,
       "vcp": 3,
       "vcp_pct": 11.1,
-      "a20_pct": 25.9,
-      "a50_pct": 40.7,
+      "a20_pct": 7.4,
+      "a50_pct": 33.3,
       "a200_pct": 14.8
     },
     {
       "sector": "Specialty Chemicals",
       "universe": 18,
-      "vcp": 3,
-      "vcp_pct": 16.7,
+      "vcp": 2,
+      "vcp_pct": 11.1,
       "a20_pct": 33.3,
-      "a50_pct": 50.0,
-      "a200_pct": 61.1
+      "a50_pct": 44.4,
+      "a200_pct": 55.6
+    },
+    {
+      "sector": "Power",
+      "universe": 17,
+      "vcp": 2,
+      "vcp_pct": 11.8,
+      "a20_pct": 11.8,
+      "a50_pct": 29.4,
+      "a200_pct": 52.9
     },
     {
       "sector": "Oil Gas & Consumable Fuels",
       "universe": 17,
-      "vcp": 3,
-      "vcp_pct": 17.6,
-      "a20_pct": 41.2,
-      "a50_pct": 47.1,
-      "a200_pct": 35.3
-    },
-    {
-      "sector": "Telecommunication",
-      "universe": 9,
-      "vcp": 3,
-      "vcp_pct": 33.3,
-      "a20_pct": 44.4,
-      "a50_pct": 66.7,
-      "a200_pct": 55.6
-    },
-    {
-      "sector": "NBFCs & Finance",
-      "universe": 67,
       "vcp": 2,
-      "vcp_pct": 3.0,
-      "a20_pct": 17.9,
-      "a50_pct": 22.4,
-      "a200_pct": 26.9
+      "vcp_pct": 11.8,
+      "a20_pct": 35.3,
+      "a50_pct": 29.4,
+      "a200_pct": 29.4
     },
     {
       "sector": "Hospitals & Healthcare",
       "universe": 14,
       "vcp": 2,
       "vcp_pct": 14.3,
-      "a20_pct": 85.7,
-      "a50_pct": 92.9,
-      "a200_pct": 78.6
+      "a20_pct": 78.6,
+      "a50_pct": 100.0,
+      "a200_pct": 71.4
+    },
+    {
+      "sector": "Media Entertainment & Publication",
+      "universe": 4,
+      "vcp": 2,
+      "vcp_pct": 50.0,
+      "a20_pct": 50.0,
+      "a50_pct": 50.0,
+      "a200_pct": 50.0
+    },
+    {
+      "sector": "NBFCs & Finance",
+      "universe": 67,
+      "vcp": 1,
+      "vcp_pct": 1.5,
+      "a20_pct": 10.4,
+      "a50_pct": 20.9,
+      "a200_pct": 25.4
     },
     {
       "sector": "Automobile and Auto Components",
       "universe": 37,
       "vcp": 1,
       "vcp_pct": 2.7,
-      "a20_pct": 43.2,
-      "a50_pct": 54.1,
-      "a200_pct": 51.4
+      "a20_pct": 32.4,
+      "a50_pct": 51.4,
+      "a200_pct": 45.9
     },
     {
       "sector": "Fast Moving Consumer Goods",
       "universe": 28,
       "vcp": 1,
       "vcp_pct": 3.6,
-      "a20_pct": 46.4,
-      "a50_pct": 42.9,
+      "a20_pct": 25.0,
+      "a50_pct": 35.7,
       "a200_pct": 32.1
-    },
-    {
-      "sector": "Banks",
-      "universe": 26,
-      "vcp": 1,
-      "vcp_pct": 3.8,
-      "a20_pct": 73.1,
-      "a50_pct": 57.7,
-      "a200_pct": 57.7
     },
     {
       "sector": "Metals & Mining",
@@ -118,7 +118,7 @@
       "vcp": 1,
       "vcp_pct": 5.9,
       "a20_pct": 11.8,
-      "a50_pct": 23.5,
+      "a50_pct": 17.6,
       "a200_pct": 76.5
     },
     {
@@ -126,9 +126,9 @@
       "universe": 10,
       "vcp": 1,
       "vcp_pct": 10.0,
-      "a20_pct": 30.0,
-      "a50_pct": 40.0,
-      "a200_pct": 50.0
+      "a20_pct": 20.0,
+      "a50_pct": 30.0,
+      "a200_pct": 30.0
     },
     {
       "sector": "Defense",
@@ -136,25 +136,34 @@
       "vcp": 1,
       "vcp_pct": 11.1,
       "a20_pct": 22.2,
-      "a50_pct": 33.3,
-      "a200_pct": 33.3
+      "a50_pct": 22.2,
+      "a200_pct": 22.2
     },
     {
-      "sector": "Media Entertainment & Publication",
-      "universe": 4,
+      "sector": "Textiles",
+      "universe": 5,
       "vcp": 1,
-      "vcp_pct": 25.0,
-      "a20_pct": 50.0,
-      "a50_pct": 50.0,
-      "a200_pct": 50.0
+      "vcp_pct": 20.0,
+      "a20_pct": 40.0,
+      "a50_pct": 80.0,
+      "a200_pct": 80.0
+    },
+    {
+      "sector": "Banks",
+      "universe": 26,
+      "vcp": 0,
+      "vcp_pct": 0.0,
+      "a20_pct": 53.8,
+      "a50_pct": 53.8,
+      "a200_pct": 57.7
     },
     {
       "sector": "Consumer Services",
       "universe": 22,
       "vcp": 0,
       "vcp_pct": 0.0,
-      "a20_pct": 13.6,
-      "a50_pct": 18.2,
+      "a20_pct": 9.1,
+      "a50_pct": 13.6,
       "a200_pct": 9.1
     },
     {
@@ -162,26 +171,26 @@
       "universe": 15,
       "vcp": 0,
       "vcp_pct": 0.0,
-      "a20_pct": 33.3,
+      "a20_pct": 20.0,
       "a50_pct": 26.7,
-      "a200_pct": 33.3
+      "a200_pct": 26.7
     },
     {
       "sector": "Services",
       "universe": 14,
       "vcp": 0,
       "vcp_pct": 0.0,
-      "a20_pct": 28.6,
-      "a50_pct": 57.1,
-      "a200_pct": 42.9
+      "a20_pct": 35.7,
+      "a50_pct": 50.0,
+      "a200_pct": 35.7
     },
     {
       "sector": "Realty",
       "universe": 11,
       "vcp": 0,
       "vcp_pct": 0.0,
-      "a20_pct": 9.1,
-      "a50_pct": 18.2,
+      "a20_pct": 0.0,
+      "a50_pct": 9.1,
       "a200_pct": 9.1
     },
     {
@@ -199,8 +208,8 @@
       "vcp": 0,
       "vcp_pct": 0.0,
       "a20_pct": 37.5,
-      "a50_pct": 37.5,
-      "a200_pct": 25.0
+      "a50_pct": 25.0,
+      "a200_pct": 12.5
     },
     {
       "sector": "Railways",
@@ -212,21 +221,12 @@
       "a200_pct": 12.5
     },
     {
-      "sector": "Textiles",
-      "universe": 5,
-      "vcp": 0,
-      "vcp_pct": 0.0,
-      "a20_pct": 60.0,
-      "a50_pct": 80.0,
-      "a200_pct": 80.0
-    },
-    {
       "sector": "Diversified",
       "universe": 3,
       "vcp": 0,
       "vcp_pct": 0.0,
       "a20_pct": 0.0,
-      "a50_pct": 33.3,
+      "a50_pct": 0.0,
       "a200_pct": 0.0
     }
   ]
