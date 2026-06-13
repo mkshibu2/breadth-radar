@@ -1451,6 +1451,69 @@ thead th[onclick]:hover {
   color: var(--text) !important;
   opacity: 1 !important;
 }
+
+/* Watch List Panel CSS */
+#scc-chart-workspace {
+  display: flex;
+  flex-direction: row;
+}
+#scc-watchlist-panel {
+  display: flex;
+  flex-direction: column;
+}
+.scc-wl-item:hover {
+  background: rgba(91, 163, 245, 0.04);
+}
+.wl-flag-flagged {
+  opacity: 1.0 !important;
+}
+.wl-flag-unflagged {
+  opacity: 0.12 !important;
+  transition: opacity 0.15s;
+}
+.scc-wl-item:hover .wl-flag-unflagged {
+  opacity: 0.55 !important;
+}
+.wl-del-btn {
+  background: none;
+  border: none;
+  color: var(--dim);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: bold;
+  padding: 0 2px;
+  opacity: 0.3;
+  transition: opacity 0.15s, color 0.15s;
+  outline: none;
+}
+.wl-del-btn:hover {
+  opacity: 1 !important;
+  color: var(--red) !important;
+}
+#scc-wl-tabs-bar::-webkit-scrollbar {
+  height: 3px;
+}
+#scc-wl-tabs-bar::-webkit-scrollbar-track {
+  background: var(--bg3);
+}
+#scc-wl-tabs-bar::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+#scc-wl-tabs-bar::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+@media(max-width: 800px) {
+  #scc-chart-workspace {
+    flex-direction: column !important;
+  }
+  #scc-watchlist-panel {
+    width: 100% !important;
+    border-left: none !important;
+    border-top: 1px solid var(--border) !important;
+    height: 350px !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -2150,11 +2213,68 @@ thead th[onclick]:hover {
                 <div id="scc-chart-global-suggest" class="max-suggest-box" style="width:180px; left:0; top:100%;"></div>
               </div>
             </div>
+
+            <!-- Watchlist toggle -->
+            <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+              <button id="scc-watchlist-toggle-btn" onclick="sccToggleWatchlist()" 
+                      style="background:rgba(91,163,245,0.06); border:1px solid rgba(91,163,245,0.2); color:var(--accent); font-size:11px; font-weight:600; padding:4px 8px; border-radius:3px; outline:none; height:24px; cursor:pointer; display:flex; align-items:center; gap:4px; transition:all 0.15s;">
+                <span>⭐ Watch List</span>
+              </button>
+            </div>
           </div>
 
-          <!-- Charts Grid Container -->
-          <div id="scc-chart-grid" class="scc-chart-grid-2" style="display:grid;gap:8px;padding:8px;background:var(--bg);">
-            <!-- Chart cards injected dynamically -->
+          <!-- Workspace containing Grid & Watchlist side-by-side -->
+          <div id="scc-chart-workspace">
+            <!-- Charts Grid Container -->
+            <div id="scc-chart-grid" class="scc-chart-grid-2" style="display:grid;gap:8px;padding:8px;background:var(--bg);flex:1;min-width:0;">
+              <!-- Chart cards injected dynamically -->
+            </div>
+
+            <!-- Watch List Panel -->
+            <div id="scc-watchlist-panel" style="width:280px; border-left:1px solid var(--border); background:var(--bg2); display:flex; flex-direction:column; flex-shrink:0; transition: width 0.2s;">
+              <!-- Watchlist Header -->
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--bg3); border-bottom:1px solid var(--border);">
+                <span style="font-family:var(--disp); font-size:12px; font-weight:800; letter-spacing:1px; color:var(--text); display:flex; align-items:center; gap:6px;">
+                  ⭐ WATCH LIST
+                </span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span id="scc-wl-count" style="font-size:10px; color:var(--dim); font-family:var(--mono);">0 items</span>
+                  <button onclick="sccWatchlistFetchAll(true)" title="Refresh Watch List"
+                          style="background:none; border:none; color:var(--dim); cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; padding:2px; border-radius:3px; transition:color 0.15s; outline:none;"
+                          onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--dim)'">
+                    ↺
+                  </button>
+                </div>
+              </div>
+
+              <!-- Tabs Bar -->
+              <div id="scc-wl-tabs-bar" style="display:flex; align-items:center; border-bottom:1px solid var(--border); background:var(--bg3); padding:0 8px; overflow-x:auto; gap:4px; height:32px;">
+                <!-- Rendered dynamically -->
+              </div>
+              
+              <!-- Add Symbol Input -->
+              <div style="padding:8px 12px; border-bottom:1px solid var(--border); position:relative;">
+                <input type="text" id="scc-wl-add-input" placeholder="+ Add Symbol (e.g. RELIANCE)"
+                       oninput="sccWatchlistSuggest(this.value)"
+                       onkeyup="if(event.key==='Enter') { sccWatchlistAddFromInput(this.value); }"
+                       onfocus="this.style.borderColor='var(--teal)';"
+                       onblur="setTimeout(()=> { const el=document.getElementById('scc-wl-suggest'); if(el)el.style.display='none'; }, 200);"
+                       style="width: 100%; background: var(--bg4); border: 1px solid var(--border); color: var(--text); font-family: var(--body); font-size: 11px; padding: 5px 8px; outline: none; border-radius: 4px; box-sizing: border-box; text-transform: uppercase;">
+                <div id="scc-wl-suggest" class="max-suggest-box" style="width: calc(100% - 24px); left: 12px; top: 100%;"></div>
+              </div>
+
+              <!-- Watchlist Column Headers -->
+              <div style="display:flex; justify-content:space-between; padding:6px 12px; border-bottom:1px solid rgba(255,255,255,0.03); background:var(--bg3); font-size:9px; font-weight:700; color:var(--dim); text-transform:uppercase; letter-spacing:0.5px;">
+                <span style="flex:1; text-align:left;">Symbol</span>
+                <span style="width:70px; text-align:right; margin-right:12px;">Last</span>
+                <span style="width:65px; text-align:right;">Chg%</span>
+              </div>
+
+              <!-- Watchlist Table / Rows Container -->
+              <div id="scc-wl-rows" style="flex:1; overflow-y:auto; padding:4px 0;">
+                <!-- Rows will be injected here -->
+              </div>
+            </div>
           </div>
 
           <!-- Timeframe Changer Popup overlay -->
@@ -4281,6 +4401,11 @@ function sccChartRebuildGrid() {
   const grid = document.getElementById('scc-chart-grid');
   if (!grid) return;
   
+  // Apply watchlist visibility & render
+  sccApplyWatchlistVisibility();
+  sccWlRenderTabs();
+  sccWatchlistRender();
+  
   // Update controls states on first load / layout rebuild
   const layoutSelect = document.getElementById('scc-chart-layout-select');
   if (layoutSelect && layoutSelect.value !== _sccChartLayout) {
@@ -4563,6 +4688,21 @@ async function sccChartRenderPanel(index) {
   }
 }
 
+function sccChartSetActivePanel(index) {
+  _sccActivePanelIndex = index;
+  const grid = document.getElementById('scc-chart-grid');
+  if (grid) {
+    const cards = grid.querySelectorAll('.scc-chart-card');
+    cards.forEach((card, idx) => {
+      if (idx === index) {
+        card.style.borderColor = 'var(--accent)';
+      } else {
+        card.style.borderColor = 'var(--border)';
+      }
+    });
+  }
+}
+
 function sccChartInputHandler(index, value) {
   sccChartSuggestInput(index, value);
   const upperVal = value.toUpperCase().trim();
@@ -4645,7 +4785,6 @@ function sccChartSelectStock(index, symbol) {
   sccChartRebuildGrid();
 }
 
-// Enter key instant submit
 function sccChartSubmitSymbol(index, value) {
   const upperVal = value.toUpperCase().trim();
   const suggestBox = document.getElementById(`scc-chart-suggest-${index}`);
@@ -4773,8 +4912,1022 @@ function sccChartGlobalSelect(symbol) {
   sccChartRebuildGrid();
 }
 
+// ── Watchlist Panel Functions ──
+function sccApplyWatchlistVisibility() {
+  const panel = document.getElementById('scc-watchlist-panel');
+  const btn = document.getElementById('scc-watchlist-toggle-btn');
+  if (!panel) return;
+  
+  if (_sccShowWatchlist) {
+    panel.style.display = 'flex';
+    if (btn) {
+      btn.style.background = 'rgba(91, 163, 245, 0.15)';
+      btn.style.borderColor = 'var(--accent)';
+      btn.style.color = 'var(--text)';
+    }
+    sccWatchlistFetchAll();
+  } else {
+    panel.style.display = 'none';
+    if (btn) {
+      btn.style.background = 'rgba(91, 163, 245, 0.06)';
+      btn.style.borderColor = 'rgba(91, 163, 245, 0.2)';
+      btn.style.color = 'var(--accent)';
+    }
+  }
+}
+
+function sccToggleWatchlist() {
+  _sccShowWatchlist = !_sccShowWatchlist;
+  localStorage.setItem('_sccShowWatchlist', _sccShowWatchlist);
+  sccApplyWatchlistVisibility();
+}
+
+function sccWlRenderTabs() {
+  const tabsBar = document.getElementById('scc-wl-tabs-bar');
+  if (!tabsBar) return;
+
+  const names = Object.keys(_sccWatchlists);
+  let html = '';
+  
+  // 1. Render custom text lists
+  names.forEach(name => {
+    const isActive = name === _sccActiveWatchlist;
+    const tabColor = isActive ? 'var(--teal)' : 'var(--dim)';
+    const borderStyle = isActive ? 'border-bottom: 2px solid var(--teal); font-weight: 700;' : 'border-bottom: 2px solid transparent; font-weight: 600;';
+    const closeBtn = names.length > 1 ? `<span class="scc-wl-tab-close" onclick="event.stopPropagation(); sccWlDeleteTab('${name.replace(/'/g, "\\'")}')" style="font-size:11px; margin-left:6px; opacity:0.5; color:var(--dim); cursor:pointer; font-weight:bold; width:12px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%;" onmouseover="this.style.opacity='1'; this.style.color='var(--red)';" onmouseout="this.style.opacity='0.5'; this.style.color='var(--dim)';">×</span>` : '';
+    
+    html += `
+      <div onclick="sccWlSwitchTab('${name.replace(/'/g, "\\'")}')" 
+           style="padding: 6px 8px; font-size:10px; color:${tabColor}; ${borderStyle} cursor:pointer; display:flex; align-items:center; gap:2px; height: 100%; box-sizing:border-box; user-select:none; transition: color 0.15s;"
+           onmouseover="this.style.color='var(--text)'"
+           onmouseout="this.style.color='${isActive ? 'var(--teal)' : 'var(--dim)'}'">
+        <span>${name}</span>
+        ${closeBtn}
+      </div>
+    `;
+  });
+
+  // 2. Render dynamic color flag watchlists
+  const colorsMap = {
+    red: '#ef4444',
+    blue: '#3b82f6',
+    green: '#22c55e',
+    yellow: '#eab308',
+    purple: '#a855f7',
+    cyan: '#06b6d4',
+    pink: '#ec4899'
+  };
+  
+  // Find which flag colors are currently active on at least one stock
+  Object.keys(colorsMap).forEach(c => {
+    const hasSymbols = Object.keys(_sccSymbolFlags).some(sym => _sccSymbolFlags[sym] === c);
+    if (hasSymbols) {
+      const tabName = `__flag_${c}`;
+      const isActive = tabName === _sccActiveWatchlist;
+      const borderStyle = isActive ? 'border-bottom: 2px solid var(--teal);' : 'border-bottom: 2px solid transparent;';
+      
+      html += `
+        <div onclick="sccWlSwitchTab('${tabName}')" 
+             title="${c.toUpperCase()} Flag Watchlist"
+             style="padding: 6px 10px; ${borderStyle} cursor:pointer; display:flex; align-items:center; height: 100%; box-sizing:border-box; transition: opacity 0.15s; opacity: ${isActive ? '1' : '0.5'}"
+             onmouseover="this.style.opacity='1'"
+             onmouseout="this.style.opacity='${isActive ? '1' : '0.5'}'">
+          <svg width="8" height="14" viewBox="0 0 10 18" fill="${colorsMap[c]}">
+            <path d="M0 0h10v18l-5-4-5 4V0z"/>
+          </svg>
+        </div>
+      `;
+    }
+  });
+
+  // Add the "+" button
+  html += `
+    <button onclick="sccWlCreateTabPrompt()" title="Create new watch list"
+            style="background:none; border:none; color:var(--accent); font-size:14px; font-weight:bold; cursor:pointer; padding:4px 8px; outline:none; display:flex; align-items:center; justify-content:center; height: 100%;"
+            onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--accent)'">+</button>
+  `;
+
+  tabsBar.innerHTML = html;
+}
+
+function sccWlSwitchTab(name) {
+  _sccActiveWatchlist = name;
+  localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+  
+  // Clear selection when switching tabs
+  _sccWlSelectedSymbols = [];
+  _sccWlLastSelectedSymbol = null;
+  
+  if (name.startsWith('__flag_')) {
+    const color = name.replace('__flag_', '');
+    _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
+  } else {
+    _sccWatchlistSymbols = _sccWatchlists[name] || [];
+  }
+  
+  sccWlRenderTabs();
+  sccWatchlistRender();
+  sccWatchlistFetchAll();
+}
+
+function sccWlCreateTabPrompt() {
+  const name = prompt("Enter new Watch List name:");
+  if (name === null) return;
+  const cleaned = name.trim();
+  if (!cleaned) {
+    alert("Watch List name cannot be empty.");
+    return;
+  }
+  if (_sccWatchlists[cleaned]) {
+    alert("A Watch List with this name already exists.");
+    return;
+  }
+  _sccWatchlists[cleaned] = [];
+  _sccActiveWatchlist = cleaned;
+  _sccWatchlistSymbols = _sccWatchlists[cleaned];
+  localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
+  localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+  
+  // Clear selection
+  _sccWlSelectedSymbols = [];
+  _sccWlLastSelectedSymbol = null;
+
+  sccWlRenderTabs();
+  sccWatchlistRender();
+  sccWatchlistFetchAll();
+}
+
+function sccWlDeleteTab(name) {
+  if (confirm(`Are you sure you want to delete the watchlist "${name}"?`)) {
+    delete _sccWatchlists[name];
+    localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
+    
+    // Switch to another tab
+    if (_sccActiveWatchlist === name) {
+      const keys = Object.keys(_sccWatchlists);
+      _sccActiveWatchlist = keys[0] || "Main";
+      _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist];
+      localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+    }
+    
+    // Clear selection
+    _sccWlSelectedSymbols = [];
+    _sccWlLastSelectedSymbol = null;
+
+    sccWlRenderTabs();
+    sccWatchlistRender();
+    sccWatchlistFetchAll();
+  }
+}
+
+function sccWatchlistRender() {
+  const countEl = document.getElementById('scc-wl-count');
+  if (countEl) countEl.innerText = `${_sccWatchlistSymbols.length} items`;
+
+  const rowsContainer = document.getElementById('scc-wl-rows');
+  if (!rowsContainer) return;
+
+  if (_sccWatchlistSymbols.length === 0) {
+    rowsContainer.innerHTML = `
+      <div style="color:var(--dim); padding:20px; text-align:center; font-size:11px;">
+        Watch list is empty. Add symbols using the input above.
+      </div>
+    `;
+    return;
+  }
+
+  const activeSymbols = _sccChartSymbols.map(s => s ? s.toUpperCase() : '');
+
+  let allStocks = n500CsvGetCached() || [];
+  if (allStocks.length === 0 && _sdCurrentData?.stocks) {
+    allStocks = _sdCurrentData.stocks;
+  }
+
+  let html = '';
+  _sccWatchlistSymbols.forEach(sym => {
+    const sUpper = sym.toUpperCase();
+    const data = _sccWatchlistData[sUpper];
+    
+    const isSelected = _sccWlSelectedSymbols.includes(sUpper);
+    const isChartActive = activeSymbols.includes(sUpper);
+
+    let itemBg = 'background: transparent;';
+    if (isSelected) {
+      itemBg = 'background: rgba(91, 163, 245, 0.15);';
+    } else if (isChartActive) {
+      itemBg = 'background: rgba(91, 163, 245, 0.05);';
+    }
+
+    const borderStyle = isChartActive ? 'border-left: 3px solid var(--accent);' : 'border-left: 3px solid transparent;';
+    const itemPadding = isChartActive ? 'padding: 8px 12px 8px 9px;' : 'padding: 8px 12px;';
+
+    const stockInfo = allStocks.find(s => s.symbol && s.symbol.toUpperCase() === sUpper);
+    const companyName = stockInfo ? (stockInfo.company || '') : '';
+
+    // Colored Flags Setup (Ribbon/Bookmark shape)
+    const flagColorName = _sccSymbolFlags[sUpper] || 'none';
+    const hasFlag = flagColorName !== 'none';
+    const colorsMap = {
+      red: '#ef4444',
+      blue: '#3b82f6',
+      green: '#22c55e',
+      yellow: '#eab308',
+      purple: '#a855f7',
+      cyan: '#06b6d4',
+      pink: '#ec4899'
+    };
+    const flagColor = hasFlag ? colorsMap[flagColorName] : 'var(--dim)';
+    const flagClass = hasFlag ? 'wl-flag-flagged' : 'wl-flag-unflagged';
+
+    let priceStr = '<span style="color:var(--dim)">...</span>';
+    let changeStr = '<span style="color:var(--dim)">...</span>';
+
+    if (data) {
+      if (data.error) {
+        priceStr = '<span style="color:var(--red)">Err</span>';
+        changeStr = '<span style="color:var(--red)">--</span>';
+      } else {
+        priceStr = data.price.toFixed(1);
+        const changeVal = data.change;
+        const sign = changeVal >= 0 ? '+' : '';
+        const color = changeVal >= 0 ? 'var(--lime)' : 'var(--red)';
+        changeStr = `<span style="color:${color}">${sign}${changeVal.toFixed(1)}%</span>`;
+      }
+    }
+
+    html += `
+      <div class="scc-wl-item" 
+           onclick="sccWlItemClick(event, '${sUpper}')" 
+           oncontextmenu="sccWlItemContextMenu(event, '${sUpper}')"
+           style="display:flex; align-items:center; justify-content:space-between; ${itemBg} ${borderStyle} ${itemPadding} border-bottom:1px solid rgba(255,255,255,0.03); cursor:pointer; transition:background 0.15s;"
+           onmouseover="this.style.background='${isSelected ? 'rgba(91, 163, 245, 0.18)' : 'rgba(91, 163, 245, 0.04)'}'"
+           onmouseout="this.style.background='${isSelected ? 'rgba(91, 163, 245, 0.15)' : (isChartActive ? 'rgba(91, 163, 245, 0.05)' : 'transparent')}'">
+        
+        <!-- Flag & Symbol & Company Name -->
+        <div style="display:flex; align-items:center; min-width:0; flex:1; padding-right:8px;">
+          <!-- Vertical bookmark-shaped flag SVG (clickable to toggle flag status) -->
+          <svg class="${flagClass}" onclick="sccWatchlistFlagClick(event, this, '${sUpper}')" 
+               width="8" height="14" viewBox="0 0 10 18" 
+               fill="${flagColor}" 
+               style="cursor:pointer; color:${flagColor}; margin-right:8px; flex-shrink:0;"
+               title="${hasFlag ? 'Click to remove flag' : 'Click to choose flag'}">
+            <path d="M0 0h10v18l-5-4-5 4V0z"/>
+          </svg>
+          
+          <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
+            <span style="font-weight:700; color:var(--text); font-size:12px; font-family:var(--body);">${sUpper}</span>
+            <span style="font-size:9px; color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${companyName}">${companyName}</span>
+          </div>
+        </div>
+        
+        <!-- Last Price -->
+        <div style="font-family:var(--mono); font-size:11px; font-weight:600; text-align:right; margin-right:12px; width:70px; flex-shrink:0; color:var(--text);">
+          ${priceStr}
+        </div>
+        
+        <!-- Change % Badge -->
+        <div style="width:65px; text-align:right; flex-shrink:0; display:flex; align-items:center; justify-content:flex-end; gap:6px;">
+          <span style="font-family:var(--mono); font-weight:600; font-size:11px;">
+            ${changeStr}
+          </span>
+          <button class="wl-del-btn" onclick="event.stopPropagation(); sccWatchlistRemoveSymbol('${sUpper}');" title="Remove from Watch List"
+                  style="background:none; border:none; color:var(--dim); cursor:pointer; font-size:13px; font-weight:bold; padding:0 2px; opacity:0.3; transition:opacity 0.15s, color 0.15s; outline:none;"
+                  onmouseover="this.style.opacity='1'; this.style.color='var(--red)';"
+                  onmouseout="this.style.opacity='0.3'; this.style.color='var(--dim)';">
+            ×
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  rowsContainer.innerHTML = html;
+}
+
+function sccWatchlistFlagClick(event, element, symbol) {
+  event.stopPropagation();
+  event.preventDefault();
+  
+  const sym = symbol.toUpperCase();
+  const currentFlag = _sccSymbolFlags[sym] || 'none';
+  
+  if (currentFlag !== 'none') {
+    // If flagged: remove flag immediately (unflag)
+    delete _sccSymbolFlags[sym];
+    localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+    
+    // Sync active watchlist symbols if viewing flag tab
+    if (_sccActiveWatchlist === `__flag_${currentFlag}`) {
+      _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === currentFlag);
+      
+      const hasSymbols = Object.keys(_sccSymbolFlags).some(s => _sccSymbolFlags[s] === currentFlag);
+      if (!hasSymbols) {
+        _sccActiveWatchlist = Object.keys(_sccWatchlists)[0] || "Main";
+        _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+        localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+      }
+    }
+    
+    sccWlRenderTabs();
+    sccWatchlistRender();
+  } else {
+    // If unflagged: open option to select any colored flag popup
+    sccWatchlistOpenFlagPopup(element, sym);
+  }
+}
+
+function sccWlItemClick(event, symbol) {
+  const sym = symbol.toUpperCase();
+  const list = _sccWatchlistSymbols.map(s => s.toUpperCase());
+  const index = list.indexOf(sym);
+  if (index === -1) return;
+
+  if (event.ctrlKey || event.metaKey) {
+    // Ctrl+click toggles selection of this item
+    if (_sccWlSelectedSymbols.includes(sym)) {
+      _sccWlSelectedSymbols = _sccWlSelectedSymbols.filter(s => s !== sym);
+    } else {
+      _sccWlSelectedSymbols.push(sym);
+    }
+    _sccWlLastSelectedSymbol = sym;
+  } else if (event.shiftKey && _sccWlLastSelectedSymbol && list.includes(_sccWlLastSelectedSymbol)) {
+    // Shift+click range selects everything between last selection and this item
+    const lastIndex = list.indexOf(_sccWlLastSelectedSymbol);
+    const start = Math.min(index, lastIndex);
+    const end = Math.max(index, lastIndex);
+    const range = list.slice(start, end + 1);
+    
+    range.forEach(s => {
+      if (!_sccWlSelectedSymbols.includes(s)) {
+        _sccWlSelectedSymbols.push(s);
+      }
+    });
+    _sccWlLastSelectedSymbol = sym;
+  } else {
+    // Regular click clears multi-selection, selects this single row, and updates chart
+    _sccWlSelectedSymbols = [sym];
+    _sccWlLastSelectedSymbol = sym;
+    sccWatchlistSelect(sym);
+  }
+  
+  sccWatchlistRender();
+}
+
+function sccWlItemContextMenu(event, symbol) {
+  event.preventDefault();
+  event.stopPropagation();
+  
+  const sym = symbol.toUpperCase();
+  // If right-clicked item is not already selected, reset selection to just this item
+  if (!_sccWlSelectedSymbols.includes(sym)) {
+    _sccWlSelectedSymbols = [sym];
+    _sccWlLastSelectedSymbol = sym;
+    sccWatchlistRender();
+  }
+  
+  sccWlOpenContextMenu(event);
+}
+
+function sccWlOpenContextMenu(event) {
+  sccWlCloseContextMenu();
+
+  const menu = document.createElement('div');
+  menu.id = 'scc-wl-context-menu';
+  menu.style.position = 'fixed';
+  menu.style.zIndex = '999999';
+  menu.style.background = 'var(--bg3)';
+  menu.style.border = '1px solid var(--bdr2)';
+  menu.style.borderRadius = '6px';
+  menu.style.boxShadow = '0 10px 32px rgba(0,0,0,0.7)';
+  menu.style.padding = '6px 0';
+  menu.style.width = '200px';
+  menu.style.fontFamily = 'var(--body)';
+  menu.style.fontSize = '12px';
+  menu.style.color = 'var(--text)';
+  
+  let left = event.clientX;
+  let top = event.clientY;
+  
+  const menuWidth = 200;
+  const menuHeight = 220;
+  if (left + menuWidth > window.innerWidth) left = window.innerWidth - menuWidth - 10;
+  if (top + menuHeight > window.innerHeight) top = window.innerHeight - menuHeight - 10;
+
+  menu.style.left = `${left}px`;
+  menu.style.top = `${top}px`;
+
+  const flagColors = {
+    red: '#ef4444',
+    blue: '#3b82f6',
+    green: '#22c55e',
+    yellow: '#eab308',
+    purple: '#a855f7',
+    cyan: '#06b6d4',
+    pink: '#ec4899'
+  };
+
+  let html = `
+    <div style="padding: 6px 12px; color: var(--dim); font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+      Flag/Unflag selected
+    </div>
+    <div style="display: flex; gap: 6px; padding: 4px 12px; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+  `;
+
+  Object.keys(flagColors).forEach(c => {
+    html += `
+      <div onclick="sccWlSetFlagSelected('${c}')" 
+           title="${c.toUpperCase()} Flag"
+           style="width: 14px; height: 14px; border-radius: 50%; background: ${flagColors[c]}; cursor: pointer; transition: transform 0.1s;"
+           onmouseover="this.style.transform='scale(1.2)'"
+           onmouseout="this.style.transform='scale(1.0)'"></div>
+    `;
+  });
+
+  html += `
+      <div onclick="sccWlSetFlagSelected('none')" 
+           title="Clear Flag"
+           style="width: 14px; height: 14px; border-radius: 50%; background: #475569; position: relative; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s;"
+           onmouseover="this.style.transform='scale(1.2)'"
+           onmouseout="this.style.transform='scale(1.0)'">
+        <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.6); transform: rotate(45deg);"></div>
+      </div>
+    </div>
+  `;
+
+  const watchlistNames = Object.keys(_sccWatchlists);
+  
+  html += `
+    <div class="scc-ctx-item" onclick="sccWlSetFlagSelected('none')" style="padding: 8px 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: background 0.15s;">
+      <span>Unflag selected</span>
+    </div>
+    <div style="height: 1px; background: var(--border); margin: 4px 0;"></div>
+  `;
+
+  const otherLists = watchlistNames.filter(name => name !== _sccActiveWatchlist);
+
+  if (otherLists.length > 0) {
+    html += `
+      <div class="scc-ctx-item scc-ctx-has-submenu" style="padding: 8px 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; position: relative; transition: background 0.15s;">
+        <span>Move selected to...</span>
+        <span style="font-size: 10px; color: var(--dim);">▶</span>
+        <div class="scc-ctx-submenu" style="display: none; position: absolute; left: 100%; top: 0; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 10px 32px rgba(0,0,0,0.7); width: 160px; padding: 4px 0; z-index: 9999999;">
+      `;
+      
+      otherLists.forEach(name => {
+        html += `
+          <div onclick="sccWlMoveSelectedTo('${name.replace(/'/g, "\\'")}')" 
+               class="scc-ctx-item" 
+               style="padding: 8px 16px; cursor: pointer; text-align: left; transition: background 0.15s;">
+            ${name}
+          </div>
+        `;
+      });
+
+      html += `
+        </div>
+      </div>
+    `;
+  } else {
+    html += `
+      <div class="scc-ctx-item disabled" style="padding: 8px 16px; color: var(--dim); cursor: not-allowed; display: flex; align-items: center; justify-content: space-between;">
+        <span>Move selected to...</span>
+      </div>
+    `;
+  }
+
+  html += `
+    <div class="scc-ctx-item" onclick="sccWlCreateListFromSelected()" style="padding: 8px 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: background 0.15s;">
+      <span>Move to new list...</span>
+    </div>
+    <div style="height: 1px; background: var(--border); margin: 4px 0;"></div>
+    <div class="scc-ctx-item" onclick="sccWlDeleteSelected()" style="padding: 8px 16px; cursor: pointer; color: var(--red); display: flex; align-items: center; justify-content: space-between; transition: background 0.15s;">
+      <span>Delete selected</span>
+      <span style="font-size: 10px; color: var(--dim); margin-left: 10px;">Del</span>
+    </div>
+  `;
+
+  menu.innerHTML = html;
+  document.body.appendChild(menu);
+
+  const submenuTrigger = menu.querySelector('.scc-ctx-has-submenu');
+  if (submenuTrigger) {
+    const submenu = submenuTrigger.querySelector('.scc-ctx-submenu');
+    submenuTrigger.addEventListener('mouseenter', () => {
+      if (submenu) submenu.style.display = 'block';
+    });
+    submenuTrigger.addEventListener('mouseleave', () => {
+      if (submenu) submenu.style.display = 'none';
+    });
+  }
+
+  const items = menu.querySelectorAll('.scc-ctx-item');
+  items.forEach(item => {
+    if (!item.classList.contains('disabled')) {
+      item.addEventListener('mouseenter', () => {
+        item.style.background = 'rgba(91, 163, 245, 0.1)';
+      });
+      item.addEventListener('mouseleave', () => {
+        item.style.background = 'transparent';
+      });
+    }
+  });
+
+  setTimeout(() => {
+    document.addEventListener('click', sccWlCloseContextMenuOutside);
+    document.addEventListener('contextmenu', sccWlCloseContextMenuOutside);
+  }, 10);
+}
+
+function sccWlCloseContextMenu() {
+  const menu = document.getElementById('scc-wl-context-menu');
+  if (menu) {
+    menu.remove();
+  }
+  document.removeEventListener('click', sccWlCloseContextMenuOutside);
+  document.removeEventListener('contextmenu', sccWlCloseContextMenuOutside);
+}
+
+function sccWlCloseContextMenuOutside(e) {
+  const menu = document.getElementById('scc-wl-context-menu');
+  if (menu && !menu.contains(e.target)) {
+    sccWlCloseContextMenu();
+  }
+}
+
+function sccWlSetFlagSelected(color) {
+  _sccWlSelectedSymbols.forEach(sym => {
+    const s = sym.toUpperCase();
+    if (color === 'none') {
+      delete _sccSymbolFlags[s];
+    } else {
+      _sccSymbolFlags[s] = color;
+    }
+  });
+  localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+  
+  // Sync if currently viewing a flag tab
+  if (_sccActiveWatchlist.startsWith('__flag_')) {
+    const activeColor = _sccActiveWatchlist.replace('__flag_', '');
+    _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === activeColor);
+    
+    const hasSymbols = Object.keys(_sccSymbolFlags).some(s => _sccSymbolFlags[s] === activeColor);
+    if (!hasSymbols) {
+      _sccActiveWatchlist = Object.keys(_sccWatchlists)[0] || "Main";
+      _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+      localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+    }
+  }
+
+  sccWlCloseContextMenu();
+  sccWlRenderTabs();
+  sccWatchlistRender();
+}
+
+function sccWlMoveSelectedTo(targetList) {
+  const currentList = _sccWatchlists[_sccActiveWatchlist];
+  const target = _sccWatchlists[targetList];
+
+  _sccWlSelectedSymbols.forEach(sym => {
+    const s = sym.toUpperCase();
+    
+    if (_sccActiveWatchlist.startsWith('__flag_')) {
+      // If moving from a flag tab, it removes the flag
+      delete _sccSymbolFlags[s];
+    } else if (currentList) {
+      const idx = currentList.indexOf(s);
+      if (idx !== -1) currentList.splice(idx, 1);
+    }
+    
+    if (target && !target.includes(s)) {
+      target.push(s);
+    }
+  });
+
+  localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
+  localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+  
+  if (_sccActiveWatchlist.startsWith('__flag_')) {
+    const activeColor = _sccActiveWatchlist.replace('__flag_', '');
+    _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === activeColor);
+    
+    const hasSymbols = Object.keys(_sccSymbolFlags).some(s => _sccSymbolFlags[s] === activeColor);
+    if (!hasSymbols) {
+      _sccActiveWatchlist = Object.keys(_sccWatchlists)[0] || "Main";
+      _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+      localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+    }
+  }
+
+  sccWlCloseContextMenu();
+  
+  _sccWlSelectedSymbols = [];
+  _sccWlLastSelectedSymbol = null;
+  
+  sccWlRenderTabs();
+  sccWatchlistRender();
+  sccWatchlistFetchAll();
+}
+
+function sccWlCreateListFromSelected() {
+  const name = prompt("Enter new Watch List name:");
+  if (name === null) return;
+  const cleaned = name.trim();
+  if (!cleaned) {
+    alert("Watch List name cannot be empty.");
+    return;
+  }
+  if (_sccWatchlists[cleaned]) {
+    alert("A Watch List with this name already exists.");
+    return;
+  }
+
+  _sccWatchlists[cleaned] = [..._sccWlSelectedSymbols];
+  
+  const currentList = _sccWatchlists[_sccActiveWatchlist];
+  _sccWlSelectedSymbols.forEach(sym => {
+    const s = sym.toUpperCase();
+    if (_sccActiveWatchlist.startsWith('__flag_')) {
+      delete _sccSymbolFlags[s];
+    } else if (currentList) {
+      const idx = currentList.indexOf(s);
+      if (idx !== -1) currentList.splice(idx, 1);
+    }
+  });
+
+  _sccActiveWatchlist = cleaned;
+  _sccWatchlistSymbols = _sccWatchlists[cleaned];
+
+  localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
+  localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+  localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+
+  sccWlCloseContextMenu();
+  _sccWlSelectedSymbols = [];
+  _sccWlLastSelectedSymbol = null;
+
+  sccWlRenderTabs();
+  sccWatchlistRender();
+  sccWatchlistFetchAll();
+}
+
+function sccWlDeleteSelected() {
+  if (_sccActiveWatchlist.startsWith('__flag_')) {
+    const color = _sccActiveWatchlist.replace('__flag_', '');
+    _sccWlSelectedSymbols.forEach(sym => {
+      delete _sccSymbolFlags[sym.toUpperCase()];
+    });
+    localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+    
+    _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
+    
+    const hasSymbols = Object.keys(_sccSymbolFlags).some(s => _sccSymbolFlags[s] === color);
+    if (!hasSymbols) {
+      _sccActiveWatchlist = Object.keys(_sccWatchlists)[0] || "Main";
+      _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+      localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+    }
+  } else {
+    const currentList = _sccWatchlists[_sccActiveWatchlist];
+    if (currentList) {
+      _sccWlSelectedSymbols.forEach(sym => {
+        const idx = currentList.indexOf(sym.toUpperCase());
+        if (idx !== -1) {
+          currentList.splice(idx, 1);
+        }
+      });
+      localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
+    }
+  }
+
+  sccWlCloseContextMenu();
+  _sccWlSelectedSymbols = [];
+  _sccWlLastSelectedSymbol = null;
+  
+  sccWlRenderTabs();
+  sccWatchlistRender();
+}
+
+function sccWatchlistOpenFlagPopup(element, symbol) {
+  sccWatchlistCloseFlagPopup();
+
+  const sym = symbol.toUpperCase();
+  const currentFlag = _sccSymbolFlags[sym] || 'none';
+
+  const popup = document.createElement('div');
+  popup.id = 'scc-wl-flag-popup';
+  popup.style.position = 'fixed';
+  popup.style.zIndex = '999999';
+  popup.style.background = 'var(--bg3)';
+  popup.style.border = '1px solid var(--bdr2)';
+  popup.style.borderRadius = '6px';
+  popup.style.boxShadow = '0 8px 24px rgba(0,0,0,0.6)';
+  popup.style.padding = '8px 10px';
+  popup.style.display = 'flex';
+  popup.style.gap = '8px';
+  popup.style.alignItems = 'center';
+  
+  const rect = element.getBoundingClientRect();
+  popup.style.left = `${rect.left}px`;
+  popup.style.top = `${rect.bottom + 4}px`;
+
+  const colors = {
+    red: '#ef4444',
+    blue: '#3b82f6',
+    green: '#22c55e',
+    yellow: '#eab308',
+    purple: '#a855f7',
+    cyan: '#06b6d4',
+    pink: '#ec4899'
+  };
+
+  let html = '';
+  Object.keys(colors).forEach(c => {
+    const isSelected = currentFlag === c;
+    const border = isSelected ? 'border: 2px solid var(--text);' : 'border: 1px solid rgba(255,255,255,0.2);';
+    html += `
+      <div onclick="sccWatchlistSetFlag('${sym}', '${c}')" 
+           title="${c.toUpperCase()} Flag"
+           style="width: 14px; height: 14px; border-radius: 50%; background: ${colors[c]}; cursor: pointer; ${border} box-sizing: border-box; transition: transform 0.1s;"
+           onmouseover="this.style.transform='scale(1.2)'"
+           onmouseout="this.style.transform='scale(1.0)'"></div>
+    `;
+  });
+
+  const isNoneSelected = currentFlag === 'none';
+  const noneBorder = isNoneSelected ? 'border: 2px solid var(--text);' : 'border: 1px solid rgba(255,255,255,0.2);';
+  html += `
+    <div onclick="sccWatchlistSetFlag('${sym}', 'none')" 
+         title="Clear Flag"
+         style="width: 14px; height: 14px; border-radius: 50%; background: #475569; position: relative; cursor: pointer; ${noneBorder} box-sizing: border-box; display: flex; align-items: center; justify-content: center; transition: transform 0.1s;"
+         onmouseover="this.style.transform='scale(1.2)'"
+         onmouseout="this.style.transform='scale(1.0)'">
+      <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.6); transform: rotate(45deg);"></div>
+    </div>
+  `;
+
+  popup.innerHTML = html;
+  document.body.appendChild(popup);
+
+  setTimeout(() => {
+    document.addEventListener('click', sccWatchlistCloseFlagPopupOutside);
+  }, 10);
+}
+
+function sccWatchlistCloseFlagPopup() {
+  const popup = document.getElementById('scc-wl-flag-popup');
+  if (popup) {
+    popup.remove();
+  }
+  document.removeEventListener('click', sccWatchlistCloseFlagPopupOutside);
+}
+
+function sccWatchlistCloseFlagPopupOutside(e) {
+  const popup = document.getElementById('scc-wl-flag-popup');
+  if (popup && !popup.contains(e.target)) {
+    sccWatchlistCloseFlagPopup();
+  }
+}
+
+function sccWatchlistSetFlag(symbol, color) {
+  const sym = symbol.toUpperCase();
+  if (color === 'none') {
+    delete _sccSymbolFlags[sym];
+  } else {
+    _sccSymbolFlags[sym] = color;
+  }
+  localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+  
+  // Sync if currently viewing a flag tab
+  if (_sccActiveWatchlist.startsWith('__flag_')) {
+    const activeColor = _sccActiveWatchlist.replace('__flag_', '');
+    _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === activeColor);
+    
+    const hasSymbols = Object.keys(_sccSymbolFlags).some(s => _sccSymbolFlags[s] === activeColor);
+    if (!hasSymbols) {
+      _sccActiveWatchlist = Object.keys(_sccWatchlists)[0] || "Main";
+      _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+      localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+    }
+  }
+
+  sccWatchlistCloseFlagPopup();
+  sccWlRenderTabs();
+  sccWatchlistRender();
+}
+
+function sccWatchlistSelect(symbol) {
+  const sym = symbol.toUpperCase();
+  if (_sccSyncSymbols) {
+    for (let i = 0; i < _sccChartSymbols.length; i++) {
+      _sccChartSymbols[i] = sym;
+    }
+  } else {
+    _sccChartSymbols[_sccActivePanelIndex] = sym;
+  }
+  localStorage.setItem('_sccChartSymbols', JSON.stringify(_sccChartSymbols));
+  sccChartRebuildGrid();
+  sccWatchlistRender();
+}
+
+function sccWatchlistAddSymbol(symbol) {
+  const sym = symbol.toUpperCase().trim();
+  if (!sym) return;
+  
+  if (_sccActiveWatchlist.startsWith('__flag_')) {
+    const color = _sccActiveWatchlist.replace('__flag_', '');
+    _sccSymbolFlags[sym] = color;
+    localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+    
+    _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
+    sccWlRenderTabs();
+    sccWatchlistRender();
+    sccWatchlistFetchSymbolData(sym);
+  } else {
+    if (!_sccWatchlistSymbols.includes(sym)) {
+      _sccWatchlistSymbols.push(sym);
+      localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
+      sccWatchlistRender();
+      sccWatchlistFetchSymbolData(sym);
+    }
+  }
+}
+
+function sccWatchlistRemoveSymbol(symbol) {
+  const sym = symbol.toUpperCase();
+  
+  if (_sccActiveWatchlist.startsWith('__flag_')) {
+    delete _sccSymbolFlags[sym];
+    localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+    
+    const color = _sccActiveWatchlist.replace('__flag_', '');
+    _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
+    
+    const hasSymbols = Object.keys(_sccSymbolFlags).some(s => _sccSymbolFlags[s] === color);
+    if (!hasSymbols) {
+      _sccActiveWatchlist = Object.keys(_sccWatchlists)[0] || "Main";
+      _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+      localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+    }
+    
+    _sccWlSelectedSymbols = _sccWlSelectedSymbols.filter(s => s !== sym);
+    sccWlRenderTabs();
+    sccWatchlistRender();
+  } else {
+    const index = _sccWatchlistSymbols.indexOf(sym);
+    if (index !== -1) {
+      _sccWatchlistSymbols.splice(index, 1);
+      localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
+      
+      _sccWlSelectedSymbols = _sccWlSelectedSymbols.filter(s => s !== sym);
+      sccWatchlistRender();
+    }
+  }
+}
+
+function sccWatchlistSuggest(val) {
+  const suggestBox = document.getElementById('scc-wl-suggest');
+  if (!suggestBox) return;
+
+  const query = val.trim().toLowerCase();
+  if (!query) {
+    suggestBox.style.display = 'none';
+    suggestBox.innerHTML = '';
+    return;
+  }
+
+  let allStocks = n500CsvGetCached() || [];
+  if (allStocks.length === 0 && _sdCurrentData?.stocks) {
+    allStocks = _sdCurrentData.stocks;
+  }
+
+  const matches = [];
+  for (const s of allStocks) {
+    if ((s.symbol && s.symbol.toLowerCase().includes(query)) || 
+        (s.company && s.company.toLowerCase().includes(query))) {
+      matches.push(s);
+      if (matches.length >= 6) break;
+    }
+  }
+
+  if (matches.length === 0) {
+    suggestBox.style.display = 'none';
+    suggestBox.innerHTML = '';
+    return;
+  }
+
+  suggestBox.innerHTML = matches.map(s => {
+    return `
+      <div class="max-suggest-item" onclick="sccWatchlistSuggestSelect('${s.symbol.replace(/'/g, "\\'")}')">
+        <span style="font-weight:700;color:var(--teal);">${s.symbol}</span>
+        <span class="comp-name" style="max-width:140px">${s.company || ''}</span>
+      </div>`;
+  }).join('');
+  suggestBox.style.display = 'block';
+}
+
+function sccWatchlistSuggestSelect(symbol) {
+  sccWatchlistAddSymbol(symbol);
+  const input = document.getElementById('scc-wl-add-input');
+  if (input) input.value = '';
+  const suggestBox = document.getElementById('scc-wl-suggest');
+  if (suggestBox) suggestBox.style.display = 'none';
+}
+
+function sccWatchlistAddFromInput(val) {
+  const symbol = val.trim().toUpperCase();
+  if (symbol) {
+    sccWatchlistAddSymbol(symbol);
+    const input = document.getElementById('scc-wl-add-input');
+    if (input) {
+      input.value = '';
+      input.blur();
+    }
+    const suggestBox = document.getElementById('scc-wl-suggest');
+    if (suggestBox) suggestBox.style.display = 'none';
+  }
+}
+
+async function sccWatchlistFetchSymbolData(symbol) {
+  const sym = symbol.toUpperCase();
+  try {
+    const candles = await fetchYfData(sym, '5d', '1d');
+    if (candles && candles.length > 0) {
+      const lastCandle = candles[candles.length - 1];
+      const prevCandle = candles.length > 1 ? candles[candles.length - 2] : lastCandle;
+      const price = lastCandle.close;
+      const pctChange = ((price - prevCandle.close) / prevCandle.close) * 100;
+      _sccWatchlistData[sym] = { price, change: pctChange };
+    }
+  } catch (err) {
+    console.error("Watchlist fetch error for " + sym, err);
+    if (!_sccWatchlistData[sym]) {
+      _sccWatchlistData[sym] = { error: true };
+    }
+  }
+  sccWatchlistRender();
+}
+
+function sccWatchlistFetchAll(bypassCache = false) {
+  _sccWatchlistSymbols.forEach(sym => {
+    const sUpper = sym.toUpperCase();
+    if (bypassCache) {
+      const yfSymbol = sUpper.startsWith('^') ? sUpper : (sUpper + '.NS');
+      const cacheKey = `${yfSymbol}_5d_1d`;
+      _yfDataCache.delete(cacheKey);
+      _yfDataCache.delete(`${yfSymbol}_6mo_1d`);
+    }
+    sccWatchlistFetchSymbolData(sUpper);
+  });
+}
+
+// Clear watchlist multi-selection when clicking outside watchlist elements
+document.addEventListener('click', (e) => {
+  const insideWl = e.target.closest('.scc-wl-item') || 
+                   e.target.closest('#scc-wl-tabs-bar') ||
+                   e.target.closest('#scc-wl-flag-popup') ||
+                   e.target.closest('#scc-wl-context-menu') ||
+                   e.target.closest('#scc-wl-add-input') ||
+                   e.target.closest('#scc-wl-suggest') ||
+                   e.target.closest('.wl-del-btn') ||
+                   e.target.closest('button[onclick*="sccWatchlist"]') ||
+                   e.target.closest('button[onclick*="sccToggleWatchlist"]');
+                   
+  if (!insideWl) {
+    if (_sccWlSelectedSymbols.length > 0) {
+      _sccWlSelectedSymbols = [];
+      _sccWlLastSelectedSymbol = null;
+      sccWatchlistRender();
+    }
+  }
+});
+
 // Global Key Listeners for Chart Keyboard Focus shortcuts
 document.addEventListener('keydown', (e) => {
+  // Alt+W: Add current chart stock to active watchlist
+  if (e.altKey && e.key.toLowerCase() === 'w') {
+    const pane = document.getElementById('scc-pane-chart');
+    if (pane && pane.style.display !== 'none') {
+      e.preventDefault();
+      const activeSymbol = _sccChartSymbols[_sccActivePanelIndex];
+      if (activeSymbol) {
+        sccWatchlistAddSymbol(activeSymbol);
+      }
+    }
+    return;
+  }
+
+  // Delete key: Remove all selected symbols from watchlist
+  if (e.key === 'Delete') {
+    const pane = document.getElementById('scc-pane-chart');
+    if (pane && pane.style.display !== 'none' && _sccWlSelectedSymbols.length > 0) {
+      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        sccWlDeleteSelected();
+      }
+    }
+    return;
+  }
+
   // Ignore if user is typing in any input/textarea/select
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
     return;
@@ -11517,6 +12670,16 @@ let _sccChartType = 'volume_candles';
 let _sccSyncSymbols = false;
 let _sccChartZoomFactors = [1.0, 1.0, 1.0, 1.0];
 
+// ── Watchlist state variables ──
+let _sccWatchlists = { "Main": ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT'] };
+let _sccActiveWatchlist = "Main";
+let _sccWatchlistSymbols = _sccWatchlists["Main"];
+let _sccWatchlistData = {};
+let _sccSymbolFlags = {};
+let _sccShowWatchlist = true;
+let _sccWlSelectedSymbols = [];
+let _sccWlLastSelectedSymbol = null;
+
 try {
   const savedSyms = localStorage.getItem('_sccChartSymbols');
   if (savedSyms) _sccChartSymbols = JSON.parse(savedSyms);
@@ -11535,8 +12698,34 @@ try {
   
   const savedZooms = localStorage.getItem('_sccChartZoomFactors');
   if (savedZooms) _sccChartZoomFactors = JSON.parse(savedZooms);
+
+  const savedWls = localStorage.getItem('_sccWatchlists');
+  if (savedWls) _sccWatchlists = JSON.parse(savedWls);
+
+  const savedActiveWl = localStorage.getItem('_sccActiveWatchlist');
+  if (savedActiveWl) _sccActiveWatchlist = savedActiveWl;
+
+  const savedFlags = localStorage.getItem('_sccSymbolFlags');
+  if (savedFlags) _sccSymbolFlags = JSON.parse(savedFlags);
+
+  if (_sccActiveWatchlist && _sccActiveWatchlist.startsWith('__flag_')) {
+    const color = _sccActiveWatchlist.replace('__flag_', '');
+    _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
+  } else {
+    if (!_sccWatchlists[_sccActiveWatchlist]) {
+      const keys = Object.keys(_sccWatchlists);
+      _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main";
+      if (keys.length === 0) {
+        _sccWatchlists["Main"] = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT'];
+      }
+    }
+    _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+  }
+
+  const savedShowWl = localStorage.getItem('_sccShowWatchlist');
+  if (savedShowWl !== null) _sccShowWatchlist = savedShowWl === 'true';
 } catch (e) {
-  console.warn("Failed to load Chart tab localStorage preferences", e);
+  console.warn("Failed to load Chart tab / Watchlist localStorage preferences", e);
 }
 
 function sectorDrillGetCached() {
