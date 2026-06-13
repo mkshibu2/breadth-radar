@@ -175,6 +175,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
 
 /* ── MAIN TWO-COLUMN GRID ────────────────────────────────── */
 .dash-grid{display:grid;grid-template-columns:minmax(0,6.3fr) minmax(0,3.7fr);gap:8px;align-items:start;}
+.dash-grid.wide-command {
+  grid-template-columns: 1fr;
+}
+.dash-grid.wide-command > .col:last-child {
+  display: none;
+}
 .col{display:flex;flex-direction:column;gap:8px;}
 
 /* ── FOLLOW-THROUGH DAY DETECTOR ───────────────────────── */
@@ -584,6 +590,56 @@ canvas#bsr-chart{width:100%;height:100%;}
   opacity: 0.35;
   margin-left: 4px;
   flex-shrink: 0;
+}
+
+/* ── Sector Command Centre Chart Tab ────────────────────── */
+#scc-pane-chart {
+  display: flex;
+  flex-direction: column;
+}
+#scc-chart-grid {
+  flex: 1;
+  min-height: 0;
+}
+.scc-chart-grid-1 {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  gap: 8px;
+  height: calc(100vh - 180px);
+}
+.scc-chart-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: 1fr;
+  gap: 8px;
+  height: calc(100vh - 180px);
+}
+.scc-chart-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 8px;
+  height: calc(100vh - 180px);
+}
+.scc-chart-grid-1 .sd-chart-card,
+.scc-chart-grid-2 .sd-chart-card,
+.scc-chart-grid-4 .sd-chart-card {
+  height: 100% !important;
+  min-height: 0 !important;
+}
+@media(max-width:600px){
+  .scc-chart-grid-1, .scc-chart-grid-2, .scc-chart-grid-4 {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: unset !important;
+    height: auto !important;
+  }
+  .scc-chart-grid-1 .sd-chart-card,
+  .scc-chart-grid-2 .sd-chart-card,
+  .scc-chart-grid-4 .sd-chart-card {
+    height: 260px !important;
+    min-height: 260px !important;
+  }
 }
 
 /* ── MPM ─────────────────────────────────────────────────── */
@@ -1702,6 +1758,10 @@ thead th[onclick]:hover {
             <span style="color:inherit;font-weight:inherit">🌡 Heatmap</span>
             <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-heatmap',this)" title="About Heatmap tab features">i</button>
           </div>
+          <div id="scc-tab-chart" class="scc-tab" onclick="sccTab('chart')">
+            <span style="color:inherit;font-weight:inherit">📈 Chart</span>
+            <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-chart',this)" title="About Chart tab features">i</button>
+          </div>
         </div>
 
         <!-- ── TAB: BREADTH ────────────────────────────── -->
@@ -2046,6 +2106,64 @@ thead th[onclick]:hover {
             </div>
           </div>
         </div><!-- /pane-heatmap -->
+
+        <!-- ── TAB: CHART ────────────────────────────────── -->
+        <div id="scc-pane-chart" style="display:none; position:relative;">
+          <!-- Controls at the top -->
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--bg3);border-bottom:1px solid var(--border);flex-wrap:wrap;">
+            <!-- Layout Selection -->
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="color:var(--dim);font-size:11px">Layout:</span>
+              <select id="scc-chart-layout-select" onchange="sccChartSetLayout(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
+                <option value="1">1 Column</option>
+                <option value="2">2 Columns</option>
+                <option value="4">2 x 2 Grid</option>
+              </select>
+            </div>
+
+            <!-- Type Selection -->
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="color:var(--dim);font-size:11px">Type:</span>
+              <select id="scc-chart-type-select" onchange="sccChartSetType(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
+                <option value="volume_candles">Volume Candles</option>
+                <option value="candlestick">Candles</option>
+                <option value="ohlc">Bars</option>
+              </select>
+            </div>
+
+            <!-- Sync Symbols toggle -->
+            <div style="display:flex;align-items:center;gap:6px;margin-left:4px">
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:var(--sub);user-select:none">
+                <input type="checkbox" id="scc-chart-sync-symbols" onchange="sccChartSetSync(this.checked)" style="accent-color:var(--teal)">
+                Sync Symbols
+              </label>
+            </div>
+
+            <!-- Global Symbol Input -->
+            <div id="scc-chart-global-sym-wrap" style="display:none;align-items:center;gap:6px;margin-left:4px">
+              <span style="color:var(--dim);font-size:11px">Global Symbol:</span>
+              <div style="position:relative">
+                <input type="text" id="scc-chart-global-symbol" placeholder="e.g. RELIANCE" oninput="sccChartGlobalInput(this.value)"
+                       onfocus="this.style.borderColor='var(--teal)';" 
+                       onblur="setTimeout(()=> { const el=document.getElementById('scc-chart-global-suggest'); if(el)el.style.display='none'; }, 200);"
+                       style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;padding:3px 6px;border-radius:3px;outline:none;height:24px;width:100px;text-transform:uppercase">
+                <div id="scc-chart-global-suggest" class="max-suggest-box" style="width:180px; left:0; top:100%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Grid Container -->
+          <div id="scc-chart-grid" class="scc-chart-grid-2" style="display:grid;gap:8px;padding:8px;background:var(--bg);">
+            <!-- Chart cards injected dynamically -->
+          </div>
+
+          <!-- Timeframe Changer Popup overlay -->
+          <div id="scc-timeframe-popup" style="display:none; position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); background:var(--bg3); border:1px solid var(--bdr2); border-radius:6px; padding:10px 14px; box-shadow:0 12px 32px rgba(0,0,0,0.6); z-index:100; align-items:center; gap:8px;">
+            <span style="font-size:11px; color:var(--dim); font-family:var(--mono);">INTERVAL:</span>
+            <input type="text" id="scc-timeframe-popup-input" style="width:60px; background:var(--bg); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:12px; font-weight:700; padding:3px 6px; outline:none; border-radius:3px; text-transform:uppercase;" onkeydown="sccTimeframePopupKey(event)">
+            <span style="font-size:9px; color:var(--dim);">(60/1H, 1D, W, 1M)</span>
+          </div>
+        </div><!-- /pane-chart -->
 
       </div><!-- /Sector Command Centre -->
 
@@ -4053,8 +4171,8 @@ function rrgSubTab(tab) {
 }
 
 function sccTab(tab) {
-  const colors = { breadth: 'var(--teal)', rrg: 'var(--purple)', heatmap: 'var(--teal)' };
-  ['breadth','rrg','heatmap'].forEach(t => {
+  const colors = { breadth: 'var(--teal)', rrg: 'var(--purple)', heatmap: 'var(--teal)', chart: 'var(--teal)' };
+  ['breadth','rrg','heatmap','chart'].forEach(t => {
     const btn  = document.getElementById('scc-tab-' + t);
     const pane = document.getElementById('scc-pane-' + t);
     const active = t === tab;
@@ -4065,8 +4183,19 @@ function sccTab(tab) {
     }
     if (pane) pane.style.display = active ? 'block' : 'none';
   });
+  
+  const dGrid = document.querySelector('.dash-grid');
+  if (dGrid) {
+    if (tab === 'chart') {
+      dGrid.classList.add('wide-command');
+    } else {
+      dGrid.classList.remove('wide-command');
+    }
+  }
+  
   if (tab === 'rrg')     { setTimeout(() => { rrgSubTab('breadth'); brrgRebuildChips(); brrgDraw(); }, 50); }
   if (tab === 'heatmap') setTimeout(() => slhRender(), 50);
+  if (tab === 'chart')   setTimeout(() => sccChartRebuildGrid(), 50);
 }
 
 function toggleMaximizeSectorCommand() {
@@ -4095,6 +4224,7 @@ function toggleMaximizeSectorCommand() {
   // Re-draw active pane to fit maximized state layout
   const isRrgActive = document.getElementById('scc-pane-rrg').style.display !== 'none';
   const isHeatmapActive = document.getElementById('scc-pane-heatmap').style.display !== 'none';
+  const isChartActive = document.getElementById('scc-pane-chart') && document.getElementById('scc-pane-chart').style.display !== 'none';
 
   if (isRrgActive) {
     const isPriceActive = document.getElementById('rrg-sub-price').style.display !== 'none';
@@ -4105,8 +4235,617 @@ function toggleMaximizeSectorCommand() {
     }
   } else if (isHeatmapActive) {
     setTimeout(() => { if (typeof slhRender === 'function') slhRender(); }, 80);
+  } else if (isChartActive) {
+    setTimeout(() => {
+      const count = parseInt(_sccChartLayout);
+      for (let i = 0; i < count; i++) {
+        sccChartRenderPanel(i);
+      }
+    }, 80);
   } else {
     setTimeout(() => { if (typeof brrgDraw === 'function') brrgDraw(); }, 80);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  SECTOR COMMAND CENTRE — CHART TAB WORKBENCH
+// ════════════════════════════════════════════════════════════════════════
+
+// Zoom functions for Sector Command Chart panels
+function sccChartZoom(index, direction) {
+  sccChartSetActivePanel(index);
+  let zoomFactor = _sccChartZoomFactors[index] || 1.0;
+  if (direction > 0) {
+    // Zoom in -> show fewer candles -> decrease zoom factor
+    zoomFactor *= 0.85;
+  } else {
+    // Zoom out -> show more candles -> increase zoom factor
+    zoomFactor *= 1.15;
+  }
+  zoomFactor = Math.max(0.15, Math.min(5.0, zoomFactor));
+  _sccChartZoomFactors[index] = zoomFactor;
+  localStorage.setItem('_sccChartZoomFactors', JSON.stringify(_sccChartZoomFactors));
+  sccChartRenderPanel(index);
+}
+
+function sccChartZoomReset(index) {
+  sccChartSetActivePanel(index);
+  _sccChartZoomFactors[index] = 1.0;
+  localStorage.setItem('_sccChartZoomFactors', JSON.stringify(_sccChartZoomFactors));
+  sccChartRenderPanel(index);
+}
+
+let _sccActivePanelIndex = 0;
+
+function sccChartRebuildGrid() {
+  const grid = document.getElementById('scc-chart-grid');
+  if (!grid) return;
+  
+  // Update controls states on first load / layout rebuild
+  const layoutSelect = document.getElementById('scc-chart-layout-select');
+  if (layoutSelect && layoutSelect.value !== _sccChartLayout) {
+    layoutSelect.value = _sccChartLayout;
+  }
+  
+  const typeSelect = document.getElementById('scc-chart-type-select');
+  if (typeSelect && typeSelect.value !== _sccChartType) {
+    typeSelect.value = _sccChartType;
+  }
+  
+  const syncCb = document.getElementById('scc-chart-sync-symbols');
+  if (syncCb && syncCb.checked !== _sccSyncSymbols) {
+    syncCb.checked = _sccSyncSymbols;
+  }
+  
+  const globalWrap = document.getElementById('scc-chart-global-sym-wrap');
+  if (globalWrap) {
+    globalWrap.style.display = _sccSyncSymbols ? 'flex' : 'none';
+  }
+  
+  if (_sccSyncSymbols) {
+    const globalInput = document.getElementById('scc-chart-global-symbol');
+    if (globalInput && globalInput.value !== _sccChartSymbols[0]) {
+      globalInput.value = _sccChartSymbols[0] || '';
+    }
+  }
+
+  const count = parseInt(_sccChartLayout);
+  
+  if (count === 4) {
+    grid.className = 'scc-chart-grid-4';
+    grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+  } else if (count === 2) {
+    grid.className = 'scc-chart-grid-2';
+    grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+  } else {
+    grid.className = 'scc-chart-grid-1';
+    grid.style.gridTemplateColumns = '1fr';
+  }
+
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    const symbol = _sccChartSymbols[i] || '';
+    const timeframe = _sccChartTimeframes[i] || 'D';
+    const tvUrl = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(symbol)}`;
+    
+    // Highlight the active panel
+    const isActive = i === _sccActivePanelIndex;
+    const borderStyle = isActive ? 'border: 1px solid var(--accent);' : 'border: 1px solid var(--border);';
+    const shadowStyle = isActive ? 'box-shadow: 0 0 10px rgba(91, 163, 245, 0.25);' : 'box-shadow: none;';
+    
+    html += `
+      <div class="sd-chart-card" id="scc-chart-card-${i}" onclick="sccChartSetActivePanel(${i})" style="cursor: pointer; ${borderStyle} ${shadowStyle}">
+        <div class="sd-chart-header" style="padding: 4px 8px; gap: 4px;">
+          <!-- Symbol Search Input -->
+          <div style="position:relative; width: 85px;">
+            <input type="text" id="scc-chart-input-${i}" value="${symbol}" placeholder="Symbol..." 
+                   oninput="sccChartInputHandler(${i}, this.value)"
+                   onkeyup="if(event.key==='Enter') { sccChartSubmitSymbol(${i}, this.value); }"
+                   onfocus="this.style.borderColor='var(--teal)';"
+                   onblur="setTimeout(()=> { const el=document.getElementById('scc-chart-suggest-${i}'); if(el)el.style.display='none'; }, 200);"
+                   style="width: 100%; background: var(--bg4); border: 1px solid var(--border); color: var(--text); font-family: var(--body); font-size: 11px; padding: 3px 5px; outline: none; border-radius: 3px; height: 22px; box-sizing: border-box; text-transform: uppercase;">
+            <div id="scc-chart-suggest-${i}" class="max-suggest-box" style="width: 160px; left: 0; top: 100%;"></div>
+          </div>
+          
+          <!-- Company & Symbol Title -->
+          <div id="scc-chart-title-${i}" style="display:flex; align-items:center; overflow:hidden; flex: 1; min-width: 0; padding-left: 2px;">
+            <span style="font-family:var(--disp);font-size:11px;font-weight:800;color:var(--teal)">${symbol}</span>
+          </div>
+          
+          <!-- Stats Panel -->
+          <div id="scc-chart-stats-${i}" style="font-size: 10px; display:flex; align-items:center; white-space:nowrap; gap: 4px;"></div>
+
+          <!-- Timeframe select -->
+          <select onchange="sccChartSetTimeframe(${i}, this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:10px;font-weight:600;padding:2px 4px;border-radius:3px;outline:none;height:22px;cursor:pointer;">
+            <option value="1H" ${timeframe === '1H' ? 'selected' : ''}>1H</option>
+            <option value="D" ${timeframe === 'D' ? 'selected' : ''}>D</option>
+            <option value="W" ${timeframe === 'W' ? 'selected' : ''}>W</option>
+            <option value="M" ${timeframe === 'M' ? 'selected' : ''}>M</option>
+          </select>
+
+          <!-- Action buttons -->
+          <div style="display:flex; align-items:center; gap:3px;">
+            <!-- Zoom buttons -->
+            <button class="sd-chart-max-btn" onclick="sccChartZoom(${i}, 1); event.stopPropagation();" title="Zoom In"
+                    style="height:22px; width:22px; font-weight:bold; border:1px solid var(--border);">
+              +
+            </button>
+            <button class="sd-chart-max-btn" onclick="sccChartZoom(${i}, -1); event.stopPropagation();" title="Zoom Out"
+                    style="height:22px; width:22px; font-weight:bold; border:1px solid var(--border);">
+              -
+            </button>
+            <button class="sd-chart-max-btn" onclick="sccChartZoomReset(${i}); event.stopPropagation();" title="Reset Zoom"
+                    style="height:22px; width:22px; border:1px solid var(--border);">
+              ↺
+            </button>
+            <a href="${tvUrl}" target="_blank" rel="noopener" title="TradingView"
+               style="font-size:10px;color:var(--accent);text-decoration:none;padding:2px 4px;border-radius:3px;border:1px solid rgba(91,163,245,.2);background:rgba(91,163,245,.05);display:flex;align-items:center;justify-content:center;height:22px;box-sizing:border-box;">
+               ↗
+            </a>
+            <button class="sd-chart-max-btn" onclick="openMaximizedChart('${symbol}')" title="Maximize Chart"
+                    style="height:22px; width:22px; padding:0; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); border-radius:3px; background:transparent;">
+              ⛶
+            </button>
+          </div>
+        </div>
+        
+        <!-- Chart Container -->
+        <div class="sd-chart-container" style="flex:1; position:relative; overflow:hidden;">
+          <canvas id="scc-chart-canvas-${i}" style="width:100%; height:100%; display:block;"></canvas>
+          <div id="scc-chart-loader-${i}" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#131722; color:var(--dim); font-size:11px; flex-direction:column; gap:6px;">
+            Loading chart…
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  grid.innerHTML = html;
+  
+  // Render charts for each panel
+  for (let i = 0; i < count; i++) {
+    sccChartRenderPanel(i);
+  }
+}
+
+function sccChartSetActivePanel(index) {
+  _sccActivePanelIndex = index;
+  const count = parseInt(_sccChartLayout);
+  for (let i = 0; i < count; i++) {
+    const card = document.getElementById(`scc-chart-card-${i}`);
+    if (card) {
+      if (i === index) {
+        card.style.borderColor = 'var(--accent)';
+        card.style.boxShadow = '0 0 10px rgba(91, 163, 245, 0.25)';
+      } else {
+        card.style.borderColor = 'var(--border)';
+        card.style.boxShadow = 'none';
+      }
+    }
+  }
+}
+
+async function sccChartRenderPanel(index) {
+  const symbol = _sccChartSymbols[index];
+  const timeframe = _sccChartTimeframes[index];
+  const canvasId = `scc-chart-canvas-${index}`;
+  const loaderId = `scc-chart-loader-${index}`;
+  const titleId = `scc-chart-title-${index}`;
+  const statsId = `scc-chart-stats-${index}`;
+  
+  const loader = document.getElementById(loaderId);
+  const titleEl = document.getElementById(titleId);
+  const statsEl = document.getElementById(statsId);
+
+  if (!symbol) {
+    if (loader) {
+      loader.innerHTML = '<span style="color:var(--dim)">Enter symbol</span>';
+      loader.style.display = 'flex';
+    }
+    return;
+  }
+
+  // Update input text value
+  const input = document.getElementById(`scc-chart-input-${index}`);
+  if (input && input.value !== symbol) {
+    input.value = symbol;
+  }
+
+  if (loader) {
+    loader.style.display = 'flex';
+    loader.innerHTML = 'Loading chart…';
+  }
+
+  let range = '6mo';
+  let interval = '1d';
+  if (timeframe === '1H') {
+    range = '1mo';
+    interval = '60m';
+  } else if (timeframe === 'D') {
+    range = '6mo';
+    interval = '1d';
+  } else if (timeframe === 'W') {
+    range = '2y';
+    interval = '1wk';
+  } else if (timeframe === 'M') {
+    range = '5y';
+    interval = '1mo';
+  }
+
+  // Fetch company info from our local stock list if available
+  let companyName = '';
+  let rsRating = '';
+  
+  let allStocks = n500CsvGetCached() || [];
+  if (allStocks.length === 0 && _sdCurrentData?.stocks) {
+    allStocks = _sdCurrentData.stocks;
+  }
+  const stockInfo = allStocks.find(s => s.symbol && s.symbol.toUpperCase() === symbol.toUpperCase());
+  if (stockInfo) {
+    companyName = stockInfo.company || '';
+    rsRating = stockInfo.rs_rating != null ? stockInfo.rs_rating : '';
+  }
+
+  if (titleEl) {
+    titleEl.innerHTML = `<span style="font-family:var(--disp);font-size:11px;font-weight:800;color:var(--teal)">${symbol.toUpperCase()}</span>
+                         <span style="font-size:9px;color:var(--dim);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:4px" title="${companyName}">${companyName}</span>`;
+  }
+
+  try {
+    const [candles, niftyCandles] = await Promise.all([
+      fetchYfData(symbol.toUpperCase(), range, interval),
+      symbol.toUpperCase() !== '^NSEI' ? fetchYfData('^NSEI', range, interval).catch(() => null) : Promise.resolve(null)
+    ]);
+    if (loader) loader.style.display = 'none';
+    
+    // Calculate zoom drawCount override
+    const canvas = document.getElementById(canvasId);
+    let drawCountOverride = null;
+    if (canvas && candles && candles.length > 0) {
+      const rect = canvas.getBoundingClientRect();
+      const minCandlePx = (_sccChartType === 'ohlc') ? 3 : 4;
+      const maxFitCount = Math.max(20, Math.floor(rect.width / minCandlePx));
+      const totalCount = candles.length;
+      const defaultDrawCount = Math.min(totalCount, maxFitCount);
+      const zoomFactor = _sccChartZoomFactors[index] || 1.0;
+      drawCountOverride = Math.min(totalCount, Math.max(10, Math.round(defaultDrawCount * zoomFactor)));
+    }
+
+    // Draw on canvas
+    drawAnyChart(canvasId, candles, _sccChartType, drawCountOverride, niftyCandles);
+
+    // Attach wheel zoom listener if not already attached
+    if (canvas && !canvas.dataset.hasWheelListener) {
+      canvas.dataset.hasWheelListener = "true";
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        sccChartSetActivePanel(index);
+        let zoomFactor = _sccChartZoomFactors[index] || 1.0;
+        if (e.deltaY < 0) {
+          // Scroll up: zoom in -> fewer candles -> decrease zoom factor
+          zoomFactor *= 0.85;
+        } else {
+          // Scroll down: zoom out -> more candles -> increase zoom factor
+          zoomFactor *= 1.15;
+        }
+        zoomFactor = Math.max(0.15, Math.min(5.0, zoomFactor));
+        _sccChartZoomFactors[index] = zoomFactor;
+        localStorage.setItem('_sccChartZoomFactors', JSON.stringify(_sccChartZoomFactors));
+        sccChartRenderPanel(index);
+      }, { passive: false });
+    }
+    
+    // Get last candle to show current stats
+    if (candles && candles.length > 0) {
+      const lastCandle = candles[candles.length - 1];
+      const prevCandle = candles.length > 1 ? candles[candles.length - 2] : lastCandle;
+      const price = lastCandle.close;
+      const pctChange = ((price - prevCandle.close) / prevCandle.close) * 100;
+      const sign = pctChange >= 0 ? '+' : '';
+      const color = pctChange >= 0 ? 'var(--lime)' : 'var(--red)';
+      
+      let statsStr = `<span style="font-family:var(--mono);font-weight:600;margin-right:2px">${price.toFixed(1)}</span>
+                      <span style="color:${color};font-family:var(--mono);font-weight:600;margin-right:2px">${sign}${pctChange.toFixed(1)}%</span>`;
+      if (rsRating !== '') {
+        statsStr += `<span style="color:var(--purple);font-size:8px;background:rgba(192,132,252,0.12);padding:1px 3px;border-radius:2px">RS:${rsRating}</span>`;
+      }
+      if (statsEl) statsEl.innerHTML = statsStr;
+    }
+  } catch (err) {
+    console.error("YF scc chart error for " + symbol, err);
+    if (loader) {
+      loader.innerHTML = `
+        <div style="color:var(--sub);font-size:10px;text-align:center;padding:12px;line-height:1.5;">
+          <span style="color:var(--red);font-weight:600;display:block;margin-bottom:4px;">Failed to load data</span>
+          Run proxy or check connection.
+        </div>`;
+    }
+  }
+}
+
+function sccChartInputHandler(index, value) {
+  sccChartSuggestInput(index, value);
+  const upperVal = value.toUpperCase().trim();
+  if (_sccSyncSymbols) {
+    for (let i = 0; i < _sccChartSymbols.length; i++) {
+      _sccChartSymbols[i] = upperVal;
+    }
+  } else {
+    _sccChartSymbols[index] = upperVal;
+  }
+  localStorage.setItem('_sccChartSymbols', JSON.stringify(_sccChartSymbols));
+  
+  if (window._sccChartTypingTimeout) clearTimeout(window._sccChartTypingTimeout);
+  window._sccChartTypingTimeout = setTimeout(() => {
+    if (_sccSyncSymbols) {
+      const count = parseInt(_sccChartLayout);
+      for (let i = 0; i < count; i++) {
+        sccChartRenderPanel(i);
+      }
+    } else {
+      sccChartRenderPanel(index);
+    }
+  }, 500);
+}
+
+function sccChartSuggestInput(index, val) {
+  const suggestBox = document.getElementById(`scc-chart-suggest-${index}`);
+  if (!suggestBox) return;
+
+  const query = val.trim().toLowerCase();
+  if (!query) {
+    suggestBox.style.display = 'none';
+    suggestBox.innerHTML = '';
+    return;
+  }
+
+  let allStocks = n500CsvGetCached() || [];
+  if (allStocks.length === 0 && _sdCurrentData?.stocks) {
+    allStocks = _sdCurrentData.stocks;
+  }
+
+  const matches = [];
+  for (const s of allStocks) {
+    if ((s.symbol && s.symbol.toLowerCase().includes(query)) || 
+        (s.company && s.company.toLowerCase().includes(query))) {
+      matches.push(s);
+      if (matches.length >= 6) break;
+    }
+  }
+
+  if (matches.length === 0) {
+    suggestBox.style.display = 'none';
+    suggestBox.innerHTML = '';
+    return;
+  }
+
+  suggestBox.innerHTML = matches.map(s => {
+    return `
+      <div class="max-suggest-item" onclick="sccChartSelectStock(${index}, '${s.symbol.replace(/'/g, "\\'")}')">
+        <span style="font-weight:700;color:var(--teal);">${s.symbol}</span>
+        <span class="comp-name" style="max-width:90px">${s.company || ''}</span>
+      </div>`;
+  }).join('');
+  suggestBox.style.display = 'block';
+}
+
+function sccChartSelectStock(index, symbol) {
+  const suggestBox = document.getElementById(`scc-chart-suggest-${index}`);
+  if (suggestBox) suggestBox.style.display = 'none';
+  
+  if (_sccSyncSymbols) {
+    for (let i = 0; i < _sccChartSymbols.length; i++) {
+      _sccChartSymbols[i] = symbol;
+    }
+  } else {
+    _sccChartSymbols[index] = symbol;
+  }
+  
+  localStorage.setItem('_sccChartSymbols', JSON.stringify(_sccChartSymbols));
+  sccChartRebuildGrid();
+}
+
+// Enter key instant submit
+function sccChartSubmitSymbol(index, value) {
+  const upperVal = value.toUpperCase().trim();
+  const suggestBox = document.getElementById(`scc-chart-suggest-${index}`);
+  if (suggestBox) suggestBox.style.display = 'none';
+  
+  if (_sccSyncSymbols) {
+    for (let i = 0; i < _sccChartSymbols.length; i++) {
+      _sccChartSymbols[i] = upperVal;
+    }
+  } else {
+    _sccChartSymbols[index] = upperVal;
+  }
+  localStorage.setItem('_sccChartSymbols', JSON.stringify(_sccChartSymbols));
+  sccChartRebuildGrid();
+}
+
+function sccChartSetLayout(val) {
+  _sccChartLayout = val;
+  localStorage.setItem('_sccChartLayout', val);
+  sccChartRebuildGrid();
+}
+
+function sccChartSetType(val) {
+  _sccChartType = val;
+  localStorage.setItem('_sccChartType', val);
+  const count = parseInt(_sccChartLayout);
+  for (let i = 0; i < count; i++) {
+    sccChartRenderPanel(i);
+  }
+}
+
+function sccChartSetTimeframe(index, val) {
+  _sccChartTimeframes[index] = val;
+  localStorage.setItem('_sccChartTimeframes', JSON.stringify(_sccChartTimeframes));
+  sccChartRenderPanel(index);
+}
+
+function sccChartSetSync(checked) {
+  _sccSyncSymbols = checked;
+  localStorage.setItem('_sccSyncSymbols', JSON.stringify(checked));
+  
+  const globalWrap = document.getElementById('scc-chart-global-sym-wrap');
+  if (globalWrap) {
+    globalWrap.style.display = checked ? 'flex' : 'none';
+  }
+  
+  if (checked) {
+    const primarySymbol = _sccChartSymbols[0] || 'RELIANCE';
+    for (let i = 0; i < _sccChartSymbols.length; i++) {
+      _sccChartSymbols[i] = primarySymbol;
+    }
+    localStorage.setItem('_sccChartSymbols', JSON.stringify(_sccChartSymbols));
+    sccChartRebuildGrid();
+  }
+}
+
+function sccChartGlobalInput(value) {
+  sccChartGlobalSuggest(value);
+  const upperVal = value.toUpperCase().trim();
+  for (let i = 0; i < _sccChartSymbols.length; i++) {
+    _sccChartSymbols[i] = upperVal;
+  }
+  localStorage.setItem('_sccChartSymbols', JSON.stringify(_sccChartSymbols));
+  
+  if (window._sccChartGlobalTimeout) clearTimeout(window._sccChartGlobalTimeout);
+  window._sccChartGlobalTimeout = setTimeout(() => {
+    const count = parseInt(_sccChartLayout);
+    for (let i = 0; i < count; i++) {
+      sccChartRenderPanel(i);
+    }
+  }, 500);
+}
+
+function sccChartGlobalSuggest(val) {
+  const suggestBox = document.getElementById('scc-chart-global-suggest');
+  if (!suggestBox) return;
+
+  const query = val.trim().toLowerCase();
+  if (!query) {
+    suggestBox.style.display = 'none';
+    suggestBox.innerHTML = '';
+    return;
+  }
+
+  let allStocks = n500CsvGetCached() || [];
+  if (allStocks.length === 0 && _sdCurrentData?.stocks) {
+    allStocks = _sdCurrentData.stocks;
+  }
+
+  const matches = [];
+  for (const s of allStocks) {
+    if ((s.symbol && s.symbol.toLowerCase().includes(query)) || 
+        (s.company && s.company.toLowerCase().includes(query))) {
+      matches.push(s);
+      if (matches.length >= 8) break;
+    }
+  }
+
+  if (matches.length === 0) {
+    suggestBox.style.display = 'none';
+    suggestBox.innerHTML = '';
+    return;
+  }
+
+  suggestBox.innerHTML = matches.map(s => {
+    return `
+      <div class="max-suggest-item" onclick="sccChartGlobalSelect('${s.symbol.replace(/'/g, "\\'")}')">
+        <span style="font-weight:700;color:var(--teal);">${s.symbol}</span>
+        <span class="comp-name">${s.company || ''}</span>
+      </div>`;
+  }).join('');
+  suggestBox.style.display = 'block';
+}
+
+function sccChartGlobalSelect(symbol) {
+  const globalInput = document.getElementById('scc-chart-global-symbol');
+  if (globalInput) globalInput.value = symbol;
+  const suggestBox = document.getElementById('scc-chart-global-suggest');
+  if (suggestBox) suggestBox.style.display = 'none';
+  
+  for (let i = 0; i < _sccChartSymbols.length; i++) {
+    _sccChartSymbols[i] = symbol;
+  }
+  localStorage.setItem('_sccChartSymbols', JSON.stringify(_sccChartSymbols));
+  sccChartRebuildGrid();
+}
+
+// Global Key Listeners for Chart Keyboard Focus shortcuts
+document.addEventListener('keydown', (e) => {
+  // Ignore if user is typing in any input/textarea/select
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+    return;
+  }
+  
+  // Ignore if Chart pane is not visible
+  const pane = document.getElementById('scc-pane-chart');
+  if (!pane || pane.style.display === 'none') return;
+  
+  const char = e.key;
+  
+  // Escape key: hide popup
+  if (char === 'Escape') {
+    sccHideTimeframePopup();
+    return;
+  }
+  
+  // 1. Text keys (A-Z) -> focus stock input
+  if (/^[a-zA-Z]$/.test(char) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    const input = document.getElementById(`scc-chart-input-${_sccActivePanelIndex}`);
+    if (input) {
+      input.focus();
+      input.value = char.toUpperCase();
+      sccChartInputHandler(_sccActivePanelIndex, input.value);
+      e.preventDefault();
+    }
+  }
+  
+  // 2. Number keys (0-9) -> open timeframe popup
+  if (/^[0-9]$/.test(char)) {
+    sccShowTimeframePopup(char);
+    e.preventDefault();
+  }
+});
+
+function sccShowTimeframePopup(initialChar) {
+  const popup = document.getElementById('scc-timeframe-popup');
+  const input = document.getElementById('scc-timeframe-popup-input');
+  if (!popup || !input) return;
+  
+  popup.style.display = 'flex';
+  input.value = initialChar;
+  input.focus();
+}
+
+function sccHideTimeframePopup() {
+  const popup = document.getElementById('scc-timeframe-popup');
+  if (popup) popup.style.display = 'none';
+}
+
+function sccTimeframePopupKey(e) {
+  if (e.key === 'Enter') {
+    const val = e.target.value.toUpperCase().trim();
+    sccHideTimeframePopup();
+    
+    let tf = 'D';
+    if (val === '60' || val === '1H' || val === 'H') {
+      tf = '1H';
+    } else if (val === '1D' || val === 'D' || val === '1') {
+      tf = 'D';
+    } else if (val === '1W' || val === 'W') {
+      tf = 'W';
+    } else if (val === '1M' || val === 'M') {
+      tf = 'M';
+    } else {
+      return;
+    }
+    
+    sccChartSetTimeframe(_sccActivePanelIndex, tf);
+  } else if (e.key === 'Escape') {
+    sccHideTimeframePopup();
   }
 }
 
@@ -9057,7 +9796,7 @@ async function seedHistoricalData() {
 
 })();
 
-window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal()); bsrRenderChart(); renderA1Sparkline(loadLocal()); if (typeof brrgDraw === 'function') brrgDraw(); if (typeof srtDrawRRG === 'function') srtDrawRRG(); if (document.getElementById('sector-drill-overlay') && document.getElementById('sector-drill-overlay').style.display !== 'none' && _sdActiveTab === 'charts' && _sdChartsLayout === 'auto') { sdRenderCharts(_sdCurrentSector, _sdCurrentData); } if (document.getElementById('chart-max-overlay') && document.getElementById('chart-max-overlay').style.display !== 'none' && _sdMaximizedChartSymbol) { const range = _sdChartsInterval === 'D' ? '6mo' : '2y'; const interval = _sdChartsInterval === 'D' ? '1d' : '1wk'; fetchYfData(_sdMaximizedChartSymbol, range, interval).then(candles => { drawAnyChart('max-chart-canvas', candles, _sdChartType); }).catch(() => {}); } },100); });
+window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal()); bsrRenderChart(); renderA1Sparkline(loadLocal()); if (typeof brrgDraw === 'function') brrgDraw(); if (typeof srtDrawRRG === 'function') srtDrawRRG(); if (document.getElementById('sector-drill-overlay') && document.getElementById('sector-drill-overlay').style.display !== 'none' && _sdActiveTab === 'charts' && _sdChartsLayout === 'auto') { sdRenderCharts(_sdCurrentSector, _sdCurrentData); } if (document.getElementById('chart-max-overlay') && document.getElementById('chart-max-overlay').style.display !== 'none' && _sdMaximizedChartSymbol) { const range = _sdChartsInterval === 'D' ? '6mo' : '2y'; const interval = _sdChartsInterval === 'D' ? '1d' : '1wk'; Promise.all([fetchYfData(_sdMaximizedChartSymbol, range, interval), _sdMaximizedChartSymbol.toUpperCase() !== '^NSEI' ? fetchYfData('^NSEI', range, interval).catch(() => null) : Promise.resolve(null)]).then(([candles, niftyCandles]) => { drawAnyChart('max-chart-canvas', candles, _sdChartType, null, niftyCandles); }).catch(() => {}); } const sccChartPane = document.getElementById('scc-pane-chart'); if (sccChartPane && sccChartPane.style.display !== 'none') { const count = parseInt(_sccChartLayout); for (let i = 0; i < count; i++) { sccChartRenderPanel(i); } } },100); });
 // Re-render chart after fonts/layout settle on mobile
 window.addEventListener('load', () => { setTimeout(() => { renderA1Sparkline(loadLocal()); renderChart(loadLocal()); rrgRebuildChips(); srtDrawRRG(); if (typeof brrgDraw === 'function') brrgDraw(); }, 300); });
 
@@ -10413,6 +11152,13 @@ const INFO = {
     what: 'A weekly color-coded leadership grid tracking relative performance history. Features:<ul><li><b>Chronological Performance Grid:</b> Matrix showing weekly returns vs Nifty 50 (latest week on the right).</li><li><b>Intensity Color Scales:</b> Green blocks show positive outperformance (darker = stronger). Red blocks show underperformance. Grey blocks are neutral.</li><li><b>Sector Name Links:</b> Click any sector name on the left of the grid to drill down to constituent stocks.</li></ul>',
     how: 'Calculates the performance spread weekly: <b>Sector Return % − Nifty 50 Return %</b> for each individual week. Colors are scaled dynamically based on the size of the spread.',
     use: '• Scan for rows with a solid sequence of dark green cells over the last 3-6 weeks, indicating sustained institutional accumulation.<br>• Avoid sectors with consecutive red cells, signaling active distribution and capital flight.<br>• Use alongside RRG to confirm if a sector\'s rotation is supported by actual weekly outperformance.'
+  },
+
+  'scc-feature-chart': {
+    title: 'Chart Tab Features',
+    what: 'A direct multi-chart workbench for manually tracking stocks. Features:<ul><li><b>Layout Options:</b> Toggle between 2-column (2 charts side-by-side) and 4-column (4 charts side-by-side) grid formats.</li><li><b>Independent Settings:</b> Set the symbol and timeframe (Daily/Weekly) for each chart pane individually.</li><li><b>Sync Option:</b> Synchronize all panels to a single symbol for multi-timeframe analysis (e.g. Daily next to Weekly).</li><li><b>TradingView Integration:</b> Quick external links to TradingView chart views.</li><li><b>Maximizer:</b> Instantly enlarge any chart panel into full screen view.</li></ul>',
+    how: 'Fetches historical stock prices directly from Yahoo Finance using the local proxy server or public CORS fallbacks. Renders high-quality price bars or Volume Candles with a smoothed 20-period Exponential Moving Average (EMA 20 in orange).',
+    use: '• <b>Volume Candles:</b> Look for wide, green candles on high volume to confirm massive institutional accumulation.<br>• <b>Multi-Timeframe Analysis:</b> Check the same symbol on both the Daily (6-month view) and Weekly (2-year view) side-by-side. The trend is healthy if the price stays consistently above the rising EMA 20 (orange line) on both timeframes.'
   }
 
 };
@@ -10763,6 +11509,36 @@ let _sdMaximizedChartSymbol = null;
 let _sdMaximizedChartCompany = null;
 let _sdMaximizedChartStats = '';
 
+// ── Sector Command Centre Chart Tab state variables ───────
+let _sccChartSymbols = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK'];
+let _sccChartTimeframes = ['D', 'W', '1H', 'M'];
+let _sccChartLayout = '1';
+let _sccChartType = 'volume_candles';
+let _sccSyncSymbols = false;
+let _sccChartZoomFactors = [1.0, 1.0, 1.0, 1.0];
+
+try {
+  const savedSyms = localStorage.getItem('_sccChartSymbols');
+  if (savedSyms) _sccChartSymbols = JSON.parse(savedSyms);
+  
+  const savedTfs = localStorage.getItem('_sccChartTimeframes');
+  if (savedTfs) _sccChartTimeframes = JSON.parse(savedTfs);
+  
+  const savedLayout = localStorage.getItem('_sccChartLayout');
+  if (savedLayout) _sccChartLayout = savedLayout;
+  
+  const savedType = localStorage.getItem('_sccChartType');
+  if (savedType) _sccChartType = savedType;
+  
+  const savedSync = localStorage.getItem('_sccSyncSymbols');
+  if (savedSync) _sccSyncSymbols = JSON.parse(savedSync);
+  
+  const savedZooms = localStorage.getItem('_sccChartZoomFactors');
+  if (savedZooms) _sccChartZoomFactors = JSON.parse(savedZooms);
+} catch (e) {
+  console.warn("Failed to load Chart tab localStorage preferences", e);
+}
+
 function sectorDrillGetCached() {
   if (_sectorStocksCache) return _sectorStocksCache;
   try { _sectorStocksCache = JSON.parse(localStorage.getItem(LS_SECTOR_STOCKS)) || null; return _sectorStocksCache; } catch(e) { return null; }
@@ -10985,10 +11761,13 @@ function openMaximizedChart(symbol) {
   const range = _sdChartsInterval === 'D' ? '6mo' : '2y';
   const interval = _sdChartsInterval === 'D' ? '1d' : '1wk';
 
-  fetchYfData(symbol, range, interval)
-    .then(candles => {
+  Promise.all([
+    fetchYfData(symbol, range, interval),
+    symbol.toUpperCase() !== '^NSEI' ? fetchYfData('^NSEI', range, interval).catch(() => null) : Promise.resolve(null)
+  ])
+    .then(([candles, niftyCandles]) => {
       if (loader) loader.style.display = 'none';
-      drawAnyChart('max-chart-canvas', candles, _sdChartType);
+      drawAnyChart('max-chart-canvas', candles, _sdChartType, null, niftyCandles);
     })
     .catch(err => {
       console.error("YF Maximized Chart Error for " + symbol, err);
@@ -11031,8 +11810,9 @@ function maxChartChangeType(type) {
     const yfSymbol = _sdMaximizedChartSymbol + '.NS';
     const cacheKey = `${yfSymbol}_${range}_${interval}`;
     const candles = _yfDataCache.get(cacheKey);
+    const niftyCandles = _yfDataCache.get(`^NSEI_${range}_${interval}`);
     if (candles) {
-      drawAnyChart('max-chart-canvas', candles, _sdChartType);
+      drawAnyChart('max-chart-canvas', candles, _sdChartType, null, niftyCandles);
     }
   }
 }
@@ -11544,7 +12324,7 @@ function sdChartsNextPage(totalPages) {
 const _yfDataCache = new Map();
 
 async function fetchYfData(symbol, range, interval) {
-  const yfSymbol = symbol + '.NS';
+  const yfSymbol = symbol.startsWith('^') ? symbol : (symbol + '.NS');
   const cacheKey = `${yfSymbol}_${range}_${interval}`;
   if (_yfDataCache.has(cacheKey)) {
     return _yfDataCache.get(cacheKey);
@@ -11641,7 +12421,7 @@ function calculateEMA(candles, period) {
   return ema;
 }
 
-function drawAnyChart(canvasId, candles, chartType) {
+function drawAnyChart(canvasId, candles, chartType, drawCountOverride, niftyCandles) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
@@ -11666,9 +12446,16 @@ function drawAnyChart(canvasId, candles, chartType) {
     return;
   }
 
-  // Slice candles to display only the last 60 (daily) or 52 (weekly)
-  const drawCount = _sdChartsInterval === 'D' ? 60 : 52;
+  // Compute max candles that fit with good readability based on canvas pixel width.
+  // Min candle body width for readability: 4px (candlestick/volume), 3px (ohlc/line)
+  const minCandlePx = (chartType === 'ohlc') ? 3 : 4;
+  const maxFitCount = Math.max(20, Math.floor(width / minCandlePx));
   const totalCount = candles.length;
+  // Never exceed all available data; cap at fit count
+  let drawCount = Math.min(totalCount, maxFitCount);
+  if (drawCountOverride != null) {
+    drawCount = Math.min(totalCount, Math.max(10, drawCountOverride));
+  }
   const startIndex = Math.max(0, totalCount - drawCount);
 
   // Calculate EMA 20 on ALL candles
@@ -11812,6 +12599,72 @@ function drawAnyChart(canvasId, candles, chartType) {
     }
   }
   ctx.stroke();
+
+  // Draw RS Line Overlay (Sky Blue) if niftyCandles are provided
+  if (niftyCandles && niftyCandles.length > 0) {
+    const niftyTimeMap = new Map();
+    const niftyDateMap = new Map();
+    for (const nc of niftyCandles) {
+      niftyTimeMap.set(nc.time, nc.close);
+      const dateStr = new Date(nc.time).toISOString().split('T')[0];
+      niftyDateMap.set(dateStr, nc.close);
+    }
+
+    const rsValues = [];
+    let minRs = Infinity;
+    let maxRs = -Infinity;
+
+    for (let i = 0; i < candleCount; i++) {
+      const c = drawCandles[i];
+      let nClose = niftyTimeMap.get(c.time);
+      if (nClose == null) {
+        const dateStr = new Date(c.time).toISOString().split('T')[0];
+        nClose = niftyDateMap.get(dateStr);
+      }
+      if (nClose != null && nClose > 0) {
+        const ratio = c.close / nClose;
+        rsValues.push(ratio);
+        if (ratio < minRs) minRs = ratio;
+        if (ratio > maxRs) maxRs = ratio;
+      } else {
+        rsValues.push(null);
+      }
+    }
+
+    if (minRs !== Infinity && minRs !== maxRs) {
+      const getRsY = (val) => {
+        const rsRange = maxRs - minRs;
+        const pct = (val - minRs) / rsRange;
+        // Map to bottom 50% of the price panel (chartHeight * 0.8 to chartHeight * 0.3)
+        return chartHeight * 0.8 - pct * (chartHeight * 0.5);
+      };
+
+      ctx.strokeStyle = '#38bdf8'; // Sky blue
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      let firstRs = true;
+      for (let i = 0; i < candleCount; i++) {
+        const val = rsValues[i];
+        if (val !== null) {
+          const x = i * candleWidth + candleWidth / 2;
+          const y = getRsY(val);
+          if (firstRs) {
+            ctx.moveTo(x, y);
+            firstRs = false;
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+      }
+      ctx.stroke();
+
+      // Draw subtle legend text on left side
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = '8px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('RS Line (vs Nifty 50)', 6, chartHeight * 0.3 - 4);
+    }
+  }
 
   // Draw Dates
   let lastMonth = '';
@@ -12106,11 +12959,14 @@ function sdRenderCharts(sectorName, secData) {
         const symbol = entry.target.getAttribute('data-symbol');
         obs.unobserve(entry.target);
         
-        fetchYfData(symbol, range, interval)
-          .then(candles => {
+        Promise.all([
+          fetchYfData(symbol, range, interval),
+          symbol.toUpperCase() !== '^NSEI' ? fetchYfData('^NSEI', range, interval).catch(() => null) : Promise.resolve(null)
+        ])
+          .then(([candles, niftyCandles]) => {
             const loader = document.getElementById(`yf-loader-${symbol}`);
             if (loader) loader.style.display = 'none';
-            drawAnyChart(`yf-chart-${symbol}`, candles, _sdChartType);
+            drawAnyChart(`yf-chart-${symbol}`, candles, _sdChartType, null, niftyCandles);
           })
           .catch(err => {
             console.error("YF Chart Error for " + symbol, err);
