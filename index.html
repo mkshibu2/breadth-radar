@@ -1523,6 +1523,47 @@ thead th[onclick]:hover {
     height: 350px !important;
   }
 }
+
+/* ── SCC WATCHLIST COPY MODAL ────────────────────────────────────── */
+#scc-wl-copy-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(3,3,5,.85); z-index:5000;
+  align-items:center; justify-content:center; padding:16px;
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+}
+#scc-wl-copy-overlay.open { display:flex; }
+#scc-wl-copy-modal {
+  background:var(--bg2); border:1px solid var(--bdr2);
+  border-radius:10px; width:100%; max-width:480px;
+  box-shadow:0 24px 64px rgba(0,0,0,.7);
+  animation:tipIn .2s cubic-bezier(.2,0,.2,1);
+  overflow:hidden;
+}
+.scc-wl-copy-head {
+  padding:16px 20px;
+  background:var(--bg3); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.scc-wl-copy-title {
+  font-family:var(--disp); font-size:16px; font-weight:800;
+  color:var(--text); letter-spacing:.5px; display:flex; align-items:center; gap:6px;
+}
+.scc-wl-copy-close {
+  background:none; border:none; color:var(--dim);
+  font-size:16px; cursor:pointer; padding:2px 4px;
+  transition:color .15s;
+}
+.scc-wl-copy-close:hover { color:var(--text); }
+.scc-wl-copy-body { padding:20px; display:flex; flex-direction:column; gap:12px; }
+.scc-wl-copy-desc { font-size:12px; color:var(--sub); line-height:1.5; }
+.scc-wl-copy-textarea {
+  width:100%; background:var(--bg4); border:1px solid var(--border);
+  color:var(--accent); font-family:var(--mono); font-size:12px;
+  padding:10px; border-radius:6px; outline:none; resize:vertical;
+  transition:border-color .15s;
+}
+.scc-wl-copy-textarea:focus { border-color:var(--accent); }
+.scc-wl-copy-actions { display:flex; justify-content:flex-end; gap:8px; }
 </style>
 </head>
 <body>
@@ -2254,10 +2295,16 @@ thead th[onclick]:hover {
                     Bs
                   </button>
                   <button id="scc-wl-reset-btn" onclick="sccWlResetOrder()" title="Reset Watch List to Original Order"
-                          style="background:none; border:1px solid var(--border); color:var(--dim); font-size:9px; font-weight:700; padding:1px 4px; border-radius:3px; cursor:pointer; outline:none; transition:all 0.15s;"
+                          style="background:none; border:1px solid var(--border); color:var(--dim); font-size:10px; font-weight:700; padding:1px 5px; border-radius:3px; cursor:pointer; outline:none; transition:all 0.15s; display:inline-flex; align-items:center; justify-content:center;"
                           onmouseover="this.style.borderColor='var(--dim)'; this.style.color='var(--text)'"
                           onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--dim)'">
-                    Reset
+                    ⟲
+                  </button>
+                  <button id="scc-wl-copy-btn" onclick="sccWlCopySymbols()" title="Copy Watch List Symbols for TradingView"
+                          style="background:none; border:1px solid var(--border); color:var(--dim); font-size:10px; font-weight:700; padding:1px 5px; border-radius:3px; cursor:pointer; outline:none; transition:all 0.15s; display:inline-flex; align-items:center; justify-content:center;"
+                          onmouseover="this.style.borderColor='var(--dim)'; this.style.color='var(--text)'"
+                          onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--dim)'">
+                    📋
                   </button>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
@@ -5434,6 +5481,65 @@ function sccWlResetOrder() {
   }
   
   sccWatchlistRender();
+}
+
+function sccWlCopySymbols() {
+  const symbols = [...new Set(_sccWatchlistSymbols.map(s => s.trim().toUpperCase()))].filter(Boolean);
+  if (symbols.length === 0) {
+    alert('Watch List is empty. Nothing to copy.');
+    return;
+  }
+  
+  if (symbols.length <= 10) {
+    const text = symbols.join(', ');
+    navigator.clipboard.writeText(text).then(() => {
+      alert(`Copied ${symbols.length} symbol(s) to clipboard:\n\n${text}`);
+    }).catch(err => {
+      console.error('Failed to copy symbols: ', err);
+      sccWlOpenCopyModal(symbols, text);
+    });
+  } else {
+    const lines = [];
+    for (let i = 0; i < symbols.length; i += 10) {
+      lines.push(symbols.slice(i, i + 10).join(','));
+    }
+    const text = lines.join(',\n');
+    sccWlOpenCopyModal(symbols, text);
+  }
+}
+
+function sccWlOpenCopyModal(symbols, text) {
+  const overlay = document.getElementById('scc-wl-copy-overlay');
+  const textarea = document.getElementById('scc-wl-copy-textarea');
+  const countEl = document.getElementById('scc-wl-copy-count');
+  
+  if (overlay && textarea && countEl) {
+    countEl.textContent = symbols.length;
+    textarea.value = text;
+    overlay.classList.add('open');
+    textarea.select();
+  }
+}
+
+function sccWlCloseCopyModal() {
+  const overlay = document.getElementById('scc-wl-copy-overlay');
+  if (overlay) {
+    overlay.classList.remove('open');
+  }
+}
+
+function sccWlCopyTextareaContent() {
+  const textarea = document.getElementById('scc-wl-copy-textarea');
+  if (textarea) {
+    textarea.select();
+    navigator.clipboard.writeText(textarea.value).then(() => {
+      alert('Copied to clipboard!');
+      sccWlCloseCopyModal();
+    }).catch(err => {
+      console.error('Failed to copy text: ', err);
+      alert('Failed to copy to clipboard. Please copy manually from the text window.');
+    });
+  }
 }
 
 // Watchlist Tab drag-and-drop reordering
@@ -15785,4 +15891,35 @@ document.addEventListener('click', () => {
         <div class="about-section-title">Methodology</div>
         <div class="about-tool-desc">
           Breadth Score weights: <b>A/D Ratio 35%</b> · <b>%&gt;EMA20 20%</b> · <b>%&gt;SMA50 15%</b> ·
-          <b>%&gt;SMA200 15%</b> · <b>52W H/L 15%</b>. Zones: Healthy ≥55 · Expanding 45–55 ·
+          <b>%&gt;SMA200 15%</b> · <b>52W H/L 15%</b>. Zones: Healthy ≥55 · Expanding 45–55 · Caution 30–45 · Bearish &lt;30.
+        </div>
+      </div>
+
+    </div><!-- /about-body -->
+  </div><!-- /about-modal -->
+</div><!-- /about-modal-overlay -->
+
+<!-- SCC WATCHLIST COPY MODAL -->
+<div id="scc-wl-copy-overlay" onclick="if(event.target===this)sccWlCloseCopyModal()">
+  <div id="scc-wl-copy-modal">
+    <div class="scc-wl-copy-head">
+      <div class="scc-wl-copy-title">
+        <span>📋 COPY WATCHLIST SYMBOLS</span>
+      </div>
+      <button class="scc-wl-copy-close" onclick="sccWlCloseCopyModal()">✕</button>
+    </div>
+    <div class="scc-wl-copy-body">
+      <div class="scc-wl-copy-desc">
+        Watchlist contains <b id="scc-wl-copy-count">0</b> symbols. Since it is more than 10 symbols, they are displayed below separated by commas with trailing commas for line continuity (max 10 symbols per line).
+      </div>
+      <textarea id="scc-wl-copy-textarea" class="scc-wl-copy-textarea" rows="8" readonly onclick="this.select()"></textarea>
+      <div class="scc-wl-copy-actions">
+        <button class="btn btn-sec" onclick="sccWlCloseCopyModal()">Close</button>
+        <button class="btn btn-primary" onclick="sccWlCopyTextareaContent()">Copy to Clipboard</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
