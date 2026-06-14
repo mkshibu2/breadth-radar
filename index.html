@@ -296,7 +296,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
   width: 100%;
 }
 .sd-chart-card {
-  background: var(--bg2);
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   overflow: hidden;
@@ -4685,9 +4685,6 @@ async function sccChartRenderPanel(index) {
       
       let statsStr = `<span style="font-family:var(--mono);font-weight:600;margin-right:2px">${price.toFixed(1)}</span>
                       <span style="color:${color};font-family:var(--mono);font-weight:600;margin-right:2px">${sign}${pctChange.toFixed(1)}%</span>`;
-      if (rsRating !== '') {
-        statsStr += `<span style="color:var(--purple);font-size:8px;background:rgba(192,132,252,0.12);padding:1px 3px;border-radius:2px">RS:${rsRating}</span>`;
-      }
       if (statsEl) statsEl.innerHTML = statsStr;
     }
   } catch (err) {
@@ -14134,6 +14131,8 @@ function drawAnyChart(canvasId, candles, chartType, drawCountOverride, niftyCand
   const height = rect.height;
 
   ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = '#050508'; // Dark black / crystal black
+  ctx.fillRect(0, 0, width, height);
 
   if (!candles || candles.length === 0) {
     ctx.fillStyle = '#64748b';
@@ -14361,11 +14360,6 @@ function drawAnyChart(canvasId, candles, chartType, drawCountOverride, niftyCand
       ctx.font = '8px sans-serif';
       ctx.textAlign = 'left';
       let legendText = 'RS Line (vs Nifty 50)';
-      if (rsRating !== '') {
-        legendText = `RS Line (vs N50):${rsRating}`;
-      } else {
-        legendText = `RS Line (vs N50)`;
-      }
       ctx.fillText(legendText, 6, chartHeight * 0.3 - 4);
     }
   }
