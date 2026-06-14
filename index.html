@@ -4597,19 +4597,10 @@ async function sccChartRenderPanel(index) {
     interval = '1mo';
   }
 
-  // Fetch company info from our local stock list if available
-  let companyName = '';
-  let rsRating = '';
-  
-  let allStocks = n500CsvGetCached() || [];
-  if (allStocks.length === 0 && _sdCurrentData?.stocks) {
-    allStocks = _sdCurrentData.stocks;
-  }
-  const stockInfo = allStocks.find(s => s.symbol && s.symbol.toUpperCase() === symbol.toUpperCase());
-  if (stockInfo) {
-    companyName = stockInfo.company || '';
-    rsRating = stockInfo.rs_rating != null ? stockInfo.rs_rating : '';
-  }
+  // Fetch company info and RS rating using the helper
+  const meta = findStockMetadata(symbol);
+  const companyName = meta.company;
+  const rsRating = meta.rs_rating;
 
   if (titleEl) {
     titleEl.innerHTML = `<span style="font-family:var(--disp);font-size:11px;font-weight:800;color:var(--teal)">${symbol.toUpperCase()}</span>
@@ -4913,6 +4904,14 @@ function sccChartGlobalSelect(symbol) {
 }
 
 // ── Watchlist Panel Functions ──
+function sccSaveWatchlistsLocalAndSync() {
+  localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
+  localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+  const now = Date.now();
+  localStorage.setItem('_sccWatchlistsUpdatedAt', now.toString());
+  pushToCloud();
+}
+
 function sccApplyWatchlistVisibility() {
   const panel = document.getElementById('scc-watchlist-panel');
   const btn = document.getElementById('scc-watchlist-toggle-btn');
@@ -4967,6 +4966,21 @@ function sccWlRenderTabs() {
     `;
   });
 
+  // 1.5. Render dynamic VCP screener watchlist tab
+  {
+    const isActive = _sccActiveWatchlist === 'VCP';
+    const tabColor = isActive ? 'var(--teal)' : 'var(--dim)';
+    const borderStyle = isActive ? 'border-bottom: 2px solid var(--teal); font-weight: 700;' : 'border-bottom: 2px solid transparent; font-weight: 600;';
+    html += `
+      <div onclick="sccWlSwitchTab('VCP')" 
+           style="padding: 6px 8px; font-size:10px; color:${tabColor}; ${borderStyle} cursor:pointer; display:flex; align-items:center; gap:2px; height: 100%; box-sizing:border-box; user-select:none; transition: color 0.15s;"
+           onmouseover="this.style.color='var(--text)'"
+           onmouseout="this.style.color='${isActive ? 'var(--teal)' : 'var(--dim)'}'">
+        <span>⚡ VCP</span>
+      </div>
+    `;
+  }
+
   // 2. Render dynamic color flag watchlists
   const colorsMap = {
     red: '#ef4444',
@@ -5018,7 +5032,9 @@ function sccWlSwitchTab(name) {
   _sccWlSelectedSymbols = [];
   _sccWlLastSelectedSymbol = null;
   
-  if (name.startsWith('__flag_')) {
+  if (name === 'VCP') {
+    _sccWatchlistSymbols = []; // Populated dynamically in sccWatchlistRender()
+  } else if (name.startsWith('__flag_')) {
     const color = name.replace('__flag_', '');
     _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
   } else {
@@ -5045,8 +5061,8 @@ function sccWlCreateTabPrompt() {
   _sccWatchlists[cleaned] = [];
   _sccActiveWatchlist = cleaned;
   _sccWatchlistSymbols = _sccWatchlists[cleaned];
-  localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
   localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+  sccSaveWatchlistsLocalAndSync();
   
   // Clear selection
   _sccWlSelectedSymbols = [];
@@ -5060,7 +5076,6 @@ function sccWlCreateTabPrompt() {
 function sccWlDeleteTab(name) {
   if (confirm(`Are you sure you want to delete the watchlist "${name}"?`)) {
     delete _sccWatchlists[name];
-    localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
     
     // Switch to another tab
     if (_sccActiveWatchlist === name) {
@@ -5069,6 +5084,7 @@ function sccWlDeleteTab(name) {
       _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist];
       localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
     }
+    sccSaveWatchlistsLocalAndSync();
     
     // Clear selection
     _sccWlSelectedSymbols = [];
@@ -5081,16 +5097,50 @@ function sccWlDeleteTab(name) {
 }
 
 function sccWatchlistRender() {
+  let watchlistItems = [];
+  let flatSymbols = [];
+  
+  if (_sccActiveWatchlist === 'VCP') {
+    const cachedDrill = sectorDrillGetCached();
+    if (cachedDrill && cachedDrill.sectors) {
+      calculateRSRatings(cachedDrill);
+      const sortedSectors = Object.keys(cachedDrill.sectors).sort();
+      sortedSectors.forEach(secName => {
+        const sec = cachedDrill.sectors[secName];
+        if (sec && Array.isArray(sec.stocks) && sec.stocks.length > 0) {
+          watchlistItems.push({ type: 'header', label: secName });
+          const sortedStocks = [...sec.stocks].sort((a,b) => a.symbol.localeCompare(b.symbol));
+          sortedStocks.forEach(s => {
+            watchlistItems.push({ type: 'stock', symbol: s.symbol });
+            flatSymbols.push(s.symbol.toUpperCase());
+          });
+        }
+      });
+    }
+    _sccWatchlistSymbols = flatSymbols;
+  } else if (_sccActiveWatchlist.startsWith('__flag_')) {
+    const color = _sccActiveWatchlist.replace('__flag_', '');
+    _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
+    _sccWatchlistSymbols.forEach(sym => {
+      watchlistItems.push({ type: 'stock', symbol: sym });
+    });
+  } else {
+    _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+    _sccWatchlistSymbols.forEach(sym => {
+      watchlistItems.push({ type: 'stock', symbol: sym });
+    });
+  }
+
   const countEl = document.getElementById('scc-wl-count');
   if (countEl) countEl.innerText = `${_sccWatchlistSymbols.length} items`;
 
   const rowsContainer = document.getElementById('scc-wl-rows');
   if (!rowsContainer) return;
 
-  if (_sccWatchlistSymbols.length === 0) {
+  if (watchlistItems.length === 0) {
     rowsContainer.innerHTML = `
       <div style="color:var(--dim); padding:20px; text-align:center; font-size:11px;">
-        Watch list is empty. Add symbols using the input above.
+        Watch list is empty.
       </div>
     `;
     return;
@@ -5098,13 +5148,18 @@ function sccWatchlistRender() {
 
   const activeSymbols = _sccChartSymbols.map(s => s ? s.toUpperCase() : '');
 
-  let allStocks = n500CsvGetCached() || [];
-  if (allStocks.length === 0 && _sdCurrentData?.stocks) {
-    allStocks = _sdCurrentData.stocks;
-  }
-
   let html = '';
-  _sccWatchlistSymbols.forEach(sym => {
+  watchlistItems.forEach(item => {
+    if (item.type === 'header') {
+      html += `
+        <div class="scc-wl-section-hdr" style="padding: 6px 12px; background: var(--bg3); color: var(--teal); font-weight: 700; font-size: 10px; border-bottom: 1px solid var(--border); letter-spacing: 0.5px; text-transform: uppercase; margin-top: 4px; display: flex; align-items: center; justify-content: space-between;">
+          <span>${item.label}</span>
+        </div>
+      `;
+      return;
+    }
+    
+    const sym = item.symbol;
     const sUpper = sym.toUpperCase();
     const data = _sccWatchlistData[sUpper];
     
@@ -5121,8 +5176,8 @@ function sccWatchlistRender() {
     const borderStyle = isChartActive ? 'border-left: 3px solid var(--accent);' : 'border-left: 3px solid transparent;';
     const itemPadding = isChartActive ? 'padding: 8px 12px 8px 9px;' : 'padding: 8px 12px;';
 
-    const stockInfo = allStocks.find(s => s.symbol && s.symbol.toUpperCase() === sUpper);
-    const companyName = stockInfo ? (stockInfo.company || '') : '';
+    const meta = findStockMetadata(sUpper);
+    const companyName = meta.company;
 
     // Colored Flags Setup (Ribbon/Bookmark shape)
     const flagColorName = _sccSymbolFlags[sUpper] || 'none';
@@ -5155,8 +5210,18 @@ function sccWatchlistRender() {
       }
     }
 
+    const showRemoveBtn = _sccActiveWatchlist !== 'VCP';
+    const removeBtnHtml = showRemoveBtn ? `
+      <button class="wl-del-btn" onclick="event.stopPropagation(); sccWatchlistRemoveSymbol('${sUpper}');" title="Remove from Watch List"
+              style="background:none; border:none; color:var(--dim); cursor:pointer; font-size:13px; font-weight:bold; padding:0 2px; opacity:0.3; transition:opacity 0.15s, color 0.15s; outline:none;"
+              onmouseover="this.style.opacity='1'; this.style.color='var(--red)';"
+              onmouseout="this.style.opacity='0.3'; this.style.color='var(--dim)';">
+        ×
+      </button>
+    ` : '';
+
     html += `
-      <div class="scc-wl-item" 
+      <div class="scc-wl-item" id="scc-wl-item-${sUpper}"
            onclick="sccWlItemClick(event, '${sUpper}')" 
            oncontextmenu="sccWlItemContextMenu(event, '${sUpper}')"
            style="display:flex; align-items:center; justify-content:space-between; ${itemBg} ${borderStyle} ${itemPadding} border-bottom:1px solid rgba(255,255,255,0.03); cursor:pointer; transition:background 0.15s;"
@@ -5190,12 +5255,7 @@ function sccWatchlistRender() {
           <span style="font-family:var(--mono); font-weight:600; font-size:11px;">
             ${changeStr}
           </span>
-          <button class="wl-del-btn" onclick="event.stopPropagation(); sccWatchlistRemoveSymbol('${sUpper}');" title="Remove from Watch List"
-                  style="background:none; border:none; color:var(--dim); cursor:pointer; font-size:13px; font-weight:bold; padding:0 2px; opacity:0.3; transition:opacity 0.15s, color 0.15s; outline:none;"
-                  onmouseover="this.style.opacity='1'; this.style.color='var(--red)';"
-                  onmouseout="this.style.opacity='0.3'; this.style.color='var(--dim)';">
-            ×
-          </button>
+          ${removeBtnHtml}
         </div>
       </div>
     `;
@@ -5214,7 +5274,6 @@ function sccWatchlistFlagClick(event, element, symbol) {
   if (currentFlag !== 'none') {
     // If flagged: remove flag immediately (unflag)
     delete _sccSymbolFlags[sym];
-    localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
     
     // Sync active watchlist symbols if viewing flag tab
     if (_sccActiveWatchlist === `__flag_${currentFlag}`) {
@@ -5227,6 +5286,7 @@ function sccWatchlistFlagClick(event, element, symbol) {
         localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
       }
     }
+    sccSaveWatchlistsLocalAndSync();
     
     sccWlRenderTabs();
     sccWatchlistRender();
@@ -5463,7 +5523,7 @@ function sccWlSetFlagSelected(color) {
       _sccSymbolFlags[s] = color;
     }
   });
-  localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+  sccSaveWatchlistsLocalAndSync();
   
   // Sync if currently viewing a flag tab
   if (_sccActiveWatchlist.startsWith('__flag_')) {
@@ -5503,8 +5563,7 @@ function sccWlMoveSelectedTo(targetList) {
     }
   });
 
-  localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
-  localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+  sccSaveWatchlistsLocalAndSync();
   
   if (_sccActiveWatchlist.startsWith('__flag_')) {
     const activeColor = _sccActiveWatchlist.replace('__flag_', '');
@@ -5557,9 +5616,8 @@ function sccWlCreateListFromSelected() {
   _sccActiveWatchlist = cleaned;
   _sccWatchlistSymbols = _sccWatchlists[cleaned];
 
-  localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
   localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
-  localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+  sccSaveWatchlistsLocalAndSync();
 
   sccWlCloseContextMenu();
   _sccWlSelectedSymbols = [];
@@ -5571,12 +5629,15 @@ function sccWlCreateListFromSelected() {
 }
 
 function sccWlDeleteSelected() {
+  if (_sccActiveWatchlist === 'VCP') {
+    alert("VCP is an automatic system watchlist based on screener data and cannot be modified manually.");
+    return;
+  }
   if (_sccActiveWatchlist.startsWith('__flag_')) {
     const color = _sccActiveWatchlist.replace('__flag_', '');
     _sccWlSelectedSymbols.forEach(sym => {
       delete _sccSymbolFlags[sym.toUpperCase()];
     });
-    localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
     
     _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
     
@@ -5595,9 +5656,9 @@ function sccWlDeleteSelected() {
           currentList.splice(idx, 1);
         }
       });
-      localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
     }
   }
+  sccSaveWatchlistsLocalAndSync();
 
   sccWlCloseContextMenu();
   _sccWlSelectedSymbols = [];
@@ -5695,7 +5756,7 @@ function sccWatchlistSetFlag(symbol, color) {
   } else {
     _sccSymbolFlags[sym] = color;
   }
-  localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+  sccSaveWatchlistsLocalAndSync();
   
   // Sync if currently viewing a flag tab
   if (_sccActiveWatchlist.startsWith('__flag_')) {
@@ -5730,22 +5791,26 @@ function sccWatchlistSelect(symbol) {
 }
 
 function sccWatchlistAddSymbol(symbol) {
+  if (_sccActiveWatchlist === 'VCP') {
+    alert("VCP is an automatic system watchlist based on screener data and cannot be modified manually.");
+    return;
+  }
   const sym = symbol.toUpperCase().trim();
   if (!sym) return;
   
   if (_sccActiveWatchlist.startsWith('__flag_')) {
     const color = _sccActiveWatchlist.replace('__flag_', '');
     _sccSymbolFlags[sym] = color;
-    localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
     
     _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
+    sccSaveWatchlistsLocalAndSync();
     sccWlRenderTabs();
     sccWatchlistRender();
     sccWatchlistFetchSymbolData(sym);
   } else {
     if (!_sccWatchlistSymbols.includes(sym)) {
       _sccWatchlistSymbols.push(sym);
-      localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
+      sccSaveWatchlistsLocalAndSync();
       sccWatchlistRender();
       sccWatchlistFetchSymbolData(sym);
     }
@@ -5757,7 +5822,6 @@ function sccWatchlistRemoveSymbol(symbol) {
   
   if (_sccActiveWatchlist.startsWith('__flag_')) {
     delete _sccSymbolFlags[sym];
-    localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
     
     const color = _sccActiveWatchlist.replace('__flag_', '');
     _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
@@ -5770,13 +5834,14 @@ function sccWatchlistRemoveSymbol(symbol) {
     }
     
     _sccWlSelectedSymbols = _sccWlSelectedSymbols.filter(s => s !== sym);
+    sccSaveWatchlistsLocalAndSync();
     sccWlRenderTabs();
     sccWatchlistRender();
   } else {
     const index = _sccWatchlistSymbols.indexOf(sym);
     if (index !== -1) {
       _sccWatchlistSymbols.splice(index, 1);
-      localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
+      sccSaveWatchlistsLocalAndSync();
       
       _sccWlSelectedSymbols = _sccWlSelectedSymbols.filter(s => s !== sym);
       sccWatchlistRender();
@@ -5903,6 +5968,49 @@ document.addEventListener('click', (e) => {
 
 // Global Key Listeners for Chart Keyboard Focus shortcuts
 document.addEventListener('keydown', (e) => {
+  // ArrowUp / ArrowDown navigation for watchlist selection
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'TEXTAREA') {
+      if (_sccShowWatchlist && _sccWatchlistSymbols.length > 0) {
+        e.preventDefault();
+        
+        const activeChartSymbol = (_sccChartSymbols[_sccActivePanelIndex] || '').toUpperCase();
+        const currentSymbol = (_sccWlLastSelectedSymbol || activeChartSymbol || '').toUpperCase();
+        
+        const list = _sccWatchlistSymbols.map(s => s.toUpperCase());
+        let index = list.indexOf(currentSymbol);
+        
+        if (e.key === 'ArrowUp') {
+          if (index === -1) {
+            index = list.length - 1;
+          } else {
+            index = (index - 1 + list.length) % list.length;
+          }
+        } else { // ArrowDown
+          if (index === -1) {
+            index = 0;
+          } else {
+            index = (index + 1) % list.length;
+          }
+        }
+        
+        const targetSymbol = list[index];
+        _sccWlSelectedSymbols = [targetSymbol];
+        _sccWlLastSelectedSymbol = targetSymbol;
+        sccWatchlistSelect(targetSymbol);
+        
+        // Scroll target item into view smoothly
+        setTimeout(() => {
+          const itemEl = document.getElementById(`scc-wl-item-${targetSymbol}`);
+          if (itemEl) {
+            itemEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          }
+        }, 50);
+        return;
+      }
+    }
+  }
+
   // Alt+W: Add current chart stock to active watchlist
   if (e.altKey && e.key.toLowerCase() === 'w') {
     const pane = document.getElementById('scc-pane-chart');
@@ -6694,6 +6802,9 @@ function vcpbInit() {
   const inp = document.getElementById('vcpb-url-input');
   if (inp && saved) inp.value = saved;
   vcpbFetch(false);
+  
+  // Fetch sector stocks in background so RS scores are loaded for watchlist and charts
+  sdFetchSectorStocksBackground();
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -7302,7 +7413,10 @@ function buildPayload() {
     bsr: bsrLoad(),
     mpm: mpmLoad(),
     ftd: ftdLoad(),
-    srt: srtLoad()
+    srt: srtLoad(),
+    sccWatchlists: _sccWatchlists,
+    sccSymbolFlags: _sccSymbolFlags,
+    sccWatchlistsUpdatedAt: parseInt(localStorage.getItem('_sccWatchlistsUpdatedAt') || '0')
   };
 }
 
@@ -7367,6 +7481,40 @@ async function pullFromCloud(key, bin) {
     ftdSaveData(mergedFtd);
     ftdScanUndercutAll(); // re-validate after merge
 
+    // Watchlist Sync
+    const cloudWatchlists = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccWatchlists : null;
+    const cloudSymbolFlags = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccSymbolFlags : null;
+    const cloudWatchlistsUpdatedAt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.sccWatchlistsUpdatedAt || raw._pushedAt || 0) : 0;
+    
+    const localWatchlistsUpdatedAt = parseInt(localStorage.getItem('_sccWatchlistsUpdatedAt') || '0');
+    
+    if (cloudWatchlists && (cloudWatchlistsUpdatedAt > localWatchlistsUpdatedAt)) {
+      _sccWatchlists = cloudWatchlists;
+      if (cloudSymbolFlags) _sccSymbolFlags = cloudSymbolFlags;
+      localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
+      localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+      localStorage.setItem('_sccWatchlistsUpdatedAt', cloudWatchlistsUpdatedAt.toString());
+      
+      // Make sure the active watchlist exists
+      if (!_sccWatchlists[_sccActiveWatchlist] && !_sccActiveWatchlist.startsWith('__flag_')) {
+        const keys = Object.keys(_sccWatchlists);
+        _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main";
+        localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+      }
+      
+      // Update symbols
+      if (_sccActiveWatchlist.startsWith('__flag_')) {
+        const color = _sccActiveWatchlist.replace('__flag_', '');
+        _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
+      } else {
+        _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+      }
+      
+      // Clear selection
+      _sccWlSelectedSymbols = [];
+      _sccWlLastSelectedSymbol = null;
+    }
+
     const merged = loadLocal();
     setSyncStatus('ok','Synced');
     setupFlash(`✓ Pulled — ${merged.length} breadth + ${bsrLoad().length} BSR + ${mpmLoad().length} MPM + ${srtLoad().length} sectors`, 'var(--lime)');
@@ -7376,6 +7524,9 @@ async function pullFromCloud(key, bin) {
     ftdRender();
     renderAnalysisFTD();
     srtRender();
+    sccWlRenderTabs();
+    sccWatchlistRender();
+    sccWatchlistFetchAll();
   } catch(e) {
     setSyncStatus('err','Sync Error');
     setupFlash('✗ Pull failed: ' + e.message, 'var(--red)');
@@ -12745,6 +12896,75 @@ function n500CsvSetCached(data) {
   try { localStorage.setItem(LS_N500_CSV, JSON.stringify(data)); } catch(e) {}
 }
 
+async function sdFetchSectorStocksBackground() {
+  const baseUrl = vcpbGetUrl();
+  if (!baseUrl) return;
+  try {
+    const resp = await fetch(baseUrl + '/sector_stocks.json?_=' + Date.now(), { cache: 'no-store' });
+    if (resp.ok) {
+      const fresh = await resp.json();
+      sectorDrillSetCached(fresh);
+      calculateRSRatings(fresh);
+      console.log('[Background] Fetched and cached sector stocks');
+      sccWatchlistRender();
+      sccWatchlistFetchAll();
+    }
+  } catch(e) {
+    console.warn('[Background] Failed to fetch sector stocks:', e);
+  }
+}
+
+// Helper: find stock metadata (company name, RS rating) by checking VCP scanner cache first, then universe CSV list
+function findStockMetadata(symbol) {
+  if (!symbol) return { company: '', rs_rating: '' };
+  const sUpper = symbol.toUpperCase().replace('.NS', '');
+
+  let company = '';
+  let rs_rating = '';
+
+  // 1. Try to find in the VCP scanner daily sector stocks cache (which contains RS ratings)
+  const cachedDrill = sectorDrillGetCached();
+  if (cachedDrill && cachedDrill.sectors) {
+    // Ensure RS ratings are calculated on the cached data
+    if (typeof calculateRSRatings === 'function') {
+      calculateRSRatings(cachedDrill);
+    }
+    
+    // Search all sectors
+    for (const secName in cachedDrill.sectors) {
+      const sec = cachedDrill.sectors[secName];
+      if (sec && Array.isArray(sec.stocks)) {
+        const found = sec.stocks.find(x => x.symbol && x.symbol.toUpperCase() === sUpper);
+        if (found) {
+          company = found.company || '';
+          rs_rating = found.rs_rating != null ? found.rs_rating : '';
+          break;
+        }
+      }
+    }
+  }
+
+  // 2. Try to find in the Nifty 500 universe CSV cache (contains company name)
+  if (!company) {
+    const allStocks = n500CsvGetCached() || [];
+    const found = allStocks.find(s => s.symbol && s.symbol.toUpperCase() === sUpper);
+    if (found) {
+      company = found.company || '';
+    }
+  }
+
+  // 3. Fallback to current sector stocks if loaded
+  if (!rs_rating && _sdCurrentData && Array.isArray(_sdCurrentData.stocks)) {
+    const found = _sdCurrentData.stocks.find(x => x.symbol && x.symbol.toUpperCase() === sUpper);
+    if (found) {
+      if (!company) company = found.company || '';
+      rs_rating = found.rs_rating != null ? found.rs_rating : '';
+    }
+  }
+
+  return { company, rs_rating };
+}
+
 // ── Parse ind_nifty500list.csv into array of {symbol, company, industry} ──
 function parseN500Csv(text) {
   const lines = text.trim().split('\n');
@@ -13088,7 +13308,13 @@ async function sectorDrillOpen(sectorName, tabToOpen = 'vcp') {
     if (baseUrl) {
       try {
         const resp = await fetch(baseUrl + '/sector_stocks.json?_=' + Date.now(), { cache: 'no-store' });
-        if (resp.ok) { const fresh = await resp.json(); sectorDrillSetCached(fresh); data = fresh; }
+        if (resp.ok) {
+          const fresh = await resp.json();
+          sectorDrillSetCached(fresh);
+          data = fresh;
+          sccWatchlistRender();
+          sccWatchlistFetchAll();
+        }
       } catch(e) {}
     }
   }
@@ -13615,6 +13841,25 @@ function drawAnyChart(canvasId, candles, chartType, drawCountOverride, niftyCand
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
+  // Retrieve RS Score rating for the symbol
+  let symbol = '';
+  if (canvasId.startsWith('yf-chart-')) {
+    symbol = canvasId.replace('yf-chart-', '').toUpperCase();
+  } else if (canvasId === 'max-chart-canvas') {
+    symbol = (_sdMaximizedChartSymbol || '').toUpperCase();
+  } else if (canvasId.startsWith('scc-chart-canvas-')) {
+    const idx = parseInt(canvasId.replace('scc-chart-canvas-', ''));
+    if (!isNaN(idx) && _sccChartSymbols[idx]) {
+      symbol = _sccChartSymbols[idx].toUpperCase();
+    }
+  }
+
+  let rsRating = '';
+  if (symbol) {
+    const meta = findStockMetadata(symbol);
+    rsRating = meta.rs_rating;
+  }
+
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
   canvas.width = rect.width * dpr;
@@ -13769,9 +14014,9 @@ function drawAnyChart(canvasId, candles, chartType, drawCountOverride, niftyCand
     }
   }
 
-  // Draw EMA 20 (Orange)
+  // Draw EMA 20 (Red, 50% transparency)
   const getY = (val) => chartHeight - ((val - minPrice) / finalRange) * chartHeight;
-  ctx.strokeStyle = '#f59e0b';
+  ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
   let firstEma = true;
@@ -13828,7 +14073,7 @@ function drawAnyChart(canvasId, candles, chartType, drawCountOverride, niftyCand
         return chartHeight * 0.8 - pct * (chartHeight * 0.5);
       };
 
-      ctx.strokeStyle = '#38bdf8'; // Sky blue
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.5)'; // Sky blue, 50% transparency
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       let firstRs = true;
@@ -13851,7 +14096,13 @@ function drawAnyChart(canvasId, candles, chartType, drawCountOverride, niftyCand
       ctx.fillStyle = '#38bdf8';
       ctx.font = '8px sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText('RS Line (vs Nifty 50)', 6, chartHeight * 0.3 - 4);
+      let legendText = 'RS Line (vs Nifty 50)';
+      if (rsRating !== '') {
+        legendText = `RS Line (vs N50):${rsRating}`;
+      } else {
+        legendText = `RS Line (vs N50)`;
+      }
+      ctx.fillText(legendText, 6, chartHeight * 0.3 - 4);
     }
   }
 
@@ -13985,7 +14236,7 @@ function sdRenderCharts(sectorName, secData) {
     const tvUrl  = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(s.symbol)}`;
 
     let statsHtml = '';
-    const emaLegend = ` | <span style="color:var(--dim);font-size:9px">EMA20: <b style="color:#f59e0b">●</b></span>`;
+    const emaLegend = ` | <span style="color:var(--dim);font-size:9px">EMA20: <b style="color:rgba(239, 68, 68, 0.5)">●</b></span>`;
     if (_sdChartsSource === 'vcp') {
       const rsVal = s.rs_rating != null ? s.rs_rating : '—';
       const score = s.final_score > 0 ? s.final_score : s.vcp_score;
@@ -14005,7 +14256,7 @@ function sdRenderCharts(sectorName, secData) {
       statsHtml = `
         <div style="display:flex;align-items:center;gap:3px">
           ${vcpBadges}
-          <span style="color:var(--dim);font-size:9px;margin-left:3px">EMA20: <b style="color:#f59e0b">●</b></span>
+          <span style="color:var(--dim);font-size:9px;margin-left:3px">EMA20: <b style="color:rgba(239, 68, 68, 0.5)">●</b></span>
         </div>`;
     }
 
