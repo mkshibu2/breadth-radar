@@ -7484,16 +7484,12 @@ async function pullFromCloud(key, bin) {
     // Watchlist Sync
     const cloudWatchlists = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccWatchlists : null;
     const cloudSymbolFlags = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccSymbolFlags : null;
-    const cloudWatchlistsUpdatedAt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.sccWatchlistsUpdatedAt || raw._pushedAt || 0) : 0;
     
-    const localWatchlistsUpdatedAt = parseInt(localStorage.getItem('_sccWatchlistsUpdatedAt') || '0');
-    
-    if (cloudWatchlists && (cloudWatchlistsUpdatedAt > localWatchlistsUpdatedAt)) {
+    if (cloudWatchlists) {
       _sccWatchlists = cloudWatchlists;
       if (cloudSymbolFlags) _sccSymbolFlags = cloudSymbolFlags;
       localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
       localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
-      localStorage.setItem('_sccWatchlistsUpdatedAt', cloudWatchlistsUpdatedAt.toString());
       
       // Make sure the active watchlist exists
       if (!_sccWatchlists[_sccActiveWatchlist] && !_sccActiveWatchlist.startsWith('__flag_')) {
@@ -7506,7 +7502,7 @@ async function pullFromCloud(key, bin) {
       if (_sccActiveWatchlist.startsWith('__flag_')) {
         const color = _sccActiveWatchlist.replace('__flag_', '');
         _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
-      } else {
+      } else if (_sccActiveWatchlist !== 'VCP') {
         _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
       }
       
