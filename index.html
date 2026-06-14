@@ -1456,13 +1456,21 @@ thead th[onclick]:hover {
 #scc-chart-workspace {
   display: flex;
   flex-direction: row;
+  height: calc(100vh - 180px);
+  min-height: 0;
 }
 #scc-watchlist-panel {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 0;
 }
 .scc-wl-item:hover {
   background: rgba(91, 163, 245, 0.04);
+}
+.scc-wl-item.wl-dragging {
+  opacity: 0.4;
+  border: 1px dashed var(--accent) !important;
 }
 .wl-flag-flagged {
   opacity: 1.0 !important;
@@ -1506,6 +1514,7 @@ thead th[onclick]:hover {
 @media(max-width: 800px) {
   #scc-chart-workspace {
     flex-direction: column !important;
+    height: auto !important;
   }
   #scc-watchlist-panel {
     width: 100% !important;
@@ -2234,9 +2243,23 @@ thead th[onclick]:hover {
             <div id="scc-watchlist-panel" style="width:280px; border-left:1px solid var(--border); background:var(--bg2); display:flex; flex-direction:column; flex-shrink:0; transition: width 0.2s;">
               <!-- Watchlist Header -->
               <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--bg3); border-bottom:1px solid var(--border);">
-                <span style="font-family:var(--disp); font-size:12px; font-weight:800; letter-spacing:1px; color:var(--text); display:flex; align-items:center; gap:6px;">
-                  ⭐ WATCH LIST
-                </span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-family:var(--disp); font-size:12px; font-weight:800; letter-spacing:1px; color:var(--text);">
+                    ⭐ WATCH LIST
+                  </span>
+                  <button id="scc-wl-sort-bs-btn" onclick="sccWlSortByBreadth()" title="Sort Watch List by Sector Breadth Score (VCP Screener Breadth tab)"
+                          style="background:rgba(45,212,191,0.1); border:1px solid rgba(45,212,191,0.3); color:var(--teal); font-size:9px; font-weight:700; padding:1px 4px; border-radius:3px; cursor:pointer; outline:none; transition:all 0.15s;"
+                          onmouseover="this.style.background='rgba(45,212,191,0.2)'"
+                          onmouseout="this.style.background='rgba(45,212,191,0.1)'">
+                    Bs
+                  </button>
+                  <button id="scc-wl-reset-btn" onclick="sccWlResetOrder()" title="Reset Watch List to Original Order"
+                          style="background:none; border:1px solid var(--border); color:var(--dim); font-size:9px; font-weight:700; padding:1px 4px; border-radius:3px; cursor:pointer; outline:none; transition:all 0.15s;"
+                          onmouseover="this.style.borderColor='var(--dim)'; this.style.color='var(--text)'"
+                          onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--dim)'">
+                    Reset
+                  </button>
+                </div>
                 <div style="display:flex; align-items:center; gap:8px;">
                   <span id="scc-wl-count" style="font-size:10px; color:var(--dim); font-family:var(--mono);">0 items</span>
                   <button onclick="sccWatchlistFetchAll(true)" title="Refresh Watch List"
@@ -2271,7 +2294,7 @@ thead th[onclick]:hover {
               </div>
 
               <!-- Watchlist Table / Rows Container -->
-              <div id="scc-wl-rows" style="flex:1; overflow-y:auto; padding:4px 0;">
+              <div id="scc-wl-rows" style="flex:1; overflow-y:auto; overscroll-behavior:contain; padding:4px 0;">
                 <!-- Rows will be injected here -->
               </div>
             </div>
@@ -4957,6 +4980,11 @@ function sccWlRenderTabs() {
     
     html += `
       <div onclick="sccWlSwitchTab('${name.replace(/'/g, "\\'")}')" 
+           draggable="true"
+           ondragstart="sccTabDragStart(event, '${name.replace(/'/g, "\\'")}')"
+           ondragover="sccTabDragOver(event)"
+           ondrop="sccTabDrop(event, '${name.replace(/'/g, "\\'")}')"
+           ondragend="sccTabDragEnd(event)"
            style="padding: 6px 8px; font-size:10px; color:${tabColor}; ${borderStyle} cursor:pointer; display:flex; align-items:center; gap:2px; height: 100%; box-sizing:border-box; user-select:none; transition: color 0.15s;"
            onmouseover="this.style.color='var(--text)'"
            onmouseout="this.style.color='${isActive ? 'var(--teal)' : 'var(--dim)'}'">
@@ -5031,6 +5059,7 @@ function sccWlSwitchTab(name) {
   // Clear selection when switching tabs
   _sccWlSelectedSymbols = [];
   _sccWlLastSelectedSymbol = null;
+  _sccWlIsBreadthSorted = false;
   
   if (name === 'VCP') {
     _sccWatchlistSymbols = []; // Populated dynamically in sccWatchlistRender()
@@ -5099,21 +5128,39 @@ function sccWlDeleteTab(name) {
 function sccWatchlistRender() {
   let watchlistItems = [];
   let flatSymbols = [];
+  const isRowDraggable = _sccActiveWatchlist !== 'VCP' && !_sccActiveWatchlist.startsWith('__flag_') && !_sccWlIsBreadthSorted;
   
   if (_sccActiveWatchlist === 'VCP') {
     const cachedDrill = sectorDrillGetCached();
     if (cachedDrill && cachedDrill.sectors) {
       calculateRSRatings(cachedDrill);
-      const sortedSectors = Object.keys(cachedDrill.sectors).sort();
+      
+      let sortedSectors;
+      if (_sccWlIsBreadthSorted) {
+        const rankedSectors = sccGetRankedSectors();
+        sortedSectors = Object.keys(cachedDrill.sectors).sort((a, b) => {
+          let rankA = rankedSectors.indexOf(a);
+          let rankB = rankedSectors.indexOf(b);
+          if (rankA === -1) rankA = 9999;
+          if (rankB === -1) rankB = 9999;
+          return rankA - rankB;
+        });
+      } else {
+        sortedSectors = Object.keys(cachedDrill.sectors).sort();
+      }
+
       sortedSectors.forEach(secName => {
         const sec = cachedDrill.sectors[secName];
         if (sec && Array.isArray(sec.stocks) && sec.stocks.length > 0) {
-          watchlistItems.push({ type: 'header', label: secName });
-          const sortedStocks = [...sec.stocks].sort((a,b) => a.symbol.localeCompare(b.symbol));
-          sortedStocks.forEach(s => {
-            watchlistItems.push({ type: 'stock', symbol: s.symbol });
-            flatSymbols.push(s.symbol.toUpperCase());
-          });
+          const isCollapsed = _sccWlCollapsedSectors.has(secName);
+          watchlistItems.push({ type: 'header', label: secName, collapsed: isCollapsed });
+          if (!isCollapsed) {
+            const sortedStocks = [...sec.stocks].sort((a,b) => a.symbol.localeCompare(b.symbol));
+            sortedStocks.forEach(s => {
+              watchlistItems.push({ type: 'stock', symbol: s.symbol });
+              flatSymbols.push(s.symbol.toUpperCase());
+            });
+          }
         }
       });
     }
@@ -5151,9 +5198,14 @@ function sccWatchlistRender() {
   let html = '';
   watchlistItems.forEach(item => {
     if (item.type === 'header') {
+      const isCollapsed = item.collapsed;
       html += `
-        <div class="scc-wl-section-hdr" style="padding: 6px 12px; background: var(--bg3); color: var(--teal); font-weight: 700; font-size: 10px; border-bottom: 1px solid var(--border); letter-spacing: 0.5px; text-transform: uppercase; margin-top: 4px; display: flex; align-items: center; justify-content: space-between;">
+        <div class="scc-wl-section-hdr" onclick="sccWlToggleSector('${item.label.replace(/'/g, "\\'")}')" 
+             style="padding: 6px 12px; background: var(--bg3); color: var(--teal); font-weight: 700; font-size: 10px; border-bottom: 1px solid var(--border); letter-spacing: 0.5px; text-transform: uppercase; margin-top: 4px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;"
+             onmouseover="this.style.background='var(--border)'"
+             onmouseout="this.style.background='var(--bg3)'">
           <span>${item.label}</span>
+          <span style="font-size: 8px; color: var(--dim);">${isCollapsed ? '▶' : '▼'}</span>
         </div>
       `;
       return;
@@ -5220,8 +5272,10 @@ function sccWatchlistRender() {
       </button>
     ` : '';
 
+    const dragAttr = isRowDraggable ? `draggable="true" ondragstart="sccRowDragStart(event, '${sUpper}')" ondragover="sccRowDragOver(event)" ondrop="sccRowDrop(event, '${sUpper}')" ondragend="sccRowDragEnd(event)"` : '';
+
     html += `
-      <div class="scc-wl-item" id="scc-wl-item-${sUpper}"
+      <div class="scc-wl-item" id="scc-wl-item-${sUpper}" ${dragAttr}
            onclick="sccWlItemClick(event, '${sUpper}')" 
            oncontextmenu="sccWlItemContextMenu(event, '${sUpper}')"
            style="display:flex; align-items:center; justify-content:space-between; ${itemBg} ${borderStyle} ${itemPadding} border-bottom:1px solid rgba(255,255,255,0.03); cursor:pointer; transition:background 0.15s;"
@@ -5262,6 +5316,192 @@ function sccWatchlistRender() {
   });
 
   rowsContainer.innerHTML = html;
+}
+
+function sccWlToggleSector(secName) {
+  if (_sccWlCollapsedSectors.has(secName)) {
+    _sccWlCollapsedSectors.delete(secName);
+  } else {
+    _sccWlCollapsedSectors.add(secName);
+  }
+  sccWatchlistRender();
+}
+
+function sccGetStockSector(symbol) {
+  if (!symbol) return 'Other';
+  const sUpper = symbol.toUpperCase().replace('.NS', '');
+  
+  // 1. Try VCP screener cache first (contains symbol -> sector mapping)
+  const cachedDrill = sectorDrillGetCached();
+  if (cachedDrill && cachedDrill.sectors) {
+    for (const secName in cachedDrill.sectors) {
+      const sec = cachedDrill.sectors[secName];
+      if (sec && Array.isArray(sec.stocks)) {
+        if (sec.stocks.some(x => x.symbol && x.symbol.toUpperCase() === sUpper)) {
+          return secName;
+        }
+      }
+    }
+  }
+  
+  // 2. Try Nifty 500 universe CSV cache
+  const allStocks = n500CsvGetCached() || [];
+  const found = allStocks.find(s => s.symbol && s.symbol.toUpperCase() === sUpper);
+  if (found) {
+    if (typeof csvSectorMap === 'function') {
+      return csvSectorMap(found.symbol, found.company || '', found.industry || '');
+    }
+  }
+  
+  return 'Other';
+}
+
+function sccGetRankedSectors() {
+  const cached = vcpbGetCached();
+  if (!cached || !Array.isArray(cached.sectors)) return [];
+  
+  const list = cached.sectors.map(s => {
+    return {
+      sector: s.sector,
+      score: typeof vcpbScore === 'function' ? vcpbScore(s) : (s.composite || 0)
+    };
+  });
+  
+  list.sort((a, b) => b.score - a.score);
+  return list.map(x => x.sector);
+}
+
+function sccWlSortByBreadth() {
+  if (_sccWlIsBreadthSorted) return;
+  
+  // Save current order of the active watchlist if not already saved
+  if (!_sccWlOriginalOrders[_sccActiveWatchlist]) {
+    if (_sccActiveWatchlist === 'VCP') {
+      // VCP is dynamic, we don't save its order
+    } else if (_sccActiveWatchlist.startsWith('__flag_')) {
+      // flag watchlists are computed dynamically, we don't save their order
+    } else {
+      _sccWlOriginalOrders[_sccActiveWatchlist] = [...(_sccWatchlists[_sccActiveWatchlist] || [])];
+    }
+  }
+
+  _sccWlIsBreadthSorted = true;
+  
+  if (_sccActiveWatchlist !== 'VCP' && !_sccActiveWatchlist.startsWith('__flag_')) {
+    const rankedSectors = sccGetRankedSectors();
+    const currentList = _sccWatchlists[_sccActiveWatchlist] || [];
+    
+    const sorted = [...currentList].sort((a, b) => {
+      const secA = sccGetStockSector(a);
+      const secB = sccGetStockSector(b);
+      
+      let rankA = rankedSectors.indexOf(secA);
+      let rankB = rankedSectors.indexOf(secB);
+      
+      if (rankA === -1) rankA = 9999;
+      if (rankB === -1) rankB = 9999;
+      
+      if (rankA !== rankB) {
+        return rankA - rankB;
+      }
+      return a.localeCompare(b);
+    });
+    
+    _sccWatchlists[_sccActiveWatchlist] = sorted;
+    _sccWatchlistSymbols = sorted;
+    sccSaveWatchlistsLocalAndSync();
+  }
+  
+  sccWatchlistRender();
+}
+
+function sccWlResetOrder() {
+  if (!_sccWlIsBreadthSorted) return;
+  
+  _sccWlIsBreadthSorted = false;
+  
+  if (_sccActiveWatchlist !== 'VCP' && !_sccActiveWatchlist.startsWith('__flag_')) {
+    const orig = _sccWlOriginalOrders[_sccActiveWatchlist];
+    if (orig) {
+      _sccWatchlists[_sccActiveWatchlist] = [...orig];
+      _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist];
+      sccSaveWatchlistsLocalAndSync();
+    }
+  }
+  
+  sccWatchlistRender();
+}
+
+// Watchlist Tab drag-and-drop reordering
+function sccTabDragStart(event, name) {
+  _sccDraggedTabName = name;
+  event.dataTransfer.effectAllowed = 'move';
+  event.target.style.opacity = '0.4';
+}
+function sccTabDragOver(event) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+}
+function sccTabDrop(event, targetName) {
+  event.preventDefault();
+  if (!_sccDraggedTabName || _sccDraggedTabName === targetName) return;
+  
+  const keys = Object.keys(_sccWatchlists);
+  const fromIndex = keys.indexOf(_sccDraggedTabName);
+  const toIndex = keys.indexOf(targetName);
+  
+  if (fromIndex !== -1 && toIndex !== -1) {
+    const newWatchlists = {};
+    keys.splice(fromIndex, 1);
+    keys.splice(toIndex, 0, _sccDraggedTabName);
+    keys.forEach(k => {
+      newWatchlists[k] = _sccWatchlists[k];
+    });
+    _sccWatchlists = newWatchlists;
+    
+    sccSaveWatchlistsLocalAndSync();
+    sccWlRenderTabs();
+  }
+}
+function sccTabDragEnd(event) {
+  event.target.style.opacity = '1';
+  _sccDraggedTabName = null;
+}
+
+// Watchlist Row drag-and-drop reordering
+function sccRowDragStart(event, symbol) {
+  _sccDraggedRowSymbol = symbol.toUpperCase();
+  event.dataTransfer.effectAllowed = 'move';
+  event.currentTarget.classList.add('wl-dragging');
+}
+function sccRowDragOver(event) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+}
+function sccRowDrop(event, targetSymbol) {
+  event.preventDefault();
+  const dragSym = _sccDraggedRowSymbol;
+  const targetSym = targetSymbol.toUpperCase();
+  if (!dragSym || dragSym === targetSym) return;
+  
+  const currentList = _sccWatchlists[_sccActiveWatchlist] || [];
+  const fromIndex = currentList.indexOf(dragSym);
+  const toIndex = currentList.indexOf(targetSym);
+  
+  if (fromIndex !== -1 && toIndex !== -1) {
+    currentList.splice(fromIndex, 1);
+    currentList.splice(toIndex, 0, dragSym);
+    
+    _sccWatchlists[_sccActiveWatchlist] = currentList;
+    _sccWatchlistSymbols = currentList;
+    
+    sccSaveWatchlistsLocalAndSync();
+    sccWatchlistRender();
+  }
+}
+function sccRowDragEnd(event) {
+  event.currentTarget.classList.remove('wl-dragging');
+  _sccDraggedRowSymbol = null;
 }
 
 function sccWatchlistFlagClick(event, element, symbol) {
@@ -11073,6 +11313,29 @@ async function seedHistoricalData() {
       const cSrt = isLegacy ? [] : (payload.srt||[]);
       srtSave(mergeByKey(cSrt, srtLoad(), s => s.id));
 
+      // ── Watchlist Sync on Startup
+      const cloudWatchlists = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccWatchlists : null;
+      const cloudSymbolFlags = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccSymbolFlags : null;
+      if (cloudWatchlists) {
+        _sccWatchlists = cloudWatchlists;
+        if (cloudSymbolFlags) _sccSymbolFlags = cloudSymbolFlags;
+        localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
+        localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+        if (!_sccWatchlists[_sccActiveWatchlist] && !_sccActiveWatchlist.startsWith('__flag_')) {
+          const keys = Object.keys(_sccWatchlists);
+          _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main";
+          localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+        }
+        if (_sccActiveWatchlist.startsWith('__flag_')) {
+          const color = _sccActiveWatchlist.replace('__flag_', '');
+          _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
+        } else if (_sccActiveWatchlist !== 'VCP') {
+          _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+        }
+        _sccWlSelectedSymbols = [];
+        _sccWlLastSelectedSymbol = null;
+      }
+
       const recCount = loadLocal().length;
       const bsrCount = bsrLoad().length;
       const mpmCount = mpmLoad().length;
@@ -12826,6 +13089,11 @@ let _sccSymbolFlags = {};
 let _sccShowWatchlist = true;
 let _sccWlSelectedSymbols = [];
 let _sccWlLastSelectedSymbol = null;
+let _sccWlCollapsedSectors = new Set();
+let _sccWlOriginalOrders = {};
+let _sccWlIsBreadthSorted = false;
+let _sccDraggedTabName = null;
+let _sccDraggedRowSymbol = null;
 
 try {
   const savedSyms = localStorage.getItem('_sccChartSymbols');
