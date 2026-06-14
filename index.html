@@ -4604,13 +4604,13 @@ async function sccChartRenderPanel(index) {
     loader.innerHTML = 'Loading chart…';
   }
 
-  let range = '6mo';
+  let range = '1y';
   let interval = '1d';
   if (timeframe === '1H') {
     range = '1mo';
     interval = '60m';
   } else if (timeframe === 'D') {
-    range = '6mo';
+    range = '1y';
     interval = '1d';
   } else if (timeframe === 'W') {
     range = '2y';
@@ -5125,7 +5125,7 @@ function sccWlDeleteTab(name) {
 function sccWatchlistRender() {
   let watchlistItems = [];
   let flatSymbols = [];
-  const isRowDraggable = _sccActiveWatchlist !== 'VCP' && !_sccActiveWatchlist.startsWith('__flag_') && !_sccWlIsBreadthSorted;
+  const isRowDraggable = _sccActiveWatchlist !== 'VCP' && !_sccWlIsBreadthSorted;
   
   if (_sccActiveWatchlist === 'VCP') {
     const cachedDrill = sectorDrillGetCached();
@@ -5269,7 +5269,7 @@ function sccWatchlistRender() {
       </button>
     ` : '';
 
-    const dragAttr = isRowDraggable ? `draggable="true" ondragstart="sccRowDragStart(event, '${sUpper}')" ondragover="sccRowDragOver(event)" ondrop="sccRowDrop(event, '${sUpper}')" ondragend="sccRowDragEnd(event)"` : '';
+    const dragAttr = isRowDraggable ? `draggable="true" ondragstart="sccRowDragStart(event, '${sUpper}')" ondragover="sccRowDragOver(event)" ondrop="sccRowDrop(event, '${sUpper}')" ondragend="sccRowDragEnd(event)" ontouchstart="sccRowTouchStart(event, '${sUpper}')" ontouchmove="sccRowTouchMove(event)" ontouchend="sccRowTouchEnd(event)"` : '';
 
     html += `
       <div class="scc-wl-item" id="scc-wl-item-${sUpper}" ${dragAttr}
@@ -5281,12 +5281,19 @@ function sccWatchlistRender() {
         
         <!-- Flag & Symbol & Company Name -->
         <div style="display:flex; align-items:center; min-width:0; flex:1; padding-right:8px;">
-          <!-- Vertical bookmark-shaped flag SVG (clickable to toggle flag status) -->
-          <svg class="${flagClass}" onclick="sccWatchlistFlagClick(event, this, '${sUpper}')" 
+          <!-- Vertical bookmark-shaped flag SVG (clickable to toggle flag status, hold to change color) -->
+          <svg class="${flagClass}" 
+               onclick="sccWatchlistFlagClick(event, this, '${sUpper}')" 
+               onmousedown="sccFlagPressStart(event, this, '${sUpper}')" 
+               onmouseup="sccFlagPressEnd(event, this, '${sUpper}')" 
+               onmouseleave="sccFlagPressCancel()"
+               ontouchstart="sccFlagPressStart(event, this, '${sUpper}')" 
+               ontouchend="sccFlagPressEnd(event, this, '${sUpper}')" 
+               ontouchmove="sccFlagPressCancel()"
                width="8" height="14" viewBox="0 0 10 18" 
                fill="${flagColor}" 
                style="cursor:pointer; color:${flagColor}; margin-right:8px; flex-shrink:0;"
-               title="${hasFlag ? 'Click to remove flag' : 'Click to choose flag'}">
+               title="${hasFlag ? 'Click to remove flag, hold to change color' : 'Click to choose flag'}">
             <path d="M0 0h10v18l-5-4-5 4V0z"/>
           </svg>
           
@@ -5480,30 +5487,150 @@ function sccRowDrop(event, targetSymbol) {
   const dragSym = _sccDraggedRowSymbol;
   const targetSym = targetSymbol.toUpperCase();
   if (!dragSym || dragSym === targetSym) return;
-  
-  const currentList = _sccWatchlists[_sccActiveWatchlist] || [];
-  const fromIndex = currentList.indexOf(dragSym);
-  const toIndex = currentList.indexOf(targetSym);
-  
-  if (fromIndex !== -1 && toIndex !== -1) {
-    currentList.splice(fromIndex, 1);
-    currentList.splice(toIndex, 0, dragSym);
-    
-    _sccWatchlists[_sccActiveWatchlist] = currentList;
-    _sccWatchlistSymbols = currentList;
-    
-    sccSaveWatchlistsLocalAndSync();
-    sccWatchlistRender();
-  }
+  sccPerformStockSwap(dragSym, targetSym);
 }
 function sccRowDragEnd(event) {
   event.currentTarget.classList.remove('wl-dragging');
   _sccDraggedRowSymbol = null;
 }
 
+// Touchscreen drag reordering helpers
+function sccRowTouchStart(event, symbol) {
+  const touch = event.touches[0];
+  _sccTouchStartY = touch.clientY;
+  _sccTouchDraggedSym = symbol.toUpperCase();
+  _sccTouchDraggedEl = event.currentTarget;
+  _sccTouchActive = false;
+  
+  _sccTouchTimeout = setTimeout(() => {
+    _sccTouchActive = true;
+    if (_sccTouchDraggedEl) {
+      _sccTouchDraggedEl.classList.add('wl-dragging');
+    }
+  }, 250);
+}
+
+function sccRowTouchMove(event) {
+  if (!_sccTouchDraggedSym) return;
+  const touch = event.touches[0];
+  
+  if (!_sccTouchActive) {
+    if (Math.abs(touch.clientY - _sccTouchStartY) > 10) {
+      clearTimeout(_sccTouchTimeout);
+      _sccTouchDraggedSym = null;
+      _sccTouchDraggedEl = null;
+    }
+    return;
+  }
+  
+  event.preventDefault();
+  
+  const elementUnderTouch = document.elementFromPoint(touch.clientX, touch.clientY);
+  if (!elementUnderTouch) return;
+  
+  const targetEl = elementUnderTouch.closest('.scc-wl-item');
+  if (!targetEl || targetEl === _sccTouchDraggedEl) return;
+  
+  const targetSym = targetEl.id.replace('scc-wl-item-', '').toUpperCase();
+  if (!targetSym || targetSym === _sccTouchDraggedSym) return;
+  
+  sccPerformStockSwap(_sccTouchDraggedSym, targetSym);
+  
+  const newDraggedEl = document.getElementById(`scc-wl-item-${_sccTouchDraggedSym}`);
+  if (newDraggedEl) {
+    _sccTouchDraggedEl = newDraggedEl;
+    _sccTouchDraggedEl.classList.add('wl-dragging');
+  }
+}
+
+function sccRowTouchEnd(event) {
+  clearTimeout(_sccTouchTimeout);
+  if (_sccTouchDraggedEl) {
+    _sccTouchDraggedEl.classList.remove('wl-dragging');
+  }
+  _sccTouchDraggedSym = null;
+  _sccTouchDraggedEl = null;
+  _sccTouchActive = false;
+}
+
+// Unified Stock Swap logic
+function sccPerformStockSwap(dragSym, targetSym) {
+  dragSym = dragSym.toUpperCase();
+  targetSym = targetSym.toUpperCase();
+  if (dragSym === targetSym) return;
+  
+  if (_sccActiveWatchlist.startsWith('__flag_')) {
+    const color = _sccActiveWatchlist.replace('__flag_', '');
+    const currentList = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
+    const fromIndex = currentList.indexOf(dragSym);
+    const toIndex = currentList.indexOf(targetSym);
+    
+    if (fromIndex !== -1 && toIndex !== -1) {
+      currentList.splice(fromIndex, 1);
+      currentList.splice(toIndex, 0, dragSym);
+      
+      const newFlags = {};
+      currentList.forEach(s => {
+        newFlags[s] = color;
+      });
+      Object.keys(_sccSymbolFlags).forEach(s => {
+        if (_sccSymbolFlags[s] !== color) {
+          newFlags[s] = _sccSymbolFlags[s];
+        }
+      });
+      _sccSymbolFlags = newFlags;
+      _sccWatchlistSymbols = currentList;
+      
+      sccSaveWatchlistsLocalAndSync();
+      sccWatchlistRender();
+    }
+  } else if (_sccActiveWatchlist !== 'VCP') {
+    const currentList = _sccWatchlists[_sccActiveWatchlist] || [];
+    const fromIndex = currentList.indexOf(dragSym);
+    const toIndex = currentList.indexOf(targetSym);
+    
+    if (fromIndex !== -1 && toIndex !== -1) {
+      currentList.splice(fromIndex, 1);
+      currentList.splice(toIndex, 0, dragSym);
+      
+      _sccWatchlists[_sccActiveWatchlist] = currentList;
+      _sccWatchlistSymbols = currentList;
+      
+      sccSaveWatchlistsLocalAndSync();
+      sccWatchlistRender();
+    }
+  }
+}
+
+// Flag Press and Hold logic
+function sccFlagPressStart(event, element, symbol) {
+  _sccFlagHoldActive = false;
+  _sccFlagHoldTimeout = setTimeout(() => {
+    _sccFlagHoldActive = true;
+    sccWatchlistOpenFlagPopup(element, symbol);
+  }, 350);
+}
+
+function sccFlagPressEnd(event, element, symbol) {
+  clearTimeout(_sccFlagHoldTimeout);
+  if (_sccFlagHoldActive) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+}
+
+function sccFlagPressCancel() {
+  clearTimeout(_sccFlagHoldTimeout);
+}
+
 function sccWatchlistFlagClick(event, element, symbol) {
   event.stopPropagation();
   event.preventDefault();
+  
+  if (_sccFlagHoldActive) {
+    _sccFlagHoldActive = false;
+    return;
+  }
   
   const sym = symbol.toUpperCase();
   const currentFlag = _sccSymbolFlags[sym] || 'none';
@@ -11356,7 +11483,7 @@ async function seedHistoricalData() {
 
 })();
 
-window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal()); bsrRenderChart(); renderA1Sparkline(loadLocal()); if (typeof brrgDraw === 'function') brrgDraw(); if (typeof srtDrawRRG === 'function') srtDrawRRG(); if (document.getElementById('sector-drill-overlay') && document.getElementById('sector-drill-overlay').style.display !== 'none' && _sdActiveTab === 'charts' && _sdChartsLayout === 'auto') { sdRenderCharts(_sdCurrentSector, _sdCurrentData); } if (document.getElementById('chart-max-overlay') && document.getElementById('chart-max-overlay').style.display !== 'none' && _sdMaximizedChartSymbol) { const range = _sdChartsInterval === 'D' ? '6mo' : '2y'; const interval = _sdChartsInterval === 'D' ? '1d' : '1wk'; Promise.all([fetchYfData(_sdMaximizedChartSymbol, range, interval), _sdMaximizedChartSymbol.toUpperCase() !== '^NSEI' ? fetchYfData('^NSEI', range, interval).catch(() => null) : Promise.resolve(null)]).then(([candles, niftyCandles]) => { drawAnyChart('max-chart-canvas', candles, _sdChartType, null, niftyCandles); }).catch(() => {}); } const sccChartPane = document.getElementById('scc-pane-chart'); if (sccChartPane && sccChartPane.style.display !== 'none') { const count = parseInt(_sccChartLayout); for (let i = 0; i < count; i++) { sccChartRenderPanel(i); } } },100); });
+window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal()); bsrRenderChart(); renderA1Sparkline(loadLocal()); if (typeof brrgDraw === 'function') brrgDraw(); if (typeof srtDrawRRG === 'function') srtDrawRRG(); if (document.getElementById('sector-drill-overlay') && document.getElementById('sector-drill-overlay').style.display !== 'none' && _sdActiveTab === 'charts' && _sdChartsLayout === 'auto') { sdRenderCharts(_sdCurrentSector, _sdCurrentData); } if (document.getElementById('chart-max-overlay') && document.getElementById('chart-max-overlay').style.display !== 'none' && _sdMaximizedChartSymbol) { const range = _sdChartsInterval === 'D' ? '1y' : '2y'; const interval = _sdChartsInterval === 'D' ? '1d' : '1wk'; Promise.all([fetchYfData(_sdMaximizedChartSymbol, range, interval), _sdMaximizedChartSymbol.toUpperCase() !== '^NSEI' ? fetchYfData('^NSEI', range, interval).catch(() => null) : Promise.resolve(null)]).then(([candles, niftyCandles]) => { drawAnyChart('max-chart-canvas', candles, _sdChartType, null, niftyCandles); }).catch(() => {}); } const sccChartPane = document.getElementById('scc-pane-chart'); if (sccChartPane && sccChartPane.style.display !== 'none') { const count = parseInt(_sccChartLayout); for (let i = 0; i < count; i++) { sccChartRenderPanel(i); } } },100); });
 // Re-render chart after fonts/layout settle on mobile
 window.addEventListener('load', () => { setTimeout(() => { renderA1Sparkline(loadLocal()); renderChart(loadLocal()); rrgRebuildChips(); srtDrawRRG(); if (typeof brrgDraw === 'function') brrgDraw(); }, 300); });
 
@@ -13091,6 +13218,13 @@ let _sccWlOriginalOrders = {};
 let _sccWlIsBreadthSorted = false;
 let _sccDraggedTabName = null;
 let _sccDraggedRowSymbol = null;
+let _sccTouchActive = false;
+let _sccTouchTimeout = null;
+let _sccTouchDraggedSym = null;
+let _sccTouchStartY = 0;
+let _sccTouchDraggedEl = null;
+let _sccFlagHoldTimeout = null;
+let _sccFlagHoldActive = false;
 
 try {
   const savedSyms = localStorage.getItem('_sccChartSymbols');
@@ -13428,7 +13562,7 @@ function openMaximizedChart(symbol) {
 
   overlay.style.display = 'flex';
 
-  const range = _sdChartsInterval === 'D' ? '6mo' : '2y';
+  const range = _sdChartsInterval === 'D' ? '1y' : '2y';
   const interval = _sdChartsInterval === 'D' ? '1d' : '1wk';
 
   Promise.all([
@@ -13475,7 +13609,7 @@ function maxChartChangeType(type) {
   if (mainTypeSelect) mainTypeSelect.value = type;
 
   if (_sdMaximizedChartSymbol) {
-    const range = _sdChartsInterval === 'D' ? '6mo' : '2y';
+    const range = _sdChartsInterval === 'D' ? '1y' : '2y';
     const interval = _sdChartsInterval === 'D' ? '1d' : '1wk';
     const yfSymbol = _sdMaximizedChartSymbol + '.NS';
     const cacheKey = `${yfSymbol}_${range}_${interval}`;
@@ -14648,7 +14782,7 @@ function sdRenderCharts(sectorName, secData) {
       ${chartCardsHtml}
     </div>` + viewMoreHtml;
 
-  const range = _sdChartsInterval === 'D' ? '6mo' : '2y';
+  const range = _sdChartsInterval === 'D' ? '1y' : '2y';
   const interval = _sdChartsInterval === 'D' ? '1d' : '1wk';
 
   const observer = new IntersectionObserver((entries, obs) => {
