@@ -1191,6 +1191,55 @@ body.guest-mode #cp-overlay,
 body.guest-mode #bsr-module-card,
 body.guest-mode #mpm-module-card { display:none !important; }
 
+/* Guest Mode Header buttons */
+.guest-pull-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--body);
+  color: #050508;
+  background: var(--yellow);
+  border: none;
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background .15s;
+  letter-spacing: .2px;
+}
+.guest-pull-btn:hover {
+  background: #fde047;
+}
+.guest-exit-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--body);
+  color: var(--yellow);
+  background: transparent;
+  border: 1px solid rgba(232, 184, 75, 0.4);
+  padding: 4px 11px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all .15s;
+  letter-spacing: .2px;
+}
+.guest-exit-btn:hover {
+  background: rgba(232, 184, 75, 0.1);
+  border-color: var(--yellow);
+}
+body.guest-mode .guest-pull-btn,
+body.guest-mode .guest-exit-btn {
+  display: inline-flex;
+}
+body.guest-mode .cp-btn,
+body.guest-mode .sync-status {
+  display: none !important;
+}
+
 /* ── CONTROL PANEL BUTTON ───────────────────────────────────────── */
 .cp-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;font-family:var(--body);color:#050508;background:var(--accent);border:none;padding:5px 12px;border-radius:4px;cursor:pointer;transition:background .15s;letter-spacing:.2px;}
 .cp-btn:hover{background:#7bb8f7;}
@@ -1309,6 +1358,14 @@ body.guest-mode #mpm-module-card { display:none !important; }
   box-shadow:0 24px 64px rgba(0,0,0,.7);
   animation:tipIn .2s cubic-bezier(.2,0,.2,1);
   overflow:hidden;
+  max-height:85vh;
+  display:flex;
+  flex-direction:column;
+}
+.about-body {
+  padding:22px;
+  overflow-y:auto;
+  flex:1;
 }
 .about-head {
   padding:20px 22px 16px;
@@ -1587,6 +1644,12 @@ thead th[onclick]:hover {
     <div class="hdr-tag">Universe: <b>Nifty 500</b></div>
     <div class="hdr-tag" id="hdr-date"></div>
     <div class="guest-badge" id="guest-badge">👁 Guest View</div>
+    <button class="guest-pull-btn" id="guest-pull-btn" onclick="guestPullData()" title="Pull latest data from the cloud">
+      🔄 Pull Data
+    </button>
+    <button class="guest-exit-btn" id="guest-exit-btn" onclick="cfgExitGuest()" title="Exit Guest Mode and clear local data">
+      Exit Guest Mode
+    </button>
     <button class="cp-btn" onclick="openControlPanel()" title="Open Control Panel — EOD Data Entry &amp; Settings">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="flex-shrink:0"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
       Control Panel
@@ -1605,12 +1668,6 @@ thead th[onclick]:hover {
   <a class="src-btn" href="https://mkshibu2.github.io/trading-manual/" target="_blank" style="color:var(--teal);border-color:rgba(45,212,191,.3);background:rgba(45,212,191,.04)"><span class="dot" style="background:var(--teal)"></span>📊 Trading Model</a>
   <a class="src-btn" href="aiprompt.html" target="_blank" style="color:var(--purple);border-color:rgba(168,85,247,.3);background:rgba(168,85,247,.04)"><span class="dot" style="background:var(--purple)"></span>🤖 AI Prompt</a>
   <a class="src-btn" href="vcp_scanner_results.html" target="_blank" style="color:var(--blue);border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.04)"><span class="dot" style="background:var(--blue)"></span>📊 VCP Screener ↗</a>
-</div>
-
-<!-- GUEST MODE BANNER -->
-<div class="guest-banner" id="guest-banner">
-  👁 <b>Guest View Mode</b> — You are viewing read-only data. Entry forms are hidden. Pull latest data using the sync button.
-  <button onclick="cfgExitGuest()" onmouseover="this.style.background='rgba(232,184,75,0.1)'" onmouseout="this.style.background='none'" style="background: none; border: 1px solid rgba(232,184,75,0.4); color: var(--yellow); padding: 2px 8px; margin-left: 12px; font-size: 10px; border-radius: 3px; cursor: pointer; font-family: var(--body); font-weight: 600; transition: all 0.15s;">Exit Guest Mode</button>
 </div>
 
 <div class="page">
@@ -2446,7 +2503,6 @@ thead th[onclick]:hover {
           <div class="card-title" style="color:var(--lime)">🚀 Follow-Through Day Tracker</div>
           <div style="display:flex;align-items:center;gap:6px">
             <button class="info-btn" onclick="showInfoTip('ftd',this)" title="About FTD">i</button>
-            <button onclick="ftdReset()" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid rgba(248,113,113,.3);background:transparent;color:var(--red);cursor:pointer" title="Reset all FTD data">↺ Reset</button>
           </div>
         </div>
 
@@ -2472,42 +2528,7 @@ thead th[onclick]:hover {
           </div>
         </div>
 
-        <!-- Add Day form (toggle) -->
-        <div style="padding:8px 12px 0;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-          <button onclick="ftdToggleAdd()" title="Toggle form to add Nifty price details for Day 1, subsequent rally days, or a Follow-Through Day (FTD)" style="font-size:11px;font-weight:600;padding:5px 14px;background:rgba(74,222,128,.12);color:var(--lime);border:1px solid rgba(74,222,128,.3);border-radius:4px;cursor:pointer">+ Log Day</button>
-          <button onclick="ftdManualVoid()" title="Manually void the current rally attempt if you judge the market has failed (e.g. heavy selling or breadth collapse)" style="font-size:10px;padding:4px 10px;background:transparent;color:var(--red);border:1px solid rgba(248,113,113,.25);border-radius:4px;cursor:pointer">⚠ Void Attempt</button>
-          <button onclick="ftdRestoreVoid()" title="Restore the most recent auto-voided rally attempt (e.g. if a data error caused a false undercut)" style="font-size:10px;padding:4px 10px;background:transparent;color:var(--teal);border:1px solid rgba(45,212,191,.25);border-radius:4px;cursor:pointer">↩ Restore</button>
-        </div>
-        <div id="ftd-add-panel" style="display:none;padding:10px 12px;background:var(--bg3);margin:8px 12px;border-radius:5px;border:1px solid var(--border)">
-          <div style="font-size:10px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Log Rally Day</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
-            <div>
-              <div style="font-size:10px;color:var(--sub);margin-bottom:3px">Date</div>
-              <input type="date" id="ftd-date" style="width:100%;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 7px;border-radius:3px;outline:none">
-            </div>
-            <div>
-              <div style="font-size:10px;color:var(--sub);margin-bottom:3px">Nifty Close</div>
-              <input type="number" id="ftd-close" placeholder="23150" step="0.05" style="width:100%;background:var(--bg);border:1px solid var(--bdr2);color:var(--accent);font-family:var(--mono);font-size:11px;padding:5px 7px;border-radius:3px;outline:none">
-            </div>
-            <div>
-              <div style="font-size:10px;color:var(--sub);margin-bottom:3px">Prev Close</div>
-              <input type="number" id="ftd-prev" placeholder="22900" step="0.05" style="width:100%;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 7px;border-radius:3px;outline:none">
-            </div>
-          </div>
-          <div class="ftd-type-row">
-            <span style="font-size:10px;color:var(--sub);font-weight:600">Day type:</span>
-            <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="ftd-type" id="ftd-type" value="attempt" checked> Rally Day 1</label>
-            <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="ftd-type" value="followthrough"> FTD Confirmed</label>
-            <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="ftd-type" value="distribution"> Distribution Day</label>
-            <span style="font-size:10px;color:var(--sub);font-weight:600;margin-left:8px">Vol higher:</span>
-            <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="ftd-vol" id="ftd-vol" value="yes" checked> Yes</label>
-            <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="ftd-vol" value="no"> No</label>
-          </div>
-          <div style="display:flex;gap:6px;margin-top:8px">
-            <button onclick="ftdAddDay()" style="flex:1;font-size:11px;font-weight:600;padding:6px;background:var(--lime);color:#0e1420;border:none;border-radius:4px;cursor:pointer">Save Entry</button>
-            <button onclick="ftdToggleAdd()" style="font-size:11px;padding:6px 12px;background:transparent;border:1px solid var(--border);color:var(--dim);border-radius:4px;cursor:pointer">Cancel</button>
-          </div>
-        </div>
+
 
         <!-- Log table (collapsible) -->
         <div id="ftd-log-wrap" style="display:none">
@@ -10384,33 +10405,7 @@ const LS_FTD = 'ftd_data';
 function ftdLoad() { try { return JSON.parse(lsGet(LS_FTD)||'[]'); } catch(e){ return []; } }
 function ftdSaveData(d) { lsSet(LS_FTD, JSON.stringify(d)); }
 
-let _ftdAddOpen = false;
-function ftdToggleAdd() {
-  _ftdAddOpen = !_ftdAddOpen;
-  document.getElementById('ftd-add-panel').style.display = _ftdAddOpen ? 'block' : 'none';
-  if (_ftdAddOpen) {
-    document.getElementById('ftd-date').value = new Date().toISOString().slice(0,10);
-  }
-}
 
-function ftdAddDay() {
-  const date  = document.getElementById('ftd-date').value;
-  const close = parseFloat(document.getElementById('ftd-close').value);
-  const prev  = parseFloat(document.getElementById('ftd-prev').value);
-  const volRadio = document.querySelector('input[name="ftd-vol"]:checked');
-  const typeRadio = document.querySelector('input[name="ftd-type"]:checked');
-  const volUp = volRadio ? volRadio.value === 'yes' : true;
-  const type  = typeRadio ? typeRadio.value : 'attempt';
-  if (!date || isNaN(close) || isNaN(prev)) { alert('Please fill Date, Close and Prev Close'); return; }
-  const movePct = ((close - prev) / prev * 100);
-  const days = ftdLoad();
-  days.unshift({ date, close, prev, movePct: +movePct.toFixed(2), volUp, type, id: Date.now(), _updatedAt: Date.now() });
-  ftdSaveData(days);
-  _ftdAddOpen = false;
-  document.getElementById('ftd-add-panel').style.display = 'none';
-  ftdRender();
-  pushToCloud();
-}
 
 function ftdManualVoid() {
   const { status } = ftdComputeState();
@@ -13211,6 +13206,46 @@ async function jbReadPublic(bin) {
   return j.record || j;
 }
 
+async function guestPullData() {
+  const guestBin = lsGet(LS_GUEST_BIN);
+  if (!guestBin) {
+    alert('No guest bin configured.');
+    return;
+  }
+  const btn = document.getElementById('guest-pull-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '🔄 Pulling…';
+  }
+  setSyncStatus('syncing', 'Syncing...');
+  try {
+    const payload = await jbReadPublic(guestBin);
+    const recs = Array.isArray(payload) ? payload : (payload.records||[]);
+    const bsr  = Array.isArray(payload) ? [] : (payload.bsr||[]);
+    const mpm  = Array.isArray(payload) ? [] : (payload.mpm||[]);
+    const ftd  = Array.isArray(payload) ? [] : (payload.ftd||[]);
+    const srt  = Array.isArray(payload) ? [] : (payload.srt||[]);
+    saveLocal(recs);
+    bsrSave(bsr);
+    mpmSave(mpm);
+    ftdSaveData(ftd.sort((a,b)=>b.date.localeCompare(a.date)));
+    srtSave(srt);
+    
+    setSyncStatus('ok', `Guest · ${recs.length}rec · ${mpm.length}mpm · ${srt.length}sec`);
+    renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender(); slhRender();
+    
+    flash('✅ Data pulled successfully from cloud!', 'var(--lime)');
+  } catch(e) {
+    setSyncStatus('err', 'Guest · Pull Failed');
+    flash('✗ Pull failed: ' + e.message, 'var(--red)');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🔄 Pull Data';
+    }
+  }
+}
+
 function cfgExitGuest() {
   if (!confirm('Exit Guest Mode?\n\nThis will clear the guest data from this browser. You can reconnect anytime with the Bin ID.')) return;
   lsDel(LS_GUEST_BIN);
@@ -15210,8 +15245,9 @@ document.addEventListener('click', () => {
               <div style="font-size:10px;color:var(--dim);padding-left:23px;line-height:1.5">Tick to manually log a Follow-Through Day (FTD).</div>
             </div>
           </div>
-          <button class="btn btn-sec" onclick="ftdManualVoid()" style="font-size:11px;padding:6px 12px;color:var(--red);border-color:rgba(248,113,113,.3);white-space:nowrap;align-self:center">⚠ Void Attempt</button>
-          <button class="btn btn-sec" onclick="ftdRestoreVoid()" style="font-size:11px;padding:6px 12px;color:var(--teal);border-color:rgba(45,212,191,.3);white-space:nowrap;align-self:center">↩ Restore</button>
+          <button class="btn btn-sec" onclick="ftdManualVoid()" style="font-size:11px;padding:6px 12px;color:var(--red);border-color:rgba(248,113,113,.3);white-space:nowrap;align-self:center" title="Manually void the current rally attempt">⚠ Void Attempt</button>
+          <button class="btn btn-sec" onclick="ftdRestoreVoid()" style="font-size:11px;padding:6px 12px;color:var(--teal);border-color:rgba(45,212,191,.3);white-space:nowrap;align-self:center" title="Restore the most recent auto-voided rally attempt">↩ Restore</button>
+          <button class="btn btn-sec" onclick="ftdReset()" style="font-size:11px;padding:6px 12px;color:var(--red);border-color:rgba(248,113,113,.3);white-space:nowrap;align-self:center" title="Reset all FTD data and clear history to start a fresh rally attempt">↺ Reset Tracker</button>
           <div class="ef" style="flex:1;border:none;padding:0;background:none;min-width:0">
             <input type="text" id="i-notes" placeholder="Notes: FII activity, budget day, key support…" style="font-size:12px;font-weight:400;width:100%">
           </div>
@@ -15861,80 +15897,17 @@ document.addEventListener('click', () => {
 
       <!-- About the tool -->
       <div class="about-section">
-        <div class="about-section-title">About This Tool</div>
+        <div class="about-section-title">About the Tool</div>
         <div class="about-tool-desc">
-          NSE Breadth Radar is a <b>personal market breadth dashboard</b> built for Indian swing traders
-          who follow price-and-volume methodology. It tracks market internals — advance/decline ratios,
-          moving average breadth, 52-week high/low ratios, breakout success rates and distribution
-          pressure — to give you a single <b>Breadth Score</b> and clear zone guidance before you place any trade.<br><br>
-          Built from scratch out of a trader's real need. Free to use. Not investment advice.
-        </div>
-        <div class="about-version-row">
-          <span class="about-pill accent">Nifty 500 Universe</span>
-          <span class="about-pill">Client-side · No server</span>
-          <span class="about-pill">JSONBin cloud sync</span>
-          <span class="about-pill">© 2026 Shibu M K</span>
-        </div>
-      </div>
-
-      <!-- Sector Rotation & RRG -->
-      <div class="about-section">
-        <div class="about-section-title">Sector Rotation Module</div>
-        <div class="about-tool-desc">
-          The <b>Sector Rotation Module</b> tracks 16 NSE sectoral indices — from IT and Pharma to Defence,
-          Capital Markets, and PSE — and classifies each into one of four Weinstein-style stages based on
-          its position relative to its 20-week and 50-week moving averages.<br><br>
-          <b>How to read it:</b> Every sector row shows its % above/below the 20-week MA (<b>vs20</b>),
-          MA dot indicators (● above · ◐ within 1% · ○ below), stage badge
-          (<span style="color:var(--lime)">S2 Advancing</span> · <span style="color:var(--accent)">S1 Basing</span> ·
-          <span style="color:var(--yellow)">S3 Topping</span> · <span style="color:var(--red)">S4 Declining</span>),
-          relative strength vs Nifty 50 (RS%), and weeks in the current stage.<br><br>
-          <b>Trading edge:</b> Focus new breakout entries on <b>S2 sectors</b> — they are above both MAs and
-          in an advancing trend. S1 sectors are basing and warrant watchlist attention. Avoid S3/S4 for new longs.<br><br>
-          Click any sector name to open its live NSE index tracker page with constituent stocks and performance data.
-          Data is updated weekly (Friday/Sunday). Use the bulk import to enter historical weekly closes for up to 16 sectors at once.
-        </div>
-        <div class="about-version-row" style="margin-top:8px">
-          <span class="about-pill accent">16 NSE Sectors</span>
-          <span class="about-pill">Weinstein Stage Analysis</span>
-          <span class="about-pill">Weekly Data</span>
-          <span class="about-pill">RS vs Nifty 50</span>
-        </div>
-      </div>
-
-      <!-- RRG -->
-      <div class="about-section">
-        <div class="about-section-title">Relative Rotation Graph (RRG)</div>
-        <div class="about-tool-desc">
-          The <b>RRG</b> is a four-quadrant scatter chart that plots every sector simultaneously using two metrics:
-          <b>RS-Ratio</b> (X-axis) measures whether the sector is stronger or weaker than Nifty 50 on a smoothed
-          basis, and <b>RS-Momentum</b> (Y-axis) measures whether that relative strength is improving or deteriorating.<br><br>
-          <b>The four quadrants:</b>
-          <span style="color:var(--lime)">Leading</span> (strong &amp; improving, top-right) →
-          <span style="color:var(--yellow)">Weakening</span> (strong but slowing, bottom-right) →
-          <span style="color:var(--red)">Lagging</span> (weak &amp; deteriorating, bottom-left) →
-          <span style="color:var(--accent)">Improving</span> (gaining momentum, top-left). Clockwise rotation is the natural bullish path.<br><br>
-          <b>Tail:</b> Each sector plots a coloured trail showing its last N weeks of movement — you can visually see <i>direction</i>, not just position.
-          Sectors with long tails moving toward the Leading quadrant are the strongest candidates.<br><br>
-          <b>Controls:</b> Use <b>+ / −</b> or preset buttons (4 · 8 · 12 · All) to control how many sectors appear.
-          The <b>Weeks stepper</b> controls tail length (1–52 weeks). <b>Filter: S2</b> shows only advancing sectors.
-          <b>Highlight chips</b> (left-click = spotlight, right-click = hide) let you isolate one or more sectors.
-          The <b>▶ Play</b> animation replays each sector's journey week-by-week so you can see momentum build up over time.
-        </div>
-        <div class="about-version-row" style="margin-top:8px">
-          <span class="about-pill accent">JdK RS-Ratio Methodology</span>
-          <span class="about-pill">Tail Animation</span>
-          <span class="about-pill">Sector Spotlight</span>
-          <span class="about-pill">S2 Filter</span>
-        </div>
-      </div>
-
-      <!-- Methodology -->
-      <div class="about-section">
-        <div class="about-section-title">Methodology</div>
-        <div class="about-tool-desc">
-          Breadth Score weights: <b>A/D Ratio 35%</b> · <b>%&gt;EMA20 20%</b> · <b>%&gt;SMA50 15%</b> ·
-          <b>%&gt;SMA200 15%</b> · <b>52W H/L 15%</b>. Zones: Healthy ≥55 · Expanding 45–55 · Caution 30–45 · Bearish &lt;30.
+          NSE Breadth Radar is a <b>personal market breadth dashboard</b> designed to align your swing trading exposure with the market environment.<br><br>
+          For swing traders following price-and-volume breakout methodologies (such as Minervini, O'Neil, Darvas, and Weinstein), capital preservation and performance depend entirely on two core pillars:
+          <br><br>
+          <ul>
+            <li><b>Market Environment (Index Breadth)</b>: Evaluates daily Nifty 500 internals (A/D ratio, moving average breadth, 52-week highs/lows) to calculate a composite <b>Breadth Score (0-100)</b>. This maps directly to specific <b>Action Zones (Healthy, Expanding, Caution, Bearish)</b>, telling you when to aggressively scale up exposure or when to raise cash and stand aside.</li>
+            <li><b>Sector Analysis &amp; Watchlist Sorting</b>: Classifies 16 key sectors into **Weinstein Stages** (S1 Basing, S2 Advancing, S3 Topping, S4 Declining) to locate where institutions are buying. The drill-down lists display daily **VCP setup scanner candidates** with Scanner RS Ratings, and the **Breadth (BS) Sorting** feature automatically ranks watchlist stocks based on their parent sector's breadth strength first.</li>
+          </ul>
+          <br>
+          By evaluating the market environment before entering setups and prioritizing stocks inside leading Stage 2 sectors, you filter out low-probability breakouts, trade with the wind at your back, and protect your capital.
         </div>
       </div>
 
