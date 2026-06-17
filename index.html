@@ -1608,7 +1608,10 @@ thead th[onclick]:hover {
 </div>
 
 <!-- GUEST MODE BANNER -->
-<div class="guest-banner" id="guest-banner">👁 <b>Guest View Mode</b> — You are viewing read-only data. Entry forms are hidden. Pull latest data using the sync button.</div>
+<div class="guest-banner" id="guest-banner">
+  👁 <b>Guest View Mode</b> — You are viewing read-only data. Entry forms are hidden. Pull latest data using the sync button.
+  <button onclick="cfgExitGuest()" onmouseover="this.style.background='rgba(232,184,75,0.1)'" onmouseout="this.style.background='none'" style="background: none; border: 1px solid rgba(232,184,75,0.4); color: var(--yellow); padding: 2px 8px; margin-left: 12px; font-size: 10px; border-radius: 3px; cursor: pointer; font-family: var(--body); font-weight: 600; transition: all 0.15s;">Exit Guest Mode</button>
+</div>
 
 <div class="page">
 
@@ -6591,7 +6594,7 @@ const LS_VCPB_HIST   = 'nse_vcpb_hist_v1';   // rolling daily score history per 
 let _vcpbSort = 'composite';                   // default: Score first
 let _vcpbSortAsc = false;                      // default: descending
 
-function vcpbGetUrl()          { return (localStorage.getItem(LS_VCPB_URL) || '').trim().replace(/\/$/, ''); }
+function vcpbGetUrl()          { return (localStorage.getItem(LS_VCPB_URL) || 'https://mkshibu2.github.io/breadth-radar').trim().replace(/\/$/, ''); }
 function vcpbSetStoredUrl(url) { localStorage.setItem(LS_VCPB_URL, url.trim().replace(/\/$/, '')); }
 function vcpbGetCached()       { try { return JSON.parse(localStorage.getItem(LS_VCPB_DATA)) || null; } catch(e) { return null; } }
 function vcpbSetCached(data)   { try { localStorage.setItem(LS_VCPB_DATA, JSON.stringify(data)); } catch(e) {} }
@@ -13225,8 +13228,44 @@ function cfgExitGuest() {
   closeCfgModal();
 }
 
+function cfgCopyGuestLink() {
+  const cfg = getCfg();
+  if (!cfg.bin) {
+    cfgBanner('⚠ No Bin ID configured.', 'warn', 'cp-sync-msg');
+    return;
+  }
+  const link = window.location.origin + window.location.pathname + '?bin=' + encodeURIComponent(cfg.bin);
+  
+  navigator.clipboard.writeText(link).then(() => {
+    cfgBanner('📋 Guest share link copied to clipboard!', 'ok', 'cp-sync-msg');
+  }).catch(err => {
+    try {
+      const tempInput = document.createElement('input');
+      tempInput.value = link;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+      cfgBanner('📋 Guest share link copied to clipboard!', 'ok', 'cp-sync-msg');
+    } catch (e) {
+      cfgBanner('✗ Copy failed. Link: ' + link, 'err', 'cp-sync-msg');
+    }
+  });
+}
+
 // Check guest mode on page load (called from init)
 function initGuestMode() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryBin = urlParams.get('bin') || urlParams.get('guest_bin') || urlParams.get('share');
+    if (queryBin) {
+      lsSet(LS_GUEST_BIN, queryBin.trim());
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  } catch (e) {
+    console.error('[Guest] URL parsing failed:', e);
+  }
+
   const guestBin = lsGet(LS_GUEST_BIN);
   if (!guestBin) return false;
 
@@ -15267,12 +15306,16 @@ document.addEventListener('click', () => {
               <div style="font-size:11px;color:var(--sub);margin-top:2px" id="cp-sync-binid-display">—</div>
             </div>
           </div>
+          <div style="font-size:11px;color:var(--sub);line-height:1.5;margin-bottom:12px">
+            Share view-only access with others without giving your Master Key. Make sure the bin is <b>Public</b> first.
+          </div>
           <div class="cfg-banner" id="cp-sync-msg"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="cfg-btn-sec" onclick="cfgTestExisting()">🔄 Test</button>
             <button class="cfg-btn-sec" onclick="cfgForcePull()">⬇ Pull</button>
             <button class="cfg-btn-sec" onclick="cfgForcePush()">⬆ Push</button>
             <button class="cfg-btn-sec" id="cfg-make-public-btn" onclick="cfgMakePublic()" style="color:var(--teal);border-color:rgba(45,212,191,.3)">🌐 Make Public</button>
+            <button class="cfg-btn-sec" id="cfg-copy-guest-link-btn" onclick="cfgCopyGuestLink()" style="color:var(--purple);border-color:rgba(192,132,252,.3)">🔗 Copy Guest Link</button>
             <button class="cfg-btn-sec" id="cfg-make-private-btn" onclick="cfgMakePrivate()" style="color:var(--yellow);border-color:rgba(251,191,36,.3)">🔒 Make Private</button>
             <button class="cfg-btn-danger" onclick="cfgClearCreds()">🗑 Remove from device</button>
           </div>
