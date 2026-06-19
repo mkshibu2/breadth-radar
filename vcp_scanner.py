@@ -123,10 +123,6 @@ def fetch_data(symbol, days=400):
         try:
             raw        = tk.fast_info
             info['market_cap'] = safe(getattr(raw, 'market_cap', 0)) / 1e7  # → crore
-            
-            # Fetch YF sector/industry for smart routing
-            raw2 = tk.info
-            info['industry'] = raw2.get('industry', '—')
         except: pass
         return df, info
     except: return None, {}
@@ -751,6 +747,17 @@ function switchTab(name, btn) {
   filterTable(); 
 }
 
+function switchBreadthView(view, btn) {
+  document.getElementById('breadth-view-sec').style.display = (view === 'sec') ? '' : 'none';
+  document.getElementById('breadth-view-ind').style.display = (view === 'ind') ? '' : 'none';
+  document.querySelectorAll('.breadth-view-btn').forEach(function(b){
+    b.classList.remove('active');
+    b.style.background = '#0d1929'; b.style.color = '#64748b'; b.style.borderColor = '#1e2d45';
+  });
+  btn.classList.add('active');
+  btn.style.background = 'rgba(45,212,191,.1)'; btn.style.color = '#2dd4bf'; btn.style.borderColor = 'rgba(45,212,191,.3)';
+}
+
 var _ss = {};
 function sortTable(th) {
   var tbl  = th.closest('table');
@@ -905,7 +912,7 @@ HEADERS = ''.join(TH(h, i) for i, h in enumerate([
     'FINAL','GRADE','SETUP','POTENTIAL BO','PULL BACK','PP'
 ]))
 
-def generate_html(results, scan_time, total_scanned, errors, rejects, sector_stats):
+def generate_html(results, scan_time, total_scanned, errors, rejects, sector_stats, industry_stats):
     import json as _json
     elite      = [r for r in results if r['grade'] in ('A+','A')][:20]
     potbo_list = [r for r in results if r.get('pot_bo') and 'YES' in r['pot_bo']][:20]
@@ -970,6 +977,67 @@ def generate_html(results, scan_time, total_scanned, errors, rejects, sector_sta
         </div>
     </div>'''
 
+    # Generate Industry Group Health Table (granular sub-split of the sectors above)
+    ind_rows = []
+    sorted_inds = sorted(industry_stats.items(), key=lambda x: (-x[1]['vcp'], -x[1]['total']))
+    for ind, st in sorted_inds:
+        if st['total'] == 0: continue
+        tot, vcp = st['total'], st['vcp']
+        p20  = int((st['a20'] / tot) * 100)
+        p50  = int((st['a50'] / tot) * 100)
+        p200 = int((st['a200'] / tot) * 100)
+
+        c20  = '#4ade80' if p20 >= 60 else '#fbbf24' if p20 >= 40 else '#f87171'
+        c50  = '#4ade80' if p50 >= 60 else '#fbbf24' if p50 >= 40 else '#f87171'
+        c200 = '#4ade80' if p200 >= 60 else '#fbbf24' if p200 >= 40 else '#f87171'
+        vcp_c = '#2dd4bf' if vcp > 0 else '#64748b'
+        parent = st.get('parent', '')
+
+        ind_rows.append(f'''<tr style="border-bottom:1px solid #1e2d45;background:#0d1929">
+            <td style="padding:6px 10px;font-size:11px;font-weight:700;color:#e2e8f5;white-space:nowrap;">{ind}<span style="font-size:9px;font-weight:500;color:#475569;margin-left:6px">{parent}</span></td>
+            <td style="padding:6px 10px;font-size:11px;text-align:center;color:#94a3b8">{tot}</td>
+            <td style="padding:6px 10px;font-size:12px;font-weight:800;text-align:center;color:{vcp_c}">{vcp}</td>
+            <td style="padding:6px 10px;font-size:11px;text-align:center;color:{c20}">{p20}%</td>
+            <td style="padding:6px 10px;font-size:11px;text-align:center;color:{c50}">{p50}%</td>
+            <td style="padding:6px 10px;font-size:11px;text-align:center;color:{c200}">{p200}%</td>
+        </tr>''')
+
+    ind_table = f'''<div style="background:#0d1929;border:1px solid #1e2d45;border-radius:6px;overflow:hidden;height:100%">
+        <div style="padding:10px 16px;background:#0a1220;border-bottom:1px solid #1e2d45;font-size:11px;font-weight:800;color:#2dd4bf;letter-spacing:1px;text-transform:uppercase">
+            🏷️ Industry Group Breadth & Health
+        </div>
+        <div style="max-height:220px;overflow-y:auto;overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;text-align:left;white-space:nowrap;">
+                <thead style="position:sticky;top:0;background:#0f1c30;box-shadow:0 1px 0 #1e2d45">
+                    <tr>
+                        <th style="padding:8px 10px;font-size:9px;color:#64748b">INDUSTRY GROUP <span style="color:#334155">(parent sector)</span></th>
+                        <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">N500 UNIVERSE</th>
+                        <th style="padding:8px 10px;font-size:9px;color:#2dd4bf;text-align:center">VCP CANDIDATES</th>
+                        <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">% > 20 EMA</th>
+                        <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">% > 50 SMA</th>
+                        <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">% > 200 SMA</th>
+                    </tr>
+                </thead>
+                <tbody>{''.join(ind_rows)}</tbody>
+            </table>
+        </div>
+    </div>'''
+
+    breadth_panel = f'''<div style="background:transparent;height:100%">
+        <div style="display:flex;gap:4px;margin-bottom:6px">
+            <button class="breadth-view-btn active" onclick="switchBreadthView('sec',this)"
+                style="background:rgba(45,212,191,.1);color:#2dd4bf;border:1px solid rgba(45,212,191,.3);border-radius:5px 5px 0 0;padding:5px 14px;font-size:10px;font-weight:700;cursor:pointer">
+                📊 Sectors &middot; {len([s for s in sector_stats.values() if s['total']])}
+            </button>
+            <button class="breadth-view-btn" onclick="switchBreadthView('ind',this)"
+                style="background:#0d1929;color:#64748b;border:1px solid #1e2d45;border-radius:5px 5px 0 0;padding:5px 14px;font-size:10px;font-weight:700;cursor:pointer">
+                🏷️ Industries &middot; {len([s for s in industry_stats.values() if s['total']])}
+            </button>
+        </div>
+        <div id="breadth-view-sec">{sec_table}</div>
+        <div id="breadth-view-ind" style="display:none">{ind_table}</div>
+    </div>'''
+
     def tab_section(title, color, stocks, tid):
         if not stocks:
             return f'<div style="color:#475569;text-align:center;padding:48px;font-size:13px">No stocks in this category.</div>'
@@ -1025,7 +1093,7 @@ def generate_html(results, scan_time, total_scanned, errors, rejects, sector_sta
         {cards}
     </div>
     <div style="flex:2;min-width:280px;width:100%;">
-        {sec_table}
+        {breadth_panel}
     </div>
   </div>
   
@@ -1107,6 +1175,10 @@ def main():
             # Look up specific NSE data from the CSV map
             nse_info = nse_map.get(sym, {})
             nse_ind  = nse_info.get('Industry', 'Unknown')
+            nse_ind_raw = nse_ind  # preserved BEFORE the theme overrides below —
+                                    # get_industry_group()'s substring matching is
+                                    # built against NSE's raw taxonomy, not our
+                                    # display-friendly Sector-tab labels.
             nse_comp = nse_info.get('Company Name', sym)
 
             df, info = fetch_data(sym)
@@ -1115,45 +1187,65 @@ def main():
                 continue
 
             # --- SMART INDUSTRY/THEME SPLIT ---
-            yf_ind = info.get('industry', '')
+            comp_lower = nse_comp.lower()
             
             # 1. Railway Super-Theme (Overrides everything else)
             railway_tickers = ['IRFC', 'IRCTC', 'RVNL', 'IRCON', 'RITES', 'TITAGARH', 'TEXMACO', 'RAILTEL', 'JWL']
-            if sym in railway_tickers or 'Railway' in nse_comp:
+            if sym in railway_tickers or 'railway' in comp_lower:
                 nse_ind = 'Railways'
             
             # 2. Pharma vs Hospitals
             elif nse_ind == 'Healthcare':
-                if 'Drug' in yf_ind or 'Biotechnology' in yf_ind or 'Pharma' in nse_comp or 'Lab' in nse_comp:
-                    nse_ind = 'Pharma'
-                else:
+                hosp_tickers = ['APOLLOHOSP', 'ASTERDM', 'FORTIS', 'MEDANTA', 'KIMS', 'MAXHEALTH', 'NH', 'RAINBOW', 'VIJAYA', 'LALPATHLAB']
+                if sym in hosp_tickers or 'hospital' in comp_lower or 'diagnostic' in comp_lower or 'clinic' in comp_lower or 'medical center' in comp_lower:
                     nse_ind = 'Hospitals & Healthcare'
+                else:
+                    nse_ind = 'Pharma'
             
             # 3. Defense Split
             elif nse_ind == 'Capital Goods' or nse_ind == 'Services':
-                defense_keywords = ['Aerospace', 'Defense', 'Defence']
+                defense_keywords = ['aerospace', 'defense', 'defence']
                 defense_tickers = ['HAL', 'BEL', 'MAZDOCK', 'COCHINSHIP', 'BDL', 'BEML', 'DATAPATTNS', 'GRSE', 'PARAS', 'MTARTECH']
-                if any(kw in yf_ind for kw in defense_keywords) or any(kw in nse_comp for kw in defense_keywords) or sym in defense_tickers:
+                if any(kw in comp_lower for kw in defense_keywords) or sym in defense_tickers:
                     nse_ind = 'Defense'
                     
             # 4. Breaking up Financial Services (101 stocks is too many)
             elif nse_ind == 'Financial Services':
-                if 'Bank' in nse_comp or 'Banks -' in yf_ind:
+                if 'bank' in comp_lower or sym in ['AUBANK', 'FEDERALBNK', 'HDFCBANK', 'ICICIBANK', 'IDFCFIRSTB', 'INDIANB', 'IOB', 'KARURVYSYA', 'KOTAKBANK', 'PNB', 'RBLBANK', 'SBIN', 'UCOBANK', 'UNIONBANK', 'YESBANK', 'BANKBARODA', 'BANKINDIA', 'MAHABANK']:
                     nse_ind = 'Banks'
                 else:
                     nse_ind = 'NBFCs & Finance'
                     
             # 5. Specialty Chemicals vs Agrochemicals
             elif nse_ind == 'Chemicals':
-                agro_keywords = ['Agricultural', 'Fertilizer', 'Agri']
+                agro_keywords = ['agricultural', 'fertilizer', 'agri']
                 agro_tickers = ['CHAMBLFERT', 'FACT', 'COROMANDEL', 'GNFC', 'GSFC', 'RCF', 'UPL']
-                if any(kw in yf_ind for kw in agro_keywords) or sym in agro_tickers:
+                if any(kw in comp_lower for kw in agro_keywords) or sym in agro_tickers:
                     nse_ind = 'Agrochemicals & Fertilizers'
                 else:
                     nse_ind = 'Specialty Chemicals'
             # ----------------------------------
 
-            industry_group, parent_sector = get_industry_group(sym, nse_comp, nse_ind)
+            # Granular Industry-tab classification: feed get_industry_group() the
+            # ORIGINAL raw NSE industry (nse_ind_raw), not the broad-sector label
+            # above. Using the overridden label here was the bug — e.g. "NBFCs &
+            # Finance" doesn't contain "FINANCIAL"/"BANKS", so it skipped the
+            # entire Financials sub-split (PSU/Private Banks, Insurance, AMCs,
+            # Capital Markets) and every one of those 60+ stocks collapsed into a
+            # single generic bucket. Same issue hit Pharma (override "Pharma"
+            # doesn't contain "PHARMACEUTICALS"/"HEALTHCARE", so CDMO/Diagnostics/
+            # Medical Devices never split out) and Chemicals (Agro stocks merged
+            # into Specialty Chemicals).
+            industry_group, parent_sector = get_industry_group(sym, nse_comp, nse_ind_raw)
+
+            # Railways and Agrochemicals are thematic splits NSE's raw industry
+            # string can't reveal on its own (same ticker/keyword logic as the
+            # Sector-tab override above) — re-apply them here so the Industry tab
+            # stays aligned with the Sector tab for these two cases.
+            if nse_ind == 'Railways':
+                industry_group, parent_sector = 'Railways', 'Railways'
+            elif nse_ind == 'Agrochemicals & Fertilizers':
+                industry_group, parent_sector = 'Agrochemicals & Fertilizers', 'Materials'
 
             if nse_ind not in sector_stats:
                 sector_stats[nse_ind] = {'total': 0, 'vcp': 0, 'a20': 0, 'a50': 0, 'a200': 0}
@@ -1246,7 +1338,7 @@ def main():
     html_out = out_dir / 'vcp_scanner_results.html'
 
     print(f'\nGenerating HTML report...')
-    html = generate_html(results, scan_time, total, errors, rejects, sector_stats)
+    html = generate_html(results, scan_time, total, errors, rejects, sector_stats, industry_stats)
     html_out.write_text(html, encoding='utf-8')
     print(f'✅ HTML saved: {html_out}')
 

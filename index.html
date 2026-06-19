@@ -259,6 +259,21 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
   z-index: 10;
 }
 
+.scc-table-container {
+  overflow-x: auto;
+  overflow-y: auto;
+}
+.scc-table-container table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg2); /* obsidian glass surface */
+  z-index: 10;
+  box-shadow: inset 0 -1px 0 var(--border); /* keep bottom border line */
+}
+#srt-home-card.maximized .scc-table-container {
+  max-height: calc(100vh - 200px);
+}
+
 #brrg-canvas, #srt-rrg-canvas {
   margin: 0 auto !important;
 }
@@ -2074,7 +2089,7 @@ thead th[onclick]:hover {
             </div>
 
             <!-- Table -->
-            <div style="overflow-x:auto;padding:0 14px 4px">
+            <div class="scc-table-container" style="padding:0 14px 4px">
               <table style="width:100%;border-collapse:collapse">
                 <thead>
                   <tr style="border-bottom:1px solid var(--border)">
@@ -2113,18 +2128,6 @@ thead th[onclick]:hover {
 
         <!-- ── TAB: RRG ─────────────────────────────────── -->
         <div id="scc-pane-rrg" style="display:none">
-
-          <!-- RRG sub-tab bar -->
-          <div style="display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 14px">
-            <button id="rrg-sub-tab-breadth" onclick="rrgSubTab('breadth')"
-              style="font-size:10px;font-weight:700;padding:7px 12px;border:none;background:none;color:var(--teal);border-bottom:2px solid var(--teal);cursor:pointer;letter-spacing:.3px;text-transform:uppercase">
-              📶 Breadth RRG
-            </button>
-            <button id="rrg-sub-tab-price" onclick="rrgSubTab('price')"
-              style="font-size:10px;font-weight:600;padding:7px 12px;border:none;background:none;color:var(--dim);border-bottom:2px solid transparent;cursor:pointer;letter-spacing:.3px;text-transform:uppercase">
-              📡 Price RS RRG
-            </button>
-          </div>
 
           <!-- ── SUB-PANE: BREADTH RRG ─────────────────────── -->
           <div id="rrg-sub-breadth">
@@ -2238,77 +2241,7 @@ thead th[onclick]:hover {
 
           </div><!-- /rrg-sub-breadth -->
 
-          <!-- ── SUB-PANE: PRICE RS RRG ─────────────────────── -->
-          <div id="rrg-sub-price" style="display:none">
 
-            <div style="padding:10px 14px 6px">
-              <div style="font-size:9px;color:var(--purple);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">Price RS Relative Rotation Graph</div>
-              <div style="font-size:9px;color:var(--dim)">
-                X = RS-Ratio vs Nifty 50 · Y = RS-Momentum · Uses weekly sector close data from Control Panel → Sectors tab
-              </div>
-            </div>
-
-            <!-- Controls: Top N sectors -->
-            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:0 14px 4px">
-              <span style="font-size:9px;color:var(--dim);min-width:44px">Sectors:</span>
-              <button onclick="rrgAdjustTop(-1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">&#8722;</button>
-              <span id="rrg-top-display" style="font-size:10px;font-weight:600;color:var(--text);min-width:24px;text-align:center">8</span>
-              <button onclick="rrgAdjustTop(+1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">+</button>
-              <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
-              <button onclick="srtRRGSetTop(4)"  id="rrg-top-4"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">4</button>
-              <button onclick="srtRRGSetTop(8)"  id="rrg-top-8"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer">8</button>
-              <button onclick="srtRRGSetTop(12)" id="rrg-top-12" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12</button>
-              <button onclick="srtRRGSetTop(0)"  id="rrg-top-0"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">All</button>
-            </div>
-
-            <!-- Controls: Tail weeks + Filter + Animate -->
-            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:0 14px 6px">
-              <span style="font-size:9px;color:var(--dim);min-width:44px">Weeks:</span>
-              <button onclick="rrgAdjustTail(-1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">&#8722;</button>
-              <span id="rrg-tail-display" style="font-size:10px;font-weight:600;color:var(--purple);min-width:24px;text-align:center">8w</span>
-              <button onclick="rrgAdjustTail(+1)" style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">+</button>
-              <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
-              <button onclick="srtRRGSetTail(4)"  id="rrg-tail-4"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">4w</button>
-              <button onclick="srtRRGSetTail(8)"  id="rrg-tail-8"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--purple);color:#fff;cursor:pointer">8w</button>
-              <button onclick="srtRRGSetTail(12)" id="rrg-tail-12" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12w</button>
-              <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
-              <span style="font-size:9px;color:var(--dim)">Filter:</span>
-              <button onclick="srtRRGSetFilter('all')" id="rrg-f-all" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer">All</button>
-              <button onclick="srtRRGSetFilter('s2')"  id="rrg-f-s2"  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">S2</button>
-              <button onclick="srtRRGAnimate()" id="rrg-anim-btn" style="font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.1);color:var(--yellow);cursor:pointer;font-weight:600;margin-left:2px">&#9654; Play</button>
-            </div>
-
-            <!-- Sector highlight chips -->
-            <div id="rrg-sector-chips" style="display:flex;gap:4px;flex-wrap:wrap;padding:4px 14px 6px;background:var(--bg3);border-top:1px solid var(--border);border-bottom:1px solid var(--border);min-height:30px;align-items:center">
-              <span style="font-size:9px;color:var(--dim);margin-right:2px">Highlight:</span>
-            </div>
-
-            <!-- Animation bar -->
-            <div id="rrg-anim-bar-wrap" style="display:none;padding:6px 14px">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
-                <span id="rrg-anim-week-label" style="font-size:9px;color:var(--yellow);font-weight:600">Week 1</span>
-                <button onclick="srtRRGStopAnim()" style="font-size:9px;padding:1px 6px;border-radius:3px;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.1);color:var(--red);cursor:pointer">&#9632; Stop</button>
-              </div>
-              <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
-                <div id="rrg-anim-bar" style="height:100%;width:0%;background:var(--yellow);border-radius:2px;transition:width .25s"></div>
-              </div>
-            </div>
-
-            <!-- Canvas -->
-            <div style="padding:0 14px 4px;position:relative">
-              <canvas id="srt-rrg-canvas" style="width:100%;border-radius:6px;display:block"></canvas>
-            </div>
-
-            <!-- Legend -->
-            <div style="padding:6px 14px 10px;border-top:1px solid var(--border);font-size:9px;color:var(--dim);line-height:1.6">
-              <b style="color:var(--lime)">Leading</b> = strong &amp; improving &nbsp;
-              <b style="color:var(--accent)">Improving</b> = gaining momentum &nbsp;
-              <b style="color:var(--yellow)">Weakening</b> = slowing down &nbsp;
-              <b style="color:var(--red)">Lagging</b> = weak &amp; deteriorating<br>
-              Dot = current · tail = last N weeks · Clockwise rotation = bullish · Enter sector data via Control Panel → Sectors tab
-            </div>
-
-          </div><!-- /rrg-sub-price -->
 
         </div><!-- /pane-rrg -->
 
@@ -3877,365 +3810,12 @@ function srtBuildRow(s, i, opts) {
 let _rrgTailWeeks  = 8;   // default 8 weeks
 let _rrgFilter     = 'all';
 let _rrgTopN       = 8;   // default 8 sectors
-let _rrgSectorSel  = {};  // sector id -> true/false highlight override (empty = show all)
-let _rrgAnimTimer  = null;
-let _rrgAnimStep   = 0;
-
-// ── +/− adjusters ────────────────────────────────────────────────────────
-function rrgAdjustTop(delta) {
-  const sectors = srtLoad().filter(s => s.id !== 'NIFTY50');
-  const total   = sectors.length;
-  // 0 = All means total; treat that specially
-  let cur = _rrgTopN === 0 ? total : _rrgTopN;
-  cur = Math.max(1, Math.min(total, cur + delta));
-  if (cur >= total) cur = 0;   // wrap back to All
-  srtRRGSetTop(cur);
-}
-
-function rrgAdjustTail(delta) {
-  const next = Math.max(1, Math.min(52, _rrgTailWeeks + delta));
-  srtRRGSetTail(next);
-}
-
-function srtRRGSetTop(n) {
-  _rrgTopN = n;
-  // Update +/- display
-  const disp = document.getElementById('rrg-top-display');
-  if (disp) disp.textContent = n === 0 ? 'All' : n;
-  // Update preset buttons
-  [4, 8, 12, 0].forEach(v => {
-    const b = document.getElementById('rrg-top-' + v);
-    if (!b) return;
-    const active = v === n;
-    b.style.background  = active ? 'var(--accent)' : 'transparent';
-    b.style.color       = active ? '#000' : 'var(--dim)';
-    b.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
-  });
-  rrgRebuildChips();
-  srtDrawRRG();
-}
-
 // Sector colours for RRG dots/tails
 const RRG_COLORS = [
   '#4ade80','#5ba3f5','#fbbf24','#f87171','#a78bfa',
   '#2dd4bf','#fb923c','#e879f9','#34d399','#60a5fa',
   '#f472b6','#facc15','#94a3b8'
 ];
-
-function srtRRGSetTail(n) {
-  _rrgTailWeeks = n;
-  const disp = document.getElementById('rrg-tail-display');
-  if (disp) disp.textContent = n + 'w';
-  [4,8,12].forEach(w => {
-    const b = document.getElementById('rrg-tail-' + w);
-    if (b) { b.style.background = w===n ? 'var(--purple)' : 'transparent'; b.style.color = w===n ? '#fff' : 'var(--dim)'; }
-  });
-  srtDrawRRG();
-}
-
-function srtRRGSetFilter(f) {
-  _rrgFilter = f;
-  ['all','s2'].forEach(k => {
-    const b = document.getElementById('rrg-f-' + k);
-    if (b) { b.style.background = k===f ? 'var(--accent)' : 'transparent'; b.style.color = k===f ? '#000' : 'var(--dim)'; b.style.borderColor = k===f ? 'var(--accent)' : 'var(--border)'; }
-  });
-  _rrgSectorSel = {};  // reset individual selection when filter changes
-  rrgRebuildChips();
-  srtDrawRRG();
-}
-
-// ── Sector chip selector ──────────────────────────────────────────────────
-function rrgRebuildChips() {
-  const wrap = document.getElementById('rrg-sector-chips');
-  if (!wrap) return;
-  // Remove old chips (keep the label span)
-  const chips = wrap.querySelectorAll('.rrg-chip');
-  chips.forEach(c => c.remove());
-
-  const sectors = srtLoad().filter(s => s.id !== 'NIFTY50');
-  const stageF  = _rrgFilter === 's2' ? sectors.filter(s => s.stage === 'S2') : sectors;
-  const topF    = _rrgTopN > 0
-    ? [...stageF].sort((a,b) => (b.vs20||0) - (a.vs20||0)).slice(0, _rrgTopN)
-    : stageF;
-
-  topF.forEach((s, ci) => {
-    const color = RRG_COLORS[ci % RRG_COLORS.length];
-    const sel   = _rrgSectorSel[s.id];     // undefined = all shown; true = highlighted; false = hidden
-    const chip  = document.createElement('button');
-    chip.className = 'rrg-chip';
-    chip.textContent = s.name;
-    chip.title = 'Click: highlight · Right-click: hide/show';
-    chip.style.cssText = `font-size:9px;padding:2px 7px;border-radius:10px;border:1.5px solid ${color};cursor:pointer;font-weight:600;transition:all .15s;` +
-      (sel === false
-        ? `background:transparent;color:var(--dim);opacity:.4;border-style:dashed`
-        : sel === true
-        ? `background:${color};color:#0e1420`
-        : `background:rgba(0,0,0,.2);color:${color}`);
-
-    chip.addEventListener('click', () => {
-      const cur = _rrgSectorSel[s.id];
-      // cycle: undefined → true (highlight) → undefined (normal)
-      _rrgSectorSel[s.id] = cur === true ? undefined : true;
-      rrgRebuildChips();
-      srtDrawRRG();
-    });
-    chip.addEventListener('contextmenu', e => {
-      e.preventDefault();
-      const cur = _rrgSectorSel[s.id];
-      _rrgSectorSel[s.id] = cur === false ? undefined : false;
-      rrgRebuildChips();
-      srtDrawRRG();
-    });
-    wrap.appendChild(chip);
-  });
-
-  // "Clear" link if any selection active
-  const hasAny = Object.keys(_rrgSectorSel).some(k => _rrgSectorSel[k] !== undefined);
-  if (hasAny) {
-    const clr = document.createElement('button');
-    clr.className = 'rrg-chip';
-    clr.textContent = '✕ Clear';
-    clr.style.cssText = 'font-size:9px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);cursor:pointer;color:var(--dim);background:transparent;';
-    clr.addEventListener('click', () => { _rrgSectorSel = {}; rrgRebuildChips(); srtDrawRRG(); });
-    wrap.appendChild(clr);
-  }
-}
-
-// ── Animation ─────────────────────────────────────────────────────────────
-function srtRRGAnimate() {
-  if (_rrgAnimTimer !== null) { srtRRGStopAnim(); return; }
-  const barWrap = document.getElementById('rrg-anim-bar-wrap');
-  const animBtn = document.getElementById('rrg-anim-btn');
-  if (barWrap) barWrap.style.display = 'block';
-  if (animBtn) { animBtn.textContent = '⏸ Pause'; animBtn.style.color = 'var(--yellow)'; }
-
-  // Precompute: gather all series, find minimum points across sectors
-  const sectors = srtLoad().filter(s => s.id !== 'NIFTY50');
-  const stageF  = _rrgFilter === 's2' ? sectors.filter(s => s.stage === 'S2') : sectors;
-  const topF    = _rrgTopN > 0
-    ? [...stageF].sort((a,b) => (b.vs20||0) - (a.vs20||0)).slice(0, _rrgTopN)
-    : stageF;
-  const allSeries = topF.map(s => rrgComputeSeries(s)).filter(p => p.length >= 2);
-  if (!allSeries.length) { srtRRGStopAnim(); return; }
-
-  const totalPts = Math.max(...allSeries.map(p => p.length));
-  // Start from max(1, totalPts - _rrgTailWeeks) to "build up" tail
-  const startIdx = Math.max(1, totalPts - _rrgTailWeeks);
-  let step = startIdx;
-
-  _rrgAnimStep = step;
-
-  _rrgAnimTimer = setInterval(() => {
-    if (step > totalPts) { srtRRGStopAnim(); return; }
-
-    // Update progress bar + label
-    const pct = Math.round(((step - startIdx) / (totalPts - startIdx)) * 100);
-    const bar = document.getElementById('rrg-anim-bar');
-    const lbl = document.getElementById('rrg-anim-week-label');
-    if (bar) bar.style.width = pct + '%';
-    if (lbl) lbl.textContent = 'Week ' + step + ' / ' + totalPts;
-
-    // Draw with tail capped at step
-    srtDrawRRG(step);
-    step++;
-    _rrgAnimStep = step;
-  }, 500);
-}
-
-function srtRRGStopAnim() {
-  if (_rrgAnimTimer !== null) { clearInterval(_rrgAnimTimer); _rrgAnimTimer = null; }
-  const barWrap = document.getElementById('rrg-anim-bar-wrap');
-  const animBtn = document.getElementById('rrg-anim-btn');
-  if (barWrap) barWrap.style.display = 'none';
-  if (animBtn) { animBtn.textContent = '▶ Play'; animBtn.style.color = 'var(--yellow)'; }
-  srtDrawRRG();   // redraw with full tail
-}
-
-// Compute EMA of an array
-function rrgEMA(arr, period) {
-  if (!arr.length) return [];
-  const k = 2 / (period + 1);
-  const out = [arr[0]];
-  for (let i = 1; i < arr.length; i++) out.push(arr[i] * k + out[i-1] * (1-k));
-  return out;
-}
-
-// Build RS-Ratio and RS-Momentum series for one sector
-// Returns array of {date, rsRatio, rsMom} — one per week
-function rrgComputeSeries(sector) {
-  const h = sector.history;
-  if (!h || h.length < 3) return [];
-
-  const validH = h.filter(e => e.close && e.niftyClose);
-  if (validH.length < 3) return [];
-
-  const ratios = validH.map(e => e.close / e.niftyClose);
-  const base   = ratios[0];
-  const normRatios = ratios.map(r => (r / base) * 100);
-
-  const smoothed = rrgEMA(normRatios, 10);
-  const result = smoothed.map((rs, i) => {
-    const mom = i > 0 ? (smoothed[i] / smoothed[i-1]) * 100 : 100;
-    return { date: validH[i].date, rsRatio: rs, rsMom: mom };
-  });
-  return result;
-}
-
-// animUpTo: if set, only show series up to that index (for animation)
-function srtDrawRRG(animUpTo) {
-  const canvas = document.getElementById('srt-rrg-canvas');
-  if (!canvas) return;
-
-  const isMaximized = document.getElementById('srt-home-card')?.classList.contains('maximized');
-  const parentWidth = canvas.parentElement.offsetWidth || 340;
-  let W = parentWidth;
-  let H = Math.round(W * 0.82);
-
-  if (isMaximized) {
-    const maxH = Math.max(300, window.innerHeight - 280); // headers, tabs, controls, legend
-    if (H > maxH) {
-      H = maxH;
-      W = Math.round(H / 0.82);
-    }
-  }
-
-  canvas.width  = W * window.devicePixelRatio;
-  canvas.height = H * window.devicePixelRatio;
-  canvas.style.width  = W + 'px';
-  canvas.style.height = H + 'px';
-  const ctx = canvas.getContext('2d');
-  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-
-  const sectors    = srtLoad().filter(s => s.id !== 'NIFTY50');
-  const stageFiltered = _rrgFilter === 's2' ? sectors.filter(s => s.stage === 'S2') : sectors;
-  const topFiltered   = _rrgTopN > 0
-    ? [...stageFiltered].sort((a,b) => (b.vs20||0) - (a.vs20||0)).slice(0, _rrgTopN)
-    : stageFiltered;
-
-  // Determine which sectors are highlighted / hidden
-  const anyHighlighted = Object.values(_rrgSectorSel).some(v => v === true);
-
-  const seriesAll = topFiltered.map((s, ci) => {
-    const hidden      = _rrgSectorSel[s.id] === false;
-    const highlighted = anyHighlighted ? _rrgSectorSel[s.id] === true : true;
-    let pts = rrgComputeSeries(s);
-    if (animUpTo !== undefined) pts = pts.slice(0, animUpTo);
-    return {
-      sector: s,
-      color:  RRG_COLORS[ci % RRG_COLORS.length],
-      points: pts,
-      hidden,
-      highlighted
-    };
-  }).filter(s => !s.hidden && s.points.length >= 2);
-
-  // Axis bounds from tail
-  const tailPoints = seriesAll.map(s => s.points.slice(-(_rrgTailWeeks + 1)));
-  const allX = tailPoints.flat().map(p => p.rsRatio);
-  const allY = tailPoints.flat().map(p => p.rsMom);
-  if (!allX.length) {
-    ctx.font = '12px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.textAlign = 'center';
-    ctx.fillText('Not enough history — need 3+ weeks per sector', W/2, H/2);
-    return;
-  }
-
-  const padX = Math.max(3, Math.max(...allX.map(x => Math.abs(x-100))) + 1.5);
-  const padY = Math.max(2, Math.max(...allY.map(y => Math.abs(y-100))) + 1);
-  const xMin = 100 - padX, xMax = 100 + padX;
-  const yMin = 100 - padY, yMax = 100 + padY;
-
-  const PAD = { l: 28, r: 12, t: 12, b: 22 };
-  const cW  = W - PAD.l - PAD.r;
-  const cH  = H - PAD.t - PAD.b;
-  const toX = v => PAD.l + ((v - xMin) / (xMax - xMin)) * cW;
-  const toY = v => PAD.t + ((yMax - v) / (yMax - yMin)) * cH;
-  const cx  = toX(100), cy = toY(100);
-
-  // Background quadrants
-  const Q = [
-    { x: PAD.l, y: PAD.t, w: cx-PAD.l,   h: cy-PAD.t,   color:'rgba(91,163,245,.07)',  label:'Improving', lx: PAD.l+6, ly: PAD.t+14, lc:'#5ba3f5' },
-    { x: cx,    y: PAD.t, w: W-PAD.r-cx, h: cy-PAD.t,   color:'rgba(74,222,128,.07)',  label:'Leading',   lx: cx+6,    ly: PAD.t+14, lc:'#4ade80' },
-    { x: PAD.l, y: cy,    w: cx-PAD.l,   h: H-PAD.b-cy, color:'rgba(248,113,113,.07)', label:'Lagging',   lx: PAD.l+6, ly: cy+14,    lc:'#f87171' },
-    { x: cx,    y: cy,    w: W-PAD.r-cx, h: H-PAD.b-cy, color:'rgba(251,191,36,.07)',  label:'Weakening', lx: cx+6,    ly: cy+14,    lc:'#fbbf24' },
-  ];
-  Q.forEach(q => {
-    ctx.fillStyle = q.color; ctx.fillRect(q.x, q.y, q.w, q.h);
-    ctx.font = 'bold 9px sans-serif'; ctx.fillStyle = q.lc;
-    ctx.globalAlpha = 0.7; ctx.fillText(q.label, q.lx, q.ly); ctx.globalAlpha = 1;
-  });
-
-  // Grid lines
-  ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 1;
-  for (let v = Math.ceil(xMin); v <= xMax; v++) {
-    const x = toX(v); ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, H-PAD.b); ctx.stroke();
-  }
-  for (let v = Math.ceil(yMin*2)/2; v <= yMax; v += 0.5) {
-    const y = toY(v); ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(W-PAD.r, y); ctx.stroke();
-  }
-
-  // Centre axes
-  ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
-  ctx.beginPath(); ctx.moveTo(cx, PAD.t); ctx.lineTo(cx, H-PAD.b); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(PAD.l, cy); ctx.lineTo(W-PAD.r, cy); ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Axis labels
-  ctx.font = '8px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.textAlign = 'center';
-  ctx.fillText('RS-Ratio \u2192', W/2, H - 4);
-  ctx.save(); ctx.translate(10, H/2); ctx.rotate(-Math.PI/2);
-  ctx.fillText('RS-Momentum \u2191', 0, 0); ctx.restore();
-
-  // Draw sectors (dim non-highlighted when any are highlighted)
-  seriesAll.forEach(({ sector, color, points, highlighted }) => {
-    const tail    = points.slice(-(_rrgTailWeeks + 1));
-    if (tail.length < 2) return;
-    const dimmed  = anyHighlighted && !highlighted;
-    const opacity = dimmed ? 0.18 : 1;
-
-    // Tail line
-    ctx.beginPath();
-    tail.forEach((p, i) => {
-      const px = toX(p.rsRatio), py = toY(p.rsMom);
-      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-    });
-    ctx.strokeStyle = color; ctx.lineWidth = dimmed ? 1 : 1.5;
-    ctx.globalAlpha = dimmed ? 0.18 : 0.45; ctx.stroke(); ctx.globalAlpha = 1;
-
-    // Tail dots (small, fading)
-    tail.slice(0, -1).forEach((p, i) => {
-      const px = toX(p.rsRatio), py = toY(p.rsMom);
-      const alpha = (0.2 + (i / tail.length) * 0.5) * opacity;
-      ctx.beginPath(); ctx.arc(px, py, 2.5, 0, Math.PI*2);
-      ctx.fillStyle = color; ctx.globalAlpha = alpha; ctx.fill(); ctx.globalAlpha = 1;
-    });
-
-    // Current dot (larger, with ring for highlighted)
-    const cur = tail[tail.length-1];
-    const dx = toX(cur.rsRatio), dy = toY(cur.rsMom);
-    ctx.globalAlpha = opacity;
-    if (highlighted && anyHighlighted) {
-      ctx.beginPath(); ctx.arc(dx, dy, 8, 0, Math.PI*2);
-      ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.4; ctx.stroke();
-      ctx.globalAlpha = opacity;
-    }
-    ctx.beginPath(); ctx.arc(dx, dy, 5, 0, Math.PI*2);
-    ctx.fillStyle = color; ctx.fill();
-    ctx.strokeStyle = '#0d1520'; ctx.lineWidth = 1.5; ctx.stroke();
-    ctx.globalAlpha = 1;
-
-    // Label
-    ctx.font = highlighted && anyHighlighted ? 'bold 10px sans-serif' : 'bold 9px sans-serif';
-    ctx.fillStyle = color; ctx.globalAlpha = opacity;
-    ctx.textAlign = dx > W*0.7 ? 'right' : 'left';
-    ctx.fillText(SRT_SHORT[sector.name] || sector.name, dx + (dx > W*0.7 ? -7 : 7), dy + 3);
-    ctx.globalAlpha = 1;
-  });
-
-  if (!seriesAll.length) {
-    ctx.font = '12px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.textAlign = 'center';
-    ctx.fillText('Not enough history \u2014 need 3+ weeks per sector', W/2, H/2);
-  }
-}
 
 // ════════════════════════════════════════════════════════════════════════
 //  SECTOR LEADERSHIP HEATMAP
@@ -4422,22 +4002,6 @@ function slhRender() {
 //  SECTOR COMMAND CENTRE — tab switcher
 // ════════════════════════════════════════════════════════════════════════
 // ── RRG sub-tab switcher ──────────────────────────────────────────────────
-function rrgSubTab(tab) {
-  ['breadth','price'].forEach(t => {
-    const btn  = document.getElementById('rrg-sub-tab-' + t);
-    const pane = document.getElementById('rrg-sub-' + t);
-    const active = t === tab;
-    if (btn) {
-      btn.style.color        = active ? 'var(--teal)' : 'var(--dim)';
-      btn.style.borderBottom = active ? '2px solid var(--teal)' : '2px solid transparent';
-      btn.style.fontWeight   = active ? '700' : '600';
-    }
-    if (pane) pane.style.display = active ? 'block' : 'none';
-  });
-  if (tab === 'breadth') { setTimeout(() => { brrgRebuildChips(); brrgDraw(); }, 50); }
-  if (tab === 'price')   setTimeout(() => { rrgRebuildChips(); srtDrawRRG(); }, 50);
-}
-
 function sccTab(tab) {
   const colors = { breadth: 'var(--teal)', rrg: 'var(--purple)', heatmap: 'var(--teal)', chart: 'var(--teal)' };
   ['breadth','rrg','heatmap','chart'].forEach(t => {
@@ -4461,7 +4025,7 @@ function sccTab(tab) {
     }
   }
   
-  if (tab === 'rrg')     { setTimeout(() => { rrgSubTab('breadth'); brrgRebuildChips(); brrgDraw(); }, 50); }
+  if (tab === 'rrg')     { setTimeout(() => { brrgRebuildChips(); brrgDraw(); }, 50); }
   if (tab === 'heatmap') setTimeout(() => slhRender(), 50);
   if (tab === 'chart')   setTimeout(() => sccChartRebuildGrid(), 50);
 }
@@ -4495,12 +4059,7 @@ function toggleMaximizeSectorCommand() {
   const isChartActive = document.getElementById('scc-pane-chart') && document.getElementById('scc-pane-chart').style.display !== 'none';
 
   if (isRrgActive) {
-    const isPriceActive = document.getElementById('rrg-sub-price').style.display !== 'none';
-    if (isPriceActive) {
-      setTimeout(() => { if (typeof srtDrawRRG === 'function') srtDrawRRG(); }, 80);
-    } else {
-      setTimeout(() => { if (typeof brrgDraw === 'function') brrgDraw(); }, 80);
-    }
+    setTimeout(() => { if (typeof brrgDraw === 'function') brrgDraw(); }, 80);
   } else if (isHeatmapActive) {
     setTimeout(() => { if (typeof slhRender === 'function') slhRender(); }, 80);
   } else if (isChartActive) {
@@ -6730,134 +6289,245 @@ const AEROSPACE_DEFENCE_TICKERS = new Set(['HAL', 'BEL', 'BDL', 'ASTRAMICRO', 'P
 const SHIPBUILDING_TICKERS = new Set(['MAZDOCK', 'COCHINSHIP', 'GRSE']);
 const EMS_TICKERS = new Set(['DIXON', 'KAYNES', 'SYRMA', 'AVALON']);
 const DATA_CENTERS_TICKERS = new Set(['NETWEB', 'ANANTRAJ']);
+const RAILWAY_TICKERS = new Set(['IRFC', 'IRCTC', 'RVNL', 'IRCON', 'RITES', 'TITAGARH', 'TEXMACO', 'RAILTEL', 'JWL']);
+const AGRO_TICKERS = new Set(['CHAMBLFERT', 'FACT', 'COROMANDEL', 'GNFC', 'GSFC', 'RCF', 'UPL']);
 
-function csvIndustryMap(symbol, company, industry) {
+function getMsIndustryMapping(symbol, company, industry) {
   const sym = symbol.toUpperCase().replace('.NS', '');
   const comp = company.toUpperCase();
   const ind = industry.toUpperCase();
   
+  // 0. Railways
+  if (RAILWAY_TICKERS.has(sym) || comp.includes('RAILWAY')) {
+    return { industryGroup: "Transportation-Rail IN", parentSector: "Railways" };
+  }
+
+  // 0.5. Defense / Aerospace
+  if (AEROSPACE_DEFENCE_TICKERS.has(sym) || ["AEROSPACE", "DEFENCE", "DEFENSE", "DYNAMICS"].some(x => comp.includes(x))) {
+    return { industryGroup: "Aerospace/Defense IN", parentSector: "Defense" };
+  }
+
   // 1. Financials
   if (ind.includes("FINANCIAL") || ind.includes("BANKS")) {
     if (PSU_BANKS_TICKERS.has(sym) || ["STATE BANK", "PUNJAB NATIONAL", "BANK OF BARODA", "CANARA", "UNION BANK", "INDIAN BANK", "UCO BANK", "BANK OF INDIA", "MAHARASHTRA", "CENTRAL BANK", "OVERSEAS", "SHUBH", "PSU"].some(x => comp.includes(x))) {
-      return "PSU Banks";
+      return { industryGroup: "Banks-Money Center IN", parentSector: "Banks" };
     }
     if (PRIVATE_BANKS_TICKERS.has(sym) || ["HDFC BANK", "ICICI BANK", "KOTAK", "AXIS", "INDUSIND", "FEDERAL", "IDFC FIRST", "BANDHAN", "YES BANK", "CITY UNION", "KARUR VYSYA", "RBL", "SOUTH INDIAN", "CSB BANK", "AU SMALL"].some(x => comp.includes(x))) {
-      return "Private Banks";
+      return { industryGroup: "Banks-Money Center IN", parentSector: "Banks" };
     }
     if (INSURANCE_TICKERS.has(sym) || ["INSURANCE", "LIFE", "GENERAL INS", "ASSURANCE", "MAX FINANCIAL"].some(x => comp.includes(x))) {
-      return "Insurance";
+      return { industryGroup: "Insurance-Life IN", parentSector: "NBFCs & Finance" };
     }
     if (AMC_TICKERS.has(sym) || ["AMC", "MUTUAL FUND", "ASSET MANAGEMENT", "NIPPON LIFE"].some(x => comp.includes(x))) {
-      return "AMCs";
+      return { industryGroup: "Finance-Investment Mgmt IN", parentSector: "NBFCs & Finance" };
     }
     if (CAPITAL_MARKETS_TICKERS.has(sym) || ind.includes("CAPITAL MARKETS") || ["CDSL", "BSE", "MCX", "CAMS", "KFIN", "ANGEL ONE", "SECURITIES", "WEALTH", "BROKING", "INVESTMENT"].some(x => comp.includes(x))) {
-      return "Capital Markets";
+      return { industryGroup: "Finance-Invest Bnk/Bkrs IN", parentSector: "NBFCs & Finance" };
     }
-    return "NBFCs";
+    return { industryGroup: "Finance-Consumer Loans IN", parentSector: "NBFCs & Finance" };
   }
 
   // 2. Industrials
   if (ind.includes("CAPITAL GOODS") || ind.includes("INDUSTRIAL") || ind.includes("MACHINERY")) {
     if (AEROSPACE_DEFENCE_TICKERS.has(sym) || ["AEROSPACE", "DEFENCE", "DEFENSE", "DYNAMICS"].some(x => comp.includes(x))) {
-      if (comp.includes("AERO") || sym.includes("AERO")) return "Aerospace";
-      return "Defence";
+      return { industryGroup: "Aerospace/Defense IN", parentSector: "Defense" };
     }
     if (SHIPBUILDING_TICKERS.has(sym) || ["SHIPYARD", "SHIPBUILD", "MAZAGON"].some(x => comp.includes(x))) {
-      return "Shipbuilding";
+      return { industryGroup: "Transportation-Ship IN", parentSector: "Defense" };
     }
     if (CABLES_TICKERS.has(sym) || ["CABLE", "RR KABEL"].some(x => comp.includes(x))) {
-      return "Cables";
+      return { industryGroup: "Electrical-Power/Equipmt IN", parentSector: "Capital Goods" };
     }
     if (TRANSFORMERS_TICKERS.has(sym) || ["TRANSFORMER", "SCHNEIDER"].some(x => comp.includes(x))) {
-      return "Transformers";
+      return { industryGroup: "Electrical-Power/Equipmt IN", parentSector: "Capital Goods" };
     }
     if (BEARINGS_TICKERS.has(sym) || comp.includes("BEARING")) {
-      return "Bearings";
+      return { industryGroup: "Machinery-Gen Industrial IN", parentSector: "Capital Goods" };
     }
     if (COMPRESSORS_TICKERS.has(sym) || ["COMPRESSOR", "PNEUMATIC"].some(x => comp.includes(x))) {
-      return "Compressors";
+      return { industryGroup: "Machinery-Gen Industrial IN", parentSector: "Capital Goods" };
     }
     if (HVAC_TICKERS.has(sym) || ["VOLTAS", "BLUE STAR"].some(x => comp.includes(x))) {
-      return "HVAC";
+      return { industryGroup: "Bldg-A/C &amp; Heating Prds IN", parentSector: "Capital Goods" };
     }
     if (comp.includes("AUTOMATION") || comp.includes("HONEYWELL")) {
-      return "Automation";
+      return { industryGroup: "Machinery-Gen Industrial IN", parentSector: "Capital Goods" };
     }
-    return "Industrial Machinery";
+    return { industryGroup: "Machinery-Gen Industrial IN", parentSector: "Capital Goods" };
   }
 
   // 3. Materials
   if (ind.includes("METALS & MINING") || ind.includes("METALS") || ind.includes("MINING") || ind.includes("MATERIALS")) {
-    if (COPPER_TICKERS.has(sym) || comp.includes("COPPER")) return "Copper";
-    if (ALUMINIUM_TICKERS.has(sym) || comp.includes("ALUMINIUM") || comp.includes("NALCO")) return "Aluminium";
-    if (MINING_TICKERS.has(sym) || ind.includes("MINING") || ["COAL INDIA", "NMDC", "GMDC"].some(x => comp.includes(x))) return "Mining";
-    if (STEEL_TICKERS.has(sym) || ["STEEL", "PIPE", "APOLLO TUBES", "WELSPUN CORP"].some(x => comp.includes(x))) return "Steel";
-    return "Materials";
+    if (COPPER_TICKERS.has(sym) || comp.includes("COPPER")) {
+      return { industryGroup: "Mining-Metal Ores IN", parentSector: "Metals & Mining" };
+    }
+    if (ALUMINIUM_TICKERS.has(sym) || comp.includes("ALUMINIUM") || comp.includes("NALCO")) {
+      return { industryGroup: "Mining-Metal Ores IN", parentSector: "Metals & Mining" };
+    }
+    if (MINING_TICKERS.has(sym) || ind.includes("MINING") || ["COAL INDIA", "NMDC", "GMDC"].some(x => comp.includes(x))) {
+      return { industryGroup: "Mining-Metal Ores IN", parentSector: "Metals & Mining" };
+    }
+    if (STEEL_TICKERS.has(sym) || ["STEEL", "PIPE", "APOLLO TUBES", "WELSPUN CORP"].some(x => comp.includes(x))) {
+      return { industryGroup: "Steel-Producers IN", parentSector: "Metals & Mining" };
+    }
+    return { industryGroup: "Metal Proc &amp; Fabrication IN", parentSector: "Metals & Mining" };
   }
 
   if (ind.includes("CHEMICALS")) {
-    if (EXPLOSIVES_TICKERS.has(sym) || ["EXPLOSIVE", "SOLAR IND"].some(x => comp.includes(x))) return "Explosives";
-    if (DYES_PIGMENTS_TICKERS.has(sym) || ["DYE", "PIGMENT", "SUDARSHAN"].some(x => comp.includes(x))) {
-      if (comp.includes("DYE") || sym.includes("DYE")) return "Dyes";
-      return "Pigments";
+    if (["AGRICULTURAL", "FERTILIZER", "AGRI"].some(x => comp.includes(x)) || AGRO_TICKERS.has(sym)) {
+      return { industryGroup: "Chemicals-Agricultural IN", parentSector: "Agrochemicals & Fertilizers" };
     }
-    return "Specialty Chemicals";
+    if (EXPLOSIVES_TICKERS.has(sym) || ["EXPLOSIVE", "SOLAR IND"].some(x => comp.includes(x))) {
+      return { industryGroup: "Chemicals-Specialty IN", parentSector: "Specialty Chemicals" };
+    }
+    if (DYES_PIGMENTS_TICKERS.has(sym) || ["DYE", "PIGMENT", "SUDARSHAN"].some(x => comp.includes(x))) {
+      return { industryGroup: "Chemicals-Specialty IN", parentSector: "Specialty Chemicals" };
+    }
+    return { industryGroup: "Chemicals-Specialty IN", parentSector: "Specialty Chemicals" };
   }
 
   // 4. Energy
   if (ind.includes("POWER") || ind.includes("OIL GAS") || ind.includes("ENERGY")) {
-    if (GAS_TRADING_TICKERS.has(sym) || comp.includes("GAIL") || comp.includes("GSPL")) return "Gas Trading";
-    if (CGD_TICKERS.has(sym) || ["GUJARAT GAS", "INDRAPRASTHA GAS", "MAHANAGAR GAS", "ADANI TOTAL"].some(x => comp.includes(x))) return "CGD";
-    if (SOLAR_TICKERS.has(sym) || ["SOLAR", "ADANI GREEN", "WAAREE"].some(x => comp.includes(x))) return "Solar";
-    if (POWER_EQUIP_TICKERS.has(sym) || ["SUZLON", "WIND", "BHEL", "GET&D"].some(x => comp.includes(x))) return "Power Equipment";
-    return "Renewables";
+    if (GAS_TRADING_TICKERS.has(sym) || comp.includes("GAIL") || comp.includes("GSPL")) {
+      return { industryGroup: "Utility-Gas Distribution IN", parentSector: "Oil Gas & Consumable Fuels" };
+    }
+    if (CGD_TICKERS.has(sym) || ["GUJARAT GAS", "INDRAPRASTHA GAS", "MAHANAGAR GAS", "ADANI TOTAL"].some(x => comp.includes(x))) {
+      return { industryGroup: "Utility-Gas Distribution IN", parentSector: "Oil Gas & Consumable Fuels" };
+    }
+    if (SOLAR_TICKERS.has(sym) || ["SOLAR", "ADANI GREEN", "WAAREE"].some(x => comp.includes(x))) {
+      return { industryGroup: "Energy-Solar IN", parentSector: "Power" };
+    }
+    if (POWER_EQUIP_TICKERS.has(sym) || ["SUZLON", "WIND", "BHEL", "GET&D"].some(x => comp.includes(x))) {
+      return { industryGroup: "Electrical-Power/Equipmt IN", parentSector: "Power" };
+    }
+    return { industryGroup: "Energy-Alternative/Other IN", parentSector: "Power" };
   }
 
   // 5. Healthcare
   if (ind.includes("HEALTHCARE") || ind.includes("PHARMACEUTICALS")) {
-    if (CDMO_TICKERS.has(sym) || ["CDMO", "DIVI'S", "SYNGENE", "LAURUS"].some(x => comp.includes(x))) return "CDMO";
-    if (DIAGNOSTICS_TICKERS.has(sym) || ["DIAGNOSTIC", "LAL PATH", "METROPOLIS"].some(x => comp.includes(x))) return "Diagnostics";
-    if (MEDICAL_DEVICES_TICKERS.has(sym) || ["MEDICURE", "DEVICE"].some(x => comp.includes(x))) return "Medical Devices";
-    if (["PHARMA", "LAB", "BIOTECH", "DRUG", "MEDICINE"].some(x => comp.includes(x))) return "Pharma";
-    return "Hospitals";
+    if (CDMO_TICKERS.has(sym) || ["CDMO", "DIVI'S", "SYNGENE", "LAURUS"].some(x => comp.includes(x))) {
+      return { industryGroup: "Medical-Biomed/Biotech IN", parentSector: "Pharma" };
+    }
+    if (DIAGNOSTICS_TICKERS.has(sym) || ["DIAGNOSTIC", "LAL PATH", "METROPOLIS"].some(x => comp.includes(x))) {
+      return { industryGroup: "Medical-Services IN", parentSector: "Hospitals & Healthcare" };
+    }
+    if (MEDICAL_DEVICES_TICKERS.has(sym) || ["MEDICURE", "DEVICE"].some(x => comp.includes(x))) {
+      return { industryGroup: "Medical-Products IN", parentSector: "Hospitals & Healthcare" };
+    }
+    if (["PHARMA", "LAB", "BIOTECH", "DRUG", "MEDICINE"].some(x => comp.includes(x))) {
+      return { industryGroup: "Medical-Generic Drugs IN", parentSector: "Pharma" };
+    }
+    return { industryGroup: "Medical-Hospitals IN", parentSector: "Hospitals & Healthcare" };
   }
 
   // 6. Auto
   if (ind.includes("AUTO") || ind.includes("VEHICLE")) {
-    if (TYRES_TICKERS.has(sym) || ["TYRE", "CEAT", "MRF"].some(x => comp.includes(x))) return "Tyres";
-    if (EV_COMPONENTS_TICKERS.has(sym) || ["EV", "SONA BLW", "MINDA"].some(x => comp.includes(x))) return "EV Components";
-    if (BATTERIES_TICKERS.has(sym) || ["BATTERY", "EXIDE", "AMARA RAJA"].some(x => comp.includes(x))) return "Batteries";
-    if (TRACTORS_TICKERS.has(sym) || comp.includes("TRACTOR")) return "Tractors";
-    if (COMMERCIAL_VEH_TICKERS.has(sym) || ["ASHOK LEYLAND", "COMMERCIAL VEHICLE"].some(x => comp.includes(x))) return "Commercial Vehicles";
-    return "Passenger Vehicles";
+    if (TYRES_TICKERS.has(sym) || ["TYRE", "CEAT", "MRF"].some(x => comp.includes(x))) {
+      return { industryGroup: "Auto/Truck-Tires &amp; Misc  IN", parentSector: "Automobile and Auto Components" };
+    }
+    if (EV_COMPONENTS_TICKERS.has(sym) || ["EV", "SONA BLW", "MINDA"].some(x => comp.includes(x))) {
+      return { industryGroup: "Auto/Truck-Original Eqp IN", parentSector: "Automobile and Auto Components" };
+    }
+    if (BATTERIES_TICKERS.has(sym) || ["BATTERY", "EXIDE", "AMARA RAJA"].some(x => comp.includes(x))) {
+      return { industryGroup: "Auto/Truck-Replace Parts IN", parentSector: "Automobile and Auto Components" };
+    }
+    if (TRACTORS_TICKERS.has(sym) || comp.includes("TRACTOR")) {
+      return { industryGroup: "Machinery-Farm IN", parentSector: "Automobile and Auto Components" };
+    }
+    if (COMMERCIAL_VEH_TICKERS.has(sym) || ["ASHOK LEYLAND", "COMMERCIAL VEHICLE"].some(x => comp.includes(x))) {
+      return { industryGroup: "Trucks &amp; Parts-Hvy Duty IN", parentSector: "Automobile and Auto Components" };
+    }
+    return { industryGroup: "Auto Manufacturers IN", parentSector: "Automobile and Auto Components" };
   }
 
   // 7. Consumer
   if (ind.includes("CONSUMER") || ind.includes("RETAIL") || ind.includes("TEXTILES") || ind.includes("SERVICES")) {
-    if (TEXTILES_TICKERS.has(sym) || ind.includes("TEXTILES") || ["SPINNING", "WEAVING", "PAGE INDUSTRIES", "WELSPUN LIVING", "RAYMOND"].some(x => comp.includes(x))) return "Textiles";
-    if (RETAIL_TICKERS.has(sym) || ind.includes("RETAIL") || ["TRENT", "AVENUE SUPERMARTS", "SHOPPERS STOP"].some(x => comp.includes(x))) return "Retail";
-    if (JEWELLERY_TICKERS.has(sym) || ["JEWELLER", "TITAN", "GOLD"].some(x => comp.includes(x))) return "Jewellery";
-    if (FOOTWEAR_TICKERS.has(sym) || ["FOOTWEAR", "BATA", "METRO BRAND", "RELAXO"].some(x => comp.includes(x))) return "Footwear";
-    if (RESTAURANTS_QSR_TICKERS.has(sym) || ["RESTAURANT", "FOODWORKS", "DEVYANI", "WESTLIFE", "SAPPHIRE"].some(x => comp.includes(x))) return "QSR";
+    if (TEXTILES_TICKERS.has(sym) || ind.includes("TEXTILES") || ["SPINNING", "WEAVING", "PAGE INDUSTRIES", "WELSPUN LIVING", "RAYMOND"].some(x => comp.includes(x))) {
+      return { industryGroup: "Apparel-Clothing Mfg IN", parentSector: "Textiles" };
+    }
+    if (RETAIL_TICKERS.has(sym) || ind.includes("RETAIL") || ["TRENT", "AVENUE SUPERMARTS", "SHOPPERS STOP"].some(x => comp.includes(x))) {
+      if (sym === 'TRENT') {
+        return { industryGroup: "Retail-Department Stores IN", parentSector: "Consumer Services" };
+      }
+      if (sym === 'DMART') {
+        return { industryGroup: "Retail-Super/Mini Mkts IN", parentSector: "Consumer Services" };
+      }
+      return { industryGroup: "Retail-Specialty IN", parentSector: "Consumer Services" };
+    }
+    if (JEWELLERY_TICKERS.has(sym) || ["JEWELLER", "TITAN", "GOLD"].some(x => comp.includes(x))) {
+      return { industryGroup: "Retail/Whlsle-Jewelry IN", parentSector: "Consumer Durables" };
+    }
+    if (FOOTWEAR_TICKERS.has(sym) || ["FOOTWEAR", "BATA", "METRO BRAND", "RELAXO"].some(x => comp.includes(x))) {
+      return { industryGroup: "Apparel-Shoes &amp; Rel Mfg IN", parentSector: "Consumer Durables" };
+    }
+    if (RESTAURANTS_QSR_TICKERS.has(sym) || ["RESTAURANT", "FOODWORKS", "DEVYANI", "WESTLIFE", "SAPPHIRE"].some(x => comp.includes(x))) {
+      return { industryGroup: "Retail-Restaurants IN", parentSector: "Consumer Services" };
+    }
   }
 
   // Emerging defaults
   if (AEROSPACE_DEFENCE_TICKERS.has(sym) || ["AEROSPACE", "DEFENCE", "DEFENSE", "DYNAMICS"].some(x => comp.includes(x))) {
-    if (comp.includes("AERO") || sym.includes("AERO")) return "Aerospace";
-    return "Defence";
+    return { industryGroup: "Aerospace/Defense IN", parentSector: "Defense" };
   }
-  if (EMS_TICKERS.has(sym) || ["EMS", "DIXON", "KAYNES", "SYRMA", "AVALON"].some(x => comp.includes(x))) return "EMS";
-  if (DATA_CENTERS_TICKERS.has(sym) || comp.includes("DATA CENTER") || comp.includes("NETWEB")) return "Data Centers";
+  if (EMS_TICKERS.has(sym) || ["EMS", "DIXON", "KAYNES", "SYRMA", "AVALON"].some(x => comp.includes(x))) {
+    return { industryGroup: "Electronic-Parts IN", parentSector: "Capital Goods" };
+  }
+  if (DATA_CENTERS_TICKERS.has(sym) || comp.includes("DATA CENTER") || comp.includes("NETWEB")) {
+    return { industryGroup: "Computer-Hardware/Perip IN", parentSector: "Information Technology" };
+  }
 
   // Defaults
-  if (ind.includes("TELECOMMUNICATION")) return "Telecom";
-  if (ind.includes("INFORMATION TECHNOLOGY")) return "IT";
-  if (ind.includes("CONSTRUCTION MATERIALS")) return "Construction Materials";
-  if (ind.includes("CONSTRUCTION")) return "Construction";
-  if (ind.includes("REALTY")) return "Realty";
-  if (ind.includes("MEDIA") || ind.includes("PUBLICATION")) return "Media";
-  
-  return csvSectorMap(symbol, company, industry);
+  if (ind.includes("TELECOMMUNICATION")) {
+    return { industryGroup: "Telecom Svcs-Wireless IN", parentSector: "Telecommunication" };
+  }
+  if (ind.includes("INFORMATION TECHNOLOGY")) {
+    return { industryGroup: "Computer-Tech Services IN", parentSector: "Information Technology" };
+  }
+  if (ind.includes("CONSTRUCTION MATERIALS")) {
+    return { industryGroup: "Bldg-Cement/Concrt/Ag IN", parentSector: "Construction Materials" };
+  }
+  if (ind.includes("CONSTRUCTION")) {
+    return { industryGroup: "Bldg-Heavy Construction IN", parentSector: "Construction" };
+  }
+  if (ind.includes("REALTY")) {
+    return { industryGroup: "Real Estate Dvlpmt/Ops IN", parentSector: "Realty" };
+  }
+  if (ind.includes("MEDIA") || ind.includes("PUBLICATION")) {
+    return { industryGroup: "Media-Radio/Tv IN", parentSector: "Media Entertainment & Publication" };
+  }
+
+  // Direct raw industry defaults to valid MS industry group names
+  const rawIndMap = {
+    'FAST MOVING CONSUMER GOODS': ["Food-Packaged IN", "Fast Moving Consumer Goods"],
+    'CONSUMER SERVICES': ["Retail-Specialty IN", "Consumer Services"],
+    'CONSUMER DURABLES': ["Consumer Prod-Electronic IN", "Consumer Durables"],
+    'SERVICES': ["Comml Svcs-Consulting IN", "Services"],
+    'DIVERSIFIED': ["Diversified Operations IN", "Diversified"],
+    'OIL GAS & CONSUMABLE FUELS': ["Oil&amp;Gas-Refining/Mktg IN", "Oil Gas & Consumable Fuels"],
+    'POWER': ["Utility-Electric Power IN", "Power"],
+    'TELECOMMUNICATION': ["Telecom Svcs-Wireless IN", "Telecommunication"],
+    'INFORMATION TECHNOLOGY': ["Computer-Tech Services IN", "Information Technology"],
+    'METALS & MINING': ["Mining-Metal Ores IN", "Metals & Mining"],
+    'CHEMICALS': ["Chemicals-Basic IN", "Specialty Chemicals"],
+    'HEALTHCARE': ["Medical-Generic Drugs IN", "Pharma"],
+    'AUTOMOBILE AND AUTO COMPONENTS': ["Auto/Truck-Original Eqp IN", "Automobile and Auto Components"],
+    'TEXTILES': ["Apparel-Clothing Mfg IN", "Textiles"],
+    'REALTY': ["Real Estate Dvlpmt/Ops IN", "Realty"],
+    'MEDIA ENTERTAINMENT & PUBLICATION': ["Media-Radio/Tv IN", "Media Entertainment & Publication"],
+    'CONSTRUCTION MATERIALS': ["Bldg-Cement/Concrt/Ag IN", "Construction Materials"],
+    'CONSTRUCTION': ["Bldg-Heavy Construction IN", "Construction"]
+  };
+
+  if (rawIndMap[ind]) {
+    const [grp, sec] = rawIndMap[ind];
+    return { industryGroup: grp, parentSector: sec };
+  }
+
+  return { industryGroup: "Diversified Operations IN", parentSector: "Diversified" };
+}
+
+function csvIndustryMap(symbol, company, industry) {
+  return getMsIndustryMapping(symbol, company, industry).industryGroup;
 }
 
 function vcpbApplySearch(val) {
@@ -7689,7 +7359,7 @@ function vcpbRender(data) {
   const avoidEl = document.getElementById('vcpb-ls-avoid');
 
   if (leadEl)  leadEl.innerHTML  = leaders.map(s  => pill(s,'#0e1420','var(--lime)')).join('');
-  if (watchEl) watchEl.innerHTML = watching.length ? watching.slice(0,5).map(s => pill(s,'#0e1420','var(--yellow)')).join('') : '<span style="color:var(--dim);font-size:10px">—</span>';
+  if (watchEl) watchEl.innerHTML = watching.length ? watching.map(s => pill(s,'#0e1420','var(--yellow)')).join('') : '<span style="color:var(--dim);font-size:10px">—</span>';
   if (avoidEl) avoidEl.innerHTML = avoid.map(s    => pill(s,'#fff','rgba(248,113,113,.2)')).join('');
   // ─────────────────────────────────────────────────────────────────────
 
@@ -10392,7 +10062,7 @@ function fmtNum(n) {
     if (!dhanSec) return;
     if (tab === 'dhan') {
       // Show dhan section, hide others
-      ['eod','past','sync','srt'].forEach(t => {
+      ['eod','past','sync'].forEach(t => {
         const s = document.getElementById('cp-sec-'+t);
         const b = document.getElementById('cp-tab-'+t);
         if (s) s.classList.remove('active');
@@ -11998,9 +11668,9 @@ async function seedHistoricalData() {
 
 })();
 
-window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal()); bsrRenderChart(); renderA1Sparkline(loadLocal()); if (typeof brrgDraw === 'function') brrgDraw(); if (typeof srtDrawRRG === 'function') srtDrawRRG(); if (document.getElementById('sector-drill-overlay') && document.getElementById('sector-drill-overlay').style.display !== 'none' && _sdActiveTab === 'charts' && _sdChartsLayout === 'auto') { sdRenderCharts(_sdCurrentSector, _sdCurrentData); } if (document.getElementById('chart-max-overlay') && document.getElementById('chart-max-overlay').style.display !== 'none' && _sdMaximizedChartSymbol) { const range = _sdChartsInterval === 'D' ? '1y' : '2y'; const interval = _sdChartsInterval === 'D' ? '1d' : '1wk'; Promise.all([fetchYfData(_sdMaximizedChartSymbol, range, interval), _sdMaximizedChartSymbol.toUpperCase() !== '^NSEI' ? fetchYfData('^NSEI', range, interval).catch(() => null) : Promise.resolve(null)]).then(([candles, niftyCandles]) => { drawAnyChart('max-chart-canvas', candles, _sdChartType, null, niftyCandles); }).catch(() => {}); } const sccChartPane = document.getElementById('scc-pane-chart'); if (sccChartPane && sccChartPane.style.display !== 'none') { const count = parseInt(_sccChartLayout); for (let i = 0; i < count; i++) { sccChartRenderPanel(i); } } },100); });
+window.addEventListener('resize',()=>{ setTimeout(()=>{ renderChart(loadLocal()); bsrRenderChart(); renderA1Sparkline(loadLocal()); if (typeof brrgDraw === 'function') brrgDraw(); if (document.getElementById('sector-drill-overlay') && document.getElementById('sector-drill-overlay').style.display !== 'none' && _sdActiveTab === 'charts' && _sdChartsLayout === 'auto') { sdRenderCharts(_sdCurrentSector, _sdCurrentData); } if (document.getElementById('chart-max-overlay') && document.getElementById('chart-max-overlay').style.display !== 'none' && _sdMaximizedChartSymbol) { const range = _sdChartsInterval === 'D' ? '1y' : '2y'; const interval = _sdChartsInterval === 'D' ? '1d' : '1wk'; Promise.all([fetchYfData(_sdMaximizedChartSymbol, range, interval), _sdMaximizedChartSymbol.toUpperCase() !== '^NSEI' ? fetchYfData('^NSEI', range, interval).catch(() => null) : Promise.resolve(null)]).then(([candles, niftyCandles]) => { drawAnyChart('max-chart-canvas', candles, _sdChartType, null, niftyCandles); }).catch(() => {}); } const sccChartPane = document.getElementById('scc-pane-chart'); if (sccChartPane && sccChartPane.style.display !== 'none') { const count = parseInt(_sccChartLayout); for (let i = 0; i < count; i++) { sccChartRenderPanel(i); } } },100); });
 // Re-render chart after fonts/layout settle on mobile
-window.addEventListener('load', () => { setTimeout(() => { renderA1Sparkline(loadLocal()); renderChart(loadLocal()); rrgRebuildChips(); srtDrawRRG(); if (typeof brrgDraw === 'function') brrgDraw(); }, 300); });
+window.addEventListener('load', () => { setTimeout(() => { renderA1Sparkline(loadLocal()); renderChart(loadLocal()); brrgRebuildChips(); if (typeof brrgDraw === 'function') brrgDraw(); }, 300); });
 
 // ResizeObserver — debounced via rAF to prevent "loop" console warnings
 // rAF defers the render until after the browser has finished its layout pass,
@@ -12957,7 +12627,7 @@ function closeControlPanel() {
   if (overlay) overlay.classList.remove('open');
 }
 function cpSwitchTab(tab) {
-  ['eod','past','sync','srt'].forEach(t => {
+  ['eod','past','sync'].forEach(t => {
     const tb = document.getElementById('cp-tab-' + t);
     const sc = document.getElementById('cp-sec-' + t);
     if (tb) tb.classList.toggle('active', t === tab);
@@ -12965,7 +12635,6 @@ function cpSwitchTab(tab) {
   });
   if (tab === 'past') renderPastSeedList();
   if (tab === 'sync') cpRefreshSyncState();
-  if (tab === 'srt')  { srtRender(); srtNiftyStatusRefresh(); slhRender(); vcpbInit(); }
 }
 function cpRefreshSyncState() {
   const cfg = getCfg();
@@ -13920,13 +13589,14 @@ function findStockMetadata(symbol) {
     if (activeMap) {
       // Search all sectors/industries
       for (const secName in activeMap) {
-      const sec = cachedDrill.sectors[secName];
-      if (sec && Array.isArray(sec.stocks)) {
-        const found = sec.stocks.find(x => x.symbol && x.symbol.toUpperCase() === sUpper);
-        if (found) {
-          company = found.company || '';
-          rs_rating = found.rs_rating != null ? found.rs_rating : '';
-          break;
+        const sec = activeMap[secName];
+        if (sec && Array.isArray(sec.stocks)) {
+          const found = sec.stocks.find(x => x.symbol && x.symbol.toUpperCase() === sUpper);
+          if (found) {
+            company = found.company || '';
+            rs_rating = found.rs_rating != null ? found.rs_rating : '';
+            break;
+          }
         }
       }
     }
@@ -13969,35 +13639,8 @@ function parseN500Csv(text) {
 }
 
 // ── Same smart sector-split logic as vcp_scanner.py ──────────────────────
-const RAILWAY_TICKERS  = new Set(['IRFC','IRCTC','RVNL','IRCON','RITES','TITAGARH','TEXMACO','RAILTEL','JWL']);
-const DEFENSE_TICKERS  = new Set(['HAL','BEL','MAZDOCK','COCHINSHIP','BDL','BEML','DATAPATTNS','GRSE','PARAS','MTARTECH']);
-const AGRO_TICKERS     = new Set(['CHAMBLFERT','FACT','COROMANDEL','GNFC','GSFC','RCF','UPL']);
-// Symbols whose company names hint at their sub-sector
-const BANK_HINTS       = ['Bank','BANK'];
-const PHARMA_HINTS     = ['Pharma','Lab','Biotech'];
-const DEFENSE_HINTS    = ['Aerospace','Defence','Defense'];
-const AGRO_HINTS       = ['Agricultural','Fertilizer','Agri'];
-
 function csvSectorMap(symbol, company, industry) {
-  if (RAILWAY_TICKERS.has(symbol) || company.includes('Railway')) return 'Railways';
-  if (industry === 'Healthcare') {
-    if (PHARMA_HINTS.some(h => company.includes(h))) return 'Pharma';
-    return 'Hospitals & Healthcare';
-  }
-  if (industry === 'Capital Goods' || industry === 'Services') {
-    if (DEFENSE_TICKERS.has(symbol) || DEFENSE_HINTS.some(h => company.includes(h))) return 'Defense';
-    if (industry === 'Services') return 'Services';
-    return 'Capital Goods';
-  }
-  if (industry === 'Financial Services') {
-    if (BANK_HINTS.some(h => company.includes(h))) return 'Banks';
-    return 'NBFCs & Finance';
-  }
-  if (industry === 'Chemicals') {
-    if (AGRO_TICKERS.has(symbol) || AGRO_HINTS.some(h => company.includes(h))) return 'Agrochemicals & Fertilizers';
-    return 'Specialty Chemicals';
-  }
-  return industry;   // all others map 1:1
+  return getMsIndustryMapping(symbol, company, industry).parentSector;
 }
 
 // ── Tab switcher inside the modal ─────────────────────────────────────────
@@ -15615,7 +15258,6 @@ document.addEventListener('click', () => {
       <div class="cp-tab active" id="cp-tab-eod"  onclick="cpSwitchTab('eod')">📋 EOD Entry</div>
       <div class="cp-tab"        id="cp-tab-past" onclick="cpSwitchTab('past')">📅 Past Entry</div>
       <div class="cp-tab"        id="cp-tab-sync" onclick="cpSwitchTab('sync')">☁ Sync</div>
-      <div class="cp-tab"        id="cp-tab-srt"  onclick="cpSwitchTab('srt')">📡 Sectors</div>
       <div class="cp-tab"        id="cp-tab-dhan" onclick="cpSwitchTab('dhan')" style="color:var(--teal)">🏦 Dhan</div>
     </div>
 
@@ -16140,136 +15782,7 @@ document.addEventListener('click', () => {
         </div>
       </div><!-- /dhan -->
 
-      <!-- ── TAB 4: SECTOR ROTATION TRACKER ────────────────── -->
-      <div class="cp-section" id="cp-sec-srt">
-        <div class="cp-section-title">SECTOR ROTATION TRACKER — WEEKLY</div>
 
-        <!-- Summary cards -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px">
-          <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center">
-            <div style="font-size:9px;color:var(--dim);margin-bottom:2px">LEADING</div>
-            <div id="srt-count-lead" style="font-size:20px;font-weight:600;color:var(--lime)">0</div>
-            <div style="font-size:9px;color:var(--dim)">Stage 2</div>
-          </div>
-          <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center">
-            <div style="font-size:9px;color:var(--dim);margin-bottom:2px">BASING</div>
-            <div id="srt-count-base" style="font-size:20px;font-weight:600;color:var(--accent)">0</div>
-            <div style="font-size:9px;color:var(--dim)">Stage 1</div>
-          </div>
-          <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;text-align:center">
-            <div style="font-size:9px;color:var(--dim);margin-bottom:2px">AVOID</div>
-            <div id="srt-count-weak" style="font-size:20px;font-weight:600;color:var(--red)">0</div>
-            <div style="font-size:9px;color:var(--dim)">Stage 3-4</div>
-          </div>
-        </div>
-
-        <!-- ── WEEKLY ENTRY ───────────────────────────────────── -->
-        <div style="background:var(--bg3);border-radius:6px;padding:12px;margin-bottom:10px">
-          <div style="font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.8px;margin-bottom:8px">THIS WEEK'S ENTRY &nbsp;<a href="https://docs.google.com/spreadsheets/d/1FbPh8eVfe57o8zlU1KmGZ6bYT-2AvChTx-YyOg3YWFA/edit?usp=sharing" target="_blank" style="font-size:9px;color:var(--lime);text-decoration:none;font-weight:400">📊 My Sheet ↗</a> &nbsp;<a href="https://www.nseindia.com/reports-indices-historical-index-data" target="_blank" style="font-size:9px;color:var(--accent);text-decoration:none;font-weight:400">NSE ↗</a></div>
-
-          <!-- Step 1: Nifty 50 — once per week -->
-          <div style="background:rgba(91,163,245,.07);border:1px solid rgba(91,163,245,.2);border-radius:4px;padding:8px 10px;margin-bottom:10px">
-            <div style="font-size:9px;color:var(--accent);margin-bottom:5px;font-weight:600">STEP 1 — Enter Nifty 50 close once (applies to all sectors)</div>
-            <div style="display:flex;gap:8px;align-items:flex-end">
-              <div style="flex:1">
-                <label style="font-size:10px;color:var(--dim);display:block;margin-bottom:3px">Nifty 50 Close</label>
-                <input id="srt-nifty" type="number" placeholder="e.g. 24450" step="0.01"
-                  style="width:100%;font-size:13px;padding:6px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);box-sizing:border-box">
-              </div>
-              <button onclick="srtSetNifty()" style="font-size:11px;padding:7px 12px;background:rgba(91,163,245,.2);color:var(--accent);border:1px solid rgba(91,163,245,.3);border-radius:4px;cursor:pointer;white-space:nowrap">Set Nifty</button>
-            </div>
-            <div id="srt-nifty-status" style="font-size:9px;color:var(--dim);margin-top:4px">Not set for this week</div>
-          </div>
-
-          <!-- Step 2: Sector closes -->
-          <div style="font-size:9px;color:var(--accent);margin-bottom:6px;font-weight:600">STEP 2 — Enter each sector close (Nifty 50 auto-attached)</div>
-          <div style="margin-bottom:6px">
-            <label style="font-size:10px;color:var(--dim);display:block;margin-bottom:3px">Sector</label>
-            <select id="srt-sel" style="width:100%;font-size:12px;padding:5px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text)">
-              <option value="NIFTY IT|Information Technology">Nifty IT → Information Technology</option>
-              <option value="NIFTY PHARMA|Pharma">Nifty Pharma</option>
-              <option value="NIFTY FMCG|Fast Moving Consumer Goods">Nifty FMCG → Fast Moving Consumer Goods</option>
-              <option value="NIFTY BANK|Banks">Nifty Bank → Banks</option>
-              <option value="NIFTY AUTO|Automobile and Auto Components">Nifty Auto → Automobile and Auto Components</option>
-              <option value="NIFTY METAL|Metals & Mining">Nifty Metal → Metals & Mining</option>
-              <option value="NIFTY REALTY|Realty">Nifty Realty</option>
-              <option value="NIFTY INFRA|Construction">Nifty Infra → Construction</option>
-              <option value="NIFTY COMMODITIES|Specialty Chemicals">Nifty Commodities → Specialty Chemicals</option>
-              <option value="NIFTY PSU BANK|PSU Bank">Nifty PSU Bank</option>
-              <option value="NIFTY ENERGY|Oil Gas & Consumable Fuels">Nifty Energy → Oil Gas & Consumable Fuels</option>
-              <option value="NIFTY FINANCIAL SERVICES|NBFCs & Finance">Nifty Fin Services → NBFCs & Finance</option>
-              <option value="NIFTY INDIA MANUFACTURING|Capital Goods">Nifty India Mfg → Capital Goods</option>
-              <option value="NIFTY CAPITAL MARKETS|Capital Goods">Nifty Capital Markets → Capital Goods</option>
-              <option value="NIFTY INDIA DEFENCE|Defense">Nifty India Defence → Defense</option>
-              <option value="NIFTY CPSE|PSE">Nifty CPSE (PSE)</option>
-            </select>
-          </div>
-          <div style="margin-bottom:8px">
-            <label style="font-size:10px;color:var(--dim);display:block;margin-bottom:3px">Sector Close</label>
-            <input id="srt-close" type="number" placeholder="e.g. 38250" step="0.01"
-              style="width:100%;font-size:13px;padding:6px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);box-sizing:border-box">
-          </div>
-          <div style="display:flex;gap:6px">
-            <button onclick="srtSaveEntry()" style="flex:1;font-size:11px;padding:7px;background:var(--accent);color:#000;border:none;border-radius:4px;cursor:pointer;font-weight:600">Save Sector</button>
-            <button onclick="srtClearForm()" style="font-size:11px;padding:7px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--dim)">Clear</button>
-          </div>
-          <div id="srt-msg" style="font-size:10px;margin-top:6px;display:none"></div>
-        </div>
-
-        <!-- ── RANKED TABLE ────────────────────────────────────── -->
-        <div style="font-size:9px;color:var(--dim);margin-bottom:6px">RANKED BY STRENGTH</div>
-        <div id="srt-table-wrap" style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;font-size:11px">
-            <thead>
-              <tr style="border-bottom:1px solid var(--border)">
-                <th style="text-align:left;padding:4px;color:var(--dim);font-weight:400">#</th>
-                <th style="text-align:left;padding:4px;color:var(--dim);font-weight:400">Sector</th>
-                <th style="text-align:right;padding:4px;color:var(--dim);font-weight:400">vs20MA</th>
-                <th style="text-align:center;padding:4px;color:var(--dim);font-weight:400">MAs</th>
-                <th style="text-align:center;padding:4px;color:var(--dim);font-weight:400">Stage</th>
-                <th style="text-align:right;padding:4px;color:var(--dim);font-weight:400">RS</th>
-                <th style="text-align:right;padding:4px;color:var(--dim);font-weight:400">Wks</th>
-                <th style="padding:4px 2px"></th>
-              </tr>
-            </thead>
-            <tbody id="srt-tbody"></tbody>
-          </table>
-          <div id="srt-empty" style="text-align:center;padding:20px;color:var(--dim);font-size:11px;display:none">No sectors logged yet.</div>
-        </div>
-
-        <!-- ── HISTORICAL BULK IMPORT ──────────────────────────── -->
-        <div style="background:var(--bg3);border-radius:6px;padding:10px 12px;margin-top:14px;margin-bottom:10px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-            <div style="font-size:9px;color:var(--accent);font-weight:600;letter-spacing:.8px">HISTORICAL BULK IMPORT — backfill up to 20 weeks</div>
-            <div style="display:flex;gap:8px">
-              <a href="https://docs.google.com/spreadsheets/d/1FbPh8eVfe57o8zlU1KmGZ6bYT-2AvChTx-YyOg3YWFA/edit?usp=sharing" target="_blank" style="font-size:9px;color:var(--lime);text-decoration:none">📊 My Sheet ↗</a>
-              <a href="https://www.nseindia.com/reports-indices-historical-index-data" target="_blank" style="font-size:9px;color:var(--accent);text-decoration:none">NSE ↗</a>
-            </div>
-          </div>
-          <div style="font-size:9px;color:var(--dim);margin-bottom:6px;line-height:1.6">
-            Format: <code style="background:var(--bg2);padding:2px 5px;border-radius:2px;color:var(--teal);font-size:9px">DATE, NIFTY50, InformationTech, Pharma, FMCG, Banks, Auto, MetalsMining, Realty, Construction, SpecialtyChemicals, PSUBank, OilGas, NBFCs, CapGoods, CapGoods, Defense, PSE</code><br>
-            <span style="color:var(--dim)">Date: YYYY-MM-DD &nbsp;|&nbsp; Oldest week first &nbsp;|&nbsp; Columns map to: IT · Pharma · FMCG · Banks · Auto · Metals &amp; Mining · Realty · Construction · Specialty Chemicals · PSU Bank · Oil Gas · NBFCs &amp; Finance · Capital Goods (×2) · Defense · PSE</span>
-          </div>
-          <textarea id="srt-bulk-txt" rows="6"
-            placeholder="2025-01-03, 23644, 42100, 22300, 58900, 52800, 24100, 9200, 7800, 4300, 1580, 54100, 29800, 43200, 10200&#10;2025-01-10, 23431, 41800, 22100, 58600, 52400, 23900, 9050, 7650, 4210, 1560, 53800, 29400, 42900, 10100&#10;..."
-            style="width:100%;font-size:10px;font-family:var(--mono);padding:6px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);box-sizing:border-box;resize:vertical"></textarea>
-          <div style="display:flex;gap:6px;margin-top:6px">
-            <button onclick="srtBulkImport()" style="flex:1;font-size:11px;padding:6px;background:var(--purple);color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:600">Import History</button>
-            <button onclick="document.getElementById('srt-bulk-txt').value=''" style="font-size:11px;padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--dim)">Clear</button>
-          </div>
-          <div id="srt-bulk-msg" style="font-size:10px;margin-top:5px;display:none"></div>
-        </div>
-
-        <!-- Legend -->
-        <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;font-size:9px">
-          <span style="background:rgba(74,222,128,.15);color:var(--lime);padding:2px 6px;border-radius:3px">S2 = advancing</span>
-          <span style="background:rgba(91,163,245,.12);color:var(--accent);padding:2px 6px;border-radius:3px">S1 = basing</span>
-          <span style="background:rgba(251,191,36,.12);color:var(--yellow);padding:2px 6px;border-radius:3px">S3 = topping</span>
-          <span style="background:rgba(239,68,68,.12);color:var(--red);padding:2px 6px;border-radius:3px">S4 = declining</span>
-        </div>
-        <div style="margin-top:6px;font-size:9px;color:var(--dim)">Dots: ● above MA &nbsp; ◐ within 1% &nbsp; ○ below MA &nbsp;|&nbsp; RS = sector vs Nifty 50 &nbsp;|&nbsp; Update every Friday/Sunday</div>
-
-      </div><!-- /srt -->
 
     </div><!-- /cp-body -->
   </div><!-- /cp-panel -->
