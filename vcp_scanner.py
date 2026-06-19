@@ -436,6 +436,195 @@ def grade(score):
     else:             return 'REJECT'
 
 # ═══════════════════════════════════════════════════════════════════════
+#  INDUSTRY GROUP MAPPINGS & CLASSIFICATION
+# ═══════════════════════════════════════════════════════════════════════
+PSU_BANKS_TICKERS = {'SBIN', 'PNB', 'BOB', 'CANBK', 'UNIONBANK', 'INDIANB', 'UCOBANK', 'BANKBARODA', 'BANKINDIA', 'MAHABANK', 'CENTRALBK', 'IOB', 'PSB'}
+PRIVATE_BANKS_TICKERS = {'HDFCBANK', 'ICICIBANK', 'KOTAKBANK', 'AXISBANK', 'INDUSINDBK', 'FEDERALBNK', 'IDFCFIRSTB', 'BANDHANBNK', 'YESBANK', 'CUB', 'KTKBANK', 'RBLBANK', 'SOUTHBANK', 'CSBBANK', 'AUBANK', 'INDUSIND'}
+INSURANCE_TICKERS = {'HDFCLIFE', 'SBILIFE', 'ICICIPRULI', 'LIC', 'GICRE', 'NIACL', 'MAXFSL', 'ICICIGI', 'STARHEALTH'}
+AMC_TICKERS = {'HDFCAMC', 'NAM-INDIA', 'UTIAMC', 'ABSLAMC'}
+CAPITAL_MARKETS_TICKERS = {'CDSL', 'BSE', 'MCX', 'CAMS', 'KFINTECH', 'ANGELONE', 'ISEC', 'MUTHOOTOT', '5PAISA', 'ANANDRATHI', 'GEODJITFSL', 'MOTILALOFS'}
+
+CABLES_TICKERS = {'POLYCAB', 'KEI', 'RRKABEL', 'FINCABLES'}
+TRANSFORMERS_TICKERS = {'VOLTAMP', 'CGPOWER', 'TRIL', 'TRANSFORM', 'SCHNEIDER'}
+BEARINGS_TICKERS = {'SKFINDIA', 'TIMKEN', 'SHAFFLER', 'SCHAEFFLER', 'HARSHA'}
+COMPRESSORS_TICKERS = {'ELGIEQUIP', 'KPIL', 'KIRLPNU'}
+HVAC_TICKERS = {'VOLTAS', 'BLUESTARCO', 'HITACHIHAM'}
+
+COPPER_TICKERS = {'HINDCOPPER'}
+STEEL_TICKERS = {'TATASTEEL', 'JSWSTEEL', 'SAIL', 'JSL', 'JINDALSTEL', 'KALYANISTEEL', 'APLAPOLLO', 'WELCORP', 'MAHSEAMLES'}
+ALUMINIUM_TICKERS = {'HINDALCO', 'NATIONALUM'}
+MINING_TICKERS = {'COALINDIA', 'NMDC', 'GMDC'}
+EXPLOSIVES_TICKERS = {'SOLARINDS', 'PREMEXPLN'}
+DYES_PIGMENTS_TICKERS = {'BODALCHEM', 'KIRIINDUS', 'SUDARSCHEM', 'MEGH'}
+
+GAS_TRADING_TICKERS = {'GAIL', 'GSPL'}
+CGD_TICKERS = {'IGL', 'MGL', 'ATGL', 'GUJGASLTD'}
+SOLAR_TICKERS = {'TATAPOWER', 'ADANIGREEN', 'SWSOLAR', 'WAAREEENER', 'WEBSOL'}
+POWER_EQUIP_TICKERS = {'BHEL', 'SUZLON', 'INOXWIND', 'GET&D'}
+
+CDMO_TICKERS = {'DIVISLAB', 'SYNGENE', 'SUVENPHAR', 'LAURUSLABS'}
+DIAGNOSTICS_TICKERS = {'LALPATHLAB', 'METROPOLIS', 'THYROCARE', 'VIJAYA'}
+MEDICAL_DEVICES_TICKERS = {'POLYMED'}
+
+COMMERCIAL_VEH_TICKERS = {'ASHOKLEY', 'SMLISUZU'}
+PASSENGER_VEH_TICKERS = {'MARUTI', 'M&M', 'TATAMOTORS', 'HYUNDAI'}
+TYRES_TICKERS = {'MRF', 'APOLLOTYRE', 'CEATLTD', 'JKTYRE', 'BALKRISIND'}
+EV_COMPONENTS_TICKERS = {'SONACOMS', 'MINDACORP', 'UNOMINDA'}
+BATTERIES_TICKERS = {'EXIDEIND', 'AMARAJABAT', 'ARE&M'}
+TRACTORS_TICKERS = {'ESCORTS', 'VSTTILLERS'}
+
+RETAIL_TICKERS = {'TRENT', 'DMART', 'ABFRL', 'SHOPERSTOP', 'VMART', 'ETHOSLTD'}
+JEWELLERY_TICKERS = {'TITAN', 'KALYANKJIL', 'SENCO', 'RAJESHEXPO'}
+FOOTWEAR_TICKERS = {'BATAINDIA', 'METROBRAND', 'RELAXO', 'CAMPUS'}
+RESTAURANTS_QSR_TICKERS = {'JUBLFOOD', 'DEVYANI', 'WESTLIFE', 'RBA', 'SAPPHIRE'}
+TEXTILES_TICKERS = {'PAGEIND', 'ARVIND', 'VTL', 'RAYMOND', 'WELSPUNLIV', 'ALOKIND', 'GARFIBRES', 'GOKEX', 'KPRMILL'}
+
+AEROSPACE_DEFENCE_TICKERS = {'HAL', 'BEL', 'BDL', 'ASTRAMICRO', 'PARAS', 'DATAPATTNS', 'ZENTEC', 'MTARTECH', 'DYNAMATECH', 'IDEAFORGE'}
+SHIPBUILDING_TICKERS = {'MAZDOCK', 'COCHINSHIP', 'GRSE'}
+EMS_TICKERS = {'DIXON', 'KAYNES', 'SYRMA', 'AVALON'}
+DATA_CENTERS_TICKERS = {'NETWEB', 'ANANTRAJ'}
+
+def get_industry_group(symbol, company, industry):
+    sym = symbol.upper().replace('.NS', '')
+    comp = company.upper()
+    ind = industry.upper()
+    
+    # 1. Financials
+    if "FINANCIAL" in ind or "BANKS" in ind:
+        if sym in PSU_BANKS_TICKERS or any(x in comp for x in ["STATE BANK", "PUNJAB NATIONAL", "BANK OF BARODA", "CANARA", "UNION BANK", "INDIAN BANK", "UCO BANK", "BANK OF INDIA", "MAHARASHTRA", "CENTRAL BANK", "OVERSEAS", "SHUBH", "PSU"]):
+            return "PSU Banks", "Financials"
+        if sym in PRIVATE_BANKS_TICKERS or any(x in comp for x in ["HDFC BANK", "ICICI BANK", "KOTAK", "AXIS", "INDUSIND", "FEDERAL", "IDFC FIRST", "BANDHAN", "YES BANK", "CITY UNION", "KARUR VYSYA", "RBL", "SOUTH INDIAN", "CSB BANK", "AU SMALL"]):
+            return "Private Banks", "Financials"
+        if sym in INSURANCE_TICKERS or any(x in comp for x in ["INSURANCE", "LIFE", "GENERAL INS", "ASSURANCE", "MAX FINANCIAL"]):
+            return "Insurance", "Financials"
+        if sym in AMC_TICKERS or "AMC" in comp or "MUTUAL FUND" in comp or "ASSET MANAGEMENT" in comp or "NIPPON LIFE" in comp:
+            return "AMCs", "Financials"
+        if sym in CAPITAL_MARKETS_TICKERS or "CAPITAL MARKETS" in ind or any(x in comp for x in ["CDSL", "BSE", "MCX", "CAMS", "KFIN", "ANGEL ONE", "SECURITIES", "WEALTH", "BROKING", "INVESTMENT"]):
+            return "Capital Markets", "Financials"
+        return "NBFCs", "Financials"
+
+    # 2. Industrials
+    if "CAPITAL GOODS" in ind or "INDUSTRIAL" in ind or "MACHINERY" in ind:
+        if sym in AEROSPACE_DEFENCE_TICKERS or any(x in comp for x in ["AEROSPACE", "DEFENCE", "DEFENSE", "DYNAMICS"]):
+            if "AERO" in comp or "AERO" in sym:
+                return "Aerospace", "Emerging"
+            return "Defence", "Emerging"
+        if sym in SHIPBUILDING_TICKERS or "SHIPYARD" in comp or "SHIPBUILD" in comp or "MAZAGON" in comp:
+            return "Shipbuilding", "Emerging"
+        
+        if sym in CABLES_TICKERS or "CABLE" in comp or "RR KABEL" in comp:
+            return "Cables", "Industrials"
+        if sym in TRANSFORMERS_TICKERS or "TRANSFORMER" in comp or "SCHNEIDER" in comp:
+            return "Transformers", "Industrials"
+        if sym in BEARINGS_TICKERS or "BEARING" in comp:
+            return "Bearings", "Industrials"
+        if sym in COMPRESSORS_TICKERS or "COMPRESSOR" in comp or "PNEUMATIC" in comp:
+            return "Compressors", "Industrials"
+        if sym in HVAC_TICKERS or "VOLTAS" in comp or "BLUE STAR" in comp:
+            return "HVAC", "Industrials"
+        if "AUTOMATION" in comp or "HONEYWELL" in comp:
+            return "Automation", "Industrials"
+        return "Industrial Machinery", "Industrials"
+
+    # 3. Materials
+    if "METALS & MINING" in ind or "METALS" in ind or "MINING" in ind or "MATERIALS" in ind:
+        if sym in COPPER_TICKERS or "COPPER" in comp:
+            return "Copper", "Materials"
+        if sym in ALUMINIUM_TICKERS or "ALUMINIUM" in comp or "NALCO" in comp:
+            return "Aluminium", "Materials"
+        if sym in MINING_TICKERS or "MINING" in ind or "COAL INDIA" in comp or "NMDC" in comp or "GMDC" in comp:
+            return "Mining", "Materials"
+        if sym in STEEL_TICKERS or "STEEL" in comp or "PIPE" in comp or "APOLLO TUBES" in comp or "WELSPUN CORP" in comp:
+            return "Steel", "Materials"
+        return "Materials", "Materials"
+
+    if "CHEMICALS" in ind:
+        if sym in EXPLOSIVES_TICKERS or "EXPLOSIVE" in comp or "SOLAR IND" in comp:
+            return "Explosives", "Materials"
+        if sym in DYES_PIGMENTS_TICKERS or "DYE" in comp or "PIGMENT" in comp or "SUDARSHAN" in comp:
+            if "DYE" in comp or "DYE" in sym:
+                return "Dyes", "Materials"
+            return "Pigments", "Materials"
+        return "Specialty Chemicals", "Materials"
+
+    # 4. Energy
+    if "POWER" in ind or "OIL GAS" in ind or "ENERGY" in ind:
+        if sym in GAS_TRADING_TICKERS or "GAIL" in comp or "GSPL" in comp:
+            return "Gas Trading", "Energy"
+        if sym in CGD_TICKERS or "GUJARAT GAS" in comp or "INDRAPRASTHA GAS" in comp or "MAHANAGAR GAS" in comp or "ADANI TOTAL" in comp:
+            return "CGD", "Energy"
+        if sym in SOLAR_TICKERS or "SOLAR" in comp or "ADANI GREEN" in comp or "WAAREE" in comp:
+            return "Solar", "Energy"
+        if sym in POWER_EQUIP_TICKERS or "SUZLON" in comp or "WIND" in comp or "BHEL" in comp or "GET&D" in comp:
+            return "Power Equipment", "Energy"
+        return "Renewables", "Energy"
+
+    # 5. Healthcare
+    if "HEALTHCARE" in ind or "PHARMACEUTICALS" in ind:
+        if sym in CDMO_TICKERS or "CDMO" in comp or "DIVI'S" in comp or "SYNGENE" in comp or "LAURUS" in comp:
+            return "CDMO", "Healthcare"
+        if sym in DIAGNOSTICS_TICKERS or "DIAGNOSTIC" in comp or "LAL PATH" in comp or "METROPOLIS" in comp:
+            return "Diagnostics", "Healthcare"
+        if sym in MEDICAL_DEVICES_TICKERS or "MEDICURE" in comp or "DEVICE" in comp:
+            return "Medical Devices", "Healthcare"
+        if "PHARMA" in comp or "LAB" in comp or "BIOTECH" in comp or "DRUG" in comp or "MEDICINE" in comp:
+            return "Pharma", "Healthcare"
+        return "Hospitals", "Healthcare"
+
+    # 6. Auto
+    if "AUTO" in ind or "VEHICLE" in ind:
+        if sym in TYRES_TICKERS or "TYRE" in comp or "CEAT" in comp or "MRF" in comp:
+            return "Tyres", "Auto"
+        if sym in EV_COMPONENTS_TICKERS or "EV" in comp or "SONA BLW" in comp or "MINDA" in comp:
+            return "EV Components", "Auto"
+        if sym in BATTERIES_TICKERS or "BATTERY" in comp or "EXIDE" in comp or "AMARA RAJA" in comp:
+            return "Batteries", "Auto"
+        if sym in TRACTORS_TICKERS or "TRACTOR" in comp or "ESCORT" in comp:
+            return "Tractors", "Auto"
+        if sym in COMMERCIAL_VEH_TICKERS or "ASHOK LEYLAND" in comp or "COMMERCIAL VEHICLE" in comp:
+            return "Commercial Vehicles", "Auto"
+        return "Passenger Vehicles", "Auto"
+
+    # 7. Consumer
+    if "CONSUMER" in ind or "RETAIL" in ind or "TEXTILES" in ind or "SERVICES" in ind:
+        if sym in TEXTILES_TICKERS or "TEXTILE" in ind or "SPINNING" in comp or "WEAVING" in comp or "PAGE INDUSTRIES" in comp or "WELSPUN LIVING" in comp or "RAYMOND" in comp:
+            return "Textiles", "Consumer"
+        if sym in RETAIL_TICKERS or "RETAIL" in ind or "TRENT" in comp or "AVENUE SUPERMARTS" in comp or "SHOPPERS STOP" in comp:
+            return "Retail", "Consumer"
+        if sym in JEWELLERY_TICKERS or "JEWELLER" in comp or "TITAN" in comp or "GOLD" in comp:
+            return "Jewellery", "Consumer"
+        if sym in FOOTWEAR_TICKERS or "FOOTWEAR" in comp or "BATA" in comp or "METRO BRAND" in comp or "RELAXO" in comp:
+            return "Footwear", "Consumer"
+        if sym in RESTAURANTS_QSR_TICKERS or "RESTAURANT" in comp or "FOODWORKS" in comp or "DEVYANI" in comp or "WESTLIFE" in comp or "SAPPHIRE" in comp:
+            return "QSR", "Consumer"
+
+    # Emerging defaults
+    if sym in AEROSPACE_DEFENCE_TICKERS or any(x in comp for x in ["AEROSPACE", "DEFENCE", "DEFENSE", "DYNAMICS"]):
+        if "AERO" in comp or "AERO" in sym:
+            return "Aerospace", "Emerging"
+        return "Defence", "Emerging"
+    if sym in EMS_TICKERS or any(x in comp for x in ["EMS", "DIXON", "KAYNES", "SYRMA", "AVALON"]):
+        return "EMS", "Emerging"
+    if sym in DATA_CENTERS_TICKERS or "DATA CENTER" in comp or "NETWEB" in comp:
+        return "Data Centers", "Emerging"
+    
+    # Defaults
+    if "TELECOMMUNICATION" in ind:
+        return "Telecom", "Telecom"
+    if "INFORMATION TECHNOLOGY" in ind:
+        return "IT", "IT"
+    if "CONSTRUCTION MATERIALS" in ind:
+        return "Construction Materials", "Materials"
+    if "CONSTRUCTION" in ind:
+        return "Construction", "Construction"
+    if "REALTY" in ind:
+        return "Realty", "Realty"
+    if "MEDIA" in ind or "PUBLICATION" in ind:
+        return "Media", "Media"
+    
+    return industry, industry
+
+# ═══════════════════════════════════════════════════════════════════════
 #  MAIN ANALYSIS FUNCTION
 # ═══════════════════════════════════════════════════════════════════════
 def analyse(symbol, df, info, nse_comp, nse_ind):
@@ -905,6 +1094,7 @@ def main():
     scan_time = datetime.now().strftime('%d %b %Y  %I:%M %p')
     
     sector_stats = {}
+    industry_stats = {}
 
     print(f'Scanning {total} NSE stocks via Yahoo Finance...\n')
 
@@ -963,8 +1153,12 @@ def main():
                     nse_ind = 'Specialty Chemicals'
             # ----------------------------------
 
+            industry_group, parent_sector = get_industry_group(sym, nse_comp, nse_ind)
+
             if nse_ind not in sector_stats:
                 sector_stats[nse_ind] = {'total': 0, 'vcp': 0, 'a20': 0, 'a50': 0, 'a200': 0}
+            if industry_group not in industry_stats:
+                industry_stats[industry_group] = {'total': 0, 'vcp': 0, 'a20': 0, 'a50': 0, 'a200': 0, 'parent': parent_sector}
 
             # Safely capture Universe MAs before filtering
             c = df['Close']
@@ -978,6 +1172,11 @@ def main():
             if c0 > s50: sector_stats[nse_ind]['a50'] += 1
             if c0 > s200: sector_stats[nse_ind]['a200'] += 1
 
+            industry_stats[industry_group]['total'] += 1
+            if c0 > e20: industry_stats[industry_group]['a20'] += 1
+            if c0 > s50: industry_stats[industry_group]['a50'] += 1
+            if c0 > s200: industry_stats[industry_group]['a200'] += 1
+
             # Pass SMART NSE mappings directly to the analysis engine
             result, reason = analyse(sym, df, info, nse_comp, nse_ind)
 
@@ -986,8 +1185,11 @@ def main():
                 print(f'  [{i:3d}/{total}] {sym:<15} — ✗ {reason}')
                 continue
 
+            result['industry_group'] = industry_group
+            result['parent_sector'] = parent_sector
             results.append(result)
             sector_stats[nse_ind]['vcp'] += 1
+            industry_stats[industry_group]['vcp'] += 1
             
             print(f'  [{i:3d}/{total}] {sym:<15} — vcp:{result["vcp_score"]:3.0f}'
                   f'  adv:{result["r90"]:+.0f}%'
@@ -1048,88 +1250,103 @@ def main():
     html_out.write_text(html, encoding='utf-8')
     print(f'✅ HTML saved: {html_out}')
 
-    # ── Export JSON sidecars for NSE Breadth Radar dashboard ───────────
-    import json as _json
-
-    # 1. sector_breadth.json — per-sector MA breadth summary
-    sorted_secs = sorted(sector_stats.items(), key=lambda x: (-x[1]['vcp'], -x[1]['total']))
-    sectors_payload = []
-    for sec, st in sorted_secs:
-        if st['total'] == 0:
-            continue
-        tot = st['total']
-        sectors_payload.append({
-            'sector':   sec,
-            'universe': tot,
-            'vcp':      st['vcp'],
-            'vcp_pct':  round(st['vcp'] / tot * 100, 1),
-            'a20_pct':  round(st['a20'] / tot * 100, 1),
-            'a50_pct':  round(st['a50'] / tot * 100, 1),
-            'a200_pct': round(st['a200'] / tot * 100, 1),
+    # Output sector_breadth.json and sector_stocks.json
+    print(f'Generating JSON sidecars...')
+    import json
+    
+    # 1. sector_breadth.json
+    sectors_arr = []
+    for sec, st in sector_stats.items():
+        if st['total'] == 0: continue
+        sectors_arr.append({
+            'sector': sec,
+            'universe': st['total'],
+            'vcp_count': st['vcp'],
+            'a20_pct': int((st['a20'] / st['total']) * 100),
+            'a50_pct': int((st['a50'] / st['total']) * 100),
+            'a200_pct': int((st['a200'] / st['total']) * 100)
         })
-    breadth_payload = {
-        'scan_time':     scan_time,
-        'scan_date':     datetime.now().strftime('%Y-%m-%d'),
-        'total_scanned': total,
-        'qualified':     len(results),
-        'sectors':       sectors_payload,
-    }
-    breadth_out = out_dir / 'sector_breadth.json'
-    breadth_out.write_text(_json.dumps(breadth_payload, indent=2), encoding='utf-8')
-    print(f'✅ Breadth JSON saved: {breadth_out}')
-
-    # 2. sector_stocks.json — per-sector full stock list for drill-down
-    #    Includes ALL universe stocks (not just VCP) with their key metrics
-    #    so the Breadth Radar can show a sector drill-down on row click.
-    #    We re-scan results for VCP stocks, then fill remaining from nse_map.
-    vcp_symbols = {r['symbol'] for r in results}
-
-    # Build lookup: symbol → result dict (for VCP stocks with full metrics)
-    result_map = {r['symbol']: r for r in results}
-
-    # Group all scanned stocks by sector using sector_stats keys as reference.
-    # We need to re-derive per-stock sector — store it during scan above.
-    # Since sector_stats only has aggregates, we use results (VCP stocks have sector).
-    # For universe stocks we only have sector_stats totals, not per-stock detail.
-    # Solution: emit VCP stocks with full detail + note universe count per sector.
-    sector_stocks = {}
-    for r in results:
-        sec = r['sector']
-        if sec not in sector_stocks:
-            sector_stocks[sec] = []
-        sector_stocks[sec].append({
-            'symbol':   r['symbol'],
-            'company':  r['company'],
-            'price':    r['current'],
-            'mktcap':   round(r['market_cap'] / 1e7, 1) if r['market_cap'] else None,  # Cr
-            'r90':      round(r['r90'], 1),
-            'dist52':   round(r['dist52'], 1),
-            'drawdown': round(r['drawdown'], 1),
-            'atr':      round(r['atr_ratio'], 3),
-            'tight':    round(r['tight_pct'], 1),
-            'vcp_score': round(r['vcp_score'], 1),
-            'final_score': round(r['final_score'], 1),
-            'grade':    r['grade'],
-            'setup':    r['setup'],
-            'is_vcp':   True,
+    
+    industries_arr = []
+    for ind, st in industry_stats.items():
+        if st['total'] == 0: continue
+        industries_arr.append({
+            'sector': ind,   # Named 'sector' for table renderer mapping compatibility
+            'universe': st['total'],
+            'vcp_count': st['vcp'],
+            'a20_pct': int((st['a20'] / st['total']) * 100),
+            'a50_pct': int((st['a50'] / st['total']) * 100),
+            'a200_pct': int((st['a200'] / st['total']) * 100),
+            'parent_sector': st['parent']
         })
-
-    stocks_payload = {
-        'scan_time': scan_time,
+        
+    breadth_data = {
         'scan_date': datetime.now().strftime('%Y-%m-%d'),
-        'sectors':   {
-            sec: {
-                'universe': sector_stats[sec]['total'],
-                'vcp_count': sector_stats[sec]['vcp'],
-                'stocks': sector_stocks.get(sec, [])
-            }
-            for sec in sector_stats
-        }
+        'scan_time': scan_time,
+        'total_scanned': total,
+        'sectors': sectors_arr,
+        'industries': industries_arr
     }
-    stocks_out = out_dir / 'sector_stocks.json'
-    stocks_out.write_text(_json.dumps(stocks_payload, indent=2), encoding='utf-8')
-    print(f'✅ Stocks JSON saved: {stocks_out}')
-    # ────────────────────────────────────────────────────────────────────
+    
+    try:
+        with open(out_dir / 'sector_breadth.json', 'w', encoding='utf-8') as jf:
+            json.dump(breadth_data, jf, indent=2)
+        print(f'✅ JSON saved: {out_dir / "sector_breadth.json"}')
+    except Exception as je:
+        print(f'❌ Error writing sector_breadth.json: {je}')
+
+    # 2. sector_stocks.json
+    def serialize_stock(r):
+        return {
+            'symbol': r['symbol'],
+            'company': r['company'],
+            'price': r['current'],
+            'mktcap': r['market_cap'],
+            'r30': r['r30'],
+            'r60': r['r60'],
+            'r90': r['r90'],
+            'dist52': r['dist52'],
+            'drawdown': r['drawdown'],
+            'setup': r['setup'],
+            'final_score': r['final_score'],
+            'vcp_score': r['vcp_score'],
+            'grade': r['grade'],
+            'rs_rating': r['rs_score']
+        }
+
+    sectors_stocks_map = {}
+    for sec in sector_stats.keys():
+        sec_stocks = [serialize_stock(r) for r in results if r['sector'] == sec]
+        sectors_stocks_map[sec] = {
+            'universe': sector_stats[sec]['total'],
+            'vcp_count': sector_stats[sec]['vcp'],
+            'scan_time': scan_time,
+            'stocks': sec_stocks
+        }
+
+    industries_stocks_map = {}
+    for ind in industry_stats.keys():
+        ind_stocks = [serialize_stock(r) for r in results if r['industry_group'] == ind]
+        industries_stocks_map[ind] = {
+            'universe': industry_stats[ind]['total'],
+            'vcp_count': industry_stats[ind]['vcp'],
+            'scan_time': scan_time,
+            'stocks': ind_stocks
+        }
+
+    stocks_data = {
+        'scan_date': datetime.now().strftime('%Y-%m-%d'),
+        'scan_time': scan_time,
+        'sectors': sectors_stocks_map,
+        'industries': industries_stocks_map
+    }
+
+    try:
+        with open(out_dir / 'sector_stocks.json', 'w', encoding='utf-8') as jf:
+            json.dump(stocks_data, jf, indent=2)
+        print(f'✅ JSON saved: {out_dir / "sector_stocks.json"}')
+    except Exception as je:
+        print(f'❌ Error writing sector_stocks.json: {je}')
 
     # --- DISABLED FOR GITHUB ACTIONS TO SAVE REPO SPACE ---
     # xlsx_out = out_dir / 'vcp_scanner_results.xlsx'

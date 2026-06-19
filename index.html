@@ -1998,6 +1998,59 @@ thead th[onclick]:hover {
               </div>
             </div>
 
+            <!-- View Toggle, Search and Filters -->
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap;font-size:11px">
+              
+              <!-- Toggle View -->
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:9px">View:</span>
+                <div style="display:flex;background:var(--bg4);border:1px solid var(--border);border-radius:4px;overflow:hidden">
+                  <button id="vcpb-view-sector" onclick="vcpbSetViewMode('sector')" 
+                          style="background:var(--accent);color:#050508;border:none;font-size:10px;font-weight:700;padding:4px 10px;cursor:pointer;transition:all .15s">Sector</button>
+                  <button id="vcpb-view-industry" onclick="vcpbSetViewMode('industry')" 
+                          style="background:transparent;color:var(--sub);border:none;font-size:10px;font-weight:600;padding:4px 10px;cursor:pointer;transition:all .15s">Industry</button>
+                </div>
+              </div>
+
+              <!-- Search -->
+              <div style="display:flex;align-items:center;gap:6px;position:relative;flex:1;min-width:180px;max-width:300px">
+                <input id="vcpb-search" type="text" oninput="vcpbApplySearch(this.value)" placeholder="🔍 Search Copper, Cables, Banks..." 
+                       style="width:100%;background:var(--bg4);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 8px 4px 24px;font-size:11px;outline:none;transition:border-color .15s">
+                <span id="vcpb-search-clear" onclick="vcpbClearSearch()" 
+                      style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--dim);cursor:pointer;font-size:12px">×</span>
+              </div>
+
+              <!-- Confidence Column Toggle -->
+              <div style="display:flex;align-items:center;gap:6px">
+                <input id="vcpb-show-confidence" type="checkbox" onchange="vcpbToggleConfidenceCol(this.checked)" checked
+                       style="accent-color:var(--purple);cursor:pointer">
+                <label for="vcpb-show-confidence" style="color:var(--sub);cursor:pointer;font-size:10px;user-select:none">Confidence Col</label>
+              </div>
+            </div>
+
+            <!-- Filters Bar -->
+            <div style="display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--bg3);border-bottom:1px solid var(--border);flex-wrap:wrap;font-size:10px">
+              <span style="color:var(--dim);text-transform:uppercase;font-weight:600;letter-spacing:.5px;font-size:9px">Filter:</span>
+              <button class="vcpb-filter-btn active" onclick="vcpbSetFilter('all')" data-filter="all"
+                      style="background:var(--border);border:1px solid var(--border);color:var(--text);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">All</button>
+              <button class="vcpb-filter-btn" onclick="vcpbSetFilter('strong')" data-filter="strong"
+                      style="background:transparent;border:1px solid var(--border);color:var(--dim);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s" title="Score >= 60%">Strong</button>
+              <button class="vcpb-filter-btn" onclick="vcpbSetFilter('neutral')" data-filter="neutral"
+                      style="background:transparent;border:1px solid var(--border);color:var(--dim);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s" title="Score 40-59%">Neutral</button>
+              <button class="vcpb-filter-btn" onclick="vcpbSetFilter('weak')" data-filter="weak"
+                      style="background:transparent;border:1px solid var(--border);color:var(--dim);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s" title="Score < 40%">Weak</button>
+              <button class="vcpb-filter-btn" onclick="vcpbSetFilter('stage2')" data-filter="stage2"
+                      style="background:transparent;border:1px solid var(--border);color:var(--dim);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s" title="Stage is S2">Stage 2</button>
+              <button class="vcpb-filter-btn" onclick="vcpbSetFilter('high_conf')" data-filter="high_conf"
+                      style="background:transparent;border:1px solid var(--border);color:var(--dim);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s" title="High Confidence">High Conf</button>
+              <button class="vcpb-filter-btn" onclick="vcpbSetFilter('emerging')" data-filter="emerging"
+                      style="background:transparent;border:1px solid var(--border);color:var(--dim);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s" title="Emerging parent sector themes">Emerging Themes</button>
+              <button class="vcpb-filter-btn" onclick="vcpbSetFilter('top10')" data-filter="top10"
+                      style="background:transparent;border:1px solid var(--border);color:var(--dim);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">Top 10</button>
+              <button class="vcpb-filter-btn" onclick="vcpbSetFilter('top25')" data-filter="top25"
+                      style="background:transparent;border:1px solid var(--border);color:var(--dim);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">Top 25</button>
+            </div>
+
             <!-- Multi-Sort controls -->
             <div style="display:flex;align-items:center;gap:4px;padding:6px 14px;background:var(--bg3);border-bottom:1px solid var(--border);flex-wrap:wrap;font-size:11px">
               <span style="color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:9px">Multi-Sort:</span>
@@ -2039,6 +2092,7 @@ thead th[onclick]:hover {
                     <th id="vcpb-h-_rs" onclick="vcpbSetSort('_rs')" style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.5" title="Weekly relative strength rating compared to Nifty 50.">RS wk</th>
                     <th id="vcpb-h-_stageScore" onclick="vcpbSetSort('_stageScore')" style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.5" title="Current stage of the sector.">Stage</th>
                     <th id="vcpb-h-_daysAtTop" onclick="vcpbSetSort('_daysAtTop')" style="text-align:center;padding:5px 4px;color:var(--purple);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Consecutive trading days in top half of breadth scores.">@Top</th>
+                    <th id="vcpb-h-_confidence" onclick="vcpbSetSort('_confidence')" style="text-align:center;padding:5px 4px;color:var(--teal);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Confidence Level based on universe size, persistence, and RS stability.">Conf</th>
                   </tr>
                 </thead>
                 <tbody id="vcpb-tbody"></tbody>
@@ -5200,13 +5254,14 @@ function sccWatchlistRender() {
   
   if (_sccActiveWatchlist === 'VCP') {
     const cachedDrill = sectorDrillGetCached();
-    if (cachedDrill && cachedDrill.sectors) {
+    const activeMap = cachedDrill ? (_vcpbViewMode === 'industry' ? cachedDrill.industries : cachedDrill.sectors) : null;
+    if (cachedDrill && activeMap) {
       calculateRSRatings(cachedDrill);
       
       let sortedSectors;
       if (_sccWlIsBreadthSorted) {
         const rankedSectors = sccGetRankedSectors();
-        sortedSectors = Object.keys(cachedDrill.sectors).sort((a, b) => {
+        sortedSectors = Object.keys(activeMap).sort((a, b) => {
           let rankA = rankedSectors.indexOf(a);
           let rankB = rankedSectors.indexOf(b);
           if (rankA === -1) rankA = 9999;
@@ -5214,11 +5269,11 @@ function sccWatchlistRender() {
           return rankA - rankB;
         });
       } else {
-        sortedSectors = Object.keys(cachedDrill.sectors).sort();
+        sortedSectors = Object.keys(activeMap).sort();
       }
 
       sortedSectors.forEach(secName => {
-        const sec = cachedDrill.sectors[secName];
+        const sec = activeMap[secName];
         if (sec && Array.isArray(sec.stocks) && sec.stocks.length > 0) {
           const isCollapsed = _sccWlCollapsedSectors.has(secName);
           watchlistItems.push({ type: 'header', label: secName, collapsed: isCollapsed });
@@ -5406,14 +5461,17 @@ function sccGetStockSector(symbol) {
   if (!symbol) return 'Other';
   const sUpper = symbol.toUpperCase().replace('.NS', '');
   
-  // 1. Try VCP screener cache first (contains symbol -> sector mapping)
+  // 1. Try VCP screener cache first (contains symbol -> sector/industry mapping)
   const cachedDrill = sectorDrillGetCached();
-  if (cachedDrill && cachedDrill.sectors) {
-    for (const secName in cachedDrill.sectors) {
-      const sec = cachedDrill.sectors[secName];
-      if (sec && Array.isArray(sec.stocks)) {
-        if (sec.stocks.some(x => x.symbol && x.symbol.toUpperCase() === sUpper)) {
-          return secName;
+  if (cachedDrill) {
+    const activeMap = _vcpbViewMode === 'industry' ? cachedDrill.industries : cachedDrill.sectors;
+    if (activeMap) {
+      for (const secName in activeMap) {
+        const sec = activeMap[secName];
+        if (sec && Array.isArray(sec.stocks)) {
+          if (sec.stocks.some(x => x.symbol && x.symbol.toUpperCase() === sUpper)) {
+            return secName;
+          }
         }
       }
     }
@@ -5423,8 +5481,14 @@ function sccGetStockSector(symbol) {
   const allStocks = n500CsvGetCached() || [];
   const found = allStocks.find(s => s.symbol && s.symbol.toUpperCase() === sUpper);
   if (found) {
-    if (typeof csvSectorMap === 'function') {
-      return csvSectorMap(found.symbol, found.company || '', found.industry || '');
+    if (_vcpbViewMode === 'industry') {
+      if (typeof csvIndustryMap === 'function') {
+        return csvIndustryMap(found.symbol, found.company || '', found.industry || '');
+      }
+    } else {
+      if (typeof csvSectorMap === 'function') {
+        return csvSectorMap(found.symbol, found.company || '', found.industry || '');
+      }
     }
   }
   
@@ -5433,9 +5497,10 @@ function sccGetStockSector(symbol) {
 
 function sccGetRankedSectors() {
   const cached = vcpbGetCached();
-  if (!cached || !Array.isArray(cached.sectors)) return [];
+  const activeList = cached ? (_vcpbViewMode === 'industry' ? cached.industries : cached.sectors) : null;
+  if (!cached || !Array.isArray(activeList)) return [];
   
-  const list = cached.sectors.map(s => {
+  const list = activeList.map(s => {
     return {
       sector: s.sector,
       score: typeof vcpbScore === 'function' ? vcpbScore(s) : (s.composite || 0)
@@ -6614,7 +6679,260 @@ const LS_VCPB_DATA   = 'nse_vcpb_data_v1';
 const LS_VCPB_HIST   = 'nse_vcpb_hist_v1';   // rolling daily score history per sector
 let _vcpbSort = 'composite';                   // default: Score first
 let _vcpbSortAsc = false;                      // default: descending
+let _vcpbViewMode = 'sector';                  // default: sector view
+let _vcpbSearchQuery = '';                     // active search query
+let _vcpbFilter = 'all';                       // active filter
+let _vcpbShowConfidence = true;                // show confidence column by default
 
+// Sets of tickers for industry classification
+const PSU_BANKS_TICKERS = new Set(['SBIN', 'PNB', 'BOB', 'CANBK', 'UNIONBANK', 'INDIANB', 'UCOBANK', 'BANKBARODA', 'BANKINDIA', 'MAHABANK', 'CENTRALBK', 'IOB', 'PSB']);
+const PRIVATE_BANKS_TICKERS = new Set(['HDFCBANK', 'ICICIBANK', 'KOTAKBANK', 'AXISBANK', 'INDUSINDBK', 'FEDERALBNK', 'IDFCFIRSTB', 'BANDHANBNK', 'YESBANK', 'CUB', 'KTKBANK', 'RBLBANK', 'SOUTHBANK', 'CSBBANK', 'AUBANK', 'INDUSIND']);
+const INSURANCE_TICKERS = new Set(['HDFCLIFE', 'SBILIFE', 'ICICIPRULI', 'LIC', 'GICRE', 'NIACL', 'MAXFSL', 'ICICIGI', 'STARHEALTH']);
+const AMC_TICKERS = new Set(['HDFCAMC', 'NAM-INDIA', 'UTIAMC', 'ABSLAMC']);
+const CAPITAL_MARKETS_TICKERS = new Set(['CDSL', 'BSE', 'MCX', 'CAMS', 'KFINTECH', 'ANGELONE', 'ISEC', 'MUTHOOTOT', '5PAISA', 'ANANDRATHI', 'GEODJITFSL', 'MOTILALOFS']);
+
+const CABLES_TICKERS = new Set(['POLYCAB', 'KEI', 'RRKABEL', 'FINCABLES']);
+const TRANSFORMERS_TICKERS = new Set(['VOLTAMP', 'CGPOWER', 'TRIL', 'TRANSFORM', 'SCHNEIDER']);
+const BEARINGS_TICKERS = new Set(['SKFINDIA', 'TIMKEN', 'SHAFFLER', 'SCHAEFFLER', 'HARSHA']);
+const COMPRESSORS_TICKERS = new Set(['ELGIEQUIP', 'KPIL', 'KIRLPNU']);
+const HVAC_TICKERS = new Set(['VOLTAS', 'BLUESTARCO', 'HITACHIHAM']);
+
+const COPPER_TICKERS = new Set(['HINDCOPPER']);
+const STEEL_TICKERS = new Set(['TATASTEEL', 'JSWSTEEL', 'SAIL', 'JSL', 'JINDALSTEL', 'KALYANISTEEL', 'APLAPOLLO', 'WELCORP', 'MAHSEAMLES']);
+const ALUMINIUM_TICKERS = new Set(['HINDALCO', 'NATIONALUM']);
+const MINING_TICKERS = new Set(['COALINDIA', 'NMDC', 'GMDC']);
+const EXPLOSIVES_TICKERS = new Set(['SOLARINDS', 'PREMEXPLN']);
+const DYES_PIGMENTS_TICKERS = new Set(['BODALCHEM', 'KIRIINDUS', 'SUDARSCHEM', 'MEGH']);
+
+const GAS_TRADING_TICKERS = new Set(['GAIL', 'GSPL']);
+const CGD_TICKERS = new Set(['IGL', 'MGL', 'ATGL', 'GUJGASLTD']);
+const SOLAR_TICKERS = new Set(['TATAPOWER', 'ADANIGREEN', 'SWSOLAR', 'WAAREEENER', 'WEBSOL']);
+const POWER_EQUIP_TICKERS = new Set(['BHEL', 'SUZLON', 'INOXWIND', 'GET&D']);
+
+const CDMO_TICKERS = new Set(['DIVISLAB', 'SYNGENE', 'SUVENPHAR', 'LAURUSLABS']);
+const DIAGNOSTICS_TICKERS = new Set(['LALPATHLAB', 'METROPOLIS', 'THYROCARE', 'VIJAYA']);
+const MEDICAL_DEVICES_TICKERS = new Set(['POLYMED']);
+
+const COMMERCIAL_VEH_TICKERS = new Set(['ASHOKLEY', 'SMLISUZU']);
+const PASSENGER_VEH_TICKERS = new Set(['MARUTI', 'M&M', 'TATAMOTORS', 'HYUNDAI']);
+const TYRES_TICKERS = new Set(['MRF', 'APOLLOTYRE', 'CEATLTD', 'JKTYRE', 'BALKRISIND']);
+const EV_COMPONENTS_TICKERS = new Set(['SONACOMS', 'MINDACORP', 'UNOMINDA']);
+const BATTERIES_TICKERS = new Set(['EXIDEIND', 'AMARAJABAT', 'ARE&M']);
+const TRACTORS_TICKERS = new Set(['ESCORTS', 'VSTTILLERS']);
+
+const RETAIL_TICKERS = new Set(['TRENT', 'DMART', 'ABFRL', 'SHOPERSTOP', 'VMART', 'ETHOSLTD']);
+const JEWELLERY_TICKERS = new Set(['TITAN', 'KALYANKJIL', 'SENCO', 'RAJESHEXPO']);
+const FOOTWEAR_TICKERS = new Set(['BATAINDIA', 'METROBRAND', 'RELAXO', 'CAMPUS']);
+const RESTAURANTS_QSR_TICKERS = new Set(['JUBLFOOD', 'DEVYANI', 'WESTLIFE', 'RBA', 'SAPPHIRE']);
+const TEXTILES_TICKERS = new Set(['PAGEIND', 'ARVIND', 'VTL', 'RAYMOND', 'WELSPUNLIV', 'ALOKIND', 'GARFIBRES', 'GOKEX', 'KPRMILL']);
+
+const AEROSPACE_DEFENCE_TICKERS = new Set(['HAL', 'BEL', 'BDL', 'ASTRAMICRO', 'PARAS', 'DATAPATTNS', 'ZENTEC', 'MTARTECH', 'DYNAMATECH', 'IDEAFORGE']);
+const SHIPBUILDING_TICKERS = new Set(['MAZDOCK', 'COCHINSHIP', 'GRSE']);
+const EMS_TICKERS = new Set(['DIXON', 'KAYNES', 'SYRMA', 'AVALON']);
+const DATA_CENTERS_TICKERS = new Set(['NETWEB', 'ANANTRAJ']);
+
+function csvIndustryMap(symbol, company, industry) {
+  const sym = symbol.toUpperCase().replace('.NS', '');
+  const comp = company.toUpperCase();
+  const ind = industry.toUpperCase();
+  
+  // 1. Financials
+  if (ind.includes("FINANCIAL") || ind.includes("BANKS")) {
+    if (PSU_BANKS_TICKERS.has(sym) || ["STATE BANK", "PUNJAB NATIONAL", "BANK OF BARODA", "CANARA", "UNION BANK", "INDIAN BANK", "UCO BANK", "BANK OF INDIA", "MAHARASHTRA", "CENTRAL BANK", "OVERSEAS", "SHUBH", "PSU"].some(x => comp.includes(x))) {
+      return "PSU Banks";
+    }
+    if (PRIVATE_BANKS_TICKERS.has(sym) || ["HDFC BANK", "ICICI BANK", "KOTAK", "AXIS", "INDUSIND", "FEDERAL", "IDFC FIRST", "BANDHAN", "YES BANK", "CITY UNION", "KARUR VYSYA", "RBL", "SOUTH INDIAN", "CSB BANK", "AU SMALL"].some(x => comp.includes(x))) {
+      return "Private Banks";
+    }
+    if (INSURANCE_TICKERS.has(sym) || ["INSURANCE", "LIFE", "GENERAL INS", "ASSURANCE", "MAX FINANCIAL"].some(x => comp.includes(x))) {
+      return "Insurance";
+    }
+    if (AMC_TICKERS.has(sym) || ["AMC", "MUTUAL FUND", "ASSET MANAGEMENT", "NIPPON LIFE"].some(x => comp.includes(x))) {
+      return "AMCs";
+    }
+    if (CAPITAL_MARKETS_TICKERS.has(sym) || ind.includes("CAPITAL MARKETS") || ["CDSL", "BSE", "MCX", "CAMS", "KFIN", "ANGEL ONE", "SECURITIES", "WEALTH", "BROKING", "INVESTMENT"].some(x => comp.includes(x))) {
+      return "Capital Markets";
+    }
+    return "NBFCs";
+  }
+
+  // 2. Industrials
+  if (ind.includes("CAPITAL GOODS") || ind.includes("INDUSTRIAL") || ind.includes("MACHINERY")) {
+    if (AEROSPACE_DEFENCE_TICKERS.has(sym) || ["AEROSPACE", "DEFENCE", "DEFENSE", "DYNAMICS"].some(x => comp.includes(x))) {
+      if (comp.includes("AERO") || sym.includes("AERO")) return "Aerospace";
+      return "Defence";
+    }
+    if (SHIPBUILDING_TICKERS.has(sym) || ["SHIPYARD", "SHIPBUILD", "MAZAGON"].some(x => comp.includes(x))) {
+      return "Shipbuilding";
+    }
+    if (CABLES_TICKERS.has(sym) || ["CABLE", "RR KABEL"].some(x => comp.includes(x))) {
+      return "Cables";
+    }
+    if (TRANSFORMERS_TICKERS.has(sym) || ["TRANSFORMER", "SCHNEIDER"].some(x => comp.includes(x))) {
+      return "Transformers";
+    }
+    if (BEARINGS_TICKERS.has(sym) || comp.includes("BEARING")) {
+      return "Bearings";
+    }
+    if (COMPRESSORS_TICKERS.has(sym) || ["COMPRESSOR", "PNEUMATIC"].some(x => comp.includes(x))) {
+      return "Compressors";
+    }
+    if (HVAC_TICKERS.has(sym) || ["VOLTAS", "BLUE STAR"].some(x => comp.includes(x))) {
+      return "HVAC";
+    }
+    if (comp.includes("AUTOMATION") || comp.includes("HONEYWELL")) {
+      return "Automation";
+    }
+    return "Industrial Machinery";
+  }
+
+  // 3. Materials
+  if (ind.includes("METALS & MINING") || ind.includes("METALS") || ind.includes("MINING") || ind.includes("MATERIALS")) {
+    if (COPPER_TICKERS.has(sym) || comp.includes("COPPER")) return "Copper";
+    if (ALUMINIUM_TICKERS.has(sym) || comp.includes("ALUMINIUM") || comp.includes("NALCO")) return "Aluminium";
+    if (MINING_TICKERS.has(sym) || ind.includes("MINING") || ["COAL INDIA", "NMDC", "GMDC"].some(x => comp.includes(x))) return "Mining";
+    if (STEEL_TICKERS.has(sym) || ["STEEL", "PIPE", "APOLLO TUBES", "WELSPUN CORP"].some(x => comp.includes(x))) return "Steel";
+    return "Materials";
+  }
+
+  if (ind.includes("CHEMICALS")) {
+    if (EXPLOSIVES_TICKERS.has(sym) || ["EXPLOSIVE", "SOLAR IND"].some(x => comp.includes(x))) return "Explosives";
+    if (DYES_PIGMENTS_TICKERS.has(sym) || ["DYE", "PIGMENT", "SUDARSHAN"].some(x => comp.includes(x))) {
+      if (comp.includes("DYE") || sym.includes("DYE")) return "Dyes";
+      return "Pigments";
+    }
+    return "Specialty Chemicals";
+  }
+
+  // 4. Energy
+  if (ind.includes("POWER") || ind.includes("OIL GAS") || ind.includes("ENERGY")) {
+    if (GAS_TRADING_TICKERS.has(sym) || comp.includes("GAIL") || comp.includes("GSPL")) return "Gas Trading";
+    if (CGD_TICKERS.has(sym) || ["GUJARAT GAS", "INDRAPRASTHA GAS", "MAHANAGAR GAS", "ADANI TOTAL"].some(x => comp.includes(x))) return "CGD";
+    if (SOLAR_TICKERS.has(sym) || ["SOLAR", "ADANI GREEN", "WAAREE"].some(x => comp.includes(x))) return "Solar";
+    if (POWER_EQUIP_TICKERS.has(sym) || ["SUZLON", "WIND", "BHEL", "GET&D"].some(x => comp.includes(x))) return "Power Equipment";
+    return "Renewables";
+  }
+
+  // 5. Healthcare
+  if (ind.includes("HEALTHCARE") || ind.includes("PHARMACEUTICALS")) {
+    if (CDMO_TICKERS.has(sym) || ["CDMO", "DIVI'S", "SYNGENE", "LAURUS"].some(x => comp.includes(x))) return "CDMO";
+    if (DIAGNOSTICS_TICKERS.has(sym) || ["DIAGNOSTIC", "LAL PATH", "METROPOLIS"].some(x => comp.includes(x))) return "Diagnostics";
+    if (MEDICAL_DEVICES_TICKERS.has(sym) || ["MEDICURE", "DEVICE"].some(x => comp.includes(x))) return "Medical Devices";
+    if (["PHARMA", "LAB", "BIOTECH", "DRUG", "MEDICINE"].some(x => comp.includes(x))) return "Pharma";
+    return "Hospitals";
+  }
+
+  // 6. Auto
+  if (ind.includes("AUTO") || ind.includes("VEHICLE")) {
+    if (TYRES_TICKERS.has(sym) || ["TYRE", "CEAT", "MRF"].some(x => comp.includes(x))) return "Tyres";
+    if (EV_COMPONENTS_TICKERS.has(sym) || ["EV", "SONA BLW", "MINDA"].some(x => comp.includes(x))) return "EV Components";
+    if (BATTERIES_TICKERS.has(sym) || ["BATTERY", "EXIDE", "AMARA RAJA"].some(x => comp.includes(x))) return "Batteries";
+    if (TRACTORS_TICKERS.has(sym) || comp.includes("TRACTOR")) return "Tractors";
+    if (COMMERCIAL_VEH_TICKERS.has(sym) || ["ASHOK LEYLAND", "COMMERCIAL VEHICLE"].some(x => comp.includes(x))) return "Commercial Vehicles";
+    return "Passenger Vehicles";
+  }
+
+  // 7. Consumer
+  if (ind.includes("CONSUMER") || ind.includes("RETAIL") || ind.includes("TEXTILES") || ind.includes("SERVICES")) {
+    if (TEXTILES_TICKERS.has(sym) || ind.includes("TEXTILES") || ["SPINNING", "WEAVING", "PAGE INDUSTRIES", "WELSPUN LIVING", "RAYMOND"].some(x => comp.includes(x))) return "Textiles";
+    if (RETAIL_TICKERS.has(sym) || ind.includes("RETAIL") || ["TRENT", "AVENUE SUPERMARTS", "SHOPPERS STOP"].some(x => comp.includes(x))) return "Retail";
+    if (JEWELLERY_TICKERS.has(sym) || ["JEWELLER", "TITAN", "GOLD"].some(x => comp.includes(x))) return "Jewellery";
+    if (FOOTWEAR_TICKERS.has(sym) || ["FOOTWEAR", "BATA", "METRO BRAND", "RELAXO"].some(x => comp.includes(x))) return "Footwear";
+    if (RESTAURANTS_QSR_TICKERS.has(sym) || ["RESTAURANT", "FOODWORKS", "DEVYANI", "WESTLIFE", "SAPPHIRE"].some(x => comp.includes(x))) return "QSR";
+  }
+
+  // Emerging defaults
+  if (AEROSPACE_DEFENCE_TICKERS.has(sym) || ["AEROSPACE", "DEFENCE", "DEFENSE", "DYNAMICS"].some(x => comp.includes(x))) {
+    if (comp.includes("AERO") || sym.includes("AERO")) return "Aerospace";
+    return "Defence";
+  }
+  if (EMS_TICKERS.has(sym) || ["EMS", "DIXON", "KAYNES", "SYRMA", "AVALON"].some(x => comp.includes(x))) return "EMS";
+  if (DATA_CENTERS_TICKERS.has(sym) || comp.includes("DATA CENTER") || comp.includes("NETWEB")) return "Data Centers";
+
+  // Defaults
+  if (ind.includes("TELECOMMUNICATION")) return "Telecom";
+  if (ind.includes("INFORMATION TECHNOLOGY")) return "IT";
+  if (ind.includes("CONSTRUCTION MATERIALS")) return "Construction Materials";
+  if (ind.includes("CONSTRUCTION")) return "Construction";
+  if (ind.includes("REALTY")) return "Realty";
+  if (ind.includes("MEDIA") || ind.includes("PUBLICATION")) return "Media";
+  
+  return csvSectorMap(symbol, company, industry);
+}
+
+function vcpbApplySearch(val) {
+  _vcpbSearchQuery = val.trim();
+  const clearBtn = document.getElementById('vcpb-search-clear');
+  if (clearBtn) clearBtn.style.display = _vcpbSearchQuery ? 'block' : 'none';
+  
+  const card = document.getElementById('srt-home-card');
+  if (card && card._vcpbData) {
+    vcpbRenderTable(_vcpbViewMode === 'sector' ? card._vcpbData.sectors : (card._vcpbData.industries || []));
+  }
+}
+
+function vcpbClearSearch() {
+  const inp = document.getElementById('vcpb-search');
+  if (inp) inp.value = '';
+  vcpbApplySearch('');
+}
+
+function vcpbSetFilter(filterVal) {
+  _vcpbFilter = filterVal;
+  
+  document.querySelectorAll('.vcpb-filter-btn').forEach(btn => {
+    if (btn.getAttribute('data-filter') === filterVal) {
+      btn.style.background = 'var(--border)';
+      btn.style.color = 'var(--text)';
+    } else {
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--sub)';
+    }
+  });
+
+  const card = document.getElementById('srt-home-card');
+  if (card && card._vcpbData) {
+    vcpbRenderTable(_vcpbViewMode === 'sector' ? card._vcpbData.sectors : (card._vcpbData.industries || []));
+  }
+}
+
+function vcpbToggleConfidenceCol(checked) {
+  _vcpbShowConfidence = checked;
+  const card = document.getElementById('srt-home-card');
+  if (card && card._vcpbData) {
+    vcpbRenderTable(_vcpbViewMode === 'sector' ? card._vcpbData.sectors : (card._vcpbData.industries || []));
+  }
+}
+
+function vcpbSetViewMode(mode) {
+  _vcpbViewMode = mode;
+  
+  const secBtn = document.getElementById('vcpb-view-sector');
+  const indBtn = document.getElementById('vcpb-view-industry');
+  
+  if (secBtn && indBtn) {
+    if (mode === 'sector') {
+      secBtn.style.background = 'var(--accent)';
+      secBtn.style.color = '#050508';
+      secBtn.style.fontWeight = '700';
+      indBtn.style.background = 'transparent';
+      indBtn.style.color = 'var(--sub)';
+      indBtn.style.fontWeight = '600';
+    } else {
+      indBtn.style.background = 'var(--accent)';
+      indBtn.style.color = '#050508';
+      indBtn.style.fontWeight = '700';
+      secBtn.style.background = 'transparent';
+      secBtn.style.color = 'var(--sub)';
+      secBtn.style.fontWeight = '600';
+    }
+  }
+
+  const card = document.getElementById('srt-home-card');
+  if (card && card._vcpbData) {
+    vcpbRender(card._vcpbData);
+  }
+}
 function vcpbGetUrl()          { return (localStorage.getItem(LS_VCPB_URL) || 'https://mkshibu2.github.io/breadth-radar').trim().replace(/\/$/, ''); }
 function vcpbSetStoredUrl(url) { localStorage.setItem(LS_VCPB_URL, url.trim().replace(/\/$/, '')); }
 function vcpbGetCached()       { try { return JSON.parse(localStorage.getItem(LS_VCPB_DATA)) || null; } catch(e) { return null; } }
@@ -6732,13 +7050,25 @@ function vcpbCalculateADScore(sectorName) {
 // Format: { 'Capital Goods': [ {date, score, a20, a50, a200}, ... ], ... }
 const VCPB_HIST_MAX_DAYS = 60; // keep last 60 trading days (~12 weeks)
 
+function vcpbGetActiveNames() {
+  const cached = vcpbGetCached();
+  if (!cached) return [];
+  const list = _vcpbViewMode === 'industry' ? cached.industries : cached.sectors;
+  if (!list || !Array.isArray(list)) return [];
+  return list.map(x => x.sector);
+}
+
 function vcpbAccumulateHistory(data) {
-  if (!data || !data.sectors) return;
+  if (!data) return;
   const hist = vcpbGetHist();
   const date = data.scan_date;
   if (!date) return;
 
-  data.sectors.forEach(s => {
+  const items = [];
+  if (data.sectors) items.push(...data.sectors);
+  if (data.industries) items.push(...data.industries);
+
+  items.forEach(s => {
     if (!hist[s.sector]) hist[s.sector] = [];
     // Don't duplicate same date
     if (hist[s.sector].some(e => e.date === date)) return;
@@ -6827,7 +7157,7 @@ function vcpbSetSort(key) {
     if (s1) s1.value = key;
   }
   const card = document.getElementById('srt-home-card');
-  if (card && card._vcpbData) vcpbRenderTable(card._vcpbData.sectors);
+  if (card && card._vcpbData) vcpbRenderTable(_vcpbViewMode === 'sector' ? card._vcpbData.sectors : (card._vcpbData.industries || []));
 }
 
 function vcpbPopulateSortDropdowns() {
@@ -6845,6 +7175,7 @@ function vcpbPopulateSortDropdowns() {
     { value: '_rs', text: 'RS wk' },
     { value: '_stageScore', text: 'Stage' },
     { value: '_daysAtTop', text: '@Top' },
+    { value: '_confidence', text: 'Conf' },
     { value: 'sector', text: 'Sector' }
   ];
 
@@ -6883,7 +7214,7 @@ function vcpbApplyMultiSort() {
     }
   }
   const card = document.getElementById('srt-home-card');
-  if (card && card._vcpbData) vcpbRenderTable(card._vcpbData.sectors);
+  if (card && card._vcpbData) vcpbRenderTable(_vcpbViewMode === 'sector' ? card._vcpbData.sectors : (card._vcpbData.industries || []));
 }
 
 function vcpbSetPreset(presetName) {
@@ -6937,7 +7268,8 @@ function vcpbMedianR90(sectorName) {
   try {
     const data = sectorDrillGetCached();
     if (!data) return null;
-    const secData = data.sectors?.[sectorName];
+    const activeMap = _vcpbViewMode === 'industry' ? data.industries : data.sectors;
+    const secData = activeMap?.[sectorName];
     const stocks  = secData?.stocks || [];
     if (!stocks.length) return null;
     const r90s = stocks.map(s => s.r90).filter(v => v != null && !isNaN(v));
@@ -7035,7 +7367,8 @@ function updateTableHeaderSortIndicators() {
     '_adScore': { text: 'A/D' },
     '_rs': { text: 'RS wk' },
     '_stageScore': { text: 'Stage' },
-    '_daysAtTop': { text: '@Top' }
+    '_daysAtTop': { text: '@Top' },
+    '_confidence': { text: 'Conf' }
   };
 
   Object.keys(headers).forEach(k => {
@@ -7076,6 +7409,21 @@ function vcpbRenderTable(sectors) {
     const med90 = vcpbMedianR90(s.sector);
     const accel = vcpbAcceleration(s.sector);
     const adInfo = vcpbCalculateADScore(s.sector);
+    
+    // Calculate Confidence
+    const universe = s.universe || 0;
+    const daysAtTop = vcpbDaysAtTop(s.sector);
+    const stage = (over && over.stage) ? over.stage : '';
+    const rs = (over && over.rs != null) ? over.rs : -9999;
+    
+    let confidence = 'Medium';
+    if (universe >= 5 && daysAtTop >= 10 && (stage === 'S2' || rs >= 0)) {
+      confidence = 'High';
+    } else if (universe <= 2 || vcpbScore(s) < 40) {
+      confidence = 'Low';
+    }
+    const confScore = confidence === 'High' ? 3 : confidence === 'Medium' ? 2 : 1;
+
     return {
       ...s,
       composite:   vcpbScore(s),
@@ -7090,9 +7438,42 @@ function vcpbRenderTable(sectors) {
       _accel:      accel !== null ? accel : -9999,
       _adScore:    adInfo.net,
       _adAcc:      adInfo.acc,
-      _adDist:     adInfo.dist
+      _adDist:     adInfo.dist,
+      _confidence: confidence,
+      _confidenceScore: confScore
     };
   });
+
+  // Apply Search
+  let filtered = [...enriched];
+  if (_vcpbSearchQuery) {
+    const q = _vcpbSearchQuery.toLowerCase();
+    filtered = filtered.filter(s => s.sector.toLowerCase().includes(q));
+  }
+
+  // Apply Filter (except top 10/25 which slice after sorting)
+  if (_vcpbFilter !== 'all') {
+    if (_vcpbFilter === 'strong') {
+      filtered = filtered.filter(s => s.composite >= 60);
+    } else if (_vcpbFilter === 'neutral') {
+      filtered = filtered.filter(s => s.composite >= 40 && s.composite < 60);
+    } else if (_vcpbFilter === 'weak') {
+      filtered = filtered.filter(s => s.composite < 40);
+    } else if (_vcpbFilter === 'stage2') {
+      filtered = filtered.filter(s => s._stageScore === 4);
+    } else if (_vcpbFilter === 'high_conf') {
+      filtered = filtered.filter(s => s._confidence === 'High');
+    } else if (_vcpbFilter === 'emerging') {
+      filtered = filtered.filter(s => {
+        if (_vcpbViewMode === 'industry') {
+          return s.parent_sector === 'Emerging';
+        } else {
+          const name = s.sector.toLowerCase();
+          return name.includes('defen') || name.includes('aero') || name.includes('ship') || name.includes('drone');
+        }
+      });
+    }
+  }
 
   const compareFields = (a, b, key, asc) => {
     let valA = a[key];
@@ -7102,6 +7483,12 @@ function vcpbRenderTable(sectors) {
       const strA = valA || '';
       const strB = valB || '';
       return asc ? strA.localeCompare(strB) : strB.localeCompare(strA);
+    }
+
+    if (key === '_confidence') {
+      const vA = a._confidenceScore || 2;
+      const vB = b._confidenceScore || 2;
+      return asc ? (vA - vB) : (vB - vA);
     }
 
     const isInvalidA = (valA === null || valA === undefined || valA === -9999 || valA === -1);
@@ -7114,7 +7501,7 @@ function vcpbRenderTable(sectors) {
     return asc ? (valA - valB) : (valB - valA);
   };
 
-  const sorted = [...enriched].sort((a, b) => {
+  const sorted = [...filtered].sort((a, b) => {
     const s1 = document.getElementById('vcpb-sort-1');
     const s2 = document.getElementById('vcpb-sort-2');
     const s3 = document.getElementById('vcpb-sort-3');
@@ -7139,7 +7526,21 @@ function vcpbRenderTable(sectors) {
     return 0;
   });
 
-  tbody.innerHTML = sorted.map((s, i) => {
+  // Apply slice filters (Top 10 / Top 25)
+  let sliced = sorted;
+  if (_vcpbFilter === 'top10') {
+    sliced = sorted.slice(0, 10);
+  } else if (_vcpbFilter === 'top25') {
+    sliced = sorted.slice(0, 25);
+  }
+
+  // Update confidence header visibility
+  const confHeader = document.getElementById('vcpb-h-_confidence');
+  if (confHeader) {
+    confHeader.style.display = _vcpbShowConfidence ? 'table-cell' : 'none';
+  }
+
+  tbody.innerHTML = sliced.map((s, i) => {
     const scoreC = vcpbPctColor(s.composite);
     const a20C   = vcpbPctColor(s.a20_pct);
     const a50C   = vcpbPctColor(s.a50_pct);
@@ -7203,6 +7604,12 @@ function vcpbRenderTable(sectors) {
       ? '<span style="color:var(--yellow);font-size:11px;margin-left:4px" title="Blue Sky RS: Weekly relative strength vs Nifty 50 at 52-week high">🌟</span>'
       : '';
 
+    // Confidence cell HTML
+    const confColor = s._confidence === 'High' ? 'var(--lime)' : s._confidence === 'Low' ? 'var(--red)' : 'var(--yellow)';
+    const confCell = _vcpbShowConfidence
+      ? `<td style="padding:5px 4px;text-align:center;font-size:10px;font-weight:700;color:${confColor}">${s._confidence}</td>`
+      : '';
+
     return `<tr style="border-bottom:1px solid var(--border);background:${rowBg};cursor:pointer"
       onmouseenter="this.style.background='rgba(45,212,191,.06)'"
       onmouseleave="this.style.background='${rowBg}'"
@@ -7226,6 +7633,7 @@ function vcpbRenderTable(sectors) {
       <td style="padding:5px 4px;text-align:center;font-size:11px;font-family:var(--mono);opacity:.7">${rsCell}</td>
       <td style="padding:5px 4px;text-align:center;opacity:.7">${stageCell}</td>
       <td style="padding:5px 4px;text-align:center">${dTopCell}</td>
+      ${confCell}
     </tr>`;
   }).join('');
 }
@@ -7245,7 +7653,8 @@ function vcpbRender(data) {
   if (badgeEl) { badgeEl.textContent = data.scan_date || ''; badgeEl.style.display = 'inline'; }
 
   // ── Leader strip: rank-based (top 25% / mid 50% / bottom 25%) ──────────
-  const enrichedStrip = data.sectors
+  const activeList = _vcpbViewMode === 'sector' ? data.sectors : (data.industries || []);
+  const enrichedStrip = activeList
     .map(s => ({
       name:  s.sector,
       score: vcpbScore(s),
@@ -7284,7 +7693,7 @@ function vcpbRender(data) {
   if (avoidEl) avoidEl.innerHTML = avoid.map(s    => pill(s,'#fff','rgba(248,113,113,.2)')).join('');
   // ─────────────────────────────────────────────────────────────────────
 
-  vcpbRenderTable(data.sectors);
+  vcpbRenderTable(activeList);
   // If RRG pane is visible, redraw with fresh history
   const rrgPane = document.getElementById('scc-pane-rrg');
   if (rrgPane && rrgPane.style.display !== 'none') { brrgRebuildChips(); brrgDraw(); }
@@ -7387,7 +7796,8 @@ function brrgEMA(arr, period) {
 // ── Compute series for all sectors ───────────────────────────────────────
 function brrgComputeAll() {
   const hist       = vcpbGetHist();
-  const allSectors = Object.keys(hist).filter(k => hist[k] && hist[k].length >= 3);
+  const activeNames = new Set(vcpbGetActiveNames());
+  const allSectors = Object.keys(hist).filter(k => activeNames.has(k) && hist[k] && hist[k].length >= 3);
   if (!allSectors.length) return null;
 
   // Build date union
@@ -7441,7 +7851,8 @@ function brrgRebuildChips() {
   const container = document.getElementById('brrg-chips');
   if (!container) return;
   const hist    = vcpbGetHist();
-  const allSecs = Object.keys(hist).filter(k => hist[k] && hist[k].length >= 3);
+  const activeNames = new Set(vcpbGetActiveNames());
+  const allSecs = Object.keys(hist).filter(k => activeNames.has(k) && hist[k] && hist[k].length >= 3);
 
   // Determine displayed sectors same way brrgDraw does
   let displayed = allSecs;
@@ -13499,14 +13910,16 @@ function findStockMetadata(symbol) {
 
   // 1. Try to find in the VCP scanner daily sector stocks cache (which contains RS ratings)
   const cachedDrill = sectorDrillGetCached();
-  if (cachedDrill && cachedDrill.sectors) {
+  if (cachedDrill) {
     // Ensure RS ratings are calculated on the cached data
     if (typeof calculateRSRatings === 'function') {
       calculateRSRatings(cachedDrill);
     }
     
-    // Search all sectors
-    for (const secName in cachedDrill.sectors) {
+    const activeMap = cachedDrill.sectors || cachedDrill.industries;
+    if (activeMap) {
+      // Search all sectors/industries
+      for (const secName in activeMap) {
       const sec = cachedDrill.sectors[secName];
       if (sec && Array.isArray(sec.stocks)) {
         const found = sec.stocks.find(x => x.symbol && x.symbol.toUpperCase() === sUpper);
@@ -13642,27 +14055,33 @@ function sdSetFilter(f) {
 }
 
 function calculateRSRatings(data) {
-  if (!data || !data.sectors) return;
+  if (!data) return;
   const uniqueStocks = [];
   const symbolMap = new Map();
-  for (const secName in data.sectors) {
-    const sec = data.sectors[secName];
-    if (sec && Array.isArray(sec.stocks)) {
-      sec.stocks.forEach(s => {
-        if (!symbolMap.has(s.symbol)) {
-          const r90 = parseFloat(s.r90) || 0;
-          const dist52 = parseFloat(s.dist52) || 0;
-          const drawdown = parseFloat(s.drawdown) || 0;
-          const score = r90 * 1.5 + (100 + dist52) * 1.0 + (100 + drawdown) * 0.5;
-          const obj = { symbol: s.symbol, score, stockRefs: [s] };
-          symbolMap.set(s.symbol, obj);
-          uniqueStocks.push(obj);
-        } else {
-          symbolMap.get(s.symbol).stockRefs.push(s);
-        }
-      });
+  const mapsToProcess = [];
+  if (data.sectors) mapsToProcess.push(data.sectors);
+  if (data.industries) mapsToProcess.push(data.industries);
+
+  mapsToProcess.forEach(m => {
+    for (const secName in m) {
+      const sec = m[secName];
+      if (sec && Array.isArray(sec.stocks)) {
+        sec.stocks.forEach(s => {
+          if (!symbolMap.has(s.symbol)) {
+            const r90 = parseFloat(s.r90) || 0;
+            const dist52 = parseFloat(s.dist52) || 0;
+            const drawdown = parseFloat(s.drawdown) || 0;
+            const score = r90 * 1.5 + (100 + dist52) * 1.0 + (100 + drawdown) * 0.5;
+            const obj = { symbol: s.symbol, score, stockRefs: [s] };
+            symbolMap.set(s.symbol, obj);
+            uniqueStocks.push(obj);
+          } else {
+            symbolMap.get(s.symbol).stockRefs.push(s);
+          }
+        });
+      }
     }
-  }
+  });
   if (uniqueStocks.length === 0) return;
   uniqueStocks.sort((a, b) => a.score - b.score);
   const N = uniqueStocks.length;
@@ -13899,7 +14318,7 @@ async function sectorDrillOpen(sectorName, tabToOpen = 'vcp') {
     sdPopulateSectorsDropdown(data);
   }
 
-  _sdCurrentData = data ? (data.sectors?.[sectorName] || null) : null;
+  _sdCurrentData = data ? ((_vcpbViewMode === 'industry' ? data.industries?.[sectorName] : data.sectors?.[sectorName]) || null) : null;
 
   // Also kick off CSV fetch in background (for universe tab)
   sdFetchCsv();
@@ -14138,7 +14557,12 @@ function sdRenderUniverse(sectorName) {
   }
 
   // Filter stocks to this sector using the same smart split as vcp_scanner.py
-  const stocks = csv.filter(s => csvSectorMap(s.symbol, s.company, s.industry) === sectorName);
+  const stocks = csv.filter(s => {
+    const mapped = _vcpbViewMode === 'industry'
+      ? csvIndustryMap(s.symbol, s.company, s.industry)
+      : csvSectorMap(s.symbol, s.company, s.industry);
+    return mapped === sectorName;
+  });
   stocks.sort((a, b) => a.symbol.localeCompare(b.symbol));
 
   if (!stocks.length) {
@@ -14753,7 +15177,12 @@ function sdRenderCharts(sectorName, secData) {
       });
       return;
     }
-    stocks = csv.filter(s => csvSectorMap(s.symbol, s.company, s.industry) === sectorName);
+    stocks = csv.filter(s => {
+      const mapped = _vcpbViewMode === 'industry'
+        ? csvIndustryMap(s.symbol, s.company, s.industry)
+        : csvSectorMap(s.symbol, s.company, s.industry);
+      return mapped === sectorName;
+    });
     stocks = [...stocks].sort((a, b) => a.symbol.localeCompare(b.symbol));
   }
 
@@ -15015,9 +15444,10 @@ function sdToggleSectorDropdown(event) {
 
 function sdPopulateSectorsDropdown(data) {
   const dropdown = document.getElementById('sd-sector-dropdown');
-  if (!dropdown || !data || !data.sectors) return;
+  const activeMap = data ? (_vcpbViewMode === 'industry' ? data.industries : data.sectors) : null;
+  if (!dropdown || !data || !activeMap) return;
 
-  const sectors = Object.keys(data.sectors).sort();
+  const sectors = Object.keys(activeMap).sort();
   dropdown.innerHTML = sectors.map(sec => {
     const isCurrent = sec === _sdCurrentSector;
     return `
