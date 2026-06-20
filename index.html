@@ -14125,7 +14125,8 @@ function generateStatsTableHtml(details) {
 
   // Apply colors based on values
   const getGradeColor = (g) => {
-    return {'A+':'#2dd4bf','A':'#4ade80','B':'#fbbf24','C':'#fb923c','REJECT':'#f87171'}.get(g,'var(--dim)');
+    const colors = {'A+':'#2dd4bf','A':'#4ade80','B':'#fbbf24','C':'#fb923c','REJECT':'#f87171'};
+    return colors[g] || 'var(--dim)';
   };
   const gradeColor = getGradeColor(gradeVal);
   const r90Color = stats && stats.r90 >= 50 ? '#4ade80' : (stats && stats.r90 >= 30 ? '#fbbf24' : (stats && stats.r90 < 0 ? '#f87171' : 'var(--text)'));
@@ -14928,7 +14929,12 @@ async function fetchYfData(symbol, range, interval) {
     try {
       const pUrl = proxyFn(targetUrl);
       if (!pUrl) continue;
-      const resp = await fetch(pUrl);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const resp = await fetch(pUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
       if (resp.ok) {
         let text = await resp.text();
         if (text.trim().startsWith('{')) {
@@ -14937,6 +14943,13 @@ async function fetchYfData(symbol, range, interval) {
             text = parsed.contents;
           }
         }
+        
+        // Double check if text is valid JSON before parsing
+        const trimmed = text.trim();
+        if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+          throw new Error("Response is not JSON");
+        }
+        
         const data = JSON.parse(text);
         const candles = parseYfData(data);
         if (candles && candles.length > 0) {
