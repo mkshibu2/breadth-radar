@@ -6292,238 +6292,398 @@ const DATA_CENTERS_TICKERS = new Set(['NETWEB', 'ANANTRAJ']);
 const RAILWAY_TICKERS = new Set(['IRFC', 'IRCTC', 'RVNL', 'IRCON', 'RITES', 'TITAGARH', 'TEXMACO', 'RAILTEL', 'JWL']);
 const AGRO_TICKERS = new Set(['CHAMBLFERT', 'FACT', 'COROMANDEL', 'GNFC', 'GSFC', 'RCF', 'UPL']);
 
+const MS_GROUP_TO_SECTOR = {
+  'Aerospace/Defense': 'Defense',
+  'Apparel-Clothing Mfg': 'Textiles',
+  'Apparel-Shoes & Rel Mfg': 'Consumer Durables',
+  'Auto Manufacturers': 'Automobile and Auto Components',
+  'Auto/Truck-Original Eqp': 'Automobile and Auto Components',
+  'Auto/Truck-Replace Parts': 'Automobile and Auto Components',
+  'Auto/Truck-Tires & Misc': 'Automobile and Auto Components',
+  'Banks-Money Center': 'Banks',
+  'Beverages-Alcoholic': 'Fast Moving Consumer Goods',
+  'Beverages-Non-Alcoholic': 'Fast Moving Consumer Goods',
+  'Bldg-A/C & Heating Prds': 'Consumer Durables',
+  'Bldg-Cement/Concrt/Ag': 'Construction Materials',
+  'Bldg-Constr Prds/Misc': 'Capital Goods',
+  'Bldg-Heavy Construction': 'Construction',
+  'Bldg-Resident/Comml': 'Realty',
+  'Chemicals-Agricultural': 'Agrochemicals & Fertilizers',
+  'Chemicals-Basic': 'Specialty Chemicals',
+  'Chemicals-Paints': 'Consumer Durables',
+  'Chemicals-Plastics': 'Specialty Chemicals',
+  'Chemicals-Specialty': 'Specialty Chemicals',
+  'Comml Svcs-Advertising': 'Media Entertainment & Publication',
+  'Comml Svcs-Consulting': 'Services',
+  'Comml Svcs-Healthcare': 'Hospitals & Healthcare',
+  'Comml Svcs-Market Rsrch': 'Services',
+  'Comml Svcs-Outsourcing': 'Services',
+  'Comp Sftwr-Spec Enterprs': 'Information Technology',
+  'Computer Sftwr-Database': 'Information Technology',
+  'Computer Sftwr-Desktop': 'Information Technology',
+  'Computer-Hardware/Perip': 'Information Technology',
+  'Computer-Networking': 'Information Technology',
+  'Computer-Tech Services': 'Information Technology',
+  'Consumer Prod-Electronic': 'Consumer Durables',
+  'Consumer Prod-Specialty': 'Consumer Durables',
+  'Consumer Svcs-Education': 'Consumer Services',
+  'Cosmetics/Personal Care': 'Fast Moving Consumer Goods',
+  'Diversified Operations': 'Diversified',
+  'Elec-Misc Products': 'Capital Goods',
+  'Electrical-Power/Equipmt': 'Capital Goods',
+  'Energy-Alternative/Other': 'Power',
+  'Energy-Coal': 'Oil Gas & Consumable Fuels',
+  'Energy-Solar': 'Power',
+  'Finance-Commercial Loans': 'NBFCs & Finance',
+  'Finance-Consumer Loans': 'NBFCs & Finance',
+  'Finance-Crdtcard/Pmtpr': 'NBFCs & Finance',
+  'Finance-Invest Bnk/Bkrs': 'NBFCs & Finance',
+  'Finance-Investment Mgmt': 'NBFCs & Finance',
+  'Finance-Mrtg&Rel Svc': 'NBFCs & Finance',
+  'Finance-Property Reit': 'Realty',
+  'Financial Svcs-Specialty': 'NBFCs & Finance',
+  'Food-Grain & Related': 'Fast Moving Consumer Goods',
+  'Food-Misc Preparation': 'Fast Moving Consumer Goods',
+  'Food-Packaged': 'Fast Moving Consumer Goods',
+  'Hsehold-Appliances/Wares': 'Consumer Durables',
+  'Insurance-Acc & Health': 'NBFCs & Finance',
+  'Insurance-Brokers': 'NBFCs & Finance',
+  'Insurance-Diversified': 'NBFCs & Finance',
+  'Insurance-Life': 'NBFCs & Finance',
+  'Insurance-Prop/Cas/Titl': 'NBFCs & Finance',
+  'Internet-Content': 'Consumer Services',
+  'Leisure-Lodging': 'Consumer Services',
+  'Leisure-Movies & Related': 'Media Entertainment & Publication',
+  'Leisure-Services': 'Consumer Services',
+  'Leisure-Travel Booking': 'Consumer Services',
+  'Machinery-Constr/Mining': 'Capital Goods',
+  'Machinery-Farm': 'Automobile and Auto Components',
+  'Machinery-Gen Industrial': 'Capital Goods',
+  'Machinery-Mtl Hdlg/Autmn': 'Capital Goods',
+  'Machinery-Tools & Rel': 'Capital Goods',
+  'Media-Radio/Tv': 'Media Entertainment & Publication',
+  'Medical-Biomed/Biotech': 'Pharma',
+  'Medical-Diversified': 'Pharma',
+  'Medical-Generic Drugs': 'Pharma',
+  'Medical-Hospitals': 'Hospitals & Healthcare',
+  'Medical-Products': 'Pharma',
+  'Medical-Research Eqp/Svc': 'Pharma',
+  'Medical-Services': 'Hospitals & Healthcare',
+  'Medical-Supplies': 'Pharma',
+  'Medical-Systems/Equip': 'Pharma',
+  'Medical-Whlsle Drg/Suppl': 'Pharma',
+  'Metal Proc & Fabrication': 'Metals & Mining',
+  'Mining-Metal Ores': 'Metals & Mining',
+  'Oil&Gas-Integrated': 'Oil Gas & Consumable Fuels',
+  'Oil&Gas-Intl Expl&Prod': 'Oil Gas & Consumable Fuels',
+  'Oil&Gas-Refining/Mktg': 'Oil Gas & Consumable Fuels',
+  'Oil&Gas-Transprt/Pipelne': 'Oil Gas & Consumable Fuels',
+  'Real Estate Dvlpmt/Ops': 'Realty',
+  'Retail-Department Stores': 'Consumer Services',
+  'Retail-Internet': 'Consumer Services',
+  'Retail-Mail Order&Direct': 'Consumer Services',
+  'Retail-Restaurants': 'Consumer Services',
+  'Retail-Specialty': 'Consumer Services',
+  'Retail-Super/Mini Mkts': 'Consumer Services',
+  'Retail/Whlsle-Jewelry': 'Consumer Durables',
+  'Steel-Producers': 'Metals & Mining',
+  'Steel-Specialty Alloys': 'Metals & Mining',
+  'Telecom Svcs-Cable/Satl': 'Telecommunication',
+  'Telecom Svcs-Integrated': 'Telecommunication',
+  'Telecom Svcs-Wireless': 'Telecommunication',
+  'Telecom-Consumer Prods': 'Telecommunication',
+  'Telecom-Infrastructure': 'Telecommunication',
+  'Tobacco': 'Fast Moving Consumer Goods',
+  'Transportation-Airline': 'Services',
+  'Transportation-Equip Mfg': 'Capital Goods',
+  'Transportation-Logistics': 'Services',
+  'Transportation-Ship': 'Services',
+  'Trucks & Parts-Hvy Duty': 'Automobile and Auto Components',
+  'Utility-Electric Power': 'Power',
+  'Utility-Gas Distribution': 'Oil Gas & Consumable Fuels'
+};
+
 function getMsIndustryMapping(symbol, company, industry) {
   const sym = symbol.toUpperCase().replace('.NS', '');
   const comp = company.toUpperCase();
   const ind = industry.toUpperCase();
   
-  // 0. Railways
-  if (RAILWAY_TICKERS.has(sym) || comp.includes('RAILWAY')) {
-    return { industryGroup: "Transportation-Rail IN", parentSector: "Railways" };
+  let industryGroup = null;
+  let parentSector = null;
+
+  // 1. Try to lookup in the Filter_India_Stocks.csv map
+  const filterMap = filterStocksGetCached();
+  if (filterMap && filterMap[sym]) {
+    const rawGroup = filterMap[sym];
+    parentSector = MS_GROUP_TO_SECTOR[rawGroup] || 'Diversified';
+    industryGroup = rawGroup;
+    if (!industryGroup.endsWith(' IN')) {
+      industryGroup = industryGroup + ' IN';
+    }
   }
 
-  // 0.5. Defense / Aerospace
-  if (AEROSPACE_DEFENCE_TICKERS.has(sym) || ["AEROSPACE", "DEFENCE", "DEFENSE", "DYNAMICS"].some(x => comp.includes(x))) {
-    return { industryGroup: "Aerospace/Defense IN", parentSector: "Defense" };
-  }
-
-  // 1. Financials
-  if (ind.includes("FINANCIAL") || ind.includes("BANKS")) {
-    if (PSU_BANKS_TICKERS.has(sym) || ["STATE BANK", "PUNJAB NATIONAL", "BANK OF BARODA", "CANARA", "UNION BANK", "INDIAN BANK", "UCO BANK", "BANK OF INDIA", "MAHARASHTRA", "CENTRAL BANK", "OVERSEAS", "SHUBH", "PSU"].some(x => comp.includes(x))) {
-      return { industryGroup: "Banks-Money Center IN", parentSector: "Banks" };
+  // 2. If not found in CSV map, use default keyword heuristic fallback
+  if (!industryGroup) {
+    // 0. Railways
+    if (RAILWAY_TICKERS.has(sym) || comp.includes('RAILWAY')) {
+      industryGroup = "Transportation-Rail IN";
+      parentSector = "Railways";
     }
-    if (PRIVATE_BANKS_TICKERS.has(sym) || ["HDFC BANK", "ICICI BANK", "KOTAK", "AXIS", "INDUSIND", "FEDERAL", "IDFC FIRST", "BANDHAN", "YES BANK", "CITY UNION", "KARUR VYSYA", "RBL", "SOUTH INDIAN", "CSB BANK", "AU SMALL"].some(x => comp.includes(x))) {
-      return { industryGroup: "Banks-Money Center IN", parentSector: "Banks" };
+    // 0.5. Defense / Aerospace
+    else if (AEROSPACE_DEFENCE_TICKERS.has(sym) || ["AEROSPACE", "DEFENCE", "DEFENSE", "DYNAMICS"].some(x => comp.includes(x))) {
+      industryGroup = "Aerospace/Defense IN";
+      parentSector = "Defense";
     }
-    if (INSURANCE_TICKERS.has(sym) || ["INSURANCE", "LIFE", "GENERAL INS", "ASSURANCE", "MAX FINANCIAL"].some(x => comp.includes(x))) {
-      return { industryGroup: "Insurance-Life IN", parentSector: "NBFCs & Finance" };
-    }
-    if (AMC_TICKERS.has(sym) || ["AMC", "MUTUAL FUND", "ASSET MANAGEMENT", "NIPPON LIFE"].some(x => comp.includes(x))) {
-      return { industryGroup: "Finance-Investment Mgmt IN", parentSector: "NBFCs & Finance" };
-    }
-    if (CAPITAL_MARKETS_TICKERS.has(sym) || ind.includes("CAPITAL MARKETS") || ["CDSL", "BSE", "MCX", "CAMS", "KFIN", "ANGEL ONE", "SECURITIES", "WEALTH", "BROKING", "INVESTMENT"].some(x => comp.includes(x))) {
-      return { industryGroup: "Finance-Invest Bnk/Bkrs IN", parentSector: "NBFCs & Finance" };
-    }
-    return { industryGroup: "Finance-Consumer Loans IN", parentSector: "NBFCs & Finance" };
-  }
-
-  // 2. Industrials
-  if (ind.includes("CAPITAL GOODS") || ind.includes("INDUSTRIAL") || ind.includes("MACHINERY")) {
-    if (AEROSPACE_DEFENCE_TICKERS.has(sym) || ["AEROSPACE", "DEFENCE", "DEFENSE", "DYNAMICS"].some(x => comp.includes(x))) {
-      return { industryGroup: "Aerospace/Defense IN", parentSector: "Defense" };
-    }
-    if (SHIPBUILDING_TICKERS.has(sym) || ["SHIPYARD", "SHIPBUILD", "MAZAGON"].some(x => comp.includes(x))) {
-      return { industryGroup: "Transportation-Ship IN", parentSector: "Defense" };
-    }
-    if (CABLES_TICKERS.has(sym) || ["CABLE", "RR KABEL"].some(x => comp.includes(x))) {
-      return { industryGroup: "Electrical-Power/Equipmt IN", parentSector: "Capital Goods" };
-    }
-    if (TRANSFORMERS_TICKERS.has(sym) || ["TRANSFORMER", "SCHNEIDER"].some(x => comp.includes(x))) {
-      return { industryGroup: "Electrical-Power/Equipmt IN", parentSector: "Capital Goods" };
-    }
-    if (BEARINGS_TICKERS.has(sym) || comp.includes("BEARING")) {
-      return { industryGroup: "Machinery-Gen Industrial IN", parentSector: "Capital Goods" };
-    }
-    if (COMPRESSORS_TICKERS.has(sym) || ["COMPRESSOR", "PNEUMATIC"].some(x => comp.includes(x))) {
-      return { industryGroup: "Machinery-Gen Industrial IN", parentSector: "Capital Goods" };
-    }
-    if (HVAC_TICKERS.has(sym) || ["VOLTAS", "BLUE STAR"].some(x => comp.includes(x))) {
-      return { industryGroup: "Bldg-A/C &amp; Heating Prds IN", parentSector: "Capital Goods" };
-    }
-    if (comp.includes("AUTOMATION") || comp.includes("HONEYWELL")) {
-      return { industryGroup: "Machinery-Gen Industrial IN", parentSector: "Capital Goods" };
-    }
-    return { industryGroup: "Machinery-Gen Industrial IN", parentSector: "Capital Goods" };
-  }
-
-  // 3. Materials
-  if (ind.includes("METALS & MINING") || ind.includes("METALS") || ind.includes("MINING") || ind.includes("MATERIALS")) {
-    if (COPPER_TICKERS.has(sym) || comp.includes("COPPER")) {
-      return { industryGroup: "Mining-Metal Ores IN", parentSector: "Metals & Mining" };
-    }
-    if (ALUMINIUM_TICKERS.has(sym) || comp.includes("ALUMINIUM") || comp.includes("NALCO")) {
-      return { industryGroup: "Mining-Metal Ores IN", parentSector: "Metals & Mining" };
-    }
-    if (MINING_TICKERS.has(sym) || ind.includes("MINING") || ["COAL INDIA", "NMDC", "GMDC"].some(x => comp.includes(x))) {
-      return { industryGroup: "Mining-Metal Ores IN", parentSector: "Metals & Mining" };
-    }
-    if (STEEL_TICKERS.has(sym) || ["STEEL", "PIPE", "APOLLO TUBES", "WELSPUN CORP"].some(x => comp.includes(x))) {
-      return { industryGroup: "Steel-Producers IN", parentSector: "Metals & Mining" };
-    }
-    return { industryGroup: "Metal Proc &amp; Fabrication IN", parentSector: "Metals & Mining" };
-  }
-
-  if (ind.includes("CHEMICALS")) {
-    if (["AGRICULTURAL", "FERTILIZER", "AGRI"].some(x => comp.includes(x)) || AGRO_TICKERS.has(sym)) {
-      return { industryGroup: "Chemicals-Agricultural IN", parentSector: "Agrochemicals & Fertilizers" };
-    }
-    if (EXPLOSIVES_TICKERS.has(sym) || ["EXPLOSIVE", "SOLAR IND"].some(x => comp.includes(x))) {
-      return { industryGroup: "Chemicals-Specialty IN", parentSector: "Specialty Chemicals" };
-    }
-    if (DYES_PIGMENTS_TICKERS.has(sym) || ["DYE", "PIGMENT", "SUDARSHAN"].some(x => comp.includes(x))) {
-      return { industryGroup: "Chemicals-Specialty IN", parentSector: "Specialty Chemicals" };
-    }
-    return { industryGroup: "Chemicals-Specialty IN", parentSector: "Specialty Chemicals" };
-  }
-
-  // 4. Energy
-  if (ind.includes("POWER") || ind.includes("OIL GAS") || ind.includes("ENERGY")) {
-    if (GAS_TRADING_TICKERS.has(sym) || comp.includes("GAIL") || comp.includes("GSPL")) {
-      return { industryGroup: "Utility-Gas Distribution IN", parentSector: "Oil Gas & Consumable Fuels" };
-    }
-    if (CGD_TICKERS.has(sym) || ["GUJARAT GAS", "INDRAPRASTHA GAS", "MAHANAGAR GAS", "ADANI TOTAL"].some(x => comp.includes(x))) {
-      return { industryGroup: "Utility-Gas Distribution IN", parentSector: "Oil Gas & Consumable Fuels" };
-    }
-    if (SOLAR_TICKERS.has(sym) || ["SOLAR", "ADANI GREEN", "WAAREE"].some(x => comp.includes(x))) {
-      return { industryGroup: "Energy-Solar IN", parentSector: "Power" };
-    }
-    if (POWER_EQUIP_TICKERS.has(sym) || ["SUZLON", "WIND", "BHEL", "GET&D"].some(x => comp.includes(x))) {
-      return { industryGroup: "Electrical-Power/Equipmt IN", parentSector: "Power" };
-    }
-    return { industryGroup: "Energy-Alternative/Other IN", parentSector: "Power" };
-  }
-
-  // 5. Healthcare
-  if (ind.includes("HEALTHCARE") || ind.includes("PHARMACEUTICALS")) {
-    if (CDMO_TICKERS.has(sym) || ["CDMO", "DIVI'S", "SYNGENE", "LAURUS"].some(x => comp.includes(x))) {
-      return { industryGroup: "Medical-Biomed/Biotech IN", parentSector: "Pharma" };
-    }
-    if (DIAGNOSTICS_TICKERS.has(sym) || ["DIAGNOSTIC", "LAL PATH", "METROPOLIS"].some(x => comp.includes(x))) {
-      return { industryGroup: "Medical-Services IN", parentSector: "Hospitals & Healthcare" };
-    }
-    if (MEDICAL_DEVICES_TICKERS.has(sym) || ["MEDICURE", "DEVICE"].some(x => comp.includes(x))) {
-      return { industryGroup: "Medical-Products IN", parentSector: "Hospitals & Healthcare" };
-    }
-    if (["PHARMA", "LAB", "BIOTECH", "DRUG", "MEDICINE"].some(x => comp.includes(x))) {
-      return { industryGroup: "Medical-Generic Drugs IN", parentSector: "Pharma" };
-    }
-    return { industryGroup: "Medical-Hospitals IN", parentSector: "Hospitals & Healthcare" };
-  }
-
-  // 6. Auto
-  if (ind.includes("AUTO") || ind.includes("VEHICLE")) {
-    if (TYRES_TICKERS.has(sym) || ["TYRE", "CEAT", "MRF"].some(x => comp.includes(x))) {
-      return { industryGroup: "Auto/Truck-Tires &amp; Misc  IN", parentSector: "Automobile and Auto Components" };
-    }
-    if (EV_COMPONENTS_TICKERS.has(sym) || ["EV", "SONA BLW", "MINDA"].some(x => comp.includes(x))) {
-      return { industryGroup: "Auto/Truck-Original Eqp IN", parentSector: "Automobile and Auto Components" };
-    }
-    if (BATTERIES_TICKERS.has(sym) || ["BATTERY", "EXIDE", "AMARA RAJA"].some(x => comp.includes(x))) {
-      return { industryGroup: "Auto/Truck-Replace Parts IN", parentSector: "Automobile and Auto Components" };
-    }
-    if (TRACTORS_TICKERS.has(sym) || comp.includes("TRACTOR")) {
-      return { industryGroup: "Machinery-Farm IN", parentSector: "Automobile and Auto Components" };
-    }
-    if (COMMERCIAL_VEH_TICKERS.has(sym) || ["ASHOK LEYLAND", "COMMERCIAL VEHICLE"].some(x => comp.includes(x))) {
-      return { industryGroup: "Trucks &amp; Parts-Hvy Duty IN", parentSector: "Automobile and Auto Components" };
-    }
-    return { industryGroup: "Auto Manufacturers IN", parentSector: "Automobile and Auto Components" };
-  }
-
-  // 7. Consumer
-  if (ind.includes("CONSUMER") || ind.includes("RETAIL") || ind.includes("TEXTILES") || ind.includes("SERVICES")) {
-    if (TEXTILES_TICKERS.has(sym) || ind.includes("TEXTILES") || ["SPINNING", "WEAVING", "PAGE INDUSTRIES", "WELSPUN LIVING", "RAYMOND"].some(x => comp.includes(x))) {
-      return { industryGroup: "Apparel-Clothing Mfg IN", parentSector: "Textiles" };
-    }
-    if (RETAIL_TICKERS.has(sym) || ind.includes("RETAIL") || ["TRENT", "AVENUE SUPERMARTS", "SHOPPERS STOP"].some(x => comp.includes(x))) {
-      if (sym === 'TRENT') {
-        return { industryGroup: "Retail-Department Stores IN", parentSector: "Consumer Services" };
+    // 1. Financials
+    else if (ind.includes("FINANCIAL") || ind.includes("BANKS")) {
+      if (PSU_BANKS_TICKERS.has(sym) || ["STATE BANK", "PUNJAB NATIONAL", "BANK OF BARODA", "CANARA", "UNION BANK", "INDIAN BANK", "UCO BANK", "BANK OF INDIA", "MAHARASHTRA", "CENTRAL BANK", "OVERSEAS", "SHUBH", "PSU"].some(x => comp.includes(x))) {
+        industryGroup = "Banks-Money Center IN";
+        parentSector = "Banks";
+      } else if (PRIVATE_BANKS_TICKERS.has(sym) || ["HDFC BANK", "ICICI BANK", "KOTAK", "AXIS", "INDUSIND", "FEDERAL", "IDFC FIRST", "BANDHAN", "YES BANK", "CITY UNION", "KARUR VYSYA", "RBL", "SOUTH INDIAN", "CSB BANK", "AU SMALL"].some(x => comp.includes(x))) {
+        industryGroup = "Banks-Money Center IN";
+        parentSector = "Banks";
+      } else if (INSURANCE_TICKERS.has(sym) || ["INSURANCE", "LIFE", "GENERAL INS", "ASSURANCE", "MAX FINANCIAL"].some(x => comp.includes(x))) {
+        industryGroup = "Insurance-Life IN";
+        parentSector = "NBFCs & Finance";
+      } else if (AMC_TICKERS.has(sym) || ["AMC", "MUTUAL FUND", "ASSET MANAGEMENT", "NIPPON LIFE"].some(x => comp.includes(x))) {
+        industryGroup = "Finance-Investment Mgmt IN";
+        parentSector = "NBFCs & Finance";
+      } else if (CAPITAL_MARKETS_TICKERS.has(sym) || ind.includes("CAPITAL MARKETS") || ["CDSL", "BSE", "MCX", "CAMS", "KFIN", "ANGEL ONE", "SECURITIES", "WEALTH", "BROKING", "INVESTMENT"].some(x => comp.includes(x))) {
+        industryGroup = "Finance-Invest Bnk/Bkrs IN";
+        parentSector = "NBFCs & Finance";
+      } else {
+        industryGroup = "Finance-Consumer Loans IN";
+        parentSector = "NBFCs & Finance";
       }
-      if (sym === 'DMART') {
-        return { industryGroup: "Retail-Super/Mini Mkts IN", parentSector: "Consumer Services" };
+    }
+    // 2. Industrials
+    else if (ind.includes("CAPITAL GOODS") || ind.includes("INDUSTRIAL") || ind.includes("MACHINERY")) {
+      if (AEROSPACE_DEFENCE_TICKERS.has(sym) || ["AEROSPACE", "DEFENCE", "DEFENSE", "DYNAMICS"].some(x => comp.includes(x))) {
+        industryGroup = "Aerospace/Defense IN";
+        parentSector = "Defense";
+      } else if (SHIPBUILDING_TICKERS.has(sym) || ["SHIPYARD", "SHIPBUILD", "MAZAGON"].some(x => comp.includes(x))) {
+        industryGroup = "Transportation-Ship IN";
+        parentSector = "Defense";
+      } else if (CABLES_TICKERS.has(sym) || ["CABLE", "RR KABEL"].some(x => comp.includes(x))) {
+        industryGroup = "Electrical-Power/Equipmt IN";
+        parentSector = "Capital Goods";
+      } else if (TRANSFORMERS_TICKERS.has(sym) || ["TRANSFORMER", "SCHNEIDER"].some(x => comp.includes(x))) {
+        industryGroup = "Electrical-Power/Equipmt IN";
+        parentSector = "Capital Goods";
+      } else if (BEARINGS_TICKERS.has(sym) || comp.includes("BEARING")) {
+        industryGroup = "Machinery-Gen Industrial IN";
+        parentSector = "Capital Goods";
+      } else if (COMPRESSORS_TICKERS.has(sym) || ["COMPRESSOR", "PNEUMATIC"].some(x => comp.includes(x))) {
+        industryGroup = "Machinery-Gen Industrial IN";
+        parentSector = "Capital Goods";
+      } else if (HVAC_TICKERS.has(sym) || ["VOLTAS", "BLUE STAR"].some(x => comp.includes(x))) {
+        industryGroup = "Bldg-A/C &amp; Heating Prds IN";
+        parentSector = "Capital Goods";
+      } else if (comp.includes("AUTOMATION") || comp.includes("HONEYWELL")) {
+        industryGroup = "Machinery-Gen Industrial IN";
+        parentSector = "Capital Goods";
+      } else {
+        industryGroup = "Machinery-Gen Industrial IN";
+        parentSector = "Capital Goods";
       }
-      return { industryGroup: "Retail-Specialty IN", parentSector: "Consumer Services" };
     }
-    if (JEWELLERY_TICKERS.has(sym) || ["JEWELLER", "TITAN", "GOLD"].some(x => comp.includes(x))) {
-      return { industryGroup: "Retail/Whlsle-Jewelry IN", parentSector: "Consumer Durables" };
+    // 3. Materials
+    else if (ind.includes("METALS & MINING") || ind.includes("METALS") || ind.includes("MINING") || ind.includes("MATERIALS")) {
+      if (COPPER_TICKERS.has(sym) || comp.includes("COPPER")) {
+        industryGroup = "Mining-Metal Ores IN";
+        parentSector = "Metals & Mining";
+      } else if (ALUMINIUM_TICKERS.has(sym) || comp.includes("ALUMINIUM") || comp.includes("NALCO")) {
+        industryGroup = "Mining-Metal Ores IN";
+        parentSector = "Metals & Mining";
+      } else if (MINING_TICKERS.has(sym) || ind.includes("MINING") || ["COAL INDIA", "NMDC", "GMDC"].some(x => comp.includes(x))) {
+        industryGroup = "Mining-Metal Ores IN";
+        parentSector = "Metals & Mining";
+      } else if (STEEL_TICKERS.has(sym) || ["STEEL", "PIPE", "APOLLO TUBES", "WELSPUN CORP"].some(x => comp.includes(x))) {
+        industryGroup = "Steel-Producers IN";
+        parentSector = "Metals & Mining";
+      } else {
+        industryGroup = "Metal Proc &amp; Fabrication IN";
+        parentSector = "Metals & Mining";
+      }
     }
-    if (FOOTWEAR_TICKERS.has(sym) || ["FOOTWEAR", "BATA", "METRO BRAND", "RELAXO"].some(x => comp.includes(x))) {
-      return { industryGroup: "Apparel-Shoes &amp; Rel Mfg IN", parentSector: "Consumer Durables" };
+    else if (ind.includes("CHEMICALS")) {
+      if (["AGRICULTURAL", "FERTILIZER", "AGRI"].some(x => comp.includes(x)) || AGRO_TICKERS.has(sym)) {
+        industryGroup = "Chemicals-Agricultural IN";
+        parentSector = "Agrochemicals & Fertilizers";
+      } else if (EXPLOSIVES_TICKERS.has(sym) || ["EXPLOSIVE", "SOLAR IND"].some(x => comp.includes(x))) {
+        industryGroup = "Chemicals-Specialty IN";
+        parentSector = "Specialty Chemicals";
+      } else if (DYES_PIGMENTS_TICKERS.has(sym) || ["DYE", "PIGMENT", "SUDARSHAN"].some(x => comp.includes(x))) {
+        industryGroup = "Chemicals-Specialty IN";
+        parentSector = "Specialty Chemicals";
+      } else {
+        industryGroup = "Chemicals-Specialty IN";
+        parentSector = "Specialty Chemicals";
+      }
     }
-    if (RESTAURANTS_QSR_TICKERS.has(sym) || ["RESTAURANT", "FOODWORKS", "DEVYANI", "WESTLIFE", "SAPPHIRE"].some(x => comp.includes(x))) {
-      return { industryGroup: "Retail-Restaurants IN", parentSector: "Consumer Services" };
+    // 4. Energy
+    else if (ind.includes("POWER") || ind.includes("OIL GAS") || ind.includes("ENERGY")) {
+      if (GAS_TRADING_TICKERS.has(sym) || comp.includes("GAIL") || comp.includes("GSPL")) {
+        industryGroup = "Utility-Gas Distribution IN";
+        parentSector = "Oil Gas & Consumable Fuels";
+      } else if (CGD_TICKERS.has(sym) || ["GUJARAT GAS", "INDRAPRASTHA GAS", "MAHANAGAR GAS", "ADANI TOTAL"].some(x => comp.includes(x))) {
+        industryGroup = "Utility-Gas Distribution IN";
+        parentSector = "Oil Gas & Consumable Fuels";
+      } else if (SOLAR_TICKERS.has(sym) || ["SOLAR", "ADANI GREEN", "WAAREE"].some(x => comp.includes(x))) {
+        industryGroup = "Energy-Solar IN";
+        parentSector = "Power";
+      } else if (POWER_EQUIP_TICKERS.has(sym) || ["SUZLON", "WIND", "BHEL", "GET&D"].some(x => comp.includes(x))) {
+        industryGroup = "Electrical-Power/Equipmt IN";
+        parentSector = "Power";
+      } else {
+        industryGroup = "Energy-Alternative/Other IN";
+        parentSector = "Power";
+      }
+    }
+    // 5. Healthcare
+    else if (ind.includes("HEALTHCARE") || ind.includes("PHARMACEUTICALS")) {
+      if (comp.includes("CHEMICAL") && !comp.includes("PHARM")) {
+        industryGroup = "Chemicals-Specialty IN";
+        parentSector = "Specialty Chemicals";
+      } else if (CDMO_TICKERS.has(sym) || ["CDMO", "DIVI'S", "SYNGENE", "LAURUS"].some(x => comp.includes(x))) {
+        industryGroup = "Medical-Biomed/Biotech IN";
+        parentSector = "Pharma";
+      } else if (DIAGNOSTICS_TICKERS.has(sym) || ["DIAGNOSTIC", "LAL PATH", "METROPOLIS"].some(x => comp.includes(x))) {
+        industryGroup = "Medical-Services IN";
+        parentSector = "Hospitals & Healthcare";
+      } else if (MEDICAL_DEVICES_TICKERS.has(sym) || ["MEDICURE", "DEVICE"].some(x => comp.includes(x))) {
+        industryGroup = "Medical-Products IN";
+        parentSector = "Hospitals & Healthcare";
+      } else if (["PHARMA", "LAB", "BIOTECH", "DRUG", "MEDICINE"].some(x => comp.includes(x))) {
+        industryGroup = "Medical-Generic Drugs IN";
+        parentSector = "Pharma";
+      } else {
+        industryGroup = "Medical-Hospitals IN";
+        parentSector = "Hospitals & Healthcare";
+      }
+    }
+    // 6. Auto
+    else if (ind.includes("AUTO") || ind.includes("VEHICLE")) {
+      if (TYRES_TICKERS.has(sym) || ["TYRE", "CEAT", "MRF"].some(x => comp.includes(x))) {
+        industryGroup = "Auto/Truck-Tires &amp; Misc  IN";
+        parentSector = "Automobile and Auto Components";
+      } else if (EV_COMPONENTS_TICKERS.has(sym) || ["EV", "SONA BLW", "MINDA"].some(x => comp.includes(x))) {
+        industryGroup = "Auto/Truck-Original Eqp IN";
+        parentSector = "Automobile and Auto Components";
+      } else if (BATTERIES_TICKERS.has(sym) || ["BATTERY", "EXIDE", "AMARA RAJA"].some(x => comp.includes(x))) {
+        industryGroup = "Auto/Truck-Replace Parts IN";
+        parentSector = "Automobile and Auto Components";
+      } else if (TRACTORS_TICKERS.has(sym) || comp.includes("TRACTOR")) {
+        industryGroup = "Machinery-Farm IN";
+        parentSector = "Automobile and Auto Components";
+      } else if (COMMERCIAL_VEH_TICKERS.has(sym) || ["ASHOK LEYLAND", "COMMERCIAL VEHICLE"].some(x => comp.includes(x))) {
+        industryGroup = "Trucks &amp; Parts-Hvy Duty IN";
+        parentSector = "Automobile and Auto Components";
+      } else {
+        industryGroup = "Auto Manufacturers IN";
+        parentSector = "Automobile and Auto Components";
+      }
+    }
+    // 7. Consumer
+    else if (ind.includes("CONSUMER") || ind.includes("RETAIL") || ind.includes("TEXTILES") || ind.includes("SERVICES")) {
+      if (TEXTILES_TICKERS.has(sym) || ind.includes("TEXTILES") || ["SPINNING", "WEAVING", "PAGE INDUSTRIES", "WELSPUN LIVING", "RAYMOND"].some(x => comp.includes(x))) {
+        industryGroup = "Apparel-Clothing Mfg IN";
+        parentSector = "Textiles";
+      } else if (RETAIL_TICKERS.has(sym) || ind.includes("RETAIL") || ["TRENT", "AVENUE SUPERMARTS", "SHOPPERS STOP"].some(x => comp.includes(x))) {
+        if (sym === 'TRENT') {
+          industryGroup = "Retail-Department Stores IN";
+          parentSector = "Consumer Services";
+        } else if (sym === 'DMART') {
+          industryGroup = "Retail-Super/Mini Mkts IN";
+          parentSector = "Consumer Services";
+        } else {
+          industryGroup = "Retail-Specialty IN";
+          parentSector = "Consumer Services";
+        }
+      } else if (JEWELLERY_TICKERS.has(sym) || ["JEWELLER", "TITAN", "GOLD"].some(x => comp.includes(x))) {
+        industryGroup = "Retail/Whlsle-Jewelry IN";
+        parentSector = "Consumer Durables";
+      } else if (FOOTWEAR_TICKERS.has(sym) || ["FOOTWEAR", "BATA", "METRO BRAND", "RELAXO"].some(x => comp.includes(x))) {
+        industryGroup = "Apparel-Shoes &amp; Rel Mfg IN";
+        parentSector = "Consumer Durables";
+      } else if (RESTAURANTS_QSR_TICKERS.has(sym) || ["RESTAURANT", "FOODWORKS", "DEVYANI", "WESTLIFE", "SAPPHIRE"].some(x => comp.includes(x))) {
+        industryGroup = "Retail-Restaurants IN";
+        parentSector = "Consumer Services";
+      }
+    }
+    // Emerging defaults
+    else if (AEROSPACE_DEFENCE_TICKERS.has(sym) || ["AEROSPACE", "DEFENCE", "DEFENSE", "DYNAMICS"].some(x => comp.includes(x))) {
+      industryGroup = "Aerospace/Defense IN";
+      parentSector = "Defense";
+    } else if (EMS_TICKERS.has(sym) || ["EMS", "DIXON", "KAYNES", "SYRMA", "AVALON"].some(x => comp.includes(x))) {
+      industryGroup = "Electronic-Parts IN";
+      parentSector = "Capital Goods";
+    } else if (DATA_CENTERS_TICKERS.has(sym) || comp.includes("DATA CENTER") || comp.includes("NETWEB")) {
+      industryGroup = "Computer-Hardware/Perip IN";
+      parentSector = "Information Technology";
+    }
+    // Defaults
+    else if (ind.includes("TELECOMMUNICATION")) {
+      industryGroup = "Telecom Svcs-Wireless IN";
+      parentSector = "Telecommunication";
+    } else if (ind.includes("INFORMATION TECHNOLOGY")) {
+      industryGroup = "Computer-Tech Services IN";
+      parentSector = "Information Technology";
+    } else if (ind.includes("CONSTRUCTION MATERIALS")) {
+      industryGroup = "Bldg-Cement/Concrt/Ag IN";
+      parentSector = "Construction Materials";
+    } else if (ind.includes("CONSTRUCTION")) {
+      industryGroup = "Bldg-Heavy Construction IN";
+      parentSector = "Construction";
+    } else if (ind.includes("REALTY")) {
+      industryGroup = "Real Estate Dvlpmt/Ops IN";
+      parentSector = "Realty";
+    } else if (ind.includes("MEDIA") || ind.includes("PUBLICATION")) {
+      industryGroup = "Media-Radio/Tv IN";
+      parentSector = "Media Entertainment & Publication";
+    } else {
+      const rawIndMap = {
+        'FAST MOVING CONSUMER GOODS': ["Food-Packaged IN", "Fast Moving Consumer Goods"],
+        'CONSUMER SERVICES': ["Retail-Specialty IN", "Consumer Services"],
+        'CONSUMER DURABLES': ["Consumer Prod-Electronic IN", "Consumer Durables"],
+        'SERVICES': ["Comml Svcs-Consulting IN", "Services"],
+        'DIVERSIFIED': ["Diversified Operations IN", "Diversified"],
+        'OIL GAS & CONSUMABLE FUELS': ["Oil&amp;Gas-Refining/Mktg IN", "Oil Gas & Consumable Fuels"],
+        'POWER': ["Utility-Electric Power IN", "Power"],
+        'TELECOMMUNICATION': ["Telecom Svcs-Wireless IN", "Telecommunication"],
+        'INFORMATION TECHNOLOGY': ["Computer-Tech Services IN", "Information Technology"],
+        'METALS & MINING': ["Mining-Metal Ores IN", "Metals & Mining"],
+        'CHEMICALS': ["Chemicals-Basic IN", "Specialty Chemicals"],
+        'HEALTHCARE': ["Medical-Generic Drugs IN", "Pharma"],
+        'AUTOMOBILE AND AUTO COMPONENTS': ["Auto/Truck-Original Eqp IN", "Automobile and Auto Components"],
+        'TEXTILES': ["Apparel-Clothing Mfg IN", "Textiles"],
+        'REALTY': ["Real Estate Dvlpmt/Ops IN", "Realty"],
+        'MEDIA ENTERTAINMENT & PUBLICATION': ["Media-Radio/Tv IN", "Media Entertainment & Publication"],
+        'CONSTRUCTION MATERIALS': ["Bldg-Cement/Concrt/Ag IN", "Construction Materials"],
+        'CONSTRUCTION': ["Bldg-Heavy Construction IN", "Construction"]
+      };
+
+      if (rawIndMap[ind]) {
+        const [grp, sec] = rawIndMap[ind];
+        industryGroup = grp;
+        parentSector = sec;
+      } else {
+        industryGroup = "Diversified Operations IN";
+        parentSector = "Diversified";
+      }
     }
   }
 
-  // Emerging defaults
-  if (AEROSPACE_DEFENCE_TICKERS.has(sym) || ["AEROSPACE", "DEFENCE", "DEFENSE", "DYNAMICS"].some(x => comp.includes(x))) {
-    return { industryGroup: "Aerospace/Defense IN", parentSector: "Defense" };
-  }
-  if (EMS_TICKERS.has(sym) || ["EMS", "DIXON", "KAYNES", "SYRMA", "AVALON"].some(x => comp.includes(x))) {
-    return { industryGroup: "Electronic-Parts IN", parentSector: "Capital Goods" };
-  }
-  if (DATA_CENTERS_TICKERS.has(sym) || comp.includes("DATA CENTER") || comp.includes("NETWEB")) {
-    return { industryGroup: "Computer-Hardware/Perip IN", parentSector: "Information Technology" };
+  // 3. Apply custom theme overrides
+  const railwayTickers = new Set(['IRFC', 'IRCTC', 'RVNL', 'IRCON', 'RITES', 'TITAGARH', 'TEXMACO', 'RAILTEL', 'JWL']);
+  if (railwayTickers.has(sym) || comp.includes('RAILWAY')) {
+    industryGroup = "Railways";
+    parentSector = "Railways";
+  } else if (new Set(['MAZDOCK', 'COCHINSHIP', 'GRSE']).has(sym)) {
+    parentSector = "Defense";
   }
 
-  // Defaults
-  if (ind.includes("TELECOMMUNICATION")) {
-    return { industryGroup: "Telecom Svcs-Wireless IN", parentSector: "Telecommunication" };
-  }
-  if (ind.includes("INFORMATION TECHNOLOGY")) {
-    return { industryGroup: "Computer-Tech Services IN", parentSector: "Information Technology" };
-  }
-  if (ind.includes("CONSTRUCTION MATERIALS")) {
-    return { industryGroup: "Bldg-Cement/Concrt/Ag IN", parentSector: "Construction Materials" };
-  }
-  if (ind.includes("CONSTRUCTION")) {
-    return { industryGroup: "Bldg-Heavy Construction IN", parentSector: "Construction" };
-  }
-  if (ind.includes("REALTY")) {
-    return { industryGroup: "Real Estate Dvlpmt/Ops IN", parentSector: "Realty" };
-  }
-  if (ind.includes("MEDIA") || ind.includes("PUBLICATION")) {
-    return { industryGroup: "Media-Radio/Tv IN", parentSector: "Media Entertainment & Publication" };
-  }
-
-  // Direct raw industry defaults to valid MS industry group names
-  const rawIndMap = {
-    'FAST MOVING CONSUMER GOODS': ["Food-Packaged IN", "Fast Moving Consumer Goods"],
-    'CONSUMER SERVICES': ["Retail-Specialty IN", "Consumer Services"],
-    'CONSUMER DURABLES': ["Consumer Prod-Electronic IN", "Consumer Durables"],
-    'SERVICES': ["Comml Svcs-Consulting IN", "Services"],
-    'DIVERSIFIED': ["Diversified Operations IN", "Diversified"],
-    'OIL GAS & CONSUMABLE FUELS': ["Oil&amp;Gas-Refining/Mktg IN", "Oil Gas & Consumable Fuels"],
-    'POWER': ["Utility-Electric Power IN", "Power"],
-    'TELECOMMUNICATION': ["Telecom Svcs-Wireless IN", "Telecommunication"],
-    'INFORMATION TECHNOLOGY': ["Computer-Tech Services IN", "Information Technology"],
-    'METALS & MINING': ["Mining-Metal Ores IN", "Metals & Mining"],
-    'CHEMICALS': ["Chemicals-Basic IN", "Specialty Chemicals"],
-    'HEALTHCARE': ["Medical-Generic Drugs IN", "Pharma"],
-    'AUTOMOBILE AND AUTO COMPONENTS': ["Auto/Truck-Original Eqp IN", "Automobile and Auto Components"],
-    'TEXTILES': ["Apparel-Clothing Mfg IN", "Textiles"],
-    'REALTY': ["Real Estate Dvlpmt/Ops IN", "Realty"],
-    'MEDIA ENTERTAINMENT & PUBLICATION': ["Media-Radio/Tv IN", "Media Entertainment & Publication"],
-    'CONSTRUCTION MATERIALS': ["Bldg-Cement/Concrt/Ag IN", "Construction Materials"],
-    'CONSTRUCTION': ["Bldg-Heavy Construction IN", "Construction"]
-  };
-
-  if (rawIndMap[ind]) {
-    const [grp, sec] = rawIndMap[ind];
-    return { industryGroup: grp, parentSector: sec };
-  }
-
-  return { industryGroup: "Diversified Operations IN", parentSector: "Diversified" };
+  return { industryGroup, parentSector };
 }
 
 function csvIndustryMap(symbol, company, industry) {
@@ -13438,8 +13598,10 @@ document.addEventListener('keydown', e => {
 
 const LS_SECTOR_STOCKS = 'nse_sector_stocks_v1';
 const LS_N500_CSV      = 'nse_n500csv_v1';
+const LS_FILTER_STOCKS_CSV = 'nse_filter_stocks_csv_v1';
 let _sectorStocksCache = null;
 let _n500CsvCache      = null;
+let _filterStocksCache = null;
 let _sdCurrentSector   = '';
 let _sdCurrentData     = null;
 let _sdActiveTab       = 'vcp';
@@ -13550,6 +13712,14 @@ function n500CsvSetCached(data) {
   _n500CsvCache = data;
   try { localStorage.setItem(LS_N500_CSV, JSON.stringify(data)); } catch(e) {}
 }
+function filterStocksGetCached() {
+  if (_filterStocksCache) return _filterStocksCache;
+  try { _filterStocksCache = JSON.parse(localStorage.getItem(LS_FILTER_STOCKS_CSV)) || null; return _filterStocksCache; } catch(e) { return null; }
+}
+function filterStocksSetCached(data) {
+  _filterStocksCache = data;
+  try { localStorage.setItem(LS_FILTER_STOCKS_CSV, JSON.stringify(data)); } catch(e) {}
+}
 
 async function sdFetchSectorStocksBackground() {
   const baseUrl = vcpbGetUrl();
@@ -13634,6 +13804,40 @@ function parseN500Csv(text) {
     const industry = parts[1].trim().replace(/^"|"$/g,'');
     const symbol   = parts[2].trim().replace(/^"|"$/g,'');
     if (symbol) out.push({ symbol, company, industry });
+  }
+  return out;
+}
+
+function parseFilterStocksCsv(text) {
+  const lines = text.trim().split('\n');
+  const out = {};
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    
+    const parts = [];
+    let current = '';
+    let inQuotes = false;
+    for (let j = 0; j < line.length; j++) {
+      const char = line[j];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        parts.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    parts.push(current.trim());
+    
+    if (parts.length >= 12) {
+      const symbol = parts[1].replace(/^"|"$/g, '').trim().toUpperCase();
+      const group = parts[11].replace(/^"|"$/g, '').trim();
+      if (symbol && group) {
+        out[symbol] = group;
+      }
+    }
   }
   return out;
 }
@@ -14010,18 +14214,41 @@ function toggleMaximizeSectorDrill() {
   }
 }
 
-// ── Fetch ind_nifty500list.csv from GitHub (cached) ──────────────────────
+// ── Fetch ind_nifty500list.csv and Filter_India_Stocks.csv from GitHub (cached) ──────────────────────
 async function sdFetchCsv() {
-  if (n500CsvGetCached()) return;   // already have it
   const baseUrl = vcpbGetUrl();
   if (!baseUrl) return;
-  try {
-    const resp = await fetch(baseUrl + '/ind_nifty500list.csv?_=' + Date.now(), { cache: 'no-store' });
-    if (!resp.ok) return;
-    const text = await resp.text();
-    const parsed = parseN500Csv(text);
-    if (parsed.length > 100) n500CsvSetCached(parsed);
-  } catch(e) {}
+
+  // 1. Fetch ind_nifty500list.csv if not cached
+  if (!n500CsvGetCached()) {
+    try {
+      const resp = await fetch(baseUrl + '/ind_nifty500list.csv?_=' + Date.now(), { cache: 'no-store' });
+      if (resp.ok) {
+        const text = await resp.text();
+        const parsed = parseN500Csv(text);
+        if (parsed.length > 100) n500CsvSetCached(parsed);
+      }
+    } catch(e) {
+      console.error('Error fetching ind_nifty500list.csv:', e);
+    }
+  }
+
+  // 2. Fetch Filter_India_Stocks.csv if not cached
+  if (!filterStocksGetCached()) {
+    try {
+      const resp = await fetch(baseUrl + '/Filter_India_Stocks.csv?_=' + Date.now(), { cache: 'no-store' });
+      if (resp.ok) {
+        const text = await resp.text();
+        const parsed = parseFilterStocksCsv(text);
+        if (Object.keys(parsed).length > 100) {
+          filterStocksSetCached(parsed);
+          console.log('Successfully fetched and cached Filter_India_Stocks.csv mappings:', Object.keys(parsed).length);
+        }
+      }
+    } catch(e) {
+      console.error('Error fetching Filter_India_Stocks.csv:', e);
+    }
+  }
 }
 
 // ── VCP tab render ────────────────────────────────────────────────────────

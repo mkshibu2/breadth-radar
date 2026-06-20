@@ -29,6 +29,14 @@ from pathlib import Path
 warnings.filterwarnings('ignore')
 logging.basicConfig(level=logging.WARNING, format='%(message)s')
 
+# Configure UTF-8 encoding for Windows stdout/stderr to prevent charmap errors
+if sys.platform.startswith('win'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except AttributeError:
+        pass
+
 # ═══════════════════════════════════════════════════════════════════════
 #  CTRL+C OVERRIDE & CFFI POPUP SUPPRESSION
 # ═══════════════════════════════════════════════════════════════════════
@@ -479,146 +487,327 @@ AEROSPACE_DEFENCE_TICKERS = {'HAL', 'BEL', 'BDL', 'ASTRAMICRO', 'PARAS', 'DATAPA
 SHIPBUILDING_TICKERS = {'MAZDOCK', 'COCHINSHIP', 'GRSE'}
 EMS_TICKERS = {'DIXON', 'KAYNES', 'SYRMA', 'AVALON'}
 DATA_CENTERS_TICKERS = {'NETWEB', 'ANANTRAJ'}
+RAILWAY_TICKERS = {'IRFC', 'IRCTC', 'RVNL', 'IRCON', 'RITES', 'TITAGARH', 'TEXMACO', 'RAILTEL', 'JWL'}
+AGRO_TICKERS = {'CHAMBLFERT', 'FACT', 'COROMANDEL', 'GNFC', 'GSFC', 'RCF', 'UPL'}
+
+FILTER_STOCK_MAP = None
+
+MS_GROUP_TO_SECTOR = {
+    'Aerospace/Defense': 'Defense',
+    'Apparel-Clothing Mfg': 'Textiles',
+    'Apparel-Shoes & Rel Mfg': 'Consumer Durables',
+    'Auto Manufacturers': 'Automobile and Auto Components',
+    'Auto/Truck-Original Eqp': 'Automobile and Auto Components',
+    'Auto/Truck-Replace Parts': 'Automobile and Auto Components',
+    'Auto/Truck-Tires & Misc': 'Automobile and Auto Components',
+    'Banks-Money Center': 'Banks',
+    'Beverages-Alcoholic': 'Fast Moving Consumer Goods',
+    'Beverages-Non-Alcoholic': 'Fast Moving Consumer Goods',
+    'Bldg-A/C & Heating Prds': 'Consumer Durables',
+    'Bldg-Cement/Concrt/Ag': 'Construction Materials',
+    'Bldg-Constr Prds/Misc': 'Capital Goods',
+    'Bldg-Heavy Construction': 'Construction',
+    'Bldg-Resident/Comml': 'Realty',
+    'Chemicals-Agricultural': 'Agrochemicals & Fertilizers',
+    'Chemicals-Basic': 'Specialty Chemicals',
+    'Chemicals-Paints': 'Consumer Durables',
+    'Chemicals-Plastics': 'Specialty Chemicals',
+    'Chemicals-Specialty': 'Specialty Chemicals',
+    'Comml Svcs-Advertising': 'Media Entertainment & Publication',
+    'Comml Svcs-Consulting': 'Services',
+    'Comml Svcs-Healthcare': 'Hospitals & Healthcare',
+    'Comml Svcs-Market Rsrch': 'Services',
+    'Comml Svcs-Outsourcing': 'Services',
+    'Comp Sftwr-Spec Enterprs': 'Information Technology',
+    'Computer Sftwr-Database': 'Information Technology',
+    'Computer Sftwr-Desktop': 'Information Technology',
+    'Computer-Hardware/Perip': 'Information Technology',
+    'Computer-Networking': 'Information Technology',
+    'Computer-Tech Services': 'Information Technology',
+    'Consumer Prod-Electronic': 'Consumer Durables',
+    'Consumer Prod-Specialty': 'Consumer Durables',
+    'Consumer Svcs-Education': 'Consumer Services',
+    'Cosmetics/Personal Care': 'Fast Moving Consumer Goods',
+    'Diversified Operations': 'Diversified',
+    'Elec-Misc Products': 'Capital Goods',
+    'Electrical-Power/Equipmt': 'Capital Goods',
+    'Energy-Alternative/Other': 'Power',
+    'Energy-Coal': 'Oil Gas & Consumable Fuels',
+    'Energy-Solar': 'Power',
+    'Finance-Commercial Loans': 'NBFCs & Finance',
+    'Finance-Consumer Loans': 'NBFCs & Finance',
+    'Finance-Crdtcard/Pmtpr': 'NBFCs & Finance',
+    'Finance-Invest Bnk/Bkrs': 'NBFCs & Finance',
+    'Finance-Investment Mgmt': 'NBFCs & Finance',
+    'Finance-Mrtg&Rel Svc': 'NBFCs & Finance',
+    'Finance-Property Reit': 'Realty',
+    'Financial Svcs-Specialty': 'NBFCs & Finance',
+    'Food-Grain & Related': 'Fast Moving Consumer Goods',
+    'Food-Misc Preparation': 'Fast Moving Consumer Goods',
+    'Food-Packaged': 'Fast Moving Consumer Goods',
+    'Hsehold-Appliances/Wares': 'Consumer Durables',
+    'Insurance-Acc & Health': 'NBFCs & Finance',
+    'Insurance-Brokers': 'NBFCs & Finance',
+    'Insurance-Diversified': 'NBFCs & Finance',
+    'Insurance-Life': 'NBFCs & Finance',
+    'Insurance-Prop/Cas/Titl': 'NBFCs & Finance',
+    'Internet-Content': 'Consumer Services',
+    'Leisure-Lodging': 'Consumer Services',
+    'Leisure-Movies & Related': 'Media Entertainment & Publication',
+    'Leisure-Services': 'Consumer Services',
+    'Leisure-Travel Booking': 'Consumer Services',
+    'Machinery-Constr/Mining': 'Capital Goods',
+    'Machinery-Farm': 'Automobile and Auto Components',
+    'Machinery-Gen Industrial': 'Capital Goods',
+    'Machinery-Mtl Hdlg/Autmn': 'Capital Goods',
+    'Machinery-Tools & Rel': 'Capital Goods',
+    'Media-Radio/Tv': 'Media Entertainment & Publication',
+    'Medical-Biomed/Biotech': 'Pharma',
+    'Medical-Diversified': 'Pharma',
+    'Medical-Generic Drugs': 'Pharma',
+    'Medical-Hospitals': 'Hospitals & Healthcare',
+    'Medical-Products': 'Pharma',
+    'Medical-Research Eqp/Svc': 'Pharma',
+    'Medical-Services': 'Hospitals & Healthcare',
+    'Medical-Supplies': 'Pharma',
+    'Medical-Systems/Equip': 'Pharma',
+    'Medical-Whlsle Drg/Suppl': 'Pharma',
+    'Metal Proc & Fabrication': 'Metals & Mining',
+    'Mining-Metal Ores': 'Metals & Mining',
+    'Oil&Gas-Integrated': 'Oil Gas & Consumable Fuels',
+    'Oil&Gas-Intl Expl&Prod': 'Oil Gas & Consumable Fuels',
+    'Oil&Gas-Refining/Mktg': 'Oil Gas & Consumable Fuels',
+    'Oil&Gas-Transprt/Pipelne': 'Oil Gas & Consumable Fuels',
+    'Real Estate Dvlpmt/Ops': 'Realty',
+    'Retail-Department Stores': 'Consumer Services',
+    'Retail-Internet': 'Consumer Services',
+    'Retail-Mail Order&Direct': 'Consumer Services',
+    'Retail-Restaurants': 'Consumer Services',
+    'Retail-Specialty': 'Consumer Services',
+    'Retail-Super/Mini Mkts': 'Consumer Services',
+    'Retail/Whlsle-Jewelry': 'Consumer Durables',
+    'Steel-Producers': 'Metals & Mining',
+    'Steel-Specialty Alloys': 'Metals & Mining',
+    'Telecom Svcs-Cable/Satl': 'Telecommunication',
+    'Telecom Svcs-Integrated': 'Telecommunication',
+    'Telecom Svcs-Wireless': 'Telecommunication',
+    'Telecom-Consumer Prods': 'Telecommunication',
+    'Telecom-Infrastructure': 'Telecommunication',
+    'Tobacco': 'Fast Moving Consumer Goods',
+    'Transportation-Airline': 'Services',
+    'Transportation-Equip Mfg': 'Capital Goods',
+    'Transportation-Logistics': 'Services',
+    'Transportation-Ship': 'Services',
+    'Trucks & Parts-Hvy Duty': 'Automobile and Auto Components',
+    'Utility-Electric Power': 'Power',
+    'Utility-Gas Distribution': 'Oil Gas & Consumable Fuels',
+}
 
 def get_industry_group(symbol, company, industry):
+    global FILTER_STOCK_MAP
     sym = symbol.upper().replace('.NS', '')
+    
+    # Lazy load the Filter_India_Stocks.csv
+    if FILTER_STOCK_MAP is None:
+        FILTER_STOCK_MAP = {}
+        try:
+            csv_path = Path(__file__).resolve().parent / 'Filter_India_Stocks.csv'
+            if csv_path.exists():
+                df = pd.read_csv(csv_path, index_col=False)
+                for _, row in df.iterrows():
+                    s_code = str(row['Symbol']).strip().upper()
+                    gp = str(row['Industry_Group']).strip() if pd.notna(row['Industry_Group']) else ''
+                    if s_code and gp:
+                        FILTER_STOCK_MAP[s_code] = gp
+        except Exception as e:
+            logging.warning(f"Error loading Filter_India_Stocks.csv: {e}")
+
+    # Check if stock exists in CSV
+    if FILTER_STOCK_MAP and sym in FILTER_STOCK_MAP:
+        raw_group = FILTER_STOCK_MAP[sym]
+        parent = MS_GROUP_TO_SECTOR.get(raw_group, 'Diversified')
+        group = raw_group
+        if not group.endswith(' IN'):
+            group = group + ' IN'
+        return group, parent
+
+    # Fallback to default keyword heuristic logic if not found in CSV
     comp = company.upper()
     ind = industry.upper()
     
+    # 0. Railways
+    railway_tickers = {'IRFC', 'IRCTC', 'RVNL', 'IRCON', 'RITES', 'TITAGARH', 'TEXMACO', 'RAILTEL', 'JWL'}
+    if sym in railway_tickers or 'RAILWAY' in comp:
+        return "Transportation-Rail IN", "Railways"
+
+    # 0.5. Defense / Aerospace
+    if sym in AEROSPACE_DEFENCE_TICKERS or any(x in comp for x in ["AEROSPACE", "DEFENCE", "DEFENSE", "DYNAMICS"]):
+        return "Aerospace/Defense IN", "Defense"
+        
     # 1. Financials
     if "FINANCIAL" in ind or "BANKS" in ind:
         if sym in PSU_BANKS_TICKERS or any(x in comp for x in ["STATE BANK", "PUNJAB NATIONAL", "BANK OF BARODA", "CANARA", "UNION BANK", "INDIAN BANK", "UCO BANK", "BANK OF INDIA", "MAHARASHTRA", "CENTRAL BANK", "OVERSEAS", "SHUBH", "PSU"]):
-            return "PSU Banks", "Financials"
+            return "Banks-Money Center IN", "Banks"
         if sym in PRIVATE_BANKS_TICKERS or any(x in comp for x in ["HDFC BANK", "ICICI BANK", "KOTAK", "AXIS", "INDUSIND", "FEDERAL", "IDFC FIRST", "BANDHAN", "YES BANK", "CITY UNION", "KARUR VYSYA", "RBL", "SOUTH INDIAN", "CSB BANK", "AU SMALL"]):
-            return "Private Banks", "Financials"
+            return "Banks-Money Center IN", "Banks"
         if sym in INSURANCE_TICKERS or any(x in comp for x in ["INSURANCE", "LIFE", "GENERAL INS", "ASSURANCE", "MAX FINANCIAL"]):
-            return "Insurance", "Financials"
+            return "Insurance-Life IN", "NBFCs & Finance"
         if sym in AMC_TICKERS or "AMC" in comp or "MUTUAL FUND" in comp or "ASSET MANAGEMENT" in comp or "NIPPON LIFE" in comp:
-            return "AMCs", "Financials"
+            return "Finance-Investment Mgmt IN", "NBFCs & Finance"
         if sym in CAPITAL_MARKETS_TICKERS or "CAPITAL MARKETS" in ind or any(x in comp for x in ["CDSL", "BSE", "MCX", "CAMS", "KFIN", "ANGEL ONE", "SECURITIES", "WEALTH", "BROKING", "INVESTMENT"]):
-            return "Capital Markets", "Financials"
-        return "NBFCs", "Financials"
+            return "Finance-Invest Bnk/Bkrs IN", "NBFCs & Finance"
+        return "Finance-Consumer Loans IN", "NBFCs & Finance"
 
     # 2. Industrials
     if "CAPITAL GOODS" in ind or "INDUSTRIAL" in ind or "MACHINERY" in ind:
         if sym in AEROSPACE_DEFENCE_TICKERS or any(x in comp for x in ["AEROSPACE", "DEFENCE", "DEFENSE", "DYNAMICS"]):
-            if "AERO" in comp or "AERO" in sym:
-                return "Aerospace", "Emerging"
-            return "Defence", "Emerging"
+            return "Aerospace/Defense IN", "Defense"
         if sym in SHIPBUILDING_TICKERS or "SHIPYARD" in comp or "SHIPBUILD" in comp or "MAZAGON" in comp:
-            return "Shipbuilding", "Emerging"
+            return "Transportation-Ship IN", "Defense"
         
         if sym in CABLES_TICKERS or "CABLE" in comp or "RR KABEL" in comp:
-            return "Cables", "Industrials"
+            return "Electrical-Power/Equipmt IN", "Capital Goods"
         if sym in TRANSFORMERS_TICKERS or "TRANSFORMER" in comp or "SCHNEIDER" in comp:
-            return "Transformers", "Industrials"
+            return "Electrical-Power/Equipmt IN", "Capital Goods"
         if sym in BEARINGS_TICKERS or "BEARING" in comp:
-            return "Bearings", "Industrials"
+            return "Machinery-Gen Industrial IN", "Capital Goods"
         if sym in COMPRESSORS_TICKERS or "COMPRESSOR" in comp or "PNEUMATIC" in comp:
-            return "Compressors", "Industrials"
+            return "Machinery-Gen Industrial IN", "Capital Goods"
         if sym in HVAC_TICKERS or "VOLTAS" in comp or "BLUE STAR" in comp:
-            return "HVAC", "Industrials"
+            return "Bldg-A/C &amp; Heating Prds IN", "Capital Goods"
         if "AUTOMATION" in comp or "HONEYWELL" in comp:
-            return "Automation", "Industrials"
-        return "Industrial Machinery", "Industrials"
+            return "Machinery-Gen Industrial IN", "Capital Goods"
+        return "Machinery-Gen Industrial IN", "Capital Goods"
 
     # 3. Materials
     if "METALS & MINING" in ind or "METALS" in ind or "MINING" in ind or "MATERIALS" in ind:
         if sym in COPPER_TICKERS or "COPPER" in comp:
-            return "Copper", "Materials"
+            return "Mining-Metal Ores IN", "Metals & Mining"
         if sym in ALUMINIUM_TICKERS or "ALUMINIUM" in comp or "NALCO" in comp:
-            return "Aluminium", "Materials"
+            return "Mining-Metal Ores IN", "Metals & Mining"
         if sym in MINING_TICKERS or "MINING" in ind or "COAL INDIA" in comp or "NMDC" in comp or "GMDC" in comp:
-            return "Mining", "Materials"
+            return "Mining-Metal Ores IN", "Metals & Mining"
         if sym in STEEL_TICKERS or "STEEL" in comp or "PIPE" in comp or "APOLLO TUBES" in comp or "WELSPUN CORP" in comp:
-            return "Steel", "Materials"
-        return "Materials", "Materials"
+            return "Steel-Producers IN", "Metals & Mining"
+        return "Metal Proc &amp; Fabrication IN", "Metals & Mining"
 
     if "CHEMICALS" in ind:
+        agro_keywords = ["AGRICULTURAL", "FERTILIZER", "AGRI"]
+        agro_tickers = {"CHAMBLFERT", "FACT", "COROMANDEL", "GNFC", "GSFC", "RCF", "UPL"}
+        if any(kw in comp for kw in agro_keywords) or sym in agro_tickers:
+            return "Chemicals-Agricultural IN", "Agrochemicals & Fertilizers"
         if sym in EXPLOSIVES_TICKERS or "EXPLOSIVE" in comp or "SOLAR IND" in comp:
-            return "Explosives", "Materials"
+            return "Chemicals-Specialty IN", "Specialty Chemicals"
         if sym in DYES_PIGMENTS_TICKERS or "DYE" in comp or "PIGMENT" in comp or "SUDARSHAN" in comp:
-            if "DYE" in comp or "DYE" in sym:
-                return "Dyes", "Materials"
-            return "Pigments", "Materials"
-        return "Specialty Chemicals", "Materials"
+            return "Chemicals-Specialty IN", "Specialty Chemicals"
+        return "Chemicals-Specialty IN", "Specialty Chemicals"
 
     # 4. Energy
     if "POWER" in ind or "OIL GAS" in ind or "ENERGY" in ind:
         if sym in GAS_TRADING_TICKERS or "GAIL" in comp or "GSPL" in comp:
-            return "Gas Trading", "Energy"
+            return "Utility-Gas Distribution IN", "Oil Gas & Consumable Fuels"
         if sym in CGD_TICKERS or "GUJARAT GAS" in comp or "INDRAPRASTHA GAS" in comp or "MAHANAGAR GAS" in comp or "ADANI TOTAL" in comp:
-            return "CGD", "Energy"
+            return "Utility-Gas Distribution IN", "Oil Gas & Consumable Fuels"
         if sym in SOLAR_TICKERS or "SOLAR" in comp or "ADANI GREEN" in comp or "WAAREE" in comp:
-            return "Solar", "Energy"
+            return "Energy-Solar IN", "Power"
         if sym in POWER_EQUIP_TICKERS or "SUZLON" in comp or "WIND" in comp or "BHEL" in comp or "GET&D" in comp:
-            return "Power Equipment", "Energy"
-        return "Renewables", "Energy"
+            return "Electrical-Power/Equipmt IN", "Power"
+        return "Energy-Alternative/Other IN", "Power"
 
     # 5. Healthcare
     if "HEALTHCARE" in ind or "PHARMACEUTICALS" in ind:
+        if "CHEMICAL" in comp and "PHARM" not in comp:
+            return "Chemicals-Specialty IN", "Specialty Chemicals"
         if sym in CDMO_TICKERS or "CDMO" in comp or "DIVI'S" in comp or "SYNGENE" in comp or "LAURUS" in comp:
-            return "CDMO", "Healthcare"
+            return "Medical-Biomed/Biotech IN", "Pharma"
         if sym in DIAGNOSTICS_TICKERS or "DIAGNOSTIC" in comp or "LAL PATH" in comp or "METROPOLIS" in comp:
-            return "Diagnostics", "Healthcare"
+            return "Medical-Services IN", "Hospitals & Healthcare"
         if sym in MEDICAL_DEVICES_TICKERS or "MEDICURE" in comp or "DEVICE" in comp:
-            return "Medical Devices", "Healthcare"
+            return "Medical-Products IN", "Hospitals & Healthcare"
         if "PHARMA" in comp or "LAB" in comp or "BIOTECH" in comp or "DRUG" in comp or "MEDICINE" in comp:
-            return "Pharma", "Healthcare"
-        return "Hospitals", "Healthcare"
+            return "Medical-Generic Drugs IN", "Pharma"
+        return "Medical-Hospitals IN", "Hospitals & Healthcare"
 
     # 6. Auto
     if "AUTO" in ind or "VEHICLE" in ind:
         if sym in TYRES_TICKERS or "TYRE" in comp or "CEAT" in comp or "MRF" in comp:
-            return "Tyres", "Auto"
+            return "Auto/Truck-Tires &amp; Misc  IN", "Automobile and Auto Components"
         if sym in EV_COMPONENTS_TICKERS or "EV" in comp or "SONA BLW" in comp or "MINDA" in comp:
-            return "EV Components", "Auto"
+            return "Auto/Truck-Original Eqp IN", "Automobile and Auto Components"
         if sym in BATTERIES_TICKERS or "BATTERY" in comp or "EXIDE" in comp or "AMARA RAJA" in comp:
-            return "Batteries", "Auto"
+            return "Auto/Truck-Replace Parts IN", "Automobile and Auto Components"
         if sym in TRACTORS_TICKERS or "TRACTOR" in comp or "ESCORT" in comp:
-            return "Tractors", "Auto"
+            return "Machinery-Farm IN", "Automobile and Auto Components"
         if sym in COMMERCIAL_VEH_TICKERS or "ASHOK LEYLAND" in comp or "COMMERCIAL VEHICLE" in comp:
-            return "Commercial Vehicles", "Auto"
-        return "Passenger Vehicles", "Auto"
+            return "Trucks &amp; Parts-Hvy Duty IN", "Automobile and Auto Components"
+        return "Auto Manufacturers IN", "Automobile and Auto Components"
 
     # 7. Consumer
     if "CONSUMER" in ind or "RETAIL" in ind or "TEXTILES" in ind or "SERVICES" in ind:
         if sym in TEXTILES_TICKERS or "TEXTILE" in ind or "SPINNING" in comp or "WEAVING" in comp or "PAGE INDUSTRIES" in comp or "WELSPUN LIVING" in comp or "RAYMOND" in comp:
-            return "Textiles", "Consumer"
+            return "Apparel-Clothing Mfg IN", "Textiles"
         if sym in RETAIL_TICKERS or "RETAIL" in ind or "TRENT" in comp or "AVENUE SUPERMARTS" in comp or "SHOPPERS STOP" in comp:
-            return "Retail", "Consumer"
+            if sym == 'TRENT':
+                return "Retail-Department Stores IN", "Consumer Services"
+            if sym == 'DMART':
+                return "Retail-Super/Mini Mkts IN", "Consumer Services"
+            return "Retail-Specialty IN", "Consumer Services"
         if sym in JEWELLERY_TICKERS or "JEWELLER" in comp or "TITAN" in comp or "GOLD" in comp:
-            return "Jewellery", "Consumer"
+            return "Retail/Whlsle-Jewelry IN", "Consumer Durables"
         if sym in FOOTWEAR_TICKERS or "FOOTWEAR" in comp or "BATA" in comp or "METRO BRAND" in comp or "RELAXO" in comp:
-            return "Footwear", "Consumer"
+            return "Apparel-Shoes &amp; Rel Mfg IN", "Consumer Durables"
         if sym in RESTAURANTS_QSR_TICKERS or "RESTAURANT" in comp or "FOODWORKS" in comp or "DEVYANI" in comp or "WESTLIFE" in comp or "SAPPHIRE" in comp:
-            return "QSR", "Consumer"
+            return "Retail-Restaurants IN", "Consumer Services"
 
     # Emerging defaults
     if sym in AEROSPACE_DEFENCE_TICKERS or any(x in comp for x in ["AEROSPACE", "DEFENCE", "DEFENSE", "DYNAMICS"]):
-        if "AERO" in comp or "AERO" in sym:
-            return "Aerospace", "Emerging"
-        return "Defence", "Emerging"
+        return "Aerospace/Defense IN", "Defense"
     if sym in EMS_TICKERS or any(x in comp for x in ["EMS", "DIXON", "KAYNES", "SYRMA", "AVALON"]):
-        return "EMS", "Emerging"
+        return "Electronic-Parts IN", "Capital Goods"
     if sym in DATA_CENTERS_TICKERS or "DATA CENTER" in comp or "NETWEB" in comp:
-        return "Data Centers", "Emerging"
+        return "Computer-Hardware/Perip IN", "Information Technology"
     
     # Defaults
     if "TELECOMMUNICATION" in ind:
-        return "Telecom", "Telecom"
+        return "Telecom Svcs-Wireless IN", "Telecommunication"
     if "INFORMATION TECHNOLOGY" in ind:
-        return "IT", "IT"
+        return "Computer-Tech Services IN", "Information Technology"
     if "CONSTRUCTION MATERIALS" in ind:
-        return "Construction Materials", "Materials"
+        return "Bldg-Cement/Concrt/Ag IN", "Construction Materials"
     if "CONSTRUCTION" in ind:
-        return "Construction", "Construction"
+        return "Bldg-Heavy Construction IN", "Construction"
     if "REALTY" in ind:
-        return "Realty", "Realty"
+        return "Real Estate Dvlpmt/Ops IN", "Realty"
     if "MEDIA" in ind or "PUBLICATION" in ind:
-        return "Media", "Media"
+        return "Media-Radio/Tv IN", "Media Entertainment & Publication"
     
-    return industry, industry
+    # Direct raw industry defaults to valid MS industry group names
+    raw_ind_map = {
+        'FAST MOVING CONSUMER GOODS': ("Food-Packaged IN", "Fast Moving Consumer Goods"),
+        'CONSUMER SERVICES': ("Retail-Specialty IN", "Consumer Services"),
+        'CONSUMER DURABLES': ("Consumer Prod-Electronic IN", "Consumer Durables"),
+        'SERVICES': ("Comml Svcs-Consulting IN", "Services"),
+        'DIVERSIFIED': ("Diversified Operations IN", "Diversified"),
+        'OIL GAS & CONSUMABLE FUELS': ("Oil&amp;Gas-Refining/Mktg IN", "Oil Gas & Consumable Fuels"),
+        'POWER': ("Utility-Electric Power IN", "Power"),
+        'TELECOMMUNICATION': ("Telecom Svcs-Wireless IN", "Telecommunication"),
+        'INFORMATION TECHNOLOGY': ("Computer-Tech Services IN", "Information Technology"),
+        'METALS & MINING': ("Mining-Metal Ores IN", "Metals & Mining"),
+        'CHEMICALS': ("Chemicals-Basic IN", "Specialty Chemicals"),
+        'HEALTHCARE': ("Medical-Generic Drugs IN", "Pharma"),
+        'AUTOMOBILE AND AUTO COMPONENTS': ("Auto/Truck-Original Eqp IN", "Automobile and Auto Components"),
+        'TEXTILES': ("Apparel-Clothing Mfg IN", "Textiles"),
+        'REALTY': ("Real Estate Dvlpmt/Ops IN", "Realty"),
+        'MEDIA ENTERTAINMENT & PUBLICATION': ("Media-Radio/Tv IN", "Media Entertainment & Publication"),
+        'CONSTRUCTION MATERIALS': ("Bldg-Cement/Concrt/Ag IN", "Construction Materials"),
+        'CONSTRUCTION': ("Bldg-Heavy Construction IN", "Construction")
+    }
+    
+    if ind in raw_ind_map:
+        return raw_ind_map[ind]
+        
+    return "Diversified Operations IN", "Diversified"
+
 
 # ═══════════════════════════════════════════════════════════════════════
 #  MAIN ANALYSIS FUNCTION
@@ -1186,66 +1375,19 @@ def main():
                 print(f'  [{i:3d}/{total}] {sym:<15} — skip (no data)')
                 continue
 
-            # --- SMART INDUSTRY/THEME SPLIT ---
-            comp_lower = nse_comp.lower()
-            
-            # 1. Railway Super-Theme (Overrides everything else)
-            railway_tickers = ['IRFC', 'IRCTC', 'RVNL', 'IRCON', 'RITES', 'TITAGARH', 'TEXMACO', 'RAILTEL', 'JWL']
-            if sym in railway_tickers or 'railway' in comp_lower:
-                nse_ind = 'Railways'
-            
-            # 2. Pharma vs Hospitals
-            elif nse_ind == 'Healthcare':
-                hosp_tickers = ['APOLLOHOSP', 'ASTERDM', 'FORTIS', 'MEDANTA', 'KIMS', 'MAXHEALTH', 'NH', 'RAINBOW', 'VIJAYA', 'LALPATHLAB']
-                if sym in hosp_tickers or 'hospital' in comp_lower or 'diagnostic' in comp_lower or 'clinic' in comp_lower or 'medical center' in comp_lower:
-                    nse_ind = 'Hospitals & Healthcare'
-                else:
-                    nse_ind = 'Pharma'
-            
-            # 3. Defense Split
-            elif nse_ind == 'Capital Goods' or nse_ind == 'Services':
-                defense_keywords = ['aerospace', 'defense', 'defence']
-                defense_tickers = ['HAL', 'BEL', 'MAZDOCK', 'COCHINSHIP', 'BDL', 'BEML', 'DATAPATTNS', 'GRSE', 'PARAS', 'MTARTECH']
-                if any(kw in comp_lower for kw in defense_keywords) or sym in defense_tickers:
-                    nse_ind = 'Defense'
-                    
-            # 4. Breaking up Financial Services (101 stocks is too many)
-            elif nse_ind == 'Financial Services':
-                if 'bank' in comp_lower or sym in ['AUBANK', 'FEDERALBNK', 'HDFCBANK', 'ICICIBANK', 'IDFCFIRSTB', 'INDIANB', 'IOB', 'KARURVYSYA', 'KOTAKBANK', 'PNB', 'RBLBANK', 'SBIN', 'UCOBANK', 'UNIONBANK', 'YESBANK', 'BANKBARODA', 'BANKINDIA', 'MAHABANK']:
-                    nse_ind = 'Banks'
-                else:
-                    nse_ind = 'NBFCs & Finance'
-                    
-            # 5. Specialty Chemicals vs Agrochemicals
-            elif nse_ind == 'Chemicals':
-                agro_keywords = ['agricultural', 'fertilizer', 'agri']
-                agro_tickers = ['CHAMBLFERT', 'FACT', 'COROMANDEL', 'GNFC', 'GSFC', 'RCF', 'UPL']
-                if any(kw in comp_lower for kw in agro_keywords) or sym in agro_tickers:
-                    nse_ind = 'Agrochemicals & Fertilizers'
-                else:
-                    nse_ind = 'Specialty Chemicals'
-            # ----------------------------------
-
-            # Granular Industry-tab classification: feed get_industry_group() the
-            # ORIGINAL raw NSE industry (nse_ind_raw), not the broad-sector label
-            # above. Using the overridden label here was the bug — e.g. "NBFCs &
-            # Finance" doesn't contain "FINANCIAL"/"BANKS", so it skipped the
-            # entire Financials sub-split (PSU/Private Banks, Insurance, AMCs,
-            # Capital Markets) and every one of those 60+ stocks collapsed into a
-            # single generic bucket. Same issue hit Pharma (override "Pharma"
-            # doesn't contain "PHARMACEUTICALS"/"HEALTHCARE", so CDMO/Diagnostics/
-            # Medical Devices never split out) and Chemicals (Agro stocks merged
-            # into Specialty Chemicals).
+            # Get the exact Industry Group and Parent Sector from CSV/Heuristics
             industry_group, parent_sector = get_industry_group(sym, nse_comp, nse_ind_raw)
 
-            # Railways and Agrochemicals are thematic splits NSE's raw industry
-            # string can't reveal on its own (same ticker/keyword logic as the
-            # Sector-tab override above) — re-apply them here so the Industry tab
-            # stays aligned with the Sector tab for these two cases.
-            if nse_ind == 'Railways':
+            # Apply custom theme overrides
+            comp_lower = nse_comp.lower()
+            railway_tickers = {'IRFC', 'IRCTC', 'RVNL', 'IRCON', 'RITES', 'TITAGARH', 'TEXMACO', 'RAILTEL', 'JWL'}
+            if sym in railway_tickers or 'railway' in comp_lower:
                 industry_group, parent_sector = 'Railways', 'Railways'
-            elif nse_ind == 'Agrochemicals & Fertilizers':
-                industry_group, parent_sector = 'Agrochemicals & Fertilizers', 'Materials'
+            elif sym in {'MAZDOCK', 'COCHINSHIP', 'GRSE'}:
+                parent_sector = 'Defense'
+
+            # Ensure sector and parent sector are exactly aligned
+            nse_ind = parent_sector
 
             if nse_ind not in sector_stats:
                 sector_stats[nse_ind] = {'total': 0, 'vcp': 0, 'a20': 0, 'a50': 0, 'a200': 0}
