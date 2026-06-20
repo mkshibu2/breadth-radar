@@ -2085,6 +2085,7 @@ thead th[onclick]:hover {
                 <button onclick="vcpbSetPreset('minervini')" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.05);color:var(--purple);cursor:pointer;font-weight:600" title="Load Mark Minervini's preset: Stage > RS wk > Score > Accel > @Top > Med90%">⚡ Minervini</button>
                 <button onclick="vcpbSetPreset('oneil')" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid rgba(45,212,191,.3);background:rgba(45,212,191,.05);color:var(--teal);cursor:pointer;font-weight:600" title="Load William O'Neil's preset: RS wk > A/D > Score > @Top > Accel > Med90%">📈 O'Neil</button>
                 <button onclick="vcpbSetPreset('zanger')" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid rgba(251,146,60,.3);background:rgba(251,146,60,.05);color:var(--orange);cursor:pointer;font-weight:600" title="Load Dan Zanger's preset: Med90% > Accel > RS wk > Stage > Score > @Top">🔥 Zanger</button>
+                <button onclick="vcpbResetSort()" style="font-size:10px;padding:2px 6px;border-radius:3px;border:1px solid rgba(248,113,113,.3);background:rgba(248,113,113,.05);color:var(--red);cursor:pointer;font-weight:600" title="Reset sort to default">↺</button>
               </div>
             </div>
 
@@ -2095,7 +2096,7 @@ thead th[onclick]:hover {
                   <tr style="border-bottom:1px solid var(--border)">
                     <th style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Row number">#</th>
                     <th id="vcpb-h-sector" onclick="vcpbSetSort('sector')" style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Sector or Theme name.">Sector / Theme</th>
-                    <th id="vcpb-h-universe" onclick="vcpbSetSort('universe')" style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Number of Nifty 500 stocks in this sector/theme.">N500</th>
+                    <th id="vcpb-h-universe" onclick="vcpbSetSort('universe')" style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Number of VCP candidate stocks / total Nifty 500 stocks in this sector/theme.">VCP(N500)</th>
                     <th id="vcpb-h-composite" onclick="vcpbSetSort('composite')" style="text-align:center;padding:5px 4px;color:var(--teal);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Score = 20EMA × 50% + 50SMA × 30% + 200SMA × 20%. Indicates overall sector breadth strength.">Score</th>
                     <th id="vcpb-h-a20_pct" onclick="vcpbSetSort('a20_pct')" style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Percentage of sector stocks trading above their 20-day Exponential Moving Average (EMA).">>20EMA</th>
                     <th id="vcpb-h-a50_pct" onclick="vcpbSetSort('a50_pct')" style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Percentage of sector stocks trading above their 50-day Simple Moving Average (SMA).">>50SMA</th>
@@ -6945,6 +6946,14 @@ function vcpbSaveUrl() {
 
 async function vcpbFetch(force) {
   const baseUrl = vcpbGetUrl();
+  
+  if (force) {
+    _n500CsvCache = null;
+    localStorage.removeItem(LS_N500_CSV);
+    _filterStocksCache = null;
+    localStorage.removeItem(LS_FILTER_STOCKS_CSV);
+  }
+
   if (!baseUrl) {
     const cached = vcpbGetCached();
     if (cached) { vcpbRender(cached); return; }
@@ -6957,17 +6966,37 @@ async function vcpbFetch(force) {
   } else {
     vcpbShowState('vcpb-loading');
   }
-  const jsonUrl = baseUrl + '/sector_breadth.json?_=' + Date.now();
+  
+  let resp;
+  let localSuccess = false;
+  let jsonUrl = baseUrl + '/sector_breadth.json?_=' + Date.now();
+  
+  if (window.location.protocol === 'file:') {
+    try {
+      const localUrl = 'http://localhost:9090/local/sector_breadth.json?_=' + Date.now();
+      resp = await fetch(localUrl, { cache: 'no-store' });
+      if (resp.ok) {
+        localSuccess = true;
+        jsonUrl = 'http://localhost:9090/local/sector_breadth.json';
+      }
+    } catch(e) {}
+  }
+
+  if (!localSuccess) {
+    resp = await fetch(jsonUrl, { cache: 'no-store' });
+  }
+
   const srcEl = document.getElementById('vcpb-source-url');
-  if (srcEl) srcEl.textContent = baseUrl + '/sector_breadth.json';
+  if (srcEl) srcEl.textContent = jsonUrl.split('?')[0];
+
   try {
-    const resp = await fetch(jsonUrl, { cache: 'no-store' });
     if (!resp.ok) throw new Error('HTTP ' + resp.status + ' — file not found. Has the scanner run today?');
     const data = await resp.json();
     if (!data.sectors || !Array.isArray(data.sectors)) throw new Error('Unexpected JSON format.');
     vcpbSetCached(data);
     vcpbAccumulateHistory(data);  // build rolling history for breadth RRG
     vcpbRender(data);
+    sdFetchCsv(force); // refresh CSV in background if forced
   } catch(e) {
     const cached = vcpbGetCached();
     if (cached && !force) { vcpbRender(cached); return; }
@@ -6994,7 +7023,7 @@ function vcpbPopulateSortDropdowns() {
   const options = [
     { value: 'none', text: 'None' },
     { value: 'composite', text: 'Score' },
-    { value: 'universe', text: 'N500' },
+    { value: 'universe', text: 'VCP(N500)' },
     { value: 'a20_pct', text: '>20EMA' },
     { value: 'a50_pct', text: '>50SMA' },
     { value: 'a200_pct', text: '>200SMA' },
@@ -7075,6 +7104,20 @@ function vcpbSetPreset(presetName) {
     _vcpbSort = '_med90';
     _vcpbSortAsc = false;
     vcpbApplyMultiSort();
+  }
+}
+
+function vcpbResetSort() {
+  const defaults = ['composite', '_med90', '_accel', '_adScore', '_rs', 'none'];
+  defaults.forEach((key, idx) => {
+    const el = document.getElementById('vcpb-sort-' + (idx + 1));
+    if (el) el.value = key;
+  });
+  _vcpbSort = 'composite';
+  _vcpbSortAsc = false;
+  const card = document.getElementById('srt-home-card');
+  if (card && card._vcpbData) {
+    vcpbRenderTable(_vcpbViewMode === 'sector' ? card._vcpbData.sectors : (card._vcpbData.industries || []));
   }
 }
 
@@ -7186,7 +7229,7 @@ function stageToScore(stage) {
 function updateTableHeaderSortIndicators() {
   const headers = {
     'sector': { text: 'Sector / Theme' },
-    'universe': { text: 'N500' },
+    'universe': { text: 'VCP(N500)' },
     'composite': { text: 'Score' },
     'a20_pct': { text: '>20EMA' },
     'a50_pct': { text: '>50SMA' },
@@ -7308,6 +7351,17 @@ function vcpbRenderTable(sectors) {
   const compareFields = (a, b, key, asc) => {
     let valA = a[key];
     let valB = b[key];
+
+    if (key === 'universe') {
+      const vcpA = a.vcp_count !== undefined ? a.vcp_count : 0;
+      const vcpB = b.vcp_count !== undefined ? b.vcp_count : 0;
+      if (vcpA !== vcpB) {
+        return asc ? (vcpA - vcpB) : (vcpB - vcpA);
+      }
+      const uniA = a.universe !== undefined ? a.universe : 0;
+      const uniB = b.universe !== undefined ? b.universe : 0;
+      return asc ? (uniA - uniB) : (uniB - uniA);
+    }
 
     if (key === 'sector') {
       const strA = valA || '';
@@ -7451,7 +7505,7 @@ function vcpbRenderTable(sectors) {
            onclick="event.stopPropagation()"
            style="display:inline-block;margin-left:5px;font-size:9px;color:var(--teal);opacity:.7;text-decoration:none;background:rgba(45,212,191,.1);padding:0 4px;border-radius:2px;border:1px solid rgba(45,212,191,.2);vertical-align:middle">NSE↗</a>
       </td>
-      <td style="padding:5px 4px;text-align:center;color:var(--sub);font-size:11px;font-family:var(--mono)">${s.universe}</td>
+      <td style="padding:5px 4px;text-align:center;color:var(--sub);font-size:11px;font-family:var(--mono)">${s.vcp_count !== undefined ? s.vcp_count : 0}(${s.universe !== undefined ? s.universe : 0})</td>
       <td style="padding:5px 4px;text-align:center;font-family:var(--disp);font-size:16px;font-weight:800;color:${scoreC}">${s.composite}${trendArrow}</td>
       <td style="padding:5px 4px;text-align:right;font-size:11px;font-family:var(--mono);color:${a20C}">${s.a20_pct}%</td>
       <td style="padding:5px 4px;text-align:right;font-size:11px;font-family:var(--mono);color:${a50C}">${s.a50_pct}%</td>
@@ -7491,6 +7545,8 @@ function vcpbRender(data) {
       trend: vcpbScoreTrend(s.sector),
       accel: vcpbAcceleration(s.sector),
       med90: vcpbMedianR90(s.sector),
+      vcp_count: s.vcp_count !== undefined ? s.vcp_count : 0,
+      universe: s.universe !== undefined ? s.universe : 0,
     }))
     .sort((a, b) => b.score - a.score);
 
@@ -7511,7 +7567,7 @@ function vcpbRender(data) {
     return `<span onclick="sectorDrillOpen('${esc}')"
       style="display:inline-block;margin:1px 3px 1px 0;padding:2px 8px;border-radius:3px;background:${bg};color:${c};font-size:10px;font-weight:700;font-family:var(--mono);cursor:pointer;transition:opacity .15s"
       onmouseenter="this.style.opacity='.75'" onmouseleave="this.style.opacity='1'"
-      title="${s.name} · Score: ${s.score}${accelTip}${med90Tip} · Click for stocks">${label} <span style="font-weight:400;opacity:.75">${s.score}</span></span>`;
+      title="${s.name} · Score: ${s.score}${accelTip}${med90Tip} · Click for stocks">${label} <span style="font-weight:400;opacity:.75">${s.vcp_count}(${s.universe})</span></span>`;
   };
 
   const leadEl  = document.getElementById('vcpb-ls-lead');
@@ -13725,8 +13781,20 @@ async function sdFetchSectorStocksBackground() {
   const baseUrl = vcpbGetUrl();
   if (!baseUrl) return;
   try {
-    const resp = await fetch(baseUrl + '/sector_stocks.json?_=' + Date.now(), { cache: 'no-store' });
-    if (resp.ok) {
+    let resp;
+    let localSuccess = false;
+    if (window.location.protocol === 'file:') {
+      try {
+        const localUrl = 'http://localhost:9090/local/sector_stocks.json?_=' + Date.now();
+        resp = await fetch(localUrl, { cache: 'no-store' });
+        if (resp.ok) localSuccess = true;
+      } catch(e) {}
+    }
+    if (!localSuccess) {
+      resp = await fetch(baseUrl + '/sector_stocks.json?_=' + Date.now(), { cache: 'no-store' });
+    }
+
+    if (resp && resp.ok) {
       const fresh = await resp.json();
       sectorDrillSetCached(fresh);
       calculateRSRatings(fresh);
@@ -14148,8 +14216,20 @@ async function sectorDrillOpen(sectorName, tabToOpen = 'vcp') {
     const baseUrl = vcpbGetUrl();
     if (baseUrl) {
       try {
-        const resp = await fetch(baseUrl + '/sector_stocks.json?_=' + Date.now(), { cache: 'no-store' });
-        if (resp.ok) {
+        let resp;
+        let localSuccess = false;
+        if (window.location.protocol === 'file:') {
+          try {
+            const localUrl = 'http://localhost:9090/local/sector_stocks.json?_=' + Date.now();
+            resp = await fetch(localUrl, { cache: 'no-store' });
+            if (resp.ok) localSuccess = true;
+          } catch(e) {}
+        }
+        if (!localSuccess) {
+          resp = await fetch(baseUrl + '/sector_stocks.json?_=' + Date.now(), { cache: 'no-store' });
+        }
+
+        if (resp && resp.ok) {
           const fresh = await resp.json();
           sectorDrillSetCached(fresh);
           data = fresh;
@@ -14215,15 +14295,34 @@ function toggleMaximizeSectorDrill() {
 }
 
 // ── Fetch ind_nifty500list.csv and Filter_India_Stocks.csv from GitHub (cached) ──────────────────────
-async function sdFetchCsv() {
+async function sdFetchCsv(force = false) {
   const baseUrl = vcpbGetUrl();
   if (!baseUrl) return;
+
+  if (force) {
+    _n500CsvCache = null;
+    localStorage.removeItem(LS_N500_CSV);
+    _filterStocksCache = null;
+    localStorage.removeItem(LS_FILTER_STOCKS_CSV);
+  }
 
   // 1. Fetch ind_nifty500list.csv if not cached
   if (!n500CsvGetCached()) {
     try {
-      const resp = await fetch(baseUrl + '/ind_nifty500list.csv?_=' + Date.now(), { cache: 'no-store' });
-      if (resp.ok) {
+      let resp;
+      let localSuccess = false;
+      if (window.location.protocol === 'file:') {
+        try {
+          const localUrl = 'http://localhost:9090/local/ind_nifty500list.csv?_=' + Date.now();
+          resp = await fetch(localUrl, { cache: 'no-store' });
+          if (resp.ok) localSuccess = true;
+        } catch(e) {}
+      }
+      if (!localSuccess) {
+        resp = await fetch(baseUrl + '/ind_nifty500list.csv?_=' + Date.now(), { cache: 'no-store' });
+      }
+      
+      if (resp && resp.ok) {
         const text = await resp.text();
         const parsed = parseN500Csv(text);
         if (parsed.length > 100) n500CsvSetCached(parsed);
@@ -14236,8 +14335,20 @@ async function sdFetchCsv() {
   // 2. Fetch Filter_India_Stocks.csv if not cached
   if (!filterStocksGetCached()) {
     try {
-      const resp = await fetch(baseUrl + '/Filter_India_Stocks.csv?_=' + Date.now(), { cache: 'no-store' });
-      if (resp.ok) {
+      let resp;
+      let localSuccess = false;
+      if (window.location.protocol === 'file:') {
+        try {
+          const localUrl = 'http://localhost:9090/local/Filter_India_Stocks.csv?_=' + Date.now();
+          resp = await fetch(localUrl, { cache: 'no-store' });
+          if (resp.ok) localSuccess = true;
+        } catch(e) {}
+      }
+      if (!localSuccess) {
+        resp = await fetch(baseUrl + '/Filter_India_Stocks.csv?_=' + Date.now(), { cache: 'no-store' });
+      }
+      
+      if (resp && resp.ok) {
         const text = await resp.text();
         const parsed = parseFilterStocksCsv(text);
         if (Object.keys(parsed).length > 100) {
