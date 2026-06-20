@@ -1656,7 +1656,7 @@ thead th[onclick]:hover {
     NSE <em>BREADTH</em> RADAR
   </div>
   <div class="hdr-right">
-    <div class="hdr-tag">Universe: <b>Nifty 500</b></div>
+    <div class="hdr-tag">Universe: <b>N500+MSc400</b></div>
     <div class="hdr-tag" id="hdr-date"></div>
     <div class="guest-badge" id="guest-badge">👁 Guest View</div>
     <button class="guest-pull-btn" id="guest-pull-btn" onclick="guestPullData()" title="Pull latest data from the cloud">
@@ -1959,7 +1959,7 @@ thead th[onclick]:hover {
           <div id="vcpb-source-row" style="padding:4px 14px 0;font-size:9px;color:var(--dim);font-family:var(--mono);display:none">
             <span id="vcpb-source-url" style="color:var(--accent)"></span>
             &nbsp;·&nbsp; <span id="vcpb-scan-time"></span>
-            &nbsp;·&nbsp; N500 universe: <span id="vcpb-qualified" style="color:var(--teal)"></span>
+            &nbsp;·&nbsp; Scan universe: <span id="vcpb-qualified" style="color:var(--teal)"></span>
           </div>
 
           <!-- Loading -->
@@ -2096,7 +2096,7 @@ thead th[onclick]:hover {
                   <tr style="border-bottom:1px solid var(--border)">
                     <th style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Row number">#</th>
                     <th id="vcpb-h-sector" onclick="vcpbSetSort('sector')" style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Sector or Theme name.">Sector / Theme</th>
-                    <th id="vcpb-h-universe" onclick="vcpbSetSort('universe')" style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Number of VCP candidate stocks / total Nifty 500 stocks in this sector/theme.">VCP(N500)</th>
+                    <th id="vcpb-h-universe" onclick="vcpbSetSort('universe')" style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Number of VCP candidate stocks / total universe stocks in this sector/theme.">VCP(Univ)</th>
                     <th id="vcpb-h-composite" onclick="vcpbSetSort('composite')" style="text-align:center;padding:5px 4px;color:var(--teal);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Score = 20EMA × 50% + 50SMA × 30% + 200SMA × 20%. Indicates overall sector breadth strength.">Score</th>
                     <th id="vcpb-h-a20_pct" onclick="vcpbSetSort('a20_pct')" style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Percentage of sector stocks trading above their 20-day Exponential Moving Average (EMA).">>20EMA</th>
                     <th id="vcpb-h-a50_pct" onclick="vcpbSetSort('a50_pct')" style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px" title="Percentage of sector stocks trading above their 50-day Simple Moving Average (SMA).">>50SMA</th>
@@ -4229,6 +4229,8 @@ function sccChartRebuildGrid() {
             Loading chart…
           </div>
         </div>
+        <!-- Stats table container at the bottom of the card -->
+        <div id="scc-chart-table-${i}" style="flex-shrink:0; background:var(--bg3); border-top:1px solid var(--border);"></div>
       </div>
     `;
   }
@@ -4305,14 +4307,28 @@ async function sccChartRenderPanel(index) {
     interval = '1mo';
   }
 
-  // Fetch company info and RS rating using the helper
-  const meta = findStockMetadata(symbol);
-  const companyName = meta.company;
-  const rsRating = meta.rs_rating;
+  // Fetch details including company, sector and industry Group
+  const details = getStockDetails(symbol);
+  const companyName = details.company;
 
   if (titleEl) {
-    titleEl.innerHTML = `<span style="font-family:var(--disp);font-size:11px;font-weight:800;color:var(--teal)">${symbol.toUpperCase()}</span>
-                         <span style="font-size:9px;color:var(--dim);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:4px" title="${companyName}">${companyName}</span>`;
+    titleEl.innerHTML = `
+      <div style="display:flex; flex-direction:column; min-width:0; line-height:1.2;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-family:var(--disp); font-size:11px; font-weight:800; color:var(--teal);">${details.symbol}</span>
+          <span style="font-size:9px; color:var(--text); font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;" title="${details.company}">${details.company}</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:4px; font-size:9px; color:var(--dim); margin-top:2px;">
+          <span style="background:rgba(255,255,255,0.04); padding:1px 4px; border-radius:2px; border:1px solid var(--border); white-space:nowrap;">${details.sector}</span>
+          <span style="color:var(--sub); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;" title="${details.industry}">${details.industry}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  const tableEl = document.getElementById(`scc-chart-table-${index}`);
+  if (tableEl) {
+    tableEl.innerHTML = generateStatsTableHtml(details);
   }
 
   try {
@@ -7023,7 +7039,7 @@ function vcpbPopulateSortDropdowns() {
   const options = [
     { value: 'none', text: 'None' },
     { value: 'composite', text: 'Score' },
-    { value: 'universe', text: 'VCP(N500)' },
+    { value: 'universe', text: 'VCP(Univ)' },
     { value: 'a20_pct', text: '>20EMA' },
     { value: 'a50_pct', text: '>50SMA' },
     { value: 'a200_pct', text: '>200SMA' },
@@ -7229,7 +7245,7 @@ function stageToScore(stage) {
 function updateTableHeaderSortIndicators() {
   const headers = {
     'sector': { text: 'Sector / Theme' },
-    'universe': { text: 'VCP(N500)' },
+    'universe': { text: 'VCP(Univ)' },
     'composite': { text: 'Score' },
     'a20_pct': { text: '>20EMA' },
     'a50_pct': { text: '>50SMA' },
@@ -14008,6 +14024,143 @@ function calculateRSRatings(data) {
   });
 }
 
+// Helper: find stock metadata, sector, industry and VCP scanner stats
+function getStockDetails(symbol) {
+  if (!symbol) return { symbol: '', company: '', sector: '', industry: '', stats: null };
+  const sUpper = symbol.toUpperCase().replace('.NS', '');
+  
+  let sector = '';
+  let industry = '';
+  let company = '';
+  let scanStats = null;
+
+  // 1. Search in cached sector stocks
+  const cached = sectorDrillGetCached();
+  if (cached) {
+    if (typeof calculateRSRatings === 'function' && !cached._rs_calculated) {
+      calculateRSRatings(cached);
+      cached._rs_calculated = true;
+    }
+    if (cached.sectors) {
+      for (const [secName, secObj] of Object.entries(cached.sectors)) {
+        if (secObj && Array.isArray(secObj.stocks)) {
+          const found = secObj.stocks.find(x => x.symbol && x.symbol.toUpperCase() === sUpper);
+          if (found) {
+            sector = secName;
+            company = found.company || '';
+            scanStats = found;
+            break;
+          }
+        }
+      }
+    }
+    if (cached.industries) {
+      for (const [indName, indObj] of Object.entries(cached.industries)) {
+        if (indObj && Array.isArray(indObj.stocks)) {
+          const found = indObj.stocks.find(x => x.symbol && x.symbol.toUpperCase() === sUpper);
+          if (found) {
+            industry = indName;
+            if (!company) company = found.company || '';
+            if (!scanStats) scanStats = found;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // 2. Fallback to Nifty 500 CSV
+  if (!sector || !industry || !company) {
+    const allStocks = n500CsvGetCached() || [];
+    const found = allStocks.find(s => s.symbol && s.symbol.toUpperCase() === sUpper);
+    if (found) {
+      if (!company) company = found.company || '';
+      const mapping = getMsIndustryMapping(found.symbol, found.company, found.industry);
+      if (!sector) sector = mapping.parentSector || 'Diversified';
+      if (!industry) industry = mapping.industryGroup || found.industry || '';
+    }
+  }
+
+  // 3. Fallback heuristic mapping if still missing
+  if (!sector || !industry) {
+    const mapping = getMsIndustryMapping(sUpper, company, '');
+    if (!sector) sector = mapping.parentSector || 'Diversified';
+    if (!industry) industry = mapping.industryGroup || '';
+  }
+
+  // Clean industry name formatting
+  if (industry.endsWith(' IN')) {
+    industry = industry.slice(0, -3);
+  }
+
+  return {
+    symbol: sUpper,
+    company: company,
+    sector: sector,
+    industry: industry,
+    stats: scanStats
+  };
+}
+
+// Helper: generate HTML for the stock stats table
+function generateStatsTableHtml(details) {
+  const stats = details.stats;
+  
+  const fmt = (val, isPct = false) => {
+    if (val == null || isNaN(val)) return '—';
+    const num = parseFloat(val);
+    if (isPct) {
+      return (num >= 0 ? '+' : '') + num.toFixed(1) + '%';
+    }
+    return num.toFixed(1);
+  };
+
+  const r90Val = stats ? fmt(stats.r90, true) : '—';
+  const dist52Val = stats ? fmt(stats.dist52, true) : '—';
+  const ddVal = stats ? fmt(stats.drawdown, true) : '—';
+  const setupVal = stats ? (stats.setup || '—') : '—';
+  const rsVal = stats ? (stats.rs_rating != null ? Math.round(stats.rs_rating) : '—') : '—';
+  const scoreVal = stats ? (stats.final_score != null ? Math.round(stats.final_score) : '—') : '—';
+  const gradeVal = stats ? (stats.grade || '—') : '—';
+
+  // Apply colors based on values
+  const getGradeColor = (g) => {
+    return {'A+':'#2dd4bf','A':'#4ade80','B':'#fbbf24','C':'#fb923c','REJECT':'#f87171'}.get(g,'var(--dim)');
+  };
+  const gradeColor = getGradeColor(gradeVal);
+  const r90Color = stats && stats.r90 >= 50 ? '#4ade80' : (stats && stats.r90 >= 30 ? '#fbbf24' : (stats && stats.r90 < 0 ? '#f87171' : 'var(--text)'));
+  const ddColor = stats && stats.drawdown >= -5 ? '#4ade80' : (stats && stats.drawdown >= -15 ? '#fbbf24' : '#f87171');
+
+  return `
+    <table style="width:100%; border-collapse:collapse; font-size:10px; text-align:center; table-layout: fixed; background:var(--bg3);">
+      <thead>
+        <tr style="color:var(--dim); font-size:8px; text-transform:uppercase; letter-spacing:0.3px; background:rgba(0,0,0,0.25); border-bottom: 1px solid var(--border);">
+          <th style="padding:4px 2px; border-right:1px solid var(--border); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">90D%</th>
+          <th style="padding:4px 2px; border-right:1px solid var(--border); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">52W%</th>
+          <th style="padding:4px 2px; border-right:1px solid var(--border); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">DD%</th>
+          <th style="padding:4px 2px; border-right:1px solid var(--border); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width: 30%;">Setup</th>
+          <th style="padding:4px 2px; border-right:1px solid var(--border); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">RS</th>
+          <th style="padding:4px 2px; border-right:1px solid var(--border); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Score</th>
+          <th style="padding:4px 2px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Grade</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="height: 24px;">
+          <td style="padding:4px 2px; border-right:1px solid var(--border); font-family:var(--mono); color:${r90Color}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r90Val}</td>
+          <td style="padding:4px 2px; border-right:1px solid var(--border); font-family:var(--mono); color:#60a5fa; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${dist52Val}</td>
+          <td style="padding:4px 2px; border-right:1px solid var(--border); font-family:var(--mono); color:${ddColor}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${ddVal}</td>
+          <td style="padding:4px 2px; border-right:1px solid var(--border); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:9px; color:var(--text);" title="${setupVal}">${setupVal}</td>
+          <td style="padding:4px 2px; border-right:1px solid var(--border); font-family:var(--mono); color:#fb923c; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${rsVal}</td>
+          <td style="padding:4px 2px; border-right:1px solid var(--border); font-family:var(--mono); color:var(--teal); font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${scoreVal}</td>
+          <td style="padding:4px 2px; font-weight:bold; color:${gradeColor}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            <span style="background:${gradeColor}15; border:1px solid ${gradeColor}30; padding:1px 4px; border-radius:3px; font-size:9px;">${gradeVal}</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  `;
+}
+
 // ── Open Maximized Chart overlay ──────────────────────────────────────────
 function openMaximizedChart(symbol) {
   const overlay = document.getElementById('chart-max-overlay');
@@ -14031,43 +14184,37 @@ function openMaximizedChart(symbol) {
   let company = '';
   let statsHtml = '';
 
-  // 1. Try to find in _sdCurrentData.stocks
-  let s = (_sdCurrentData?.stocks || []).find(x => x.symbol === symbol);
+  const details = getStockDetails(symbol);
+  company = details.company;
   
-  if (!s && n500CsvGetCached()) {
-    // 2. Try to find in universe list
-    s = n500CsvGetCached().find(x => x.symbol === symbol);
-  }
-
-  if (s) {
-    company = s.company || '';
-    
-    // Build statsHtml using the same logic as sdRenderCharts
-    if (_sdChartsSource === 'vcp' || s.rs_rating != null || s.final_score != null || s.vcp_score != null) {
-      const rsVal = s.rs_rating != null ? s.rs_rating : '—';
-      const score = s.final_score > 0 ? s.final_score : s.vcp_score;
-      if (score != null) {
-        statsHtml = `RS: <b style="color:var(--purple)">${rsVal}</b> | Score: <b style="color:var(--teal)">${Math.round(score)}</b>`;
-      } else {
-        statsHtml = `RS: <b style="color:var(--purple)">${rsVal}</b>`;
-      }
+  if (details.stats) {
+    const s = details.stats;
+    const rsVal = s.rs_rating != null ? s.rs_rating : '—';
+    const score = s.final_score > 0 ? s.final_score : s.vcp_score;
+    if (score != null) {
+      statsHtml = `RS: <b style="color:var(--purple)">${rsVal}</b> | Score: <b style="color:var(--teal)">${Math.round(score)}</b>`;
     } else {
-      const vcpData = (_sdCurrentData?.stocks || []).find(x => x.symbol === symbol);
-      if (vcpData) {
-        const rsVal = vcpData.rs_rating != null ? vcpData.rs_rating : '—';
-        statsHtml = `
-          <span style="font-size:9px;background:rgba(45,212,191,.15);color:var(--teal);padding:1px 4px;border-radius:2px;border:1px solid rgba(45,212,191,.25);font-weight:600">VCP</span>
-          <span style="font-size:9px;background:rgba(167,139,250,.15);color:var(--purple);padding:1px 4px;border-radius:2px;border:1px solid rgba(167,139,250,.25);font-weight:600;margin-left:2px">RS ${rsVal}</span>`;
-      }
+      statsHtml = `RS: <b style="color:var(--purple)">${rsVal}</b>`;
     }
   }
 
   _sdMaximizedChartCompany = company;
   _sdMaximizedChartStats = statsHtml;
 
-  if (maxSymbol) maxSymbol.textContent = symbol;
-  if (maxCompany) maxCompany.textContent = company;
+  if (maxSymbol) maxSymbol.textContent = details.symbol;
+  if (maxCompany) {
+    maxCompany.innerHTML = `
+      <span>${details.company || '—'}</span>
+      <span style="font-size:10px; color:var(--dim); background:rgba(255,255,255,0.04); border:1px solid var(--border); padding:2px 6px; border-radius:3px; margin-left:8px; font-weight:500; white-space:nowrap;">${details.sector}</span>
+      <span style="font-size:10px; color:var(--sub); margin-left:6px; font-weight:500; white-space:nowrap;">${details.industry}</span>
+    `;
+  }
   if (maxStats) maxStats.innerHTML = statsHtml ? `&nbsp;·&nbsp; ${statsHtml}` : '';
+
+  const maxTableContainer = document.getElementById('max-chart-table-container');
+  if (maxTableContainer) {
+    maxTableContainer.innerHTML = generateStatsTableHtml(details);
+  }
   if (maxTvLink) maxTvLink.href = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(symbol)}`;
   if (loader) {
     loader.style.display = 'flex';
@@ -14306,29 +14453,67 @@ async function sdFetchCsv(force = false) {
     localStorage.removeItem(LS_FILTER_STOCKS_CSV);
   }
 
-  // 1. Fetch ind_nifty500list.csv if not cached
+  // 1. Fetch ind_nifty500list.csv and ind_niftymidsmallcap400list.csv if not cached
   if (!n500CsvGetCached()) {
     try {
-      let resp;
-      let localSuccess = false;
-      if (window.location.protocol === 'file:') {
-        try {
-          const localUrl = 'http://localhost:9090/local/ind_nifty500list.csv?_=' + Date.now();
-          resp = await fetch(localUrl, { cache: 'no-store' });
-          if (resp.ok) localSuccess = true;
-        } catch(e) {}
+      async function fetchOneCsv(filename) {
+        let resp;
+        let localSuccess = false;
+        if (window.location.protocol === 'file:') {
+          try {
+            const localUrl = `http://localhost:9090/local/${filename}?_=` + Date.now();
+            resp = await fetch(localUrl, { cache: 'no-store' });
+            if (resp.ok) localSuccess = true;
+          } catch(e) {}
+        }
+        if (!localSuccess) {
+          resp = await fetch(baseUrl + `/${filename}?_=` + Date.now(), { cache: 'no-store' });
+        }
+        if (resp && resp.ok) {
+          return await resp.text();
+        }
+        throw new Error(`Failed to fetch ${filename}`);
       }
-      if (!localSuccess) {
-        resp = await fetch(baseUrl + '/ind_nifty500list.csv?_=' + Date.now(), { cache: 'no-store' });
+
+      let text500 = '';
+      let text400 = '';
+      try {
+        text500 = await fetchOneCsv('ind_nifty500list.csv');
+      } catch (e) {
+        console.error('Error fetching ind_nifty500list.csv:', e);
       }
-      
-      if (resp && resp.ok) {
-        const text = await resp.text();
-        const parsed = parseN500Csv(text);
-        if (parsed.length > 100) n500CsvSetCached(parsed);
+      try {
+        text400 = await fetchOneCsv('ind_niftymidsmallcap400list.csv');
+      } catch (e) {
+        console.error('Error fetching ind_niftymidsmallcap400list.csv:', e);
+      }
+
+      const parsed500 = text500 ? parseN500Csv(text500) : [];
+      const parsed400 = text400 ? parseN500Csv(text400) : [];
+
+      // Combine and deduplicate
+      const combined = [...parsed500, ...parsed400];
+      const seen = new Set();
+      const uniqueCombined = [];
+      for (const item of combined) {
+        if (!item.symbol) continue;
+        const symUpper = item.symbol.trim().toUpperCase();
+        if (!seen.has(symUpper)) {
+          seen.add(symUpper);
+          uniqueCombined.push({
+            symbol: item.symbol.trim(),
+            company: item.company,
+            industry: item.industry
+          });
+        }
+      }
+
+      if (uniqueCombined.length > 100) {
+        n500CsvSetCached(uniqueCombined);
+        console.log(`Successfully fetched and merged CSV lists. Unique symbols cached: ${uniqueCombined.length}`);
       }
     } catch(e) {
-      console.error('Error fetching ind_nifty500list.csv:', e);
+      console.error('Error merging stock lists:', e);
     }
   }
 
@@ -14548,7 +14733,7 @@ function sdRenderUniverse(sectorName) {
 
   if (!stocks.length) {
     body.innerHTML = `<div style="padding:24px 16px;font-size:11px;color:var(--dim)">
-      No stocks found for <b>${sectorName}</b> in the Nifty 500 list.
+      No stocks found for <b>${sectorName}</b> in the scan universe.
     </div>`;
     return;
   }
@@ -14568,7 +14753,7 @@ function sdRenderUniverse(sectorName) {
   // Summary bar
   const summaryHtml = `
     <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:10px;align-items:center">
-      <span style="color:var(--dim)"><b style="color:var(--text)">${stocks.length}</b> stocks in Nifty 500</span>
+      <span style="color:var(--dim)"><b style="color:var(--text)">${stocks.length}</b> stocks in universe</span>
       ${vcpSymbols.size ? `<span style="color:var(--dim)"><b style="color:var(--teal)">${vcpSymbols.size}</b> VCP candidates today</span>` : ''}
       <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
         <button onclick="_sdChartsSource='universe';sdSwitchTab('charts')" style="background:rgba(91,163,245,.12);border:1px solid rgba(91,163,245,.25);color:var(--accent);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">📈 View Charts</button>
@@ -15571,11 +15756,15 @@ document.addEventListener('click', () => {
       </div>
     </div>
     <!-- Modal body -->
-    <div style="flex:1;background:#0c0d12;position:relative;display:flex;flex-direction:column;justify-content:center;">
-      <canvas id="max-chart-canvas" style="width:100%;height:100%;display:block;"></canvas>
-      <div id="max-chart-loader" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#0c0d12;color:var(--dim);font-size:11px;">
-        Loading chart…
+    <div style="flex:1;background:#0c0d12;position:relative;display:flex;flex-direction:column;">
+      <div style="flex:1;position:relative;min-height:0;">
+        <canvas id="max-chart-canvas" style="width:100%;height:100%;display:block;"></canvas>
+        <div id="max-chart-loader" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#0c0d12;color:var(--dim);font-size:11px;">
+          Loading chart…
+        </div>
       </div>
+      <!-- Stats table container at the bottom of maximized view -->
+      <div id="max-chart-table-container" style="flex-shrink:0; background:var(--bg3); border-top:1px solid var(--border);"></div>
     </div>
   </div>
 </div>

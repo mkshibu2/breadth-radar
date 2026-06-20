@@ -1154,7 +1154,7 @@ def generate_html(results, scan_time, total_scanned, errors, rejects, sector_sta
                 <thead style="position:sticky;top:0;background:#0f1c30;box-shadow:0 1px 0 #1e2d45">
                     <tr>
                         <th style="padding:8px 10px;font-size:9px;color:#64748b">NSE THEME/INDUSTRY</th>
-                        <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">N500 UNIVERSE</th>
+                        <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">UNIVERSE</th>
                         <th style="padding:8px 10px;font-size:9px;color:#2dd4bf;text-align:center">VCP CANDIDATES</th>
                         <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">% > 20 EMA</th>
                         <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">% > 50 SMA</th>
@@ -1200,7 +1200,7 @@ def generate_html(results, scan_time, total_scanned, errors, rejects, sector_sta
                 <thead style="position:sticky;top:0;background:#0f1c30;box-shadow:0 1px 0 #1e2d45">
                     <tr>
                         <th style="padding:8px 10px;font-size:9px;color:#64748b">INDUSTRY GROUP <span style="color:#334155">(parent sector)</span></th>
-                        <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">N500 UNIVERSE</th>
+                        <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">UNIVERSE</th>
                         <th style="padding:8px 10px;font-size:9px;color:#2dd4bf;text-align:center">VCP CANDIDATES</th>
                         <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">% > 20 EMA</th>
                         <th style="padding:8px 10px;font-size:9px;color:#64748b;text-align:center">% > 50 SMA</th>
@@ -1331,13 +1331,27 @@ def main():
     
     # 1. Load the NSE CSV dynamically
     try:
-        csv_path = Path(__file__).resolve().parent / 'ind_nifty500list.csv'
-        nse_df = pd.read_csv(csv_path)
+        dir_path = Path(__file__).resolve().parent
+        csv_path1 = dir_path / 'ind_nifty500list.csv'
+        csv_path2 = dir_path / 'ind_niftymidsmallcap400list.csv'
+        
+        nse_df1 = pd.read_csv(csv_path1)
+        nse_df2 = pd.read_csv(csv_path2)
+        
+        # Clean symbols and combine
+        nse_df1['Symbol'] = nse_df1['Symbol'].astype(str).str.strip()
+        nse_df2['Symbol'] = nse_df2['Symbol'].astype(str).str.strip()
+        
+        nse_df = pd.concat([nse_df1, nse_df2], ignore_index=True)
+        nse_df = nse_df.drop_duplicates(subset=['Symbol'])
+        
         nse_map = nse_df.set_index('Symbol').to_dict('index')
         symbols_to_scan = list(nse_map.keys())
-        print(f"✅ Successfully loaded {len(symbols_to_scan)} symbols from ind_nifty500list.csv")
+        print(f"✅ Successfully loaded {len(nse_df1)} symbols from ind_nifty500list.csv")
+        print(f"✅ Successfully loaded {len(nse_df2)} symbols from ind_niftymidsmallcap400list.csv")
+        print(f"✅ Merged unique universe: {len(symbols_to_scan)} symbols to scan")
     except Exception as e:
-        print(f"❌ Error loading 'ind_nifty500list.csv'. Ensure the file is placed in the exact same folder as this script.")
+        print(f"❌ Error loading stock list CSVs. Ensure ind_nifty500list.csv and ind_niftymidsmallcap400list.csv are placed in the exact same folder as this script.")
         print(f"Details: {e}")
         sys.exit(1)
 
