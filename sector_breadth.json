@@ -1,7 +1,7 @@
 {
   "scan_date": "2026-06-22",
-  "scan_time": "22 Jun 2026  08:59 PM",
-  "total_scanned": 505,
+  "scan_time": "22 Jun 2026  04:10 PM",
+  "total_scanned": 504,
   "sectors": [
     {
       "sector": "NBFCs & Finance",
@@ -125,11 +125,11 @@
     },
     {
       "sector": "Automobile and Auto Components",
-      "universe": 37,
-      "vcp_count": 4,
+      "universe": 36,
+      "vcp_count": 3,
       "a20_pct": 83,
-      "a50_pct": 81,
-      "a200_pct": 51
+      "a50_pct": 80,
+      "a200_pct": 50
     },
     {
       "sector": "Consumer Durables",
@@ -486,11 +486,11 @@
     },
     {
       "sector": "Auto Manufacturers IN",
-      "universe": 14,
-      "vcp_count": 2,
-      "a20_pct": 71,
-      "a50_pct": 64,
-      "a200_pct": 42,
+      "universe": 13,
+      "vcp_count": 1,
+      "a20_pct": 69,
+      "a50_pct": 61,
+      "a200_pct": 38,
       "parent_sector": "Automobile and Auto Components"
     },
     {
@@ -1252,11 +1252,11 @@
           "a200_pct": 40
         },
         "Automobile and Auto Components": {
-          "universe": 37,
-          "vcp_count": 4,
+          "universe": 36,
+          "vcp_count": 3,
           "a20_pct": 83,
-          "a50_pct": 81,
-          "a200_pct": 51
+          "a50_pct": 80,
+          "a200_pct": 50
         },
         "Consumer Durables": {
           "universe": 14,
@@ -1572,11 +1572,11 @@
           "parent_sector": "Automobile and Auto Components"
         },
         "Auto Manufacturers IN": {
-          "universe": 14,
-          "vcp_count": 2,
-          "a20_pct": 71,
-          "a50_pct": 64,
-          "a200_pct": 42,
+          "universe": 13,
+          "vcp_count": 1,
+          "a20_pct": 69,
+          "a50_pct": 61,
+          "a200_pct": 38,
           "parent_sector": "Automobile and Auto Components"
         },
         "Chemicals-Paints IN": {
