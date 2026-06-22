@@ -1956,8 +1956,9 @@ thead th[onclick]:hover {
         <div id="scc-pane-breadth">
 
           <!-- Source row -->
-          <div id="vcpb-source-row" style="padding:4px 14px 0;font-size:9px;color:var(--dim);font-family:var(--mono);display:none">
+          <div id="vcpb-source-row" style="padding:4px 14px 0;font-size:9px;color:var(--dim);font-family:var(--mono);display:none;align-items:center;gap:6px;flex-wrap:wrap">
             <span id="vcpb-source-url" style="color:var(--accent)"></span>
+            <button onclick="vcpbToggleLocalGlobal()" id="vcpb-toggle-src-btn" style="background:rgba(91,163,245,.1);border:1px solid rgba(91,163,245,.2);color:var(--accent);font-size:8px;padding:1px 5px;border-radius:3px;cursor:pointer;font-family:var(--body);font-weight:600">Switch to Local</button>
             &nbsp;·&nbsp; <span id="vcpb-scan-time"></span>
             &nbsp;·&nbsp; Scan universe: <span id="vcpb-qualified" style="color:var(--teal)"></span>
           </div>
@@ -2249,13 +2250,20 @@ thead th[onclick]:hover {
         <!-- ── TAB: HEATMAP ──────────────────────────────── -->
         <div id="scc-pane-heatmap" style="display:none">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px 4px;flex-wrap:wrap;gap:6px">
-            <div style="font-size:9px;color:var(--dim);line-height:1.5">
-              Each cell = sector RS vs Nifty 50 that week. <b style="color:var(--lime)">Green</b> = outperforming · <b style="color:var(--red)">Red</b> = underperforming · Newest week on right. Click row → NSE page.
+            <div id="slh-description" style="font-size:9px;color:var(--dim);line-height:1.5">
+              Each cell = breadth score (composite 20E/50S/200S). <b style="color:var(--lime)">Green ≥60%</b> · <b style="color:var(--yellow)">Yellow 40-59%</b> · <b style="color:var(--red)">Red &lt;40%</b>. Click row to drill down.
             </div>
-            <div style="display:flex;gap:3px">
-              <button onclick="slhSetWeeks(8)"  id="slh-w-8"  style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:var(--teal);color:#0e1420;cursor:pointer;font-weight:600">8w</button>
-              <button onclick="slhSetWeeks(12)" id="slh-w-12" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12w</button>
-              <button onclick="slhSetWeeks(20)" id="slh-w-20" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">20w</button>
+            <div style="display:flex;gap:3px;align-items:center">
+              <select id="slh-metric-select" onchange="slhRender()" style="font-size:9px;padding:2px 4px;border-radius:3px;border:1px solid var(--border);background:var(--bg4);color:var(--text);outline:none;cursor:pointer">
+                <option value="score">Score</option>
+                <option value="vcp">VCP Count</option>
+                <option value="a50">% &gt; 50 SMA (Stage 2)</option>
+                <option value="a20">% &gt; 20 EMA (Momentum)</option>
+                <option value="a200">% &gt; 200 SMA (Structure)</option>
+              </select>
+              <button onclick="slhSetWeeks(8)"  id="slh-w-8"  style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:var(--teal);color:#0e1420;cursor:pointer;font-weight:600">8r</button>
+              <button onclick="slhSetWeeks(12)" id="slh-w-12" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12r</button>
+              <button onclick="slhSetWeeks(20)" id="slh-w-20" style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">20r</button>
               <button class="info-btn" onclick="showInfoTip('sector-heatmap',this)" title="About Sector Heatmap" style="margin-left:4px">i</button>
             </div>
           </div>
@@ -3820,11 +3828,11 @@ const RRG_COLORS = [
 
 // ════════════════════════════════════════════════════════════════════════
 //  SECTOR LEADERSHIP HEATMAP
-//  Renders a weeks × sectors colour grid of RS vs Nifty 50, per week.
-//  Color: green = outperforming, red = underperforming, intensity = magnitude.
+//  Renders a runs × sectors colour grid of Breadth Scores or VCP counts.
+//  Color: green = strong, red = weak, intensity = magnitude.
 // ════════════════════════════════════════════════════════════════════════
 
-let _slhWeeks = 8;  // default weeks to show
+let _slhWeeks = 8;  // default runs to show
 
 function slhSetWeeks(n) {
   _slhWeeks = n;
@@ -3840,20 +3848,55 @@ function slhSetWeeks(n) {
   slhRender();
 }
 
-function slhRsColor(rs) {
-  // Map RS value to a background color
-  // rs > 0 = green, rs < 0 = red, magnitude drives opacity (capped at ±5%)
-  if (rs === null || rs === undefined) return { bg: 'rgba(72,85,102,.2)', text: 'var(--dim)', label: '—' };
-  const abs = Math.min(Math.abs(rs), 5);
-  const intensity = abs / 5; // 0–1
-  if (rs > 0) {
-    const a = (0.15 + intensity * 0.65).toFixed(2);
-    return { bg: `rgba(74,222,128,${a})`, text: rs > 2 ? '#0e1420' : 'var(--lime)', label: '+' + rs.toFixed(1) };
-  } else if (rs < 0) {
-    const a = (0.15 + intensity * 0.65).toFixed(2);
-    return { bg: `rgba(248,113,113,${a})`, text: rs < -2 ? '#0e1420' : 'var(--red)', label: rs.toFixed(1) };
+function slhGetHistorySeries(viewMode) {
+  const cached = vcpbGetCached();
+  const fileHistory = cached?.history;
+  
+  if (fileHistory && Array.isArray(fileHistory) && fileHistory.length > 0) {
+    const seriesMap = {};
+    fileHistory.forEach(run => {
+      const date = run.date;
+      const dataGroup = viewMode === 'industry' ? run.industries : run.sectors;
+      if (!dataGroup) return;
+      
+      Object.keys(dataGroup).forEach(name => {
+        if (!seriesMap[name]) seriesMap[name] = [];
+        const entry = dataGroup[name];
+        const a20 = entry.a20_pct ?? entry.a20 ?? 0;
+        const a50 = entry.a50_pct ?? entry.a50 ?? 0;
+        const a200 = entry.a200_pct ?? entry.a200 ?? 0;
+        const score = Math.round(a20 * 0.50 + a50 * 0.30 + a200 * 0.20);
+        seriesMap[name].push({
+          date: date,
+          score: score,
+          vcp_count: entry.vcp_count ?? 0,
+          universe: entry.universe ?? 0,
+          a20: a20,
+          a50: a50,
+          a200: a200
+        });
+      });
+    });
+    return seriesMap;
   } else {
-    return { bg: 'rgba(148,163,184,.12)', text: 'var(--sub)', label: '0.0' };
+    // Fallback to locally accumulated local storage history
+    const localHist = vcpbGetHist();
+    const seriesMap = {};
+    const activeNames = new Set(vcpbGetActiveNames());
+    Object.keys(localHist).forEach(name => {
+      if (activeNames.has(name)) {
+        seriesMap[name] = (localHist[name] || []).map(r => ({
+          date: r.date,
+          score: r.score,
+          vcp_count: 0,
+          universe: 0,
+          a20: r.a20,
+          a50: r.a50,
+          a200: r.a200
+        }));
+      }
+    });
+    return seriesMap;
   }
 }
 
@@ -3861,33 +3904,26 @@ function slhRender() {
   const grid = document.getElementById('slh-grid');
   if (!grid) return;
 
-  const sectors = srtLoad().filter(s => s.id !== 'NIFTY50' && s.history && s.history.length >= 2);
-  if (!sectors.length) {
-    grid.innerHTML = '<div style="color:var(--dim);padding:20px;text-align:center;font-size:11px">No sector history yet — add weekly data via Control Panel → Sectors tab</div>';
+  const viewMode = _vcpbViewMode || 'sector';
+  const metricSelect = document.getElementById('slh-metric-select');
+  const metric = metricSelect ? metricSelect.value : 'score'; // 'score', 'vcp', 'a50', 'a20', 'a200'
+
+  const seriesMap = slhGetHistorySeries(viewMode);
+  const activeNames = Object.keys(seriesMap);
+
+  if (!activeNames.length) {
+    grid.innerHTML = '<div style="color:var(--dim);padding:20px;text-align:center;font-size:11px">No breadth history yet — run the VCP scanner to generate history data.</div>';
     return;
   }
 
-  // Build RS series per sector: week-by-week RS vs Nifty 50
-  // rs[i] = ((sectorClose[i] - sectorClose[i-1]) / sectorClose[i-1] * 100) - ((niftyClose[i] - niftyClose[i-1]) / niftyClose[i-1] * 100)
-  const sectorSeries = sectors.map(s => {
-    const h = s.history.filter(e => e.close && e.niftyClose);
-    const rsSeries = [];
-    for (let i = 1; i < h.length; i++) {
-      const sChg = (h[i].close - h[i-1].close) / h[i-1].close * 100;
-      const nChg = (h[i].niftyClose - h[i-1].niftyClose) / h[i-1].niftyClose * 100;
-      rsSeries.push({ date: h[i].date, rs: +(sChg - nChg).toFixed(2) });
-    }
-    return { sector: s, rs: rsSeries };
-  }).filter(s => s.rs.length > 0);
-
-  if (!sectorSeries.length) {
-    grid.innerHTML = '<div style="color:var(--dim);padding:20px;text-align:center;font-size:11px">Need at least 2 weeks of data per sector</div>';
-    return;
-  }
-
-  // Collect all unique dates across all sectors, sorted, take last N
-  const allDates = [...new Set(sectorSeries.flatMap(s => s.rs.map(r => r.date)))].sort();
+  // Collect all unique dates across all active names, sorted, take last N
+  const allDates = [...new Set(activeNames.flatMap(name => seriesMap[name].map(r => r.date)))].sort();
   const showDates = allDates.slice(-_slhWeeks);
+
+  if (!showDates.length) {
+    grid.innerHTML = '<div style="color:var(--dim);padding:20px;text-align:center;font-size:11px">No runs found in history.</div>';
+    return;
+  }
 
   // Abbreviated date: "Jan 5" style
   const fmtDate = iso => {
@@ -3895,104 +3931,136 @@ function slhRender() {
     return d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
   };
 
-  // Sort sectors by average RS over shown dates (best on top)
-  sectorSeries.sort((a, b) => {
-    const avgRs = arr => {
-      const vals = showDates.map(dt => {
-        const entry = arr.rs.find(r => r.date === dt);
-        return entry ? entry.rs : null;
-      }).filter(v => v !== null);
-      return vals.length ? vals.reduce((s,v) => s+v, 0) / vals.length : -999;
-    };
-    return avgRs(b) - avgRs(a);
-  });
+  const getMetricValue = (entry, metric) => {
+    if (!entry) return null;
+    if (metric === 'score') return entry.score;
+    if (metric === 'vcp') return entry.vcp_count;
+    if (metric === 'a50') return entry.a50;
+    if (metric === 'a20') return entry.a20;
+    if (metric === 'a200') return entry.a200;
+    return null;
+  };
 
-  // Build table
+  const getAverageMetric = (name) => {
+    const list = seriesMap[name] || [];
+    const vals = showDates.map(dt => {
+      const entry = list.find(r => r.date === dt);
+      return getMetricValue(entry, metric);
+    }).filter(v => v !== null);
+    return vals.length ? vals.reduce((s,v) => s+v, 0) / vals.length : -999;
+  };
+
+  // Sort sectors by average value of shown dates (best on top)
+  activeNames.sort((a, b) => getAverageMetric(b) - getAverageMetric(a));
+
+  // Build table layout measurements
   const isMax = document.getElementById('srt-home-card')?.classList.contains('maximized');
-  const CELL_W = isMax ? 72 : 42;
+  const CELL_W = isMax ? 72 : 46;
   const CELL_H = isMax ? 36 : 26;
-  const LABEL_W = isMax ? 160 : 78;
+  const LABEL_W = isMax ? 180 : 94;
   const FONT_DATE = isMax ? '11px' : '8px';
   const FONT_SNAME = isMax ? '13px' : '10px';
   const FONT_CELL = isMax ? '11px' : '8.5px';
   const FONT_AVG = isMax ? '12px' : '9px';
   const totalW = LABEL_W + (showDates.length + 1) * CELL_W + 10;
 
+  // Update dynamic metric description
+  const descEl = document.getElementById('slh-description');
+  if (descEl) {
+    if (metric === 'vcp') {
+      descEl.innerHTML = `Each cell = VCP candidate count. <b style="color:var(--lime)">Green ≥3</b> · <b style="color:var(--yellow)">Yellow 1-2</b> · <b style="color:var(--red)">Red 0</b>. Click row to drill down.`;
+    } else {
+      const labelMap = { score: 'composite breadth score', a50: 'Stage 2 % (>50 SMA)', a20: 'Momentum % (>20 EMA)', a200: 'Structure % (>200 SMA)' };
+      descEl.innerHTML = `Each cell = ${labelMap[metric] || 'breadth'}. <b style="color:var(--lime)">Green ≥60%</b> · <b style="color:var(--yellow)">Yellow 40-59%</b> · <b style="color:var(--red)">Red &lt;40%</b>. Click row to drill down.`;
+    }
+  }
+
   let html = `<div style="display:inline-block;min-width:${totalW}px;font-family:var(--mono)">`;
 
   // Header row: dates
   html += `<div style="display:flex;align-items:center;border-bottom:1px solid var(--border);padding-bottom:4px;margin-bottom:2px">`;
-  html += `<div style="width:${LABEL_W}px;font-size:9px;color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.4px;padding-left:4px">Sector</div>`;
+  html += `<div style="width:${LABEL_W}px;font-size:9px;color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.4px;padding-left:4px">${viewMode === 'industry' ? 'Industry Group' : 'Sector Theme'}</div>`;
   showDates.forEach(dt => {
     html += `<div style="width:${CELL_W}px;text-align:center;font-size:${FONT_DATE};color:var(--dim);white-space:nowrap;overflow:hidden">${fmtDate(dt)}</div>`;
   });
-  // Avg column
   html += `<div style="width:${CELL_W}px;text-align:center;font-size:${FONT_DATE};color:var(--sub);font-weight:600">Avg</div>`;
   html += `</div>`;
 
-  // Data rows
-  const nseLink = name => {
-    const links = {
-      'Information Technology':          'https://www.nseindia.com/index-tracker/NIFTY%20IT',
-      'Pharma':                          'https://www.nseindia.com/index-tracker/NIFTY%20PHARMA',
-      'Fast Moving Consumer Goods':      'https://www.nseindia.com/index-tracker/NIFTY%20FMCG',
-      'Banks':                           'https://www.nseindia.com/index-tracker/NIFTY%20BANK',
-      'Automobile and Auto Components':  'https://www.nseindia.com/index-tracker/NIFTY%20AUTO',
-      'Metals & Mining':                 'https://www.nseindia.com/index-tracker/NIFTY%20METAL',
-      'Realty':                          'https://www.nseindia.com/index-tracker/NIFTY%20REALTY',
-      'Construction':                    'https://www.nseindia.com/index-tracker/NIFTY%20INFRA',
-      'Specialty Chemicals':             'https://www.nseindia.com/index-tracker/NIFTY%20CHEMICALS',
-      'PSU Bank':                        'https://www.nseindia.com/index-tracker/NIFTY%20PSU%20BANK',
-      'Oil Gas & Consumable Fuels':      'https://www.nseindia.com/index-tracker/NIFTY%20ENERGY',
-      'NBFCs & Finance':                 'https://www.nseindia.com/index-tracker/NIFTY%20FIN%20SERVICE',
-      'Capital Goods':                   'https://www.nseindia.com/index-tracker/NIFTY%20CAPITAL%20MKT',
-      'Defense':                         'https://www.nseindia.com/index-tracker/NIFTY%20IND%20DEFENCE',
-      'PSE':                             'https://www.nseindia.com/index-tracker/NIFTY%20PSE',
-    };
-    return links[name] || '#';
+  const getCellColor = (val, metric) => {
+    if (val === null || val === undefined) return { bg: 'rgba(72,85,102,.2)', text: 'var(--dim)', label: '—' };
+    
+    if (metric === 'vcp') {
+      if (val >= 3) {
+        return { bg: 'rgba(74,222,128,.55)', text: '#0e1420', label: Math.round(val) };
+      } else if (val >= 1) {
+        return { bg: 'rgba(251,191,36,.35)', text: 'var(--yellow)', label: Math.round(val) };
+      } else {
+        return { bg: 'rgba(248,113,113,.12)', text: 'var(--dim)', label: '0' };
+      }
+    } else {
+      if (val >= 60) {
+        const opacity = (0.2 + (val - 60) / 40 * 0.65).toFixed(2);
+        return { bg: `rgba(74,222,128,${opacity})`, text: val >= 75 ? '#0e1420' : 'var(--lime)', label: Math.round(val) + '%' };
+      } else if (val >= 40) {
+        return { bg: 'rgba(251,191,36,.28)', text: 'var(--yellow)', label: Math.round(val) + '%' };
+      } else {
+        const opacity = (0.15 + (40 - val) / 40 * 0.45).toFixed(2);
+        return { bg: `rgba(248,113,113,${opacity})`, text: 'var(--red)', label: Math.round(val) + '%' };
+      }
+    }
   };
 
-  sectorSeries.forEach(({ sector, rs }) => {
-    // Compute avg RS over shown dates
+  // Data rows
+  activeNames.forEach(name => {
+    const list = seriesMap[name] || [];
     const vals = showDates.map(dt => {
-      const e = rs.find(r => r.date === dt);
-      return e ? e.rs : null;
+      const entry = list.find(r => r.date === dt);
+      return getMetricValue(entry, metric);
     });
+    
     const nonNull = vals.filter(v => v !== null);
     const avg = nonNull.length ? nonNull.reduce((s,v) => s+v, 0) / nonNull.length : null;
-    const avgStyle = slhRsColor(avg);
-    const link = nseLink(sector.name);
+    const avgStyle = getCellColor(avg, metric);
+    const displayName = SRT_SHORT[name] || name.replace(' IN', '');
+    const escapedName = name.replace(/'/g, "\\'");
 
     html += `<div style="display:flex;align-items:center;margin-bottom:2px">`;
-    // Sector label - clickable
-    html += `<a href="${link}" target="_blank" title="Open NSE: ${sector.name}"
-      style="width:${LABEL_W}px;font-size:${FONT_SNAME};font-weight:600;color:var(--text);text-decoration:none;
+    // Clickable label -> opens constituents drilldown modal
+    html += `<div onclick="sectorDrillOpen('${escapedName}')" title="Click to view constituent VCP stocks in ${name}"
+      style="width:${LABEL_W}px;font-size:${FONT_SNAME};font-weight:600;color:var(--text);text-decoration:underline;text-decoration-style:dashed;text-decoration-color:rgba(255,255,255,.2);text-underline-offset:2px;cursor:pointer;
              white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;
              display:block;line-height:${CELL_H}px"
       onmouseover="this.style.color='var(--teal)'" onmouseout="this.style.color='var(--text)'"
-    >${SRT_SHORT[sector.name] || sector.name}</a>`;
-    // Week cells
-    vals.forEach(rs => {
-      const c = slhRsColor(rs);
+    >${displayName}</div>`;
+
+    // Cells
+    vals.forEach(val => {
+      const c = getCellColor(val, metric);
       html += `<div style="width:${CELL_W}px;height:${CELL_H}px;background:${c.bg};
                 color:${c.text};font-size:${FONT_CELL};font-weight:600;text-align:center;
                 line-height:${CELL_H}px;border-radius:2px;margin:0 1px;
-                transition:opacity .15s" title="${rs !== null ? rs.toFixed(2)+'%' : 'No data'}">${c.label}</div>`;
+                transition:opacity .15s" title="${val !== null ? val.toFixed(1) + (metric === 'vcp' ? ' candidates' : '%') : 'No data'}">${c.label}</div>`;
     });
-    // Avg cell
+
+    // Average cell
     html += `<div style="width:${CELL_W}px;height:${CELL_H}px;background:${avgStyle.bg};
               color:${avgStyle.text};font-size:${FONT_AVG};font-weight:700;text-align:center;
-              line-height:${CELL_H}px;border-radius:2px;border:1px solid rgba(255,255,255,.08)">${avg !== null ? (avg > 0 ? '+' : '') + avg.toFixed(1) : '—'}</div>`;
+              line-height:${CELL_H}px;border-radius:2px;border:1px solid rgba(255,255,255,.08)">${avgStyle.label}</div>`;
     html += `</div>`;
   });
 
   // Footer legend
   html += `<div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:9px;color:var(--dim)">`;
-  [[-4,'Strong Under'],[-2,'Under'],[0,'Neutral'],[2,'Out'],[4,'Strong Out']].forEach(([v,lbl]) => {
-    const c = slhRsColor(v === 0 ? 0.001 : v);
-    html += `<span style="display:flex;align-items:center;gap:3px"><span style="width:14px;height:10px;background:${c.bg};border-radius:2px;display:inline-block"></span>${lbl}</span>`;
-  });
-  html += `<span style="margin-left:auto">Numbers = RS% vs Nifty 50</span>`;
+  if (metric === 'vcp') {
+    html += `<span style="display:flex;align-items:center;gap:3px"><span style="width:14px;height:10px;background:rgba(248,113,113,.12);border-radius:2px;display:inline-block"></span>0 (Weak)</span>`;
+    html += `<span style="display:flex;align-items:center;gap:3px"><span style="width:14px;height:10px;background:rgba(251,191,36,.35);border-radius:2px;display:inline-block"></span>1-2 (Neutral)</span>`;
+    html += `<span style="display:flex;align-items:center;gap:3px"><span style="width:14px;height:10px;background:rgba(74,222,128,.55);border-radius:2px;display:inline-block"></span>≥3 (Strong)</span>`;
+  } else {
+    html += `<span style="display:flex;align-items:center;gap:3px"><span style="width:14px;height:10px;background:rgba(248,113,113,.25);border-radius:2px;display:inline-block"></span>&lt;40% (Weak)</span>`;
+    html += `<span style="display:flex;align-items:center;gap:3px"><span style="width:14px;height:10px;background:rgba(251,191,36,.28);border-radius:2px;display:inline-block"></span>40-59% (Neutral)</span>`;
+    html += `<span style="display:flex;align-items:center;gap:3px"><span style="width:14px;height:10px;background:rgba(74,222,128,.55);border-radius:2px;display:inline-block"></span>≥60% (Strong)</span>`;
+  }
+  html += `<span style="margin-left:auto">Numbers = cell values (left-to-right is chronological)</span>`;
   html += `</div>`;
 
   html += `</div>`;
@@ -6779,9 +6847,51 @@ function vcpbSetViewMode(mode) {
   if (card && card._vcpbData) {
     vcpbRender(card._vcpbData);
   }
+  if (typeof slhRender === 'function') slhRender();
 }
-function vcpbGetUrl()          { return (localStorage.getItem(LS_VCPB_URL) || 'https://mkshibu2.github.io/breadth-radar').trim().replace(/\/$/, ''); }
+function vcpbGetUrl() {
+  const stored = localStorage.getItem(LS_VCPB_URL);
+  if (stored) return stored.trim().replace(/\/$/, '');
+  
+  // Smart local defaults
+  const isLocal = window.location.hostname === 'localhost' || 
+                  window.location.hostname === '127.0.0.1' || 
+                  window.location.protocol === 'file:';
+  return isLocal ? 'http://localhost:9090' : 'https://mkshibu2.github.io/breadth-radar';
+}
 function vcpbSetStoredUrl(url) { localStorage.setItem(LS_VCPB_URL, url.trim().replace(/\/$/, '')); }
+
+function vcpbToggleLocalGlobal() {
+  const current = vcpbGetUrl();
+  const localUrl = 'http://localhost:9090';
+  const globalUrl = 'https://mkshibu2.github.io/breadth-radar';
+  
+  if (current.includes('localhost') || current.includes('127.0.0.1')) {
+    vcpbSetStoredUrl(globalUrl);
+  } else {
+    vcpbSetStoredUrl(localUrl);
+  }
+  
+  // Update input field if open
+  const inp = document.getElementById('vcpb-url-input');
+  if (inp) inp.value = vcpbGetUrl();
+  
+  vcpbUpdateToggleBtn();
+  vcpbFetch(true);
+}
+
+function vcpbUpdateToggleBtn() {
+  const btn = document.getElementById('vcpb-toggle-src-btn');
+  if (!btn) return;
+  const current = vcpbGetUrl();
+  if (current.includes('localhost') || current.includes('127.0.0.1')) {
+    btn.textContent = 'Switch to GitHub';
+    btn.title = 'Switch to fetching daily data from GitHub Pages';
+  } else {
+    btn.textContent = 'Switch to Local';
+    btn.title = 'Switch to fetching scanned data from localhost proxy';
+  }
+}
 function vcpbGetCached()       { try { return JSON.parse(localStorage.getItem(LS_VCPB_DATA)) || null; } catch(e) { return null; } }
 function vcpbSetCached(data)   { try { localStorage.setItem(LS_VCPB_DATA, JSON.stringify(data)); } catch(e) {} }
 function vcpbGetHist()         { try { return JSON.parse(localStorage.getItem(LS_VCPB_HIST)) || {}; } catch(e) { return {}; } }
@@ -7547,7 +7657,8 @@ function vcpbRender(data) {
   const timeEl  = document.getElementById('vcpb-scan-time');
   const qualEl  = document.getElementById('vcpb-qualified');
   const badgeEl = document.getElementById('vcpb-scan-badge');
-  if (srcRow)  srcRow.style.display  = 'block';
+  if (srcRow)  srcRow.style.display  = 'flex';
+  vcpbUpdateToggleBtn();
   if (timeEl)  timeEl.textContent    = data.scan_time || data.scan_date || '—';
   if (qualEl)  qualEl.textContent    = data.total_scanned || '?';
   if (badgeEl) { badgeEl.textContent = data.scan_date || ''; badgeEl.style.display = 'inline'; }
@@ -7606,6 +7717,7 @@ function vcpbInit() {
   const saved = vcpbGetUrl();
   const inp = document.getElementById('vcpb-url-input');
   if (inp && saved) inp.value = saved;
+  vcpbUpdateToggleBtn();
   vcpbFetch(false);
   
   // Fetch sector stocks in background so RS scores are loaded for watchlist and charts
@@ -15414,6 +15526,7 @@ function sdRenderCharts(sectorName, secData) {
 
   const chartCardsHtml = pageStocks.map(s => {
     const tvUrl  = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(s.symbol)}`;
+    const msUrl  = `https://marketsmithindia.com/mstool/eval/${s.symbol.toLowerCase()}/evaluation.jsp#/`;
 
     let statsHtml = '';
     const emaLegend = ` | <span style="color:var(--dim);font-size:9px">EMA20: <b style="color:rgba(239, 68, 68, 0.5)">●</b></span>`;
@@ -15452,6 +15565,9 @@ function sdRenderCharts(sectorName, secData) {
             <a href="${tvUrl}" target="_blank" rel="noopener"
                style="font-size:8px;color:var(--accent);text-decoration:none;padding:1px 4px;border-radius:2px;border:1px solid rgba(91,163,245,.2);background:rgba(91,163,245,.08)"
                title="Open full chart on TradingView">TV↗</a>
+            <a href="${msUrl}" target="_blank" rel="noopener"
+               style="font-size:8px;color:#f59e0b;text-decoration:none;padding:1px 4px;border-radius:2px;border:1px solid rgba(245,158,11,.25);background:rgba(245,158,11,.08)"
+               title="Open stock on MarketSmith India">MS↗</a>
             <button onclick="openMaximizedChart('${s.symbol}')"
                class="sd-chart-max-btn"
                title="Enlarge Chart">⛶</button>

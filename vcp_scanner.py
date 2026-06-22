@@ -1528,12 +1528,58 @@ def main():
             'parent_sector': st['parent']
         })
         
+    # Load previous history if exists
+    prev_history = []
+    try:
+        with open(out_dir / 'sector_breadth.json', 'r', encoding='utf-8') as jf:
+            prev_data = json.load(jf)
+            if 'history' in prev_data and isinstance(prev_data['history'], list):
+                prev_history = prev_data['history']
+    except Exception:
+        pass
+
+    # Today's snapshot entry
+    today_str = datetime.now().strftime('%Y-%m-%d')
+    new_history_entry = {
+        'date': today_str,
+        'sectors': {},
+        'industries': {}
+    }
+    
+    for sec, st in sector_stats.items():
+        if st['total'] == 0: continue
+        new_history_entry['sectors'][sec] = {
+            'universe': st['total'],
+            'vcp_count': st['vcp'],
+            'a20_pct': int((st['a20'] / st['total']) * 100),
+            'a50_pct': int((st['a50'] / st['total']) * 100),
+            'a200_pct': int((st['a200'] / st['total']) * 100)
+        }
+        
+    for ind, st in industry_stats.items():
+        if st['total'] == 0: continue
+        new_history_entry['industries'][ind] = {
+            'universe': st['total'],
+            'vcp_count': st['vcp'],
+            'a20_pct': int((st['a20'] / st['total']) * 100),
+            'a50_pct': int((st['a50'] / st['total']) * 100),
+            'a200_pct': int((st['a200'] / st['total']) * 100),
+            'parent_sector': st['parent']
+        }
+
+    # Filter out today's old record if running multiple times today
+    prev_history = [h for h in prev_history if h.get('date') != today_str]
+    prev_history.append(new_history_entry)
+    prev_history.sort(key=lambda x: x.get('date', ''))
+    prev_history = prev_history[-60:]
+
     breadth_data = {
-        'scan_date': datetime.now().strftime('%Y-%m-%d'),
+        'scan_date': today_str,
         'scan_time': scan_time,
         'total_scanned': total,
         'sectors': sectors_arr,
-        'industries': industries_arr
+        'industries': industries_arr,
+        'history': prev_history
     }
     
     try:
