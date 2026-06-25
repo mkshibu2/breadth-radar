@@ -351,21 +351,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:
   z-index: 6000;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 0;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 #chart-max-content {
   width: 100%;
-  max-width: 1100px;
-  height: 85vh;
+  max-width: 100%;
+  height: 100vh;
   background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: none;
+  border-radius: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8);
 }
 .sd-chart-max-btn {
   background: none;
@@ -13886,7 +13885,7 @@ let _sdChartsPerPage   = 9;
 let _sdChartsInterval  = 'D';
 let _sdChartsLayout    = 'auto';
 let _sdAutoChartsLimit = 12;
-let _sdChartType       = 'candlestick';
+let _sdChartType       = 'volume_candles';
 let _sdSortBy          = 'score';
 let _sdMaximizedChartSymbol = null;
 let _sdMaximizedChartCompany = null;
@@ -14371,6 +14370,7 @@ function openMaximizedChart(symbol) {
   const maxCompany = document.getElementById('max-chart-company');
   const maxStats = document.getElementById('max-chart-stats');
   const maxTvLink = document.getElementById('max-chart-tv-link');
+  const maxMsLink = document.getElementById('max-chart-ms-link');
   const loader = document.getElementById('max-chart-loader');
   
   const tfSelect = document.getElementById('max-chart-timeframe');
@@ -14419,6 +14419,7 @@ function openMaximizedChart(symbol) {
     maxTableContainer.innerHTML = generateStatsTableHtml(details);
   }
   if (maxTvLink) maxTvLink.href = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(symbol)}`;
+  if (maxMsLink) maxMsLink.href = `https://marketsmithindia.com/mstool/eval/${symbol.toLowerCase()}/evaluation.jsp#/`;
   if (loader) {
     loader.style.display = 'flex';
     loader.innerHTML = 'Loading chart…';
@@ -14852,7 +14853,6 @@ function sdRenderVcp(sectorName, secData) {
   const gradeColor = g => ({ 'A+':'var(--lime)', A:'var(--lime)', B:'var(--yellow)', C:'var(--orange)', D:'var(--red)' }[g] || 'var(--dim)');
 
   const rows = sorted.map(s => {
-    const nseUrl = `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(s.symbol)}`;
     const tvUrl  = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(s.symbol)}`;
     const msUrl  = `https://marketsmithindia.com/mstool/eval/${s.symbol.toLowerCase()}/evaluation.jsp#/`;
     const r90C   = s.r90 >= 20 ? 'var(--lime)' : s.r90 >= 0 ? 'var(--yellow)' : 'var(--red)';
@@ -14867,7 +14867,7 @@ function sdRenderVcp(sectorName, secData) {
 
     return `<tr style="border-bottom:1px solid var(--border)" onmouseenter="this.style.background='rgba(255,255,255,.03)'" onmouseleave="this.style.background='transparent'">
       <td style="padding:6px;white-space:nowrap">
-        <a href="${nseUrl}" target="_blank" rel="noopener" style="font-weight:800;font-size:13px;color:var(--teal);text-decoration:none;font-family:var(--mono)">${s.symbol}</a>
+        <a href="javascript:void(0)" onclick="openMaximizedChart('${s.symbol}')" style="font-weight:800;font-size:13px;color:var(--teal);text-decoration:none;font-family:var(--mono)" title="Click to view chart">${s.symbol}</a>
         <a href="${tvUrl}"  target="_blank" rel="noopener" style="font-size:9px;color:var(--accent);text-decoration:none;margin-left:5px;padding:1px 4px;border-radius:2px;border:1px solid rgba(91,163,245,.2);background:rgba(91,163,245,.08)" title="TradingView">TV↗</a>
         <a href="${msUrl}"  target="_blank" rel="noopener" style="font-size:9px;color:#f59e0b;text-decoration:none;margin-left:3px;padding:1px 4px;border-radius:2px;border:1px solid rgba(245,158,11,.25);background:rgba(245,158,11,.08)" title="MarketSmith India">MS↗</a>
       </td>
@@ -14975,7 +14975,6 @@ function sdRenderUniverse(sectorName) {
 
   const rows = filtered.map(s => {
     const tvUrl  = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(s.symbol)}`;
-    const nseUrl = `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(s.symbol)}`;
     const msUrl  = `https://marketsmithindia.com/mstool/eval/${s.symbol.toLowerCase()}/evaluation.jsp#/`;
     const isVcp  = vcpSymbols.has(s.symbol);
     const symColor = isVcp ? 'var(--teal)' : 'var(--text)';
@@ -14984,14 +14983,14 @@ function sdRenderUniverse(sectorName) {
     const vcpBadge = isVcp ? `<span style="font-size:8px;background:rgba(45,212,191,.15);color:var(--teal);padding:0 4px;border-radius:2px;margin-left:4px;border:1px solid rgba(45,212,191,.25)">VCP</span>${rsBadge}` : '';
     return `<tr style="border-bottom:1px solid var(--border)" onmouseenter="this.style.background='rgba(255,255,255,.03)'" onmouseleave="this.style.background='transparent'">
       <td style="padding:7px 10px;font-weight:800;font-size:13px;font-family:var(--mono);color:${symColor};white-space:nowrap">
-        ${s.symbol}${vcpBadge}
+        <a href="javascript:void(0)" onclick="openMaximizedChart('${s.symbol}')" style="color:inherit;text-decoration:none;cursor:pointer" title="Click to view chart">${s.symbol}</a>${vcpBadge}
       </td>
       <td style="padding:7px 10px;font-size:11px;color:var(--sub)">${s.company}</td>
       <td style="padding:7px 10px;text-align:center;white-space:nowrap">
         <a href="${tvUrl}" target="_blank" rel="noopener"
            style="font-size:10px;font-weight:600;color:var(--accent);text-decoration:none;padding:2px 7px;border-radius:3px;border:1px solid rgba(91,163,245,.25);background:rgba(91,163,245,.08)">TV↗</a>
-        <a href="${nseUrl}" target="_blank" rel="noopener"
-           style="font-size:10px;font-weight:600;color:var(--teal);text-decoration:none;padding:2px 7px;border-radius:3px;border:1px solid rgba(45,212,191,.25);background:rgba(45,212,191,.08);margin-left:4px">NSE↗</a>
+        <a href="javascript:void(0)" onclick="openMaximizedChart('${s.symbol}')"
+           style="font-size:10px;font-weight:600;color:var(--teal);text-decoration:none;padding:2px 7px;border-radius:3px;border:1px solid rgba(45,212,191,.25);background:rgba(45,212,191,.08);margin-left:4px" title="Open Chart">Chart</a>
         <a href="${msUrl}" target="_blank" rel="noopener"
            style="font-size:10px;font-weight:600;color:#f59e0b;text-decoration:none;padding:2px 7px;border-radius:3px;border:1px solid rgba(245,158,11,.25);background:rgba(245,158,11,.08);margin-left:4px">MS↗</a>
       </td>
@@ -15961,13 +15960,17 @@ document.addEventListener('click', () => {
           <select id="max-chart-type" onchange="maxChartChangeType(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:10px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
             <option value="candlestick">Candles</option>
             <option value="ohlc">Bars</option>
-            <option value="volume_candles">Volume Candles</option>
+            <option value="volume_candles" selected>Volume Candles</option>
           </select>
         </div>
 
         <a id="max-chart-tv-link" href="#" target="_blank" rel="noopener"
            style="font-size:11px;color:var(--accent);text-decoration:none;padding:3px 8px;border-radius:4px;border:1px solid rgba(91,163,245,.25);background:rgba(91,163,245,.08)">
            TradingView ↗
+        </a>
+        <a id="max-chart-ms-link" href="#" target="_blank" rel="noopener"
+           style="font-size:11px;color:#f59e0b;text-decoration:none;padding:3px 8px;border-radius:4px;border:1px solid rgba(245,158,11,.25);background:rgba(245,158,11,.08)">
+           MarketSmith ↗
         </a>
         <button onclick="closeMaximizedChart()"
           style="font-size:18px;color:var(--dim);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:4px;line-height:1"
