@@ -9,6 +9,7 @@ import yfinance as yf
 from datetime import datetime, timedelta
 import urllib.request
 import urllib.error
+import io
 from contextlib import contextmanager
 
 # Suppress stdout/stderr to prevent yfinance/pandas output from corrupting stdout JSON
@@ -107,8 +108,47 @@ def main():
     nifty_row = nifty_history.loc[target_date]
     nifty_close = round(float(nifty_row['Close']), 2)
     nifty_low = round(float(nifty_row['Low']), 2)
-    nifty_vol_raw = float(nifty_row['Volume'])
-    # Convert volume to Crores (Yahoo Finance volume divided by 1e7)
+
+    # Calculate Nifty 50 volume by summing constituent volumes
+    nifty50_symbols = []
+    try:
+        nifty50_url = "https://archives.nseindia.com/content/indices/ind_nifty50list.csv"
+        req = urllib.request.Request(
+            nifty50_url, 
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        )
+        with urllib.request.urlopen(req) as response:
+            content = response.read().decode('utf-8')
+            df_nifty50 = pd.read_csv(io.StringIO(content))
+            nifty50_symbols = [s.strip() for s in df_nifty50['Symbol'].dropna().tolist()]
+    except Exception:
+        # Fallback list if the download fails
+        nifty50_symbols = [
+            "ADANIENT", "ADANIPORTS", "APOLLOHOSP", "ASIANPAINT", "AXISBANK", 
+            "BAJAJ-AUTO", "BAJFINANCE", "BAJAJFINSV", "BEL", "BPCL", 
+            "BHARTIARTL", "BRITANNIA", "CIPLA", "COALINDIA", "DIVISLAB", 
+            "DRREDDY", "EICHERMOT", "GRASIM", "HCLTECH", "HDFCBANK", 
+            "HDFCLIFE", "HEROMOTOCO", "HINDALCO", "HINDUNILVR", "ICICIBANK", 
+            "ITC", "INDUSINDBK", "INFY", "JSWSTEEL", "KOTAKBANK", 
+            "LTIM", "LT", "M&M", "MARUTI", "NTPC", 
+            "NESTLEIND", "ONGC", "POWERGRID", "RELIANCE", "SBILIFE", 
+            "SHRIRAMFIN", "SBIN", "SUNPHARMA", "TCS", "TATACONSUM", 
+            "TATAMOTORS", "TATASTEEL", "TECHM", "TITAN", "ULTRACEMCO", "WIPRO"
+        ]
+
+    nifty_vol_raw = 0.0
+    for s in nifty50_symbols:
+        ticker = s + '.NS'
+        if ticker in stocks_data.columns.levels[0]:
+            df_stock = stocks_data[ticker].dropna(subset=['Volume'])
+            if not df_stock.empty:
+                df_stock.index = pd.to_datetime(df_stock.index).date
+                if target_date in df_stock.index:
+                    vol_val = df_stock.loc[target_date, 'Volume']
+                    if isinstance(vol_val, pd.Series):
+                        vol_val = vol_val.iloc[0]
+                    nifty_vol_raw += float(vol_val)
+                    
     nifty_vol = round(nifty_vol_raw / 1e7, 2) if nifty_vol_raw > 0 else 0.0
 
     # 6. Process Nifty 500 stocks
@@ -117,7 +157,7 @@ def main():
     unchanged = 0
     highs_52w = 0
     lows_52w = 0
-    above_ema20 = 0
+    above_sma20 = 0
     above_sma50 = 0
     above_sma200 = 0
     total_valid_stocks = 0
@@ -168,13 +208,13 @@ def main():
             lows_52w += 1
 
         # Indicators
-        # Calculated on the full history to keep EMA/SMA continuous and stable
-        ema20_series = df['Close'].ewm(span=20, adjust=False).mean()
+        # Calculated on the full history to keep SMA continuous and stable
+        sma20_series = df['Close'].rolling(window=20).mean()
         sma50_series = df['Close'].rolling(window=50).mean()
         sma200_series = df['Close'].rolling(window=200).mean()
 
-        if close > ema20_series.iloc[idx]:
-            above_ema20 += 1
+        if pd.notna(sma20_series.iloc[idx]) and close > sma20_series.iloc[idx]:
+            above_sma20 += 1
         if pd.notna(sma50_series.iloc[idx]) and close > sma50_series.iloc[idx]:
             above_sma50 += 1
         if pd.notna(sma200_series.iloc[idx]) and close > sma200_series.iloc[idx]:
@@ -185,7 +225,7 @@ def main():
         sys.exit(1)
 
     # MA Breadth percentages (round to 1 decimal place)
-    e20 = round((above_ema20 / total_valid_stocks) * 100, 1)
+    e20 = round((above_sma20 / total_valid_stocks) * 100, 1)
     s50 = round((above_sma50 / total_valid_stocks) * 100, 1)
     s200 = round((above_sma200 / total_valid_stocks) * 100, 1)
 
