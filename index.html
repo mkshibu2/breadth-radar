@@ -8710,6 +8710,96 @@ function loadTodayIntoForm() {
   flash('Today loaded — click Save & Sync to overwrite','var(--yellow)');
 }
 
+async function fetchAndAutofillToday() {
+  const btn = document.getElementById('btn-fetch-today');
+  const oldText = btn.innerHTML;
+  btn.innerHTML = '⏳ Fetching...';
+  btn.disabled = true;
+  
+  try {
+    const res = await fetch('http://localhost:9090/local-api/fetch-eod?date=today');
+    if (!res.ok) throw new Error('Fetch failed from local proxy');
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v !== undefined && v !== null ? v : ''; };
+    set('i-adv', data.adv);
+    set('i-dec', data.dec);
+    set('i-unc', data.unc);
+    set('i-hi', data.hi);
+    set('i-lo', data.lo);
+    set('i-e20', data.e20);
+    set('i-s50', data.s50);
+    set('i-s200', data.s200);
+    set('i-nifty', data.nifty);
+    set('i-nifty-low', data.niftyLow);
+    set('i-vol', data.vol);
+    
+    eodAutoFill();
+    flash('⚡ Autofill successful! Review and click Save & Sync All.', 'var(--lime)');
+  } catch (err) {
+    console.error(err);
+    flash('❌ Error: ' + err.message, 'var(--red)');
+  } finally {
+    btn.innerHTML = oldText;
+    btn.disabled = false;
+  }
+}
+
+async function fetchAndAutofillPast() {
+  const dateEl = document.getElementById('p-date');
+  const dateVal = dateEl ? dateEl.value : '';
+  if (!dateVal) {
+    alert('Please select a date first!');
+    return;
+  }
+  
+  const btn = document.getElementById('btn-fetch-past');
+  const oldText = btn.innerHTML;
+  btn.innerHTML = '⏳ Fetching...';
+  btn.disabled = true;
+  
+  const msgEl = document.getElementById('past-save-msg');
+  if (msgEl) {
+    msgEl.textContent = 'Fetching data...';
+    msgEl.style.color = 'var(--yellow)';
+  }
+  
+  try {
+    const res = await fetch(`http://localhost:9090/local-api/fetch-eod?date=${dateVal}`);
+    if (!res.ok) throw new Error('Fetch failed from local proxy');
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v !== undefined && v !== null ? v : ''; };
+    set('p-adv', data.adv);
+    set('p-dec', data.dec);
+    set('p-unc', data.unc);
+    set('p-hi', data.hi);
+    set('p-lo', data.lo);
+    set('p-e20', data.e20);
+    set('p-s50', data.s50);
+    set('p-s200', data.s200);
+    set('p-nifty', data.nifty);
+    set('p-nifty-low', data.niftyLow);
+    set('p-vol', data.vol);
+    
+    if (msgEl) {
+      msgEl.textContent = '⚡ Autofill successful! Review and click Save Past Entry.';
+      msgEl.style.color = 'var(--lime)';
+    }
+  } catch (err) {
+    console.error(err);
+    if (msgEl) {
+      msgEl.textContent = '❌ Error: ' + err.message;
+      msgEl.style.color = 'var(--red)';
+    }
+  } finally {
+    btn.innerHTML = oldText;
+    btn.disabled = false;
+  }
+}
+
 // Auto-fill prev close + prev vol from yesterday's saved record
 function eodAutoFill() {
   const data = loadLocal();
@@ -15924,6 +16014,7 @@ document.addEventListener('click', () => {
         <div class="cp-section-title">TODAY'S EOD DATA ENTRY — <span id="entry-today"></span></div>
         <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
           <button class="btn btn-sec" style="font-size:11px;padding:4px 10px" onclick="loadTodayIntoForm()">✎ Edit Today</button>
+          <button class="btn btn-sec" id="btn-fetch-today" style="font-size:11px;padding:4px 10px;color:var(--teal);border-color:rgba(45,212,191,.3)" onclick="fetchAndAutofillToday()">⚡ Fetch & Autofill</button>
           <button class="btn btn-sec" style="font-size:11px;padding:4px 10px" onclick="clearInputs()">✕ Clear</button>
         </div>
 
@@ -15995,7 +16086,10 @@ document.addEventListener('click', () => {
 
         <div class="past-date-row">
           <label>Date</label>
-          <input type="date" id="p-date" class="sbm-num" style="width:160px">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <input type="date" id="p-date" class="sbm-num" style="width:160px">
+            <button class="btn btn-sec" id="btn-fetch-past" style="font-size:11px;padding:4px 10px;color:var(--teal);border-color:rgba(45,212,191,.3)" onclick="fetchAndAutofillPast()">⚡ Fetch & Autofill Date</button>
+          </div>
         </div>
 
         <div class="ueg-label" style="margin-bottom:6px">🔵 Advance / Decline (ET → Advance/Decline tab)</div>
