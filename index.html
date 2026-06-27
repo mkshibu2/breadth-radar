@@ -1585,7 +1585,7 @@ async function sccChartRenderPanel(index){const symbol=_sccChartSymbols[index];c
 return;}
 const input=document.getElementById(`scc-chart-input-${index}`);if(input&&input.value!==symbol){input.value=symbol;}
 if(loader){loader.style.display='flex';loader.innerHTML='Loading chart…';}
-let range='1y';let interval='1d';if(timeframe==='1H'){range='1mo';interval='60m';}else if(timeframe==='D'){range='1y';interval='1d';}else if(timeframe==='W'){range='2y';interval='1wk';}else if(timeframe==='M'){range='5y';interval='1mo';}
+let range='1y';let interval='1d';if(timeframe==='1H'){range='2y';interval='60m';}else if(timeframe==='D'){range='1y';interval='1d';}else if(timeframe==='W'){range='2y';interval='1wk';}else if(timeframe==='M'){range='5y';interval='1mo';}
 const details=getStockDetails(symbol);const companyName=details.company;if(titleEl){titleEl.innerHTML=`
       <div style="display:flex; flex-direction:column; min-width:0; line-height:1.2;">
         <div style="display:flex; align-items:center; gap:6px;">
@@ -2524,7 +2524,7 @@ async function seedHistoricalData(){if(loadLocal().length>0)return;const seedDat
 if(_sccActiveWatchlist.startsWith('__flag_')){const color=_sccActiveWatchlist.replace('__flag_','');_sccWatchlistSymbols=Object.keys(_sccSymbolFlags).filter(s=>_sccSymbolFlags[s]===color);}else if(_sccActiveWatchlist!=='VCP'){_sccWatchlistSymbols=_sccWatchlists[_sccActiveWatchlist]||[];}
 _sccWlSelectedSymbols=[];_sccWlLastSelectedSymbol=null;}
 const recCount=loadLocal().length;const bsrCount=bsrLoad().length;const mpmCount=mpmLoad().length;const srtCount=srtLoad().filter(s=>s.id!=='NIFTY50').length;setSyncStatus('ok','Synced');console.log('[Init] Synced — Records:',recCount,'BSR:',bsrCount,'MPM:',mpmCount);}catch(e){setSyncStatus('warn','Offline · Local data shown');console.warn('[Init] Cloud pull failed:',e.message);}}
-renderAll();bsrRenderAll();mpmRenderAll();eodAutoFill();cpUpdateHomeStatus();})();window.addEventListener('resize',()=>{setTimeout(()=>{renderChart(loadLocal());bsrRenderChart();renderA1Sparkline(loadLocal());if(typeof brrgDraw==='function')brrgDraw();if(document.getElementById('sector-drill-overlay')&&document.getElementById('sector-drill-overlay').style.display!=='none'&&_sdActiveTab==='charts'&&_sdChartsLayout==='auto'){sdRenderCharts(_sdCurrentSector,_sdCurrentData);}if(document.getElementById('chart-max-overlay')&&document.getElementById('chart-max-overlay').style.display!=='none'&&_sdMaximizedChartSymbol){const range=_sdChartsInterval==='D'?'1y':'2y';const interval=_sdChartsInterval==='D'?'1d':'1wk';Promise.all([fetchYfData(_sdMaximizedChartSymbol,range,interval),_sdMaximizedChartSymbol.toUpperCase()!=='^NSEI'?fetchYfData('^NSEI',range,interval).catch(()=>null):Promise.resolve(null)]).then(([candles,niftyCandles])=>{drawAnyChart('max-chart-canvas',candles,_sdChartType,null,niftyCandles);}).catch(()=>{});}const sccChartPane=document.getElementById('scc-pane-chart');if(sccChartPane&&sccChartPane.style.display!=='none'){const count=parseInt(_sccChartLayout);for(let i=0;i<count;i++){sccChartRenderPanel(i);}}},100);});window.addEventListener('load',()=>{setTimeout(()=>{renderA1Sparkline(loadLocal());renderChart(loadLocal());brrgRebuildChips();if(typeof brrgDraw==='function')brrgDraw();},300);});(function setupResizeObservers(){const _origErr=window.onerror;window.onerror=function(msg,src,line,col,err){if(typeof msg==='string'&&msg.includes('ResizeObserver loop'))return true;return _origErr?_origErr(msg,src,line,col,err):false;};const chartWrap=document.querySelector('.chart-canvas-wrap');const bsrWrap=document.querySelector('.bsr-canvas-wrap');let chartRafId=null,bsrRafId=null;const ssWrap=document.getElementById('ss-chart-wrap');if(window.ResizeObserver&&ssWrap){let ssCellRafId=null;const roCell=new ResizeObserver(()=>{if(ssCellRafId)cancelAnimationFrame(ssCellRafId);ssCellRafId=requestAnimationFrame(()=>{renderA1Sparkline(loadLocal());ssCellRafId=null;});});roCell.observe(ssWrap);}
+renderAll();bsrRenderAll();mpmRenderAll();eodAutoFill();cpUpdateHomeStatus();})();window.addEventListener('resize',()=>{setTimeout(()=>{renderChart(loadLocal());bsrRenderChart();renderA1Sparkline(loadLocal());if(typeof brrgDraw==='function')brrgDraw();if(document.getElementById('sector-drill-overlay')&&document.getElementById('sector-drill-overlay').style.display!=='none'&&_sdActiveTab==='charts'&&_sdChartsLayout==='auto'){sdRenderCharts(_sdCurrentSector,_sdCurrentData);}if(document.getElementById('chart-max-overlay')&&document.getElementById('chart-max-overlay').style.display!=='none'&&_sdMaximizedChartSymbol){drawMaxChart();}const sccChartPane=document.getElementById('scc-pane-chart');if(sccChartPane&&sccChartPane.style.display!=='none'){const count=parseInt(_sccChartLayout);for(let i=0;i<count;i++){sccChartRenderPanel(i);}}},100);});window.addEventListener('load',()=>{setTimeout(()=>{renderA1Sparkline(loadLocal());renderChart(loadLocal());brrgRebuildChips();if(typeof brrgDraw==='function')brrgDraw();},300);});(function setupResizeObservers(){const _origErr=window.onerror;window.onerror=function(msg,src,line,col,err){if(typeof msg==='string'&&msg.includes('ResizeObserver loop'))return true;return _origErr?_origErr(msg,src,line,col,err):false;};const chartWrap=document.querySelector('.chart-canvas-wrap');const bsrWrap=document.querySelector('.bsr-canvas-wrap');let chartRafId=null,bsrRafId=null;const ssWrap=document.getElementById('ss-chart-wrap');if(window.ResizeObserver&&ssWrap){let ssCellRafId=null;const roCell=new ResizeObserver(()=>{if(ssCellRafId)cancelAnimationFrame(ssCellRafId);ssCellRafId=requestAnimationFrame(()=>{renderA1Sparkline(loadLocal());ssCellRafId=null;});});roCell.observe(ssWrap);}
 if(window.ResizeObserver&&chartWrap){const ro=new ResizeObserver(entries=>{if(chartRafId)cancelAnimationFrame(chartRafId);chartRafId=requestAnimationFrame(()=>{for(const entry of entries){if(entry.contentRect.width>10){const data=loadLocal();renderChart(data);renderSnapshot(data);renderHistory(data);}}
 chartRafId=null;});});ro.observe(chartWrap);}
 if(window.ResizeObserver&&bsrWrap){let bsrReady=false;const ro2=new ResizeObserver(entries=>{if(bsrRafId)cancelAnimationFrame(bsrRafId);bsrRafId=requestAnimationFrame(()=>{for(const entry of entries){if(entry.contentRect.width>10){bsrRenderChart();bsrReady=true;}}
@@ -2680,7 +2680,26 @@ function initGuestMode(){try{const urlParams=new URLSearchParams(window.location
 const guestBin=lsGet(LS_GUEST_BIN);if(!guestBin)return false;applyGuestMode();const exitBtn=document.getElementById('cfg-exit-guest-btn');if(exitBtn)exitBtn.style.display='inline-block';const binEl=document.getElementById('cfg-guest-bin');if(binEl)binEl.value=guestBin;jbReadPublic(guestBin).then(payload=>{const recs=Array.isArray(payload)?payload:(payload.records||[]);const bsr=Array.isArray(payload)?[]:(payload.bsr||[]);const mpm=Array.isArray(payload)?[]:(payload.mpm||[]);const ftd=Array.isArray(payload)?[]:(payload.ftd||[]);const srt=Array.isArray(payload)?[]:(payload.srt||[]);saveLocal(recs);bsrSave(bsr);mpmSave(mpm);ftdSaveData(ftd.sort((a,b)=>b.date.localeCompare(a.date)));srtSave(srt);setSyncStatus('ok',`Guest · ${recs.length}rec · ${mpm.length}mpm · ${srt.length}sec`);renderAll();bsrRenderAll();mpmRenderAll();ftdRender();srtRender();slhRender();}).catch(e=>{setSyncStatus('err','Guest · Pull Failed');console.warn('[Guest] Refresh failed:',e.message);});return true;}
 function openAboutModal(){document.getElementById('about-modal-overlay').classList.add('open');}
 function closeAboutModal(){document.getElementById('about-modal-overlay').classList.remove('open');}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMaximizedChart();closeAboutModal();closeCfgModal();sectorDrillClose();}});const LS_SECTOR_STOCKS='nse_sector_stocks_v1';const LS_N500_CSV='nse_n500csv_v1';const LS_FILTER_STOCKS_CSV='nse_filter_stocks_csv_v1';let _sectorStocksCache=null;let _n500CsvCache=null;let _filterStocksCache=null;let _sdCurrentSector='';let _sdCurrentData=null;let _sdActiveTab='vcp';let _sdSearchQuery='';let _sdChartsSource='vcp';let _sdChartsPage=0;let _sdChartsPerPage=9;let _sdChartsInterval='D';let _sdChartsLayout='auto';let _sdAutoChartsLimit=12;let _sdChartType='volume_candles';let _sdSortBy='score';let _sdMaximizedChartSymbol=null;let _sdMaximizedChartCompany=null;let _sdMaximizedChartStats='';let _sccChartSymbols=['RELIANCE','TCS','INFY','HDFCBANK'];let _sccChartTimeframes=['D','W','1H','M'];let _sccChartLayout='1';let _sccChartType='volume_candles';let _sccSyncSymbols=false;let _sccChartZoomFactors=[1.0,1.0,1.0,1.0];let _sccWatchlists={"Main":['RELIANCE','TCS','INFY','HDFCBANK','ICICIBANK','TATASTEEL','SBIN','BHARTIARTL','LT']};let _sccActiveWatchlist="Main";let _sccWatchlistSymbols=_sccWatchlists["Main"];let _sccWatchlistData={};let _sccSymbolFlags={};let _sccShowWatchlist=true;let _sccWlSelectedSymbols=[];let _sccWlLastSelectedSymbol=null;let _sccWlCollapsedSectors=new Set();let _sccWlOriginalOrders={};let _sccWlIsBreadthSorted=false;let _sccDraggedTabName=null;let _sccDraggedRowSymbol=null;let _sccTouchActive=false;let _sccTouchTimeout=null;let _sccTouchDraggedSym=null;let _sccTouchStartY=0;let _sccTouchDraggedEl=null;let _sccFlagHoldTimeout=null;let _sccFlagHoldActive=false;try{const savedSyms=localStorage.getItem('_sccChartSymbols');if(savedSyms)_sccChartSymbols=JSON.parse(savedSyms);const savedTfs=localStorage.getItem('_sccChartTimeframes');if(savedTfs)_sccChartTimeframes=JSON.parse(savedTfs);const savedLayout=localStorage.getItem('_sccChartLayout');if(savedLayout)_sccChartLayout=savedLayout;if(window.innerWidth<=600)_sccChartLayout='1';const savedType=localStorage.getItem('_sccChartType');if(savedType)_sccChartType=savedType;const savedSync=localStorage.getItem('_sccSyncSymbols');if(savedSync)_sccSyncSymbols=JSON.parse(savedSync);const savedZooms=localStorage.getItem('_sccChartZoomFactors');if(savedZooms)_sccChartZoomFactors=JSON.parse(savedZooms);const savedWls=localStorage.getItem('_sccWatchlists');if(savedWls)_sccWatchlists=JSON.parse(savedWls);const savedActiveWl=localStorage.getItem('_sccActiveWatchlist');if(savedActiveWl)_sccActiveWatchlist=savedActiveWl;const savedFlags=localStorage.getItem('_sccSymbolFlags');if(savedFlags)_sccSymbolFlags=JSON.parse(savedFlags);if(_sccActiveWatchlist&&_sccActiveWatchlist.startsWith('__flag_')){const color=_sccActiveWatchlist.replace('__flag_','');_sccWatchlistSymbols=Object.keys(_sccSymbolFlags).filter(s=>_sccSymbolFlags[s]===color);}else{if(!_sccWatchlists[_sccActiveWatchlist]){const keys=Object.keys(_sccWatchlists);_sccActiveWatchlist=keys.length>0?keys[0]:"Main";if(keys.length===0){_sccWatchlists["Main"]=['RELIANCE','TCS','INFY','HDFCBANK','ICICIBANK','TATASTEEL','SBIN','BHARTIARTL','LT'];}}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMaximizedChart();closeAboutModal();closeCfgModal();sectorDrillClose();}});const LS_SECTOR_STOCKS='nse_sector_stocks_v1';const LS_N500_CSV='nse_n500csv_v1';const LS_FILTER_STOCKS_CSV='nse_filter_stocks_csv_v1';let _sectorStocksCache=null;let _n500CsvCache=null;let _filterStocksCache=null;let _sdCurrentSector='';let _sdCurrentData=null;let _sdActiveTab='vcp';let _sdSearchQuery='';let _sdChartsSource='vcp';let _sdChartsPage=0;let _sdChartsPerPage=9;let _sdChartsInterval='D';let _sdChartsLayout='auto';let _sdAutoChartsLimit=12;let _sdChartType='volume_candles';let _sdSortBy='score';let _sdMaximizedChartSymbol=null;let _sdMaximizedChartCompany=null;let _sdMaximizedChartStats='';
+// ── Max chart TV-style interaction state ──
+let _maxCandles=null;          // full candle array for the maximized chart
+let _maxNiftyCandles=null;
+let _maxViewOffset=0;          // bars from the right end that are hidden (pan)
+let _maxBarWidth=8;            // px per bar (zoom)
+let _maxIsDragging=false;
+let _maxDragStartX=0;
+let _maxDragStartOffset=0;
+let _maxRightScaleWidth=60;
+let _maxBottomHeight=18;
+let _maxVolFrac=0.18;          // fraction of chart for volume panel
+let _maxPricePad=0.06;         // price padding fraction (vertical zoom via right-scale drag)
+let _maxRsDragActive=false;    // dragging right scale (vertical zoom)
+let _maxRsDragStartY=0;
+let _maxRsDragStartPad=0.06;
+let _maxBaDragActive=false;    // dragging bottom axis (horizontal zoom)
+let _maxBaDragStartX=0;
+let _maxBaDragStartBw=8;
+let _sccChartSymbols=['RELIANCE','TCS','INFY','HDFCBANK'];let _sccChartTimeframes=['D','W','1H','M'];let _sccChartLayout='1';let _sccChartType='volume_candles';let _sccSyncSymbols=false;let _sccChartZoomFactors=[1.0,1.0,1.0,1.0];let _sccWatchlists={"Main":['RELIANCE','TCS','INFY','HDFCBANK','ICICIBANK','TATASTEEL','SBIN','BHARTIARTL','LT']};let _sccActiveWatchlist="Main";let _sccWatchlistSymbols=_sccWatchlists["Main"];let _sccWatchlistData={};let _sccSymbolFlags={};let _sccShowWatchlist=true;let _sccWlSelectedSymbols=[];let _sccWlLastSelectedSymbol=null;let _sccWlCollapsedSectors=new Set();let _sccWlOriginalOrders={};let _sccWlIsBreadthSorted=false;let _sccDraggedTabName=null;let _sccDraggedRowSymbol=null;let _sccTouchActive=false;let _sccTouchTimeout=null;let _sccTouchDraggedSym=null;let _sccTouchStartY=0;let _sccTouchDraggedEl=null;let _sccFlagHoldTimeout=null;let _sccFlagHoldActive=false;try{const savedSyms=localStorage.getItem('_sccChartSymbols');if(savedSyms)_sccChartSymbols=JSON.parse(savedSyms);const savedTfs=localStorage.getItem('_sccChartTimeframes');if(savedTfs)_sccChartTimeframes=JSON.parse(savedTfs);const savedLayout=localStorage.getItem('_sccChartLayout');if(savedLayout)_sccChartLayout=savedLayout;if(window.innerWidth<=600)_sccChartLayout='1';const savedType=localStorage.getItem('_sccChartType');if(savedType)_sccChartType=savedType;const savedSync=localStorage.getItem('_sccSyncSymbols');if(savedSync)_sccSyncSymbols=JSON.parse(savedSync);const savedZooms=localStorage.getItem('_sccChartZoomFactors');if(savedZooms)_sccChartZoomFactors=JSON.parse(savedZooms);const savedWls=localStorage.getItem('_sccWatchlists');if(savedWls)_sccWatchlists=JSON.parse(savedWls);const savedActiveWl=localStorage.getItem('_sccActiveWatchlist');if(savedActiveWl)_sccActiveWatchlist=savedActiveWl;const savedFlags=localStorage.getItem('_sccSymbolFlags');if(savedFlags)_sccSymbolFlags=JSON.parse(savedFlags);if(_sccActiveWatchlist&&_sccActiveWatchlist.startsWith('__flag_')){const color=_sccActiveWatchlist.replace('__flag_','');_sccWatchlistSymbols=Object.keys(_sccSymbolFlags).filter(s=>_sccSymbolFlags[s]===color);}else{if(!_sccWatchlists[_sccActiveWatchlist]){const keys=Object.keys(_sccWatchlists);_sccActiveWatchlist=keys.length>0?keys[0]:"Main";if(keys.length===0){_sccWatchlists["Main"]=['RELIANCE','TCS','INFY','HDFCBANK','ICICIBANK','TATASTEEL','SBIN','BHARTIARTL','LT'];}}
 _sccWatchlistSymbols=_sccWatchlists[_sccActiveWatchlist]||[];}
 const savedShowWl=localStorage.getItem('_sccShowWatchlist');if(savedShowWl!==null)_sccShowWatchlist=savedShowWl==='true';}catch(e){console.warn("Failed to load Chart tab / Watchlist localStorage preferences",e);}
 function sectorDrillGetCached(){if(_sectorStocksCache)return _sectorStocksCache;try{_sectorStocksCache=JSON.parse(localStorage.getItem(LS_SECTOR_STOCKS))||null;return _sectorStocksCache;}catch(e){return null;}}
@@ -2745,22 +2764,437 @@ return num.toFixed(1);};const r90Val=stats?fmt(stats.r90,true):'—';const dist5
       </tbody>
     </table>
   `;}
-function openMaximizedChart(symbol){const overlay=document.getElementById('chart-max-overlay');const maxSymbol=document.getElementById('max-chart-symbol');const maxCompany=document.getElementById('max-chart-company');const maxStats=document.getElementById('max-chart-stats');const maxTvLink=document.getElementById('max-chart-tv-link');const maxMsLink=document.getElementById('max-chart-ms-link');const loader=document.getElementById('max-chart-loader');const tfSelect=document.getElementById('max-chart-timeframe');const typeSelect=document.getElementById('max-chart-type');if(!overlay)return;_sdMaximizedChartSymbol=symbol;if(tfSelect)tfSelect.value=_sdChartsInterval;if(typeSelect)typeSelect.value=_sdChartType;let company='';let statsHtml='';const details=getStockDetails(symbol);company=details.company;if(details.stats){const s=details.stats;const rsVal=s.rs_rating!=null?s.rs_rating:'—';const score=s.final_score>0?s.final_score:s.vcp_score;if(score!=null){statsHtml=`RS: <b style="color:var(--purple)">${rsVal}</b> | Score: <b style="color:var(--teal)">${Math.round(score)}</b>`;}else{statsHtml=`RS: <b style="color:var(--purple)">${rsVal}</b>`;}}
-_sdMaximizedChartCompany=company;_sdMaximizedChartStats=statsHtml;if(maxSymbol)maxSymbol.textContent=details.symbol;if(maxCompany){maxCompany.innerHTML=`
-      <span style="color:var(--sub);">${details.company || '—'}</span>
-      <span style="font-size:10px;color:var(--dim);background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:2px 6px;border-radius:3px;font-weight:500;white-space:nowrap;">${details.sector}</span>
-      <span style="font-size:10px;color:var(--sub);font-weight:500;white-space:nowrap;">${details.industry}</span>
-    `;}
-if(maxStats)maxStats.innerHTML=statsHtml?`· ${statsHtml}`:'';const maxTableContainer=document.getElementById('max-chart-table-container');if(maxTableContainer){maxTableContainer.innerHTML=generateStatsTableHtml(details);}
-if(maxTvLink)maxTvLink.href=`https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(symbol)}`;if(maxMsLink)maxMsLink.href=`https://marketsmithindia.com/mstool/eval/${symbol.toLowerCase()}/evaluation.jsp#/`;if(loader){loader.style.display='flex';loader.innerHTML='Loading chart…';}
-overlay.style.display='flex';const range=_sdChartsInterval==='1H'?'1mo':_sdChartsInterval==='W'?'2y':_sdChartsInterval==='M'?'5y':'1y';const interval=_sdChartsInterval==='1H'?'60m':_sdChartsInterval==='W'?'1wk':_sdChartsInterval==='M'?'1mo':'1d';Promise.all([fetchYfData(symbol,range,interval),symbol.toUpperCase()!=='^NSEI'?fetchYfData('^NSEI',range,interval).catch(()=>null):Promise.resolve(null)]).then(([candles,niftyCandles])=>{if(loader)loader.style.display='none';drawAnyChart('max-chart-canvas',candles,_sdChartType,null,niftyCandles);}).catch(err=>{console.error("YF Maximized Chart Error for "+symbol,err);if(loader){loader.innerHTML=`
-          <div style="color:var(--sub);font-size:11px;text-align:center;padding:12px;line-height:1.5;max-width:280px;margin:0 auto;">
-            <span style="color:var(--red);font-weight:600;display:block;margin-bottom:6px;">Failed to load chart data</span>
-            Run <code style="background:var(--bg4);padding:2px 4px;border-radius:3px;color:var(--accent);font-family:var(--mono);font-size:10px;white-space:nowrap;">node chart_proxy.js</code><br>in terminal to enable EOD charts.
-          </div>`;}});}
-function closeMaximizedChart(){const overlay=document.getElementById('chart-max-overlay');if(overlay)overlay.style.display='none';_sdMaximizedChartSymbol=null;_sdMaximizedChartCompany=null;_sdMaximizedChartStats='';}
-function maxChartChangeTimeframe(interval){_sdChartsInterval=interval;const mainTfSelect=document.querySelector('.sd-charts-controls select[onchange="sdSetChartsInterval(this.value)"]');if(mainTfSelect)mainTfSelect.value=interval;if(_sdMaximizedChartSymbol){openMaximizedChart(_sdMaximizedChartSymbol);}}
-function maxChartChangeType(type){_sdChartType=type;const mainTypeSelect=document.querySelector('.sd-charts-controls select[onchange="sdSetChartType(this.value)"]');if(mainTypeSelect)mainTypeSelect.value=type;if(_sdMaximizedChartSymbol){const range=_sdChartsInterval==='1H'?'1mo':_sdChartsInterval==='W'?'2y':_sdChartsInterval==='M'?'5y':'1y';const interval=_sdChartsInterval==='1H'?'60m':_sdChartsInterval==='W'?'1wk':_sdChartsInterval==='M'?'1mo':'1d';const yfSymbol=_sdMaximizedChartSymbol+'.NS';const cacheKey=`${yfSymbol}_${range}_${interval}`;const candles=_yfDataCache.get(cacheKey);const niftyCandles=_yfDataCache.get(`^NSEI_${range}_${interval}`);if(candles){drawAnyChart('max-chart-canvas',candles,_sdChartType,null,niftyCandles);}}}
+function openMaximizedChart(symbol){const overlay=document.getElementById('chart-max-overlay');const maxSymbol=document.getElementById('max-chart-symbol');const maxCompany=document.getElementById('max-chart-company');const maxStats=document.getElementById('max-chart-stats');const loader=document.getElementById('max-chart-loader');const tfSelect=document.getElementById('max-chart-timeframe');const typeSelect=document.getElementById('max-chart-type');if(!overlay)return;_sdMaximizedChartSymbol=symbol;_maxViewOffset=0;// reset pan on new symbol
+if(tfSelect)tfSelect.value=_sdChartsInterval;if(typeSelect)typeSelect.value=_sdChartType;const details=getStockDetails(symbol);let statsHtml='';if(details.stats){const s=details.stats;const rsVal=s.rs_rating!=null?s.rs_rating:'—';const score=s.final_score>0?s.final_score:s.vcp_score;statsHtml=score!=null?`RS: <b style="color:var(--purple)">${rsVal}</b> · Score: <b style="color:var(--teal)">${Math.round(score)}</b>`:`RS: <b style="color:var(--purple)">${rsVal}</b>`;}
+_sdMaximizedChartCompany=details.company;_sdMaximizedChartStats=statsHtml;if(maxSymbol)maxSymbol.textContent=details.symbol;if(maxCompany){maxCompany.innerHTML=`<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;">${details.company||'—'}</span><span style="font-size:10px;color:var(--dim);background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:1px 6px;border-radius:3px;font-weight:500;white-space:nowrap;flex-shrink:0;">${details.sector}</span><span style="font-size:10px;color:var(--sub);font-weight:500;white-space:nowrap;flex-shrink:0;">${details.industry}</span>`;}
+if(maxStats)maxStats.innerHTML=statsHtml||'';const maxTableContainer=document.getElementById('max-chart-table-container');if(maxTableContainer){maxTableContainer.innerHTML=generateStatsTableHtml(details);}
+if(loader){loader.style.display='flex';loader.innerHTML='Loading chart…';}
+overlay.style.display='flex';_maxFetchAndDraw(symbol);}
+function _maxFetchAndDraw(symbol){const loader=document.getElementById('max-chart-loader');const range=_sdChartsInterval==='1H'?'2y':_sdChartsInterval==='W'?'2y':_sdChartsInterval==='M'?'5y':'1y';const interval=_sdChartsInterval==='1H'?'60m':_sdChartsInterval==='W'?'1wk':_sdChartsInterval==='M'?'1mo':'1d';Promise.all([fetchYfData(symbol,range,interval),symbol.toUpperCase()!=='^NSEI'?fetchYfData('^NSEI',range,interval).catch(()=>null):Promise.resolve(null)]).then(([candles,niftyCandles])=>{if(loader)loader.style.display='none';_maxCandles=candles;_maxNiftyCandles=niftyCandles;drawMaxChart();_maxSetupInteraction();}).catch(err=>{console.error("YF Max Chart Error",err);if(loader){loader.innerHTML=`<div style="color:var(--sub);font-size:11px;text-align:center;padding:12px;line-height:1.5;max-width:280px;margin:0 auto;"><span style="color:var(--red);font-weight:600;display:block;margin-bottom:6px;">Failed to load chart data</span>Run <code style="background:var(--bg4);padding:2px 4px;border-radius:3px;color:var(--accent);font-family:var(--mono);font-size:10px;white-space:nowrap;">node chart_proxy.js</code><br>in terminal to enable EOD charts.</div>`;}});}
+function maxChartRefresh(){if(_sdMaximizedChartSymbol){const loader=document.getElementById('max-chart-loader');if(loader){loader.style.display='flex';loader.innerHTML='Refreshing…';}// Clear cache for this symbol
+const range=_sdChartsInterval==='1H'?'2y':_sdChartsInterval==='W'?'2y':_sdChartsInterval==='M'?'5y':'1y';const interval=_sdChartsInterval==='1H'?'60m':_sdChartsInterval==='W'?'1wk':_sdChartsInterval==='M'?'1mo':'1d';const yfSym=_sdMaximizedChartSymbol+'.NS';_yfDataCache.delete(`${yfSym}_${range}_${interval}`);_yfDataCache.delete(`^NSEI_${range}_${interval}`);_maxFetchAndDraw(_sdMaximizedChartSymbol);}}
+function closeMaximizedChart(){const overlay=document.getElementById('chart-max-overlay');if(overlay)overlay.style.display='none';_sdMaximizedChartSymbol=null;_sdMaximizedChartCompany=null;_sdMaximizedChartStats='';_maxCandles=null;_maxNiftyCandles=null;_maxRemoveInteraction();}
+function maxChartChangeTimeframe(interval){_sdChartsInterval=interval;const mainTfSelect=document.querySelector('.sd-charts-controls select[onchange="sdSetChartsInterval(this.value)"]');if(mainTfSelect)mainTfSelect.value=interval;if(_sdMaximizedChartSymbol){_maxViewOffset=0;openMaximizedChart(_sdMaximizedChartSymbol);}}
+function maxChartChangeType(type){_sdChartType=type;const mainTypeSelect=document.querySelector('.sd-charts-controls select[onchange="sdSetChartType(this.value)"]');if(mainTypeSelect)mainTypeSelect.value=type;if(_maxCandles){drawMaxChart();}}
+// ── TV-style chart drawing for max canvas ──────────────────────────────
+// (single authoritative drawMaxChart defined below, after interaction handlers)
+function _maxSetupInteraction(){
+  const canvas=document.getElementById('max-chart-canvas');
+  if(!canvas||canvas._maxWired)return;
+  canvas._maxWired=true;
+  canvas.addEventListener('wheel',_maxOnWheel,{passive:false});
+  canvas.addEventListener('mousedown',_maxOnMouseDown);
+  window.addEventListener('mousemove',_maxOnMouseMove);
+  window.addEventListener('mouseup',_maxOnMouseUp);
+  canvas.addEventListener('mouseleave',_maxOnMouseLeave);
+  canvas.addEventListener('mousemove',_maxUpdateCursor);
+  canvas.addEventListener('dblclick',_maxOnDblClick);
+}
+function _maxRemoveInteraction(){
+  const canvas=document.getElementById('max-chart-canvas');
+  if(canvas){
+    canvas.removeEventListener('wheel',_maxOnWheel);
+    canvas.removeEventListener('mousedown',_maxOnMouseDown);
+    window.removeEventListener('mousemove',_maxOnMouseMove);
+    window.removeEventListener('mouseup',_maxOnMouseUp);
+    canvas.removeEventListener('mouseleave',_maxOnMouseLeave);
+    canvas.removeEventListener('mousemove',_maxUpdateCursor);
+    canvas.removeEventListener('dblclick',_maxOnDblClick);
+    canvas._maxWired=false;
+  }
+}
+function maxChartResetView(){
+  _maxViewOffset=0;
+  _maxBarWidth=8;
+  _maxPricePad=0.06;
+  drawMaxChart();
+}
+function _maxOnDblClick(e){
+  const canvas=document.getElementById('max-chart-canvas');
+  if(!canvas)return;
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left;
+  const st=canvas._maxState;
+  const onRS=st&&mx>=st.chartW;
+  if(onRS){
+    _maxPricePad=0.06;
+  }else{
+    maxChartResetView();
+    return;
+  }
+  drawMaxChart();
+}
+function _maxUpdateCursor(e){
+  const canvas=document.getElementById('max-chart-canvas');
+  if(!canvas)return;
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const st=canvas._maxState;
+  if(!st){canvas.style.cursor='crosshair';return;}
+  const onRS=mx>=st.chartW;
+  const onBA=my>=st.chartH;
+  if(onRS) canvas.style.cursor='ns-resize';
+  else if(onBA) canvas.style.cursor='ew-resize';
+  else canvas.style.cursor=_maxIsDragging?'grabbing':'crosshair';
+}
+function _maxOnWheel(e){
+  e.preventDefault();
+  if(!_maxCandles||_maxCandles.length===0)return;
+  const canvas=document.getElementById('max-chart-canvas');
+  if(!canvas)return;
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const st=canvas._maxState;
+  const onRS=st&&mx>=st.chartW;
+  const onBA=st&&my>=st.chartH;
+  if(onRS){
+    const factor=e.deltaY>0?1.10:0.90;
+    _maxPricePad=Math.max(0.001,Math.min(2.0,_maxPricePad*factor));
+  }else if(onBA){
+    const zoomFactor=e.deltaY<0?1.12:0.88;
+    _maxBarWidth=Math.max(2,Math.min(60,_maxBarWidth*zoomFactor));
+  }else{
+    const delta=Math.sign(e.deltaY);
+    const zoomFactor=delta<0?1.12:0.88;
+    const oldBw=_maxBarWidth;
+    const newBw=Math.max(2,Math.min(60,oldBw*zoomFactor));
+    if(oldBw!==newBw){
+      _maxBarWidth=newBw;
+      if(st&&st.chartW){
+        const mouseRatio=Math.max(0,Math.min(1,mx/st.chartW));
+        const total=_maxCandles.length;
+        const oldVis=Math.max(10,Math.floor(st.chartW/oldBw));
+        const newVis=Math.max(10,Math.floor(st.chartW/newBw));
+        const visDiff=oldVis-newVis;
+        _maxViewOffset+=visDiff*(1-mouseRatio);
+        _maxViewOffset=Math.max(-15,Math.min(total-5,_maxViewOffset));
+      }
+    }
+  }
+  drawMaxChart();
+}
+function _maxOnMouseDown(e){
+  const canvas=document.getElementById('max-chart-canvas');
+  if(!canvas)return;
+  e.preventDefault();
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const st=canvas._maxState;
+  const onRS=st&&mx>=st.chartW;
+  const onBA=st&&my>=st.chartH;
+  if(onRS){
+    _maxRsDragActive=true;
+    _maxRsDragStartY=e.clientY;
+    _maxRsDragStartPad=_maxPricePad;
+    canvas.style.cursor='ns-resize';
+  }else if(onBA){
+    _maxBaDragActive=true;
+    _maxBaDragStartX=e.clientX;
+    _maxBaDragStartBw=_maxBarWidth;
+    canvas.style.cursor='ew-resize';
+  }else{
+    _maxIsDragging=true;
+    _maxDragStartX=e.clientX;
+    _maxDragStartOffset=_maxViewOffset;
+    canvas.style.cursor='grabbing';
+  }
+}
+function _maxOnMouseUp(){
+  _maxIsDragging=false;
+  _maxRsDragActive=false;
+  _maxBaDragActive=false;
+  const canvas=document.getElementById('max-chart-canvas');
+  if(canvas)canvas.style.cursor='crosshair';
+}
+function _maxOnMouseLeave(){
+  if(!_maxIsDragging&&!_maxRsDragActive&&!_maxBaDragActive){
+    const canvas=document.getElementById('max-chart-canvas');
+    if(canvas)canvas.style.cursor='crosshair';
+    document.getElementById('max-chart-ohlc-tip').style.display='none';
+    if(canvas&&canvas._maxState)drawMaxChart();
+  }
+}
+function _maxOnMouseMove(e){
+  const canvas=document.getElementById('max-chart-canvas');
+  if(!canvas||!_maxCandles)return;
+  if(_maxRsDragActive){
+    e.preventDefault();
+    const dy=e.clientY-_maxRsDragStartY;
+    _maxPricePad=Math.max(0.001,Math.min(2.0,_maxRsDragStartPad*Math.pow(1.005,dy)));
+    drawMaxChart();return;
+  }
+  if(_maxBaDragActive){
+    e.preventDefault();
+    const dx=e.clientX-_maxBaDragStartX;
+    _maxBarWidth=Math.max(2,Math.min(60,_maxBaDragStartBw*Math.pow(1.005,dx)));
+    drawMaxChart();return;
+  }
+  if(_maxIsDragging){
+    e.preventDefault();
+    const dx=e.clientX-_maxDragStartX;
+    const st=canvas._maxState;
+    const slot=(st&&st.barSlot)?st.barSlot:_maxBarWidth;
+    const barsShifted=dx/slot;
+    _maxViewOffset=Math.max(-15,Math.min(_maxCandles.length-5,_maxDragStartOffset+barsShifted));
+    drawMaxChart();return;
+  }
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  if(mx<0||mx>rect.width||my<0||my>rect.height){
+    document.getElementById('max-chart-ohlc-tip').style.display='none';
+    return;
+  }
+  drawMaxChart();
+  const st=canvas._maxState;if(!st)return;
+  if(mx>=st.chartW||my>=st.chartH){
+    document.getElementById('max-chart-ohlc-tip').style.display='none';
+    return;
+  }
+  const slotIdx=Math.min(st.barsVisible-1,Math.max(0,Math.floor(mx/st.barSlot)));
+  const item=st.slotItems[slotIdx];
+  if(!item||!item.candle)return;
+  const c=item.candle;
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);
+  const cx=st.barX(slotIdx);
+  ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(cx,0);ctx.lineTo(cx,st.chartH);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,my);ctx.lineTo(st.chartW,my);ctx.stroke();
+  ctx.setLineDash([]);
+  if(my<=st.priceH){
+    const price=st.minP+((st.priceH-my)/st.priceH)*(st.maxP-st.minP);
+    const priceLabel=price.toFixed(price>1000?1:2);
+    ctx.fillStyle='#2a3550';ctx.fillRect(st.chartW+1,my-10,st.RSW-2,20);
+    ctx.strokeStyle='rgba(91,163,245,0.4)';ctx.lineWidth=1;ctx.strokeRect(st.chartW+1,my-10,st.RSW-2,20);
+    ctx.fillStyle='#e2e8f0';ctx.font='bold 10px monospace';ctx.textAlign='left';ctx.textBaseline='middle';
+    ctx.fillText(priceLabel,st.chartW+6,my);
+  }
+  if(c.time){
+    const d=new Date(c.time);
+    const dateTagStr=d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'});
+    const tw=68;
+    const tx=Math.max(0,Math.min(st.chartW-tw,cx-tw/2));
+    ctx.fillStyle='#2a3550';ctx.fillRect(tx,st.chartH+1,tw,st.BAH-2);
+    ctx.strokeStyle='rgba(91,163,245,0.4)';ctx.lineWidth=1;ctx.strokeRect(tx,st.chartH+1,tw,st.BAH-2);
+    ctx.fillStyle='#e2e8f0';ctx.font='bold 10px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(dateTagStr,tx+tw/2,st.chartH+st.BAH/2);
+  }
+  ctx.restore();
+  const tip=document.getElementById('max-chart-ohlc-tip');
+  if(tip){
+    const d=new Date(c.time);
+    const dateStr=d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    const isUp=c.close>=c.open;
+    const col=isUp?'#26a69a':'#ef5350';
+    const chg=((c.close-c.open)/c.open*100).toFixed(2);
+    const ema=item.ema;
+    tip.innerHTML=`<span style="color:#64748b;font-size:10px;">${dateStr}</span>  `
+      +`O <b style="color:${col}">${c.open.toFixed(1)}</b>  `
+      +`H <b style="color:${col}">${c.high.toFixed(1)}</b>  `
+      +`L <b style="color:${col}">${c.low.toFixed(1)}</b>  `
+      +`C <b style="color:${col}">${c.close.toFixed(1)}</b>  `
+      +`<span style="color:${col};font-weight:700;">${chg}%</span>`
+      +(ema?`  <span style="color:rgba(239,68,68,0.85);"> EMA ${ema.toFixed(1)}</span>`:'');
+    tip.style.display='block';
+    const tx=mx+20>st.chartW-190?mx-220:mx+16;
+    tip.style.left=tx+'px';
+    tip.style.top=(my<55?my+16:my-52)+'px';
+  }
+}
+function drawMaxChart(){
+const canvas=document.getElementById('max-chart-canvas');
+if(!canvas||!_maxCandles||_maxCandles.length===0)return;
+const ctx=canvas.getContext('2d');
+const dpr=window.devicePixelRatio||1;
+const rect=canvas.getBoundingClientRect();
+const targetW=Math.round(rect.width*dpr);
+const targetH=Math.round(rect.height*dpr);
+if(canvas.width!==targetW||canvas.height!==targetH){
+  canvas.width=targetW;
+  canvas.height=targetH;
+}
+ctx.setTransform(dpr,0,0,dpr,0,0);
+const W=rect.width,H=rect.height;
+const RSW=_maxRightScaleWidth,BAH=_maxBottomHeight;
+const chartW=W-RSW,chartH=H-BAH;
+const volPanelH=Math.round(chartH*_maxVolFrac);
+const priceH=chartH-volPanelH-1;
+
+const barsVisible=Math.max(10,Math.floor(chartW/_maxBarWidth));
+const total=_maxCandles.length;
+_maxViewOffset=Math.max(-15,Math.min(_maxViewOffset,total-5));
+
+const barSlot=chartW/barsVisible;
+const barX=(slot)=>slot*barSlot+barSlot/2;
+
+const fullEma20=calculateEMA(_maxCandles,20);
+const exactStartCandle=total-1-_maxViewOffset-(barsVisible-1);
+const startCandleIdx=Math.floor(exactStartCandle);
+
+const slotItems=[];
+const visCandles=[];
+for(let s=0;s<barsVisible;s++){
+  const cIdx=startCandleIdx+s;
+  if(cIdx>=0&&cIdx<total){
+    const c=_maxCandles[cIdx];
+    const ema=fullEma20[cIdx];
+    const item={candle:c,ema:ema,slot:s,globalIdx:cIdx};
+    slotItems[s]=item;
+    visCandles.push(item);
+  }else{
+    slotItems[s]=null;
+  }
+}
+
+if(visCandles.length===0)return;
+
+let minP=Infinity,maxP=-Infinity,maxVol=0;
+for(const item of visCandles){
+  const c=item.candle;
+  if(c.low<minP)minP=c.low;
+  if(c.high>maxP)maxP=c.high;
+  if(c.volume>maxVol)maxVol=c.volume;
+  if(item.ema!=null){
+    if(item.ema<minP)minP=item.ema;
+    if(item.ema>maxP)maxP=item.ema;
+  }
+}
+const pad=(maxP-minP)*_maxPricePad;
+minP-=pad;maxP+=pad;
+const pRange=maxP-minP||1;
+const pxY=(price)=>priceH-((price-minP)/pRange)*priceH;
+
+// ── backgrounds ──
+ctx.fillStyle='#050508';ctx.fillRect(0,0,W,H);
+ctx.fillStyle='#070810';ctx.fillRect(0,priceH+1,chartW,volPanelH);
+ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;
+ctx.beginPath();ctx.moveTo(0,priceH);ctx.lineTo(chartW,priceH);ctx.stroke();
+ctx.fillStyle='#0a0b10';ctx.fillRect(chartW,0,RSW,chartH);
+ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=1;
+ctx.beginPath();ctx.moveTo(chartW,0);ctx.lineTo(chartW,chartH);ctx.stroke();
+
+// ── price grid ──
+ctx.strokeStyle='rgba(255,255,255,0.035)';
+const gridCount=6;
+for(let i=0;i<=gridCount;i++){
+  const price=minP+(pRange/gridCount)*i;
+  const y=pxY(price);
+  if(y<0||y>priceH)continue;
+  ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(chartW,y);ctx.stroke();
+  ctx.fillStyle='#3d5166';ctx.font='9px monospace';ctx.textAlign='left';ctx.textBaseline='middle';
+  ctx.fillText(price.toFixed(price>1000?0:1),chartW+5,y);
+}
+
+// ── volume bars ──
+const avgVol=visCandles.reduce((sum,it)=>sum+it.candle.volume,0)/visCandles.length;
+const volTop=priceH+1;
+for(const item of visCandles){
+  const c=item.candle;
+  const isUp=c.close>=c.open;
+  let bw=Math.max(1,barSlot*0.7);
+  if(_sdChartType==='volume_candles'){const vf=Math.min(2.5,Math.max(0.4,(c.volume/(avgVol||1))));bw=Math.max(1,barSlot*0.7*vf);}
+  const barH=maxVol>0?(c.volume/maxVol)*(volPanelH-2):0;
+  const x=barX(item.slot);
+  ctx.fillStyle=isUp?'rgba(38,166,154,0.35)':'rgba(239,83,80,0.35)';
+  ctx.fillRect(x-bw/2,volTop+volPanelH-barH,bw,barH);
+}
+ctx.fillStyle='rgba(255,255,255,0.12)';ctx.font='8px monospace';ctx.textAlign='left';ctx.textBaseline='top';
+ctx.fillText('VOL',chartW+5,volTop+2);
+
+// ── candles ──
+const cw=Math.max(1,barSlot*0.68);
+for(const item of visCandles){
+  const c=item.candle;
+  const isUp=c.close>=c.open;
+  const col=isUp?'#26a69a':'#ef5350';
+  const x=barX(item.slot);
+  const yO=pxY(c.open),yC=pxY(c.close),yH=pxY(c.high),yL=pxY(c.low);
+  ctx.strokeStyle=col;ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(x,yH);ctx.lineTo(x,yL);ctx.stroke();
+  let bw=cw;
+  if(_sdChartType==='volume_candles'){const vf=Math.min(2.5,Math.max(0.4,(c.volume/(avgVol||1))));bw=Math.max(1,cw*vf);}
+  if(_sdChartType==='ohlc'){
+    ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(x-bw/2,yO);ctx.lineTo(x,yO);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x,yC);ctx.lineTo(x+bw/2,yC);ctx.stroke();
+  }else{
+    const bodyH=Math.abs(yC-yO)||1;
+    ctx.fillStyle=col;ctx.fillRect(x-bw/2,Math.min(yO,yC),bw,bodyH);
+  }
+}
+
+// ── EMA20 ──
+ctx.strokeStyle='rgba(239,68,68,0.6)';ctx.lineWidth=1.3;ctx.beginPath();
+let fE=true;
+for(let s=0;s<barsVisible;s++){
+  const item=slotItems[s];
+  if(item&&item.ema!=null){
+    const x=barX(s);const y=pxY(item.ema);
+    if(fE){ctx.moveTo(x,y);fE=false;}else ctx.lineTo(x,y);
+  }
+}
+ctx.stroke();
+
+// ── RS line ──
+if(_maxNiftyCandles&&_maxNiftyCandles.length>0){
+  const nMap=new Map();
+  for(const nc of _maxNiftyCandles)nMap.set(new Date(nc.time).toISOString().split('T')[0],nc.close);
+  const rsVals=slotItems.map(it=>{if(!it)return null;const n=nMap.get(new Date(it.candle.time).toISOString().split('T')[0]);return(n&&n>0)?it.candle.close/n:null;});
+  let minRS=Infinity,maxRS=-Infinity;
+  rsVals.forEach(v=>{if(v!=null){if(v<minRS)minRS=v;if(v>maxRS)maxRS=v;}});
+  if(minRS!==Infinity&&minRS!==maxRS){
+    const rsRange=maxRS-minRS;
+    const rsY=(v)=>priceH*0.85-((v-minRS)/rsRange)*(priceH*0.55);
+    ctx.strokeStyle='rgba(56,189,248,0.5)';ctx.lineWidth=1.3;ctx.beginPath();
+    let fR=true;
+    rsVals.forEach((v,s)=>{if(v!=null){const x=barX(s);const y=rsY(v);if(fR){ctx.moveTo(x,y);fR=false;}else ctx.lineTo(x,y);}});
+    ctx.stroke();
+    ctx.fillStyle='rgba(56,189,248,0.55)';ctx.font='9px sans-serif';ctx.textAlign='left';ctx.textBaseline='top';
+    ctx.fillText('RS Line (vs Nifty 50)',6,priceH*0.28);
+  }
+}
+
+// ── date axis ──
+ctx.fillStyle='#07080d';ctx.fillRect(0,chartH,W,BAH);
+ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;
+ctx.beginPath();ctx.moveTo(0,chartH);ctx.lineTo(W,chartH);ctx.stroke();
+ctx.fillStyle='#3d5166';ctx.font='9px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+let lastLbl='';
+for(let s=0;s<barsVisible;s++){
+  const item=slotItems[s];
+  if(!item)continue;
+  const d=new Date(item.candle.time);
+  let lbl=d.toLocaleString('default',{month:'short'});
+  if(d.getMonth()===0||s===0)lbl+=` ${d.getFullYear().toString().slice(2)}`;
+  if(lbl!==lastLbl){
+    const x=barX(s);
+    if(x>30&&x<chartW-20){
+      ctx.fillText(lbl,x,chartH+BAH/2);lastLbl=lbl;
+      ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.beginPath();ctx.moveTo(x,chartH);ctx.lineTo(x,chartH+3);ctx.stroke();
+    }
+  }
+}
+
+// last price tag on right scale
+const lastItem=visCandles[visCandles.length-1];
+if(lastItem){
+  const lastC=lastItem.candle;
+  const ly=pxY(lastC.close);
+  const isUp=lastC.close>=lastC.open;
+  ctx.fillStyle=isUp?'#26a69a':'#ef5350';
+  ctx.fillRect(chartW+1,ly-10,RSW-2,20);
+  ctx.fillStyle='#fff';ctx.font='bold 10px monospace';ctx.textAlign='left';ctx.textBaseline='middle';
+  ctx.fillText(lastC.close.toFixed(lastC.close>1000?1:2),chartW+5,ly);
+}
+
+canvas._maxState={visCandles,slotItems,barsVisible,barX,pxY,chartW,chartH,priceH,volPanelH,volTop,RSW,BAH,W,H,dpr,minP,maxP,barSlot};
+const resetBtn=document.getElementById('max-chart-reset-btn');
+if(resetBtn){
+  const isModified=(_maxViewOffset!==0||_maxBarWidth!==8||Math.abs(_maxPricePad-0.06)>0.001);
+  resetBtn.style.display=isModified?'inline-flex':'none';
+}
+}
 function maxChartSearchInput(val){const suggestBox=document.getElementById('max-chart-suggest');if(!suggestBox)return;const query=val.trim().toLowerCase();if(!query){suggestBox.style.display='none';suggestBox.innerHTML='';return;}
 let allStocks=n500CsvGetCached()||[];if(allStocks.length===0&&_sdCurrentData?.stocks){allStocks=_sdCurrentData.stocks;}
 const matches=[];for(const s of allStocks){if((s.symbol&&s.symbol.toLowerCase().includes(query))||(s.company&&s.company.toLowerCase().includes(query))){matches.push(s);if(matches.length>=8)break;}}
@@ -2925,7 +3359,7 @@ prevEma=sum/period;ema.push(prevEma);}else{const val=candles[i].close*k+prevEma*
 return ema;}
 function drawAnyChart(canvasId,candles,chartType,drawCountOverride,niftyCandles){const canvas=document.getElementById(canvasId);if(!canvas)return;const ctx=canvas.getContext('2d');let symbol='';if(canvasId.startsWith('yf-chart-')){symbol=canvasId.replace('yf-chart-','').toUpperCase();}else if(canvasId==='max-chart-canvas'){symbol=(_sdMaximizedChartSymbol||'').toUpperCase();}else if(canvasId.startsWith('scc-chart-canvas-')){const idx=parseInt(canvasId.replace('scc-chart-canvas-',''));if(!isNaN(idx)&&_sccChartSymbols[idx]){symbol=_sccChartSymbols[idx].toUpperCase();}}
 let rsRating='';if(symbol){const meta=findStockMetadata(symbol);rsRating=meta.rs_rating;}
-const dpr=window.devicePixelRatio||1;const rect=canvas.getBoundingClientRect();canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;ctx.scale(dpr,dpr);const width=rect.width;const height=rect.height;ctx.clearRect(0,0,width,height);ctx.fillStyle='#050508';ctx.fillRect(0,0,width,height);if(!candles||candles.length===0){ctx.fillStyle='#64748b';ctx.font='10px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('No chart data found',width/2,height/2);return;}
+const dpr=window.devicePixelRatio||1;const rect=canvas.getBoundingClientRect();const tW=Math.round(rect.width*dpr);const tH=Math.round(rect.height*dpr);if(canvas.width!==tW||canvas.height!==tH){canvas.width=tW;canvas.height=tH;}ctx.setTransform(dpr,0,0,dpr,0,0);const width=rect.width;const height=rect.height;ctx.clearRect(0,0,width,height);ctx.fillStyle='#050508';ctx.fillRect(0,0,width,height);if(!candles||candles.length===0){ctx.fillStyle='#64748b';ctx.font='10px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('No chart data found',width/2,height/2);return;}
 const minCandlePx=(chartType==='ohlc')?3:4;const maxFitCount=Math.max(20,Math.floor(width/minCandlePx));const totalCount=candles.length;let drawCount=Math.min(totalCount,maxFitCount);if(drawCountOverride!=null){drawCount=Math.min(totalCount,Math.max(10,drawCountOverride));}
 const startIndex=Math.max(0,totalCount-drawCount);const ema20=calculateEMA(candles,20);const drawCandles=candles.slice(startIndex);const drawEma=ema20.slice(startIndex);let minPrice=Infinity;let maxPrice=-Infinity;let maxVolume=0;for(const c of drawCandles){if(c.low<minPrice)minPrice=c.low;if(c.high>maxPrice)maxPrice=c.high;if(c.volume>maxVolume)maxVolume=c.volume;}
 for(let i=0;i<drawCandles.length;i++){if(drawEma[i]!=null){if(drawEma[i]<minPrice)minPrice=drawEma[i];if(drawEma[i]>maxPrice)maxPrice=drawEma[i];}}
@@ -3168,72 +3602,101 @@ document.addEventListener('click',()=>{const dropdown=document.getElementById('s
 
 <div id="chart-max-overlay" onclick="if(event.target===this)closeMaximizedChart()">
   <div id="chart-max-content" onclick="event.stopPropagation()">
-    
-    <div id="chart-max-header" style="flex-shrink:0;border-bottom:1px solid var(--border);">
 
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:10px 14px 6px;gap:8px;">
-        <div style="min-width:0;flex:1;">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <span id="max-chart-symbol" style="font-family:var(--disp);font-size:22px;font-weight:800;color:var(--teal);line-height:1;">—</span>
-            <span id="max-chart-stats" style="font-size:11px;color:var(--dim);line-height:1;">—</span>
-            
-            <a id="max-chart-tv-link" href="javascript:void(0)"
-               onclick="var sym=document.getElementById('max-chart-symbol').textContent.trim();if(sym&&sym!=='—')window.open('https://www.tradingview.com/chart/?symbol=NSE%3A'+encodeURIComponent(sym),'_blank');"
-               style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;font-size:12px;font-weight:700;color:var(--accent);text-decoration:none;border-radius:4px;border:1px solid rgba(91,163,245,.35);background:rgba(91,163,245,.10);white-space:nowrap;flex-shrink:0;cursor:pointer;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-              TV
-            </a>
-            
-            <a id="max-chart-ms-link" href="javascript:void(0)"
-               onclick="var sym=document.getElementById('max-chart-symbol').textContent.trim();if(sym&&sym!=='—')window.open('https://marketsmithindia.com/mstool/eval/'+sym.toLowerCase()+'/evaluation.jsp#/','_blank');"
-               style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;font-size:12px;font-weight:700;color:#f59e0b;text-decoration:none;border-radius:4px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.10);white-space:nowrap;flex-shrink:0;cursor:pointer;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              MS
-            </a>
-          </div>
-          <div id="max-chart-company" style="font-size:11px;color:var(--sub);margin-top:4px;display:flex;align-items:center;flex-wrap:wrap;gap:5px;">—</div>
-        </div>
-        <button onclick="closeMaximizedChart()"
-          style="font-size:20px;color:var(--dim);background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:4px;line-height:1;flex-shrink:0;"
-          onmouseenter="this.style.color='var(--text)'" onmouseleave="this.style.color='var(--dim)'">✕</button>
+    <!-- ── Single-row header (wraps to 2 rows only on mobile) ── -->
+    <div id="chart-max-header" style="flex-shrink:0;display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid var(--border);flex-wrap:wrap;min-height:44px;background:var(--bg3);">
+
+      <!-- Symbol -->
+      <span id="max-chart-symbol" style="font-family:var(--disp);font-size:20px;font-weight:800;color:var(--teal);line-height:1;white-space:nowrap;">—</span>
+
+      <!-- TV button -->
+      <a id="max-chart-tv-link" href="javascript:void(0)"
+         onclick="var sym=document.getElementById('max-chart-symbol').textContent.trim();if(sym&&sym!=='—')window.open('https://www.tradingview.com/chart/?symbol=NSE%3A'+encodeURIComponent(sym),'_blank');"
+         style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;font-size:12px;font-weight:700;color:var(--accent);text-decoration:none;border-radius:4px;border:1px solid rgba(91,163,245,.35);background:rgba(91,163,245,.10);white-space:nowrap;flex-shrink:0;cursor:pointer;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        TV
+      </a>
+
+      <!-- MS button -->
+      <a id="max-chart-ms-link" href="javascript:void(0)"
+         onclick="var sym=document.getElementById('max-chart-symbol').textContent.trim();if(sym&&sym!=='—')window.open('https://marketsmithindia.com/mstool/eval/'+sym.toLowerCase()+'/evaluation.jsp#/','_blank');"
+         style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;font-size:12px;font-weight:700;color:#f59e0b;text-decoration:none;border-radius:4px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.10);white-space:nowrap;flex-shrink:0;cursor:pointer;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        MS
+      </a>
+
+      <!-- Divider -->
+      <div style="width:1px;height:20px;background:var(--border);flex-shrink:0;"></div>
+
+      <!-- Company + sector (truncated) -->
+      <div id="max-chart-company" style="font-size:11px;color:var(--sub);display:flex;align-items:center;gap:5px;min-width:0;flex:1;overflow:hidden;">—</div>
+
+      <!-- Stats -->
+      <span id="max-chart-stats" style="font-size:11px;color:var(--dim);white-space:nowrap;flex-shrink:0;">—</span>
+
+      <!-- Divider -->
+      <div style="width:1px;height:20px;background:var(--border);flex-shrink:0;"></div>
+
+      <!-- TF select -->
+      <select id="max-chart-timeframe" onchange="maxChartChangeTimeframe(this.value)"
+              style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:28px;cursor:pointer;flex-shrink:0;">
+        <option value="1H">1H</option>
+        <option value="D" selected>D</option>
+        <option value="W">W</option>
+        <option value="M">M</option>
+      </select>
+
+      <!-- Type select -->
+      <select id="max-chart-type" onchange="maxChartChangeType(this.value)"
+              style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:28px;cursor:pointer;flex-shrink:0;">
+        <option value="candlestick">Candles</option>
+        <option value="ohlc">Bars</option>
+        <option value="volume_candles" selected>Vol Candles</option>
+      </select>
+
+      <!-- Search box -->
+      <div style="position:relative;flex-shrink:0;">
+        <input type="text" id="max-chart-search" placeholder="Search…" oninput="maxChartSearchInput(this.value)"
+               style="background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--body);font-size:11px;padding:0 8px;outline:none;border-radius:4px;height:28px;width:120px;box-sizing:border-box;"
+               onfocus="this.style.borderColor='var(--teal)';" onblur="setTimeout(()=>document.getElementById('max-chart-suggest').style.display='none',200);">
+        <div id="max-chart-suggest" class="max-suggest-box"></div>
       </div>
 
-      <div style="display:flex;align-items:center;gap:8px;padding:0 14px 10px;flex-wrap:wrap;">
+      <!-- Refresh button -->
+      <button id="max-chart-refresh-btn" onclick="maxChartRefresh()"
+              title="Refresh chart data"
+              style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:var(--bg4);border:1px solid var(--border);color:var(--dim);border-radius:4px;cursor:pointer;flex-shrink:0;transition:color .15s,border-color .15s;"
+              onmouseenter="this.style.color='var(--teal)';this.style.borderColor='rgba(45,212,191,.4)';"
+              onmouseleave="this.style.color='var(--dim)';this.style.borderColor='var(--border)';">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      </button>
 
-        <div style="position:relative;flex:1;min-width:120px;max-width:200px;">
-          <input type="text" id="max-chart-search" placeholder="Search symbol…" oninput="maxChartSearchInput(this.value)"
-                 style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--body);font-size:12px;padding:6px 8px;outline:none;border-radius:4px;height:30px;box-sizing:border-box;"
-                 onfocus="this.style.borderColor='var(--teal)';" onblur="setTimeout(()=>document.getElementById('max-chart-suggest').style.display='none', 200);">
-          <div id="max-chart-suggest" class="max-suggest-box"></div>
-        </div>
-
-        <select id="max-chart-timeframe" onchange="maxChartChangeTimeframe(this.value)"
-                style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:30px;cursor:pointer;">
-          <option value="1H">1 Hour</option>
-          <option value="D">Daily</option>
-          <option value="W">Weekly</option>
-          <option value="M">Monthly</option>
-        </select>
-
-        <select id="max-chart-type" onchange="maxChartChangeType(this.value)"
-                style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:30px;cursor:pointer;">
-          <option value="candlestick">Candles</option>
-          <option value="ohlc">Bars</option>
-          <option value="volume_candles" selected>Vol Candles</option>
-        </select>
-
-      </div>
+      <!-- Close -->
+      <button onclick="closeMaximizedChart()"
+        style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;font-size:16px;color:var(--dim);background:none;border:1px solid transparent;cursor:pointer;border-radius:4px;line-height:1;flex-shrink:0;"
+        onmouseenter="this.style.color='var(--text)';this.style.borderColor='var(--border)';"
+        onmouseleave="this.style.color='var(--dim)';this.style.borderColor='transparent';">✕</button>
     </div>
-    
-    <div style="flex:1;background:#0c0d12;position:relative;display:flex;flex-direction:column;">
-      <div style="flex:1;position:relative;min-height:0;">
-        <canvas id="max-chart-canvas" style="width:100%;height:100%;display:block;"></canvas>
-        <div id="max-chart-loader" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#0c0d12;color:var(--dim);font-size:11px;">
+
+    <!-- ── Chart body ── -->
+    <div style="flex:1;background:#050508;position:relative;display:flex;flex-direction:column;min-height:0;">
+      <div id="max-chart-wrapper" style="flex:1;position:relative;min-height:0;">
+        <canvas id="max-chart-canvas" style="width:100%;height:100%;display:block;cursor:crosshair;"></canvas>
+        <!-- Floating OHLC tooltip -->
+        <div id="max-chart-ohlc-tip" style="display:none;position:absolute;top:10px;left:10px;background:rgba(12,13,18,0.92);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-family:var(--mono);font-size:11px;line-height:1.7;pointer-events:none;z-index:10;white-space:nowrap;"></div>
+        <!-- TV Style Floating Reset Button -->
+        <button id="max-chart-reset-btn" onclick="maxChartResetView()" title="Reset Chart View (Auto Fit)"
+          style="display:none; position:absolute; top:10px; right:75px; z-index:20; background:rgba(18, 20, 26, 0.88); border:1px solid var(--bdr2); color:var(--accent); font-family:var(--body); font-size:11px; font-weight:600; padding:4px 10px; border-radius:4px; cursor:pointer; align-items:center; gap:5px; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); box-shadow:0 4px 12px rgba(0,0,0,0.5); transition:all 0.15s ease;"
+          onmouseenter="this.style.background='rgba(91,163,245,0.18)';this.style.borderColor='var(--accent)';this.style.color='#fff';"
+          onmouseleave="this.style.background='rgba(18,20,26,0.88)';this.style.borderColor='var(--bdr2)';this.style.color='var(--accent)';">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          <span>Reset View</span>
+        </button>
+        <div id="max-chart-loader" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#050508;color:var(--dim);font-size:11px;pointer-events:none;">
           Loading chart…
         </div>
       </div>
-      
-      <div id="max-chart-table-container" style="flex-shrink:0; background:var(--bg3); border-top:1px solid var(--border);"></div>
+      <div id="max-chart-table-container" style="flex-shrink:0;background:var(--bg3);border-top:1px solid var(--border);"></div>
     </div>
   </div>
 </div>
