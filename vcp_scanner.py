@@ -115,10 +115,14 @@ def ema(series, period):
 def sma(series, period):
     return series.rolling(period).mean()
 
+BULK_STOCK_DATA = {}
+
 # ═══════════════════════════════════════════════════════════════════════
 #  DATA FETCH (Yahoo Finance)
 # ═══════════════════════════════════════════════════════════════════════
 def fetch_data(symbol, days=400):
+    if symbol in BULK_STOCK_DATA:
+        return BULK_STOCK_DATA[symbol], {}
     try:
         tk    = yf.Ticker(symbol + '.NS')
         end   = datetime.now()
@@ -1367,6 +1371,36 @@ def main():
     sector_stats = {}
     industry_stats = {}
 
+    print(f'⚡ Bulk downloading price data for {total} NSE stocks in parallel via Yahoo Finance...')
+    clean_symbols = [s for s in symbols_to_scan if isinstance(s, str) and s.strip() and not s.startswith('DUMMY')]
+    yf_tickers = [s + '.NS' for s in clean_symbols]
+    end_dt = datetime.now()
+    start_dt = end_dt - timedelta(days=400)
+    
+    global BULK_STOCK_DATA
+    BULK_STOCK_DATA = {}
+    
+    try:
+        chunk_size = 150
+        for c_idx in range(0, len(yf_tickers), chunk_size):
+            chunk_tickers = yf_tickers[c_idx:c_idx + chunk_size]
+            b_df = yf.download(chunk_tickers, start=start_dt, end=end_dt, group_by='ticker', threads=True, progress=False)
+            if b_df is not None and not b_df.empty:
+                if isinstance(b_df.columns, pd.MultiIndex):
+                    for t_str in chunk_tickers:
+                        if t_str in b_df.columns.levels[0]:
+                            s_df = b_df[t_str].dropna(subset=['Close'])
+                            if len(s_df) >= 252:
+                                sym_clean = t_str.replace('.NS', '')
+                                BULK_STOCK_DATA[sym_clean] = s_df[['Open','High','Low','Close','Volume']].dropna()
+                else:
+                    if len(b_df) >= 252:
+                        sym_clean = chunk_tickers[0].replace('.NS', '')
+                        BULK_STOCK_DATA[sym_clean] = b_df[['Open','High','Low','Close','Volume']].dropna()
+        print(f"✅ Bulk download complete! Cached {len(BULK_STOCK_DATA)} stocks in memory.\n")
+    except Exception as b_err:
+        print(f"⚠️ Bulk download warning: {b_err}. Falling back to individual fetching.\n")
+
     print(f'Scanning {total} NSE stocks via Yahoo Finance...\n')
 
     for i, sym in enumerate(symbols_to_scan, 1):
@@ -1446,7 +1480,8 @@ def main():
                   f'  tight:{result["tight_pct"]:.1f}%'
                   f'  {result["setup"]}')
 
-            time.sleep(CFG['delay_between_stocks'])
+            if sym not in BULK_STOCK_DATA:
+                time.sleep(CFG['delay_between_stocks'])
 
         except Exception as e:
             errors += 1
