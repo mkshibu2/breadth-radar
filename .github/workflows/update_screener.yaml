@@ -33,9 +33,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install yfinance pandas numpy openpyxl
 
-      - name: Run VCP Scanner Script
-        run: python vcp_scanner.py
-
       - name: Run EOD Automation Script
         env:
           JSONBIN_KEY: ${{ secrets.JSONBIN_KEY }}
@@ -46,6 +43,10 @@ jobs:
           else
             echo "⚠️ JSONBIN_KEY or JSONBIN_BIN not set in GitHub Secrets. Skipping automated EOD push."
           fi
+
+      - name: Run VCP Scanner Script
+        continue-on-error: true
+        run: python vcp_scanner.py
 
       - name: Commit and Push Results
         run: |
