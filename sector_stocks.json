@@ -1,11 +1,11 @@
 {
   "scan_date": "2026-06-30",
-  "scan_time": "30 Jun 2026  12:15 PM",
+  "scan_time": "30 Jun 2026  12:24 PM",
   "sectors": {
     "NBFCs & Finance": {
       "universe": 67,
       "vcp_count": 5,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "CGCL",
@@ -92,13 +92,13 @@
     "Diversified": {
       "universe": 5,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Capital Goods": {
       "universe": 36,
       "vcp_count": 8,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "HONAUT",
@@ -233,13 +233,13 @@
     "Construction Materials": {
       "universe": 9,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Power": {
       "universe": 21,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "ACMESOLAR",
@@ -262,7 +262,7 @@
     "Metals & Mining": {
       "universe": 28,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "AIAENG",
@@ -285,7 +285,7 @@
     "Banks": {
       "universe": 26,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "MAHABANK",
@@ -308,7 +308,7 @@
     "Fast Moving Consumer Goods": {
       "universe": 28,
       "vcp_count": 4,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "HONASA",
@@ -379,7 +379,7 @@
     "Specialty Chemicals": {
       "universe": 20,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "ACUTAAS",
@@ -402,7 +402,7 @@
     "Pharma": {
       "universe": 37,
       "vcp_count": 5,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "WOCKPHARMA",
@@ -489,13 +489,13 @@
     "Realty": {
       "universe": 12,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Oil Gas & Consumable Fuels": {
       "universe": 19,
       "vcp_count": 2,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "AEGISLOG",
@@ -534,7 +534,7 @@
     "Consumer Services": {
       "universe": 19,
       "vcp_count": 3,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "TBOTEK",
@@ -589,7 +589,7 @@
     "Textiles": {
       "universe": 7,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "KPRMILL",
@@ -612,7 +612,7 @@
     "Construction": {
       "universe": 10,
       "vcp_count": 2,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "CEMPRO",
@@ -651,7 +651,7 @@
     "Media Entertainment & Publication": {
       "universe": 5,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "SAREGAMA",
@@ -674,7 +674,7 @@
     "Automobile and Auto Components": {
       "universe": 36,
       "vcp_count": 3,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "MINDACORP",
@@ -729,13 +729,13 @@
     "Consumer Durables": {
       "universe": 14,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Hospitals & Healthcare": {
       "universe": 11,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "MAXHEALTH",
@@ -758,7 +758,7 @@
     "Services": {
       "universe": 14,
       "vcp_count": 2,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "INDIGO",
@@ -797,19 +797,19 @@
     "Agrochemicals & Fertilizers": {
       "universe": 8,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Defense": {
       "universe": 8,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Telecommunication": {
       "universe": 7,
       "vcp_count": 2,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "IDEA",
@@ -848,7 +848,7 @@
     "Information Technology": {
       "universe": 25,
       "vcp_count": 3,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "HFCL",
@@ -903,7 +903,7 @@
     "Railways": {
       "universe": 8,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     }
   },
@@ -911,7 +911,7 @@
     "Finance-Investment Mgmt IN": {
       "universe": 13,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "NUVAMA",
@@ -934,13 +934,13 @@
     "Diversified Operations IN": {
       "universe": 5,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Electrical-Power/Equipmt IN": {
       "universe": 15,
       "vcp_count": 2,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "APARINDS",
@@ -979,13 +979,13 @@
     "Bldg-Cement/Concrt/Ag IN": {
       "universe": 9,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Energy-Solar IN": {
       "universe": 3,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "ACMESOLAR",
@@ -1008,7 +1008,7 @@
     "Steel-Specialty Alloys IN": {
       "universe": 2,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "AIAENG",
@@ -1031,13 +1031,13 @@
     "Steel-Producers IN": {
       "universe": 16,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Banks-Money Center IN": {
       "universe": 26,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "MAHABANK",
@@ -1060,19 +1060,19 @@
     "Food-Packaged IN": {
       "universe": 5,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Finance-Mrtg&Rel Svc IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Chemicals-Specialty IN": {
       "universe": 17,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "ACUTAAS",
@@ -1095,7 +1095,7 @@
     "Finance-Consumer Loans IN": {
       "universe": 21,
       "vcp_count": 3,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "CGCL",
@@ -1150,7 +1150,7 @@
     "Medical-Diversified IN": {
       "universe": 12,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "LAURUSLABS",
@@ -1173,7 +1173,7 @@
     "Machinery-Constr/Mining IN": {
       "universe": 3,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "ACE",
@@ -1196,13 +1196,13 @@
     "Utility-Electric Power IN": {
       "universe": 10,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Elec-Misc Products IN": {
       "universe": 5,
       "vcp_count": 3,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "HONAUT",
@@ -1257,37 +1257,37 @@
     "Energy-Alternative/Other IN": {
       "universe": 8,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Real Estate Dvlpmt/Ops IN": {
       "universe": 10,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Utility-Gas Distribution IN": {
       "universe": 4,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Insurance-Brokers IN": {
       "universe": 4,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Retail-Department Stores IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Apparel-Clothing Mfg IN": {
       "universe": 7,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "KPRMILL",
@@ -1310,13 +1310,13 @@
     "Finance-Property Reit IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Oil&Gas-Transprt/Pipelne IN": {
       "universe": 3,
       "vcp_count": 2,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "AEGISLOG",
@@ -1355,7 +1355,7 @@
     "Bldg-Heavy Construction IN": {
       "universe": 10,
       "vcp_count": 2,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "CEMPRO",
@@ -1394,13 +1394,13 @@
     "Comml Svcs-Advertising IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Medical-Generic Drugs IN": {
       "universe": 14,
       "vcp_count": 4,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "WOCKPHARMA",
@@ -1471,7 +1471,7 @@
     "Beverages-Alcoholic IN": {
       "universe": 4,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "ABDL",
@@ -1494,7 +1494,7 @@
     "Auto/Truck-Original Eqp IN": {
       "universe": 15,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "MINDACORP",
@@ -1517,13 +1517,13 @@
     "Hsehold-Appliances/Wares IN": {
       "universe": 5,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Medical-Hospitals IN": {
       "universe": 8,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "MAXHEALTH",
@@ -1546,13 +1546,13 @@
     "Auto/Truck-Tires & Misc IN": {
       "universe": 5,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Auto Manufacturers IN": {
       "universe": 13,
       "vcp_count": 2,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "ATHERENERG",
@@ -1591,37 +1591,37 @@
     "Chemicals-Paints IN": {
       "universe": 3,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Bldg-Constr Prds/Misc IN": {
       "universe": 4,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Finance-Invest Bnk/Bkrs IN": {
       "universe": 5,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Retail-Super/Mini Mkts IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Comml Svcs-Outsourcing IN": {
       "universe": 4,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Financial Svcs-Specialty IN": {
       "universe": 9,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "IFCI",
@@ -1644,25 +1644,25 @@
     "Apparel-Shoes & Rel Mfg IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Chemicals-Agricultural IN": {
       "universe": 8,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Aerospace/Defense IN": {
       "universe": 5,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Machinery-Gen Industrial IN": {
       "universe": 7,
       "vcp_count": 2,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "THERMAX",
@@ -1701,13 +1701,13 @@
     "Oil&Gas-Refining/Mktg IN": {
       "universe": 7,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Telecom Svcs-Wireless IN": {
       "universe": 2,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "IDEA",
@@ -1730,43 +1730,43 @@
     "Telecom Svcs-Cable/Satl IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Medical-Biomed/Biotech IN": {
       "universe": 5,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Computer-Tech Services IN": {
       "universe": 17,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Transportation-Logistics IN": {
       "universe": 3,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Medical-Whlsle Drg/Suppl IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Bldg-A/C & Heating Prds IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Food-Misc Preparation IN": {
       "universe": 5,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "ZYDUSWELL",
@@ -1789,31 +1789,31 @@
     "Consumer Prod-Specialty IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Food-Grain & Related IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Comp Sftwr-Spec Enterprs IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Comml Svcs-Market Rsrch IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Retail-Internet IN": {
       "universe": 4,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "CARTRADE",
@@ -1836,7 +1836,7 @@
     "Leisure-Lodging IN": {
       "universe": 6,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "THELEELA",
@@ -1859,19 +1859,19 @@
     "Energy-Coal IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Transportation-Equip Mfg IN": {
       "universe": 3,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Cosmetics/Personal Care IN": {
       "universe": 9,
       "vcp_count": 2,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "HONASA",
@@ -1910,79 +1910,79 @@
     "Machinery-Mtl Hdlg/Autmn IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Trucks & Parts-Hvy Duty IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Retail-Restaurants IN": {
       "universe": 3,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Medical-Services IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Medical-Supplies IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Machinery-Farm IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Finance-Commercial Loans IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Insurance-Prop/Cas/Titl IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Insurance-Diversified IN": {
       "universe": 3,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Tobacco IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Mining-Metal Ores IN": {
       "universe": 7,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Insurance-Life IN": {
       "universe": 4,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Computer-Networking IN": {
       "universe": 2,
       "vcp_count": 2,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "HFCL",
@@ -2021,37 +2021,37 @@
     "Metal Proc & Fabrication IN": {
       "universe": 3,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Railways": {
       "universe": 8,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Telecom-Consumer Prods IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Telecom-Infrastructure IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Internet-Content IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Transportation-Airline IN": {
       "universe": 1,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "INDIGO",
@@ -2074,19 +2074,19 @@
     "Comml Svcs-Consulting IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Comml Svcs-Healthcare IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Transportation-Ship IN": {
       "universe": 2,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "JSWINFRA",
@@ -2109,61 +2109,61 @@
     "Retail/Whlsle-Jewelry IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Chemicals-Basic IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Medical-Products IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Auto/Truck-Replace Parts IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Computer Sftwr-Database IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Insurance-Acc & Health IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Oil&Gas-Intl Expl&Prod IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Computer Sftwr-Desktop IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Chemicals-Plastics IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Leisure-Movies & Related IN": {
       "universe": 2,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "SAREGAMA",
@@ -2186,13 +2186,13 @@
     "Medical-Systems/Equip IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Computer-Hardware/Perip IN": {
       "universe": 1,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "REDINGTON",
@@ -2215,37 +2215,37 @@
     "Oil&Gas-Integrated IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Finance-Crdtcard/Pmtpr IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Bldg-Resident/Comml IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Media-Radio/Tv IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Medical-Research Eqp/Svc IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Leisure-Travel Booking IN": {
       "universe": 1,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "TBOTEK",
@@ -2268,7 +2268,7 @@
     "Telecom Svcs-Integrated IN": {
       "universe": 2,
       "vcp_count": 1,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": [
         {
           "symbol": "TATACOMM",
@@ -2291,13 +2291,13 @@
     "Beverages-Non-Alcoholic IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     },
     "Machinery-Tools & Rel IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "30 Jun 2026  12:15 PM",
+      "scan_time": "30 Jun 2026  12:24 PM",
       "stocks": []
     }
   }
