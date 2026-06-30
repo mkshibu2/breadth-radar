@@ -284,13 +284,24 @@ def main():
     bin_id = os.environ.get("JSONBIN_BIN") or os.environ.get("JSONBIN_ID")
     master_key = os.environ.get("JSONBIN_KEY") or os.environ.get("JSONBIN_MASTER_KEY")
 
+    if bin_id:
+        bin_id = bin_id.strip()
+    if master_key:
+        master_key = master_key.strip()
+
     if not bin_id or not master_key:
         print(json.dumps({"error": "JSONBIN_BIN (or JSONBIN_ID) and JSONBIN_KEY (or JSONBIN_MASTER_KEY) environment variables must be set for --push"}), file=sys.stderr)
         sys.exit(1)
 
     print(f"Fetching current bin data from JSONBin (Bin: {bin_id})...")
     url = f"https://api.jsonbin.io/v3/b/{bin_id}/latest"
-    req = urllib.request.Request(url, headers={"X-Master-Key": master_key})
+    req = urllib.request.Request(
+        url,
+        headers={
+            "X-Master-Key": master_key,
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+    )
     
     try:
         with urllib.request.urlopen(req) as response:
@@ -364,7 +375,8 @@ def main():
         data=json.dumps(payload).encode('utf-8'),
         headers={
             "Content-Type": "application/json",
-            "X-Master-Key": master_key
+            "X-Master-Key": master_key,
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
         method="PUT"
     )
