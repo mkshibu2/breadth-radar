@@ -35,13 +35,13 @@ jobs:
 
       - name: Run EOD Automation Script
         env:
-          JSONBIN_KEY: ${{ secrets.JSONBIN_KEY }}
-          JSONBIN_BIN: ${{ secrets.JSONBIN_BIN }}
+          JSONBIN_KEY: ${{ secrets.JSONBIN_KEY || secrets.JSONBIN_MASTER_KEY }}
+          JSONBIN_BIN: ${{ secrets.JSONBIN_BIN || secrets.JSONBIN_ID }}
         run: |
           if [ -n "$JSONBIN_KEY" ] && [ -n "$JSONBIN_BIN" ]; then
             python automate_eod.py --push
           else
-            echo "⚠️ JSONBIN_KEY or JSONBIN_BIN not set in GitHub Secrets. Skipping automated EOD push."
+            echo "⚠️ JSONBIN_KEY/JSONBIN_MASTER_KEY or JSONBIN_BIN/JSONBIN_ID not set in GitHub Secrets. Skipping automated EOD push."
           fi
 
       - name: Run VCP Scanner Script
