@@ -281,11 +281,11 @@ def main():
         return
 
     # 8. Push to JSONBin.io (Option A)
-    bin_id = os.environ.get("JSONBIN_BIN")
-    master_key = os.environ.get("JSONBIN_KEY")
+    bin_id = os.environ.get("JSONBIN_BIN") or os.environ.get("JSONBIN_ID")
+    master_key = os.environ.get("JSONBIN_KEY") or os.environ.get("JSONBIN_MASTER_KEY")
 
     if not bin_id or not master_key:
-        print(json.dumps({"error": "JSONBIN_BIN and JSONBIN_KEY environment variables must be set for --push"}), file=sys.stderr)
+        print(json.dumps({"error": "JSONBIN_BIN (or JSONBIN_ID) and JSONBIN_KEY (or JSONBIN_MASTER_KEY) environment variables must be set for --push"}), file=sys.stderr)
         sys.exit(1)
 
     print(f"Fetching current bin data from JSONBin (Bin: {bin_id})...")
