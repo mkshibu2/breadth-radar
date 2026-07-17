@@ -1,585 +1,456 @@
 {
-  "scan_date": "2026-07-16",
-  "scan_time": "16 Jul 2026  11:54 AM",
+  "scan_date": "2026-07-17",
+  "scan_time": "17 Jul 2026  11:41 AM",
   "sectors": {
     "NBFCs & Finance": {
       "universe": 68,
-      "vcp_count": 5,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "vcp_count": 4,
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
-        {
-          "symbol": "ANANDRATHI",
-          "company": "Anand Rathi Wealth Ltd.",
-          "price": 2079.6,
-          "mktcap": 0,
-          "r30": 16.4,
-          "r60": 16.6,
-          "r90": 13.7,
-          "dist52": -4.4,
-          "drawdown": -4.4,
-          "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 59.5,
-          "vcp_score": 48,
-          "grade": "REJECT",
-          "rs_rating": 22.8
-        },
-        {
-          "symbol": "POONAWALLA",
-          "company": "Poonawalla Fincorp Ltd.",
-          "price": 472.15,
-          "mktcap": 0,
-          "r30": 16.5,
-          "r60": 16.7,
-          "r90": 12.9,
-          "dist52": -17.2,
-          "drawdown": -2.8,
-          "setup": "\ud83c\udfaf Mature VCP",
-          "final_score": 51.7,
-          "vcp_score": 52,
-          "grade": "REJECT",
-          "rs_rating": 4.3
-        },
         {
           "symbol": "NUVAMA",
           "company": "Nuvama Wealth Management Ltd.",
-          "price": 1846.4,
+          "price": 1863.1,
           "mktcap": 0,
-          "r30": 6.9,
-          "r60": 25.8,
+          "r30": 8.3,
+          "r60": 26.2,
           "r90": 35.2,
-          "dist52": -7.4,
-          "drawdown": -7.4,
+          "dist52": -6.6,
+          "drawdown": -6.6,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 50.7,
-          "vcp_score": 41,
+          "final_score": 58.3,
+          "vcp_score": 53,
           "grade": "REJECT",
-          "rs_rating": 17.6
+          "rs_rating": 20.8
         },
         {
           "symbol": "CGCL",
           "company": "Capri Global Capital Ltd.",
-          "price": 258.89,
+          "price": 256.38,
           "mktcap": 0,
-          "r30": 19.2,
-          "r60": 41.9,
-          "r90": 39.9,
-          "dist52": -2.1,
-          "drawdown": -2.1,
-          "setup": "\ud83d\udd2e Potential BO",
-          "final_score": 50.4,
-          "vcp_score": 36,
+          "r30": 16.1,
+          "r60": 37.9,
+          "r90": 39.8,
+          "dist52": -3.1,
+          "drawdown": -3.1,
+          "setup": "\ud83e\uddf2 Pull Back",
+          "final_score": 52.0,
+          "vcp_score": 38,
           "grade": "REJECT",
-          "rs_rating": 23.6
+          "rs_rating": 26.9
+        },
+        {
+          "symbol": "POONAWALLA",
+          "company": "Poonawalla Fincorp Ltd.",
+          "price": 477.3,
+          "mktcap": 0,
+          "r30": 18.0,
+          "r60": 19.3,
+          "r90": 13.0,
+          "dist52": -16.3,
+          "drawdown": -1.8,
+          "setup": "\ud83c\udfaf Mature VCP",
+          "final_score": 51.9,
+          "vcp_score": 52,
+          "grade": "REJECT",
+          "rs_rating": 6.0
         },
         {
           "symbol": "PAYTM",
           "company": "One 97 Communications Ltd.",
-          "price": 1361.1,
+          "price": 1348.0,
           "mktcap": 0,
-          "r30": 21.5,
-          "r60": 21.4,
-          "r90": 17.2,
-          "dist52": -3.3,
-          "drawdown": -3.3,
+          "r30": 23.2,
+          "r60": 16.9,
+          "r90": 15.5,
+          "dist52": -4.2,
+          "drawdown": -4.2,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 45.4,
+          "final_score": 45.5,
           "vcp_score": 30,
           "grade": "REJECT",
-          "rs_rating": 12.1
+          "rs_rating": 12.8
         }
       ]
     },
     "Diversified": {
       "universe": 5,
-      "vcp_count": 2,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "vcp_count": 1,
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
-        {
-          "symbol": "JUBLINGREA",
-          "company": "Jubilant Ingrevia Ltd.",
-          "price": 758.45,
-          "mktcap": 0,
-          "r30": 16.8,
-          "r60": 4.4,
-          "r90": 13.7,
-          "dist52": -10.3,
-          "drawdown": -0.5,
-          "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 44.1,
-          "vcp_score": 36,
-          "grade": "REJECT",
-          "rs_rating": 4.4
-        },
         {
           "symbol": "GODREJIND",
           "company": "Godrej Industries Ltd.",
-          "price": 1339.3,
+          "price": 1334.7,
           "mktcap": 0,
-          "r30": 27.3,
-          "r60": 18.1,
-          "r90": 45.6,
-          "dist52": -7.2,
-          "drawdown": -7.2,
+          "r30": 20.1,
+          "r60": 18.7,
+          "r90": 43.8,
+          "dist52": -7.5,
+          "drawdown": -7.5,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 43.7,
+          "final_score": 44.0,
           "vcp_score": 29,
           "grade": "REJECT",
-          "rs_rating": 19.3
+          "rs_rating": 22.1
         }
       ]
     },
     "Capital Goods": {
       "universe": 36,
-      "vcp_count": 4,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "vcp_count": 3,
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "HONAUT",
           "company": "Honeywell Automation India Ltd.",
-          "price": 39015.0,
+          "price": 38955.0,
           "mktcap": 0,
-          "r30": 7.2,
-          "r60": 34.2,
-          "r90": 19.0,
-          "dist52": -5.0,
-          "drawdown": -3.6,
+          "r30": 5.1,
+          "r60": 29.4,
+          "r90": 20.0,
+          "dist52": -4.9,
+          "drawdown": -3.5,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 67.6,
-          "vcp_score": 68,
-          "grade": "C",
-          "rs_rating": 6.7
-        },
-        {
-          "symbol": "RRKABEL",
-          "company": "R R Kabel Ltd.",
-          "price": 2403.9,
-          "mktcap": 0,
-          "r30": 8.8,
-          "r60": 25.6,
-          "r90": 64.0,
-          "dist52": -5.7,
-          "drawdown": -5.7,
-          "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 60.4,
-          "vcp_score": 50,
-          "grade": "C",
-          "rs_rating": 37.0
+          "final_score": 58.3,
+          "vcp_score": 52,
+          "grade": "REJECT",
+          "rs_rating": 9.1
         },
         {
           "symbol": "SYRMA",
           "company": "Syrma SGS Technology Ltd.",
-          "price": 1423.9,
+          "price": 1359.1,
           "mktcap": 0,
-          "r30": 9.7,
-          "r60": 44.7,
-          "r90": 47.8,
-          "dist52": -6.2,
-          "drawdown": -6.2,
+          "r30": 0.9,
+          "r60": 35.4,
+          "r90": 37.8,
+          "dist52": -10.5,
+          "drawdown": -10.5,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 59.6,
-          "vcp_score": 47,
+          "final_score": 56.8,
+          "vcp_score": 49,
           "grade": "REJECT",
-          "rs_rating": 44.7
+          "rs_rating": 45.3
         },
         {
           "symbol": "KIRLOSENG",
           "company": "Kirloskar Oil Eng Ltd.",
-          "price": 2396.1,
+          "price": 2255.7,
           "mktcap": 0,
-          "r30": 20.5,
-          "r60": 44.3,
-          "r90": 46.1,
-          "dist52": -11.9,
-          "drawdown": -11.9,
-          "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 52.8,
-          "vcp_score": 37,
+          "r30": 13.7,
+          "r60": 35.6,
+          "r90": 35.6,
+          "dist52": -17.1,
+          "drawdown": -17.1,
+          "setup": "\ud83d\udc40 Watch",
+          "final_score": 51.7,
+          "vcp_score": 42,
           "grade": "REJECT",
-          "rs_rating": 54.5
+          "rs_rating": 54.1
         }
       ]
     },
     "Construction Materials": {
       "universe": 9,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Power": {
       "universe": 21,
       "vcp_count": 2,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "ACMESOLAR",
           "company": "ACME Solar Holdings Ltd.",
-          "price": 394.0,
+          "price": 385.25,
           "mktcap": 0,
-          "r30": 18.7,
-          "r60": 39.3,
-          "r90": 31.8,
-          "dist52": -1.2,
-          "drawdown": -1.2,
-          "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 61.6,
-          "vcp_score": 51,
-          "grade": "C",
-          "rs_rating": 24.8
+          "r30": 16.1,
+          "r60": 36.8,
+          "r90": 30.0,
+          "dist52": -3.4,
+          "drawdown": -3.4,
+          "setup": "\ud83e\uddf2 Pull Back",
+          "final_score": 58.4,
+          "vcp_score": 45,
+          "grade": "REJECT",
+          "rs_rating": 28.0
         },
         {
           "symbol": "ADANIENSOL",
           "company": "Adani Energy Solutions Ltd.",
-          "price": 1689.5,
+          "price": 1722.6,
           "mktcap": 0,
-          "r30": 13.3,
-          "r60": 27.1,
-          "r90": 34.2,
-          "dist52": -3.1,
-          "drawdown": -3.1,
-          "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 53.9,
-          "vcp_score": 36,
+          "r30": 13.1,
+          "r60": 28.0,
+          "r90": 36.1,
+          "dist52": -2.0,
+          "drawdown": -2.0,
+          "setup": "\ud83c\udf31 Early VCP",
+          "final_score": 58.4,
+          "vcp_score": 42,
           "grade": "REJECT",
-          "rs_rating": 35.7
+          "rs_rating": 43.1
         }
       ]
     },
     "Metals & Mining": {
       "universe": 28,
-      "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
-      "stocks": [
-        {
-          "symbol": "WELCORP",
-          "company": "Welspun Corp Ltd.",
-          "price": 1684.0,
-          "mktcap": 0,
-          "r30": 21.2,
-          "r60": 31.9,
-          "r90": 56.9,
-          "dist52": -0.9,
-          "drawdown": -0.9,
-          "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 60.6,
-          "vcp_score": 45,
-          "grade": "C",
-          "rs_rating": 47.0
-        }
-      ]
+      "vcp_count": 0,
+      "scan_time": "17 Jul 2026  11:41 AM",
+      "stocks": []
     },
     "Banks": {
       "universe": 26,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "J&KBANK",
           "company": "Jammu & Kashmir Bank Ltd.",
-          "price": 177.73,
+          "price": 182.69,
           "mktcap": 0,
-          "r30": 9.1,
-          "r60": 33.3,
-          "r90": 35.4,
-          "dist52": -11.9,
-          "drawdown": -11.9,
+          "r30": 12.1,
+          "r60": 36.0,
+          "r90": 38.2,
+          "dist52": -9.4,
+          "drawdown": -9.4,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 44.5,
-          "vcp_score": 28,
+          "final_score": 49.6,
+          "vcp_score": 32,
           "grade": "REJECT",
-          "rs_rating": 31.1
+          "rs_rating": 36.9
         }
       ]
     },
     "Fast Moving Consumer Goods": {
       "universe": 28,
-      "vcp_count": 3,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "vcp_count": 2,
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "HONASA",
           "company": "Honasa Consumer Ltd.",
-          "price": 470.1,
+          "price": 466.95,
           "mktcap": 0,
-          "r30": 17.1,
-          "r60": 32.6,
-          "r90": 37.2,
-          "dist52": -4.3,
-          "drawdown": -4.3,
+          "r30": 14.9,
+          "r60": 30.9,
+          "r90": 32.8,
+          "dist52": -5.0,
+          "drawdown": -5.0,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 70.3,
+          "final_score": 70.7,
           "vcp_score": 65,
           "grade": "B",
-          "rs_rating": 27.6
+          "rs_rating": 31.1
         },
         {
           "symbol": "ZYDUSWELL",
           "company": "Zydus Wellness Ltd.",
-          "price": 601.9,
+          "price": 586.45,
           "mktcap": 0,
-          "r30": 18.9,
-          "r60": 18.2,
-          "r90": 20.5,
-          "dist52": -1.0,
-          "drawdown": -1.0,
-          "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 65.6,
+          "r30": 16.4,
+          "r60": 14.6,
+          "r90": 16.0,
+          "dist52": -3.4,
+          "drawdown": -3.4,
+          "setup": "\ud83e\uddf2 Pull Back",
+          "final_score": 65.8,
           "vcp_score": 59,
           "grade": "C",
-          "rs_rating": 18.6
-        },
-        {
-          "symbol": "NYKAA",
-          "company": "FSN E-Commerce Ventures Ltd.",
-          "price": 324.85,
-          "mktcap": 0,
-          "r30": 15.6,
-          "r60": 19.7,
-          "r90": 22.8,
-          "dist52": -2.2,
-          "drawdown": -2.2,
-          "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 57.1,
-          "vcp_score": 45,
-          "grade": "REJECT",
-          "rs_rating": 17.8
+          "rs_rating": 19.7
         }
       ]
     },
     "Specialty Chemicals": {
       "universe": 20,
       "vcp_count": 2,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "ACUTAAS",
           "company": "Acutaas Chemicals Ltd.",
-          "price": 3583.8,
+          "price": 3619.4,
           "mktcap": 0,
-          "r30": 19.5,
-          "r60": 24.2,
-          "r90": 48.7,
-          "dist52": -4.2,
-          "drawdown": -4.2,
+          "r30": 15.4,
+          "r60": 25.6,
+          "r90": 52.4,
+          "dist52": -3.2,
+          "drawdown": -3.2,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 71.6,
-          "vcp_score": 60,
+          "final_score": 74.6,
+          "vcp_score": 63,
           "grade": "B",
-          "rs_rating": 63.0
+          "rs_rating": 73.0
         },
         {
           "symbol": "HSCL",
           "company": "Himadri Speciality Chemical Ltd.",
-          "price": 722.35,
+          "price": 741.55,
           "mktcap": 0,
-          "r30": 3.0,
-          "r60": 28.3,
-          "r90": 47.9,
-          "dist52": -1.6,
-          "drawdown": -1.6,
+          "r30": 7.4,
+          "r60": 27.7,
+          "r90": 46.6,
+          "dist52": -0.4,
+          "drawdown": -0.4,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 64.8,
-          "vcp_score": 56,
+          "final_score": 60.5,
+          "vcp_score": 48,
           "grade": "C",
-          "rs_rating": 26.4
+          "rs_rating": 31.1
         }
       ]
     },
     "Pharma": {
       "universe": 37,
-      "vcp_count": 4,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "vcp_count": 2,
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "CAPLIPOINT",
           "company": "Caplin Point Laboratories Ltd.",
-          "price": 2671.5,
+          "price": 2614.2,
           "mktcap": 0,
-          "r30": 14.4,
-          "r60": 31.3,
-          "r90": 51.2,
-          "dist52": -1.0,
-          "drawdown": -1.0,
-          "setup": "\ud83c\udfaf Mature VCP",
-          "final_score": 71.5,
-          "vcp_score": 71,
+          "r30": 10.8,
+          "r60": 29.9,
+          "r90": 49.3,
+          "dist52": -3.1,
+          "drawdown": -3.1,
+          "setup": "\ud83e\uddf2 Pull Back",
+          "final_score": 70.0,
+          "vcp_score": 68,
           "grade": "B",
-          "rs_rating": 24.2
-        },
-        {
-          "symbol": "GLAND",
-          "company": "Gland Pharma Ltd.",
-          "price": 2529.4,
-          "mktcap": 0,
-          "r30": 15.1,
-          "r60": 12.4,
-          "r90": 40.9,
-          "dist52": -1.7,
-          "drawdown": -1.7,
-          "setup": "\ud83c\udfaf Mature VCP",
-          "final_score": 67.4,
-          "vcp_score": 61,
-          "grade": "C",
-          "rs_rating": 23.2
-        },
-        {
-          "symbol": "GRANULES",
-          "company": "Granules India Ltd.",
-          "price": 903.25,
-          "mktcap": 0,
-          "r30": 21.8,
-          "r60": 17.8,
-          "r90": 35.9,
-          "dist52": -0.7,
-          "drawdown": -0.7,
-          "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 55.1,
-          "vcp_score": 39,
-          "grade": "REJECT",
-          "rs_rating": 31.1
+          "rs_rating": 26.9
         },
         {
           "symbol": "IPCALAB",
           "company": "Ipca Laboratories Ltd.",
-          "price": 1890.2,
+          "price": 1900.6,
           "mktcap": 0,
-          "r30": 22.8,
-          "r60": 14.1,
+          "r30": 23.1,
+          "r60": 15.4,
           "r90": 28.7,
-          "dist52": -1.0,
-          "drawdown": -1.0,
+          "dist52": -2.3,
+          "drawdown": -2.3,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 49.6,
+          "final_score": 50.1,
           "vcp_score": 33,
           "grade": "REJECT",
-          "rs_rating": 15.4
+          "rs_rating": 18.9
         }
       ]
     },
     "Realty": {
       "universe": 12,
       "vcp_count": 2,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "GODREJPROP",
           "company": "Godrej Properties Ltd.",
-          "price": 2090.3,
+          "price": 2102.1,
           "mktcap": 0,
-          "r30": 16.9,
-          "r60": 21.9,
-          "r90": 18.8,
-          "dist52": -13.2,
-          "drawdown": -3.6,
+          "r30": 16.1,
+          "r60": 22.3,
+          "r90": 16.5,
+          "dist52": -12.7,
+          "drawdown": -3.1,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 51.4,
+          "final_score": 51.6,
           "vcp_score": 48,
           "grade": "REJECT",
-          "rs_rating": 5.5
+          "rs_rating": 6.7
         },
         {
           "symbol": "LODHA",
           "company": "Lodha Developers Ltd.",
-          "price": 1178.1,
+          "price": 1188.75,
           "mktcap": 0,
-          "r30": 28.8,
-          "r60": 32.0,
-          "r90": 37.5,
-          "dist52": -19.1,
-          "drawdown": -3.8,
+          "r30": 28.7,
+          "r60": 35.1,
+          "r90": 35.7,
+          "dist52": -18.4,
+          "drawdown": -3.0,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 42.5,
+          "final_score": 42.8,
           "vcp_score": 36,
           "grade": "REJECT",
-          "rs_rating": 7.6
+          "rs_rating": 9.7
         }
       ]
     },
     "Oil Gas & Consumable Fuels": {
       "universe": 19,
-      "vcp_count": 3,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "vcp_count": 2,
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "AEGISLOG",
           "company": "Aegis Logistics Ltd.",
-          "price": 1297.5,
+          "price": 1349.1,
           "mktcap": 0,
-          "r30": 29.5,
-          "r60": 86.2,
-          "r90": 76.2,
-          "dist52": -8.4,
-          "drawdown": -8.4,
+          "r30": 34.7,
+          "r60": 91.0,
+          "r90": 86.5,
+          "dist52": -4.7,
+          "drawdown": -4.7,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 61.3,
-          "vcp_score": 54,
+          "final_score": 67.2,
+          "vcp_score": 58,
           "grade": "C",
-          "rs_rating": 41.0
-        },
-        {
-          "symbol": "CHENNPETRO",
-          "company": "Chennai Petroleum Corporation Ltd.",
-          "price": 1240.8,
-          "mktcap": 0,
-          "r30": 6.5,
-          "r60": 26.3,
-          "r90": 23.2,
-          "dist52": -3.0,
-          "drawdown": -3.0,
-          "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 45.5,
-          "vcp_score": 24,
-          "grade": "REJECT",
-          "rs_rating": 25.8
+          "rs_rating": 53.4
         },
         {
           "symbol": "AEGISVOPAK",
           "company": "Aegis Vopak Terminals Ltd.",
-          "price": 269.26,
+          "price": 271.24,
           "mktcap": 0,
-          "r30": 13.2,
-          "r60": 35.3,
-          "r90": 36.7,
-          "dist52": -13.6,
-          "drawdown": -13.6,
+          "r30": 11.7,
+          "r60": 36.0,
+          "r90": 36.9,
+          "dist52": -12.9,
+          "drawdown": -12.9,
           "setup": "\ud83d\udc40 Watch",
-          "final_score": 36.4,
+          "final_score": 36.8,
           "vcp_score": 25,
           "grade": "REJECT",
-          "rs_rating": 11.7
+          "rs_rating": 15.1
         }
       ]
     },
     "Consumer Services": {
       "universe": 20,
       "vcp_count": 2,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "CARTRADE",
           "company": "Cartrade Tech Ltd.",
-          "price": 2812.6,
+          "price": 2699.4,
           "mktcap": 0,
-          "r30": 7.6,
-          "r60": 55.0,
-          "r90": 58.9,
-          "dist52": -14.5,
-          "drawdown": -8.7,
+          "r30": 4.4,
+          "r60": 48.0,
+          "r90": 52.7,
+          "dist52": -18.0,
+          "drawdown": -12.4,
           "setup": "\ud83d\udc40 Watch",
-          "final_score": 56.9,
-          "vcp_score": 54,
+          "final_score": 50.5,
+          "vcp_score": 50,
           "grade": "REJECT",
-          "rs_rating": 20.9
+          "rs_rating": 20.8
         },
         {
           "symbol": "NAUKRI",
           "company": "Info Edge (India) Ltd.",
-          "price": 1207.0,
+          "price": 1187.25,
           "mktcap": 0,
-          "r30": 18.7,
-          "r60": 29.3,
-          "r90": 13.0,
-          "dist52": -18.2,
-          "drawdown": -1.8,
+          "r30": 17.9,
+          "r60": 26.0,
+          "r90": 10.2,
+          "dist52": -19.5,
+          "drawdown": -3.4,
           "setup": "\ud83c\udf31 Early VCP",
           "final_score": 36.0,
           "vcp_score": 30,
@@ -591,1316 +462,1281 @@
     "Textiles": {
       "universe": 7,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Construction": {
       "universe": 10,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "CEMPRO",
           "company": "Cemindia Projects Ltd.",
-          "price": 1603.2,
+          "price": 1615.0,
           "mktcap": 0,
           "r30": 35.4,
-          "r60": 85.1,
-          "r90": 152.1,
-          "dist52": -2.7,
-          "drawdown": -2.7,
-          "setup": "\ud83d\udd2e Potential BO",
-          "final_score": 66.2,
-          "vcp_score": 50,
-          "grade": "C",
-          "rs_rating": 68.1
+          "r60": 90.1,
+          "r90": 151.0,
+          "dist52": -2.0,
+          "drawdown": -2.0,
+          "setup": "\ud83c\udf31 Early VCP",
+          "final_score": 70.8,
+          "vcp_score": 56,
+          "grade": "B",
+          "rs_rating": 77.1
         }
       ]
     },
     "Media Entertainment & Publication": {
       "universe": 5,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Automobile and Auto Components": {
       "universe": 36,
-      "vcp_count": 3,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "vcp_count": 5,
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "MINDACORP",
           "company": "Minda Corporation Ltd.",
-          "price": 682.95,
+          "price": 678.3,
           "mktcap": 0,
-          "r30": 6.0,
-          "r60": 31.3,
-          "r90": 28.2,
-          "dist52": -4.3,
-          "drawdown": -4.3,
+          "r30": 4.2,
+          "r60": 31.1,
+          "r90": 26.1,
+          "dist52": -5.0,
+          "drawdown": -5.0,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 63.6,
+          "final_score": 63.9,
           "vcp_score": 63,
           "grade": "C",
-          "rs_rating": 14.6
+          "rs_rating": 17.6
         },
         {
-          "symbol": "GABRIEL",
-          "company": "Gabriel India Ltd.",
-          "price": 1363.2,
+          "symbol": "EXIDEIND",
+          "company": "Exide Industries Ltd.",
+          "price": 435.2,
           "mktcap": 0,
-          "r30": 21.4,
-          "r60": 24.5,
-          "r90": 33.9,
-          "dist52": -1.6,
-          "drawdown": -0.8,
+          "r30": 13.6,
+          "r60": 28.8,
+          "r90": 31.3,
+          "dist52": -0.3,
+          "drawdown": -0.3,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 55.3,
-          "vcp_score": 45,
-          "grade": "REJECT",
-          "rs_rating": 18.9
+          "final_score": 60.4,
+          "vcp_score": 54,
+          "grade": "C",
+          "rs_rating": 16.7
         },
         {
           "symbol": "ATHERENERG",
           "company": "Ather Energy Ltd.",
-          "price": 1267.1,
+          "price": 1282.2,
           "mktcap": 0,
-          "r30": 28.0,
-          "r60": 39.2,
-          "r90": 42.5,
-          "dist52": -5.8,
-          "drawdown": -5.8,
+          "r30": 32.3,
+          "r60": 41.0,
+          "r90": 43.1,
+          "dist52": -4.7,
+          "drawdown": -4.7,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 53.6,
-          "vcp_score": 32,
+          "final_score": 59.0,
+          "vcp_score": 36,
           "grade": "REJECT",
-          "rs_rating": 69.6
+          "rs_rating": 78.6
+        },
+        {
+          "symbol": "SONACOMS",
+          "company": "Sona BLW Precision Forgings Ltd.",
+          "price": 704.85,
+          "mktcap": 0,
+          "r30": 16.8,
+          "r60": 20.1,
+          "r90": 21.6,
+          "dist52": -0.5,
+          "drawdown": -0.5,
+          "setup": "\ud83c\udf31 Early VCP",
+          "final_score": 57.0,
+          "vcp_score": 43,
+          "grade": "REJECT",
+          "rs_rating": 26.7
+        },
+        {
+          "symbol": "GABRIEL",
+          "company": "Gabriel India Ltd.",
+          "price": 1336.6,
+          "mktcap": 0,
+          "r30": 17.1,
+          "r60": 22.7,
+          "r90": 31.6,
+          "dist52": -3.5,
+          "drawdown": -2.7,
+          "setup": "\ud83c\udf31 Early VCP",
+          "final_score": 55.5,
+          "vcp_score": 45,
+          "grade": "REJECT",
+          "rs_rating": 20.8
         }
       ]
     },
     "Consumer Durables": {
       "universe": 14,
       "vcp_count": 2,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "KALYANKJIL",
           "company": "Kalyan Jewellers India Ltd.",
-          "price": 546.6,
+          "price": 574.4,
           "mktcap": 0,
-          "r30": 42.7,
-          "r60": 58.8,
-          "r90": 30.9,
-          "dist52": -11.3,
-          "drawdown": -1.6,
+          "r30": 50.0,
+          "r60": 67.2,
+          "r90": 38.4,
+          "dist52": -6.7,
+          "drawdown": -0.5,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 40.8,
+          "final_score": 43.5,
           "vcp_score": 33,
           "grade": "REJECT",
-          "rs_rating": 7.9
+          "rs_rating": 14.2
         },
         {
           "symbol": "DIXON",
           "company": "Dixon Technologies (India) Ltd.",
-          "price": 14507.0,
+          "price": 14329.0,
           "mktcap": 0,
-          "r30": 13.0,
-          "r60": 31.3,
-          "r90": 29.4,
-          "dist52": -21.5,
-          "drawdown": -1.2,
+          "r30": 13.1,
+          "r60": 30.3,
+          "r90": 27.2,
+          "dist52": -22.4,
+          "drawdown": -2.4,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 39.6,
+          "final_score": 39.8,
           "vcp_score": 34,
           "grade": "REJECT",
-          "rs_rating": 10.2
+          "rs_rating": 11.7
         }
       ]
     },
     "Hospitals & Healthcare": {
       "universe": 11,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Services": {
       "universe": 14,
-      "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "vcp_count": 2,
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "JSWINFRA",
           "company": "JSW Infrastructure Ltd.",
-          "price": 339.3,
+          "price": 342.15,
           "mktcap": 0,
-          "r30": 13.7,
-          "r60": 27.9,
-          "r90": 22.2,
-          "dist52": -4.6,
-          "drawdown": -4.6,
+          "r30": 11.1,
+          "r60": 30.5,
+          "r90": 24.1,
+          "dist52": -3.8,
+          "drawdown": -3.8,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 50.7,
-          "vcp_score": 39,
+          "final_score": 57.2,
+          "vcp_score": 49,
           "grade": "REJECT",
-          "rs_rating": 11.1
+          "rs_rating": 14.5
+        },
+        {
+          "symbol": "ECLERX",
+          "company": "eClerx Services Ltd.",
+          "price": 1979.8,
+          "mktcap": 0,
+          "r30": 36.7,
+          "r60": 30.4,
+          "r90": 26.6,
+          "dist52": -20.7,
+          "drawdown": -2.2,
+          "setup": "\ud83c\udf31 Early VCP",
+          "final_score": 37.3,
+          "vcp_score": 34,
+          "grade": "REJECT",
+          "rs_rating": 7.5
         }
       ]
     },
     "Agrochemicals & Fertilizers": {
       "universe": 8,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "SUMICHEM",
           "company": "Sumitomo Chemical India Ltd.",
-          "price": 540.55,
+          "price": 538.55,
           "mktcap": 0,
-          "r30": 16.4,
-          "r60": 15.3,
-          "r90": 21.1,
-          "dist52": -18.7,
-          "drawdown": -1.7,
+          "r30": 19.3,
+          "r60": 17.2,
+          "r90": 22.7,
+          "dist52": -18.8,
+          "drawdown": -1.8,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 37.2,
-          "vcp_score": 27,
+          "final_score": 44.8,
+          "vcp_score": 39,
           "grade": "REJECT",
-          "rs_rating": 8.6
+          "rs_rating": 11.7
         }
       ]
     },
     "Defense": {
       "universe": 8,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Telecommunication": {
       "universe": 7,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Information Technology": {
       "universe": 25,
       "vcp_count": 3,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "HFCL",
           "company": "HFCL Ltd.",
-          "price": 224.38,
+          "price": 213.17,
           "mktcap": 0,
-          "r30": 18.0,
-          "r60": 62.4,
-          "r90": 140.5,
-          "dist52": -2.2,
-          "drawdown": -2.2,
-          "setup": "\ud83d\udd2e Potential BO",
-          "final_score": 77.2,
-          "vcp_score": 62,
+          "r30": 6.8,
+          "r60": 53.0,
+          "r90": 117.9,
+          "dist52": -7.1,
+          "drawdown": -7.1,
+          "setup": "\ud83e\uddf2 Pull Back",
+          "final_score": 70.8,
+          "vcp_score": 58,
           "grade": "B",
           "rs_rating": 100.0
         },
         {
           "symbol": "OFSS",
           "company": "Oracle Financial Services Software Ltd.",
-          "price": 11681.0,
+          "price": 11771.0,
           "mktcap": 0,
-          "r30": 23.7,
-          "r60": 21.1,
-          "r90": 48.7,
-          "dist52": -2.3,
-          "drawdown": -2.3,
-          "setup": "\ud83d\udd2e Potential BO",
-          "final_score": 58.2,
-          "vcp_score": 45,
-          "grade": "REJECT",
-          "rs_rating": 26.5
+          "r30": 25.2,
+          "r60": 21.3,
+          "r90": 52.7,
+          "dist52": -1.6,
+          "drawdown": -1.6,
+          "setup": "\ud83c\udf31 Early VCP",
+          "final_score": 60.7,
+          "vcp_score": 48,
+          "grade": "C",
+          "rs_rating": 32.6
         },
         {
           "symbol": "REDINGTON",
           "company": "Redington Ltd.",
-          "price": 276.1,
+          "price": 275.05,
           "mktcap": 0,
-          "r30": 13.4,
-          "r60": 27.5,
-          "r90": 24.0,
-          "dist52": -10.3,
-          "drawdown": -4.2,
+          "r30": 3.4,
+          "r60": 25.4,
+          "r90": 23.7,
+          "dist52": -10.6,
+          "drawdown": -4.6,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 54.2,
+          "final_score": 54.4,
           "vcp_score": 56,
           "grade": "REJECT",
-          "rs_rating": 5.3
+          "rs_rating": 6.4
         }
       ]
     },
     "Railways": {
       "universe": 8,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     }
   },
   "industries": {
     "Finance-Investment Mgmt IN": {
       "universe": 13,
-      "vcp_count": 2,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "vcp_count": 1,
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
-        {
-          "symbol": "ANANDRATHI",
-          "company": "Anand Rathi Wealth Ltd.",
-          "price": 2079.6,
-          "mktcap": 0,
-          "r30": 16.4,
-          "r60": 16.6,
-          "r90": 13.7,
-          "dist52": -4.4,
-          "drawdown": -4.4,
-          "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 59.5,
-          "vcp_score": 48,
-          "grade": "REJECT",
-          "rs_rating": 22.8
-        },
         {
           "symbol": "NUVAMA",
           "company": "Nuvama Wealth Management Ltd.",
-          "price": 1846.4,
+          "price": 1863.1,
           "mktcap": 0,
-          "r30": 6.9,
-          "r60": 25.8,
+          "r30": 8.3,
+          "r60": 26.2,
           "r90": 35.2,
-          "dist52": -7.4,
-          "drawdown": -7.4,
+          "dist52": -6.6,
+          "drawdown": -6.6,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 50.7,
-          "vcp_score": 41,
+          "final_score": 58.3,
+          "vcp_score": 53,
           "grade": "REJECT",
-          "rs_rating": 17.6
+          "rs_rating": 20.8
         }
       ]
     },
     "Diversified Operations IN": {
       "universe": 5,
-      "vcp_count": 2,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "vcp_count": 1,
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
-        {
-          "symbol": "JUBLINGREA",
-          "company": "Jubilant Ingrevia Ltd.",
-          "price": 758.45,
-          "mktcap": 0,
-          "r30": 16.8,
-          "r60": 4.4,
-          "r90": 13.7,
-          "dist52": -10.3,
-          "drawdown": -0.5,
-          "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 44.1,
-          "vcp_score": 36,
-          "grade": "REJECT",
-          "rs_rating": 4.4
-        },
         {
           "symbol": "GODREJIND",
           "company": "Godrej Industries Ltd.",
-          "price": 1339.3,
+          "price": 1334.7,
           "mktcap": 0,
-          "r30": 27.3,
-          "r60": 18.1,
-          "r90": 45.6,
-          "dist52": -7.2,
-          "drawdown": -7.2,
+          "r30": 20.1,
+          "r60": 18.7,
+          "r90": 43.8,
+          "dist52": -7.5,
+          "drawdown": -7.5,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 43.7,
+          "final_score": 44.0,
           "vcp_score": 29,
           "grade": "REJECT",
-          "rs_rating": 19.3
+          "rs_rating": 22.1
         }
       ]
     },
     "Electrical-Power/Equipmt IN": {
       "universe": 15,
-      "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
-      "stocks": [
-        {
-          "symbol": "RRKABEL",
-          "company": "R R Kabel Ltd.",
-          "price": 2403.9,
-          "mktcap": 0,
-          "r30": 8.8,
-          "r60": 25.6,
-          "r90": 64.0,
-          "dist52": -5.7,
-          "drawdown": -5.7,
-          "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 60.4,
-          "vcp_score": 50,
-          "grade": "C",
-          "rs_rating": 37.0
-        }
-      ]
+      "vcp_count": 0,
+      "scan_time": "17 Jul 2026  11:41 AM",
+      "stocks": []
     },
     "Bldg-Cement/Concrt/Ag IN": {
       "universe": 9,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Energy-Solar IN": {
       "universe": 3,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "ACMESOLAR",
           "company": "ACME Solar Holdings Ltd.",
-          "price": 394.0,
+          "price": 385.25,
           "mktcap": 0,
-          "r30": 18.7,
-          "r60": 39.3,
-          "r90": 31.8,
-          "dist52": -1.2,
-          "drawdown": -1.2,
-          "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 61.6,
-          "vcp_score": 51,
-          "grade": "C",
-          "rs_rating": 24.8
+          "r30": 16.1,
+          "r60": 36.8,
+          "r90": 30.0,
+          "dist52": -3.4,
+          "drawdown": -3.4,
+          "setup": "\ud83e\uddf2 Pull Back",
+          "final_score": 58.4,
+          "vcp_score": 45,
+          "grade": "REJECT",
+          "rs_rating": 28.0
         }
       ]
     },
     "Steel-Specialty Alloys IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Steel-Producers IN": {
       "universe": 16,
-      "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
-      "stocks": [
-        {
-          "symbol": "WELCORP",
-          "company": "Welspun Corp Ltd.",
-          "price": 1684.0,
-          "mktcap": 0,
-          "r30": 21.2,
-          "r60": 31.9,
-          "r90": 56.9,
-          "dist52": -0.9,
-          "drawdown": -0.9,
-          "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 60.6,
-          "vcp_score": 45,
-          "grade": "C",
-          "rs_rating": 47.0
-        }
-      ]
+      "vcp_count": 0,
+      "scan_time": "17 Jul 2026  11:41 AM",
+      "stocks": []
     },
     "Banks-Money Center IN": {
       "universe": 26,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "J&KBANK",
           "company": "Jammu & Kashmir Bank Ltd.",
-          "price": 177.73,
+          "price": 182.69,
           "mktcap": 0,
-          "r30": 9.1,
-          "r60": 33.3,
-          "r90": 35.4,
-          "dist52": -11.9,
-          "drawdown": -11.9,
+          "r30": 12.1,
+          "r60": 36.0,
+          "r90": 38.2,
+          "dist52": -9.4,
+          "drawdown": -9.4,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 44.5,
-          "vcp_score": 28,
+          "final_score": 49.6,
+          "vcp_score": 32,
           "grade": "REJECT",
-          "rs_rating": 31.1
+          "rs_rating": 36.9
         }
       ]
     },
     "Food-Packaged IN": {
       "universe": 5,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Finance-Mrtg&Rel Svc IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Chemicals-Specialty IN": {
       "universe": 17,
       "vcp_count": 2,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "ACUTAAS",
           "company": "Acutaas Chemicals Ltd.",
-          "price": 3583.8,
+          "price": 3619.4,
           "mktcap": 0,
-          "r30": 19.5,
-          "r60": 24.2,
-          "r90": 48.7,
-          "dist52": -4.2,
-          "drawdown": -4.2,
+          "r30": 15.4,
+          "r60": 25.6,
+          "r90": 52.4,
+          "dist52": -3.2,
+          "drawdown": -3.2,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 71.6,
-          "vcp_score": 60,
+          "final_score": 74.6,
+          "vcp_score": 63,
           "grade": "B",
-          "rs_rating": 63.0
+          "rs_rating": 73.0
         },
         {
           "symbol": "HSCL",
           "company": "Himadri Speciality Chemical Ltd.",
-          "price": 722.35,
+          "price": 741.55,
           "mktcap": 0,
-          "r30": 3.0,
-          "r60": 28.3,
-          "r90": 47.9,
-          "dist52": -1.6,
-          "drawdown": -1.6,
+          "r30": 7.4,
+          "r60": 27.7,
+          "r90": 46.6,
+          "dist52": -0.4,
+          "drawdown": -0.4,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 64.8,
-          "vcp_score": 56,
+          "final_score": 60.5,
+          "vcp_score": 48,
           "grade": "C",
-          "rs_rating": 26.4
+          "rs_rating": 31.1
         }
       ]
     },
     "Finance-Consumer Loans IN": {
       "universe": 22,
       "vcp_count": 2,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
-        {
-          "symbol": "POONAWALLA",
-          "company": "Poonawalla Fincorp Ltd.",
-          "price": 472.15,
-          "mktcap": 0,
-          "r30": 16.5,
-          "r60": 16.7,
-          "r90": 12.9,
-          "dist52": -17.2,
-          "drawdown": -2.8,
-          "setup": "\ud83c\udfaf Mature VCP",
-          "final_score": 51.7,
-          "vcp_score": 52,
-          "grade": "REJECT",
-          "rs_rating": 4.3
-        },
         {
           "symbol": "CGCL",
           "company": "Capri Global Capital Ltd.",
-          "price": 258.89,
+          "price": 256.38,
           "mktcap": 0,
-          "r30": 19.2,
-          "r60": 41.9,
-          "r90": 39.9,
-          "dist52": -2.1,
-          "drawdown": -2.1,
-          "setup": "\ud83d\udd2e Potential BO",
-          "final_score": 50.4,
-          "vcp_score": 36,
+          "r30": 16.1,
+          "r60": 37.9,
+          "r90": 39.8,
+          "dist52": -3.1,
+          "drawdown": -3.1,
+          "setup": "\ud83e\uddf2 Pull Back",
+          "final_score": 52.0,
+          "vcp_score": 38,
           "grade": "REJECT",
-          "rs_rating": 23.6
+          "rs_rating": 26.9
+        },
+        {
+          "symbol": "POONAWALLA",
+          "company": "Poonawalla Fincorp Ltd.",
+          "price": 477.3,
+          "mktcap": 0,
+          "r30": 18.0,
+          "r60": 19.3,
+          "r90": 13.0,
+          "dist52": -16.3,
+          "drawdown": -1.8,
+          "setup": "\ud83c\udfaf Mature VCP",
+          "final_score": 51.9,
+          "vcp_score": 52,
+          "grade": "REJECT",
+          "rs_rating": 6.0
         }
       ]
     },
     "Medical-Diversified IN": {
       "universe": 12,
-      "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
-      "stocks": [
-        {
-          "symbol": "GRANULES",
-          "company": "Granules India Ltd.",
-          "price": 903.25,
-          "mktcap": 0,
-          "r30": 21.8,
-          "r60": 17.8,
-          "r90": 35.9,
-          "dist52": -0.7,
-          "drawdown": -0.7,
-          "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 55.1,
-          "vcp_score": 39,
-          "grade": "REJECT",
-          "rs_rating": 31.1
-        }
-      ]
+      "vcp_count": 0,
+      "scan_time": "17 Jul 2026  11:41 AM",
+      "stocks": []
     },
     "Machinery-Constr/Mining IN": {
       "universe": 3,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Utility-Electric Power IN": {
       "universe": 10,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "ADANIENSOL",
           "company": "Adani Energy Solutions Ltd.",
-          "price": 1689.5,
+          "price": 1722.6,
           "mktcap": 0,
-          "r30": 13.3,
-          "r60": 27.1,
-          "r90": 34.2,
-          "dist52": -3.1,
-          "drawdown": -3.1,
-          "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 53.9,
-          "vcp_score": 36,
+          "r30": 13.1,
+          "r60": 28.0,
+          "r90": 36.1,
+          "dist52": -2.0,
+          "drawdown": -2.0,
+          "setup": "\ud83c\udf31 Early VCP",
+          "final_score": 58.4,
+          "vcp_score": 42,
           "grade": "REJECT",
-          "rs_rating": 35.7
+          "rs_rating": 43.1
         }
       ]
     },
     "Elec-Misc Products IN": {
       "universe": 5,
       "vcp_count": 2,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "HONAUT",
           "company": "Honeywell Automation India Ltd.",
-          "price": 39015.0,
+          "price": 38955.0,
           "mktcap": 0,
-          "r30": 7.2,
-          "r60": 34.2,
-          "r90": 19.0,
-          "dist52": -5.0,
-          "drawdown": -3.6,
+          "r30": 5.1,
+          "r60": 29.4,
+          "r90": 20.0,
+          "dist52": -4.9,
+          "drawdown": -3.5,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 67.6,
-          "vcp_score": 68,
-          "grade": "C",
-          "rs_rating": 6.7
+          "final_score": 58.3,
+          "vcp_score": 52,
+          "grade": "REJECT",
+          "rs_rating": 9.1
         },
         {
           "symbol": "SYRMA",
           "company": "Syrma SGS Technology Ltd.",
-          "price": 1423.9,
+          "price": 1359.1,
           "mktcap": 0,
-          "r30": 9.7,
-          "r60": 44.7,
-          "r90": 47.8,
-          "dist52": -6.2,
-          "drawdown": -6.2,
+          "r30": 0.9,
+          "r60": 35.4,
+          "r90": 37.8,
+          "dist52": -10.5,
+          "drawdown": -10.5,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 59.6,
-          "vcp_score": 47,
+          "final_score": 56.8,
+          "vcp_score": 49,
           "grade": "REJECT",
-          "rs_rating": 44.7
+          "rs_rating": 45.3
         }
       ]
     },
     "Energy-Alternative/Other IN": {
       "universe": 8,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Real Estate Dvlpmt/Ops IN": {
       "universe": 10,
       "vcp_count": 2,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "GODREJPROP",
           "company": "Godrej Properties Ltd.",
-          "price": 2090.3,
+          "price": 2102.1,
           "mktcap": 0,
-          "r30": 16.9,
-          "r60": 21.9,
-          "r90": 18.8,
-          "dist52": -13.2,
-          "drawdown": -3.6,
+          "r30": 16.1,
+          "r60": 22.3,
+          "r90": 16.5,
+          "dist52": -12.7,
+          "drawdown": -3.1,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 51.4,
+          "final_score": 51.6,
           "vcp_score": 48,
           "grade": "REJECT",
-          "rs_rating": 5.5
+          "rs_rating": 6.7
         },
         {
           "symbol": "LODHA",
           "company": "Lodha Developers Ltd.",
-          "price": 1178.1,
+          "price": 1188.75,
           "mktcap": 0,
-          "r30": 28.8,
-          "r60": 32.0,
-          "r90": 37.5,
-          "dist52": -19.1,
-          "drawdown": -3.8,
+          "r30": 28.7,
+          "r60": 35.1,
+          "r90": 35.7,
+          "dist52": -18.4,
+          "drawdown": -3.0,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 42.5,
+          "final_score": 42.8,
           "vcp_score": 36,
           "grade": "REJECT",
-          "rs_rating": 7.6
+          "rs_rating": 9.7
         }
       ]
     },
     "Utility-Gas Distribution IN": {
       "universe": 4,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Insurance-Brokers IN": {
       "universe": 4,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Retail-Department Stores IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Apparel-Clothing Mfg IN": {
       "universe": 7,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Finance-Property Reit IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Oil&Gas-Transprt/Pipelne IN": {
       "universe": 3,
       "vcp_count": 2,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "AEGISLOG",
           "company": "Aegis Logistics Ltd.",
-          "price": 1297.5,
+          "price": 1349.1,
           "mktcap": 0,
-          "r30": 29.5,
-          "r60": 86.2,
-          "r90": 76.2,
-          "dist52": -8.4,
-          "drawdown": -8.4,
+          "r30": 34.7,
+          "r60": 91.0,
+          "r90": 86.5,
+          "dist52": -4.7,
+          "drawdown": -4.7,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 61.3,
-          "vcp_score": 54,
+          "final_score": 67.2,
+          "vcp_score": 58,
           "grade": "C",
-          "rs_rating": 41.0
+          "rs_rating": 53.4
         },
         {
           "symbol": "AEGISVOPAK",
           "company": "Aegis Vopak Terminals Ltd.",
-          "price": 269.26,
+          "price": 271.24,
           "mktcap": 0,
-          "r30": 13.2,
-          "r60": 35.3,
-          "r90": 36.7,
-          "dist52": -13.6,
-          "drawdown": -13.6,
+          "r30": 11.7,
+          "r60": 36.0,
+          "r90": 36.9,
+          "dist52": -12.9,
+          "drawdown": -12.9,
           "setup": "\ud83d\udc40 Watch",
-          "final_score": 36.4,
+          "final_score": 36.8,
           "vcp_score": 25,
           "grade": "REJECT",
-          "rs_rating": 11.7
+          "rs_rating": 15.1
         }
       ]
     },
     "Bldg-Heavy Construction IN": {
       "universe": 10,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "CEMPRO",
           "company": "Cemindia Projects Ltd.",
-          "price": 1603.2,
+          "price": 1615.0,
           "mktcap": 0,
           "r30": 35.4,
-          "r60": 85.1,
-          "r90": 152.1,
-          "dist52": -2.7,
-          "drawdown": -2.7,
-          "setup": "\ud83d\udd2e Potential BO",
-          "final_score": 66.2,
-          "vcp_score": 50,
-          "grade": "C",
-          "rs_rating": 68.1
+          "r60": 90.1,
+          "r90": 151.0,
+          "dist52": -2.0,
+          "drawdown": -2.0,
+          "setup": "\ud83c\udf31 Early VCP",
+          "final_score": 70.8,
+          "vcp_score": 56,
+          "grade": "B",
+          "rs_rating": 77.1
         }
       ]
     },
     "Comml Svcs-Advertising IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Medical-Generic Drugs IN": {
       "universe": 14,
-      "vcp_count": 3,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "vcp_count": 2,
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "CAPLIPOINT",
           "company": "Caplin Point Laboratories Ltd.",
-          "price": 2671.5,
+          "price": 2614.2,
           "mktcap": 0,
-          "r30": 14.4,
-          "r60": 31.3,
-          "r90": 51.2,
-          "dist52": -1.0,
-          "drawdown": -1.0,
-          "setup": "\ud83c\udfaf Mature VCP",
-          "final_score": 71.5,
-          "vcp_score": 71,
+          "r30": 10.8,
+          "r60": 29.9,
+          "r90": 49.3,
+          "dist52": -3.1,
+          "drawdown": -3.1,
+          "setup": "\ud83e\uddf2 Pull Back",
+          "final_score": 70.0,
+          "vcp_score": 68,
           "grade": "B",
-          "rs_rating": 24.2
-        },
-        {
-          "symbol": "GLAND",
-          "company": "Gland Pharma Ltd.",
-          "price": 2529.4,
-          "mktcap": 0,
-          "r30": 15.1,
-          "r60": 12.4,
-          "r90": 40.9,
-          "dist52": -1.7,
-          "drawdown": -1.7,
-          "setup": "\ud83c\udfaf Mature VCP",
-          "final_score": 67.4,
-          "vcp_score": 61,
-          "grade": "C",
-          "rs_rating": 23.2
+          "rs_rating": 26.9
         },
         {
           "symbol": "IPCALAB",
           "company": "Ipca Laboratories Ltd.",
-          "price": 1890.2,
+          "price": 1900.6,
           "mktcap": 0,
-          "r30": 22.8,
-          "r60": 14.1,
+          "r30": 23.1,
+          "r60": 15.4,
           "r90": 28.7,
-          "dist52": -1.0,
-          "drawdown": -1.0,
+          "dist52": -2.3,
+          "drawdown": -2.3,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 49.6,
+          "final_score": 50.1,
           "vcp_score": 33,
           "grade": "REJECT",
-          "rs_rating": 15.4
+          "rs_rating": 18.9
         }
       ]
     },
     "Beverages-Alcoholic IN": {
       "universe": 4,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Auto/Truck-Original Eqp IN": {
       "universe": 15,
-      "vcp_count": 2,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "vcp_count": 4,
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "MINDACORP",
           "company": "Minda Corporation Ltd.",
-          "price": 682.95,
+          "price": 678.3,
           "mktcap": 0,
-          "r30": 6.0,
-          "r60": 31.3,
-          "r90": 28.2,
-          "dist52": -4.3,
-          "drawdown": -4.3,
+          "r30": 4.2,
+          "r60": 31.1,
+          "r90": 26.1,
+          "dist52": -5.0,
+          "drawdown": -5.0,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 63.6,
+          "final_score": 63.9,
           "vcp_score": 63,
           "grade": "C",
-          "rs_rating": 14.6
+          "rs_rating": 17.6
+        },
+        {
+          "symbol": "EXIDEIND",
+          "company": "Exide Industries Ltd.",
+          "price": 435.2,
+          "mktcap": 0,
+          "r30": 13.6,
+          "r60": 28.8,
+          "r90": 31.3,
+          "dist52": -0.3,
+          "drawdown": -0.3,
+          "setup": "\ud83c\udf31 Early VCP",
+          "final_score": 60.4,
+          "vcp_score": 54,
+          "grade": "C",
+          "rs_rating": 16.7
+        },
+        {
+          "symbol": "SONACOMS",
+          "company": "Sona BLW Precision Forgings Ltd.",
+          "price": 704.85,
+          "mktcap": 0,
+          "r30": 16.8,
+          "r60": 20.1,
+          "r90": 21.6,
+          "dist52": -0.5,
+          "drawdown": -0.5,
+          "setup": "\ud83c\udf31 Early VCP",
+          "final_score": 57.0,
+          "vcp_score": 43,
+          "grade": "REJECT",
+          "rs_rating": 26.7
         },
         {
           "symbol": "GABRIEL",
           "company": "Gabriel India Ltd.",
-          "price": 1363.2,
+          "price": 1336.6,
           "mktcap": 0,
-          "r30": 21.4,
-          "r60": 24.5,
-          "r90": 33.9,
-          "dist52": -1.6,
-          "drawdown": -0.8,
+          "r30": 17.1,
+          "r60": 22.7,
+          "r90": 31.6,
+          "dist52": -3.5,
+          "drawdown": -2.7,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 55.3,
+          "final_score": 55.5,
           "vcp_score": 45,
           "grade": "REJECT",
-          "rs_rating": 18.9
+          "rs_rating": 20.8
         }
       ]
     },
     "Hsehold-Appliances/Wares IN": {
       "universe": 5,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "DIXON",
           "company": "Dixon Technologies (India) Ltd.",
-          "price": 14507.0,
+          "price": 14329.0,
           "mktcap": 0,
-          "r30": 13.0,
-          "r60": 31.3,
-          "r90": 29.4,
-          "dist52": -21.5,
-          "drawdown": -1.2,
+          "r30": 13.1,
+          "r60": 30.3,
+          "r90": 27.2,
+          "dist52": -22.4,
+          "drawdown": -2.4,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 39.6,
+          "final_score": 39.8,
           "vcp_score": 34,
           "grade": "REJECT",
-          "rs_rating": 10.2
+          "rs_rating": 11.7
         }
       ]
     },
     "Medical-Hospitals IN": {
       "universe": 8,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Auto/Truck-Tires & Misc IN": {
       "universe": 5,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Auto Manufacturers IN": {
       "universe": 13,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "ATHERENERG",
           "company": "Ather Energy Ltd.",
-          "price": 1267.1,
+          "price": 1282.2,
           "mktcap": 0,
-          "r30": 28.0,
-          "r60": 39.2,
-          "r90": 42.5,
-          "dist52": -5.8,
-          "drawdown": -5.8,
+          "r30": 32.3,
+          "r60": 41.0,
+          "r90": 43.1,
+          "dist52": -4.7,
+          "drawdown": -4.7,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 53.6,
-          "vcp_score": 32,
+          "final_score": 59.0,
+          "vcp_score": 36,
           "grade": "REJECT",
-          "rs_rating": 69.6
+          "rs_rating": 78.6
         }
       ]
     },
     "Chemicals-Paints IN": {
       "universe": 3,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Bldg-Constr Prds/Misc IN": {
       "universe": 4,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Finance-Invest Bnk/Bkrs IN": {
       "universe": 5,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Retail-Super/Mini Mkts IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Comml Svcs-Outsourcing IN": {
       "universe": 4,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Financial Svcs-Specialty IN": {
       "universe": 9,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "PAYTM",
           "company": "One 97 Communications Ltd.",
-          "price": 1361.1,
+          "price": 1348.0,
           "mktcap": 0,
-          "r30": 21.5,
-          "r60": 21.4,
-          "r90": 17.2,
-          "dist52": -3.3,
-          "drawdown": -3.3,
+          "r30": 23.2,
+          "r60": 16.9,
+          "r90": 15.5,
+          "dist52": -4.2,
+          "drawdown": -4.2,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 45.4,
+          "final_score": 45.5,
           "vcp_score": 30,
           "grade": "REJECT",
-          "rs_rating": 12.1
+          "rs_rating": 12.8
         }
       ]
     },
     "Apparel-Shoes & Rel Mfg IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Chemicals-Agricultural IN": {
       "universe": 8,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "SUMICHEM",
           "company": "Sumitomo Chemical India Ltd.",
-          "price": 540.55,
+          "price": 538.55,
           "mktcap": 0,
-          "r30": 16.4,
-          "r60": 15.3,
-          "r90": 21.1,
-          "dist52": -18.7,
-          "drawdown": -1.7,
+          "r30": 19.3,
+          "r60": 17.2,
+          "r90": 22.7,
+          "dist52": -18.8,
+          "drawdown": -1.8,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 37.2,
-          "vcp_score": 27,
+          "final_score": 44.8,
+          "vcp_score": 39,
           "grade": "REJECT",
-          "rs_rating": 8.6
+          "rs_rating": 11.7
         }
       ]
     },
     "Aerospace/Defense IN": {
       "universe": 5,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Machinery-Gen Industrial IN": {
       "universe": 7,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "KIRLOSENG",
           "company": "Kirloskar Oil Eng Ltd.",
-          "price": 2396.1,
+          "price": 2255.7,
           "mktcap": 0,
-          "r30": 20.5,
-          "r60": 44.3,
-          "r90": 46.1,
-          "dist52": -11.9,
-          "drawdown": -11.9,
-          "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 52.8,
-          "vcp_score": 37,
+          "r30": 13.7,
+          "r60": 35.6,
+          "r90": 35.6,
+          "dist52": -17.1,
+          "drawdown": -17.1,
+          "setup": "\ud83d\udc40 Watch",
+          "final_score": 51.7,
+          "vcp_score": 42,
           "grade": "REJECT",
-          "rs_rating": 54.5
+          "rs_rating": 54.1
         }
       ]
     },
     "Oil&Gas-Refining/Mktg IN": {
       "universe": 7,
-      "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
-      "stocks": [
-        {
-          "symbol": "CHENNPETRO",
-          "company": "Chennai Petroleum Corporation Ltd.",
-          "price": 1240.8,
-          "mktcap": 0,
-          "r30": 6.5,
-          "r60": 26.3,
-          "r90": 23.2,
-          "dist52": -3.0,
-          "drawdown": -3.0,
-          "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 45.5,
-          "vcp_score": 24,
-          "grade": "REJECT",
-          "rs_rating": 25.8
-        }
-      ]
+      "vcp_count": 0,
+      "scan_time": "17 Jul 2026  11:41 AM",
+      "stocks": []
     },
     "Telecom Svcs-Wireless IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Telecom Svcs-Cable/Satl IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Medical-Biomed/Biotech IN": {
       "universe": 5,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Computer-Tech Services IN": {
       "universe": 17,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Transportation-Logistics IN": {
       "universe": 3,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Medical-Whlsle Drg/Suppl IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Bldg-A/C & Heating Prds IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Food-Misc Preparation IN": {
       "universe": 5,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "ZYDUSWELL",
           "company": "Zydus Wellness Ltd.",
-          "price": 601.9,
+          "price": 586.45,
           "mktcap": 0,
-          "r30": 18.9,
-          "r60": 18.2,
-          "r90": 20.5,
-          "dist52": -1.0,
-          "drawdown": -1.0,
-          "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 65.6,
+          "r30": 16.4,
+          "r60": 14.6,
+          "r90": 16.0,
+          "dist52": -3.4,
+          "drawdown": -3.4,
+          "setup": "\ud83e\uddf2 Pull Back",
+          "final_score": 65.8,
           "vcp_score": 59,
           "grade": "C",
-          "rs_rating": 18.6
+          "rs_rating": 19.7
         }
       ]
     },
     "Consumer Prod-Specialty IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Food-Grain & Related IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Comp Sftwr-Spec Enterprs IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Comml Svcs-Market Rsrch IN": {
       "universe": 2,
-      "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
-      "stocks": []
+      "vcp_count": 1,
+      "scan_time": "17 Jul 2026  11:41 AM",
+      "stocks": [
+        {
+          "symbol": "ECLERX",
+          "company": "eClerx Services Ltd.",
+          "price": 1979.8,
+          "mktcap": 0,
+          "r30": 36.7,
+          "r60": 30.4,
+          "r90": 26.6,
+          "dist52": -20.7,
+          "drawdown": -2.2,
+          "setup": "\ud83c\udf31 Early VCP",
+          "final_score": 37.3,
+          "vcp_score": 34,
+          "grade": "REJECT",
+          "rs_rating": 7.5
+        }
+      ]
     },
     "Retail-Internet IN": {
       "universe": 4,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "CARTRADE",
           "company": "Cartrade Tech Ltd.",
-          "price": 2812.6,
+          "price": 2699.4,
           "mktcap": 0,
-          "r30": 7.6,
-          "r60": 55.0,
-          "r90": 58.9,
-          "dist52": -14.5,
-          "drawdown": -8.7,
+          "r30": 4.4,
+          "r60": 48.0,
+          "r90": 52.7,
+          "dist52": -18.0,
+          "drawdown": -12.4,
           "setup": "\ud83d\udc40 Watch",
-          "final_score": 56.9,
-          "vcp_score": 54,
+          "final_score": 50.5,
+          "vcp_score": 50,
           "grade": "REJECT",
-          "rs_rating": 20.9
+          "rs_rating": 20.8
         }
       ]
     },
     "Leisure-Lodging IN": {
       "universe": 6,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Energy-Coal IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Transportation-Equip Mfg IN": {
       "universe": 3,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Cosmetics/Personal Care IN": {
       "universe": 9,
-      "vcp_count": 2,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "vcp_count": 1,
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "HONASA",
           "company": "Honasa Consumer Ltd.",
-          "price": 470.1,
+          "price": 466.95,
           "mktcap": 0,
-          "r30": 17.1,
-          "r60": 32.6,
-          "r90": 37.2,
-          "dist52": -4.3,
-          "drawdown": -4.3,
+          "r30": 14.9,
+          "r60": 30.9,
+          "r90": 32.8,
+          "dist52": -5.0,
+          "drawdown": -5.0,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 70.3,
+          "final_score": 70.7,
           "vcp_score": 65,
           "grade": "B",
-          "rs_rating": 27.6
-        },
-        {
-          "symbol": "NYKAA",
-          "company": "FSN E-Commerce Ventures Ltd.",
-          "price": 324.85,
-          "mktcap": 0,
-          "r30": 15.6,
-          "r60": 19.7,
-          "r90": 22.8,
-          "dist52": -2.2,
-          "drawdown": -2.2,
-          "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 57.1,
-          "vcp_score": 45,
-          "grade": "REJECT",
-          "rs_rating": 17.8
+          "rs_rating": 31.1
         }
       ]
     },
     "Machinery-Mtl Hdlg/Autmn IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Trucks & Parts-Hvy Duty IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Retail-Restaurants IN": {
       "universe": 3,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Medical-Services IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Medical-Supplies IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Machinery-Farm IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Finance-Commercial Loans IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Insurance-Prop/Cas/Titl IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Insurance-Diversified IN": {
       "universe": 3,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Tobacco IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Mining-Metal Ores IN": {
       "universe": 7,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Insurance-Life IN": {
       "universe": 4,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Computer-Networking IN": {
       "universe": 2,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "HFCL",
           "company": "HFCL Ltd.",
-          "price": 224.38,
+          "price": 213.17,
           "mktcap": 0,
-          "r30": 18.0,
-          "r60": 62.4,
-          "r90": 140.5,
-          "dist52": -2.2,
-          "drawdown": -2.2,
-          "setup": "\ud83d\udd2e Potential BO",
-          "final_score": 77.2,
-          "vcp_score": 62,
+          "r30": 6.8,
+          "r60": 53.0,
+          "r90": 117.9,
+          "dist52": -7.1,
+          "drawdown": -7.1,
+          "setup": "\ud83e\uddf2 Pull Back",
+          "final_score": 70.8,
+          "vcp_score": 58,
           "grade": "B",
           "rs_rating": 100.0
         }
@@ -1909,42 +1745,42 @@
     "Metal Proc & Fabrication IN": {
       "universe": 3,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Railways": {
       "universe": 8,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Telecom-Consumer Prods IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Telecom-Infrastructure IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Internet-Content IN": {
       "universe": 1,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "NAUKRI",
           "company": "Info Edge (India) Ltd.",
-          "price": 1207.0,
+          "price": 1187.25,
           "mktcap": 0,
-          "r30": 18.7,
-          "r60": 29.3,
-          "r90": 13.0,
-          "dist52": -18.2,
-          "drawdown": -1.8,
+          "r30": 17.9,
+          "r60": 26.0,
+          "r90": 10.2,
+          "dist52": -19.5,
+          "drawdown": -3.4,
           "setup": "\ud83c\udf31 Early VCP",
           "final_score": 36.0,
           "vcp_score": 30,
@@ -1956,225 +1792,225 @@
     "Transportation-Airline IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Comml Svcs-Consulting IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Comml Svcs-Healthcare IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Transportation-Ship IN": {
       "universe": 2,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "JSWINFRA",
           "company": "JSW Infrastructure Ltd.",
-          "price": 339.3,
+          "price": 342.15,
           "mktcap": 0,
-          "r30": 13.7,
-          "r60": 27.9,
-          "r90": 22.2,
-          "dist52": -4.6,
-          "drawdown": -4.6,
+          "r30": 11.1,
+          "r60": 30.5,
+          "r90": 24.1,
+          "dist52": -3.8,
+          "drawdown": -3.8,
           "setup": "\ud83e\uddf2 Pull Back",
-          "final_score": 50.7,
-          "vcp_score": 39,
+          "final_score": 57.2,
+          "vcp_score": 49,
           "grade": "REJECT",
-          "rs_rating": 11.1
+          "rs_rating": 14.5
         }
       ]
     },
     "Retail/Whlsle-Jewelry IN": {
       "universe": 2,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "KALYANKJIL",
           "company": "Kalyan Jewellers India Ltd.",
-          "price": 546.6,
+          "price": 574.4,
           "mktcap": 0,
-          "r30": 42.7,
-          "r60": 58.8,
-          "r90": 30.9,
-          "dist52": -11.3,
-          "drawdown": -1.6,
+          "r30": 50.0,
+          "r60": 67.2,
+          "r90": 38.4,
+          "dist52": -6.7,
+          "drawdown": -0.5,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 40.8,
+          "final_score": 43.5,
           "vcp_score": 33,
           "grade": "REJECT",
-          "rs_rating": 7.9
+          "rs_rating": 14.2
         }
       ]
     },
     "Chemicals-Basic IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Medical-Products IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Auto/Truck-Replace Parts IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Computer Sftwr-Database IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Insurance-Acc & Health IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Oil&Gas-Intl Expl&Prod IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Computer Sftwr-Desktop IN": {
       "universe": 2,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "OFSS",
           "company": "Oracle Financial Services Software Ltd.",
-          "price": 11681.0,
+          "price": 11771.0,
           "mktcap": 0,
-          "r30": 23.7,
-          "r60": 21.1,
-          "r90": 48.7,
-          "dist52": -2.3,
-          "drawdown": -2.3,
-          "setup": "\ud83d\udd2e Potential BO",
-          "final_score": 58.2,
-          "vcp_score": 45,
-          "grade": "REJECT",
-          "rs_rating": 26.5
+          "r30": 25.2,
+          "r60": 21.3,
+          "r90": 52.7,
+          "dist52": -1.6,
+          "drawdown": -1.6,
+          "setup": "\ud83c\udf31 Early VCP",
+          "final_score": 60.7,
+          "vcp_score": 48,
+          "grade": "C",
+          "rs_rating": 32.6
         }
       ]
     },
     "Chemicals-Plastics IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Leisure-Movies & Related IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Medical-Systems/Equip IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Computer-Hardware/Perip IN": {
       "universe": 1,
       "vcp_count": 1,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": [
         {
           "symbol": "REDINGTON",
           "company": "Redington Ltd.",
-          "price": 276.1,
+          "price": 275.05,
           "mktcap": 0,
-          "r30": 13.4,
-          "r60": 27.5,
-          "r90": 24.0,
-          "dist52": -10.3,
-          "drawdown": -4.2,
+          "r30": 3.4,
+          "r60": 25.4,
+          "r90": 23.7,
+          "dist52": -10.6,
+          "drawdown": -4.6,
           "setup": "\ud83c\udf31 Early VCP",
-          "final_score": 54.2,
+          "final_score": 54.4,
           "vcp_score": 56,
           "grade": "REJECT",
-          "rs_rating": 5.3
+          "rs_rating": 6.4
         }
       ]
     },
     "Oil&Gas-Integrated IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Finance-Crdtcard/Pmtpr IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Bldg-Resident/Comml IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Media-Radio/Tv IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Medical-Research Eqp/Svc IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Leisure-Travel Booking IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Telecom Svcs-Integrated IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Beverages-Non-Alcoholic IN": {
       "universe": 2,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Machinery-Tools & Rel IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     },
     "Leisure-Services IN": {
       "universe": 1,
       "vcp_count": 0,
-      "scan_time": "16 Jul 2026  11:54 AM",
+      "scan_time": "17 Jul 2026  11:41 AM",
       "stocks": []
     }
   }
