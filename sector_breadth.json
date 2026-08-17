@@ -1,6 +1,6 @@
 {
   "scan_date": "2026-08-17",
-  "scan_time": "17 Aug 2026  04:36 PM",
+  "scan_time": "17 Aug 2026  05:16 PM",
   "total_scanned": 504,
   "sectors": [
     {
@@ -22,9 +22,9 @@
     {
       "sector": "Capital Goods",
       "universe": 36,
-      "vcp_count": 6,
+      "vcp_count": 5,
       "a20_pct": 69,
-      "a50_pct": 63,
+      "a50_pct": 61,
       "a200_pct": 80
     },
     {
@@ -120,7 +120,7 @@
       "universe": 26,
       "vcp_count": 4,
       "a20_pct": 61,
-      "a50_pct": 76,
+      "a50_pct": 80,
       "a200_pct": 42
     },
     {
@@ -226,9 +226,9 @@
     {
       "sector": "Electrical-Power/Equipmt IN",
       "universe": 15,
-      "vcp_count": 5,
+      "vcp_count": 4,
       "a20_pct": 73,
-      "a50_pct": 66,
+      "a50_pct": 60,
       "a200_pct": 80,
       "parent_sector": "Capital Goods"
     },
@@ -696,7 +696,7 @@
       "universe": 2,
       "vcp_count": 0,
       "a20_pct": 0,
-      "a50_pct": 50,
+      "a50_pct": 100,
       "a200_pct": 0,
       "parent_sector": "Information Technology"
     },
@@ -36829,9 +36829,9 @@
         },
         "Capital Goods": {
           "universe": 36,
-          "vcp_count": 6,
+          "vcp_count": 5,
           "a20_pct": 69,
-          "a50_pct": 63,
+          "a50_pct": 61,
           "a200_pct": 80
         },
         "Construction Materials": {
@@ -36915,7 +36915,7 @@
           "universe": 26,
           "vcp_count": 4,
           "a20_pct": 61,
-          "a50_pct": 76,
+          "a50_pct": 80,
           "a200_pct": 42
         },
         "Construction": {
@@ -37008,9 +37008,9 @@
         },
         "Electrical-Power/Equipmt IN": {
           "universe": 15,
-          "vcp_count": 5,
+          "vcp_count": 4,
           "a20_pct": 73,
-          "a50_pct": 66,
+          "a50_pct": 60,
           "a200_pct": 80,
           "parent_sector": "Capital Goods"
         },
@@ -37426,7 +37426,7 @@
           "universe": 2,
           "vcp_count": 0,
           "a20_pct": 0,
-          "a50_pct": 50,
+          "a50_pct": 100,
           "a200_pct": 0,
           "parent_sector": "Information Technology"
         },
