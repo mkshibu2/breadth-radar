@@ -10,7 +10,33 @@ from datetime import datetime, timedelta
 import urllib.request
 import urllib.error
 import io
+import time
 from contextlib import contextmanager
+
+def execute_request_with_retry(req, max_retries=5, initial_backoff=2):
+    """
+    Execute an urllib request with exponential backoff for transient issues.
+    """
+    for attempt in range(1, max_retries + 1):
+        try:
+            # Set a timeout for the connection to avoid hanging indefinitely
+            with urllib.request.urlopen(req, timeout=15) as response:
+                return response.read()
+        except Exception as e:
+            is_transient = True
+            # If it's an HTTPError, check the status code
+            if isinstance(e, urllib.error.HTTPError):
+                # Client errors (except 429) are usually not transient, so do not retry
+                if 400 <= e.code < 500 and e.code != 429:
+                    is_transient = False
+            
+            if not is_transient or attempt == max_retries:
+                raise e
+            
+            backoff = initial_backoff * (2 ** (attempt - 1))
+            print(f"⚠️ JSONBin request failed: {e}. Retrying attempt {attempt}/{max_retries} in {backoff}s...", file=sys.stderr)
+            time.sleep(backoff)
+
 
 # Suppress stdout/stderr to prevent yfinance/pandas output from corrupting stdout JSON
 @contextmanager
@@ -304,9 +330,9 @@ def main():
     )
     
     try:
-        with urllib.request.urlopen(req) as response:
-            payload = json.loads(response.read().decode('utf-8'))['record']
-    except urllib.error.URLError as e:
+        response_bytes = execute_request_with_retry(req)
+        payload = json.loads(response_bytes.decode('utf-8'))['record']
+    except Exception as e:
         print(json.dumps({"error": f"Failed to fetch data from JSONBin: {str(e)}"}), file=sys.stderr)
         sys.exit(1)
 
@@ -382,10 +408,10 @@ def main():
     )
 
     try:
-        with urllib.request.urlopen(update_req) as response:
-            result = json.loads(response.read().decode('utf-8'))
-            print(f"✅ Success! JSONBin updated. Record for {target_date_str} synced.")
-    except urllib.error.URLError as e:
+        response_bytes = execute_request_with_retry(update_req)
+        result = json.loads(response_bytes.decode('utf-8'))
+        print(f"✅ Success! JSONBin updated. Record for {target_date_str} synced.")
+    except Exception as e:
         print(json.dumps({"error": f"Failed to push data to JSONBin: {str(e)}"}), file=sys.stderr)
         sys.exit(1)
 
