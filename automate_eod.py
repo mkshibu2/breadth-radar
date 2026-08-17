@@ -333,8 +333,9 @@ def main():
         response_bytes = execute_request_with_retry(req)
         payload = json.loads(response_bytes.decode('utf-8'))['record']
     except Exception as e:
-        print(json.dumps({"error": f"Failed to fetch data from JSONBin: {str(e)}"}), file=sys.stderr)
-        sys.exit(1)
+        print(json.dumps({"warning": f"Skipping JSONBin sync. Failed to fetch data: {str(e)}"}), file=sys.stderr)
+        # Exit with 0 to allow the rest of the daily scanner workflow (VCP scanner and Git commit) to succeed
+        sys.exit(0)
 
     # Ensure records exists
     if "records" not in payload:
@@ -412,8 +413,9 @@ def main():
         result = json.loads(response_bytes.decode('utf-8'))
         print(f"✅ Success! JSONBin updated. Record for {target_date_str} synced.")
     except Exception as e:
-        print(json.dumps({"error": f"Failed to push data to JSONBin: {str(e)}"}), file=sys.stderr)
-        sys.exit(1)
+        print(json.dumps({"warning": f"Skipping JSONBin sync. Failed to push data: {str(e)}"}), file=sys.stderr)
+        # Exit with 0 so the daily scanner workflow continues
+        sys.exit(0)
 
 if __name__ == "__main__":
     main()
