@@ -407,17 +407,250 @@
       gap: 18px;
     }
 
+    /* Mobile header bar */
+    .mobile-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      height: 50px;
+      padding: 0 16px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--line);
+      z-index: 90;
+    }
+    
+    .hamburger-btn, .mobile-refresh-btn {
+      background: none;
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      border-radius: 4px;
+    }
+    .hamburger-btn:hover, .mobile-refresh-btn:hover {
+      background: var(--panel2);
+    }
+    
+    .brand-mobile {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-mobile .mark {
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      background: linear-gradient(135deg, var(--gold), #8a6420);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-weight: 700;
+      color: #0a0e14;
+      font-size: 11px;
+    }
+    .brand-mobile .name {
+      font-weight: 800;
+      font-size: 13.5px;
+      letter-spacing: -.01em;
+    }
+
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 7, 10, 0.6);
+      z-index: 99;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .sidebar-backdrop.show {
+      display: block;
+      opacity: 1;
+    }
+
+    /* Grid layout overrides */
+    .overview-grid-top {
+      display: grid;
+      grid-template-columns: 2.2fr 1.8fr 2fr 2.2fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .overview-grid-bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .add-trade-container, .calc-container {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    .form-two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 16px;
+    }
+    .form-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .form-row-span-2 {
+      grid-column: span 2;
+    }
+    .metrics-grid {
+      border-left: 1px solid var(--line-soft);
+      padding-left: 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px 20px;
+    }
+    .expenses-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 14px;
+    }
+    .multiyear-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .settings-container {
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .settings-rules-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 20px;
+    }
+    .settings-rules-right {
+      border-left: 1px solid var(--line-soft);
+      padding-left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .modal-two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      margin-bottom: 14px;
+      gap: 14px;
+    }
+    .active-exposure-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 12px;
+      text-align: center;
+    }
+
+    /* Responsiveness Breakpoints */
     @media(max-width:980px) {
+      .mobile-bar {
+        display: flex;
+      }
       .two-col {
         grid-template-columns: 1fr;
       }
-
       .shell {
         grid-template-columns: 1fr;
+        min-height: calc(100vh - 96px); /* ticker + mobile-bar height */
       }
-
       .sidebar {
-        display: none;
+        position: fixed;
+        top: 0;
+        left: -260px;
+        width: 250px;
+        height: 100vh;
+        z-index: 100;
+        transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 5px 0 25px rgba(0, 0, 0, 0.5);
+      }
+      .sidebar.open {
+        left: 0;
+      }
+      .main {
+        padding: 16px 16px 40px;
+        width: 100%;
+      }
+      .add-trade-container, .calc-container, .expenses-grid, .multiyear-container, .settings-container {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .metrics-grid {
+        border-left: none;
+        padding-left: 0;
+        border-top: 1px solid var(--line-soft);
+        padding-top: 20px;
+      }
+    }
+
+    @media(max-width:800px) {
+      .overview-grid-top {
+        grid-template-columns: 1fr 1fr;
+      }
+      .settings-rules-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .settings-rules-right {
+        border-left: none;
+        padding-left: 0;
+        border-top: 1px solid var(--line-soft);
+        padding-top: 16px;
+      }
+    }
+
+    @media(max-width:760px) {
+      .modal-two-col {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+    }
+
+    @media(max-width:600px) {
+      .overview-grid-top, .overview-grid-bottom {
+        grid-template-columns: 1fr;
+      }
+      .form-two-col {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .form-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+      .form-row span:first-child, .form-row label {
+        text-align: left !important;
+        width: auto !important;
+      }
+      .form-row-span-2 {
+        grid-column: span 1;
+      }
+      .active-exposure-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .modal {
+        padding: 16px;
+      }
+    }
+    
+    @media(max-width:480px) {
+      .active-exposure-grid {
+        grid-template-columns: 1fr;
+      }
+      .form-grid, .form-grid.c3 {
+        grid-template-columns: 1fr;
       }
     }
 
@@ -876,6 +1109,32 @@
       flex-wrap: wrap;
       gap: 8px;
     }
+
+    .pyramid-col-left {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      border-right: 1px solid var(--line-soft);
+      padding-right: 12px;
+    }
+    .pyramid-col-right {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-left: 4px;
+    }
+    @media(max-width:600px) {
+      .pyramid-col-left {
+        border-right: none;
+        padding-right: 0;
+        border-bottom: 1px solid var(--line-soft);
+        padding-bottom: 12px;
+      }
+      .pyramid-col-right {
+        padding-left: 0;
+        padding-top: 12px;
+      }
+    }
   </style>
 </head>
 
@@ -1328,10 +1587,41 @@
       { id: 'settings', label: 'Settings', icon: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2Z' }
     ];
 
+    function toggleMobileMenu(force) {
+      const sidebar = $('.sidebar');
+      const backdrop = $('#sidebarBackdrop');
+      if (sidebar && backdrop) {
+        const isOpen = sidebar.classList.contains('open');
+        const show = force !== undefined ? force : !isOpen;
+        if (show) {
+          sidebar.classList.add('open');
+          backdrop.classList.add('show');
+        } else {
+          sidebar.classList.remove('open');
+          backdrop.classList.remove('show');
+        }
+      }
+    }
+
     function renderShell() {
       const s = overviewStats();
       document.body.innerHTML = `
   <div class="ticker" id="ticker"></div>
+  <div class="mobile-bar">
+    <button class="hamburger-btn" id="menuToggleBtn" title="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;"><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
+    </button>
+    <div class="brand-mobile">
+      <div class="mark">TJ</div>
+      <div>
+        <div class="name">Trade Journal</div>
+      </div>
+    </div>
+    <button class="mobile-refresh-btn" id="mobileRefreshBtn" title="Refresh">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+    </button>
+  </div>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
   <div class="shell">
     <div class="sidebar">
       <div class="brand"><div class="mark">TJ</div><div><div class="name">Trade Journal</div><div class="sub">FY ${STATE.settings.currentFY || ''}</div></div></div>
@@ -1372,9 +1662,42 @@
       ${n.label}
     </div>`).join('');
       document.querySelectorAll('[data-nav]').forEach(el => {
-        el.onclick = () => { STATE.view = el.dataset.nav; renderShell(); };
+        el.onclick = () => { 
+          STATE.view = el.dataset.nav; 
+          renderShell(); 
+          toggleMobileMenu(false); 
+        };
       });
-      $('#refreshBtn').onclick = async () => { $('#refreshBtn').innerHTML = '<span class="spinner"></span> Refreshing…'; await loadAll(); renderShell(); toast('Data refreshed', 'ok'); };
+
+      const refreshFn = async (btnEl) => {
+        const originalText = btnEl.innerHTML;
+        btnEl.innerHTML = '<span class="spinner"></span> Refreshing…';
+        btnEl.disabled = true;
+        try {
+          await loadAll();
+          renderShell();
+          toast('Data refreshed', 'ok');
+        } catch (err) {
+          toast('Refresh failed: ' + err.message, 'err');
+          btnEl.innerHTML = originalText;
+          btnEl.disabled = false;
+        }
+      };
+
+      $('#refreshBtn').onclick = () => refreshFn($('#refreshBtn'));
+      const mobRefresh = $('#mobileRefreshBtn');
+      if (mobRefresh) {
+        mobRefresh.onclick = () => refreshFn(mobRefresh);
+      }
+
+      const menuToggleBtn = $('#menuToggleBtn');
+      if (menuToggleBtn) {
+        menuToggleBtn.onclick = () => toggleMobileMenu(true);
+      }
+      const sidebarBackdrop = $('#sidebarBackdrop');
+      if (sidebarBackdrop) {
+        sidebarBackdrop.onclick = () => toggleMobileMenu(false);
+      }
 
       renderTicker(s);
       renderView();
@@ -1422,7 +1745,7 @@
     
     <div class="two-col">
       <div>
-        <div class="grid-cards" style="grid-template-columns: 2.2fr 1.8fr 2fr 2.2fr; gap: 12px; margin-bottom: 18px;">
+        <div class="grid-cards overview-grid-top">
           <div class="card">
             <div class="lbl">Current Capital</div>
             <div class="num">${fmtRs(s.capital)}</div>
@@ -1470,7 +1793,7 @@
       </div>
       
       <div>
-        <div class="grid-cards" style="grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 18px;">
+        <div class="grid-cards overview-grid-bottom">
           <div class="card"><div class="lbl">Win Rate (≤31-Mar-26)</div><div class="num">${fmtPct(s.winPctPre)}</div><div class="sub">${s.wonCountPre}W / ${s.lostCountPre}L</div></div>
           <div class="card"><div class="lbl">Win Rate (≥1-Apr-26)</div><div class="num">${fmtPct(s.winPctPost)}</div><div class="sub">${s.wonCountPost}W / ${s.lostCountPost}L</div></div>
           <div class="card" style="cursor:pointer;" onclick="STATE.view='trades'; STATE.tradeFilter='open'; renderShell();"><div class="lbl">Open Positions</div><div class="num">${s.openCount}</div><div class="sub">${fmtRs(s.openRisk)} at risk</div></div>
@@ -1930,48 +2253,48 @@
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; align-items: start;">
+      <div class="add-trade-container">
         <!-- Left Side: Inputs -->
         <div style="display: flex; flex-direction: column; gap: 14px;">
           <!-- Grid for Primary Inputs -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="form-two-col">
+            <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Open Date:</span>
               <input type="date" id="f_openDate" value="${todayISO()}" tabindex="1" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Stock Name:</span>
               <input type="text" id="f_stock" placeholder="e.g. TITAN" value="${pfStock}" tabindex="2" style="text-transform:uppercase; flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
 
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Breadth Score:</span>
               <input type="number" id="f_breadth" placeholder="e.g. 65" tabindex="3" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Tranche %:</span>
               <input type="number" step="0.1" id="f_entryPct" value="${Math.round(pfEntryPct * 100)}" tabindex="4" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
 
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Entry Price (₹):</span>
               <input type="number" step="0.01" id="f_entryPrice" value="${pfEntryPrice}" tabindex="5" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Stop-Loss (₹):</span>
               <input type="number" step="0.01" id="f_slPrice" value="${pfSlPrice}" tabindex="6" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
 
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Brokerage (₹):</span>
               <input type="number" step="0.01" id="f_brokerage" value="${STATE.settings.brokeragePerTrade || 60}" tabindex="7" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Capital (₹):</span>
               <input type="number" id="f_cap" value="${Math.round(cap)}" tabindex="8" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
 
-            <div style="display: flex; align-items: center; gap: 8px; grid-column: span 2;">
+            <div class="form-row form-row-span-2">
               <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Setup Strategy:</span>
               <input type="text" id="f_setup" placeholder="e.g. VCP, Pullback" value="" tabindex="9" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
@@ -1980,34 +2303,34 @@
           <!-- Pyramid Entries -->
           <div style="border-top: 1px solid var(--line-soft); padding-top: 12px;">
             <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600; margin-bottom: 8px;">Pyramid Entries (Optional)</div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;">
+            <div class="form-two-col">
               <!-- Entry 2 -->
-              <div style="display: flex; flex-direction: column; gap: 6px; border-right: 1px solid var(--line-soft); padding-right: 12px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
+              <div class="pyramid-col-left">
+                <div class="form-row">
                   <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E2 Price (₹):</span>
                   <input type="number" step="0.01" id="f_e2p" tabindex="11" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="form-row">
                   <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E2 Qty:</span>
                   <input type="text" id="f_e2q" placeholder="250 or 30%" tabindex="12" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="form-row">
                   <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E2 Date:</span>
                   <input type="date" id="f_e2d" value="${todayISO()}" tabindex="13" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
                 </div>
               </div>
 
               <!-- Entry 3 -->
-              <div style="display: flex; flex-direction: column; gap: 6px; padding-left: 4px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
+              <div class="pyramid-col-right">
+                <div class="form-row">
                   <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E3 Price (₹):</span>
                   <input type="number" step="0.01" id="f_e3p" tabindex="14" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="form-row">
                   <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E3 Qty:</span>
                   <input type="text" id="f_e3q" placeholder="150 or 20%" tabindex="15" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="form-row">
                   <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E3 Date:</span>
                   <input type="date" id="f_e3d" value="${todayISO()}" tabindex="16" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
                 </div>
@@ -2023,7 +2346,7 @@
         </div>
 
         <!-- Right Side: Results Metrics -->
-        <div style="border-left: 1px solid var(--line-soft); padding-left: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px;">
+        <div class="metrics-grid">
           <div style="grid-column: span 2; font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Auto-sized position sizing</div>
           <div>
             <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Risk / Share</div>
@@ -2286,7 +2609,7 @@
         <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${remainingQty > 0 ? 'var(--gold)' : 'var(--green)'};"></span>
         Active Exposure Summary
       </h4>
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:12px; text-align:center;">
+      <div class="active-exposure-grid">
         <div style="border-right:1px solid var(--line); padding-right:8px;">
           <div style="font-size:10px; color:var(--dim); text-transform:uppercase; margin-bottom:4px; font-weight:500;">Realized P/L</div>
           <div style="font-size:13px; font-family:var(--mono); font-weight:bold; color:${realizedPnL >= 0 ? 'var(--green)' : 'var(--red)'};">
@@ -2315,7 +2638,7 @@
     </div>
     ` : ''}
 
-    <div class="two-col" style="grid-template-columns: 1fr 1fr; margin-bottom: 14px; gap: 14px;">
+    <div class="modal-two-col">
       <fieldset style="margin-top:0; padding:12px;">
         <legend>Buys Breakdown</legend>
         <div style="font-family:var(--sans); font-size:12px; display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto;">
@@ -2344,7 +2667,7 @@
     </div>
 
     ${t.status === 'open' ? `
-    <div class="two-col" style="grid-template-columns: 1fr 1fr; margin-bottom: 14px; gap: 14px;">
+    <div class="modal-two-col">
       <fieldset style="margin-top:0; padding:12px;">
         <legend>Add pyramid entry</legend>
         <div class="form-grid" style="grid-template-columns: 1fr; gap: 8px;">
@@ -2382,7 +2705,7 @@
     <div class="field" style="margin-bottom:12px;"><label>Setup Strategy</label><input type="text" id="m_setup" value="${t.setup || ''}" placeholder="e.g. VCP, Pullback, Cheat"></div>
     <div class="field" style="margin-bottom:12px;"><label>Remarks</label><textarea rows="2" id="m_remarks" placeholder="Setup notes, trading plan, lessons...">${t.remarks || ''}</textarea></div>
     
-    <div style="display:flex;gap:10px;">
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
       <button class="btn" id="m_updateRemarks">${t.status === 'open' ? 'Save Changes' : 'Save Remarks'}</button>
       <button class="btn danger ghost" id="m_delete" style="margin-left:auto;">Delete Trade</button>
     </div>
@@ -2723,52 +3046,52 @@
         <h3 style="margin: 0;">Position Size Calculator Sandbox</h3>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; align-items: start;">
+      <div class="calc-container">
         <!-- Left Side: Inputs Grid -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
+        <div class="form-two-col">
+          <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Stock Name:</span>
             <input type="text" id="r_stock" placeholder="e.g. TITAN" style="text-transform:uppercase; flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Breadth Score:</span>
             <input type="number" id="r_breadth" placeholder="e.g. 65" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
 
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Capital (₹):</span>
             <input type="number" id="r_cap" value="${Math.round(cap)}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Risk % / trade:</span>
             <input type="number" step="0.1" id="r_riskPct" value="${(riskPct * 100)}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
 
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Entry Price (₹):</span>
             <input type="number" step="0.01" id="r_entry" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Stop-Loss (₹):</span>
             <input type="number" step="0.01" id="r_sl" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
 
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Tranche %:</span>
             <input type="number" step="0.1" id="r_entryPct" value="50" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Setup Strategy:</span>
             <input type="text" id="r_setup" placeholder="e.g. VCP, Pullback" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
 
-          <div style="display: flex; justify-content: flex-end; grid-column: span 2; margin-top: 4px;">
+          <div class="form-row form-row-span-2" style="justify-content: flex-end; margin-top: 4px;">
             <button class="btn silver" id="addWlBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);">+ Add to Watchlist</button>
           </div>
         </div>
 
         <!-- Right Side: Results Metrics List -->
-        <div style="border-left: 1px solid var(--line-soft); padding-left: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;">
+        <div class="metrics-grid">
           <div>
             <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Risk / Share</div>
             <div style="font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--mono); margin-top: 2px;" id="r_out_slps">—</div>
@@ -2797,7 +3120,7 @@
       </div>
 
       <!-- Footer Info Row (Combined Risk Reference) -->
-      <div style="border-top: 1px solid var(--line-soft); margin-top: 14px; padding-top: 10px; display: flex; gap: 24px; font-size: 11.5px; color: var(--dim);">
+      <div style="border-top: 1px solid var(--line-soft); margin-top: 14px; padding-top: 10px; display: flex; flex-wrap: wrap; gap: 12px 24px; font-size: 11.5px; color: var(--dim);">
         <div><span style="color: var(--sub);">Preferred Positions:</span> <strong style="color: var(--text); font-family: var(--mono); font-weight: 600;">${STATE.settings.maxStocksMin || ''}–${STATE.settings.maxStocksMax || ''} stocks</strong></div>
         <div><span style="color: var(--sub);">Pyramid Wait:</span> <strong style="color: var(--text); font-family: var(--mono); font-weight: 600;">${STATE.settings.pyramidDays || ''} days</strong></div>
         <div><span style="color: var(--sub);">Max Risk / Trade:</span> <strong style="color: var(--gold); font-family: var(--mono); font-weight: 600;">${fmtRs(cap * riskPct)}</strong></div>
@@ -2921,7 +3244,7 @@
       host.innerHTML = `
     <div class="page-head"><div><h1>Expenses</h1><p>Log platform fees, subscriptions, and other non-brokerage trading expenses</p></div></div>
     
-    <div class="two-col" style="grid-template-columns: 1fr 1.3fr; gap: 14px;">
+    <div class="expenses-grid">
       <!-- Left Column: Log New Expense -->
       <div class="panel" style="padding: 14px; margin-bottom: 0;">
         <div class="panel-head" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
@@ -2930,18 +3253,18 @@
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="form-two-col">
+            <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 80px; text-align: right;">Date:</span>
               <input type="date" id="e_date" value="${todayISO()}" tabindex="1" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 80px; text-align: right;">Amount (₹):</span>
               <input type="number" id="e_amount" placeholder="e.g. 1500" tabindex="2" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--line-soft); padding-top: 10px;">
+          <div class="form-row" style="border-top: 1px solid var(--line-soft); padding-top: 10px;">
             <span style="font-size: 12px; color: var(--dim); width: 80px; text-align: right;">Description:</span>
             <input type="text" id="e_note" placeholder="e.g. Dhan platform charges, journal subscription" tabindex="3" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
@@ -3146,7 +3469,7 @@
     <div class="page-head"><div><h1>Multi-Year Record</h1><p>Long-term track record across financial years</p></div>
       <button class="btn primary" id="addYearBtn">+ Add Year</button></div>
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+    <div class="multiyear-container">
       <!-- Left Column -->
       <div>
         <div class="panel" style="padding: 14px; height: 300px; box-sizing: border-box; display: flex; flex-direction: column; margin-bottom: 14px;">
@@ -3399,7 +3722,7 @@
       host.innerHTML = `
     <div class="page-head"><div><h1>Settings</h1><p>Risk parameters and connection details</p></div></div>
     
-    <div style="display: grid; grid-template-columns: 1fr 1.1fr; gap: 14px; align-items: start;">
+    <div class="settings-container">
       <!-- Left Column: Risk Rules, Dhan, Connection -->
       <div style="display: flex; flex-direction: column; gap: 14px;">
         <!-- Card 1: Risk Rules -->
@@ -3409,31 +3732,31 @@
             <button class="btn silver" id="saveSettingsBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save</button>
           </div>
           
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px;">
+          <div class="settings-rules-grid">
             <!-- Row 1 Left: Financial Year -->
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Financial Year:</span>
               <input id="s_fy" value="${s.currentFY || ''}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
             <!-- Row 1 Right: Opening Capital -->
-            <div style="display: flex; align-items: center; gap: 8px; border-left: 1px solid var(--line-soft); padding-left: 20px;">
+            <div class="settings-rules-right">
               <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Opening Capital:</span>
               <input type="number" id="s_open" value="${s.openingCapitalFY || ''}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
 
             <!-- Row 2 Left: Risk% Per Trade -->
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Risk% Per Trade:</span>
               <input type="number" step="0.1" id="s_riskpct" value="${(Number(s.riskPctPerTrade || 0) * 100)}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
             <!-- Row 2 Right: Pyramid Counts -->
-            <div style="display: flex; align-items: center; gap: 8px; border-left: 1px solid var(--line-soft); padding-left: 20px;">
+            <div class="settings-rules-right">
               <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Pyramid Counts:</span>
               <input type="number" id="s_pyramid" value="${s.pyramidDays || ''}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
 
             <!-- Row 3 Left: Positions -->
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Positions:</span>
               <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
                 <input type="number" id="s_minpos" value="${s.maxStocksMin || ''}" style="width: 45%; height: 28px; padding: 4px 8px; font-size: 12px; text-align: center; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
@@ -3442,7 +3765,7 @@
               </div>
             </div>
             <!-- Row 3 Right: Default Brokerage -->
-            <div style="display: flex; align-items: center; gap: 8px; border-left: 1px solid var(--line-soft); padding-left: 20px;">
+            <div class="settings-rules-right">
               <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Default Brokerage:</span>
               <input type="number" id="s_brok" value="${s.brokeragePerTrade || ''}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
@@ -3455,7 +3778,7 @@
             <h3>Broker Sync &amp; Connection</h3>
             <button class="btn silver" id="saveDhanBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save</button>
           </div>
-          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <div class="form-row" style="margin-bottom: 10px;">
             <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Dhan Access Token:</span>
             <input type="password" id="s_dhan_token" value="${localStorage.getItem('tj_dhan_token') || ''}" placeholder="Paste Dhan Token" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
@@ -3476,7 +3799,7 @@
           <table style="width: 100%;"><thead><tr><th>Date</th><th>Amount</th><th>Note</th><th style="width:70px;"></th></tr></thead>
           <tbody>${STATE.capitalLog.map((c, idx) => `<tr><td>${formatDateDMY(c.date)}</td><td style="color:${c.amount >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${c.amount >= 0 ? '+' : ''}${fmtRs(c.amount)}</td><td style="font-family:var(--sans);">${c.note || ''}</td><td style="text-align:right;"><button class="btn ghost" style="padding: 2px 4px; font-size: 10px; margin-right: 2px;" onclick="editCapitalChange(${idx})">Edit</button><button class="btn danger ghost" style="padding: 2px 4px; font-size: 10px;" onclick="deleteCapitalChange(${idx})">✕</button></td></tr>`).join('')}</tbody></table>
         </div>
-        <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid var(--line-soft); padding-top: 12px;">
+        <div class="form-two-col" style="border-top: 1px solid var(--line-soft); padding-top: 12px;">
           <div class="field">
             <label>Type</label>
             <select id="c_type" style="background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:6px; padding:6px; outline:none; height:28px; font-size:12px; width: 100%;">
