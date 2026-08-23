@@ -1,0 +1,3585 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trade Journal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0e14;
+      --bg2: #0d1219;
+      --panel: #121822;
+      --panel2: #161e2b;
+      --line: #212a38;
+      --line-soft: #1a212c;
+      --text: #e7ebf1;
+      --sub: #8b96a8;
+      --dim: #5b6576;
+      --gold: #d4a24e;
+      --gold-soft: #3a2f1c;
+      --green: #33d17a;
+      --green-soft: #0f2a1c;
+      --red: #ff5c5c;
+      --red-soft: #2f1414;
+      --blue: #5aa9ff;
+      --mono: 'JetBrains Mono', ui-monospace, monospace;
+      --sans: 'Inter', system-ui, sans-serif;
+      --radius: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      background: radial-gradient(1200px 600px at 15% -10%, #131a26 0%, var(--bg) 55%);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::selection {
+      background: var(--gold-soft);
+      color: var(--gold);
+    }
+
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--line);
+      border-radius: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    button {
+      font-family: var(--sans);
+      cursor: pointer;
+    }
+
+    input,
+    select {
+      font-family: var(--mono);
+    }
+
+    /* ---------- Ticker strip ---------- */
+    .ticker {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      overflow-x: auto;
+      background: linear-gradient(180deg, #0d1219, #0a0e14);
+      border-bottom: 1px solid var(--line);
+      padding: 0 20px;
+      height: 46px;
+      white-space: nowrap;
+    }
+
+    .sidebar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .ticker::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tick {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 0 18px;
+      border-right: 1px solid var(--line-soft);
+      height: 100%;
+      align-items: center;
+    }
+
+    .tick:last-child {
+      border-right: none;
+    }
+
+    .tick .lbl {
+      font-size: 10px;
+      letter-spacing: .08em;
+      color: var(--dim);
+      text-transform: uppercase;
+    }
+
+    .tick .val {
+      font-family: var(--mono);
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .up {
+      color: var(--green);
+    }
+
+    .down {
+      color: var(--red);
+    }
+
+    .flat {
+      color: var(--sub);
+    }
+
+    /* ---------- Shell ---------- */
+    .shell {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      min-height: calc(100vh - 46px);
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      padding: 22px 14px;
+      background: var(--bg2);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 10px 22px;
+    }
+
+    .brand .mark {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, var(--gold), #8a6420);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-weight: 700;
+      color: #0a0e14;
+      font-size: 13px;
+    }
+
+    .brand .name {
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: -.01em;
+    }
+
+    .brand .sub {
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: .06em;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: var(--sub);
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .nav-item svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      opacity: .85;
+    }
+
+    .nav-item:hover {
+      background: var(--panel2);
+      color: var(--text);
+    }
+
+    .nav-item.active {
+      background: var(--gold-soft);
+      color: var(--gold);
+      border-color: #4a3a20;
+    }
+
+    .side-foot {
+      margin-top: auto;
+      padding-top: 14px;
+      border-top: 1px solid var(--line-soft);
+    }
+
+    .side-foot button {
+      width: 100%;
+      background: none;
+      border: 1px solid var(--line);
+      color: var(--dim);
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 12px;
+    }
+
+    .side-foot button:hover {
+      color: var(--sub);
+      border-color: var(--sub);
+    }
+
+    .main {
+      padding: 26px 30px 60px;
+      width: 90%;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+      animation: fade .25s ease;
+    }
+
+    @keyframes fade {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .page-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 20px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .page-head h1 {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -.01em;
+    }
+
+    .page-head p {
+      color: var(--sub);
+      font-size: 12.5px;
+      margin-top: 2px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--panel2);
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      transition: .15s;
+    }
+
+    .btn:hover {
+      border-color: var(--sub);
+    }
+
+    .btn.primary {
+      background: linear-gradient(180deg, #e6b563, var(--gold));
+      color: #231a08;
+      border: none;
+    }
+
+    .btn.primary:hover {
+      filter: brightness(1.06);
+    }
+
+    .btn.danger {
+      color: var(--red);
+    }
+
+    .btn.ghost {
+      background: none;
+      border: 1px solid var(--line);
+    }
+
+    .btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+
+    /* ---------- Cards / grid ---------- */
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      min-height: 96px;
+    }
+
+    .card .lbl {
+      font-size: 10.5px;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      font-weight: 600;
+    }
+
+    .card .num {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .card .sub {
+      font-size: 11px;
+      color: var(--sub);
+      margin-top: auto;
+      padding-top: 4px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .panel-head h3 {
+      font-size: 13.5px;
+      font-weight: 700;
+    }
+
+    .panel-head .hint {
+      font-size: 11.5px;
+      color: var(--dim);
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 18px;
+    }
+
+    @media(max-width:980px) {
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+    }
+
+    /* Settings Sub-Navigation */
+    .settings-nav-btn {
+      background: none;
+      border: none;
+      text-align: left;
+      padding: 10px 14px;
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+      width: 100%;
+    }
+
+    .settings-nav-btn:hover {
+      color: var(--text);
+      background: var(--bg2);
+    }
+
+    .settings-nav-btn.active {
+      color: var(--text) !important;
+      background: var(--line-soft) !important;
+      font-weight: 600 !important;
+    }
+
+    /* ---------- Tables ---------- */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+
+    thead th {
+      text-align: left;
+      color: var(--dim);
+      font-weight: 600;
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line-soft);
+      white-space: nowrap;
+      font-family: var(--mono);
+    }
+
+    tbody tr {
+      transition: .1s;
+    }
+
+    tbody tr:hover {
+      background: var(--panel2);
+      cursor: pointer;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10.5px;
+      font-weight: 700;
+      font-family: var(--sans);
+    }
+
+    .badge.open {
+      background: #1b2a3d;
+      color: var(--blue);
+    }
+
+    .badge.closed-win {
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .badge.closed-loss {
+      background: var(--red-soft);
+      color: var(--red);
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .toolbar input,
+    .toolbar select {
+      background: var(--bg2);
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 7px;
+      font-size: 12.5px;
+    }
+
+    .toolbar input {
+      min-width: 180px;
+    }
+
+    .seg {
+      display: flex;
+      background: var(--bg2);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      overflow: hidden;
+    }
+
+    .seg button {
+      background: none;
+      border: none;
+      color: var(--sub);
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .seg button.on {
+      background: var(--gold-soft);
+      color: var(--gold);
+    }
+
+    /* ---------- Forms ---------- */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .form-grid.c3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    @media(max-width:760px) {
+
+      .form-grid,
+      .form-grid.c3 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 11px;
+      color: var(--sub);
+      font-weight: 600;
+      letter-spacing: .02em;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      background: var(--bg2);
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 9px 11px;
+      border-radius: 7px;
+      font-size: 13px;
+      width: 100%;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+
+    .field.readonly input {
+      color: var(--sub);
+      background: #0d1119;
+    }
+
+    .field .derived {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gold);
+      padding: 9px 0;
+    }
+
+    fieldset {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    legend {
+      font-size: 11px;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      font-weight: 700;
+      padding: 0 6px;
+    }
+
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 7, 10, .7);
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      z-index: 50;
+      padding: 40px 16px;
+      overflow: auto;
+    }
+
+    .modal-bg.show {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 24px;
+      width: 100%;
+      max-width: 760px;
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .modal-head h3 {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .close-x {
+      background: none;
+      border: none;
+      color: var(--dim);
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 50px 20px;
+      color: var(--dim);
+    }
+
+    .empty h4 {
+      color: var(--sub);
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 22px;
+      right: 22px;
+      background: var(--panel2);
+      border: 1px solid var(--line);
+      padding: 12px 18px;
+      border-radius: 9px;
+      font-size: 13px;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+    }
+
+    .toast.show {
+      display: block;
+      animation: fade .2s;
+    }
+
+    .toast.err {
+      border-color: #5a2626;
+      color: var(--red);
+    }
+
+    .toast.ok {
+      border-color: #1f4a30;
+      color: var(--green);
+    }
+
+    .live-row {
+      background: rgba(212, 162, 78, .03);
+    }
+
+    .live-row:hover {
+      background: rgba(212, 162, 78, .06) !important;
+    }
+
+    /* Setup screen */
+    .setup-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .setup-card {
+      max-width: 520px;
+      width: 100%;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 32px;
+    }
+
+    .setup-card h1 {
+      font-size: 19px;
+      margin-bottom: 8px;
+    }
+
+    .setup-card p {
+      color: var(--sub);
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+
+    .setup-card .field {
+      margin-bottom: 14px;
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--dim);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: var(--sub);
+      font-size: 13px;
+    }
+
+    /* Footer styles */
+    .app-footer {
+      margin-top: 40px;
+      border-top: 1px solid var(--line);
+      padding-top: 20px;
+      padding-bottom: 20px;
+      font-family: var(--sans);
+    }
+
+    .footer-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      color: var(--text);
+    }
+
+    .footer-title {
+      background: linear-gradient(90deg, var(--text) 0%, var(--dim) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .footer-tagline {
+      font-size: 11.5px;
+      color: var(--sub);
+      font-style: italic;
+      margin: 0;
+    }
+
+    .footer-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      font-size: 11.5px;
+    }
+
+    @media(max-width: 600px) {
+      .footer-meta {
+        align-items: flex-start;
+      }
+    }
+
+    .meta-author {
+      color: var(--sub);
+    }
+
+    .meta-author strong {
+      color: var(--text);
+    }
+
+    .meta-email {
+      color: var(--gold);
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+
+    .meta-email:hover {
+      opacity: 0.8;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10.5px;
+      color: var(--dim);
+      border-top: 1px solid rgba(255, 255, 255, 0.02);
+      padding-top: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="app"></div>
+  <div class="modal-bg" id="modalBg">
+    <div class="modal" id="modalBody"></div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    /* =========================================================================
+       CONFIG + STATE
+       ========================================================================= */
+    const CFG_KEY = 'tj_config_v1';
+    let CONFIG = JSON.parse(localStorage.getItem(CFG_KEY) || 'null'); // {apiUrl, token}
+
+    let STATE = {
+      trades: [], settings: {}, capitalLog: [], multiYear: [], expenses: [],
+      view: 'overview', tradeFilter: 'open', search: '', editingCapitalIndex: null,
+      livePrices: {}
+    };
+
+    const $ = sel => document.querySelector(sel);
+    const fmt = n => (n === null || n === undefined || n === '' || isNaN(n)) ? '—' : Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmtPct = n => (n === null || n === undefined || n === '' || isNaN(n)) ? '—' : (Number(n) * 100).toFixed(2) + '%';
+    const fmtRs = n => (n === null || n === undefined || n === '' || isNaN(n)) ? '—' : '₹' + fmt(n);
+    const todayISO = () => new Date().toISOString().slice(0, 10);
+
+    function handleQtyPercentageInput(qtyInput, getFullQtyFn) {
+      qtyInput.onchange = () => {
+        let val = qtyInput.value.trim();
+        if (val.endsWith('%')) {
+          const pct = parseFloat(val) / 100;
+          const fullQty = getFullQtyFn();
+          if (pct > 0 && fullQty > 0) {
+            qtyInput.value = Math.floor(fullQty * pct);
+            qtyInput.dispatchEvent(new Event('input'));
+          }
+        }
+      };
+    }
+
+    function toast(msg, kind) {
+      const t = $('#toast'); t.textContent = msg; t.className = 'toast show ' + (kind || '');
+      setTimeout(() => t.classList.remove('show'), 3200);
+    }
+
+    /* Helper to convert YYYY-MM-DD to DD-MM-YY */
+    function formatDateDMY(dateStr) {
+      if (!dateStr || dateStr === '—') return '—';
+      // Standardize potential DateTime inputs (slice to Date only)
+      const cleanStr = (typeof dateStr === 'string') ? dateStr.split(' ')[0] : '';
+      const parts = cleanStr.split('-');
+      if (parts.length === 3 && parts[0].length === 4) {
+        const y = parts[0].slice(-2); // last 2 digits of year
+        const m = parts[1];
+        const d = parts[2];
+        return `${d}-${m}-${y}`;
+      }
+      return dateStr;
+    }
+
+    function getPyramidFillsBadges(t) {
+      const tranches = [];
+
+      // Tranche 1
+      if (t.entry1Qty && t.entry1Price) {
+        tranches.push({ label: 'E1', qty: t.entry1Qty, price: t.entry1Price });
+      }
+      // Tranche 2
+      if (t.entry2Qty && t.entry2Price) {
+        tranches.push({ label: 'E2', qty: t.entry2Qty, price: t.entry2Price });
+      }
+
+      // Parse extra tranches from remarks
+      const extraTranches = {};
+      const remarks = t.remarks || '';
+      const regex = /\[Tranche (\d+): ₹([\d\.,]+) × (\d+)\]/g;
+      let match;
+      while ((match = regex.exec(remarks)) !== null) {
+        const num = parseInt(match[1]);
+        const price = parseFloat(match[2].replace(/,/g, ''));
+        const qty = parseInt(match[3]);
+        extraTranches[num] = { price, qty };
+      }
+
+      // Tranche 3
+      const t3Price = extraTranches[3] ? extraTranches[3].price : t.entry3Price;
+      const t3Qty = extraTranches[3] ? extraTranches[3].qty : t.entry3Qty;
+      if (t3Qty && t3Price) {
+        tranches.push({ label: 'E3', qty: t3Qty, price: t3Price });
+      }
+
+      // Tranches 4+
+      Object.keys(extraTranches)
+        .map(Number)
+        .filter(num => num > 3)
+        .sort((a, b) => a - b)
+        .forEach(num => {
+          const et = extraTranches[num];
+          tranches.push({ label: `E${num}`, qty: et.qty, price: et.price });
+        });
+
+      return tranches.map(tr => `
+        <span style="font-size: 9px; font-family: var(--mono); background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 4px; padding: 1px 4px; color: var(--sub); display: inline-flex; align-items: center; gap: 3px; margin-right: 4px; margin-top: 3px;">
+          <strong style="color: var(--gold); font-size: 8.5px;">${tr.label}</strong>
+          <span>${tr.qty}@₹${fmt(tr.price)}</span>
+        </span>
+      `).join('');
+    }
+
+    /* =========================================================================
+       API
+       ========================================================================= */
+    async function apiGet() {
+      const url = CONFIG.apiUrl + '?action=all&token=' + encodeURIComponent(CONFIG.token);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('API error ' + res.status);
+      return res.json();
+    }
+    async function apiPost(body) {
+      const res = await fetch(CONFIG.apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
+        body: JSON.stringify({ ...body, token: CONFIG.token })
+      });
+      if (!res.ok) throw new Error('API error ' + res.status);
+      const j = await res.json();
+      if (j.error) throw new Error(j.error);
+      return j;
+    }
+
+    async function loadAll() {
+      const data = await apiGet();
+      STATE.trades = (data.trades || []).map(normalizeTrade);
+      STATE.settings = data.settings || {};
+      STATE.capitalLog = data.capitalLog || [];
+      STATE.multiYear = data.multiYear || [];
+      STATE.expenses = data.expenses || [];
+      STATE.watchlist = (data.watchlist || []).map(normalizeWatchlist);
+    }
+
+    function normalizeTrade(t) {
+      const num = k => t[k] === '' || t[k] === undefined || t[k] === null ? null : Number(t[k]);
+      return {
+        ...t,
+        breadth: num('breadth'), entryPct: num('entryPct'), riskPerShare: num('riskPerShare'),
+        entry1Price: num('entry1Price'), entry1Qty: num('entry1Qty'), entry1Amt: num('entry1Amt'),
+        entry2Price: num('entry2Price'), entry2Qty: num('entry2Qty'), entry2Amt: num('entry2Amt'),
+        entry3Price: num('entry3Price'), entry3Qty: num('entry3Qty'), entry3Amt: num('entry3Amt'),
+        avgBuyPrice: num('avgBuyPrice'), totBuyQty: num('totBuyQty'), totBuyAmt: num('totBuyAmt'),
+        slPrice: num('slPrice'), slPerShare: num('slPerShare'), slPct: num('slPct'),
+        fullQty: num('fullQty'), totLossAtSL: num('totLossAtSL'), brokerage: num('brokerage'),
+        exit1Price: num('exit1Price'), exit1Qty: num('exit1Qty'), exit2Price: num('exit2Price'), exit2Qty: num('exit2Qty'),
+        exit3Price: num('exit3Price'), exit3Qty: num('exit3Qty'),
+        totExitAmt: num('totExitAmt'), pnl: num('pnl'), pnlPct: num('pnlPct'), days: num('days'), rr: num('rr'), tslPrice: num('tslPrice')
+      };
+    }
+
+    function normalizeWatchlist(w) {
+      const num = k => w[k] === '' || w[k] === undefined || w[k] === null ? null : Number(w[k]);
+      return {
+        ...w,
+        entryPrice: num('entryPrice'),
+        slPrice: num('slPrice'),
+        slPct: num('slPct'),
+        qty: num('qty'),
+        posSize: num('posSize'),
+        risk: num('risk'),
+        entryPct: num('entryPct'),
+        breadth: num('breadth')
+      };
+    }
+
+    function computeOpenTradePnL(t) {
+      if (t.status !== 'open') return { pnl: t.pnl, pnlPct: t.pnlPct };
+
+      const extraExits = {};
+      const remarks = t.remarks || '';
+      const regexExit = /\[Exit (\d+): ₹([\d\.,]+) × (\d+)\]/g;
+      let matchExit;
+      while ((matchExit = regexExit.exec(remarks)) !== null) {
+        const num = parseInt(matchExit[1]);
+        const price = parseFloat(matchExit[2].replace(/,/g, ''));
+        const qty = parseInt(matchExit[3]);
+        const amt = Math.round(price * qty);
+        extraExits[num] = { price, qty, amt };
+      }
+
+      const ex1Price = extraExits[1] ? extraExits[1].price : t.exit1Price;
+      const ex1Qty = extraExits[1] ? extraExits[1].qty : t.exit1Qty;
+      const ex2Price = extraExits[2] ? extraExits[2].price : t.exit2Price;
+      const ex2Qty = extraExits[2] ? extraExits[2].qty : t.exit2Qty;
+      const ex3Price = extraExits[3] ? extraExits[3].price : t.exit3Price;
+      const ex3Qty = extraExits[3] ? extraExits[3].qty : t.exit3Qty;
+
+      const totExitQty = [ex1Qty, ex2Qty, ex3Qty].reduce((s, q) => s + (Number(q) || 0), 0) + Object.values(extraExits).filter((e, idx) => idx >= 3).reduce((s, e) => s + e.qty, 0);
+      const remainingQty = Number(t.totBuyQty || 0) - totExitQty;
+
+      const totExitAmt = [
+        ex1Price && ex1Qty ? Math.round(ex1Price * ex1Qty) : 0,
+        ex2Price && ex2Qty ? Math.round(ex2Price * ex2Qty) : 0,
+        ex3Price && ex3Qty ? Math.round(ex3Price * ex3Qty) : 0
+      ].reduce((s, a) => s + a, 0) + Object.values(extraExits).filter((e, idx) => idx >= 3).reduce((s, e) => s + e.amt, 0);
+
+      const realizedCost = totExitQty * Number(t.avgBuyPrice || 0);
+      const realizedPnL = totExitQty > 0 ? Math.round(totExitAmt - realizedCost) : 0;
+
+      const activeSL = (t.tslPrice != null && t.tslPrice !== '') ? Number(t.tslPrice) : Number(t.slPrice || 0);
+      const expectedPnL = Math.round((activeSL - Number(t.avgBuyPrice || 0)) * remainingQty + realizedPnL);
+      const expectedPnLPct = t.totBuyAmt ? expectedPnL / Number(t.totBuyAmt) : 0;
+
+      return { pnl: expectedPnL, pnlPct: expectedPnLPct };
+    }
+
+    /* =========================================================================
+       DERIVED PORTFOLIO METRICS  (mirrors the Excel PF sheet)
+       ========================================================================= */
+    function currentCapital() {
+      const opening = Number(STATE.settings.openingCapitalFY || 0);
+      const realizedPnl = STATE.trades.filter(t => t.status === 'closed').reduce((s, t) => s + (t.pnl || 0), 0);
+      const totalExpenses = STATE.expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+      return opening + capitalAdditionsExcludingOpening() + realizedPnl - totalExpenses;
+    }
+    function added0() { return 0; }
+    function capitalAdditionsExcludingOpening() {
+      return STATE.capitalLog.filter(c => !/opening/i.test(c.note || '')).reduce((s, c) => s + Number(c.amount || 0), 0);
+    }
+    function monthKey(dateStr) { if (!dateStr) return null; const d = new Date(dateStr); return isNaN(d) ? null : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+    function monthLabel(key) { const [y, m] = key.split('-'); return new Date(y, m - 1, 1).toLocaleString('en-US', { month: 'short', year: '2-digit' }); }
+
+    function getFYOfDate(dateStr) {
+      if (!dateStr) return null;
+      const parts = dateStr.split('-');
+      if (parts.length < 2) return null;
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10);
+      if (isNaN(year) || isNaN(month)) return null;
+      if (month >= 4) {
+        return `${year}-${year + 1}`;
+      } else {
+        return `${year - 1}-${year}`;
+      }
+    }
+
+    function getAvailableFYs() {
+      const fys = new Set();
+      if (STATE.settings.currentFY) {
+        const f = formatFY(STATE.settings.currentFY);
+        if (f) fys.add(f);
+      }
+      (STATE.trades || []).forEach(t => {
+        if (t.status === 'closed' && t.closedDate) {
+          const fy = getFYOfDate(t.closedDate);
+          if (fy) fys.add(fy);
+        }
+      });
+      (STATE.expenses || []).forEach(e => {
+        if (e.date) {
+          const fy = getFYOfDate(e.date);
+          if (fy) fys.add(fy);
+        }
+      });
+      return Array.from(fys).sort().reverse();
+    }
+
+    function monthlyPnL(filterFY) {
+      const map = {};
+      STATE.trades.filter(t => t.status === 'closed' && t.closedDate).forEach(t => {
+        if (filterFY && filterFY !== 'All') {
+          const fy = getFYOfDate(t.closedDate);
+          if (fy !== filterFY) return;
+        }
+        const k = monthKey(t.closedDate); if (!k) return;
+        map[k] = map[k] || { won: 0, lost: 0, winAmt: 0, lossAmt: 0, pnl: 0 };
+        if (t.pnl >= 0) { map[k].won++; map[k].winAmt += t.pnl; } else { map[k].lost++; map[k].lossAmt += t.pnl; }
+        map[k].pnl += t.pnl;
+      });
+      (STATE.expenses || []).forEach(e => {
+        if (filterFY && filterFY !== 'All') {
+          const fy = getFYOfDate(e.date);
+          if (fy !== filterFY) return;
+        }
+        const k = monthKey(e.date); if (!k) return;
+        map[k] = map[k] || { won: 0, lost: 0, winAmt: 0, lossAmt: 0, pnl: 0 };
+        map[k].pnl -= Number(e.amount || 0);
+      });
+      return Object.keys(map).sort().map(k => ({ key: k, label: monthLabel(k), ...map[k] }));
+    }
+
+    function overviewStats() {
+      const closed = STATE.trades.filter(t => t.status === 'closed');
+      const open = STATE.trades.filter(t => t.status === 'open');
+      const won = closed.filter(t => t.pnl >= 0);
+      const lost = closed.filter(t => t.pnl < 0);
+      const realizedPnl = closed.reduce((s, t) => s + (t.pnl || 0), 0);
+      const openRisk = open.reduce((s, t) => {
+        const extraExits = {};
+        const remarks = t.remarks || '';
+        const regexExit = /\[Exit (\d+): ₹([\d\.,]+) × (\d+)\]/g;
+        let matchExit;
+        while ((matchExit = regexExit.exec(remarks)) !== null) {
+          const num = parseInt(matchExit[1]);
+          const qty = parseInt(matchExit[3]);
+          extraExits[num] = { qty };
+        }
+        const ex1Qty = extraExits[1] ? extraExits[1].qty : t.exit1Qty;
+        const ex2Qty = extraExits[2] ? extraExits[2].qty : t.exit2Qty;
+        const ex3Qty = extraExits[3] ? extraExits[3].qty : t.exit3Qty;
+        const totExitQty = [ex1Qty, ex2Qty, ex3Qty].reduce((sum, q) => sum + (Number(q) || 0), 0) + Object.values(extraExits).filter((e, idx) => idx >= 3).reduce((sum, e) => sum + e.qty, 0);
+        const remainingQty = Number(t.totBuyQty || 0) - totExitQty;
+
+        const activeSL = (t.tslPrice != null && t.tslPrice !== '') ? Number(t.tslPrice) : Number(t.slPrice || 0);
+        const riskPerShare = Number(t.avgBuyPrice || 0) - activeSL;
+        const tradeRisk = riskPerShare > 0 ? Math.round(riskPerShare * remainingQty) : 0;
+        return s + tradeRisk;
+      }, 0);
+      const opening = Number(STATE.settings.openingCapitalFY || 0);
+      const cap = currentCapital();
+
+      const closedPre = closed.filter(t => t.closedDate && t.closedDate <= '2026-03-31');
+      const wonPre = closedPre.filter(t => t.pnl >= 0);
+      const lostPre = closedPre.filter(t => t.pnl < 0);
+
+      const closedPost = closed.filter(t => t.closedDate && t.closedDate >= '2026-04-01');
+      const wonPost = closedPost.filter(t => t.pnl >= 0);
+      const lostPost = closedPost.filter(t => t.pnl < 0);
+
+      const totalWinAmt = won.reduce((sum, t) => sum + (t.pnl || 0), 0);
+      const totalLossAmt = lost.reduce((sum, t) => sum + Math.abs(t.pnl || 0), 0);
+      const avgWin = won.length ? Math.round(totalWinAmt / won.length) : 0;
+      const avgLoss = lost.length ? Math.round(totalLossAmt / lost.length) : 0;
+      const winLossRatio = avgLoss ? +(avgWin / avgLoss).toFixed(2) : 0;
+      const expectancy = closed.length ? Math.round(realizedPnl / closed.length) : 0;
+      const expectancyR = closed.length ? +(closed.reduce((sum, t) => sum + (t.rr || 0), 0) / closed.length).toFixed(2) : 0;
+
+      return {
+        capital: cap,
+        opening,
+        realizedPnl,
+        returnPct: opening ? realizedPnl / opening : 0,
+        winPct: closed.length ? won.length / closed.length : 0,
+        wonCount: won.length, lostCount: lost.length, openCount: open.length,
+        openRisk,
+        riskBudget: cap * Number(STATE.settings.riskPctPerTrade || 0.01),
+        winPctPre: closedPre.length ? wonPre.length / closedPre.length : 0,
+        wonCountPre: wonPre.length,
+        lostCountPre: lostPre.length,
+        winPctPost: closedPost.length ? wonPost.length / closedPost.length : 0,
+        wonCountPost: wonPost.length,
+        lostCountPost: lostPost.length,
+        avgWin,
+        avgLoss,
+        winLossRatio,
+        expectancy,
+        expectancyR
+      };
+    }
+
+    /* =========================================================================
+       TRADE MATH  (mirrors JL-N calc sheet logic)
+       ========================================================================= */
+    function computeEntryCalc({ capital, riskPct, entryPct, entryPrice, slPrice, brokerage }) {
+      const slPerShare = (entryPrice != null && slPrice != null) ? +(entryPrice - slPrice).toFixed(4) : null;
+      const slPctVal = (slPerShare != null && entryPrice) ? slPerShare / entryPrice : null;
+      const riskAt1 = capital * riskPct;
+      const fullQty = (slPerShare && slPerShare > 0) ? Math.floor(riskAt1 / slPerShare) : null;
+      const entry1Qty = (fullQty != null) ? Math.floor(fullQty * entryPct) : null;
+      const totLossAtSL = (entry1Qty != null && slPerShare != null) ? Math.round(entry1Qty * slPerShare) : null;
+      const entry1Amt = (entryPrice != null && entry1Qty != null) ? Math.round(entryPrice * entry1Qty + Number(brokerage || 0)) : null;
+      return { slPerShare, slPct: slPctVal, fullQty, entry1Qty, totLossAtSL, entry1Amt };
+    }
+
+    function aggregateBuy(t) {
+      const legs = [
+        [t.entry1Price, t.entry1Qty], [t.entry2Price, t.entry2Qty], [t.entry3Price, t.entry3Qty]
+      ].filter(([p, q]) => p != null && q);
+      const totBuyQty = legs.reduce((s, [, q]) => s + Number(q), 0);
+      const totBuyAmt = [t.entry1Amt, t.entry2Amt, t.entry3Amt].reduce((s, a) => s + (Number(a) || 0), 0);
+      const avgBuyPrice = totBuyQty ? +(totBuyAmt / totBuyQty).toFixed(2) : null;
+      return { totBuyQty, totBuyAmt, avgBuyPrice };
+    }
+    function aggregateExit(t) {
+      const legs = [[t.exit1Price, t.exit1Qty], [t.exit2Price, t.exit2Qty], [t.exit3Price, t.exit3Qty]].filter(([p, q]) => p != null && q);
+      const totExitAmt = legs.reduce((s, [p, q]) => s + Number(p) * Number(q), 0);
+      const totExitQty = legs.reduce((s, [, q]) => s + Number(q), 0);
+      return { totExitAmt: legs.length ? Math.round(totExitAmt) : null, totExitQty };
+    }
+
+    /* =========================================================================
+       SETUP / BOOT
+       ========================================================================= */
+    function renderSetup() {
+      $('#app').innerHTML = `
+    <div class="setup-wrap"><div class="setup-card">
+      <h1>Connect your journal</h1>
+      <p>Point this app at your Google Sheet's Apps Script Web App URL (see SETUP.md). Both values are stored only in this browser.</p>
+      <div class="field"><label>Apps Script Web App URL</label>
+        <input id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec" />
+      </div>
+      <div class="field"><label>API Token</label>
+        <input id="cfgToken" placeholder="the secret string from Code.gs" />
+      </div>
+      <button class="btn primary" id="cfgSave" style="width:100%;justify-content:center;margin-top:6px;">Connect</button>
+    </div></div>`;
+      $('#cfgSave').onclick = async () => {
+        const apiUrl = $('#cfgUrl').value.trim();
+        const token = $('#cfgToken').value.trim();
+        if (!apiUrl || !token) { toast('Enter both fields', 'err'); return; }
+        CONFIG = { apiUrl, token };
+        $('#cfgSave').innerHTML = '<span class="spinner"></span> Connecting…';
+        try {
+          const url = apiUrl + '?action=all&token=' + encodeURIComponent(token);
+          const res = await fetch(url);
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const j = await res.json();
+          if (j.error) throw new Error(j.error);
+          localStorage.setItem(CFG_KEY, JSON.stringify(CONFIG));
+          boot();
+        } catch (err) {
+          toast('Could not connect: ' + err.message, 'err');
+          $('#cfgSave').textContent = 'Connect';
+        }
+      };
+    }
+
+    async function boot() {
+      $('#app').innerHTML = `<div class="loading-screen"><span class="spinner"></span> Loading your journal…</div>`;
+      try {
+        await loadAll();
+        renderShell();
+      } catch (err) {
+        $('#app').innerHTML = `<div class="loading-screen">Could not load data: ${err.message}<br><br>
+      <button class="btn" onclick="localStorage.removeItem('${CFG_KEY}');location.reload();">Reset connection</button></div>`;
+      }
+    }
+
+    /* =========================================================================
+       SHELL + NAV
+       ========================================================================= */
+    const NAV = [
+      { id: 'overview', label: 'Overview', icon: 'M3 13h4v7H3v-7Zm7-7h4v14h-4V6Zm7 4h4v10h-4V10Z' },
+      { id: 'risk', label: 'Position Calc', icon: 'M12 2 3 7l9 5 9-5-9-5Zm-9 10 9 5 9-5M3 17l9 5 9-5' },
+      { id: 'add', label: 'Add Trade', icon: 'M12 5v14M5 12h14' },
+      { id: 'trades', label: 'Trade Log', icon: 'M4 5h16M4 12h16M4 19h10' },
+      { id: 'expenses', label: 'Expenses', icon: 'M12 1v22m5-18H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
+      { id: 'multiyear', label: 'Multi-Year', icon: 'M3 3v18h18M7 15l4-6 4 3 5-8' },
+      { id: 'settings', label: 'Settings', icon: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2Z' }
+    ];
+
+    function renderShell() {
+      const s = overviewStats();
+      document.body.innerHTML = `
+  <div class="ticker" id="ticker"></div>
+  <div class="shell">
+    <div class="sidebar">
+      <div class="brand"><div class="mark">TJ</div><div><div class="name">Trade Journal</div><div class="sub">FY ${STATE.settings.currentFY || ''}</div></div></div>
+      <div id="navList"></div>
+      <div class="side-foot">
+        <button id="refreshBtn">↻ Refresh data</button>
+      </div>
+    </div>
+    <div class="main">
+      <div id="viewHost"></div>
+      <footer class="app-footer">
+        <div class="footer-top">
+          <div class="footer-brand">
+            <div class="footer-logo">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px; vertical-align:middle;"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+              <span class="footer-title">TRADE JOURNAL</span>
+            </div>
+            <p class="footer-tagline">Precision in execution — built for the Indian swing trader</p>
+          </div>
+          <div class="footer-meta">
+            <div class="meta-author">Designed & built by <strong>Shibu M K</strong></div>
+            <a href="mailto:shibuvyshnavam@gmail.com" class="meta-email">shibuvyshnavam@gmail.com</a>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <div class="copyright">© 2026 Shibu M K · Trade Journal · All rights reserved</div>
+          <div class="disclaimer">Data sources: Self-logged & Dhan API</div>
+        </div>
+      </footer>
+    </div>
+  </div>
+  <div class="modal-bg" id="modalBg"><div class="modal" id="modalBody"></div></div>
+  <div class="toast" id="toast"></div>`;
+
+      $('#navList').innerHTML = NAV.map(n => `
+    <div class="nav-item ${STATE.view === n.id ? 'active' : ''}" data-nav="${n.id}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="${n.icon}"/></svg>
+      ${n.label}
+    </div>`).join('');
+      document.querySelectorAll('[data-nav]').forEach(el => {
+        el.onclick = () => { STATE.view = el.dataset.nav; renderShell(); };
+      });
+      $('#refreshBtn').onclick = async () => { $('#refreshBtn').innerHTML = '<span class="spinner"></span> Refreshing…'; await loadAll(); renderShell(); toast('Data refreshed', 'ok'); };
+
+      renderTicker(s);
+      renderView();
+    }
+
+    function renderTicker(s) {
+      const ret = s.returnPct;
+      const winCls = s.winPct >= 0.5 ? 'up' : 'down';
+      $('#ticker').innerHTML = `
+    <div class="tick"><span class="lbl">Capital</span><span class="val">${fmtRs(s.capital)}</span></div>
+    <div class="tick"><span class="lbl">FY P/L</span><span class="val ${s.realizedPnl >= 0 ? 'up' : 'down'}">${s.realizedPnl >= 0 ? '+' : ''}${fmtRs(s.realizedPnl)}</span></div>
+    <div class="tick"><span class="lbl">Return</span><span class="val ${ret >= 0 ? 'up' : 'down'}">${ret >= 0 ? '+' : ''}${fmtPct(ret)}</span></div>
+    <div class="tick"><span class="lbl">Win Rate</span><span class="val ${winCls}">${fmtPct(s.winPct)}</span></div>
+    <div class="tick"><span class="lbl">Open Positions</span><span class="val flat">${s.openCount}</span></div>
+    <div class="tick"><span class="lbl">Open Risk</span><span class="val flat">${fmtRs(s.openRisk)}</span></div>
+    <div class="tick"><span class="lbl">Risk Budget / Trade</span><span class="val flat">${fmtRs(s.riskBudget)}</span></div>
+  `;
+    }
+
+    function renderView() {
+      const host = $('#viewHost');
+      if (STATE.view === 'overview') return renderOverview(host);
+      if (STATE.view === 'trades') return renderTrades(host);
+      if (STATE.view === 'add') return renderAddTrade(host);
+      if (STATE.view === 'risk') return renderRiskCalc(host);
+      if (STATE.view === 'expenses') return renderExpenses(host);
+      if (STATE.view === 'multiyear') return renderMultiYear(host);
+      if (STATE.view === 'settings') return renderSettings(host);
+    }
+
+    /* =========================================================================
+       OVERVIEW
+       ========================================================================= */
+    function renderOverview(host) {
+      const s = overviewStats();
+      const availableFYs = getAvailableFYs();
+      const selectedFY = STATE.selectedPnlFY || formatFY(STATE.settings.currentFY) || 'All';
+      const period = STATE.selectedEquityPeriod || 'All';
+      const monthly = monthlyPnL(selectedFY);
+      const totalExpenses = (STATE.expenses || []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
+      const netPnl = s.realizedPnl - totalExpenses;
+
+      host.innerHTML = `
+    <div class="page-head"><div><h1>Overview</h1><p>Portfolio snapshot for FY ${STATE.settings.currentFY || ''}</p></div></div>
+    
+    <div class="two-col">
+      <div>
+        <div class="grid-cards" style="grid-template-columns: 2.2fr 1.8fr 2fr 2.2fr; gap: 12px; margin-bottom: 18px;">
+          <div class="card">
+            <div class="lbl">Current Capital</div>
+            <div class="num">${fmtRs(s.capital)}</div>
+            <div class="sub" style="font-size:11.5px; margin-top:4px;">
+              Invested: <span style="color:var(--text);font-family:var(--mono);">${fmtRs(s.opening + capitalAdditionsExcludingOpening())}</span> 
+              · Gain: <span style="color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'};font-family:var(--mono);font-weight:600;">${netPnl >= 0 ? '+' : ''}${fmtRs(netPnl)}</span>
+            </div>
+          </div>
+          <div class="card"><div class="lbl">Net P/L (FY)</div><div class="num" style="color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'}">${netPnl >= 0 ? '+' : ''}${fmtRs(netPnl)}</div><div class="sub">Gross: ${fmt(s.realizedPnl)} · Exp: ${fmt(totalExpenses)}</div></div>
+          <div class="card">
+            <div class="lbl">Avg Win / Avg Loss</div>
+            <div class="num" style="font-size:16px; margin-top:8px; font-weight:700;">
+              <span style="color:var(--green);font-family:var(--mono);">${s.avgWin >= 0 ? '+' : ''}${fmtRs(s.avgWin)}</span>
+              <span style="color:var(--dim);font-weight:400;margin:0 2px;">/</span>
+              <span style="color:var(--red);font-family:var(--mono);">${s.avgLoss > 0 ? '-' : ''}${fmtRs(s.avgLoss)}</span>
+            </div>
+            <div class="sub" style="margin-top:4px;">W/L Ratio: <span style="color:var(--text);font-weight:600;">${s.winLossRatio}:1</span></div>
+          </div>
+          <div class="card">
+            <div class="lbl">Expectancy (Avg)</div>
+            <div class="num" style="color:${s.expectancy >= 0 ? 'var(--green)' : 'var(--red)'}">${s.expectancy >= 0 ? '+' : ''}${fmtRs(s.expectancy)}</div>
+            <div class="sub">
+              R-Exp: <span style="color:var(--text);font-weight:600;font-family:var(--mono);">${s.expectancyR >= 0 ? '+' : ''}${s.expectancyR}R</span>
+              · <span style="color:var(--dim);">${s.wonCount + s.lostCount} Tr (${s.wonCount}W/${s.lostCount}L)</span>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Equity curve <span class="hint" style="font-weight:normal; font-size:11.5px; margin-left:6px; color:var(--dim);">(Cumulative realized P/L)</span></h3>
+            <div>
+              <select id="equityPeriodSelect" style="background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:4px; padding:3px 8px; font-size:11.5px; outline:none; cursor:pointer;">
+                <option value="All" ${period === 'All' ? 'selected' : ''}>All Time</option>
+                <option value="Pre-Apr-26" ${period === 'Pre-Apr-26' ? 'selected' : ''}>Upto 31 Mar '26</option>
+                <option value="Post-Apr-26" ${period === 'Post-Apr-26' ? 'selected' : ''}>1 Apr '26 onwards</option>
+              </select>
+            </div>
+          </div>
+          <canvas id="equityChart" height="140"></canvas>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Recent trades</h3><span class="hint" style="cursor:pointer;" onclick="STATE.view='trades';renderShell();">View all →</span></div>
+          ${tradeTableHTML(STATE.trades.slice().sort((a, b) => (b.openDate || '').localeCompare(a.openDate || '')).slice(0, 8))}
+        </div>
+      </div>
+      
+      <div>
+        <div class="grid-cards" style="grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 18px;">
+          <div class="card"><div class="lbl">Win Rate (≤31-Mar-26)</div><div class="num">${fmtPct(s.winPctPre)}</div><div class="sub">${s.wonCountPre}W / ${s.lostCountPre}L</div></div>
+          <div class="card"><div class="lbl">Win Rate (≥1-Apr-26)</div><div class="num">${fmtPct(s.winPctPost)}</div><div class="sub">${s.wonCountPost}W / ${s.lostCountPost}L</div></div>
+          <div class="card" style="cursor:pointer;" onclick="STATE.view='trades'; STATE.tradeFilter='open'; renderShell();"><div class="lbl">Open Positions</div><div class="num">${s.openCount}</div><div class="sub">${fmtRs(s.openRisk)} at risk</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Monthly P&amp;L Chart</h3>
+            <div>
+              <select id="pnlYearSelect" style="background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:4px; padding:3px 8px; font-size:11.5px; outline:none; cursor:pointer;">
+                <option value="All" ${selectedFY === 'All' ? 'selected' : ''}>All Years</option>
+                ${availableFYs.map(fy => `<option value="${fy}" ${selectedFY === fy ? 'selected' : ''}>FY ${fy}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+          <canvas id="monthlyPnLChart" height="180"></canvas>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Monthly P&amp;L Table</h3></div>
+          <table><thead><tr><th>Month</th><th>Won</th><th>Lost</th><th>P/L</th></tr></thead>
+          <tbody>
+            ${monthly.length ? monthly.map(m => `<tr>
+              <td style="font-family:var(--sans);color:var(--sub);">${m.label}</td>
+              <td>${m.won}</td><td>${m.lost}</td>
+              <td style="color:${m.pnl >= 0 ? 'var(--green)' : 'var(--red)'}">${m.pnl >= 0 ? '+' : ''}${fmt(m.pnl)}</td>
+            </tr>`).join('') : `<tr><td colspan="4" style="font-family:var(--sans);color:var(--dim);text-align:center;padding:20px;">No closed trades yet</td></tr>`}
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+  `;
+      drawEquityChart();
+      drawMonthlyPnLChart(monthly);
+
+      $('#equityPeriodSelect').onchange = (e) => {
+        STATE.selectedEquityPeriod = e.target.value;
+        renderOverview(host);
+      };
+
+      $('#pnlYearSelect').onchange = (e) => {
+        STATE.selectedPnlFY = e.target.value;
+        renderOverview(host);
+      };
+    }
+
+    let _equityChart = null;
+    function drawEquityChart() {
+      const canvas = $('#equityChart'); if (!canvas) return;
+      let closed = STATE.trades.filter(t => t.status === 'closed' && t.closedDate).sort((a, b) => a.closedDate.localeCompare(b.closedDate));
+
+      const period = STATE.selectedEquityPeriod || 'All';
+      if (period === 'Pre-Apr-26') {
+        closed = closed.filter(t => t.closedDate <= '2026-03-31');
+      } else if (period === 'Post-Apr-26') {
+        closed = closed.filter(t => t.closedDate >= '2026-04-01');
+      }
+
+      let cum = 0;
+      const labels = [], data = [];
+      closed.forEach(t => { cum += (t.pnl || 0); labels.push(formatDateDMY(t.closedDate)); data.push(Math.round(cum)); });
+      if (_equityChart) _equityChart.destroy();
+      _equityChart = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: { labels, datasets: [{ data, borderColor: '#d4a24e', backgroundColor: 'rgba(212,162,78,.12)', fill: true, tension: .25, pointRadius: 0, borderWidth: 2 }] },
+        options: {
+          responsive: true, plugins: { legend: { display: false } },
+          scales: {
+            x: { display: labels.length > 0, grid: { color: '#1a212c' }, ticks: { color: '#5b6576', maxTicksLimit: 6 } },
+            y: { grid: { color: '#1a212c' }, ticks: { color: '#5b6576', callback: function (value) { return '₹' + value.toLocaleString('en-IN'); } } }
+          }
+        }
+      });
+    }
+
+    let _monthlyPnLChart = null;
+    function drawMonthlyPnLChart(monthly) {
+      const canvas = $('#monthlyPnLChart'); if (!canvas) return;
+      const labels = monthly.map(m => m.label);
+      const data = monthly.map(m => Math.round(m.pnl * 100) / 100);
+      const colors = data.map(v => v >= 0 ? '#33d17a' : '#ff5c5c');
+      const bgColors = data.map(v => v >= 0 ? 'rgba(51,209,122,.15)' : 'rgba(255,92,92,.15)');
+
+      if (_monthlyPnLChart) _monthlyPnLChart.destroy();
+      _monthlyPnLChart = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: bgColors,
+            borderColor: colors,
+            borderWidth: 1.5,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: '#1a212c' }, ticks: { color: '#5b6576' } },
+            y: {
+              grid: { color: '#1a212c' },
+              ticks: {
+                color: '#5b6576',
+                callback: function (value) { return '₹' + value.toLocaleString('en-IN'); }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    /* =========================================================================
+       TRADE LOG
+       ========================================================================= */
+    function tradeTableHTML(list) {
+      if (!list.length) return `<div class="empty"><h4>No trades to show</h4><p>Add your first trade to get started.</p></div>`;
+
+      const isOpenTab = STATE.tradeFilter === 'open';
+
+      return `<div style="overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch;"><table style="width: 100%; min-width: 750px;"><thead><tr>
+    <th>Open</th><th>Stock</th><th>Avg Buy</th><th>Qty</th><th>SL/TSL</th><th>Status</th>
+    ${isOpenTab ? `
+      <th>P/L at TSL</th><th>P/L at TSL %</th><th>Live P/L</th><th>Live P/L %</th>
+    ` : `
+      <th>Exit</th><th>P/L</th><th>P/L %</th><th>R:R</th>
+    `}
+    <th>Days</th>
+  </tr></thead><tbody>
+    ${list.map(t => {
+        const badge = t.status === 'open' ? '<span class="badge open">OPEN</span>' :
+          (t.pnl >= 0 ? '<span class="badge closed-win">WIN</span>' : '<span class="badge closed-loss">LOSS</span>');
+
+        let customColsHtml = '';
+        if (isOpenTab) {
+          const extraExits = {};
+          const remarks = t.remarks || '';
+          const regexExit = /\[Exit (\d+): ₹([\d\.,]+) × (\d+)\]/g;
+          let matchExit;
+          while ((matchExit = regexExit.exec(remarks)) !== null) {
+            const num = parseInt(matchExit[1]);
+            const price = parseFloat(matchExit[2].replace(/,/g, ''));
+            const qty = parseInt(matchExit[3]);
+            const amt = Math.round(price * qty);
+            extraExits[num] = { price, qty, amt };
+          }
+
+          const ex1Price = extraExits[1] ? extraExits[1].price : t.exit1Price;
+          const ex1Qty = extraExits[1] ? extraExits[1].qty : t.exit1Qty;
+          const ex2Price = extraExits[2] ? extraExits[2].price : t.exit2Price;
+          const ex2Qty = extraExits[2] ? extraExits[2].qty : t.exit2Qty;
+          const ex3Price = extraExits[3] ? extraExits[3].price : t.exit3Price;
+          const ex3Qty = extraExits[3] ? extraExits[3].qty : t.exit3Qty;
+
+          const totExitQty = [ex1Qty, ex2Qty, ex3Qty].reduce((s, q) => s + (Number(q) || 0), 0) + Object.values(extraExits).filter((e, idx) => idx >= 3).reduce((s, e) => s + e.qty, 0);
+          const remainingQty = Number(t.totBuyQty || 0) - totExitQty;
+
+          const totExitAmt = [
+            ex1Price && ex1Qty ? Math.round(ex1Price * ex1Qty) : 0,
+            ex2Price && ex2Qty ? Math.round(ex2Price * ex2Qty) : 0,
+            ex3Price && ex3Qty ? Math.round(ex3Price * ex3Qty) : 0
+          ].reduce((s, a) => s + a, 0) + Object.values(extraExits).filter((e, idx) => idx >= 3).reduce((s, e) => s + e.amt, 0);
+
+          const realizedCost = totExitQty * Number(t.avgBuyPrice || 0);
+          const realizedPnL = totExitQty > 0 ? Math.round(totExitAmt - realizedCost) : 0;
+
+          const pnlAtTS = t.pnl == null ? 0 : t.pnl;
+          const livePrice = STATE.livePrices[t.stock];
+          let livePnLHtml = '<td>—</td><td>—</td>';
+          if (livePrice != null) {
+            const livePnL = Math.round((livePrice - Number(t.avgBuyPrice || 0)) * remainingQty + realizedPnL);
+            const livePnLPct = t.totBuyAmt ? livePnL / Number(t.totBuyAmt) : 0;
+            livePnLHtml = `
+              <td style="color:${livePnL >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${livePnL >= 0 ? '+' : ''}${fmtRs(livePnL)}</td>
+              <td style="color:${livePnL >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${fmtPct(livePnLPct)}</td>
+            `;
+          }
+
+          customColsHtml = `
+            <td style="color:${pnlAtTS >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${pnlAtTS >= 0 ? '+' : ''}${fmtRs(pnlAtTS)}</td>
+            <td style="color:${pnlAtTS >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${fmtPct(t.pnlPct)}</td>
+            ${livePnLHtml}
+          `;
+        } else {
+          customColsHtml = `
+            <td>${t.status === 'closed' ? formatDateDMY(t.closedDate) : '—'}</td>
+            <td style="color:${t.pnl == null ? 'var(--dim)' : (t.pnl >= 0 ? 'var(--green)' : 'var(--red)')}">${t.pnl == null ? '—' : (t.pnl >= 0 ? '+' : '') + fmt(t.pnl)}</td>
+            <td>${fmtPct(t.pnlPct)}</td>
+            <td>${t.rr == null ? '—' : fmt(t.rr)}</td>
+          `;
+        }
+
+        const opened = new Date(t.openDate);
+        const daysVal = t.status === 'closed' ? (t.days == null ? '—' : t.days) : (isNaN(opened) ? '—' : Math.round((new Date() - opened) / 86400000));
+
+        return `<tr data-id="${t.id}">
+        <td>${formatDateDMY(t.openDate)}</td>
+        <td style="font-family:var(--sans);font-weight:600;padding-top:8px;padding-bottom:8px;">
+          ${t.stock || '—'}
+          <div style="display:flex; flex-wrap:wrap; margin-top:2px;">
+            ${getPyramidFillsBadges(t)}
+          </div>
+        </td>
+        <td>${fmt(t.avgBuyPrice)}</td>
+        <td>${fmt(t.totBuyQty)}</td>
+        <td>${fmt(t.slPrice)}${t.tslPrice ? ` / <span style="color:var(--gold);font-weight:600;">${fmt(t.tslPrice)}</span>` : ''}</td>
+        <td>${badge}</td>
+        ${customColsHtml}
+        <td>${daysVal}</td>
+      </tr>`;
+      }).join('')}
+  </tbody></table></div>`;
+    }
+
+    function pnlTableHTML(list) {
+      if (!list.length) return `<div class="empty"><h4>No realized trades found</h4><p>Closed trades will appear here grouped by close date.</p></div>`;
+
+      // Group trades by month of closedDate
+      const groups = {};
+      list.forEach(t => {
+        const key = monthKey(t.closedDate) || 'unknown';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(t);
+      });
+
+      // Sort month keys descending (most recent months first)
+      const sortedKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+      return sortedKeys.map(key => {
+        const monthTrades = groups[key];
+        const label = key === 'unknown' ? 'Unknown Month' : monthLabel(key);
+        const grossPnl = monthTrades.reduce((sum, t) => sum + (Number(t.pnl) || 0), 0);
+
+        // Match expenses logged in this specific month
+        const monthExp = (STATE.expenses || [])
+          .filter(e => monthKey(e.date) === key)
+          .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+        const netPnl = grossPnl - monthExp;
+
+        // Sort trades in this month by closedDate descending
+        monthTrades.sort((a, b) => (b.closedDate || '').localeCompare(a.closedDate || ''));
+
+        return `
+      <div class="month-group" style="margin-bottom: 24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:rgba(255,255,255,.02); border:1px solid var(--line); border-radius:6px; margin-bottom:8px; flex-wrap: wrap; gap: 8px;">
+          <h3 style="margin:0; font-size:13.5px; color:var(--text); font-weight:600;">${label}</h3>
+          <div style="font-size:12px; display:flex; gap:16px; flex-wrap: wrap;">
+            <span style="color:var(--dim);">Gross P/L: <strong style="font-family:var(--mono); color:${grossPnl >= 0 ? 'var(--green)' : 'var(--red)'};">${grossPnl >= 0 ? '+' : ''}${fmtRs(grossPnl)}</strong></span>
+            <span style="color:var(--dim);">Expenses: <strong style="font-family:var(--mono); color:var(--text);">${fmtRs(monthExp)}</strong></span>
+            <span style="color:var(--dim);">Net P/L: <strong style="font-family:var(--mono); color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'};">${netPnl >= 0 ? '+' : ''}${fmtRs(netPnl)}</strong></span>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Open</th><th>Stock</th><th>Avg Buy</th><th>Qty</th><th>SL</th><th>Status</th><th>Exit</th><th>P/L</th><th>P/L %</th><th>R:R</th><th>Days</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${monthTrades.map(t => {
+          const badge = '<span class="badge closed-win">WIN</span>';
+          const lossBadge = '<span class="badge closed-loss">LOSS</span>';
+          return `
+                  <tr data-id="${t.id}">
+                    <td>${formatDateDMY(t.openDate)}</td>
+                    <td style="font-family:var(--sans);font-weight:600;padding-top:8px;padding-bottom:8px;">
+                      ${t.stock || '—'}
+                      <div style="display:flex; flex-wrap:wrap; margin-top:2px;">
+                        ${getPyramidFillsBadges(t)}
+                      </div>
+                    </td>
+                    <td>${fmt(t.avgBuyPrice)}</td>
+                    <td>${fmt(t.totBuyQty)}</td>
+                    <td>${fmt(t.slPrice)}</td>
+                    <td>${t.pnl >= 0 ? badge : lossBadge}</td>
+                    <td>${formatDateDMY(t.closedDate)}</td>
+                    <td style="color:${t.pnl >= 0 ? 'var(--green)' : 'var(--red)'}">${t.pnl >= 0 ? '+' : ''}${fmt(t.pnl)}</td>
+                    <td>${fmtPct(t.pnlPct)}</td>
+                    <td>${t.rr == null ? '—' : fmt(t.rr)}</td>
+                    <td>${t.days == null ? '—' : t.days}</td>
+                  </tr>
+                `;
+        }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+      }).join('');
+    }
+
+    function renderTrades(host) {
+      host.innerHTML = `
+    <div class="page-head"><div><h1>Trade Log</h1><p>${STATE.trades.length} trades total</p></div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        ${STATE.tradeFilter === 'open' ? `<button class="btn" id="fetchGFinanceBtn" style="background:#1d4ed8;border-color:#1d4ed8;color:#fff;">📈 Fetch Google Finance Price</button>` : ''}
+        <button class="btn" id="syncDhanBtn">⚡ Sync Dhan Trades</button>
+        <button class="btn primary" onclick="STATE.view='add';renderShell();">+ New Trade</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="toolbar">
+        <div class="seg" id="filterSeg">
+          <button data-f="all" class="${STATE.tradeFilter === 'all' ? 'on' : ''}">All</button>
+          <button data-f="open" class="${STATE.tradeFilter === 'open' ? 'on' : ''}">Open</button>
+          <button data-f="closed" class="${STATE.tradeFilter === 'closed' ? 'on' : ''}">Closed</button>
+          <button data-f="pnl" class="${STATE.tradeFilter === 'pnl' ? 'on' : ''}">PnL</button>
+        </div>
+        <input id="searchBox" placeholder="Search stock…" value="${STATE.search}">
+      </div>
+      <div id="tradeTableWrap"></div>
+    </div>`;
+      $('#filterSeg').querySelectorAll('button').forEach(b => {
+        b.onclick = () => { STATE.tradeFilter = b.dataset.f; renderTrades(host); };
+      });
+      $('#searchBox').oninput = (e) => { STATE.search = e.target.value; renderTradeTable(); };
+      $('#syncDhanBtn').onclick = () => openDhanSyncModal();
+
+      const fetchBtn = $('#fetchGFinanceBtn');
+      if (fetchBtn) {
+        fetchBtn.onclick = async () => {
+          const openTrades = STATE.trades.filter(t => t.status === 'open');
+          const tickers = openTrades.map(t => t.stock).filter(Boolean);
+          if (!tickers.length) { toast('No open positions to fetch prices for', 'info'); return; }
+
+          fetchBtn.innerHTML = '<span class="spinner"></span> Fetching prices…';
+          fetchBtn.disabled = true;
+          try {
+            const res = await apiPost({ action: 'getLivePrices', tickers });
+            STATE.livePrices = res.prices || {};
+            toast('Live prices updated from Google Finance', 'ok');
+            renderTradeTable();
+          } catch (err) {
+            toast('Fetch failed: ' + err.message, 'err');
+          } finally {
+            fetchBtn.innerHTML = '📈 Fetch Google Finance Price';
+            fetchBtn.disabled = false;
+          }
+        };
+      }
+
+      renderTradeTable();
+    }
+
+    function openDhanSyncModal() {
+      const token = localStorage.getItem('tj_dhan_token') || '';
+      if (!token) {
+        toast('Please enter your Dhan Access Token in Settings first!', 'err');
+        STATE.view = 'settings';
+        renderShell();
+        return;
+      }
+
+      const end = todayISO();
+      const startD = new Date();
+      startD.setDate(startD.getDate() - 7);
+      const start = startD.toISOString().slice(0, 10);
+
+      $('#modalBody').innerHTML = `
+    <div class="modal-head">
+      <h3>Sync Trades from Dhan</h3>
+      <button class="close-x" id="mClose">✕</button>
+    </div>
+    <p style="color:var(--sub); font-size:12.5px; margin-bottom:14px;">Select the date range to fetch equity segment fills from your Dhan account. Aggregated tranches will be merged or closed dynamically.</p>
+    
+    <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:18px;">
+      <div class="field">
+        <label>Start Date</label>
+        <input type="date" id="sync_start" value="${start}">
+      </div>
+      <div class="field">
+        <label>End Date</label>
+        <input type="date" id="sync_end" value="${end}">
+      </div>
+    </div>
+    
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button class="btn ghost" id="sync_cancel">Cancel</button>
+      <button class="btn primary" id="sync_run">Run Sync</button>
+    </div>
+  `;
+      $('#modalBg').classList.add('show');
+      $('#mClose').onclick = closeModal;
+      $('#sync_cancel').onclick = closeModal;
+
+      $('#sync_run').onclick = async () => {
+        const startDate = $('#sync_start').value;
+        const endDate = $('#sync_end').value;
+        if (!startDate || !endDate) {
+          toast('Please enter start and end dates', 'err');
+          return;
+        }
+
+        $('#sync_run').innerHTML = '<span class="spinner"></span> Syncing…';
+        $('#sync_run').disabled = true;
+
+        try {
+          const res = await apiPost({
+            action: 'syncDhan',
+            dhanToken: token,
+            startDate: startDate,
+            endDate: endDate
+          });
+
+          toast(`Sync success: Mapped ${res.newTrades} new & updated ${res.updatedTrades} positions!`, 'ok');
+          closeModal();
+          await loadAll();
+          renderShell();
+        } catch (err) {
+          toast('Sync failed: ' + err.message, 'err');
+          $('#sync_run').textContent = 'Run Sync';
+          $('#sync_run').disabled = false;
+        }
+      };
+    }
+    function renderTradeTable() {
+      let list = STATE.trades.slice();
+      if (STATE.search) list = list.filter(t => (t.stock || '').toLowerCase().includes(STATE.search.toLowerCase()));
+
+      if (STATE.tradeFilter === 'pnl') {
+        list = list.filter(t => t.status === 'closed');
+        $('#tradeTableWrap').innerHTML = pnlTableHTML(list);
+      } else {
+        if (STATE.tradeFilter !== 'all') list = list.filter(t => t.status === STATE.tradeFilter);
+        list.sort((a, b) => (b.openDate || '').localeCompare(a.openDate || ''));
+        $('#tradeTableWrap').innerHTML = tradeTableHTML(list);
+      }
+
+      $('#tradeTableWrap').querySelectorAll('tr[data-id]').forEach(row => {
+        row.onclick = () => openTradeModal(STATE.trades.find(t => t.id === row.dataset.id));
+      });
+    }
+
+    /* =========================================================================
+       ADD TRADE
+       ========================================================================= */
+    function renderAddTrade(host) {
+      const cap = currentCapital();
+      const riskPct = Number(STATE.settings.riskPctPerTrade || 0.01);
+
+      const pf = STATE.prefillTrade || {};
+      const pfStock = pf.stock || '';
+      const pfEntryPrice = pf.entryPrice != null ? pf.entryPrice : '';
+      const pfSlPrice = pf.slPrice != null ? pf.slPrice : '';
+      const pfEntryPct = pf.entryPct != null ? pf.entryPct : 0.5;
+
+      host.innerHTML = `
+    <div class="page-head"><div><h1>Add Trade</h1><p>New position entry — sizing follows your ${(riskPct * 100)}% risk rule</p></div></div>
+    
+    <div class="panel" style="padding: 14px; margin-bottom: 0;">
+      <!-- Header row with title and action buttons -->
+      <div class="panel-head" style="margin-bottom:         <h3 style="margin: 0;">Add Trade Position Entry</h3>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn silver" id="saveTradeBtn" tabindex="10" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);">Save</button>
+          <button class="btn ghost" onclick="STATE.view='trades';renderShell();" tabindex="18" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Cancel</button>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; align-items: start;">
+        <!-- Left Side: Inputs -->
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- Grid for Primary Inputs -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Open Date:</span>
+              <input type="date" id="f_openDate" value="${todayISO()}" tabindex="1" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Stock Name:</span>
+              <input type="text" id="f_stock" placeholder="e.g. TITAN" value="${pfStock}" tabindex="2" style="text-transform:uppercase; flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Breadth Score:</span>
+              <input type="number" id="f_breadth" placeholder="e.g. 65" tabindex="3" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Tranche %:</span>
+              <input type="number" step="0.1" id="f_entryPct" value="${Math.round(pfEntryPct * 100)}" tabindex="4" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Entry Price (₹):</span>
+              <input type="number" step="0.01" id="f_entryPrice" value="${pfEntryPrice}" tabindex="5" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Stop-Loss (₹):</span>
+              <input type="number" step="0.01" id="f_slPrice" value="${pfSlPrice}" tabindex="6" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Brokerage (₹):</span>
+              <input type="number" step="0.01" id="f_brokerage" value="${STATE.settings.brokeragePerTrade || 60}" tabindex="7" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Capital (₹):</span>
+              <input type="number" id="f_cap" value="${Math.round(cap)}" tabindex="8" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; grid-column: span 2;">
+              <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Setup Strategy:</span>
+              <input type="text" id="f_setup" placeholder="e.g. VCP, Pullback" value="" tabindex="9" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+          </div>
+
+          <!-- Pyramid Entries -->
+          <div style="border-top: 1px solid var(--line-soft); padding-top: 12px;">
+            <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600; margin-bottom: 8px;">Pyramid Entries (Optional)</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;">
+              <!-- Entry 2 -->
+              <div style="display: flex; flex-direction: column; gap: 6px; border-right: 1px solid var(--line-soft); padding-right: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E2 Price (₹):</span>
+                  <input type="number" step="0.01" id="f_e2p" tabindex="11" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E2 Qty:</span>
+                  <input type="text" id="f_e2q" placeholder="250 or 30%" tabindex="12" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E2 Date:</span>
+                  <input type="date" id="f_e2d" value="${todayISO()}" tabindex="13" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+                </div>
+              </div>
+
+              <!-- Entry 3 -->
+              <div style="display: flex; flex-direction: column; gap: 6px; padding-left: 4px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E3 Price (₹):</span>
+                  <input type="number" step="0.01" id="f_e3p" tabindex="14" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E3 Qty:</span>
+                  <input type="text" id="f_e3q" placeholder="150 or 20%" tabindex="15" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E3 Date:</span>
+                  <input type="date" id="f_e3d" value="${todayISO()}" tabindex="16" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Remarks -->
+          <div style="border-top: 1px solid var(--line-soft); padding-top: 12px; display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Remarks:</span>
+            <textarea id="f_remarks" rows="2" placeholder="Setup notes, base pattern, catalyst…" tabindex="17" style="width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 6px 8px; font-size: 12px; font-family: var(--sans); outline: none; resize: none;"></textarea>
+          </div>
+        </div>
+
+        <!-- Right Side: Results Metrics -->
+        <div style="border-left: 1px solid var(--line-soft); padding-left: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px;">
+          <div style="grid-column: span 2; font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Auto-sized position sizing</div>
+          <div>
+            <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Risk / Share</div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--mono); margin-top: 2px;" id="calc_slPerShare">—</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">SL %</div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--mono); margin-top: 2px;" id="calc_slPct">—</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Full Qty</div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--mono); margin-top: 2px;" id="calc_fullQty">—</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Tranche Qty</div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--mono); margin-top: 2px;" id="calc_entryQty">—</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Entry Value</div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--mono); margin-top: 2px;" id="calc_entryAmt">—</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Risk at SL</div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--mono); margin-top: 2px;" id="calc_riskAtSL">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+      ['f_entryPrice', 'f_slPrice', 'f_entryPct', 'f_brokerage', 'f_cap'].forEach(id => {
+        $('#' + id).oninput = updateAddCalc; $('#' + id).onchange = updateAddCalc;
+      });
+
+      $('#f_remarks').addEventListener('keydown', (e) => {
+        if (e.key === 'Tab' && !e.shiftKey) {
+          e.preventDefault();
+          $('#saveTradeBtn').focus();
+        }
+      });
+      $('#f_breadth').oninput = () => {
+        const mbs = parseFloat($('#f_breadth').value);
+        if (!isNaN(mbs)) {
+          let tranche = 25;
+          if (mbs >= 75) tranche = 100;
+          else if (mbs >= 45) tranche = 50;
+          $('#f_entryPct').value = tranche;
+        }
+        updateAddCalc();
+      };
+
+      // Tag manual inputs to prevent auto-overwrites
+      ['f_e2p', 'f_e2q', 'f_e3p', 'f_e3q'].forEach(id => {
+        $('#' + id).oninput = () => {
+          $('#' + id).removeAttribute('data-auto');
+        };
+      });
+
+      handleQtyPercentageInput($('#f_e2q'), () => parseFloat($('#calc_fullQty').textContent) || 0);
+      handleQtyPercentageInput($('#f_e3q'), () => parseFloat($('#calc_fullQty').textContent) || 0);
+
+      updateAddCalc();
+      function updateAddCalc() {
+        const entryPrice = parseFloat($('#f_entryPrice').value);
+        const slPrice = parseFloat($('#f_slPrice').value);
+        const entryPct = (parseFloat($('#f_entryPct').value) || 0) / 100;
+        const capital = parseFloat($('#f_cap').value) || cap;
+        const brokerage = parseFloat($('#f_brokerage').value) || 0;
+
+        const c = computeEntryCalc({ capital, riskPct, entryPct, entryPrice: isNaN(entryPrice) ? null : entryPrice, slPrice: isNaN(slPrice) ? null : slPrice, brokerage });
+        $('#calc_slPerShare').textContent = c.slPerShare != null ? fmt(c.slPerShare) : '—';
+        $('#calc_slPct').textContent = c.slPct != null ? fmtPct(c.slPct) : '—';
+        $('#calc_fullQty').textContent = c.fullQty != null ? c.fullQty : '—';
+        $('#calc_entryQty').textContent = c.entry1Qty != null ? c.entry1Qty : '—';
+        $('#calc_entryAmt').textContent = c.entry1Amt != null ? fmtRs(c.entry1Amt) : '—';
+        $('#calc_riskAtSL').textContent = c.totLossAtSL != null ? fmtRs(c.totLossAtSL) : '—';
+
+        // Auto prefill Entry 2 (30% Qty) and Entry 3 (20% Qty) if not manually modified
+        if (c.fullQty != null && !isNaN(entryPrice)) {
+          if (!$('#f_e2q').value || $('#f_e2q').getAttribute('data-auto') === 'true') {
+            $('#f_e2q').value = Math.floor(c.fullQty * 0.3);
+            $('#f_e2q').setAttribute('data-auto', 'true');
+          }
+          if (!$('#f_e3q').value || $('#f_e3q').getAttribute('data-auto') === 'true') {
+            $('#f_e3q').value = Math.floor(c.fullQty * 0.2);
+            $('#f_e3q').setAttribute('data-auto', 'true');
+          }
+        }
+      }
+
+      $('#saveTradeBtn').onclick = async () => {
+        const entryPrice = parseFloat($('#f_entryPrice').value);
+        const slPrice = parseFloat($('#f_slPrice').value);
+        const entryPct = (parseFloat($('#f_entryPct').value) || 50) / 100;
+        const brokerage = parseFloat($('#f_brokerage').value) || 0;
+        const stock = $('#f_stock').value.trim().toUpperCase();
+        if (!stock || isNaN(entryPrice) || isNaN(slPrice)) { toast('Stock, entry price and SL price are required', 'err'); return; }
+        const c = computeEntryCalc({ capital: cap, riskPct, entryPct, entryPrice, slPrice, brokerage });
+        const e2p = parseFloat($('#f_e2p').value), e2q = parseFloat($('#f_e2q').value);
+        const e3p = parseFloat($('#f_e3p').value), e3q = parseFloat($('#f_e3q').value);
+        const trade = {
+          status: 'open', openDate: $('#f_openDate').value, breadth: $('#f_breadth').value || '',
+          entryPct, riskPerShare: cap * riskPct * entryPct, stock,
+          entry1Price: entryPrice, entry1Qty: c.entry1Qty, entry1Amt: c.entry1Amt,
+          entry2Price: isNaN(e2p) ? '' : e2p, entry2Qty: isNaN(e2q) ? '' : e2q, entry2Amt: (!isNaN(e2p) && !isNaN(e2q)) ? Math.round(e2p * e2q) : '',
+          entry2Date: (!isNaN(e2p) && !isNaN(e2q)) ? ($('#f_e2d').value || $('#f_openDate').value) : '',
+          entry3Price: isNaN(e3p) ? '' : e3p, entry3Qty: isNaN(e3q) ? '' : e3q, entry3Amt: (!isNaN(e3p) && !isNaN(e3q)) ? Math.round(e3p * e3q) : '',
+          entry3Date: (!isNaN(e3p) && !isNaN(e3q)) ? ($('#f_e3d').value || $('#f_openDate').value) : '',
+          slPrice, slPerShare: c.slPerShare, slPct: c.slPct, fullQty: c.fullQty, totLossAtSL: c.totLossAtSL, brokerage,
+          setup: $('#f_setup').value.trim(),
+          remarks: $('#f_remarks').value
+        };
+        const buy = aggregateBuy(normalizeTrade(trade));
+        trade.totBuyQty = buy.totBuyQty; trade.totBuyAmt = buy.totBuyAmt; trade.avgBuyPrice = buy.avgBuyPrice;
+
+        const pnlData = computeOpenTradePnL(trade);
+        trade.pnl = pnlData.pnl;
+        trade.pnlPct = pnlData.pnlPct;
+        $('#saveTradeBtn').innerHTML = '<span class="spinner"></span> Saving…';
+        try {
+          await apiPost({ action: 'addTrade', trade });
+          STATE.prefillTrade = null;
+          await loadAll();
+          STATE.view = 'trades';
+          toast('Trade saved', 'ok');
+          renderShell();
+        } catch (err) { toast('Save failed: ' + err.message, 'err'); $('#saveTradeBtn').textContent = 'Save Trade'; }
+      };
+    }
+
+    /* =========================================================================
+       TRADE MODAL (view / add pyramid / close / delete)
+       ========================================================================= */
+    function openTradeModal(t) {
+      let prefillPrice = '';
+      let prefillQty = '';
+      let qtyLabel = 'Qty';
+      if (t.status === 'open') {
+        if (!t.entry2Price) {
+          prefillQty = Math.floor(Number(t.fullQty || 0) * 0.3) || '';
+          qtyLabel = 'Qty (30%)';
+        } else if (!t.entry3Price) {
+          prefillQty = Math.floor(Number(t.fullQty || 0) * 0.2) || '';
+          qtyLabel = 'Qty (20%)';
+        } else {
+          prefillQty = '';
+          qtyLabel = 'Qty';
+        }
+      }
+
+      // Parse extra tranches from remarks
+      const extraTranches = {};
+      const extraExits = {};
+      const remarks = t.remarks || '';
+
+      // Parse buys
+      const regex = /\[Tranche (\d+): ₹([\d\.,]+) × (\d+)\]/g;
+      let match;
+      while ((match = regex.exec(remarks)) !== null) {
+        const num = parseInt(match[1]);
+        const price = parseFloat(match[2].replace(/,/g, ''));
+        const qty = parseInt(match[3]);
+        const amt = Math.round(price * qty);
+        extraTranches[num] = { price, qty, amt };
+      }
+
+      // Parse exits
+      const regexExit = /\[Exit (\d+): ₹([\d\.,]+) × (\d+)\]/g;
+      let matchExit;
+      while ((matchExit = regexExit.exec(remarks)) !== null) {
+        const num = parseInt(matchExit[1]);
+        const price = parseFloat(matchExit[2].replace(/,/g, ''));
+        const qty = parseInt(matchExit[3]);
+        const amt = Math.round(price * qty);
+        extraExits[num] = { price, qty, amt };
+      }
+
+      const t3Price = extraTranches[3] ? extraTranches[3].price : t.entry3Price;
+      const t3Qty = extraTranches[3] ? extraTranches[3].qty : t.entry3Qty;
+      const t3Amt = extraTranches[3] ? extraTranches[3].amt : t.entry3Amt;
+
+      const extraBuysHtml = Object.keys(extraTranches)
+        .map(Number)
+        .filter(num => num > 3)
+        .sort((a, b) => a - b)
+        .map(num => {
+          const et = extraTranches[num];
+          return `
+        <div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,.02); border-radius:4px; border:1px solid var(--line);">
+          <span style="color:var(--sub);">Tranche ${num} (Pyramid):</span>
+          <strong style="font-family:var(--mono);">₹${fmt(et.price)} × ${et.qty}</strong>
+        </div>
+      `;
+        }).join('');
+
+      // Exits Breakdown calculations
+      const ex1Price = extraExits[1] ? extraExits[1].price : t.exit1Price;
+      const ex1Qty = extraExits[1] ? extraExits[1].qty : t.exit1Qty;
+
+      const ex2Price = extraExits[2] ? extraExits[2].price : t.exit2Price;
+      const ex2Qty = extraExits[2] ? extraExits[2].qty : t.exit2Qty;
+
+      const ex3Price = extraExits[3] ? extraExits[3].price : t.exit3Price;
+      const ex3Qty = extraExits[3] ? extraExits[3].qty : t.exit3Qty;
+
+      const exitsHtmlList = [];
+      if (ex1Price) exitsHtmlList.push(`<div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,.02); border-radius:4px; border:1px solid var(--line);"><span>Exit 1:</span><strong style="font-family:var(--mono);">₹${fmt(ex1Price)} × ${ex1Qty}</strong></div>`);
+      if (ex2Price) exitsHtmlList.push(`<div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,.02); border-radius:4px; border:1px solid var(--line);"><span>Exit 2:</span><strong style="font-family:var(--mono);">₹${fmt(ex2Price)} × ${ex2Qty}</strong></div>`);
+      if (ex3Price) exitsHtmlList.push(`<div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,.02); border-radius:4px; border:1px solid var(--line);"><span>Exit 3:</span><strong style="font-family:var(--mono);">₹${fmt(ex3Price)} × ${ex3Qty}</strong></div>`);
+
+      Object.keys(extraExits)
+        .map(Number)
+        .filter(num => num > 3)
+        .sort((a, b) => a - b)
+        .forEach(num => {
+          const ee = extraExits[num];
+          exitsHtmlList.push(`<div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,.02); border-radius:4px; border:1px solid var(--line);"><span>Exit ${num}:</span><strong style="font-family:var(--mono);">₹${fmt(ee.price)} × ${ee.qty}</strong></div>`);
+        });
+
+      const exitsHtml = exitsHtmlList.length ? exitsHtmlList.join('') : `<div style="text-align:center; color:var(--dim); padding:16px 0; font-family:var(--sans);">No exits logged yet</div>`;
+
+      const totExitQty = [t.exit1Qty, t.exit2Qty, t.exit3Qty].reduce((s, q) => s + (Number(q) || 0), 0) + Object.values(extraExits).filter((e, idx) => idx >= 3).reduce((s, e) => s + e.qty, 0);
+      const remainingQty = Number(t.totBuyQty || 0) - totExitQty;
+
+      const totExitAmt = [
+        ex1Price && ex1Qty ? Math.round(ex1Price * ex1Qty) : 0,
+        ex2Price && ex2Qty ? Math.round(ex2Price * ex2Qty) : 0,
+        ex3Price && ex3Qty ? Math.round(ex3Price * ex3Qty) : 0
+      ].reduce((s, a) => s + a, 0) + Object.values(extraExits).filter((e, idx) => idx >= 3).reduce((s, e) => s + e.amt, 0);
+
+      const realizedCost = totExitQty * Number(t.avgBuyPrice || 0);
+      const realizedPnL = totExitQty > 0 ? Math.round(totExitAmt - realizedCost) : 0;
+      const realizedPnLPct = realizedCost > 0 ? (realizedPnL / realizedCost) : 0;
+      const capitalExposure = remainingQty * Number(t.avgBuyPrice || 0);
+      const expectedPnL = Math.round((Number(t.slPrice || 0) - Number(t.avgBuyPrice || 0)) * remainingQty + realizedPnL);
+
+      $('#modalBody').innerHTML = `
+    <div class="modal-head"><h3>Trade Details <span style="color:var(--dim);font-weight:400;font-size:12px;">· ID: ${t.id}</span></h3>
+      <button class="close-x" id="mClose">✕</button></div>
+
+    <div class="form-grid" style="margin-bottom:12px;">
+      <div class="field"><label>Stock</label><input id="m_stock" value="${t.stock}" style="text-transform:uppercase;"></div>
+      <div class="field"><label>Open Date</label><input type="date" id="m_openDate" value="${t.openDate}"></div>
+      ${t.status === 'open' ? `
+        <div class="field"><label>Initial SL (₹)</label><input type="number" step="0.01" id="m_slPrice" value="${t.slPrice || ''}"></div>
+        <div class="field"><label>Trailing SL / TSL (₹)</label><input type="number" step="0.01" id="m_tslPrice" value="${t.tslPrice || ''}" style="border: 1px solid var(--gold); background: rgba(212,162,78,.03); color: var(--text);"></div>
+      ` : `
+        <div class="field readonly"><label>Initial SL</label><input disabled value="${fmt(t.slPrice)}"></div>
+        <div class="field readonly"><label>Trailing SL / TSL</label><input disabled value="${fmt(t.tslPrice)}"></div>
+      `}
+
+      <div class="field readonly"><label>Avg Buy</label><input disabled value="${fmt(t.avgBuyPrice)}"></div>
+      <div class="field readonly"><label>Buy Qty</label><input disabled value="${fmt(t.totBuyQty)}"></div>
+      <div class="field readonly"><label>Buy Amount</label><input disabled value="${fmtRs(t.totBuyAmt)}"></div>
+      <div class="field readonly"><label>Risk at SL</label><input disabled value="${fmtRs(t.totLossAtSL)}" id="m_riskAtSL"></div>
+    </div>
+
+    ${t.status === 'open' ? `
+    <div style="background:rgba(255,255,255,.02); border:1px solid var(--line); border-radius:6px; padding:12px; margin-bottom:14px; display:flex; flex-direction:column; gap:8px;">
+      <h4 style="margin:0; font-size:12px; color:var(--sub); display:flex; align-items:center; gap:6px; font-weight:600;">
+        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${remainingQty > 0 ? 'var(--gold)' : 'var(--green)'};"></span>
+        Active Exposure Summary
+      </h4>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:12px; text-align:center;">
+        <div style="border-right:1px solid var(--line); padding-right:8px;">
+          <div style="font-size:10px; color:var(--dim); text-transform:uppercase; margin-bottom:4px; font-weight:500;">Realized P/L</div>
+          <div style="font-size:13px; font-family:var(--mono); font-weight:bold; color:${realizedPnL >= 0 ? 'var(--green)' : 'var(--red)'};">
+            ${realizedPnL >= 0 ? '+' : ''}${fmtRs(realizedPnL)}
+          </div>
+        </div>
+        <div style="border-right:1px solid var(--line); padding-right:8px;">
+          <div style="font-size:10px; color:var(--dim); text-transform:uppercase; margin-bottom:4px; font-weight:500;">Shares in Hand</div>
+          <div style="font-size:13px; font-family:var(--mono); font-weight:bold; color:var(--text);">
+            ${remainingQty}
+          </div>
+        </div>
+        <div style="border-right:1px solid var(--line); padding-right:8px;">
+          <div style="font-size:10px; color:var(--dim); text-transform:uppercase; margin-bottom:4px; font-weight:500;">Expected P/L (SL/TSL)</div>
+          <div id="m_expectedPnL_val" style="font-size:13px; font-family:var(--mono); font-weight:bold; color:${expectedPnL >= 0 ? 'var(--green)' : 'var(--red)'};">
+            ${expectedPnL >= 0 ? '+' : ''}${fmtRs(expectedPnL)}
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px; color:var(--dim); text-transform:uppercase; margin-bottom:4px; font-weight:500;">Cap Exposure</div>
+          <div style="font-size:13px; font-family:var(--mono); font-weight:bold; color:var(--text);">
+            ${fmtRs(capitalExposure)}
+          </div>
+        </div>
+      </div>
+    </div>
+    ` : ''}
+
+    <div class="two-col" style="grid-template-columns: 1fr 1fr; margin-bottom: 14px; gap: 14px;">
+      <fieldset style="margin-top:0; padding:12px;">
+        <legend>Buys Breakdown</legend>
+        <div style="font-family:var(--sans); font-size:12px; display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto;">
+          <div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,.02); border-radius:4px; border:1px solid var(--line);">
+            <span style="color:var(--sub);">Tranche 1 (${formatDateDMY(t.openDate)}):</span>
+            <strong style="font-family:var(--mono);">₹${fmt(t.entry1Price)} × ${t.entry1Qty}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,.02); border-radius:4px; border:1px solid ${!t.entry2Price && t.status === 'open' ? 'var(--gold)' : 'var(--line)'}; ${!t.entry2Price && t.status === 'open' ? 'color:var(--gold); background:rgba(212,162,78,.05);' : ''}">
+            <span>Tranche 2${t.entry2Date ? ` (${formatDateDMY(t.entry2Date)})` : ''}:</span>
+            <strong style="font-family:var(--mono);">${t.entry2Price ? `₹${fmt(t.entry2Price)} × ${t.entry2Qty}` : (t.status === 'open' ? 'BUY NEXT ⚡' : '—')}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,.02); border-radius:4px; border:1px solid ${t.entry2Price && !t3Price && t.status === 'open' ? 'var(--gold)' : 'var(--line)'}; ${t.entry2Price && !t3Price && t.status === 'open' ? 'color:var(--gold); background:rgba(212,162,78,.05);' : ''}">
+            <span>Tranche 3${t.entry3Date ? ` (${formatDateDMY(t.entry3Date)})` : ''}:</span>
+            <strong style="font-family:var(--mono);">${t3Price ? `₹${fmt(t3Price)} × ${t3Qty}` : (t.entry2Price && t.status === 'open' ? 'BUY NEXT ⚡' : 'Not bought')}</strong>
+          </div>
+          ${extraBuysHtml}
+        </div>
+      </fieldset>
+
+      <fieldset style="margin-top:0; padding:12px;">
+        <legend>Exits Breakdown (${totExitQty}/${t.totBuyQty || 0})</legend>
+        <div style="font-family:var(--sans); font-size:12px; display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto;">
+          ${exitsHtml}
+        </div>
+      </fieldset>
+    </div>
+
+    ${t.status === 'open' ? `
+    <div class="two-col" style="grid-template-columns: 1fr 1fr; margin-bottom: 14px; gap: 14px;">
+      <fieldset style="margin-top:0; padding:12px;">
+        <legend>Add pyramid entry</legend>
+        <div class="form-grid" style="grid-template-columns: 1fr; gap: 8px;">
+          <div class="field"><label>Price</label><input type="number" step="0.01" id="m_addPrice" value="${prefillPrice}"></div>
+          <div class="field"><label>${qtyLabel}</label><input type="text" id="m_addQty" value="${prefillQty}" placeholder="e.g. 100 or 30%"></div>
+          <div class="field"><label>Date</label><input type="date" id="m_addDate" value="${todayISO()}"></div>
+          <button class="btn primary" id="m_addLeg" style="margin-top:4px; justify-content:center;">Add Buy Leg</button>
+        </div>
+      </fieldset>
+
+      <fieldset style="margin-top:0; padding:12px;">
+        <legend>Log Partial / Full Exit</legend>
+        <div class="form-grid" style="grid-template-columns: 1fr; gap: 8px;">
+          <div class="field"><label>Exit Price</label><input type="number" step="0.01" id="m_exitPrice"></div>
+          <div class="field"><label>Exit Qty</label><input type="text" id="m_exitQty" value="${remainingQty}" placeholder="e.g. 100 or 50%"></div>
+          <div class="field"><label>Exit Date</label><input type="date" id="m_exitDate" value="${todayISO()}"></div>
+          <button class="btn primary" id="m_logExit" style="margin-top:4px; justify-content:center; background:var(--gold); border-color:var(--gold);">Log Sell Leg</button>
+        </div>
+      </fieldset>
+    </div>
+    ` : `
+    <fieldset style="margin-bottom:14px; margin-top:0; padding:12px;">
+      <legend>Closed Trade Summary</legend>
+      <div class="form-grid c3" style="margin-bottom:12px; gap: 8px;">
+        <div class="field readonly"><label>Total Exit Value</label><input disabled value="${fmtRs(t.totExitAmt)}"></div>
+        <div class="field readonly"><label>Net P/L</label><input disabled value="${fmtRs(t.pnl)}" style="color:${t.pnl >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:bold;"></div>
+        <div class="field readonly"><label>P/L %</label><input disabled value="${fmtPct(t.pnlPct)}" style="color:${t.pnl >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:bold;"></div>
+        <div class="field readonly"><label>R:R Ratio</label><input disabled value="${t.rr == null ? '—' : t.rr}"></div>
+        <div class="field readonly"><label>Holding Period</label><input disabled value="${t.days == null ? '—' : t.days + ' days'}"></div>
+        <div class="field readonly"><label>Closed Date</label><input disabled value="${formatDateDMY(t.closedDate)}"></div>
+      </div>
+    </fieldset>
+    `}
+
+    <div class="field" style="margin-bottom:12px;"><label>Setup Strategy</label><input type="text" id="m_setup" value="${t.setup || ''}" placeholder="e.g. VCP, Pullback, Cheat"></div>
+    <div class="field" style="margin-bottom:12px;"><label>Remarks</label><textarea rows="2" id="m_remarks" placeholder="Setup notes, trading plan, lessons...">${t.remarks || ''}</textarea></div>
+    
+    <div style="display:flex;gap:10px;">
+      <button class="btn" id="m_updateRemarks">${t.status === 'open' ? 'Save Changes' : 'Save Remarks'}</button>
+      <button class="btn danger ghost" id="m_delete" style="margin-left:auto;">Delete Trade</button>
+    </div>
+  `;
+      $('#modalBg').classList.add('show');
+      $('#mClose').onclick = closeModal;
+      $('#modalBg').onclick = (e) => { if (e.target.id === 'modalBg') closeModal(); };
+
+      const updateModalPnLAndRisk = () => {
+        const slInput = $('#m_slPrice');
+        const tslInput = $('#m_tslPrice');
+        const sl = slInput ? parseFloat(slInput.value) || 0 : 0;
+        const tsl = tslInput ? parseFloat(tslInput.value) : NaN;
+        const activeSL = !isNaN(tsl) && tsl !== 0 ? tsl : sl;
+        const avgBuy = Number(t.avgBuyPrice || 0);
+        const remQty = remainingQty;
+
+        // Re-calculate Expected P/L in real-time
+        const expected = Math.round((activeSL - avgBuy) * remQty + realizedPnL);
+        const valEl = $('#m_expectedPnL_val');
+        if (valEl) {
+          valEl.textContent = (expected >= 0 ? '+' : '') + fmtRs(expected);
+          valEl.style.color = expected >= 0 ? 'var(--green)' : 'var(--red)';
+        }
+
+        // Re-calculate Risk at SL in real-time
+        const slPerShare = Number((avgBuy - sl).toFixed(4));
+        const totLossAtSL = Math.round(Number(t.totBuyQty || 0) * slPerShare);
+        const riskEl = $('#m_riskAtSL');
+        if (riskEl) {
+          riskEl.value = fmtRs(totLossAtSL);
+        }
+      };
+
+      if ($('#m_slPrice')) $('#m_slPrice').oninput = updateModalPnLAndRisk;
+      if ($('#m_tslPrice')) $('#m_tslPrice').oninput = updateModalPnLAndRisk;
+
+      const addLegBtn = $('#m_addLeg');
+      if (addLegBtn) {
+        addLegBtn.onclick = async () => {
+          const price = parseFloat($('#m_addPrice').value), qty = parseFloat($('#m_addQty').value);
+          const date = $('#m_addDate').value;
+          if (isNaN(price) || isNaN(qty)) { toast('Enter price and qty', 'err'); return; }
+          const updated = { ...t };
+          if (!updated.entry2Price) {
+            updated.entry2Price = price;
+            updated.entry2Qty = qty;
+            updated.entry2Amt = Math.round(price * qty);
+            updated.entry2Date = date;
+          }
+          else if (!updated.entry3Price) {
+            updated.entry3Price = price;
+            updated.entry3Qty = qty;
+            updated.entry3Amt = Math.round(price * qty);
+            updated.entry3Date = date;
+          }
+          else {
+            const oldQty = Number(updated.entry3Qty || 0);
+            const oldAmt = Number(updated.entry3Amt || 0);
+            const newQty = oldQty + qty;
+            const newAmt = oldAmt + Math.round(price * qty);
+            const newPrice = newQty ? +(newAmt / newQty).toFixed(2) : 0;
+
+            let remarksStr = updated.remarks || '';
+            if (updated.entry3Price && !remarksStr.includes('[Tranche 3:')) {
+              const e3d = updated.entry3Date ? ` on ${formatDateDMY(updated.entry3Date)}` : '';
+              remarksStr = remarksStr.trim() + (remarksStr ? '\n' : '') + `[Tranche 3: ₹${Number(updated.entry3Price).toFixed(2)} × ${updated.entry3Qty}${e3d}]`;
+            }
+            const matches = remarksStr.match(/\[Tranche \d+:/g) || [];
+            const nextNum = 3 + matches.length;
+            remarksStr = remarksStr.trim() + '\n' + `[Tranche ${nextNum}: ₹${price.toFixed(2)} × ${qty} on ${formatDateDMY(date)}]`;
+
+            updated.remarks = remarksStr;
+            updated.entry3Price = newPrice;
+            updated.entry3Qty = newQty;
+            updated.entry3Amt = newAmt;
+            if (!updated.entry3Date) {
+              updated.entry3Date = date;
+            }
+          }
+          const buy = aggregateBuy(normalizeTrade(updated));
+          updated.totBuyQty = buy.totBuyQty; updated.totBuyAmt = buy.totBuyAmt; updated.avgBuyPrice = buy.avgBuyPrice;
+
+          // Re-calculate Expected P/L for open position
+          const pnlData = computeOpenTradePnL(updated);
+          updated.pnl = pnlData.pnl;
+          updated.pnlPct = pnlData.pnlPct;
+          if (updated.totLossAtSL) updated.rr = +(updated.pnl / updated.totLossAtSL).toFixed(2);
+
+          updated.remarks = $('#m_remarks').value.trim() + (updated.remarks !== t.remarks ? '\n' + updated.remarks.replace(t.remarks, '').trim() : '');
+          try { await apiPost({ action: 'updateTrade', trade: updated }); await loadAll(); toast('Position updated', 'ok'); closeModal(); renderShell(); }
+          catch (err) { toast('Failed: ' + err.message, 'err'); }
+        };
+        const addQtyEl = $('#m_addQty');
+        if (addQtyEl) {
+          handleQtyPercentageInput(addQtyEl, () => Number(t.fullQty || 0));
+        }
+      }
+
+      const logExitBtn = $('#m_logExit');
+      if (logExitBtn) {
+        logExitBtn.onclick = async () => {
+          const price = parseFloat($('#m_exitPrice').value);
+          const qty = parseFloat($('#m_exitQty').value);
+          const date = $('#m_exitDate').value;
+          if (isNaN(price) || isNaN(qty)) { toast('Enter exit price and qty', 'err'); return; }
+
+          const updated = { ...t };
+
+          if (!updated.exit1Price) {
+            updated.exit1Price = price;
+            updated.exit1Qty = qty;
+          } else if (!updated.exit2Price) {
+            updated.exit2Price = price;
+            updated.exit2Qty = qty;
+          } else if (!updated.exit3Price) {
+            updated.exit3Price = price;
+            updated.exit3Qty = qty;
+          } else {
+            const oldQty = Number(updated.exit3Qty || 0);
+            const oldVal = Number(updated.exit3Price || 0) * oldQty;
+            const newVal = price * qty;
+            const newQty = oldQty + qty;
+            const newPrice = newQty ? Number(((oldVal + newVal) / newQty).toFixed(2)) : 0;
+
+            let remarksStr = updated.remarks || '';
+            if (updated.exit3Price && !remarksStr.includes('[Exit 3:')) {
+              remarksStr = remarksStr.trim() + (remarksStr ? '\n' : '') + `[Exit 3: ₹${Number(updated.exit3Price).toFixed(2)} × ${updated.exit3Qty}]`;
+            }
+            const matches = remarksStr.match(/\[Exit \d+:/g) || [];
+            const nextNum = 3 + matches.length;
+            remarksStr = remarksStr.trim() + '\n' + `[Exit ${nextNum}: ₹${price.toFixed(2)} × ${qty}]`;
+
+            updated.remarks = remarksStr;
+            updated.exit3Price = newPrice;
+            updated.exit3Qty = newQty;
+          }
+
+          const ex = aggregateExit(normalizeTrade(updated));
+          updated.totExitAmt = ex.totExitAmt;
+          const totalExitQty = ex.totExitQty;
+          updated.remarks = $('#m_remarks').value.trim() + (updated.remarks !== t.remarks ? '\n' + updated.remarks.replace(t.remarks, '').trim() : '');
+
+          if (totalExitQty >= (updated.totBuyQty || 0)) {
+            updated.status = 'closed';
+            updated.closedDate = date;
+            updated.pnl = Math.round(updated.totExitAmt - (updated.totBuyAmt || 0));
+            updated.pnlPct = updated.totBuyAmt ? updated.pnl / updated.totBuyAmt : null;
+            const opened = new Date(updated.openDate), closed = new Date(updated.closedDate);
+            updated.days = isNaN(opened) || isNaN(closed) ? null : Math.round((closed - opened) / 86400000);
+            updated.rr = updated.totLossAtSL ? +(updated.pnl / updated.totLossAtSL).toFixed(2) : null;
+          } else {
+            updated.status = 'open';
+            updated.closedDate = '';
+
+            // Re-calculate Expected P/L for open position
+            const pnlData = computeOpenTradePnL(updated);
+            updated.pnl = pnlData.pnl;
+            updated.pnlPct = pnlData.pnlPct;
+
+            updated.days = '';
+            updated.rr = updated.totLossAtSL ? +(updated.pnl / updated.totLossAtSL).toFixed(2) : null;
+          }
+
+          try {
+            await apiPost({ action: 'updateTrade', trade: updated });
+            await loadAll();
+            toast('Exit logged successfully', 'ok');
+            closeModal();
+            renderShell();
+          } catch (err) {
+            toast('Failed: ' + err.message, 'err');
+          }
+        };
+        handleQtyPercentageInput($('#m_exitQty'), () => Number(t.totBuyQty || 0));
+      }
+
+      $('#m_updateRemarks').onclick = async () => {
+        const stockName = $('#m_stock').value.trim().toUpperCase();
+        const openDate = $('#m_openDate').value;
+        if (!stockName) { toast('Stock name is required', 'err'); return; }
+        if (!openDate) { toast('Open date is required', 'err'); return; }
+
+        const updated = {
+          ...t,
+          stock: stockName,
+          openDate: openDate,
+          setup: $('#m_setup').value.trim(),
+          remarks: $('#m_remarks').value.trim()
+        };
+
+        const slInput = $('#m_slPrice');
+        const tslInput = $('#m_tslPrice');
+
+        if (slInput) {
+          const newSl = parseFloat(slInput.value);
+          if (!isNaN(newSl)) {
+            updated.slPrice = newSl;
+            const slPerShare = Number((updated.avgBuyPrice - newSl).toFixed(4));
+            updated.slPerShare = slPerShare;
+            updated.slPct = updated.avgBuyPrice ? slPerShare / updated.avgBuyPrice : null;
+            updated.totLossAtSL = Math.round(Number(updated.totBuyQty || 0) * slPerShare);
+          }
+        }
+
+        if (tslInput) {
+          const newTsl = parseFloat(tslInput.value);
+          updated.tslPrice = isNaN(newTsl) ? '' : newTsl;
+        }
+
+        if (updated.status === 'open') {
+          const pnlData = computeOpenTradePnL(updated);
+          updated.pnl = pnlData.pnl;
+          updated.pnlPct = pnlData.pnlPct;
+          updated.rr = updated.totLossAtSL ? +(updated.pnl / updated.totLossAtSL).toFixed(2) : null;
+        } else {
+          const opened = new Date(updated.openDate), closed = new Date(updated.closedDate);
+          updated.days = isNaN(opened) || isNaN(closed) ? null : Math.round((closed - opened) / 86400000);
+        }
+
+        try {
+          await apiPost({ action: 'updateTrade', trade: updated });
+          await loadAll();
+          toast('Trade updated successfully', 'ok');
+          closeModal();
+          renderShell();
+        } catch (err) {
+          toast('Failed: ' + err.message, 'err');
+        }
+      };
+
+      $('#m_delete').onclick = async () => {
+        if (!confirm('Delete this trade permanently?')) return;
+        try { await apiPost({ action: 'deleteTrade', id: t.id }); await loadAll(); toast('Trade deleted', 'ok'); closeModal(); renderShell(); }
+        catch (err) { toast('Failed: ' + err.message, 'err'); }
+      };
+    }
+    function closeModal() { $('#modalBg').classList.remove('show'); }
+
+    /* =========================================================================
+       RISK / POSITION SIZE CALCULATOR (standalone, no save)
+       ========================================================================= */
+    function getWatchlist() {
+      return STATE.watchlist || [];
+    }
+
+    async function saveWatchlist(rows) {
+      STATE.watchlist = rows.map(normalizeWatchlist);
+      try {
+        await apiPost({ action: 'updateWatchlist', rows });
+      } catch (err) {
+        toast('Failed to save watchlist: ' + err.message, 'err');
+      }
+    }
+
+    window.moveWlToTradeLog = async (idx) => {
+      const wl = getWatchlist();
+      const item = wl[idx];
+      if (!item) return;
+
+      const cap = currentCapital();
+      const riskPct = Number(STATE.settings.riskPctPerTrade || 0.01);
+
+      const c = computeEntryCalc({
+        capital: cap,
+        riskPct,
+        entryPct: item.entryPct,
+        entryPrice: item.entryPrice,
+        slPrice: item.slPrice,
+        brokerage: Number(STATE.settings.brokeragePerTrade || 60)
+      });
+
+      const trade = {
+        status: 'open',
+        openDate: todayISO(),
+        breadth: item.breadth || '',
+        entryPct: item.entryPct,
+        riskPerShare: cap * riskPct * item.entryPct,
+        stock: item.stock,
+        entry1Price: item.entryPrice,
+        entry1Qty: c.entry1Qty || item.qty,
+        entry1Amt: c.entry1Amt || Math.round(item.entryPrice * item.qty),
+        slPrice: item.slPrice,
+        slPerShare: c.slPerShare,
+        slPct: c.slPct,
+        fullQty: c.fullQty,
+        totLossAtSL: c.totLossAtSL,
+        brokerage: Number(STATE.settings.brokeragePerTrade || 60),
+        setup: item.setup || 'Watchlist',
+        remarks: item.setup ? `Executed from planned watchlist (Setup: ${item.setup})` : 'Executed from planned watchlist'
+      };
+
+      trade.totBuyQty = trade.entry1Qty;
+      trade.totBuyAmt = trade.entry1Amt;
+      trade.avgBuyPrice = trade.entry1Price;
+
+      const pnlData = computeOpenTradePnL(trade);
+      trade.pnl = pnlData.pnl;
+      trade.pnlPct = pnlData.pnlPct;
+
+      toast('Saving trade to Google Sheet...', 'info');
+
+      try {
+        await apiPost({ action: 'addTrade', trade });
+
+        wl.splice(idx, 1);
+        await saveWatchlist(wl);
+
+        await loadAll();
+        STATE.view = 'trades';
+        renderShell();
+        toast(`Successfully logged ${item.stock} to Trade Log!`, 'ok');
+      } catch (err) {
+        toast('Failed to log trade: ' + err.message, 'err');
+      }
+    };
+
+    window.deleteWlItem = async (idx) => {
+      const wl = getWatchlist();
+      wl.splice(idx, 1);
+      await saveWatchlist(wl);
+      renderShell();
+      toast('Removed from watchlist', 'ok');
+    };
+
+    function renderRiskCalc(host) {
+      const cap = currentCapital();
+      const riskPct = Number(STATE.settings.riskPctPerTrade || 0.01);
+      const wl = getWatchlist();
+
+      host.innerHTML = `
+    <div class="page-head"><div><h1>Position Calc</h1><p>Position sizing sandbox & planned trades planner</p></div></div>
+    
+    <!-- Unified Sandbox Calculator Card -->
+    <div class="panel" style="padding: 14px; margin-bottom: 14px;">
+      <!-- Header row with title -->
+      <div class="panel-head" style="margin-bottom: 12px; flex-shrink: 0;">
+        <h3 style="margin: 0;">Position Size Calculator Sandbox</h3>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; align-items: start;">
+        <!-- Left Side: Inputs Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Stock Name:</span>
+            <input type="text" id="r_stock" placeholder="e.g. TITAN" style="text-transform:uppercase; flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Breadth Score:</span>
+            <input type="number" id="r_breadth" placeholder="e.g. 65" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Capital (₹):</span>
+            <input type="number" id="r_cap" value="${Math.round(cap)}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Risk % / trade:</span>
+            <input type="number" step="0.1" id="r_riskPct" value="${(riskPct * 100)}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Entry Price (₹):</span>
+            <input type="number" step="0.01" id="r_entry" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Stop-Loss (₹):</span>
+            <input type="number" step="0.01" id="r_sl" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Tranche %:</span>
+            <input type="number" step="0.1" id="r_entryPct" value="50" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Setup Strategy:</span>
+            <input type="text" id="r_setup" placeholder="e.g. VCP, Pullback" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; grid-column: span 2; margin-top: 4px;">
+            <button class="btn silver" id="addWlBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);">+ Add to Watchlist</button>
+          </div>
+        </div>
+
+        <!-- Right Side: Results Metrics List -->
+        <div style="border-left: 1px solid var(--line-soft); padding-left: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;">
+          <div>
+            <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Risk / Share</div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--mono); margin-top: 2px;" id="r_out_slps">—</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">SL %</div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--mono); margin-top: 2px;" id="r_out_slpct">—</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Full Qty</div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--mono); margin-top: 2px;" id="r_out_full">—</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Tranche Qty</div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--mono); margin-top: 2px;" id="r_out_qty">—</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Position Value</div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--mono); margin-top: 2px;" id="r_out_amt">—</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Risk at SL</div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--mono); margin-top: 2px;" id="r_out_risk">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Info Row (Combined Risk Reference) -->
+      <div style="border-top: 1px solid var(--line-soft); margin-top: 14px; padding-top: 10px; display: flex; gap: 24px; font-size: 11.5px; color: var(--dim);">
+        <div><span style="color: var(--sub);">Preferred Positions:</span> <strong style="color: var(--text); font-family: var(--mono); font-weight: 600;">${STATE.settings.maxStocksMin || ''}–${STATE.settings.maxStocksMax || ''} stocks</strong></div>
+        <div><span style="color: var(--sub);">Pyramid Wait:</span> <strong style="color: var(--text); font-family: var(--mono); font-weight: 600;">${STATE.settings.pyramidDays || ''} days</strong></div>
+        <div><span style="color: var(--sub);">Max Risk / Trade:</span> <strong style="color: var(--gold); font-family: var(--mono); font-weight: 600;">${fmtRs(cap * riskPct)}</strong></div>
+      </div>
+    </div>
+    
+    <!-- Watchlist Table Card -->
+    <div class="panel" style="overflow-x: auto; padding: 14px; margin-bottom: 0;">
+      <div class="panel-head" style="margin-bottom: 10px;"><h3>Watchlist / Planned Trades</h3><span class="hint">Synced to Google Sheets</span></div>
+      <table style="width: 100%;">
+        <thead>
+          <tr>
+            <th>Stock</th>
+            <th>Planned Entry</th>
+            <th>Stop Loss</th>
+            <th>SL %</th>
+            <th>Qty</th>
+            <th>Position Value</th>
+            <th>Risk at SL</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${wl.length ? wl.map((item, idx) => `
+            <tr>
+              <td style="font-family:var(--sans);font-weight:600;color:var(--gold);">${item.stock}${item.setup ? `<br><span style="font-size:9px;color:var(--dim);background:var(--bg2);padding:1px 4px;border-radius:3px;font-weight:normal;">${item.setup}</span>` : ''}</td>
+              <td>${fmt(item.entryPrice)}</td>
+              <td>${fmt(item.slPrice)}</td>
+              <td style="color:var(--red);">${fmtPct(item.slPct)}</td>
+              <td>${item.qty}</td>
+              <td>${fmtRs(item.posSize)}</td>
+              <td>${fmtRs(item.risk)}</td>
+              <td>
+                <div style="display:flex;gap:6px;">
+                  <button class="btn silver" style="font-size:10px;padding:4px 8px;min-height:auto;" onclick="moveWlToTradeLog(${idx})">🚀 Buy / Log</button>
+                  <button class="btn danger ghost" style="font-size:10px;padding:4px 8px;min-height:auto;" onclick="deleteWlItem(${idx})">✕ Remove</button>
+                </div>
+              </td>
+            </tr>
+          `).join('') : `<tr><td colspan="8" style="text-align:center;color:var(--dim);padding:20px;font-family:var(--sans);">No planned trades in watchlist</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+      ['r_cap', 'r_riskPct', 'r_entry', 'r_sl', 'r_entryPct'].forEach(id => {
+        $('#' + id).oninput = calc;
+        $('#' + id).onchange = calc;
+      });
+
+      $('#r_breadth').oninput = () => {
+        const mbs = parseFloat($('#r_breadth').value);
+        if (!isNaN(mbs)) {
+          let tranche = 25;
+          if (mbs >= 75) tranche = 100;
+          else if (mbs >= 45) tranche = 50;
+          $('#r_entryPct').value = tranche;
+        }
+        calc();
+      };
+
+      function calc() {
+        const capital = parseFloat($('#r_cap').value) || 0;
+        const rp = (parseFloat($('#r_riskPct').value) || 0) / 100;
+        const entryPrice = parseFloat($('#r_entry').value);
+        const slPrice = parseFloat($('#r_sl').value);
+        const entryPct = (parseFloat($('#r_entryPct').value) || 0) / 100;
+        const c = computeEntryCalc({ capital, riskPct: rp, entryPct, entryPrice: isNaN(entryPrice) ? null : entryPrice, slPrice: isNaN(slPrice) ? null : slPrice, brokerage: 0 });
+        $('#r_out_slps').textContent = c.slPerShare != null ? fmt(c.slPerShare) : '—';
+        $('#r_out_slpct').textContent = c.slPct != null ? fmtPct(c.slPct) : '—';
+        $('#r_out_full').textContent = c.fullQty != null ? c.fullQty : '—';
+        $('#r_out_qty').textContent = c.entry1Qty != null ? c.entry1Qty : '—';
+        $('#r_out_amt').textContent = c.entry1Amt != null ? fmtRs(c.entry1Amt) : '—';
+        $('#r_out_risk').textContent = c.totLossAtSL != null ? fmtRs(c.totLossAtSL) : '—';
+      }
+
+      $('#addWlBtn').onclick = async () => {
+        const stock = $('#r_stock').value.trim().toUpperCase();
+        const entryPrice = parseFloat($('#r_entry').value);
+        const slPrice = parseFloat($('#r_sl').value);
+        const entryPct = (parseFloat($('#r_entryPct').value) || 50) / 100;
+        const capital = parseFloat($('#r_cap').value) || 0;
+        const rp = (parseFloat($('#r_riskPct').value) || 0) / 100;
+        const breadth = parseFloat($('#r_breadth').value) || '';
+        const setup = $('#r_setup').value.trim();
+
+        if (!stock || isNaN(entryPrice) || isNaN(slPrice)) {
+          toast('Stock name, entry price and stop loss are required to save', 'err');
+          return;
+        }
+
+        const c = computeEntryCalc({ capital, riskPct: rp, entryPct, entryPrice, slPrice, brokerage: 0 });
+
+        const currentWl = getWatchlist();
+        currentWl.push({
+          stock,
+          entryPrice,
+          slPrice,
+          slPct: c.slPct,
+          qty: c.entry1Qty || 0,
+          posSize: c.entry1Amt || 0,
+          risk: c.totLossAtSL || 0,
+          entryPct,
+          breadth,
+          setup
+        });
+
+        await saveWatchlist(currentWl);
+        renderShell();
+        toast(`Added ${stock} to planned watchlist!`, 'ok');
+      };
+
+      calc();
+    }
+
+    /* =========================================================================
+       EXPENSES
+       ========================================================================= */
+    function renderExpenses(host) {
+      const totalExpenses = (STATE.expenses || []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
+      host.innerHTML = `
+    <div class="page-head"><div><h1>Expenses</h1><p>Log platform fees, subscriptions, and other non-brokerage trading expenses</p></div></div>
+    
+    <div class="two-col" style="grid-template-columns: 1fr 1.3fr; gap: 14px;">
+      <!-- Left Column: Log New Expense -->
+      <div class="panel" style="padding: 14px; margin-bottom: 0;">
+        <div class="panel-head" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+          <h3 style="margin: 0;">Log New Expense</h3>
+          <button class="btn silver" id="addExpenseBtn" tabindex="4" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);">Save Log</button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 12px; color: var(--dim); width: 80px; text-align: right;">Date:</span>
+              <input type="date" id="e_date" value="${todayISO()}" tabindex="1" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 12px; color: var(--dim); width: 80px; text-align: right;">Amount (₹):</span>
+              <input type="number" id="e_amount" placeholder="e.g. 1500" tabindex="2" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--line-soft); padding-top: 10px;">
+            <span style="font-size: 12px; color: var(--dim); width: 80px; text-align: right;">Description:</span>
+            <input type="text" id="e_note" placeholder="e.g. Dhan platform charges, journal subscription" tabindex="3" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Expense Log List -->
+      <div class="panel" style="padding: 14px; margin-bottom: 0;">
+        <div class="panel-head" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+          <h3 style="margin: 0;">Expense Log</h3>
+          <span style="font-size: 12px; font-weight: 600; color: var(--red); background: var(--bg2); padding: 2px 8px; border-radius: 4px; font-family: var(--mono);">Total: ${fmtRs(totalExpenses)}</span>
+        </div>
+
+        <div style="max-height: 260px; overflow-y: auto;">
+          <table style="width: 100%;">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Note / Description</th>
+                <th style="text-align: right; padding-right: 12px;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(STATE.expenses || []).length ? (STATE.expenses || []).map((e, idx) => `
+                <tr>
+                  <td>${formatDateDMY(e.date)}</td>
+                  <td style="color:var(--red); font-weight:600;">${fmtRs(e.amount)}</td>
+                  <td style="font-family:var(--sans); white-space: normal; color: var(--text);">${e.note || ''}</td>
+                  <td style="text-align: right; padding-right: 8px;">
+                    <button class="btn danger ghost" style="padding: 3px 8px; font-size: 11px; min-height: auto;" onclick="deleteExpenseItem(${idx})">Delete</button>
+                  </td>
+                </tr>
+              `).join('') : `
+                <tr>
+                  <td colspan="4" style="font-family:var(--sans); color:var(--dim); text-align:center; padding:20px;">No expenses logged yet</td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+
+      $('#addExpenseBtn').onclick = async () => {
+        const amount = parseFloat($('#e_amount').value);
+        const date = $('#e_date').value;
+        const note = $('#e_note').value.trim();
+        if (isNaN(amount) || amount <= 0 || !date) {
+          toast('Please enter a valid date and positive amount', 'err');
+          return;
+        }
+        $('#addExpenseBtn').innerHTML = '<span class="spinner"></span> Saving…';
+        try {
+          await apiPost({ action: 'addExpense', entry: { date, amount, note } });
+          await loadAll();
+          toast('Expense logged successfully', 'ok');
+          renderShell();
+        } catch (err) {
+          toast('Failed to log expense: ' + err.message, 'err');
+          $('#addExpenseBtn').textContent = 'Save Log';
+        }
+      };
+
+      $('#e_note').addEventListener('keydown', (e) => {
+        if (e.key === 'Tab' && !e.shiftKey) {
+          e.preventDefault();
+          $('#addExpenseBtn').focus();
+        }
+      });
+    }
+
+    async function deleteExpenseItem(index) {
+      if (!confirm('Are you sure you want to delete this expense?')) return;
+      try {
+        await apiPost({ action: 'deleteExpense', index: index });
+        await loadAll();
+        toast('Expense deleted', 'ok');
+        renderShell();
+      } catch (err) {
+        toast('Failed to delete: ' + err.message, 'err');
+      }
+    }
+    window.deleteExpenseItem = deleteExpenseItem; // Attach to window for global HTML access
+
+    /* =========================================================================
+       MULTI-YEAR RECORD
+       ========================================================================= */
+    function formatFY(fyStr) {
+      if (!fyStr) return "";
+      const parts = fyStr.split('-');
+      if (parts.length === 2) {
+        let start = parts[0].trim();
+        let end = parts[1].trim();
+        if (end.length === 2) {
+          end = start.slice(0, 2) + end;
+        }
+        return `${start}-${end}`;
+      }
+      return fyStr;
+    }
+
+    function calculateActiveYearAverageCapital() {
+      const opening = Number(STATE.settings.openingCapitalFY || 0);
+      const startDateStr = STATE.settings.currentFY ? (STATE.settings.currentFY.split('-')[0] + '-04-01') : '2026-04-01';
+      const start = new Date(startDateStr);
+      const end = new Date(); // today
+
+      if (isNaN(start.getTime())) return opening;
+
+      const totalMs = end - start;
+      if (totalMs <= 0) return opening;
+      const totalDays = Math.max(1, Math.ceil(totalMs / (1000 * 60 * 60 * 24)));
+
+      const transactions = [];
+
+      // Capital additions
+      STATE.capitalLog.filter(c => !/opening/i.test(c.note || '')).forEach(c => {
+        const d = new Date(c.date);
+        const offset = Math.floor((d - start) / (1000 * 60 * 60 * 24));
+        transactions.push({ day: offset, amount: Number(c.amount || 0) });
+      });
+
+      // Trade P/Ls
+      STATE.trades.filter(t => t.status === 'closed' && t.closedDate).forEach(t => {
+        const d = new Date(t.closedDate);
+        const offset = Math.floor((d - start) / (1000 * 60 * 60 * 24));
+        transactions.push({ day: offset, amount: Number(t.pnl || 0) });
+      });
+
+      // Expenses
+      STATE.expenses.forEach(e => {
+        const d = new Date(e.date);
+        const offset = Math.floor((d - start) / (1000 * 60 * 60 * 24));
+        transactions.push({ day: offset, amount: -Number(e.amount || 0) });
+      });
+
+      transactions.sort((a, b) => a.day - b.day);
+
+      let currentCap = opening;
+      let timeWeightedSum = 0;
+      let lastDay = 0;
+
+      transactions.forEach(tx => {
+        const targetDay = Math.min(totalDays, Math.max(0, tx.day));
+        if (targetDay > lastDay) {
+          timeWeightedSum += currentCap * (targetDay - lastDay);
+          lastDay = targetDay;
+        }
+        currentCap += tx.amount;
+      });
+
+      if (totalDays > lastDay) {
+        timeWeightedSum += currentCap * (totalDays - lastDay);
+      }
+
+      return timeWeightedSum / totalDays;
+    }
+
+    function getMultiYearRowsWithLive() {
+      const rows = STATE.multiYear.map(r => ({ ...r, isLive: false }));
+      const activeFYLabel = formatFY(STATE.settings.currentFY);
+      if (activeFYLabel) {
+        const s = overviewStats();
+        const totalExpenses = (STATE.expenses || []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
+        const netPnl = s.realizedPnl - totalExpenses;
+
+        // Use dynamic average capital as base
+        const avgCapital = calculateActiveYearAverageCapital();
+        const returnPct = avgCapital ? (netPnl / avgCapital) * 100 : 0;
+
+        const idx = rows.findIndex(r => r.year === activeFYLabel);
+        if (idx !== -1) {
+          rows[idx].openingCap = avgCapital;
+          rows[idx].pnl = netPnl;
+          rows[idx].returnPct = returnPct;
+          rows[idx].isLive = true;
+        } else {
+          rows.push({
+            year: activeFYLabel,
+            openingCap: avgCapital,
+            pnl: netPnl,
+            returnPct: returnPct,
+            isLive: true
+          });
+        }
+      }
+
+      // Sort chronological by starting year
+      rows.sort((a, b) => {
+        const startA = parseInt(a.year.split('-')[0]) || 0;
+        const startB = parseInt(b.year.split('-')[0]) || 0;
+        return startA - startB;
+      });
+      return rows;
+    }
+
+    function renderMultiYear(host) {
+      const rows = getMultiYearRowsWithLive();
+      host.innerHTML = `
+    <div class="page-head"><div><h1>Multi-Year Record</h1><p>Long-term track record across financial years</p></div>
+      <button class="btn primary" id="addYearBtn">+ Add Year</button></div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+      <!-- Left Column -->
+      <div>
+        <div class="panel" style="padding: 14px; height: 300px; box-sizing: border-box; display: flex; flex-direction: column; margin-bottom: 14px;">
+          <div class="panel-head" style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+            <h3>Annual Performance Table</h3>
+            <button class="btn primary" id="saveYearsBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save</button>
+          </div>
+          <div style="overflow: auto; flex: 1; min-height: 0;">
+            <table style="width: 100%;">
+              <thead><tr><th>Year</th><th>Capital (Avg)</th><th>P/L</th><th>Return %</th></tr></thead>
+              <tbody id="myBody">
+                ${rows.map((r, i) => {
+        const isLive = r.isLive;
+        return `<tr class="${isLive ? 'live-row' : ''}">
+                  <td>
+                    <input data-i="${i}" data-k="year" value="${r.year}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:90px;${isLive ? 'font-weight:bold;color:var(--gold);' : ''}">
+                    ${isLive ? '<span class="badge open" style="margin-left:4px;font-size:9px;padding:1px 5px;">LIVE</span>' : ''}
+                  </td>
+                  <td><input data-i="${i}" data-k="openingCap" type="number" step="0.01" value="${Number(r.openingCap || 0).toFixed(2)}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:110px;${isLive ? 'font-weight:bold;' : ''}"></td>
+                  <td style="color:${r.pnl >= 0 ? 'var(--green)' : 'var(--red)'}"><input data-i="${i}" data-k="pnl" type="number" step="0.01" value="${Number(r.pnl || 0).toFixed(2)}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:100px;${isLive ? 'font-weight:bold;' : ''}"></td>
+                  <td><input data-i="${i}" data-k="returnPct" type="number" step="0.01" value="${Number(r.returnPct || 0).toFixed(2)}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:90px;${isLive ? 'font-weight:bold;' : ''}"></td>
+                </tr>`
+      }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div class="panel" style="padding: 14px; height: 300px; box-sizing: border-box; display: flex; flex-direction: column; margin-bottom: 0;">
+          <div class="panel-head" style="margin-bottom: 8px; flex-shrink: 0;"><h3>Equity Curve - Capital Level</h3><span class="hint">Ending capital level per FY</span></div>
+          <div style="flex: 1; min-height: 0; position: relative;">
+            <canvas id="myEquityChart" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Right Column -->
+      <div>
+        <div class="panel" style="padding: 14px; height: 300px; box-sizing: border-box; display: flex; flex-direction: column; margin-bottom: 14px;">
+          <div class="panel-head" style="margin-bottom: 8px; flex-shrink: 0;"><h3>Equity Curve - P&amp;L Level</h3><span class="hint">Cumulative realized P/L (₹)</span></div>
+          <div style="flex: 1; min-height: 0; position: relative;">
+            <canvas id="myPnlCurveChart" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;"></canvas>
+          </div>
+        </div>
+        
+        <div class="panel" style="padding: 14px; height: 300px; box-sizing: border-box; display: flex; flex-direction: column; margin-bottom: 0;">
+          <div class="panel-head" style="margin-bottom: 8px; flex-shrink: 0;"><h3>Annual P&amp;L Bar Chart</h3><span class="hint">Net P&amp;L per FY (₹)</span></div>
+          <div style="flex: 1; min-height: 0; position: relative;">
+            <canvas id="myReturnsChart" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+      $('#addYearBtn').onclick = () => {
+        STATE.multiYear.push({ year: '', openingCap: 0, pnl: 0, returnPct: 0 });
+        renderMultiYear(host);
+      };
+
+      $('#saveYearsBtn').onclick = async () => {
+        const updatedRows = [];
+        document.querySelectorAll('#myBody tr').forEach((tr, index) => {
+          const row = rows[index];
+          if (row.isLive) {
+            updatedRows.push({
+              year: row.year,
+              openingCap: row.openingCap,
+              pnl: row.pnl,
+              returnPct: row.returnPct
+            });
+          } else {
+            const yearInp = tr.querySelector('[data-k="year"]');
+            const openingInp = tr.querySelector('[data-k="openingCap"]');
+            const pnlInp = tr.querySelector('[data-k="pnl"]');
+            const retInp = tr.querySelector('[data-k="returnPct"]');
+
+            updatedRows.push({
+              year: yearInp.value,
+              openingCap: parseFloat(openingInp.value) || 0,
+              pnl: parseFloat(pnlInp.value) || 0,
+              returnPct: parseFloat(retInp.value) || 0
+            });
+          }
+        });
+
+        try {
+          await apiPost({ action: 'updateMultiYear', rows: updatedRows });
+          toast('Saved', 'ok');
+          await loadAll();
+          renderShell();
+        }
+        catch (err) { toast('Failed: ' + err.message, 'err'); }
+      };
+
+      drawMultiYearCharts(rows);
+    }
+
+    let _myEquityChart = null;
+    let _myPnlCurveChart = null;
+    let _myReturnsChart = null;
+    function drawMultiYearCharts(rows) {
+      const canvasEq = $('#myEquityChart');
+      const canvasPnlCurve = $('#myPnlCurveChart');
+      const canvasRet = $('#myReturnsChart');
+      if (!canvasEq || !canvasPnlCurve || !canvasRet) return;
+
+      const sorted = rows.slice().sort((a, b) => {
+        const yearA = parseInt(a.year.split('-')[0]) || 0;
+        const yearB = parseInt(b.year.split('-')[0]) || 0;
+        return yearA - yearB;
+      });
+
+      // 1. Capital Curve Data
+      const eqLabels = [];
+      const eqData = [];
+      if (sorted.length > 0) {
+        eqLabels.push("Start (" + sorted[0].year.split('-')[0] + ")");
+        eqData.push(Number(sorted[0].openingCap));
+
+        sorted.forEach(r => {
+          eqLabels.push(r.year);
+          eqData.push(Math.round(Number(r.openingCap) + Number(r.pnl)));
+        });
+      }
+
+      // 2. Cumulative P/L Curve Data
+      const pnlCurveLabels = [];
+      const pnlCurveData = [];
+      if (sorted.length > 0) {
+        pnlCurveLabels.push("Start");
+        pnlCurveData.push(0);
+
+        let cumPnl = 0;
+        sorted.forEach(r => {
+          cumPnl += Number(r.pnl || 0);
+          pnlCurveLabels.push(r.year);
+          pnlCurveData.push(Math.round(cumPnl));
+        });
+      }
+
+      // 3. Annual P/L Bar Chart Data
+      const retLabels = sorted.map(r => r.year);
+      const retData = sorted.map(r => Math.round(Number(r.pnl) * 100) / 100);
+      const retColors = retData.map(v => v >= 0 ? '#33d17a' : '#ff5c5c');
+      const retBgColors = retData.map(v => v >= 0 ? 'rgba(51,209,122,.25)' : 'rgba(255,92,92,.25)');
+
+      // Render Capital Curve
+      if (_myEquityChart) _myEquityChart.destroy();
+      _myEquityChart = new Chart(canvasEq.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: eqLabels,
+          datasets: [{
+            data: eqData,
+            borderColor: '#d4a24e',
+            backgroundColor: 'rgba(212,162,78,.12)',
+            fill: true,
+            tension: 0.2,
+            pointRadius: 4,
+            pointBackgroundColor: '#d4a24e',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: '#1a212c' }, ticks: { color: '#5b6576' } },
+            y: {
+              grid: { color: '#1a212c' },
+              ticks: {
+                color: '#5b6576',
+                callback: function (value) { return '₹' + Number(value).toLocaleString('en-IN'); }
+              }
+            }
+          }
+        }
+      });
+
+      // Render Cumulative P/L Curve
+      if (_myPnlCurveChart) _myPnlCurveChart.destroy();
+      _myPnlCurveChart = new Chart(canvasPnlCurve.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: pnlCurveLabels,
+          datasets: [{
+            data: pnlCurveData,
+            borderColor: '#33d17a',
+            backgroundColor: 'rgba(51,209,122,.12)',
+            fill: true,
+            tension: 0.2,
+            pointRadius: 4,
+            pointBackgroundColor: '#33d17a',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: '#1a212c' }, ticks: { color: '#5b6576' } },
+            y: {
+              grid: { color: '#1a212c' },
+              ticks: {
+                color: '#5b6576',
+                callback: function (value) { return '₹' + Number(value).toLocaleString('en-IN'); }
+              }
+            }
+          }
+        }
+      });
+
+      // Render Annual P/L Bar Chart
+      if (_myReturnsChart) _myReturnsChart.destroy();
+      _myReturnsChart = new Chart(canvasRet.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: retLabels,
+          datasets: [{
+            data: retData,
+            backgroundColor: retBgColors,
+            borderColor: retColors,
+            borderWidth: 1.5,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: '#1a212c' }, ticks: { color: '#5b6576' } },
+            y: {
+              grid: { color: '#1a212c' },
+              ticks: {
+                color: '#5b6576',
+                callback: function (value) { return '₹' + Number(value).toLocaleString('en-IN'); }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    /* =========================================================================
+       SETTINGS
+       ========================================================================= */
+    function renderSettings(host) {
+      const s = STATE.settings;
+      host.innerHTML = `
+    <div class="page-head"><div><h1>Settings</h1><p>Risk parameters and connection details</p></div></div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1.1fr; gap: 14px; align-items: start;">
+      <!-- Left Column: Risk Rules, Dhan, Connection -->
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <!-- Card 1: Risk Rules -->
+        <div class="panel" style="padding: 14px; margin-bottom: 0;">
+          <div class="panel-head" style="margin-bottom: 10px; display: flex; align-items: center; gap: 12px;">
+            <h3>Journal Risk Rules</h3>
+            <button class="btn silver" id="saveSettingsBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save</button>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px;">
+            <!-- Row 1 Left: Financial Year -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Financial Year:</span>
+              <input id="s_fy" value="${s.currentFY || ''}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+            <!-- Row 1 Right: Opening Capital -->
+            <div style="display: flex; align-items: center; gap: 8px; border-left: 1px solid var(--line-soft); padding-left: 20px;">
+              <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Opening Capital:</span>
+              <input type="number" id="s_open" value="${s.openingCapitalFY || ''}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+
+            <!-- Row 2 Left: Risk% Per Trade -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Risk% Per Trade:</span>
+              <input type="number" step="0.1" id="s_riskpct" value="${(Number(s.riskPctPerTrade || 0) * 100)}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+            <!-- Row 2 Right: Pyramid Counts -->
+            <div style="display: flex; align-items: center; gap: 8px; border-left: 1px solid var(--line-soft); padding-left: 20px;">
+              <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Pyramid Counts:</span>
+              <input type="number" id="s_pyramid" value="${s.pyramidDays || ''}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+
+            <!-- Row 3 Left: Positions -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Positions:</span>
+              <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                <input type="number" id="s_minpos" value="${s.maxStocksMin || ''}" style="width: 45%; height: 28px; padding: 4px 8px; font-size: 12px; text-align: center; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+                <span style="color: var(--dim); font-size: 12px;">-</span>
+                <input type="number" id="s_maxpos" value="${s.maxStocksMax || ''}" style="width: 45%; height: 28px; padding: 4px 8px; font-size: 12px; text-align: center; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+              </div>
+            </div>
+            <!-- Row 3 Right: Default Brokerage -->
+            <div style="display: flex; align-items: center; gap: 8px; border-left: 1px solid var(--line-soft); padding-left: 20px;">
+              <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Default Brokerage:</span>
+              <input type="number" id="s_brok" value="${s.brokeragePerTrade || ''}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Broker Sync & Connection -->
+        <div class="panel" style="padding: 14px; margin-bottom: 0;">
+          <div class="panel-head" style="margin-bottom: 10px; display: flex; align-items: center; gap: 12px;">
+            <h3>Broker Sync &amp; Connection</h3>
+            <button class="btn silver" id="saveDhanBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+            <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Dhan Access Token:</span>
+            <input type="password" id="s_dhan_token" value="${localStorage.getItem('tj_dhan_token') || ''}" placeholder="Paste Dhan Token" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+          </div>
+          <div style="border-top: 1px solid var(--line-soft); margin: 12px 0; padding-top: 10px; display: flex; justify-content: flex-start;">
+            <button class="btn ghost danger" id="disconnectBtn" style="padding: 6px 16px; font-size: 12px; height: 32px; width: auto;">Disconnect (Backend-GS)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Capital additions / withdrawals log -->
+      <div class="panel" style="padding: 14px; margin-bottom: 0; display: flex; flex-direction: column;">
+        <div class="panel-head" style="margin-bottom: 10px; display: flex; align-items: center; gap: 12px;">
+          <h3>Capital Additions &amp; Withdrawals Log</h3>
+          <button class="btn silver" id="addCapBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save Log</button>
+          <button class="btn ghost" id="cancelCapEditBtn" style="display:none; padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Cancel</button>
+        </div>
+        <div style="max-height: 180px; overflow-y: auto; margin-bottom: 12px; border: 1px solid var(--line-soft); border-radius: 4px;">
+          <table style="width: 100%;"><thead><tr><th>Date</th><th>Amount</th><th>Note</th><th style="width:70px;"></th></tr></thead>
+          <tbody>${STATE.capitalLog.map((c, idx) => `<tr><td>${formatDateDMY(c.date)}</td><td style="color:${c.amount >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${c.amount >= 0 ? '+' : ''}${fmtRs(c.amount)}</td><td style="font-family:var(--sans);">${c.note || ''}</td><td style="text-align:right;"><button class="btn ghost" style="padding: 2px 4px; font-size: 10px; margin-right: 2px;" onclick="editCapitalChange(${idx})">Edit</button><button class="btn danger ghost" style="padding: 2px 4px; font-size: 10px;" onclick="deleteCapitalChange(${idx})">✕</button></td></tr>`).join('')}</tbody></table>
+        </div>
+        <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid var(--line-soft); padding-top: 12px;">
+          <div class="field">
+            <label>Type</label>
+            <select id="c_type" style="background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:6px; padding:6px; outline:none; height:28px; font-size:12px; width: 100%;">
+              <option value="add">Capital Addition (+)</option>
+              <option value="withdraw">Capital Withdrawal (-)</option>
+            </select>
+          </div>
+          <div class="field"><label>Date</label><input type="date" id="c_date" value="${todayISO()}" style="height:28px; padding:4px 8px; font-size:12px;"></div>
+          <div class="field"><label>Amount (₹)</label><input type="number" id="c_amount" placeholder="e.g. 50000" style="height:28px; padding:4px 8px; font-size:12px;"></div>
+          <div class="field"><label>Note</label><input type="text" id="c_note" placeholder="Optional notes..." style="height:28px; padding:4px 8px; font-size:12px;"></div>
+        </div>
+      </div>
+    </div>
+  `;
+
+      $('#saveSettingsBtn').onclick = async () => {
+        const settings = {
+          currentFY: $('#s_fy').value, openingCapitalFY: parseFloat($('#s_open').value) || 0,
+          riskPctPerTrade: (parseFloat($('#s_riskpct').value) || 0) / 100,
+          maxStocksMin: parseFloat($('#s_minpos').value) || 0, maxStocksMax: parseFloat($('#s_maxpos').value) || 0,
+          pyramidDays: parseFloat($('#s_pyramid').value) || 0, brokeragePerTrade: parseFloat($('#s_brok').value) || 0
+        };
+        try { await apiPost({ action: 'updateSettings', settings }); await loadAll(); toast('Settings saved', 'ok'); renderShell(); }
+        catch (err) { toast('Failed: ' + err.message, 'err'); }
+      };
+      $('#addCapBtn').onclick = async () => {
+        const type = $('#c_type').value;
+        let amount = parseFloat($('#c_amount').value);
+        if (isNaN(amount) || amount <= 0) { toast('Enter a valid positive amount', 'err'); return; }
+        if (type === 'withdraw') {
+          amount = -amount;
+        }
+        const note = $('#c_note').value.trim() || (type === 'withdraw' ? 'Capital withdrawal' : 'Capital addition');
+        const isEdit = STATE.editingCapitalIndex != null;
+        try {
+          if (isEdit) {
+            await apiPost({ action: 'updateCapital', index: STATE.editingCapitalIndex, entry: { date: $('#c_date').value, amount, note } });
+            STATE.editingCapitalIndex = null;
+            toast('Capital change updated', 'ok');
+          } else {
+            await apiPost({ action: 'addCapital', entry: { date: $('#c_date').value, amount, note } });
+            toast('Capital change logged', 'ok');
+          }
+          await loadAll();
+          renderShell();
+        } catch (err) {
+          toast('Failed: ' + err.message, 'err');
+        }
+      };
+
+      $('#cancelCapEditBtn').onclick = () => {
+        STATE.editingCapitalIndex = null;
+        $('#c_date').value = todayISO();
+        $('#c_amount').value = '';
+        $('#c_note').value = '';
+        $('#c_type').value = 'add';
+        $('#addCapBtn').textContent = 'Save Log';
+        $('#cancelCapEditBtn').style.display = 'none';
+      };
+
+      window.editCapitalChange = (idx) => {
+        const log = STATE.capitalLog[idx];
+        if (!log) return;
+        STATE.editingCapitalIndex = idx;
+        $('#c_date').value = log.date;
+        $('#c_amount').value = Math.abs(log.amount);
+        $('#c_note').value = log.note || '';
+        $('#c_type').value = log.amount >= 0 ? 'add' : 'withdraw';
+        $('#addCapBtn').textContent = 'Update';
+        $('#cancelCapEditBtn').style.display = 'inline-block';
+      };
+
+      window.deleteCapitalChange = async (index) => {
+        if (!confirm('Delete this capital change entry?')) return;
+        try {
+          await apiPost({ action: 'deleteCapital', index });
+          await loadAll();
+          toast('Logged capital change deleted', 'ok');
+          renderShell();
+        } catch (err) {
+          toast('Failed: ' + err.message, 'err');
+        }
+      };
+      $('#saveDhanBtn').onclick = () => {
+        const t = $('#s_dhan_token').value.trim();
+        localStorage.setItem('tj_dhan_token', t);
+        toast('Dhan token saved locally', 'ok');
+      };
+      $('#disconnectBtn').onclick = () => {
+        if (confirm('Disconnect? You will need the URL and token again to reconnect.')) {
+          localStorage.removeItem(CFG_KEY); location.reload();
+        }
+      };
+    }
+
+    /* =========================================================================
+       BOOT
+       ========================================================================= */
+    (function init() {
+      if (CONFIG && CONFIG.apiUrl && CONFIG.token) { boot(); }
+      else { renderSetup(); }
+    })();
+  </script>
+</body>
+
+</html>
