@@ -1214,13 +1214,14 @@
       // Parse extra tranches from remarks
       const extraTranches = {};
       const remarks = t.remarks || '';
-      const regex = /\[Tranche (\d+): ₹([\d\.,]+) × (\d+)\]/g;
+      const regex = /\[Tranche (\d+): ₹([\d\.,]+) × (\d+)(?:\s+on\s+([^\]]+))?\]/g;
       let match;
       while ((match = regex.exec(remarks)) !== null) {
         const num = parseInt(match[1]);
         const price = parseFloat(match[2].replace(/,/g, ''));
         const qty = parseInt(match[3]);
-        extraTranches[num] = { price, qty };
+        const date = match[4] || '';
+        extraTranches[num] = { price, qty, date };
       }
 
       // Tranche 3
@@ -2558,6 +2559,16 @@
        TRADE MODAL (view / add pyramid / close / delete)
        ========================================================================= */
     function openTradeModal(t) {
+      const buildTrancheRow = (num, label, price, qty) => {
+        return `
+          <div style="display: grid; grid-template-columns: 85px 1fr 1fr; gap: 8px; align-items: center; background:rgba(255,255,255,.02); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--line);">
+            <span style="color:var(--sub); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${label}">${label}:</span>
+            <input type="number" step="0.01" class="edit-buy-price" data-tranche="${num}" value="${price != null ? price : ''}" style="width:100%; padding: 4px 6px; border-radius: 4px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); font-family: var(--mono);" placeholder="Price">
+            <input type="number" class="edit-buy-qty" data-tranche="${num}" value="${qty != null ? qty : ''}" style="width:100%; padding: 4px 6px; border-radius: 4px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); font-family: var(--mono);" placeholder="Qty">
+          </div>
+        `;
+      };
+
       let prefillPrice = '';
       let prefillQty = '';
       let qtyLabel = 'Qty';
@@ -2580,14 +2591,15 @@
       const remarks = t.remarks || '';
 
       // Parse buys
-      const regex = /\[Tranche (\d+): ₹([\d\.,]+) × (\d+)\]/g;
+      const regex = /\[Tranche (\d+): ₹([\d\.,]+) × (\d+)(?:\s+on\s+([^\]]+))?\]/g;
       let match;
       while ((match = regex.exec(remarks)) !== null) {
         const num = parseInt(match[1]);
         const price = parseFloat(match[2].replace(/,/g, ''));
         const qty = parseInt(match[3]);
+        const date = match[4] || '';
         const amt = Math.round(price * qty);
-        extraTranches[num] = { price, qty, amt };
+        extraTranches[num] = { price, qty, amt, date };
       }
 
       // Parse exits
@@ -2605,19 +2617,7 @@
       const t3Qty = extraTranches[3] ? extraTranches[3].qty : t.entry3Qty;
       const t3Amt = extraTranches[3] ? extraTranches[3].amt : t.entry3Amt;
 
-      const extraBuysHtml = Object.keys(extraTranches)
-        .map(Number)
-        .filter(num => num > 3)
-        .sort((a, b) => a - b)
-        .map(num => {
-          const et = extraTranches[num];
-          return `
-        <div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,.02); border-radius:4px; border:1px solid var(--line);">
-          <span style="color:var(--sub);">Tranche ${num} (Pyramid):</span>
-          <strong style="font-family:var(--mono);">₹${fmt(et.price)} × ${et.qty}</strong>
-        </div>
-      `;
-        }).join('');
+
 
       // Exits Breakdown calculations
       const ex1Price = extraExits[1] ? extraExits[1].price : t.exit1Price;
@@ -2675,9 +2675,9 @@
         <div class="field readonly"><label>Trailing SL / TSL</label><input disabled value="${fmt(t.tslPrice)}"></div>
       `}
 
-      <div class="field readonly"><label>Avg Buy</label><input disabled value="${fmt(t.avgBuyPrice)}"></div>
-      <div class="field readonly"><label>Buy Qty</label><input disabled value="${fmt(t.totBuyQty)}"></div>
-      <div class="field readonly"><label>Buy Amount</label><input disabled value="${fmtRs(t.totBuyAmt)}"></div>
+      <div class="field readonly"><label>Avg Buy</label><input disabled value="${fmt(t.avgBuyPrice)}" id="m_avgBuyPrice"></div>
+      <div class="field readonly"><label>Buy Qty</label><input disabled value="${fmt(t.totBuyQty)}" id="m_totBuyQty"></div>
+      <div class="field readonly"><label>Buy Amount</label><input disabled value="${fmtRs(t.totBuyAmt)}" id="m_totBuyAmt"></div>
       <div class="field readonly"><label>Risk at SL</label><input disabled value="${fmtRs(t.totLossAtSL)}" id="m_riskAtSL"></div>
     </div>
 
@@ -2719,20 +2719,31 @@
     <div class="modal-two-col">
       <fieldset style="margin-top:0; padding:12px;">
         <legend>Buys Breakdown</legend>
-        <div style="font-family:var(--sans); font-size:12px; display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto;">
-          <div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,.02); border-radius:4px; border:1px solid var(--line);">
-            <span style="color:var(--sub);">Tranche 1 (${formatDateDMY(t.openDate)}):</span>
-            <strong style="font-family:var(--mono);">₹${fmt(t.entry1Price)} × ${t.entry1Qty}</strong>
+        <div style="font-family:var(--sans); font-size:12px; display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto; padding-right: 4px;">
+          <div style="display: grid; grid-template-columns: 85px 1fr 1fr; gap: 8px; align-items: center; margin-bottom: 2px; padding: 0 8px;">
+            <span style="font-size: 10px; color: var(--dim); font-weight: bold; text-transform: uppercase;">Tranche</span>
+            <span style="font-size: 10px; color: var(--dim); font-weight: bold; text-transform: uppercase;">Price (₹)</span>
+            <span style="font-size: 10px; color: var(--dim); font-weight: bold; text-transform: uppercase;">Qty</span>
           </div>
-          <div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,.02); border-radius:4px; border:1px solid ${!t.entry2Price && t.status === 'open' ? 'var(--gold)' : 'var(--line)'}; ${!t.entry2Price && t.status === 'open' ? 'color:var(--gold); background:rgba(212,162,78,.05);' : ''}">
-            <span>Tranche 2${t.entry2Date ? ` (${formatDateDMY(t.entry2Date)})` : ''}:</span>
-            <strong style="font-family:var(--mono);">${t.entry2Price ? `₹${fmt(t.entry2Price)} × ${t.entry2Qty}` : (t.status === 'open' ? 'BUY NEXT ⚡' : '—')}</strong>
-          </div>
-          <div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,.02); border-radius:4px; border:1px solid ${t.entry2Price && !t3Price && t.status === 'open' ? 'var(--gold)' : 'var(--line)'}; ${t.entry2Price && !t3Price && t.status === 'open' ? 'color:var(--gold); background:rgba(212,162,78,.05);' : ''}">
-            <span>Tranche 3${t.entry3Date ? ` (${formatDateDMY(t.entry3Date)})` : ''}:</span>
-            <strong style="font-family:var(--mono);">${t3Price ? `₹${fmt(t3Price)} × ${t3Qty}` : (t.entry2Price && t.status === 'open' ? 'BUY NEXT ⚡' : 'Not bought')}</strong>
-          </div>
-          ${extraBuysHtml}
+
+          <!-- Tranche 1 -->
+          ${buildTrancheRow(1, `T1 (${formatDateDMY(t.openDate)})`, t.entry1Price, t.entry1Qty)}
+
+          <!-- Tranche 2 -->
+          ${t.entry2Price ? buildTrancheRow(2, `T2${t.entry2Date ? ` (${formatDateDMY(t.entry2Date)})` : ''}`, t.entry2Price, t.entry2Qty) : ''}
+
+          <!-- Tranche 3 -->
+          ${t3Qty && t3Price ? buildTrancheRow(3, `T3${t.entry3Date || (extraTranches[3] && extraTranches[3].date) ? ` (${formatDateDMY(t.entry3Date || extraTranches[3].date)})` : ''}`, t3Price, t3Qty) : ''}
+
+          <!-- Extra Tranches -->
+          ${Object.keys(extraTranches)
+            .map(Number)
+            .filter(num => num > 3)
+            .sort((a, b) => a - b)
+            .map(num => {
+              const et = extraTranches[num];
+              return buildTrancheRow(num, `T${num}${et.date ? ` (${formatDateDMY(et.date)})` : ''}`, et.price, et.qty);
+            }).join('')}
         </div>
       </fieldset>
 
@@ -2793,16 +2804,75 @@
       $('#modalBg').onclick = (e) => { if (e.target.id === 'modalBg') closeModal(); };
 
       const updateModalPnLAndRisk = () => {
+        // Read tranche inputs dynamically
+        const priceInputs = Array.from(document.querySelectorAll('.edit-buy-price'));
+        const qtyInputs = Array.from(document.querySelectorAll('.edit-buy-qty'));
+        const tranchesData = {};
+        
+        priceInputs.forEach(input => {
+          const num = parseInt(input.getAttribute('data-tranche'));
+          const val = parseFloat(input.value);
+          if (!tranchesData[num]) tranchesData[num] = {};
+          tranchesData[num].price = isNaN(val) ? null : val;
+        });
+        
+        qtyInputs.forEach(input => {
+          const num = parseInt(input.getAttribute('data-tranche'));
+          const val = parseInt(input.value);
+          if (!tranchesData[num]) tranchesData[num] = {};
+          tranchesData[num].qty = isNaN(val) ? null : val;
+        });
+
+        // Compute temporary buys breakdown
+        let tempTotQty = 0;
+        let tempTotAmt = 0;
+        
+        // Tranche 1
+        const t1 = tranchesData[1] || {};
+        if (t1.price != null && t1.qty) {
+          tempTotQty += t1.qty;
+          tempTotAmt += Math.round(t1.price * t1.qty + Number(t.brokerage || 0));
+        }
+        
+        // Tranche 2
+        const t2 = tranchesData[2] || {};
+        if (t2.price != null && t2.qty) {
+          tempTotQty += t2.qty;
+          tempTotAmt += Math.round(t2.price * t2.qty);
+        }
+        
+        // Tranches 3 and above
+        Object.keys(tranchesData)
+          .map(Number)
+          .filter(num => num >= 3)
+          .forEach(num => {
+            const tr = tranchesData[num] || {};
+            if (tr.price != null && tr.qty) {
+              tempTotQty += tr.qty;
+              tempTotAmt += Math.round(tr.price * tr.qty);
+            }
+          });
+          
+        const tempAvgBuy = tempTotQty ? +(tempTotAmt / tempTotQty).toFixed(2) : 0;
+
+        // Update read-only inputs in real-time
+        if ($('#m_avgBuyPrice')) $('#m_avgBuyPrice').value = fmt(tempAvgBuy);
+        if ($('#m_totBuyQty')) $('#m_totBuyQty').value = fmt(tempTotQty);
+        if ($('#m_totBuyAmt')) $('#m_totBuyAmt').value = fmtRs(tempTotAmt);
+
+        // Recalculate PnL and Risk
         const slInput = $('#m_slPrice');
         const tslInput = $('#m_tslPrice');
         const sl = slInput ? parseFloat(slInput.value) || 0 : 0;
         const tsl = tslInput ? parseFloat(tslInput.value) : NaN;
         const activeSL = !isNaN(tsl) && tsl !== 0 ? tsl : sl;
-        const avgBuy = Number(t.avgBuyPrice || 0);
-        const remQty = remainingQty;
+        
+        const tempRemainingQty = tempTotQty - totExitQty;
+        const tempRealizedCost = totExitQty * tempAvgBuy;
+        const tempRealizedPnL = totExitQty > 0 ? Math.round(totExitAmt - tempRealizedCost) : 0;
 
         // Re-calculate Expected P/L in real-time
-        const expected = Math.round((activeSL - avgBuy) * remQty + realizedPnL);
+        const expected = Math.round((activeSL - tempAvgBuy) * tempRemainingQty + tempRealizedPnL);
         const valEl = $('#m_expectedPnL_val');
         if (valEl) {
           valEl.textContent = (expected >= 0 ? '+' : '') + fmtRs(expected);
@@ -2810,8 +2880,8 @@
         }
 
         // Re-calculate Risk at SL in real-time
-        const slPerShare = Number((avgBuy - sl).toFixed(4));
-        const totLossAtSL = Math.round(Number(t.totBuyQty || 0) * slPerShare);
+        const slPerShare = Number((tempAvgBuy - sl).toFixed(4));
+        const totLossAtSL = Math.round(tempTotQty * slPerShare);
         const riskEl = $('#m_riskAtSL');
         if (riskEl) {
           riskEl.value = fmtRs(totLossAtSL);
@@ -2820,6 +2890,9 @@
 
       if ($('#m_slPrice')) $('#m_slPrice').oninput = updateModalPnLAndRisk;
       if ($('#m_tslPrice')) $('#m_tslPrice').oninput = updateModalPnLAndRisk;
+      document.querySelectorAll('.edit-buy-price, .edit-buy-qty').forEach(input => {
+        input.oninput = updateModalPnLAndRisk;
+      });
 
       const addLegBtn = $('#m_addLeg');
       if (addLegBtn) {
@@ -2975,6 +3048,111 @@
           remarks: $('#m_remarks').value.trim()
         };
 
+        // 1. Read tranche inputs dynamically
+        const priceInputs = Array.from(document.querySelectorAll('.edit-buy-price'));
+        const qtyInputs = Array.from(document.querySelectorAll('.edit-buy-qty'));
+        const tranchesData = {};
+        
+        priceInputs.forEach(input => {
+          const num = parseInt(input.getAttribute('data-tranche'));
+          const val = parseFloat(input.value);
+          if (!tranchesData[num]) tranchesData[num] = {};
+          tranchesData[num].price = isNaN(val) ? null : val;
+        });
+        
+        qtyInputs.forEach(input => {
+          const num = parseInt(input.getAttribute('data-tranche'));
+          const val = parseInt(input.value);
+          if (!tranchesData[num]) tranchesData[num] = {};
+          tranchesData[num].qty = isNaN(val) ? null : val;
+        });
+
+        // 2. Set Tranche 1
+        const t1 = tranchesData[1] || {};
+        if (t1.price != null && t1.qty) {
+          updated.entry1Price = t1.price;
+          updated.entry1Qty = t1.qty;
+          updated.entry1Amt = Math.round(t1.price * t1.qty + Number(updated.brokerage || 0));
+        }
+
+        // 3. Set Tranche 2
+        const t2 = tranchesData[2] || {};
+        if (t2 && t2.price != null && t2.qty) {
+          updated.entry2Price = t2.price;
+          updated.entry2Qty = t2.qty;
+          updated.entry2Amt = Math.round(t2.price * t2.qty);
+        } else {
+          updated.entry2Price = null;
+          updated.entry2Qty = null;
+          updated.entry2Amt = null;
+          updated.entry2Date = '';
+        }
+
+        // 4. Collect and process Tranche 3 and above
+        const t3AndAbove = [];
+        Object.keys(tranchesData)
+          .map(Number)
+          .filter(num => num >= 3)
+          .sort((a, b) => a - b)
+          .forEach(num => {
+            const tr = tranchesData[num] || {};
+            if (tr.price != null && tr.qty) {
+              t3AndAbove.push({ num, price: tr.price, qty: tr.qty });
+            }
+          });
+
+        // Clean existing tranche strings from remarks text
+        let remarksText = updated.remarks;
+        remarksText = remarksText.replace(/\[Tranche \d+:[^\]]+\]\r?\n?/g, '').trim();
+
+        if (t3AndAbove.length === 0) {
+          updated.entry3Price = null;
+          updated.entry3Qty = null;
+          updated.entry3Amt = null;
+          updated.entry3Date = '';
+        } else if (t3AndAbove.length === 1) {
+          updated.entry3Price = t3AndAbove[0].price;
+          updated.entry3Qty = t3AndAbove[0].qty;
+          updated.entry3Amt = Math.round(t3AndAbove[0].price * t3AndAbove[0].qty);
+          if (!updated.entry3Date) {
+            updated.entry3Date = t.entry3Date || (extraTranches[3] && extraTranches[3].date) || todayISO();
+          }
+        } else {
+          // Multiple tranches starting at 3.
+          // Store their weighted average in entry3Price/Qty/Amt
+          const totQty = t3AndAbove.reduce((sum, item) => sum + item.qty, 0);
+          const totAmt = t3AndAbove.reduce((sum, item) => sum + Math.round(item.price * item.qty), 0);
+          updated.entry3Price = totQty ? +(totAmt / totQty).toFixed(2) : null;
+          updated.entry3Qty = totQty;
+          updated.entry3Amt = totAmt;
+          if (!updated.entry3Date) {
+            updated.entry3Date = t.entry3Date || (extraTranches[3] && extraTranches[3].date) || todayISO();
+          }
+
+          // Build remarks representation
+          const trancheLines = [];
+          t3AndAbove.forEach(ta => {
+            let dStr = '';
+            if (ta.num === 3) {
+              const origDate = t.entry3Date || (extraTranches[3] && extraTranches[3].date);
+              if (origDate) dStr = ` on ${formatDateDMY(origDate)}`;
+            } else {
+              const origDate = extraTranches[ta.num] && extraTranches[ta.num].date;
+              if (origDate) dStr = ` on ${formatDateDMY(origDate)}`;
+            }
+            trancheLines.push(`[Tranche ${ta.num}: ₹${ta.price.toFixed(2)} × ${ta.qty}${dStr}]`);
+          });
+          remarksText = remarksText + (remarksText ? '\n' : '') + trancheLines.join('\n');
+        }
+        updated.remarks = remarksText;
+
+        // 5. Aggregate final buy fields
+        const buy = aggregateBuy(normalizeTrade(updated));
+        updated.totBuyQty = buy.totBuyQty;
+        updated.totBuyAmt = buy.totBuyAmt;
+        updated.avgBuyPrice = buy.avgBuyPrice;
+
+        // 6. Handle SL / TSL inputs
         const slInput = $('#m_slPrice');
         const tslInput = $('#m_tslPrice');
 
@@ -2982,26 +3160,37 @@
           const newSl = parseFloat(slInput.value);
           if (!isNaN(newSl)) {
             updated.slPrice = newSl;
-            const slPerShare = Number((updated.avgBuyPrice - newSl).toFixed(4));
-            updated.slPerShare = slPerShare;
-            updated.slPct = updated.avgBuyPrice ? slPerShare / updated.avgBuyPrice : null;
-            updated.totLossAtSL = Math.round(Number(updated.totBuyQty || 0) * slPerShare);
           }
         }
-
         if (tslInput) {
           const newTsl = parseFloat(tslInput.value);
           updated.tslPrice = isNaN(newTsl) ? '' : newTsl;
         }
 
+        // Recalculate Risk Metrics based on SL
+        if (updated.slPrice != null && !isNaN(updated.slPrice)) {
+          const slPerShare = Number((updated.avgBuyPrice - updated.slPrice).toFixed(4));
+          updated.slPerShare = slPerShare;
+          updated.slPct = updated.avgBuyPrice ? slPerShare / updated.avgBuyPrice : null;
+          updated.totLossAtSL = Math.round(Number(updated.totBuyQty || 0) * slPerShare);
+        } else {
+          updated.slPerShare = null;
+          updated.slPct = null;
+          updated.totLossAtSL = null;
+        }
+
+        // 7. Recalculate PnL and metrics for open vs closed
         if (updated.status === 'open') {
           const pnlData = computeOpenTradePnL(updated);
           updated.pnl = pnlData.pnl;
           updated.pnlPct = pnlData.pnlPct;
           updated.rr = updated.totLossAtSL ? +(updated.pnl / updated.totLossAtSL).toFixed(2) : null;
         } else {
+          updated.pnl = Math.round(Number(updated.totExitAmt || 0) - Number(updated.totBuyAmt || 0));
+          updated.pnlPct = updated.totBuyAmt ? updated.pnl / updated.totBuyAmt : null;
           const opened = new Date(updated.openDate), closed = new Date(updated.closedDate);
           updated.days = isNaN(opened) || isNaN(closed) ? null : Math.round((closed - opened) / 86400000);
+          updated.rr = updated.totLossAtSL ? +(updated.pnl / updated.totLossAtSL).toFixed(2) : null;
         }
 
         try {
