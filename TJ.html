@@ -1156,7 +1156,7 @@
     let STATE = {
       trades: [], settings: {}, capitalLog: [], multiYear: [], expenses: [],
       view: 'overview', tradeFilter: 'open', search: '', editingCapitalIndex: null,
-      livePrices: {}
+      editingWlIdx: null, livePrices: {}
     };
 
     const $ = sel => document.querySelector(sel);
@@ -2248,8 +2248,8 @@
       <!-- Header row with title and action buttons -->
       <div class="panel-head" style="margin-bottom:         <h3 style="margin: 0;">Add Trade Position Entry</h3>
         <div style="display: flex; gap: 8px;">
-          <button class="btn silver" id="saveTradeBtn" tabindex="10" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);">Save</button>
-          <button class="btn ghost" onclick="STATE.view='trades';renderShell();" tabindex="18" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Cancel</button>
+          <button class="btn silver" id="saveTradeBtn" tabindex="11" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);">Save</button>
+          <button class="btn ghost" onclick="STATE.view='trades';renderShell();" tabindex="12" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Cancel</button>
         </div>
       </div>
 
@@ -2294,9 +2294,13 @@
               <input type="number" id="f_cap" value="${Math.round(cap)}" tabindex="8" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
 
-            <div class="form-row form-row-span-2">
+            <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Setup Strategy:</span>
               <input type="text" id="f_setup" placeholder="e.g. VCP, Pullback" value="" tabindex="9" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+            <div class="form-row">
+              <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Tranche Qty:</span>
+              <input type="number" id="f_qty" tabindex="10" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
           </div>
 
@@ -2308,15 +2312,15 @@
               <div class="pyramid-col-left">
                 <div class="form-row">
                   <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E2 Price (₹):</span>
-                  <input type="number" step="0.01" id="f_e2p" tabindex="11" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+                  <input type="number" step="0.01" id="f_e2p" tabindex="13" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
                 </div>
                 <div class="form-row">
                   <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E2 Qty:</span>
-                  <input type="text" id="f_e2q" placeholder="250 or 30%" tabindex="12" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+                  <input type="text" id="f_e2q" placeholder="250 or 30%" tabindex="14" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
                 </div>
                 <div class="form-row">
                   <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E2 Date:</span>
-                  <input type="date" id="f_e2d" value="${todayISO()}" tabindex="13" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+                  <input type="date" id="f_e2d" value="${todayISO()}" tabindex="15" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
                 </div>
               </div>
 
@@ -2324,15 +2328,15 @@
               <div class="pyramid-col-right">
                 <div class="form-row">
                   <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E3 Price (₹):</span>
-                  <input type="number" step="0.01" id="f_e3p" tabindex="14" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+                  <input type="number" step="0.01" id="f_e3p" tabindex="16" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
                 </div>
                 <div class="form-row">
                   <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E3 Qty:</span>
-                  <input type="text" id="f_e3q" placeholder="150 or 20%" tabindex="15" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+                  <input type="text" id="f_e3q" placeholder="150 or 20%" tabindex="17" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
                 </div>
                 <div class="form-row">
                   <span style="font-size: 11px; color: var(--dim); width: 70px; text-align: right;">E3 Date:</span>
-                  <input type="date" id="f_e3d" value="${todayISO()}" tabindex="16" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+                  <input type="date" id="f_e3d" value="${todayISO()}" tabindex="18" style="flex: 1; height: 24px; padding: 2px 6px; font-size: 11px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
                 </div>
               </div>
             </div>
@@ -2341,7 +2345,7 @@
           <!-- Remarks -->
           <div style="border-top: 1px solid var(--line-soft); padding-top: 12px; display: flex; flex-direction: column; gap: 4px;">
             <span style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Remarks:</span>
-            <textarea id="f_remarks" rows="2" placeholder="Setup notes, base pattern, catalyst…" tabindex="17" style="width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 6px 8px; font-size: 12px; font-family: var(--sans); outline: none; resize: none;"></textarea>
+            <textarea id="f_remarks" rows="2" placeholder="Setup notes, base pattern, catalyst…" tabindex="19" style="width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 6px 8px; font-size: 12px; font-family: var(--sans); outline: none; resize: none;"></textarea>
           </div>
         </div>
 
@@ -2376,9 +2380,56 @@
       </div>
     </div>
   `;
-      ['f_entryPrice', 'f_slPrice', 'f_entryPct', 'f_brokerage', 'f_cap'].forEach(id => {
-        $('#' + id).oninput = updateAddCalc; $('#' + id).onchange = updateAddCalc;
+      // Set input bindings for updates when core fields change
+      ['f_entryPrice', 'f_slPrice', 'f_brokerage', 'f_cap'].forEach(id => {
+        $('#' + id).oninput = () => {
+          const entryPct = (parseFloat($('#f_entryPct').value) || 0) / 100;
+          const capital = parseFloat($('#f_cap').value) || cap;
+          const entryPrice = parseFloat($('#f_entryPrice').value);
+          const slPrice = parseFloat($('#f_slPrice').value);
+          const c = computeEntryCalc({ capital, riskPct, entryPct, entryPrice, slPrice, brokerage: 0 });
+          if (c.fullQty != null) {
+            $('#f_qty').value = Math.floor(c.fullQty * entryPct);
+          }
+          updateAddCalc();
+        };
+        $('#' + id).onchange = () => {
+          $('#' + id).oninput();
+        };
       });
+
+      // Linked tranche pct -> qty
+      $('#f_entryPct').oninput = () => {
+        const entryPct = (parseFloat($('#f_entryPct').value) || 0) / 100;
+        const capital = parseFloat($('#f_cap').value) || cap;
+        const entryPrice = parseFloat($('#f_entryPrice').value);
+        const slPrice = parseFloat($('#f_slPrice').value);
+        const c = computeEntryCalc({ capital, riskPct, entryPct, entryPrice, slPrice, brokerage: 0 });
+        if (c.fullQty != null) {
+          $('#f_qty').value = Math.floor(c.fullQty * entryPct);
+        }
+        updateAddCalc();
+      };
+      $('#f_entryPct').onchange = () => {
+        $('#f_entryPct').oninput();
+      };
+
+      // Linked tranche qty -> pct
+      $('#f_qty').oninput = () => {
+        const qty = parseFloat($('#f_qty').value);
+        const capital = parseFloat($('#f_cap').value) || cap;
+        const entryPrice = parseFloat($('#f_entryPrice').value);
+        const slPrice = parseFloat($('#f_slPrice').value);
+        const slPerShare = (entryPrice != null && slPrice != null) ? (entryPrice - slPrice) : null;
+        const fullQty = (slPerShare && slPerShare > 0) ? Math.floor((capital * riskPct) / slPerShare) : null;
+        if (fullQty && !isNaN(qty)) {
+          $('#f_entryPct').value = +((qty / fullQty) * 100).toFixed(1);
+        }
+        updateAddCalc();
+      };
+      $('#f_qty').onchange = () => {
+        $('#f_qty').oninput();
+      };
 
       $('#f_remarks').addEventListener('keydown', (e) => {
         if (e.key === 'Tab' && !e.shiftKey) {
@@ -2386,6 +2437,7 @@
           $('#saveTradeBtn').focus();
         }
       });
+
       $('#f_breadth').oninput = () => {
         const mbs = parseFloat($('#f_breadth').value);
         if (!isNaN(mbs)) {
@@ -2393,6 +2445,14 @@
           if (mbs >= 75) tranche = 100;
           else if (mbs >= 45) tranche = 50;
           $('#f_entryPct').value = tranche;
+          // recalculate qty
+          const capital = parseFloat($('#f_cap').value) || cap;
+          const entryPrice = parseFloat($('#f_entryPrice').value);
+          const slPrice = parseFloat($('#f_slPrice').value);
+          const c = computeEntryCalc({ capital, riskPct, entryPct: tranche / 100, entryPrice, slPrice, brokerage: 0 });
+          if (c.fullQty != null) {
+            $('#f_qty').value = Math.floor(c.fullQty * (tranche / 100));
+          }
         }
         updateAddCalc();
       };
@@ -2408,6 +2468,7 @@
       handleQtyPercentageInput($('#f_e3q'), () => parseFloat($('#calc_fullQty').textContent) || 0);
 
       updateAddCalc();
+
       function updateAddCalc() {
         const entryPrice = parseFloat($('#f_entryPrice').value);
         const slPrice = parseFloat($('#f_slPrice').value);
@@ -2416,12 +2477,20 @@
         const brokerage = parseFloat($('#f_brokerage').value) || 0;
 
         const c = computeEntryCalc({ capital, riskPct, entryPct, entryPrice: isNaN(entryPrice) ? null : entryPrice, slPrice: isNaN(slPrice) ? null : slPrice, brokerage });
+        
+        const userQty = parseFloat($('#f_qty').value);
+        const qty = !isNaN(userQty) ? userQty : (c.entry1Qty || 0);
+        
+        const slPerShare = c.slPerShare;
+        const posSize = (entryPrice != null) ? Math.round(entryPrice * qty + brokerage) : null;
+        const risk = (slPerShare != null) ? Math.round(qty * slPerShare) : null;
+
         $('#calc_slPerShare').textContent = c.slPerShare != null ? fmt(c.slPerShare) : '—';
         $('#calc_slPct').textContent = c.slPct != null ? fmtPct(c.slPct) : '—';
         $('#calc_fullQty').textContent = c.fullQty != null ? c.fullQty : '—';
-        $('#calc_entryQty').textContent = c.entry1Qty != null ? c.entry1Qty : '—';
-        $('#calc_entryAmt').textContent = c.entry1Amt != null ? fmtRs(c.entry1Amt) : '—';
-        $('#calc_riskAtSL').textContent = c.totLossAtSL != null ? fmtRs(c.totLossAtSL) : '—';
+        $('#calc_entryQty').textContent = qty;
+        $('#calc_entryAmt').textContent = posSize != null ? fmtRs(posSize) : '—';
+        $('#calc_riskAtSL').textContent = risk != null ? fmtRs(risk) : '—';
 
         // Auto prefill Entry 2 (30% Qty) and Entry 3 (20% Qty) if not manually modified
         if (c.fullQty != null && !isNaN(entryPrice)) {
@@ -2443,18 +2512,27 @@
         const brokerage = parseFloat($('#f_brokerage').value) || 0;
         const stock = $('#f_stock').value.trim().toUpperCase();
         if (!stock || isNaN(entryPrice) || isNaN(slPrice)) { toast('Stock, entry price and SL price are required', 'err'); return; }
-        const c = computeEntryCalc({ capital: cap, riskPct, entryPct, entryPrice, slPrice, brokerage });
+        
+        const capital = parseFloat($('#f_cap').value) || cap;
+        const c = computeEntryCalc({ capital, riskPct, entryPct, entryPrice, slPrice, brokerage });
+        
+        const userQty = parseFloat($('#f_qty').value);
+        const qty = !isNaN(userQty) ? userQty : (c.entry1Qty || 0);
+        const entryAmt = entryPrice && qty ? Math.round(entryPrice * qty + brokerage) : 0;
+        const totLossAtSL = c.slPerShare && qty ? Math.round(qty * c.slPerShare) : 0;
+
         const e2p = parseFloat($('#f_e2p').value), e2q = parseFloat($('#f_e2q').value);
         const e3p = parseFloat($('#f_e3p').value), e3q = parseFloat($('#f_e3q').value);
+        
         const trade = {
           status: 'open', openDate: $('#f_openDate').value, breadth: $('#f_breadth').value || '',
-          entryPct, riskPerShare: cap * riskPct * entryPct, stock,
-          entry1Price: entryPrice, entry1Qty: c.entry1Qty, entry1Amt: c.entry1Amt,
+          entryPct, riskPerShare: capital * riskPct * entryPct, stock,
+          entry1Price: entryPrice, entry1Qty: qty, entry1Amt: entryAmt,
           entry2Price: isNaN(e2p) ? '' : e2p, entry2Qty: isNaN(e2q) ? '' : e2q, entry2Amt: (!isNaN(e2p) && !isNaN(e2q)) ? Math.round(e2p * e2q) : '',
           entry2Date: (!isNaN(e2p) && !isNaN(e2q)) ? ($('#f_e2d').value || $('#f_openDate').value) : '',
           entry3Price: isNaN(e3p) ? '' : e3p, entry3Qty: isNaN(e3q) ? '' : e3q, entry3Amt: (!isNaN(e3p) && !isNaN(e3q)) ? Math.round(e3p * e3q) : '',
           entry3Date: (!isNaN(e3p) && !isNaN(e3q)) ? ($('#f_e3d').value || $('#f_openDate').value) : '',
-          slPrice, slPerShare: c.slPerShare, slPct: c.slPct, fullQty: c.fullQty, totLossAtSL: c.totLossAtSL, brokerage,
+          slPrice, slPerShare: c.slPerShare, slPct: c.slPct, fullQty: c.fullQty, totLossAtSL, brokerage,
           setup: $('#f_setup').value.trim(),
           remarks: $('#f_remarks').value
         };
@@ -3023,9 +3101,19 @@
       }
     };
 
+    window.editWlItem = (idx) => {
+      STATE.editingWlIdx = idx;
+      renderShell();
+    };
+
     window.deleteWlItem = async (idx) => {
       const wl = getWatchlist();
       wl.splice(idx, 1);
+      if (STATE.editingWlIdx === idx) {
+        STATE.editingWlIdx = null;
+      } else if (STATE.editingWlIdx !== null && STATE.editingWlIdx > idx) {
+        STATE.editingWlIdx--;
+      }
       await saveWatchlist(wl);
       renderShell();
       toast('Removed from watchlist', 'ok');
@@ -3035,6 +3123,7 @@
       const cap = currentCapital();
       const riskPct = Number(STATE.settings.riskPctPerTrade || 0.01);
       const wl = getWatchlist();
+      const editingItem = STATE.editingWlIdx !== null ? wl[STATE.editingWlIdx] : null;
 
       host.innerHTML = `
     <div class="page-head"><div><h1>Position Calc</h1><p>Position sizing sandbox & planned trades planner</p></div></div>
@@ -3051,42 +3140,47 @@
         <div class="form-two-col">
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Stock Name:</span>
-            <input type="text" id="r_stock" placeholder="e.g. TITAN" style="text-transform:uppercase; flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            <input type="text" id="r_stock" value="${editingItem ? editingItem.stock : ''}" placeholder="e.g. TITAN" tabindex="1" style="text-transform:uppercase; flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Breadth Score:</span>
-            <input type="number" id="r_breadth" placeholder="e.g. 65" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            <input type="number" id="r_breadth" value="${editingItem && editingItem.breadth != null ? editingItem.breadth : ''}" placeholder="e.g. 65" tabindex="2" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
 
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Capital (₹):</span>
-            <input type="number" id="r_cap" value="${Math.round(cap)}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            <input type="number" id="r_cap" value="${Math.round(cap)}" tabindex="3" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Risk % / trade:</span>
-            <input type="number" step="0.1" id="r_riskPct" value="${(riskPct * 100)}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            <input type="number" step="0.1" id="r_riskPct" value="${(riskPct * 100)}" tabindex="4" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
 
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Entry Price (₹):</span>
-            <input type="number" step="0.01" id="r_entry" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            <input type="number" step="0.01" id="r_entry" value="${editingItem ? editingItem.entryPrice : ''}" tabindex="5" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Stop-Loss (₹):</span>
-            <input type="number" step="0.01" id="r_sl" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            <input type="number" step="0.01" id="r_sl" value="${editingItem ? editingItem.slPrice : ''}" tabindex="6" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
 
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Tranche %:</span>
-            <input type="number" step="0.1" id="r_entryPct" value="50" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            <input type="number" step="0.1" id="r_entryPct" value="${editingItem ? editingItem.entryPct * 100 : 50}" tabindex="7" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Setup Strategy:</span>
-            <input type="text" id="r_setup" placeholder="e.g. VCP, Pullback" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            <input type="text" id="r_setup" value="${editingItem && editingItem.setup ? editingItem.setup : ''}" placeholder="e.g. VCP, Pullback" tabindex="8" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+          </div>
+          <div class="form-row">
+            <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Tranche Qty:</span>
+            <input type="number" id="r_qty" value="${editingItem ? editingItem.qty : ''}" tabindex="9" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
 
-          <div class="form-row form-row-span-2" style="justify-content: flex-end; margin-top: 4px;">
-            <button class="btn silver" id="addWlBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);">+ Add to Watchlist</button>
+          <div class="form-row" style="justify-content: flex-end; gap: 8px;">
+            ${STATE.editingWlIdx !== null ? `<button class="btn ghost" id="cancelWlEditBtn" tabindex="11" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Cancel</button>` : ''}
+            <button class="btn silver" id="addWlBtn" tabindex="10" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);">${STATE.editingWlIdx !== null ? 'Update Watchlist' : '+ Add to Watchlist'}</button>
           </div>
         </div>
 
@@ -3145,8 +3239,8 @@
         </thead>
         <tbody>
           ${wl.length ? wl.map((item, idx) => `
-            <tr>
-              <td style="font-family:var(--sans);font-weight:600;color:var(--gold);">${item.stock}${item.setup ? `<br><span style="font-size:9px;color:var(--dim);background:var(--bg2);padding:1px 4px;border-radius:3px;font-weight:normal;">${item.setup}</span>` : ''}</td>
+            <tr style="cursor: pointer; ${STATE.editingWlIdx === idx ? 'background: rgba(212, 162, 78, 0.08); border-left: 3.5px solid var(--gold);' : ''}" onclick="editWlItem(${idx})">
+              <td style="font-family:var(--sans);font-weight:600;color:var(--gold);">${STATE.editingWlIdx === idx ? '⚡ ' : ''}${item.stock}${item.setup ? `<br><span style="font-size:9px;color:var(--dim);background:var(--bg2);padding:1px 4px;border-radius:3px;font-weight:normal;">${item.setup}</span>` : ''}</td>
               <td>${fmt(item.entryPrice)}</td>
               <td>${fmt(item.slPrice)}</td>
               <td style="color:var(--red);">${fmtPct(item.slPct)}</td>
@@ -3155,8 +3249,8 @@
               <td>${fmtRs(item.risk)}</td>
               <td>
                 <div style="display:flex;gap:6px;">
-                  <button class="btn silver" style="font-size:10px;padding:4px 8px;min-height:auto;" onclick="moveWlToTradeLog(${idx})">🚀 Buy / Log</button>
-                  <button class="btn danger ghost" style="font-size:10px;padding:4px 8px;min-height:auto;" onclick="deleteWlItem(${idx})">✕ Remove</button>
+                  <button class="btn silver" style="font-size:10px;padding:4px 8px;min-height:auto;" onclick="event.stopPropagation(); moveWlToTradeLog(${idx})">🚀 Buy / Log</button>
+                  <button class="btn danger ghost" style="font-size:10px;padding:4px 8px;min-height:auto;" onclick="event.stopPropagation(); deleteWlItem(${idx})">✕ Remove</button>
                 </div>
               </td>
             </tr>
@@ -3166,10 +3260,59 @@
     </div>
   `;
 
-      ['r_cap', 'r_riskPct', 'r_entry', 'r_sl', 'r_entryPct'].forEach(id => {
-        $('#' + id).oninput = calc;
-        $('#' + id).onchange = calc;
+      // Set input bindings for updates when core fields change
+      ['r_cap', 'r_riskPct', 'r_entry', 'r_sl'].forEach(id => {
+        $('#' + id).oninput = () => {
+          const entryPct = (parseFloat($('#r_entryPct').value) || 0) / 100;
+          const capital = parseFloat($('#r_cap').value) || 0;
+          const rp = (parseFloat($('#r_riskPct').value) || 0) / 100;
+          const entryPrice = parseFloat($('#r_entry').value);
+          const slPrice = parseFloat($('#r_sl').value);
+          const c = computeEntryCalc({ capital, riskPct: rp, entryPct, entryPrice, slPrice, brokerage: 0 });
+          if (c.fullQty != null) {
+            $('#r_qty').value = Math.floor(c.fullQty * entryPct);
+          }
+          calc();
+        };
+        $('#' + id).onchange = () => {
+          $('#' + id).oninput();
+        };
       });
+
+      // Linked tranche pct -> qty
+      $('#r_entryPct').oninput = () => {
+        const entryPct = (parseFloat($('#r_entryPct').value) || 0) / 100;
+        const capital = parseFloat($('#r_cap').value) || 0;
+        const rp = (parseFloat($('#r_riskPct').value) || 0) / 100;
+        const entryPrice = parseFloat($('#r_entry').value);
+        const slPrice = parseFloat($('#r_sl').value);
+        const c = computeEntryCalc({ capital, riskPct: rp, entryPct, entryPrice, slPrice, brokerage: 0 });
+        if (c.fullQty != null) {
+          $('#r_qty').value = Math.floor(c.fullQty * entryPct);
+        }
+        calc();
+      };
+      $('#r_entryPct').onchange = () => {
+        $('#r_entryPct').oninput();
+      };
+
+      // Linked tranche qty -> pct
+      $('#r_qty').oninput = () => {
+        const qty = parseFloat($('#r_qty').value);
+        const capital = parseFloat($('#r_cap').value) || 0;
+        const rp = (parseFloat($('#r_riskPct').value) || 0) / 100;
+        const entryPrice = parseFloat($('#r_entry').value);
+        const slPrice = parseFloat($('#r_sl').value);
+        const slPerShare = (entryPrice != null && slPrice != null) ? (entryPrice - slPrice) : null;
+        const fullQty = (slPerShare && slPerShare > 0) ? Math.floor((capital * rp) / slPerShare) : null;
+        if (fullQty && !isNaN(qty)) {
+          $('#r_entryPct').value = +((qty / fullQty) * 100).toFixed(1);
+        }
+        calc();
+      };
+      $('#r_qty').onchange = () => {
+        $('#r_qty').oninput();
+      };
 
       $('#r_breadth').oninput = () => {
         const mbs = parseFloat($('#r_breadth').value);
@@ -3178,6 +3321,15 @@
           if (mbs >= 75) tranche = 100;
           else if (mbs >= 45) tranche = 50;
           $('#r_entryPct').value = tranche;
+          // recalculate qty
+          const capital = parseFloat($('#r_cap').value) || 0;
+          const rp = (parseFloat($('#r_riskPct').value) || 0) / 100;
+          const entryPrice = parseFloat($('#r_entry').value);
+          const slPrice = parseFloat($('#r_sl').value);
+          const c = computeEntryCalc({ capital, riskPct: rp, entryPct: tranche / 100, entryPrice, slPrice, brokerage: 0 });
+          if (c.fullQty != null) {
+            $('#r_qty').value = Math.floor(c.fullQty * (tranche / 100));
+          }
         }
         calc();
       };
@@ -3188,13 +3340,21 @@
         const entryPrice = parseFloat($('#r_entry').value);
         const slPrice = parseFloat($('#r_sl').value);
         const entryPct = (parseFloat($('#r_entryPct').value) || 0) / 100;
-        const c = computeEntryCalc({ capital, riskPct: rp, entryPct, entryPrice: isNaN(entryPrice) ? null : entryPrice, slPrice: isNaN(slPrice) ? null : slPrice, brokerage: 0 });
+        const c = computeEntryCalc({ capital, riskPct: rp, entryPct: entryPct, entryPrice: isNaN(entryPrice) ? null : entryPrice, slPrice: isNaN(slPrice) ? null : slPrice, brokerage: 0 });
+        
+        const userQty = parseFloat($('#r_qty').value);
+        const qty = !isNaN(userQty) ? userQty : (c.entry1Qty || 0);
+        
+        const slPerShare = c.slPerShare;
+        const posSize = (entryPrice != null) ? Math.round(entryPrice * qty) : null;
+        const risk = (slPerShare != null) ? Math.round(qty * slPerShare) : null;
+
         $('#r_out_slps').textContent = c.slPerShare != null ? fmt(c.slPerShare) : '—';
         $('#r_out_slpct').textContent = c.slPct != null ? fmtPct(c.slPct) : '—';
         $('#r_out_full').textContent = c.fullQty != null ? c.fullQty : '—';
-        $('#r_out_qty').textContent = c.entry1Qty != null ? c.entry1Qty : '—';
-        $('#r_out_amt').textContent = c.entry1Amt != null ? fmtRs(c.entry1Amt) : '—';
-        $('#r_out_risk').textContent = c.totLossAtSL != null ? fmtRs(c.totLossAtSL) : '—';
+        $('#r_out_qty').textContent = qty;
+        $('#r_out_amt').textContent = posSize != null ? fmtRs(posSize) : '—';
+        $('#r_out_risk').textContent = risk != null ? fmtRs(risk) : '—';
       }
 
       $('#addWlBtn').onclick = async () => {
@@ -3212,26 +3372,47 @@
           return;
         }
 
-        const c = computeEntryCalc({ capital, riskPct: rp, entryPct, entryPrice, slPrice, brokerage: 0 });
+        const c = computeEntryCalc({ capital, riskPct: rp, entryPct: entryPct, entryPrice, slPrice, brokerage: 0 });
+        
+        const userQty = parseFloat($('#r_qty').value);
+        const qty = !isNaN(userQty) ? userQty : (c.entry1Qty || 0);
+        const posSize = entryPrice && qty ? Math.round(entryPrice * qty) : 0;
+        const risk = c.slPerShare && qty ? Math.round(qty * c.slPerShare) : 0;
 
         const currentWl = getWatchlist();
-        currentWl.push({
+        const updatedItem = {
           stock,
           entryPrice,
           slPrice,
           slPct: c.slPct,
-          qty: c.entry1Qty || 0,
-          posSize: c.entry1Amt || 0,
-          risk: c.totLossAtSL || 0,
+          qty,
+          posSize,
+          risk,
           entryPct,
           breadth,
           setup
-        });
+        };
 
-        await saveWatchlist(currentWl);
-        renderShell();
-        toast(`Added ${stock} to planned watchlist!`, 'ok');
+        if (STATE.editingWlIdx !== null) {
+          currentWl[STATE.editingWlIdx] = updatedItem;
+          STATE.editingWlIdx = null;
+          await saveWatchlist(currentWl);
+          renderShell();
+          toast(`Updated ${stock} in planned watchlist!`, 'ok');
+        } else {
+          currentWl.push(updatedItem);
+          await saveWatchlist(currentWl);
+          renderShell();
+          toast(`Added ${stock} to planned watchlist!`, 'ok');
+        }
       };
+
+      if (STATE.editingWlIdx !== null) {
+        $('#cancelWlEditBtn').onclick = () => {
+          STATE.editingWlIdx = null;
+          renderShell();
+        };
+      }
 
       calc();
     }
