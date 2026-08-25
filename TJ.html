@@ -1278,6 +1278,7 @@
       STATE.multiYear = data.multiYear || [];
       STATE.expenses = data.expenses || [];
       STATE.watchlist = (data.watchlist || []).map(normalizeWatchlist);
+      localStorage.setItem('tj_cached_state', JSON.stringify(data));
     }
 
     function normalizeTrade(t) {
@@ -1517,7 +1518,7 @@
       ].filter(([p, q]) => p != null && q);
       const totBuyQty = legs.reduce((s, [, q]) => s + Number(q), 0);
       const totBuyAmt = [t.entry1Amt, t.entry2Amt, t.entry3Amt].reduce((s, a) => s + (Number(a) || 0), 0);
-      const avgBuyPrice = totBuyQty ? +(totBuyAmt / totBuyQty).toFixed(2) : null;
+      const avgBuyPrice = totBuyQty ? +(legs.reduce((s, [p, q]) => s + Number(p) * Number(q), 0) / totBuyQty).toFixed(2) : null;
       return { totBuyQty, totBuyAmt, avgBuyPrice };
     }
     function aggregateExit(t) {
@@ -1565,13 +1566,39 @@
     }
 
     async function boot() {
-      $('#app').innerHTML = `<div class="loading-screen"><span class="spinner"></span> Loading your journal…</div>`;
+      const cached = localStorage.getItem('tj_cached_state');
+      let loadedCached = false;
+      if (cached) {
+        try {
+          const data = JSON.parse(cached);
+          STATE.trades = (data.trades || []).map(normalizeTrade);
+          STATE.settings = data.settings || {};
+          STATE.capitalLog = data.capitalLog || [];
+          STATE.multiYear = data.multiYear || [];
+          STATE.expenses = data.expenses || [];
+          STATE.watchlist = (data.watchlist || []).map(normalizeWatchlist);
+          
+          renderShell();
+          loadedCached = true;
+        } catch (e) {
+          // Ignore parse errors and fall back to loading screen
+        }
+      }
+      
+      if (!loadedCached) {
+        $('#app').innerHTML = `<div class="loading-screen"><span class="spinner"></span> Loading your journal…</div>`;
+      }
+      
       try {
         await loadAll();
         renderShell();
       } catch (err) {
-        $('#app').innerHTML = `<div class="loading-screen">Could not load data: ${err.message}<br><br>
-      <button class="btn" onclick="localStorage.removeItem('${CFG_KEY}');location.reload();">Reset connection</button></div>`;
+        if (!loadedCached) {
+          $('#app').innerHTML = `<div class="loading-screen">Could not load data: ${err.message}<br><br>
+        <button class="btn" onclick="localStorage.removeItem('${CFG_KEY}');location.reload();">Reset connection</button></div>`;
+        } else {
+          toast('Network error: Using cached data', 'err');
+        }
       }
     }
 
@@ -1913,19 +1940,16 @@
       if (!list.length) return `<div class="empty"><h4>No trades to show</h4><p>Add your first trade to get started.</p></div>`;
 
       const isOpenTab = STATE.tradeFilter === 'open';
+      let sumAmount = 0;
+      let sumPLAtTSL = 0;
+      let sumLivePL = 0;
+      let livePricesCount = 0;
 
-      return `<div style="overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch;"><table style="width: 100%; min-width: 750px;"><thead><tr>
-    <th>Open</th><th>Stock</th><th>Avg Buy</th><th>Qty</th><th>SL/TSL</th><th>Status</th>
-    ${isOpenTab ? `
-      <th>P/L at TSL</th><th>P/L at TSL %</th><th>Live P/L</th><th>Live P/L %</th>
-    ` : `
-      <th>Exit</th><th>P/L</th><th>P/L %</th><th>R:R</th>
-    `}
-    <th>Days</th>
-  </tr></thead><tbody>
-    ${list.map(t => {
+      const rowsHtml = list.map(t => {
         const badge = t.status === 'open' ? '<span class="badge open">OPEN</span>' :
           (t.pnl >= 0 ? '<span class="badge closed-win">WIN</span>' : '<span class="badge closed-loss">LOSS</span>');
+
+        const amount = Number(t.totBuyQty || 0) * Number(t.avgBuyPrice || 0);
 
         let customColsHtml = '';
         if (isOpenTab) {
@@ -1963,13 +1987,16 @@
           const pnlAtTS = t.pnl == null ? 0 : t.pnl;
           const livePrice = STATE.livePrices[t.stock];
           let livePnLHtml = '<td>—</td><td>—</td>';
+          let livePnL = 0;
+          let hasLivePrice = false;
           if (livePrice != null) {
-            const livePnL = Math.round((livePrice - Number(t.avgBuyPrice || 0)) * remainingQty + realizedPnL);
+            livePnL = Math.round((livePrice - Number(t.avgBuyPrice || 0)) * remainingQty + realizedPnL);
             const livePnLPct = t.totBuyAmt ? livePnL / Number(t.totBuyAmt) : 0;
             livePnLHtml = `
               <td style="color:${livePnL >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${livePnL >= 0 ? '+' : ''}${fmtRs(livePnL)}</td>
               <td style="color:${livePnL >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${fmtPct(livePnLPct)}</td>
             `;
+            hasLivePrice = true;
           }
 
           customColsHtml = `
@@ -1977,6 +2004,13 @@
             <td style="color:${pnlAtTS >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${fmtPct(t.pnlPct)}</td>
             ${livePnLHtml}
           `;
+
+          sumAmount += amount;
+          sumPLAtTSL += pnlAtTS;
+          if (hasLivePrice) {
+            sumLivePL += livePnL;
+            livePricesCount++;
+          }
         } else {
           customColsHtml = `
             <td>${t.status === 'closed' ? formatDateDMY(t.closedDate) : '—'}</td>
@@ -1999,12 +2033,41 @@
         </td>
         <td>${fmt(t.avgBuyPrice)}</td>
         <td>${fmt(t.totBuyQty)}</td>
+        <td>${fmtRs(amount)}</td>
         <td>${fmt(t.slPrice)}${t.tslPrice ? ` / <span style="color:var(--gold);font-weight:600;">${fmt(t.tslPrice)}</span>` : ''}</td>
         <td>${badge}</td>
         ${customColsHtml}
         <td>${daysVal}</td>
       </tr>`;
-      }).join('')}
+      }).join('');
+
+      let totalRowHtml = '';
+      if (isOpenTab) {
+        totalRowHtml = `
+          <tr style="background: rgba(255,255,255,0.02); border-top: 2px solid var(--line); font-family: var(--sans);">
+            <td colspan="4" style="text-align:right; font-weight:bold; color:var(--dim); font-size: 11px; letter-spacing: 0.5px; padding-top: 10px; padding-bottom: 10px;">TOTAL:</td>
+            <td style="font-weight:bold; color:var(--text);">${fmtRs(sumAmount)}</td>
+            <td colspan="2"></td>
+            <td style="font-weight:bold; color:${sumPLAtTSL >= 0 ? 'var(--green)' : 'var(--red)'};">${sumPLAtTSL >= 0 ? '+' : ''}${fmtRs(sumPLAtTSL)}</td>
+            <td style="font-weight:bold; color:${sumPLAtTSL >= 0 ? 'var(--green)' : 'var(--red)'};">${sumAmount ? fmtPct(sumPLAtTSL / sumAmount) : '—'}</td>
+            <td style="font-weight:bold; color:${sumLivePL >= 0 ? 'var(--green)' : 'var(--red)'};">${livePricesCount > 0 ? (sumLivePL >= 0 ? '+' : '') + fmtRs(sumLivePL) : '—'}</td>
+            <td style="font-weight:bold; color:${sumLivePL >= 0 ? 'var(--green)' : 'var(--red)'};">${(livePricesCount > 0 && sumAmount) ? fmtPct(sumLivePL / sumAmount) : '—'}</td>
+            <td></td>
+          </tr>
+        `;
+      }
+
+      return `<div style="overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch;"><table style="width: 100%; min-width: 750px;"><thead><tr>
+    <th>Open</th><th>Stock</th><th>Avg Buy</th><th>Qty</th><th>Amount</th><th>SL/TSL</th><th>Status</th>
+    ${isOpenTab ? `
+      <th>P/L at TSL</th><th>P/L at TSL %</th><th>Live P/L</th><th>Live P/L %</th>
+    ` : `
+      <th>Exit</th><th>P/L</th><th>P/L %</th><th>R:R</th>
+    `}
+    <th>Days</th>
+  </tr></thead><tbody>
+    ${rowsHtml}
+    ${totalRowHtml}
   </tbody></table></div>`;
     }
 
@@ -2093,6 +2156,7 @@
       <div style="display:flex;gap:10px;align-items:center;">
         ${STATE.tradeFilter === 'open' ? `<button class="btn" id="fetchGFinanceBtn" style="background:#1d4ed8;border-color:#1d4ed8;color:#fff;">📈 Fetch Google Finance Price</button>` : ''}
         <button class="btn" id="syncDhanBtn">⚡ Sync Dhan Trades</button>
+        <button class="btn" id="exportBtn" style="background:var(--panel2); border-color:var(--line); color:var(--text);">📤 Export Data</button>
         <button class="btn primary" onclick="STATE.view='add';renderShell();">+ New Trade</button>
       </div>
     </div>
@@ -2113,6 +2177,7 @@
       });
       $('#searchBox').oninput = (e) => { STATE.search = e.target.value; renderTradeTable(); };
       $('#syncDhanBtn').onclick = () => openDhanSyncModal();
+      $('#exportBtn').onclick = () => openExportModal();
 
       const fetchBtn = $('#fetchGFinanceBtn');
       if (fetchBtn) {
@@ -2211,6 +2276,188 @@
         }
       };
     }
+
+    function getAvailablePeriods() {
+      const months = new Set();
+      const years = new Set();
+      
+      STATE.trades.forEach(t => {
+        if (!t.openDate) return;
+        const d = new Date(t.openDate);
+        if (isNaN(d)) return;
+        
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        months.add(y + '-' + m);
+        
+        const fyStart = (d.getMonth() < 3) ? y - 1 : y;
+        years.add(fyStart + '-' + (fyStart + 1));
+      });
+      
+      const sortedMonths = Array.from(months).sort((a, b) => b.localeCompare(a));
+      const sortedFYs = Array.from(years).sort((a, b) => b.localeCompare(a));
+      
+      return { months: sortedMonths, fys: sortedFYs };
+    }
+
+    function openExportModal() {
+      const periods = getAvailablePeriods();
+      
+      let monthOpts = periods.months.map(m => {
+        const parts = m.split('-');
+        const y = parts[0];
+        const mo = parts[1];
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const lbl = monthNames[parseInt(mo) - 1] + ' ' + y;
+        return `<option value="${m}">${lbl}</option>`;
+      }).join('');
+      if (!monthOpts) monthOpts = `<option value="">No months available</option>`;
+      
+      let fyOpts = periods.fys.map(fy => {
+        const parts = fy.split('-');
+        const start = parts[0];
+        const end = parts[1];
+        const lbl = `FY ${start}-${end.substring(2)}`;
+        return `<option value="${fy}">${lbl}</option>`;
+      }).join('');
+      if (!fyOpts) fyOpts = `<option value="">No FY available</option>`;
+      
+      const today = new Date().toISOString().split('T')[0];
+      const startOfVal = new Date();
+      startOfVal.setDate(startOfVal.getDate() - 30);
+      const lastMonth = startOfVal.toISOString().split('T')[0];
+
+      const modalContent = `
+        <div class="modal-head">
+          <h3>Export Trade Data</h3>
+          <button class="close-x" id="mClose">✕</button>
+        </div>
+        <p style="color:var(--sub); font-size:12.5px; margin-bottom:14px; margin-top:8px;">Download your trade data in the template layout (matching ExportExcelFormat.xlsx) as Excel or PDF.</p>
+        
+        <div class="field" style="margin-bottom:14px;">
+          <label>Select Period Type</label>
+          <select id="export_period_type" style="width:100%; height:32px; background:var(--bg); border:1px solid var(--line); color:var(--text); padding:0 8px; border-radius:4px; outline:none;">
+            <option value="month">Specific Month</option>
+            <option value="fy">Financial Year (FY)</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+
+        <div class="field" id="wrap_export_month" style="margin-bottom:14px;">
+          <label>Select Month</label>
+          <select id="export_month" style="width:100%; height:32px; background:var(--bg); border:1px solid var(--line); color:var(--text); padding:0 8px; border-radius:4px; outline:none;">
+            ${monthOpts}
+          </select>
+        </div>
+
+        <div class="field" id="wrap_export_fy" style="margin-bottom:14px; display:none;">
+          <label>Select Financial Year</label>
+          <select id="export_fy" style="width:100%; height:32px; background:var(--bg); border:1px solid var(--line); color:var(--text); padding:0 8px; border-radius:4px; outline:none;">
+            ${fyOpts}
+          </select>
+        </div>
+
+        <div class="form-grid" id="wrap_export_custom" style="grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:14px; display:none;">
+          <div class="field">
+            <label>Start Date</label>
+            <input type="date" id="export_start" value="${lastMonth}">
+          </div>
+          <div class="field">
+            <label>End Date</label>
+            <input type="date" id="export_end" value="${today}">
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:18px;">
+          <label>Export Format</label>
+          <select id="export_format" style="width:100%; height:32px; background:var(--bg); border:1px solid var(--line); color:var(--text); padding:0 8px; border-radius:4px; outline:none;">
+            <option value="excel">Excel (.xlsx)</option>
+            <option value="pdf">PDF (.pdf)</option>
+          </select>
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+          <button class="btn ghost" id="export_cancel">Cancel</button>
+          <button class="btn primary" id="export_run">Download</button>
+        </div>
+      `;
+      
+      $('#modalBody').innerHTML = modalContent;
+      $('#modalBg').classList.add('show');
+      
+      const typeSelect = $('#export_period_type');
+      typeSelect.onchange = () => {
+        const val = typeSelect.value;
+        $('#wrap_export_month').style.display = val === 'month' ? 'block' : 'none';
+        $('#wrap_export_fy').style.display = val === 'fy' ? 'block' : 'none';
+        $('#wrap_export_custom').style.display = val === 'custom' ? 'grid' : 'none';
+      };
+
+      $('#mClose').onclick = closeModal;
+      $('#export_cancel').onclick = closeModal;
+
+      $('#export_run').onclick = async () => {
+        const filterType = typeSelect.value;
+        let filterValue = '';
+        if (filterType === 'month') {
+          filterValue = $('#export_month').value;
+          if (!filterValue) { toast('No month selected', 'err'); return; }
+        } else if (filterType === 'fy') {
+          filterValue = $('#export_fy').value;
+          if (!filterValue) { toast('No financial year selected', 'err'); return; }
+        } else {
+          const start = $('#export_start').value;
+          const end = $('#export_end').value;
+          if (!start || !end) { toast('Please enter start and end dates', 'err'); return; }
+          filterValue = start + '|' + end;
+        }
+
+        const format = $('#export_format').value;
+
+        $('#export_run').innerHTML = '<span class="spinner"></span> Generating…';
+        $('#export_run').disabled = true;
+
+        try {
+          const res = await apiPost({
+            action: 'exportTrades',
+            filterType: filterType,
+            filterValue: filterValue,
+            format: format
+          });
+
+          const mimeType = format === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          const a = document.createElement('a');
+          a.href = 'data:' + mimeType + ';base64,' + res.base64;
+          a.download = res.filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          
+          toast('Export success!', 'ok');
+          closeModal();
+        } catch (err) {
+          toast('Export failed: ' + err.message, 'err');
+          $('#export_run').textContent = 'Download';
+          $('#export_run').disabled = false;
+        }
+      };
+    }
+
+    function base64ToBlob(base64, mimeType) {
+      const byteCharacters = atob(base64);
+      const byteArrays = [];
+      for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+        const slice = byteCharacters.slice(offset, offset + 512);
+        const byteNumbers = new Array(slice.length);
+        for (let i = 0; i < slice.length; i++) {
+          byteNumbers[i] = slice.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        byteArrays.push(byteArray);
+      }
+      return new Blob(byteArrays, { type: mimeType });
+    }
+
     function renderTradeTable() {
       let list = STATE.trades.slice();
       if (STATE.search) list = list.filter(t => (t.stock || '').toLowerCase().includes(STATE.search.toLowerCase()));
@@ -2826,12 +3073,14 @@
         // Compute temporary buys breakdown
         let tempTotQty = 0;
         let tempTotAmt = 0;
+        let tempExecAmt = 0;
         
         // Tranche 1
         const t1 = tranchesData[1] || {};
         if (t1.price != null && t1.qty) {
           tempTotQty += t1.qty;
           tempTotAmt += Math.round(t1.price * t1.qty + Number(t.brokerage || 0));
+          tempExecAmt += t1.price * t1.qty;
         }
         
         // Tranche 2
@@ -2839,6 +3088,7 @@
         if (t2.price != null && t2.qty) {
           tempTotQty += t2.qty;
           tempTotAmt += Math.round(t2.price * t2.qty);
+          tempExecAmt += t2.price * t2.qty;
         }
         
         // Tranches 3 and above
@@ -2850,10 +3100,11 @@
             if (tr.price != null && tr.qty) {
               tempTotQty += tr.qty;
               tempTotAmt += Math.round(tr.price * tr.qty);
+              tempExecAmt += tr.price * tr.qty;
             }
           });
           
-        const tempAvgBuy = tempTotQty ? +(tempTotAmt / tempTotQty).toFixed(2) : 0;
+        const tempAvgBuy = tempTotQty ? +(tempExecAmt / tempTotQty).toFixed(2) : 0;
 
         // Update read-only inputs in real-time
         if ($('#m_avgBuyPrice')) $('#m_avgBuyPrice').value = fmt(tempAvgBuy);
