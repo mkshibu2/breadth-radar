@@ -42,6 +42,8 @@
     html,
     body {
       height: 100%;
+      overflow-x: hidden;
+      max-width: 100vw;
     }
 
     body {
@@ -249,7 +251,11 @@
 
     .main {
       padding: 26px 30px 60px;
-      width: 90%;
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      box-sizing: border-box;
+      min-width: 0;
     }
 
     .view {
@@ -403,9 +409,17 @@
 
     .two-col {
       display: grid;
-      grid-template-columns: 1fr 1.5fr;
+      grid-template-columns: 1fr 1fr;
       gap: 18px;
     }
+
+    /* Prevent grid items containing canvas/tables from overflowing */
+    .two-col > div,
+    .expenses-grid > div,
+    .multiyear-container > div {
+      min-width: 0;
+    }
+
 
     /* Mobile header bar */
     .mobile-bar {
@@ -624,14 +638,19 @@
         grid-template-columns: 1fr;
         gap: 12px;
       }
-      .form-row {
+      .form-row, .settings-rules-right {
         flex-direction: column;
         align-items: flex-start;
         gap: 4px;
       }
-      .form-row span:first-child, .form-row label {
+      .form-row span:first-child, .form-row label,
+      .settings-rules-right span:first-child, .settings-rules-right label {
         text-align: left !important;
         width: auto !important;
+      }
+      .form-row > input, .form-row > select, .form-row > div,
+      .settings-rules-right > input, .settings-rules-right > select, .settings-rules-right > div {
+        width: 100% !important;
       }
       .form-row-span-2 {
         grid-column: span 1;
@@ -643,6 +662,9 @@
       .modal {
         padding: 16px;
       }
+      .my-fixed-h {
+        height: 240px !important;
+      }
     }
     
     @media(max-width:480px) {
@@ -651,6 +673,38 @@
       }
       .form-grid, .form-grid.c3 {
         grid-template-columns: 1fr;
+      }
+      .toolbar input {
+        min-width: 0;
+        flex: 1 1 140px;
+      }
+      .page-head h1 {
+        font-size: 17px;
+      }
+      .card .num {
+        font-size: 19px;
+      }
+      .card {
+        padding: 12px 14px;
+        min-height: 84px;
+      }
+      .modal {
+        padding: 14px;
+        border-radius: 10px;
+      }
+      .modal-bg {
+        padding: 20px 8px;
+      }
+      .btn {
+        padding: 8px 11px;
+        font-size: 12.5px;
+      }
+    }
+
+    @media(max-height:480px) and (max-width:900px) {
+      .modal-bg {
+        align-items: flex-start;
+        padding: 12px 16px;
       }
     }
 
@@ -687,6 +741,56 @@
     table {
       width: 100%;
       border-collapse: collapse;
+      font-size: 12.5px;
+    }
+
+    /* Compact trade list (used on Overview) */
+    .compact-trade-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .compact-trade-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px 12px;
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: var(--panel2);
+      cursor: pointer;
+      transition: .15s;
+    }
+
+    .compact-trade-row:hover {
+      border-color: var(--line);
+    }
+
+    .ctr-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .ctr-stock {
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .ctr-mid {
+      display: flex;
+      justify-content: space-between;
+      color: var(--sub);
+      font-family: var(--mono);
+      font-size: 11.5px;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+    }
+
+    .ctr-bottom {
+      font-family: var(--mono);
       font-size: 12.5px;
     }
 
@@ -1771,36 +1875,40 @@
       host.innerHTML = `
     <div class="page-head"><div><h1>Overview</h1><p>Portfolio snapshot for FY ${STATE.settings.currentFY || ''}</p></div></div>
     
+    <div class="grid-cards">
+      <div class="card">
+        <div class="lbl">Current Capital</div>
+        <div class="num">${fmtRs(s.capital)}</div>
+        <div class="sub" style="font-size:11.5px; margin-top:4px;">
+          Invested: <span style="color:var(--text);font-family:var(--mono);">${fmtRs(s.opening + capitalAdditionsExcludingOpening())}</span> 
+          · Gain: <span style="color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'};font-family:var(--mono);font-weight:600;">${netPnl >= 0 ? '+' : ''}${fmtRs(netPnl)}</span>
+        </div>
+      </div>
+      <div class="card"><div class="lbl">Net P/L (FY)</div><div class="num" style="color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'}">${netPnl >= 0 ? '+' : ''}${fmtRs(netPnl)}</div><div class="sub">Gross: ${fmt(s.realizedPnl)} · Exp: ${fmt(totalExpenses)}</div></div>
+      <div class="card">
+        <div class="lbl">Avg Win / Avg Loss</div>
+        <div class="num" style="font-size:16px; margin-top:8px; font-weight:700;">
+          <span style="color:var(--green);font-family:var(--mono);">${s.avgWin >= 0 ? '+' : ''}${fmtRs(s.avgWin)}</span>
+          <span style="color:var(--dim);font-weight:400;margin:0 2px;">/</span>
+          <span style="color:var(--red);font-family:var(--mono);">${s.avgLoss > 0 ? '-' : ''}${fmtRs(s.avgLoss)}</span>
+        </div>
+        <div class="sub" style="margin-top:4px;">W/L Ratio: <span style="color:var(--text);font-weight:600;">${s.winLossRatio}:1</span></div>
+      </div>
+      <div class="card">
+        <div class="lbl">Expectancy (Avg)</div>
+        <div class="num" style="color:${s.expectancy >= 0 ? 'var(--green)' : 'var(--red)'}">${s.expectancy >= 0 ? '+' : ''}${fmtRs(s.expectancy)}</div>
+        <div class="sub">
+          R-Exp: <span style="color:var(--text);font-weight:600;font-family:var(--mono);">${s.expectancyR >= 0 ? '+' : ''}${s.expectancyR}R</span>
+          · <span style="color:var(--dim);">${s.wonCount + s.lostCount} Tr (${s.wonCount}W/${s.lostCount}L)</span>
+        </div>
+      </div>
+      <div class="card"><div class="lbl">Win Rate (≤31-Mar-26)</div><div class="num">${fmtPct(s.winPctPre)}</div><div class="sub">${s.wonCountPre}W / ${s.lostCountPre}L</div></div>
+      <div class="card"><div class="lbl">Win Rate (≥1-Apr-26)</div><div class="num">${fmtPct(s.winPctPost)}</div><div class="sub">${s.wonCountPost}W / ${s.lostCountPost}L</div></div>
+      <div class="card" style="cursor:pointer;" onclick="STATE.view='trades'; STATE.tradeFilter='open'; renderShell();"><div class="lbl">Open Positions</div><div class="num">${s.openCount}</div><div class="sub">${fmtRs(s.openRisk)} at risk</div></div>
+    </div>
+
     <div class="two-col">
       <div>
-        <div class="grid-cards overview-grid-top">
-          <div class="card">
-            <div class="lbl">Current Capital</div>
-            <div class="num">${fmtRs(s.capital)}</div>
-            <div class="sub" style="font-size:11.5px; margin-top:4px;">
-              Invested: <span style="color:var(--text);font-family:var(--mono);">${fmtRs(s.opening + capitalAdditionsExcludingOpening())}</span> 
-              · Gain: <span style="color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'};font-family:var(--mono);font-weight:600;">${netPnl >= 0 ? '+' : ''}${fmtRs(netPnl)}</span>
-            </div>
-          </div>
-          <div class="card"><div class="lbl">Net P/L (FY)</div><div class="num" style="color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'}">${netPnl >= 0 ? '+' : ''}${fmtRs(netPnl)}</div><div class="sub">Gross: ${fmt(s.realizedPnl)} · Exp: ${fmt(totalExpenses)}</div></div>
-          <div class="card">
-            <div class="lbl">Avg Win / Avg Loss</div>
-            <div class="num" style="font-size:16px; margin-top:8px; font-weight:700;">
-              <span style="color:var(--green);font-family:var(--mono);">${s.avgWin >= 0 ? '+' : ''}${fmtRs(s.avgWin)}</span>
-              <span style="color:var(--dim);font-weight:400;margin:0 2px;">/</span>
-              <span style="color:var(--red);font-family:var(--mono);">${s.avgLoss > 0 ? '-' : ''}${fmtRs(s.avgLoss)}</span>
-            </div>
-            <div class="sub" style="margin-top:4px;">W/L Ratio: <span style="color:var(--text);font-weight:600;">${s.winLossRatio}:1</span></div>
-          </div>
-          <div class="card">
-            <div class="lbl">Expectancy (Avg)</div>
-            <div class="num" style="color:${s.expectancy >= 0 ? 'var(--green)' : 'var(--red)'}">${s.expectancy >= 0 ? '+' : ''}${fmtRs(s.expectancy)}</div>
-            <div class="sub">
-              R-Exp: <span style="color:var(--text);font-weight:600;font-family:var(--mono);">${s.expectancyR >= 0 ? '+' : ''}${s.expectancyR}R</span>
-              · <span style="color:var(--dim);">${s.wonCount + s.lostCount} Tr (${s.wonCount}W/${s.lostCount}L)</span>
-            </div>
-          </div>
-        </div>
         <div class="panel">
           <div class="panel-head">
             <h3>Equity curve <span class="hint" style="font-weight:normal; font-size:11.5px; margin-left:6px; color:var(--dim);">(Cumulative realized P/L)</span></h3>
@@ -1812,20 +1920,17 @@
               </select>
             </div>
           </div>
-          <canvas id="equityChart" height="140"></canvas>
+          <div style="position: relative; width: 100%; height: 160px; min-width: 0; overflow: hidden;">
+            <canvas id="equityChart"></canvas>
+          </div>
         </div>
         <div class="panel">
           <div class="panel-head"><h3>Recent trades</h3><span class="hint" style="cursor:pointer;" onclick="STATE.view='trades';renderShell();">View all →</span></div>
-          ${tradeTableHTML(STATE.trades.slice().sort((a, b) => (b.openDate || '').localeCompare(a.openDate || '')).slice(0, 8))}
+          ${tradeTableHTML(STATE.trades.slice().sort((a, b) => (b.openDate || '').localeCompare(a.openDate || '')).slice(0, 8), { compact: true })}
         </div>
       </div>
       
       <div>
-        <div class="grid-cards overview-grid-bottom">
-          <div class="card"><div class="lbl">Win Rate (≤31-Mar-26)</div><div class="num">${fmtPct(s.winPctPre)}</div><div class="sub">${s.wonCountPre}W / ${s.lostCountPre}L</div></div>
-          <div class="card"><div class="lbl">Win Rate (≥1-Apr-26)</div><div class="num">${fmtPct(s.winPctPost)}</div><div class="sub">${s.wonCountPost}W / ${s.lostCountPost}L</div></div>
-          <div class="card" style="cursor:pointer;" onclick="STATE.view='trades'; STATE.tradeFilter='open'; renderShell();"><div class="lbl">Open Positions</div><div class="num">${s.openCount}</div><div class="sub">${fmtRs(s.openRisk)} at risk</div></div>
-        </div>
         <div class="panel">
           <div class="panel-head">
             <h3>Monthly P&amp;L Chart</h3>
@@ -1836,11 +1941,14 @@
               </select>
             </div>
           </div>
-          <canvas id="monthlyPnLChart" height="180"></canvas>
+          <div style="position: relative; width: 100%; height: 180px; min-width: 0; overflow: hidden;">
+            <canvas id="monthlyPnLChart"></canvas>
+          </div>
         </div>
         <div class="panel">
           <div class="panel-head"><h3>Monthly P&amp;L Table</h3></div>
-          <table><thead><tr><th>Month</th><th>Won</th><th>Lost</th><th>P/L</th></tr></thead>
+          <div style="overflow-x:auto; max-width:100%; -webkit-overflow-scrolling: touch;">
+          <table style="min-width:420px;"><thead><tr><th>Month</th><th>Won</th><th>Lost</th><th>P/L</th></tr></thead>
           <tbody>
             ${monthly.length ? monthly.map(m => `<tr>
               <td style="font-family:var(--sans);color:var(--sub);">${m.label}</td>
@@ -1848,6 +1956,7 @@
               <td style="color:${m.pnl >= 0 ? 'var(--green)' : 'var(--red)'}">${m.pnl >= 0 ? '+' : ''}${fmt(m.pnl)}</td>
             </tr>`).join('') : `<tr><td colspan="4" style="font-family:var(--sans);color:var(--dim);text-align:center;padding:20px;">No closed trades yet</td></tr>`}
           </tbody></table>
+          </div>
         </div>
       </div>
     </div>
@@ -1886,7 +1995,7 @@
         type: 'line',
         data: { labels, datasets: [{ data, borderColor: '#d4a24e', backgroundColor: 'rgba(212,162,78,.12)', fill: true, tension: .25, pointRadius: 0, borderWidth: 2 }] },
         options: {
-          responsive: true, plugins: { legend: { display: false } },
+          responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
           scales: {
             x: { display: labels.length > 0, grid: { color: '#1a212c' }, ticks: { color: '#5b6576', maxTicksLimit: 6 } },
             y: { grid: { color: '#1a212c' }, ticks: { color: '#5b6576', callback: function (value) { return '₹' + value.toLocaleString('en-IN'); } } }
@@ -1918,6 +2027,7 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
             x: { grid: { color: '#1a212c' }, ticks: { color: '#5b6576' } },
@@ -1936,8 +2046,46 @@
     /* =========================================================================
        TRADE LOG
        ========================================================================= */
-    function tradeTableHTML(list) {
+    function tradeTableHTML(list, opts) {
+      opts = opts || {};
+      const compact = !!opts.compact;
       if (!list.length) return `<div class="empty"><h4>No trades to show</h4><p>Add your first trade to get started.</p></div>`;
+
+      if (compact) {
+        const rows = list.map(t => {
+          const isOpen = t.status === 'open';
+          const badge = isOpen ? '<span class="badge open">OPEN</span>' :
+            (t.pnl >= 0 ? '<span class="badge closed-win">WIN</span>' : '<span class="badge closed-loss">LOSS</span>');
+          const amount = Number(t.totBuyQty || 0) * Number(t.avgBuyPrice || 0);
+          let pnlVal = t.pnl, pnlPctVal = t.pnlPct;
+          if (isOpen) {
+            const livePrice = STATE.livePrices[t.stock];
+            if (livePrice != null) {
+              const remainingQty = Number(t.totBuyQty || 0);
+              pnlVal = Math.round((livePrice - Number(t.avgBuyPrice || 0)) * remainingQty);
+              pnlPctVal = t.totBuyAmt ? pnlVal / Number(t.totBuyAmt) : null;
+            } else {
+              pnlVal = null; pnlPctVal = null;
+            }
+          }
+          const pnlHtml = pnlVal == null ? '<span style="color:var(--dim);">—</span>' :
+            `<span style="color:${pnlVal >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${pnlVal >= 0 ? '+' : ''}${fmtRs(pnlVal)}${pnlPctVal != null ? ` (${fmtPct(pnlPctVal)})` : ''}</span>`;
+          return `
+            <div class="compact-trade-row" data-id="${t.id}" onclick="STATE.view='trades';renderShell();">
+              <div class="ctr-top">
+                <span class="ctr-stock">${t.stock || '—'}</span>
+                ${badge}
+              </div>
+              <div class="ctr-mid">
+                <span>${formatDateDMY(t.openDate)}</span>
+                <span>${fmt(t.totBuyQty)} @ ${fmt(t.avgBuyPrice)} · ${fmtRs(amount)}</span>
+              </div>
+              <div class="ctr-bottom">${pnlHtml}</div>
+            </div>
+          `;
+        }).join('');
+        return `<div class="compact-trade-list">${rows}</div>`;
+      }
 
       const isOpenTab = STATE.tradeFilter === 'open';
       let sumAmount = 0;
@@ -3899,24 +4047,24 @@
           <span style="font-size: 12px; font-weight: 600; color: var(--red); background: var(--bg2); padding: 2px 8px; border-radius: 4px; font-family: var(--mono);">Total: ${fmtRs(totalExpenses)}</span>
         </div>
 
-        <div style="max-height: 260px; overflow-y: auto;">
-          <table style="width: 100%;">
+        <div style="max-height: 260px; overflow: auto; -webkit-overflow-scrolling: touch;">
+          <table style="width: 100%; min-width: 480px; table-layout: fixed;">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Amount</th>
+                <th style="width:22%;">Date</th>
+                <th style="width:24%;">Amount</th>
                 <th>Note / Description</th>
-                <th style="text-align: right; padding-right: 12px;">Action</th>
+                <th style="width:56px; text-align: right; padding-right: 8px;">Action</th>
               </tr>
             </thead>
             <tbody>
               ${(STATE.expenses || []).length ? (STATE.expenses || []).map((e, idx) => `
                 <tr>
-                  <td>${formatDateDMY(e.date)}</td>
-                  <td style="color:var(--red); font-weight:600;">${fmtRs(e.amount)}</td>
-                  <td style="font-family:var(--sans); white-space: normal; color: var(--text);">${e.note || ''}</td>
-                  <td style="text-align: right; padding-right: 8px;">
-                    <button class="btn danger ghost" style="padding: 3px 8px; font-size: 11px; min-height: auto;" onclick="deleteExpenseItem(${idx})">Delete</button>
+                  <td style="white-space: normal;">${formatDateDMY(e.date)}</td>
+                  <td style="color:var(--red); font-weight:600; white-space: normal;">${fmtRs(e.amount)}</td>
+                  <td style="font-family:var(--sans); white-space: normal; color: var(--text); word-break: break-word;">${e.note || ''}</td>
+                  <td style="text-align: right; padding-right: 4px;">
+                    <button class="btn danger ghost" style="padding: 3px 5px; font-size: 10px; min-height: auto;" onclick="deleteExpenseItem(${idx})">Del</button>
                   </td>
                 </tr>
               `).join('') : `
@@ -4093,25 +4241,25 @@
     <div class="multiyear-container">
       <!-- Left Column -->
       <div>
-        <div class="panel" style="padding: 14px; height: 300px; box-sizing: border-box; display: flex; flex-direction: column; margin-bottom: 14px;">
+        <div class="panel my-fixed-h" style="padding: 14px; height: 300px; box-sizing: border-box; display: flex; flex-direction: column; margin-bottom: 14px;">
           <div class="panel-head" style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
             <h3>Annual Performance Table</h3>
             <button class="btn primary" id="saveYearsBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save</button>
           </div>
-          <div style="overflow: auto; flex: 1; min-height: 0;">
-            <table style="width: 100%;">
+          <div style="overflow: auto; flex: 1; min-height: 0; -webkit-overflow-scrolling: touch;">
+            <table style="width: 100%; min-width: 480px; table-layout: fixed;">
               <thead><tr><th>Year</th><th>Capital (Avg)</th><th>P/L</th><th>Return %</th></tr></thead>
               <tbody id="myBody">
                 ${rows.map((r, i) => {
         const isLive = r.isLive;
         return `<tr class="${isLive ? 'live-row' : ''}">
                   <td>
-                    <input data-i="${i}" data-k="year" value="${r.year}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:90px;${isLive ? 'font-weight:bold;color:var(--gold);' : ''}">
+                    <input data-i="${i}" data-k="year" value="${r.year}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:100%;min-width:0;${isLive ? 'font-weight:bold;color:var(--gold);' : ''}">
                     ${isLive ? '<span class="badge open" style="margin-left:4px;font-size:9px;padding:1px 5px;">LIVE</span>' : ''}
                   </td>
-                  <td><input data-i="${i}" data-k="openingCap" type="number" step="0.01" value="${Number(r.openingCap || 0).toFixed(2)}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:110px;${isLive ? 'font-weight:bold;' : ''}"></td>
-                  <td style="color:${r.pnl >= 0 ? 'var(--green)' : 'var(--red)'}"><input data-i="${i}" data-k="pnl" type="number" step="0.01" value="${Number(r.pnl || 0).toFixed(2)}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:100px;${isLive ? 'font-weight:bold;' : ''}"></td>
-                  <td><input data-i="${i}" data-k="returnPct" type="number" step="0.01" value="${Number(r.returnPct || 0).toFixed(2)}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:90px;${isLive ? 'font-weight:bold;' : ''}"></td>
+                  <td><input data-i="${i}" data-k="openingCap" type="number" step="0.01" value="${Number(r.openingCap || 0).toFixed(2)}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:100%;min-width:0;${isLive ? 'font-weight:bold;' : ''}"></td>
+                  <td style="color:${r.pnl >= 0 ? 'var(--green)' : 'var(--red)'}"><input data-i="${i}" data-k="pnl" type="number" step="0.01" value="${Number(r.pnl || 0).toFixed(2)}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:100%;min-width:0;${isLive ? 'font-weight:bold;' : ''}"></td>
+                  <td><input data-i="${i}" data-k="returnPct" type="number" step="0.01" value="${Number(r.returnPct || 0).toFixed(2)}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:100%;min-width:0;${isLive ? 'font-weight:bold;' : ''}"></td>
                 </tr>`
       }).join('')}
               </tbody>
@@ -4119,7 +4267,7 @@
           </div>
         </div>
         
-        <div class="panel" style="padding: 14px; height: 300px; box-sizing: border-box; display: flex; flex-direction: column; margin-bottom: 0;">
+        <div class="panel my-fixed-h" style="padding: 14px; height: 300px; box-sizing: border-box; display: flex; flex-direction: column; margin-bottom: 0;">
           <div class="panel-head" style="margin-bottom: 8px; flex-shrink: 0;"><h3>Equity Curve - Capital Level</h3><span class="hint">Ending capital level per FY</span></div>
           <div style="flex: 1; min-height: 0; position: relative;">
             <canvas id="myEquityChart" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;"></canvas>
@@ -4129,14 +4277,14 @@
       
       <!-- Right Column -->
       <div>
-        <div class="panel" style="padding: 14px; height: 300px; box-sizing: border-box; display: flex; flex-direction: column; margin-bottom: 14px;">
+        <div class="panel my-fixed-h" style="padding: 14px; height: 300px; box-sizing: border-box; display: flex; flex-direction: column; margin-bottom: 14px;">
           <div class="panel-head" style="margin-bottom: 8px; flex-shrink: 0;"><h3>Equity Curve - P&amp;L Level</h3><span class="hint">Cumulative realized P/L (₹)</span></div>
           <div style="flex: 1; min-height: 0; position: relative;">
             <canvas id="myPnlCurveChart" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;"></canvas>
           </div>
         </div>
         
-        <div class="panel" style="padding: 14px; height: 300px; box-sizing: border-box; display: flex; flex-direction: column; margin-bottom: 0;">
+        <div class="panel my-fixed-h" style="padding: 14px; height: 300px; box-sizing: border-box; display: flex; flex-direction: column; margin-bottom: 0;">
           <div class="panel-head" style="margin-bottom: 8px; flex-shrink: 0;"><h3>Annual P&amp;L Bar Chart</h3><span class="hint">Net P&amp;L per FY (₹)</span></div>
           <div style="flex: 1; min-height: 0; position: relative;">
             <canvas id="myReturnsChart" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;"></canvas>
@@ -4257,6 +4405,7 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
             x: { grid: { color: '#1a212c' }, ticks: { color: '#5b6576' } },
@@ -4290,6 +4439,7 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
             x: { grid: { color: '#1a212c' }, ticks: { color: '#5b6576' } },
@@ -4320,6 +4470,7 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
             x: { grid: { color: '#1a212c' }, ticks: { color: '#5b6576' } },
@@ -4416,9 +4567,9 @@
           <button class="btn silver" id="addCapBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save Log</button>
           <button class="btn ghost" id="cancelCapEditBtn" style="display:none; padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Cancel</button>
         </div>
-        <div style="max-height: 180px; overflow-y: auto; margin-bottom: 12px; border: 1px solid var(--line-soft); border-radius: 4px;">
-          <table style="width: 100%;"><thead><tr><th>Date</th><th>Amount</th><th>Note</th><th style="width:70px;"></th></tr></thead>
-          <tbody>${STATE.capitalLog.map((c, idx) => `<tr><td>${formatDateDMY(c.date)}</td><td style="color:${c.amount >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${c.amount >= 0 ? '+' : ''}${fmtRs(c.amount)}</td><td style="font-family:var(--sans);">${c.note || ''}</td><td style="text-align:right;"><button class="btn ghost" style="padding: 2px 4px; font-size: 10px; margin-right: 2px;" onclick="editCapitalChange(${idx})">Edit</button><button class="btn danger ghost" style="padding: 2px 4px; font-size: 10px;" onclick="deleteCapitalChange(${idx})">✕</button></td></tr>`).join('')}</tbody></table>
+        <div style="max-height: 180px; overflow: auto; -webkit-overflow-scrolling: touch; margin-bottom: 12px; border: 1px solid var(--line-soft); border-radius: 4px;">
+          <table style="width: 100%; min-width: 420px; table-layout: fixed;"><thead><tr><th style="width:22%;">Date</th><th style="width:26%;">Amount</th><th>Note</th><th style="width:64px;"></th></tr></thead>
+          <tbody>${STATE.capitalLog.map((c, idx) => `<tr><td style="white-space:normal;">${formatDateDMY(c.date)}</td><td style="color:${c.amount >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600; white-space:normal;">${c.amount >= 0 ? '+' : ''}${fmtRs(c.amount)}</td><td style="font-family:var(--sans); white-space: normal; word-break: break-word;">${c.note || ''}</td><td style="text-align:right; padding-right:2px;"><button class="btn ghost" style="padding: 2px 3px; font-size: 9.5px; margin-right: 1px;" onclick="editCapitalChange(${idx})">Edit</button><button class="btn danger ghost" style="padding: 2px 3px; font-size: 9.5px;" onclick="deleteCapitalChange(${idx})">✕</button></td></tr>`).join('')}</tbody></table>
         </div>
         <div class="form-two-col" style="border-top: 1px solid var(--line-soft); padding-top: 12px;">
           <div class="field">
