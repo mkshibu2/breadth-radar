@@ -4246,7 +4246,7 @@
             <h3>Annual Performance Table</h3>
             <button class="btn primary" id="saveYearsBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save</button>
           </div>
-          <div style="overflow: auto; flex: 1; min-height: 0; -webkit-overflow-scrolling: touch;">
+          <div style="overflow: auto; flex: 1; min-height: 0; width: 100%; max-width: 100%; -webkit-overflow-scrolling: touch;">
             <table style="width: 100%; min-width: 480px; table-layout: fixed;">
               <thead><tr><th>Year</th><th>Capital (Avg)</th><th>P/L</th><th>Return %</th></tr></thead>
               <tbody id="myBody">
@@ -4499,7 +4499,7 @@
       <div style="display: flex; flex-direction: column; gap: 14px;">
         <!-- Card 1: Risk Rules -->
         <div class="panel" style="padding: 14px; margin-bottom: 0;">
-          <div class="panel-head" style="margin-bottom: 10px; display: flex; align-items: center; gap: 12px;">
+          <div class="panel-head" style="margin-bottom: 10px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
             <h3>Journal Risk Rules</h3>
             <button class="btn silver" id="saveSettingsBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save</button>
           </div>
@@ -4546,7 +4546,7 @@
 
         <!-- Card 2: Broker Sync & Connection -->
         <div class="panel" style="padding: 14px; margin-bottom: 0;">
-          <div class="panel-head" style="margin-bottom: 10px; display: flex; align-items: center; gap: 12px;">
+          <div class="panel-head" style="margin-bottom: 10px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
             <h3>Broker Sync &amp; Connection</h3>
             <button class="btn silver" id="saveDhanBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save</button>
           </div>
@@ -4562,13 +4562,13 @@
 
       <!-- Right Column: Capital additions / withdrawals log -->
       <div class="panel" style="padding: 14px; margin-bottom: 0; display: flex; flex-direction: column;">
-        <div class="panel-head" style="margin-bottom: 10px; display: flex; align-items: center; gap: 12px;">
+        <div class="panel-head" style="margin-bottom: 10px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
           <h3>Capital Additions &amp; Withdrawals Log</h3>
           <button class="btn silver" id="addCapBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save Log</button>
           <button class="btn ghost" id="cancelCapEditBtn" style="display:none; padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Cancel</button>
         </div>
-        <div style="max-height: 180px; overflow: auto; -webkit-overflow-scrolling: touch; margin-bottom: 12px; border: 1px solid var(--line-soft); border-radius: 4px;">
-          <table style="width: 100%; min-width: 420px; table-layout: fixed;"><thead><tr><th style="width:22%;">Date</th><th style="width:26%;">Amount</th><th>Note</th><th style="width:64px;"></th></tr></thead>
+        <div style="max-height: 180px; overflow: auto; width: 100%; max-width: 100%; -webkit-overflow-scrolling: touch; margin-bottom: 12px; border: 1px solid var(--line-soft); border-radius: 4px;">
+          <table style="width: 100%;"><thead><tr><th>Date</th><th>Amount</th><th>Note</th><th style="width:64px; text-align: right; padding-right: 4px;">Action</th></tr></thead>
           <tbody>${STATE.capitalLog.map((c, idx) => `<tr><td style="white-space:normal;">${formatDateDMY(c.date)}</td><td style="color:${c.amount >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600; white-space:normal;">${c.amount >= 0 ? '+' : ''}${fmtRs(c.amount)}</td><td style="font-family:var(--sans); white-space: normal; word-break: break-word;">${c.note || ''}</td><td style="text-align:right; padding-right:2px;"><button class="btn ghost" style="padding: 2px 3px; font-size: 9.5px; margin-right: 1px;" onclick="editCapitalChange(${idx})">Edit</button><button class="btn danger ghost" style="padding: 2px 3px; font-size: 9.5px;" onclick="deleteCapitalChange(${idx})">✕</button></td></tr>`).join('')}</tbody></table>
         </div>
         <div class="form-two-col" style="border-top: 1px solid var(--line-soft); padding-top: 12px;">
