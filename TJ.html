@@ -344,10 +344,35 @@
 
     /* ---------- Cards / grid ---------- */
     .grid-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
+      display: flex;
+      gap: 10px;
       margin-bottom: 22px;
+      width: 100%;
+    }
+
+    .grid-cards .card-cap { flex: 1.3 1 0; }
+    .grid-cards .card-pnl { flex: 1.3 1 0; }
+    .grid-cards .card-avg { flex: 1.25 1 0; }
+    .grid-cards .card-exp { flex: 1.1 1 0; }
+    .grid-cards .card-win1 { flex: 1.25 1 0; }
+    .grid-cards .card-win2 { flex: 1.25 1 0; }
+    .grid-cards .card-open { flex: 0.8 1 0; }
+
+    @media(max-width: 980px) {
+      .grid-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+      }
+      .grid-cards .card-cap,
+      .grid-cards .card-pnl,
+      .grid-cards .card-avg,
+      .grid-cards .card-exp,
+      .grid-cards .card-win1,
+      .grid-cards .card-win2,
+      .grid-cards .card-open {
+        flex: none;
+      }
     }
 
     .card {
@@ -358,6 +383,12 @@
       display: flex;
       flex-direction: column;
       min-height: 96px;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+
+    .card[onclick]:hover {
+      border-color: var(--gold);
+      background: var(--panel2);
     }
 
     .card .lbl {
@@ -373,6 +404,7 @@
       font-size: 22px;
       font-weight: 700;
       margin-top: 4px;
+      white-space: nowrap;
     }
 
     .card .sub {
@@ -1260,7 +1292,9 @@
     let STATE = {
       trades: [], settings: {}, capitalLog: [], multiYear: [], expenses: [],
       view: 'overview', tradeFilter: 'open', search: '', editingCapitalIndex: null,
-      editingWlIdx: null, livePrices: {}
+      editingWlIdx: null, livePrices: {},
+      customWinRateStart: localStorage.getItem('tj_custom_win_rate_start') || '',
+      customWinRateEnd: localStorage.getItem('tj_custom_win_rate_end') || '2026-03-31'
     };
 
     const $ = sel => document.querySelector(sel);
@@ -1563,7 +1597,9 @@
       const opening = Number(STATE.settings.openingCapitalFY || 0);
       const cap = currentCapital();
 
-      const closedPre = closed.filter(t => t.closedDate && t.closedDate <= '2026-03-31');
+      const customStart = STATE.customWinRateStart || getFirstTradeDate();
+      const customEnd = STATE.customWinRateEnd || '2026-03-31';
+      const closedPre = closed.filter(t => t.closedDate && t.closedDate >= customStart && t.closedDate <= customEnd);
       const wonPre = closedPre.filter(t => t.pnl >= 0);
       const lostPre = closedPre.filter(t => t.pnl < 0);
 
@@ -1876,7 +1912,7 @@
     <div class="page-head"><div><h1>Overview</h1><p>Portfolio snapshot for FY ${STATE.settings.currentFY || ''}</p></div></div>
     
     <div class="grid-cards">
-      <div class="card">
+      <div class="card card-cap">
         <div class="lbl">Current Capital</div>
         <div class="num">${fmtRs(s.capital)}</div>
         <div class="sub" style="font-size:11.5px; margin-top:4px;">
@@ -1884,27 +1920,33 @@
           · Gain: <span style="color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'};font-family:var(--mono);font-weight:600;">${netPnl >= 0 ? '+' : ''}${fmtRs(netPnl)}</span>
         </div>
       </div>
-      <div class="card"><div class="lbl">Net P/L (FY)</div><div class="num" style="color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'}">${netPnl >= 0 ? '+' : ''}${fmtRs(netPnl)}</div><div class="sub">Gross: ${fmt(s.realizedPnl)} · Exp: ${fmt(totalExpenses)}</div></div>
-      <div class="card">
+      <div class="card card-pnl">
+        <div class="lbl">Net P/L (FY)</div>
+        <div class="num" style="color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'}">${netPnl >= 0 ? '+' : ''}${fmtRs(netPnl)}</div>
+        <div class="sub" style="display:flex; flex-direction:column; gap:1px; font-size:10.5px; margin-top:auto; line-height:1.2;">
+          <span>Gross: <span style="color:var(--text);font-family:var(--mono);">${fmt(s.realizedPnl)}</span></span>
+          <span>Exp: <span style="color:var(--text);font-family:var(--mono);">${fmt(totalExpenses)}</span></span>
+        </div>
+      </div>
+      <div class="card card-avg">
         <div class="lbl">Avg Win / Avg Loss</div>
-        <div class="num" style="font-size:16px; margin-top:8px; font-weight:700;">
-          <span style="color:var(--green);font-family:var(--mono);">${s.avgWin >= 0 ? '+' : ''}${fmtRs(s.avgWin)}</span>
-          <span style="color:var(--dim);font-weight:400;margin:0 2px;">/</span>
-          <span style="color:var(--red);font-family:var(--mono);">${s.avgLoss > 0 ? '-' : ''}${fmtRs(s.avgLoss)}</span>
+        <div class="num" style="font-size:15px; margin-top:4px; font-weight:700; line-height: 1.35; display: flex; flex-direction: column;">
+          <span style="color:var(--green);font-family:var(--mono); white-space: nowrap;">W: ${s.avgWin >= 0 ? '+' : ''}${fmtRs(s.avgWin)}</span>
+          <span style="color:var(--red);font-family:var(--mono); white-space: nowrap;">L: ${s.avgLoss > 0 ? '-' : ''}${fmtRs(s.avgLoss)}</span>
         </div>
         <div class="sub" style="margin-top:4px;">W/L Ratio: <span style="color:var(--text);font-weight:600;">${s.winLossRatio}:1</span></div>
       </div>
-      <div class="card">
+      <div class="card card-exp">
         <div class="lbl">Expectancy (Avg)</div>
         <div class="num" style="color:${s.expectancy >= 0 ? 'var(--green)' : 'var(--red)'}">${s.expectancy >= 0 ? '+' : ''}${fmtRs(s.expectancy)}</div>
-        <div class="sub">
-          R-Exp: <span style="color:var(--text);font-weight:600;font-family:var(--mono);">${s.expectancyR >= 0 ? '+' : ''}${s.expectancyR}R</span>
-          · <span style="color:var(--dim);">${s.wonCount + s.lostCount} Tr (${s.wonCount}W/${s.lostCount}L)</span>
+        <div class="sub" style="display:flex; flex-direction:column; gap:1px; font-size:10.5px; margin-top:auto; line-height:1.2;">
+          <span>R-Exp: <span style="color:var(--text);font-weight:600;font-family:var(--mono);">${s.expectancyR >= 0 ? '+' : ''}${s.expectancyR}R</span></span>
+          <span style="color:var(--dim);">${s.wonCount + s.lostCount} Tr (${s.wonCount}W/${s.lostCount}L)</span>
         </div>
       </div>
-      <div class="card"><div class="lbl">Win Rate (≤31-Mar-26)</div><div class="num">${fmtPct(s.winPctPre)}</div><div class="sub">${s.wonCountPre}W / ${s.lostCountPre}L</div></div>
-      <div class="card"><div class="lbl">Win Rate (≥1-Apr-26)</div><div class="num">${fmtPct(s.winPctPost)}</div><div class="sub">${s.wonCountPost}W / ${s.lostCountPost}L</div></div>
-      <div class="card" style="cursor:pointer;" onclick="STATE.view='trades'; STATE.tradeFilter='open'; renderShell();"><div class="lbl">Open Positions</div><div class="num">${s.openCount}</div><div class="sub">${fmtRs(s.openRisk)} at risk</div></div>
+      <div class="card card-win1" style="cursor:pointer;" onclick="openCustomWinRateModal()"><div class="lbl">Win Rate (${formatDateDMY_MMM(STATE.customWinRateStart || getFirstTradeDate())} to ${formatDateDMY_MMM(STATE.customWinRateEnd || '2026-03-31')})</div><div class="num">${fmtPct(s.winPctPre)}</div><div class="sub">${s.wonCountPre}W / ${s.lostCountPre}L</div></div>
+      <div class="card card-win2"><div class="lbl">Win Rate (≥1-Apr-26)</div><div class="num">${fmtPct(s.winPctPost)}</div><div class="sub">${s.wonCountPost}W / ${s.lostCountPost}L</div></div>
+      <div class="card card-open" style="cursor:pointer;" onclick="STATE.view='trades'; STATE.tradeFilter='open'; renderShell();"><div class="lbl">Open Positions</div><div class="num">${s.openCount}</div><div class="sub">${fmtRs(s.openRisk)} at risk</div></div>
     </div>
 
     <div class="two-col">
@@ -1920,7 +1962,7 @@
               </select>
             </div>
           </div>
-          <div style="position: relative; width: 100%; height: 160px; min-width: 0; overflow: hidden;">
+          <div style="position: relative; width: 100%; height: 180px; min-width: 0; overflow: hidden;">
             <canvas id="equityChart"></canvas>
           </div>
         </div>
@@ -2485,9 +2527,9 @@
         <div class="field" style="margin-bottom:14px;">
           <label>Select Period Type</label>
           <select id="export_period_type" style="width:100%; height:32px; background:var(--bg); border:1px solid var(--line); color:var(--text); padding:0 8px; border-radius:4px; outline:none;">
-            <option value="month">Specific Month</option>
-            <option value="fy">Financial Year (FY)</option>
-            <option value="custom">Custom Range</option>
+            <option value="month">Month</option>
+            <option value="fy">Financial Year</option>
+            <option value="custom">Custom Period</option>
           </select>
         </div>
 
@@ -2530,6 +2572,7 @@
         </div>
       `;
       
+      $('#modalBody').style.maxWidth = '460px';
       $('#modalBody').innerHTML = modalContent;
       $('#modalBg').classList.add('show');
       
@@ -2588,6 +2631,97 @@
           $('#export_run').textContent = 'Download';
           $('#export_run').disabled = false;
         }
+      };
+    }
+
+    function getFirstTradeDate() {
+      if (STATE.trades && STATE.trades.length > 0) {
+        const dates = STATE.trades.map(t => t.openDate).filter(Boolean);
+        if (dates.length > 0) {
+          return dates.reduce((min, d) => d < min ? d : min, dates[0]);
+        }
+      }
+      return '2024-04-01';
+    }
+
+    function formatDateDMY_MMM(dateStr) {
+      if (!dateStr || dateStr === '—') return '—';
+      const cleanStr = (typeof dateStr === 'string') ? dateStr.split(' ')[0] : '';
+      const parts = cleanStr.split('-');
+      if (parts.length === 3 && parts[0].length === 4) {
+        const y = parts[0].slice(-2);
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const mIdx = parseInt(parts[1], 10) - 1;
+        const m = months[mIdx] || parts[1];
+        const d = parseInt(parts[2], 10);
+        return `${d}-${m}-${y}`;
+      }
+      return dateStr;
+    }
+
+    function openCustomWinRateModal() {
+      const defaultStart = getFirstTradeDate();
+      const currentStart = STATE.customWinRateStart || defaultStart;
+      const currentEnd = STATE.customWinRateEnd || '2026-03-31';
+
+      $('#modalBody').style.maxWidth = '380px';
+      $('#modalBody').innerHTML = `
+        <div class="modal-head" style="margin-bottom: 12px;">
+          <h3>Customize Win Rate Period</h3>
+          <button class="close-x" id="mClose">✕</button>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+          <div class="field">
+            <label>Start Date</label>
+            <input type="date" id="custom_win_start" value="${currentStart}" style="height: 28px; padding: 4px 8px; font-size: 12px; width: 100%;">
+            <div style="font-size: 10px; color: var(--dim); margin-top: 3px;">First Trade: ${formatDateDMY(defaultStart)}</div>
+          </div>
+          <div class="field">
+            <label>End Date</label>
+            <input type="date" id="custom_win_end" value="${currentEnd}" style="height: 28px; padding: 4px 8px; font-size: 12px; width: 100%;">
+            <div style="font-size: 10px; color: var(--dim); margin-top: 3px;">FY26 End: 31-03-26</div>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line-soft); padding-top: 12px; gap: 10px;">
+          <button id="custom_win_reset" class="btn ghost" style="padding: 4px 10px; font-size: 11px; height: 28px; line-height: 1.2;">Reset to Default</button>
+          <div style="display: flex; gap: 8px;">
+            <button id="custom_win_cancel" class="btn ghost" style="padding: 4px 10px; font-size: 11px; height: 28px; line-height: 1.2;">Cancel</button>
+            <button id="custom_win_save" class="btn primary" style="padding: 4px 14px; font-size: 11px; height: 28px; line-height: 1.2;">Apply</button>
+          </div>
+        </div>
+      `;
+
+      $('#modalBg').classList.add('show');
+
+      $('#mClose').onclick = closeModal;
+      $('#custom_win_cancel').onclick = closeModal;
+
+      $('#custom_win_reset').onclick = () => {
+        $('#custom_win_start').value = defaultStart;
+        $('#custom_win_end').value = '2026-03-31';
+      };
+
+      $('#custom_win_save').onclick = () => {
+        const start = $('#custom_win_start').value;
+        const end = $('#custom_win_end').value;
+        if (!start || !end) {
+          toast('Please select both start and end dates', 'err');
+          return;
+        }
+        if (start > end) {
+          toast('Start date cannot be after end date', 'err');
+          return;
+        }
+        STATE.customWinRateStart = start;
+        STATE.customWinRateEnd = end;
+        localStorage.setItem('tj_custom_win_rate_start', start);
+        localStorage.setItem('tj_custom_win_rate_end', end);
+        
+        closeModal();
+        renderShell();
+        toast('Custom period applied', 'ok');
       };
     }
 
@@ -3609,7 +3743,7 @@
         catch (err) { toast('Failed: ' + err.message, 'err'); }
       };
     }
-    function closeModal() { $('#modalBg').classList.remove('show'); }
+    function closeModal() { $('#modalBg').classList.remove('show'); $('#modalBody').style.maxWidth = ''; }
 
     /* =========================================================================
        RISK / POSITION SIZE CALCULATOR (standalone, no save)
@@ -4253,9 +4387,11 @@
                 ${rows.map((r, i) => {
         const isLive = r.isLive;
         return `<tr class="${isLive ? 'live-row' : ''}">
-                  <td>
-                    <input data-i="${i}" data-k="year" value="${r.year}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:100%;min-width:0;${isLive ? 'font-weight:bold;color:var(--gold);' : ''}">
-                    ${isLive ? '<span class="badge open" style="margin-left:4px;font-size:9px;padding:1px 5px;">LIVE</span>' : ''}
+                  <td style="white-space: nowrap;">
+                    <div style="display: flex; align-items: center; gap: 4px; width: 100%;">
+                      <input data-i="${i}" data-k="year" value="${r.year}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);flex: 1;width:0;min-width:0;${isLive ? 'font-weight:bold;color:var(--gold);' : ''}">
+                      ${isLive ? '<span class="badge open" style="flex-shrink:0;font-size:9px;padding:1px 5px;margin-left:0;">LIVE</span>' : ''}
+                    </div>
                   </td>
                   <td><input data-i="${i}" data-k="openingCap" type="number" step="0.01" value="${Number(r.openingCap || 0).toFixed(2)}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:100%;min-width:0;${isLive ? 'font-weight:bold;' : ''}"></td>
                   <td style="color:${r.pnl >= 0 ? 'var(--green)' : 'var(--red)'}"><input data-i="${i}" data-k="pnl" type="number" step="0.01" value="${Number(r.pnl || 0).toFixed(2)}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:100%;min-width:0;${isLive ? 'font-weight:bold;' : ''}"></td>
@@ -4560,16 +4696,24 @@
         </div>
       </div>
 
-      <!-- Right Column: Capital additions / withdrawals log -->
-      <div class="panel" style="padding: 14px; margin-bottom: 0; display: flex; flex-direction: column;">
+      <div class="panel" style="padding: 14px; margin-bottom: 0; display: flex; flex-direction: column; overflow-x: auto;">
         <div class="panel-head" style="margin-bottom: 10px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
           <h3>Capital Additions &amp; Withdrawals Log</h3>
           <button class="btn silver" id="addCapBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save Log</button>
           <button class="btn ghost" id="cancelCapEditBtn" style="display:none; padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Cancel</button>
         </div>
         <div style="max-height: 180px; overflow: auto; width: 100%; max-width: 100%; -webkit-overflow-scrolling: touch; margin-bottom: 12px; border: 1px solid var(--line-soft); border-radius: 4px;">
-          <table style="width: 100%;"><thead><tr><th>Date</th><th>Amount</th><th>Note</th><th style="width:64px; text-align: right; padding-right: 4px;">Action</th></tr></thead>
-          <tbody>${STATE.capitalLog.map((c, idx) => `<tr><td style="white-space:normal;">${formatDateDMY(c.date)}</td><td style="color:${c.amount >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600; white-space:normal;">${c.amount >= 0 ? '+' : ''}${fmtRs(c.amount)}</td><td style="font-family:var(--sans); white-space: normal; word-break: break-word;">${c.note || ''}</td><td style="text-align:right; padding-right:2px;"><button class="btn ghost" style="padding: 2px 3px; font-size: 9.5px; margin-right: 1px;" onclick="editCapitalChange(${idx})">Edit</button><button class="btn danger ghost" style="padding: 2px 3px; font-size: 9.5px;" onclick="deleteCapitalChange(${idx})">✕</button></td></tr>`).join('')}</tbody></table>
+          <table style="width: 75%; min-width: 480px; table-layout: fixed;">
+            <thead>
+              <tr>
+                <th style="width: 90px;">Date</th>
+                <th style="width: 110px;">Amount</th>
+                <th>Note</th>
+                <th style="width: 80px; text-align: right; padding-right: 4px;">Action</th>
+              </tr>
+            </thead>
+            <tbody>${STATE.capitalLog.map((c, idx) => `<tr><td>${formatDateDMY(c.date)}</td><td style="color:${c.amount >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${c.amount >= 0 ? '+' : ''}${fmtRs(c.amount)}</td><td style="font-family:var(--sans);">${c.note || ''}</td><td style="text-align:right; padding-right:2px;"><button class="btn ghost" style="padding: 2px 3px; font-size: 9.5px; margin-right: 1px;" onclick="editCapitalChange(${idx})">Edit</button><button class="btn danger ghost" style="padding: 2px 3px; font-size: 9.5px;" onclick="deleteCapitalChange(${idx})">✕</button></td></tr>`).join('')}</tbody>
+          </table>
         </div>
         <div class="form-two-col" style="border-top: 1px solid var(--line-soft); padding-top: 12px;">
           <div class="field">
