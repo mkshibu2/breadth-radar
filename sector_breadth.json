@@ -1,69 +1,69 @@
 {
   "scan_date": "2026-08-27",
-  "scan_time": "27 Aug 2026  03:52 PM",
+  "scan_time": "27 Aug 2026  08:30 PM",
   "total_scanned": 504,
   "sectors": [
     {
       "sector": "NBFCs & Finance",
       "universe": 68,
-      "vcp_count": 5,
-      "a20_pct": 51,
+      "vcp_count": 6,
+      "a20_pct": 55,
       "a50_pct": 50,
-      "a200_pct": 57
+      "a200_pct": 60
     },
     {
       "sector": "Diversified",
       "universe": 5,
       "vcp_count": 0,
-      "a20_pct": 20,
-      "a50_pct": 20,
-      "a200_pct": 80
+      "a20_pct": 40,
+      "a50_pct": 40,
+      "a200_pct": 60
     },
     {
       "sector": "Capital Goods",
       "universe": 36,
       "vcp_count": 4,
       "a20_pct": 52,
-      "a50_pct": 55,
+      "a50_pct": 52,
       "a200_pct": 83
     },
     {
       "sector": "Construction Materials",
       "universe": 10,
       "vcp_count": 0,
-      "a20_pct": 20,
-      "a50_pct": 20,
+      "a20_pct": 40,
+      "a50_pct": 30,
       "a200_pct": 20
     },
     {
       "sector": "Power",
       "universe": 21,
       "vcp_count": 0,
-      "a20_pct": 14,
-      "a50_pct": 9,
+      "a20_pct": 4,
+      "a50_pct": 4,
       "a200_pct": 33
     },
     {
       "sector": "Metals & Mining",
       "universe": 28,
-      "vcp_count": 4,
-      "a20_pct": 60,
+      "vcp_count": 8,
+      "a20_pct": 67,
       "a50_pct": 64,
-      "a200_pct": 78
+      "a200_pct": 75
     },
     {
       "sector": "Banks",
       "universe": 26,
       "vcp_count": 0,
-      "a20_pct": 50,
+      "a20_pct": 57,
       "a50_pct": 65,
-      "a200_pct": 69
+      "a200_pct": 73
     },
     {
       "sector": "Fast Moving Consumer Goods",
       "universe": 28,
-      "vcp_count": 1,
-      "a20_pct": 32,
+      "vcp_count": 2,
+      "a20_pct": 35,
       "a50_pct": 32,
       "a200_pct": 39
     },
@@ -71,23 +71,23 @@
       "sector": "Specialty Chemicals",
       "universe": 20,
       "vcp_count": 0,
-      "a20_pct": 55,
+      "a20_pct": 50,
       "a50_pct": 60,
-      "a200_pct": 75
+      "a200_pct": 70
     },
     {
       "sector": "Pharma",
       "universe": 37,
-      "vcp_count": 6,
-      "a20_pct": 51,
-      "a50_pct": 59,
+      "vcp_count": 8,
+      "a20_pct": 43,
+      "a50_pct": 54,
       "a200_pct": 75
     },
     {
       "sector": "Realty",
       "universe": 12,
       "vcp_count": 2,
-      "a20_pct": 58,
+      "a20_pct": 41,
       "a50_pct": 58,
       "a200_pct": 75
     },
@@ -95,16 +95,16 @@
       "sector": "Oil Gas & Consumable Fuels",
       "universe": 19,
       "vcp_count": 1,
-      "a20_pct": 21,
-      "a50_pct": 36,
+      "a20_pct": 68,
+      "a50_pct": 52,
       "a200_pct": 57
     },
     {
       "sector": "Consumer Services",
       "universe": 20,
-      "vcp_count": 3,
-      "a20_pct": 55,
-      "a50_pct": 55,
+      "vcp_count": 5,
+      "a20_pct": 60,
+      "a50_pct": 50,
       "a200_pct": 55
     },
     {
@@ -119,15 +119,15 @@
       "sector": "Information Technology",
       "universe": 26,
       "vcp_count": 6,
-      "a20_pct": 30,
-      "a50_pct": 65,
+      "a20_pct": 34,
+      "a50_pct": 61,
       "a200_pct": 42
     },
     {
       "sector": "Construction",
       "universe": 10,
       "vcp_count": 0,
-      "a20_pct": 30,
+      "a20_pct": 50,
       "a50_pct": 30,
       "a200_pct": 30
     },
@@ -135,62 +135,62 @@
       "sector": "Media Entertainment & Publication",
       "universe": 5,
       "vcp_count": 1,
-      "a20_pct": 40,
+      "a20_pct": 60,
       "a50_pct": 40,
       "a200_pct": 80
     },
     {
       "sector": "Automobile and Auto Components",
       "universe": 36,
-      "vcp_count": 4,
-      "a20_pct": 41,
-      "a50_pct": 55,
+      "vcp_count": 5,
+      "a20_pct": 52,
+      "a50_pct": 63,
       "a200_pct": 72
     },
     {
       "sector": "Consumer Durables",
       "universe": 14,
       "vcp_count": 1,
-      "a20_pct": 42,
-      "a50_pct": 50,
+      "a20_pct": 35,
+      "a50_pct": 35,
       "a200_pct": 50
     },
     {
       "sector": "Hospitals & Healthcare",
       "universe": 11,
       "vcp_count": 0,
-      "a20_pct": 45,
-      "a50_pct": 36,
-      "a200_pct": 90
+      "a20_pct": 36,
+      "a50_pct": 27,
+      "a200_pct": 81
     },
     {
       "sector": "Services",
       "universe": 14,
       "vcp_count": 1,
-      "a20_pct": 50,
-      "a50_pct": 50,
+      "a20_pct": 57,
+      "a50_pct": 78,
       "a200_pct": 71
     },
     {
       "sector": "Agrochemicals & Fertilizers",
       "universe": 8,
       "vcp_count": 1,
-      "a20_pct": 25,
-      "a50_pct": 37,
-      "a200_pct": 25
+      "a20_pct": 37,
+      "a50_pct": 50,
+      "a200_pct": 37
     },
     {
       "sector": "Defense",
       "universe": 8,
       "vcp_count": 0,
-      "a20_pct": 87,
-      "a50_pct": 87,
-      "a200_pct": 75
+      "a20_pct": 75,
+      "a50_pct": 75,
+      "a200_pct": 87
     },
     {
       "sector": "Telecommunication",
       "universe": 7,
-      "vcp_count": 0,
+      "vcp_count": 1,
       "a20_pct": 28,
       "a50_pct": 28,
       "a200_pct": 14
@@ -209,26 +209,26 @@
       "sector": "Finance-Investment Mgmt IN",
       "universe": 13,
       "vcp_count": 0,
-      "a20_pct": 61,
-      "a50_pct": 46,
-      "a200_pct": 69,
+      "a20_pct": 76,
+      "a50_pct": 53,
+      "a200_pct": 84,
       "parent_sector": "NBFCs & Finance"
     },
     {
       "sector": "Diversified Operations IN",
       "universe": 5,
       "vcp_count": 0,
-      "a20_pct": 20,
-      "a50_pct": 20,
-      "a200_pct": 80,
+      "a20_pct": 40,
+      "a50_pct": 40,
+      "a200_pct": 60,
       "parent_sector": "Diversified"
     },
     {
       "sector": "Electrical-Power/Equipmt IN",
       "universe": 15,
       "vcp_count": 3,
-      "a20_pct": 60,
-      "a50_pct": 60,
+      "a20_pct": 53,
+      "a50_pct": 53,
       "a200_pct": 86,
       "parent_sector": "Capital Goods"
     },
@@ -236,8 +236,8 @@
       "sector": "Bldg-Cement/Concrt/Ag IN",
       "universe": 10,
       "vcp_count": 0,
-      "a20_pct": 20,
-      "a50_pct": 20,
+      "a20_pct": 40,
+      "a50_pct": 30,
       "a200_pct": 20,
       "parent_sector": "Construction Materials"
     },
@@ -262,9 +262,9 @@
     {
       "sector": "Steel-Producers IN",
       "universe": 16,
-      "vcp_count": 4,
-      "a20_pct": 62,
-      "a50_pct": 56,
+      "vcp_count": 6,
+      "a20_pct": 68,
+      "a50_pct": 62,
       "a200_pct": 68,
       "parent_sector": "Metals & Mining"
     },
@@ -272,16 +272,16 @@
       "sector": "Banks-Money Center IN",
       "universe": 26,
       "vcp_count": 0,
-      "a20_pct": 50,
+      "a20_pct": 57,
       "a50_pct": 65,
-      "a200_pct": 69,
+      "a200_pct": 73,
       "parent_sector": "Banks"
     },
     {
       "sector": "Food-Packaged IN",
       "universe": 5,
-      "vcp_count": 0,
-      "a20_pct": 40,
+      "vcp_count": 1,
+      "a20_pct": 60,
       "a50_pct": 60,
       "a200_pct": 40,
       "parent_sector": "Fast Moving Consumer Goods"
@@ -290,7 +290,7 @@
       "sector": "Finance-Mrtg&Rel Svc IN",
       "universe": 2,
       "vcp_count": 0,
-      "a20_pct": 50,
+      "a20_pct": 0,
       "a50_pct": 0,
       "a200_pct": 0,
       "parent_sector": "NBFCs & Finance"
@@ -299,8 +299,8 @@
       "sector": "Chemicals-Specialty IN",
       "universe": 17,
       "vcp_count": 0,
-      "a20_pct": 58,
-      "a50_pct": 58,
+      "a20_pct": 52,
+      "a50_pct": 64,
       "a200_pct": 76,
       "parent_sector": "Specialty Chemicals"
     },
@@ -309,7 +309,7 @@
       "universe": 22,
       "vcp_count": 1,
       "a20_pct": 50,
-      "a50_pct": 63,
+      "a50_pct": 59,
       "a200_pct": 59,
       "parent_sector": "NBFCs & Finance"
     },
@@ -335,8 +335,8 @@
       "sector": "Utility-Electric Power IN",
       "universe": 10,
       "vcp_count": 0,
-      "a20_pct": 20,
-      "a50_pct": 10,
+      "a20_pct": 0,
+      "a50_pct": 0,
       "a200_pct": 30,
       "parent_sector": "Power"
     },
@@ -362,8 +362,8 @@
       "sector": "Real Estate Dvlpmt/Ops IN",
       "universe": 10,
       "vcp_count": 2,
-      "a20_pct": 70,
-      "a50_pct": 70,
+      "a20_pct": 50,
+      "a50_pct": 60,
       "a200_pct": 90,
       "parent_sector": "Realty"
     },
@@ -371,8 +371,8 @@
       "sector": "Utility-Gas Distribution IN",
       "universe": 4,
       "vcp_count": 0,
-      "a20_pct": 0,
-      "a50_pct": 0,
+      "a20_pct": 50,
+      "a50_pct": 50,
       "a200_pct": 75,
       "parent_sector": "Oil Gas & Consumable Fuels"
     },
@@ -408,7 +408,7 @@
       "universe": 1,
       "vcp_count": 0,
       "a20_pct": 0,
-      "a50_pct": 0,
+      "a50_pct": 100,
       "a200_pct": 0,
       "parent_sector": "Realty"
     },
@@ -416,8 +416,8 @@
       "sector": "Computer-Tech Services IN",
       "universe": 18,
       "vcp_count": 3,
-      "a20_pct": 22,
-      "a50_pct": 66,
+      "a20_pct": 27,
+      "a50_pct": 61,
       "a200_pct": 33,
       "parent_sector": "Information Technology"
     },
@@ -425,7 +425,7 @@
       "sector": "Oil&Gas-Transprt/Pipelne IN",
       "universe": 3,
       "vcp_count": 0,
-      "a20_pct": 0,
+      "a20_pct": 66,
       "a50_pct": 33,
       "a200_pct": 100,
       "parent_sector": "Oil Gas & Consumable Fuels"
@@ -434,7 +434,7 @@
       "sector": "Bldg-Heavy Construction IN",
       "universe": 10,
       "vcp_count": 0,
-      "a20_pct": 30,
+      "a20_pct": 50,
       "a50_pct": 30,
       "a200_pct": 30,
       "parent_sector": "Construction"
@@ -443,7 +443,7 @@
       "sector": "Comml Svcs-Advertising IN",
       "universe": 1,
       "vcp_count": 0,
-      "a20_pct": 0,
+      "a20_pct": 100,
       "a50_pct": 100,
       "a200_pct": 100,
       "parent_sector": "Media Entertainment & Publication"
@@ -451,9 +451,9 @@
     {
       "sector": "Medical-Generic Drugs IN",
       "universe": 14,
-      "vcp_count": 1,
-      "a20_pct": 71,
-      "a50_pct": 71,
+      "vcp_count": 2,
+      "a20_pct": 50,
+      "a50_pct": 64,
       "a200_pct": 92,
       "parent_sector": "Pharma"
     },
@@ -470,8 +470,8 @@
       "sector": "Auto/Truck-Original Eqp IN",
       "universe": 15,
       "vcp_count": 2,
-      "a20_pct": 46,
-      "a50_pct": 60,
+      "a20_pct": 60,
+      "a50_pct": 66,
       "a200_pct": 93,
       "parent_sector": "Automobile and Auto Components"
     },
@@ -479,15 +479,15 @@
       "sector": "Hsehold-Appliances/Wares IN",
       "universe": 5,
       "vcp_count": 0,
-      "a20_pct": 60,
-      "a50_pct": 60,
+      "a20_pct": 40,
+      "a50_pct": 20,
       "a200_pct": 40,
       "parent_sector": "Consumer Durables"
     },
     {
       "sector": "Medical-Biomed/Biotech IN",
       "universe": 6,
-      "vcp_count": 1,
+      "vcp_count": 2,
       "a20_pct": 66,
       "a50_pct": 66,
       "a200_pct": 83,
@@ -497,17 +497,17 @@
       "sector": "Medical-Hospitals IN",
       "universe": 8,
       "vcp_count": 0,
-      "a20_pct": 37,
-      "a50_pct": 25,
-      "a200_pct": 87,
+      "a20_pct": 25,
+      "a50_pct": 12,
+      "a200_pct": 75,
       "parent_sector": "Hospitals & Healthcare"
     },
     {
       "sector": "Auto/Truck-Tires & Misc IN",
       "universe": 5,
-      "vcp_count": 0,
+      "vcp_count": 1,
       "a20_pct": 40,
-      "a50_pct": 60,
+      "a50_pct": 80,
       "a200_pct": 20,
       "parent_sector": "Automobile and Auto Components"
     },
@@ -515,7 +515,7 @@
       "sector": "Auto Manufacturers IN",
       "universe": 13,
       "vcp_count": 2,
-      "a20_pct": 46,
+      "a20_pct": 53,
       "a50_pct": 61,
       "a200_pct": 76,
       "parent_sector": "Automobile and Auto Components"
@@ -542,7 +542,7 @@
       "sector": "Finance-Invest Bnk/Bkrs IN",
       "universe": 5,
       "vcp_count": 1,
-      "a20_pct": 20,
+      "a20_pct": 60,
       "a50_pct": 40,
       "a200_pct": 60,
       "parent_sector": "NBFCs & Finance"
@@ -551,7 +551,7 @@
       "sector": "Retail-Super/Mini Mkts IN",
       "universe": 2,
       "vcp_count": 0,
-      "a20_pct": 0,
+      "a20_pct": 50,
       "a50_pct": 0,
       "a200_pct": 0,
       "parent_sector": "Consumer Services"
@@ -587,25 +587,25 @@
       "sector": "Chemicals-Agricultural IN",
       "universe": 8,
       "vcp_count": 1,
-      "a20_pct": 25,
-      "a50_pct": 37,
-      "a200_pct": 25,
+      "a20_pct": 37,
+      "a50_pct": 50,
+      "a200_pct": 37,
       "parent_sector": "Agrochemicals & Fertilizers"
     },
     {
       "sector": "Aerospace/Defense IN",
       "universe": 5,
       "vcp_count": 0,
-      "a20_pct": 80,
-      "a50_pct": 100,
-      "a200_pct": 60,
+      "a20_pct": 60,
+      "a50_pct": 80,
+      "a200_pct": 80,
       "parent_sector": "Defense"
     },
     {
       "sector": "Machinery-Gen Industrial IN",
       "universe": 7,
       "vcp_count": 1,
-      "a20_pct": 28,
+      "a20_pct": 42,
       "a50_pct": 42,
       "a200_pct": 85,
       "parent_sector": "Capital Goods"
@@ -614,15 +614,15 @@
       "sector": "Oil&Gas-Refining/Mktg IN",
       "universe": 7,
       "vcp_count": 1,
-      "a20_pct": 42,
-      "a50_pct": 71,
+      "a20_pct": 100,
+      "a50_pct": 85,
       "a200_pct": 57,
       "parent_sector": "Oil Gas & Consumable Fuels"
     },
     {
       "sector": "Telecom Svcs-Wireless IN",
       "universe": 2,
-      "vcp_count": 0,
+      "vcp_count": 1,
       "a20_pct": 50,
       "a50_pct": 50,
       "a200_pct": 50,
@@ -633,7 +633,7 @@
       "universe": 1,
       "vcp_count": 0,
       "a20_pct": 0,
-      "a50_pct": 0,
+      "a50_pct": 100,
       "a200_pct": 0,
       "parent_sector": "Telecommunication"
     },
@@ -642,7 +642,7 @@
       "universe": 3,
       "vcp_count": 0,
       "a20_pct": 33,
-      "a50_pct": 0,
+      "a50_pct": 66,
       "a200_pct": 66,
       "parent_sector": "Services"
     },
@@ -668,8 +668,8 @@
       "sector": "Food-Misc Preparation IN",
       "universe": 5,
       "vcp_count": 1,
-      "a20_pct": 60,
-      "a50_pct": 40,
+      "a20_pct": 40,
+      "a50_pct": 20,
       "a200_pct": 60,
       "parent_sector": "Fast Moving Consumer Goods"
     },
@@ -712,7 +712,7 @@
     {
       "sector": "Retail-Internet IN",
       "universe": 4,
-      "vcp_count": 0,
+      "vcp_count": 1,
       "a20_pct": 75,
       "a50_pct": 75,
       "a200_pct": 50,
@@ -722,7 +722,7 @@
       "sector": "Leisure-Lodging IN",
       "universe": 6,
       "vcp_count": 1,
-      "a20_pct": 33,
+      "a20_pct": 50,
       "a50_pct": 33,
       "a200_pct": 50,
       "parent_sector": "Consumer Services"
@@ -731,7 +731,7 @@
       "sector": "Energy-Coal IN",
       "universe": 2,
       "vcp_count": 0,
-      "a20_pct": 0,
+      "a20_pct": 50,
       "a50_pct": 0,
       "a200_pct": 0,
       "parent_sector": "Oil Gas & Consumable Fuels"
@@ -775,7 +775,7 @@
     {
       "sector": "Retail-Restaurants IN",
       "universe": 3,
-      "vcp_count": 1,
+      "vcp_count": 2,
       "a20_pct": 100,
       "a50_pct": 100,
       "a200_pct": 100,
@@ -795,7 +795,7 @@
       "universe": 1,
       "vcp_count": 0,
       "a20_pct": 0,
-      "a50_pct": 100,
+      "a50_pct": 0,
       "a200_pct": 100,
       "parent_sector": "Pharma"
     },
@@ -803,8 +803,8 @@
       "sector": "Machinery-Farm IN",
       "universe": 1,
       "vcp_count": 0,
-      "a20_pct": 0,
-      "a50_pct": 0,
+      "a20_pct": 100,
+      "a50_pct": 100,
       "a200_pct": 0,
       "parent_sector": "Automobile and Auto Components"
     },
@@ -812,7 +812,7 @@
       "sector": "Finance-Commercial Loans IN",
       "universe": 2,
       "vcp_count": 0,
-      "a20_pct": 100,
+      "a20_pct": 50,
       "a50_pct": 50,
       "a200_pct": 100,
       "parent_sector": "NBFCs & Finance"
@@ -829,7 +829,7 @@
     {
       "sector": "Insurance-Diversified IN",
       "universe": 3,
-      "vcp_count": 0,
+      "vcp_count": 1,
       "a20_pct": 33,
       "a50_pct": 33,
       "a200_pct": 66,
@@ -839,18 +839,18 @@
       "sector": "Tobacco IN",
       "universe": 2,
       "vcp_count": 0,
-      "a20_pct": 0,
-      "a50_pct": 0,
+      "a20_pct": 50,
+      "a50_pct": 50,
       "a200_pct": 0,
       "parent_sector": "Fast Moving Consumer Goods"
     },
     {
       "sector": "Mining-Metal Ores IN",
       "universe": 7,
-      "vcp_count": 0,
+      "vcp_count": 1,
       "a20_pct": 71,
-      "a50_pct": 85,
-      "a200_pct": 85,
+      "a50_pct": 71,
+      "a200_pct": 71,
       "parent_sector": "Metals & Mining"
     },
     {
@@ -858,7 +858,7 @@
       "universe": 4,
       "vcp_count": 0,
       "a20_pct": 75,
-      "a50_pct": 25,
+      "a50_pct": 50,
       "a200_pct": 0,
       "parent_sector": "NBFCs & Finance"
     },
@@ -874,8 +874,8 @@
     {
       "sector": "Metal Proc & Fabrication IN",
       "universe": 3,
-      "vcp_count": 0,
-      "a20_pct": 33,
+      "vcp_count": 1,
+      "a20_pct": 66,
       "a50_pct": 66,
       "a200_pct": 100,
       "parent_sector": "Metals & Mining"
@@ -903,7 +903,7 @@
       "universe": 1,
       "vcp_count": 0,
       "a20_pct": 100,
-      "a50_pct": 100,
+      "a50_pct": 0,
       "a200_pct": 0,
       "parent_sector": "Telecommunication"
     },
@@ -920,8 +920,8 @@
       "sector": "Transportation-Airline IN",
       "universe": 1,
       "vcp_count": 0,
-      "a20_pct": 0,
-      "a50_pct": 0,
+      "a20_pct": 100,
+      "a50_pct": 100,
       "a200_pct": 100,
       "parent_sector": "Services"
     },
@@ -929,8 +929,8 @@
       "sector": "Comml Svcs-Consulting IN",
       "universe": 2,
       "vcp_count": 0,
-      "a20_pct": 0,
-      "a50_pct": 50,
+      "a20_pct": 50,
+      "a50_pct": 100,
       "a200_pct": 100,
       "parent_sector": "Services"
     },
@@ -947,7 +947,7 @@
       "sector": "Transportation-Ship IN",
       "universe": 2,
       "vcp_count": 0,
-      "a20_pct": 100,
+      "a20_pct": 50,
       "a50_pct": 50,
       "a200_pct": 100,
       "parent_sector": "Services"
@@ -1002,7 +1002,7 @@
       "universe": 2,
       "vcp_count": 0,
       "a20_pct": 50,
-      "a50_pct": 50,
+      "a50_pct": 0,
       "a200_pct": 100,
       "parent_sector": "NBFCs & Finance"
     },
@@ -1029,8 +1029,8 @@
       "universe": 2,
       "vcp_count": 0,
       "a20_pct": 50,
-      "a50_pct": 100,
-      "a200_pct": 100,
+      "a50_pct": 50,
+      "a200_pct": 50,
       "parent_sector": "Specialty Chemicals"
     },
     {
@@ -1073,7 +1073,7 @@
       "sector": "Finance-Crdtcard/Pmtpr IN",
       "universe": 1,
       "vcp_count": 0,
-      "a20_pct": 0,
+      "a20_pct": 100,
       "a50_pct": 100,
       "a200_pct": 0,
       "parent_sector": "NBFCs & Finance"
@@ -1145,8 +1145,8 @@
       "sector": "Leisure-Services IN",
       "universe": 1,
       "vcp_count": 0,
-      "a20_pct": 100,
-      "a50_pct": 100,
+      "a20_pct": 0,
+      "a50_pct": 0,
       "a200_pct": 100,
       "parent_sector": "Consumer Services"
     }
@@ -44991,93 +44991,93 @@
       "sectors": {
         "NBFCs & Finance": {
           "universe": 68,
-          "vcp_count": 5,
-          "a20_pct": 51,
+          "vcp_count": 6,
+          "a20_pct": 55,
           "a50_pct": 50,
-          "a200_pct": 57
+          "a200_pct": 60
         },
         "Diversified": {
           "universe": 5,
           "vcp_count": 0,
-          "a20_pct": 20,
-          "a50_pct": 20,
-          "a200_pct": 80
+          "a20_pct": 40,
+          "a50_pct": 40,
+          "a200_pct": 60
         },
         "Capital Goods": {
           "universe": 36,
           "vcp_count": 4,
           "a20_pct": 52,
-          "a50_pct": 55,
+          "a50_pct": 52,
           "a200_pct": 83
         },
         "Construction Materials": {
           "universe": 10,
           "vcp_count": 0,
-          "a20_pct": 20,
-          "a50_pct": 20,
+          "a20_pct": 40,
+          "a50_pct": 30,
           "a200_pct": 20
         },
         "Power": {
           "universe": 21,
           "vcp_count": 0,
-          "a20_pct": 14,
-          "a50_pct": 9,
+          "a20_pct": 4,
+          "a50_pct": 4,
           "a200_pct": 33
         },
         "Metals & Mining": {
           "universe": 28,
-          "vcp_count": 4,
-          "a20_pct": 60,
+          "vcp_count": 8,
+          "a20_pct": 67,
           "a50_pct": 64,
-          "a200_pct": 78
+          "a200_pct": 75
         },
         "Banks": {
           "universe": 26,
           "vcp_count": 0,
-          "a20_pct": 50,
+          "a20_pct": 57,
           "a50_pct": 65,
-          "a200_pct": 69
+          "a200_pct": 73
         },
         "Fast Moving Consumer Goods": {
           "universe": 28,
-          "vcp_count": 1,
-          "a20_pct": 32,
+          "vcp_count": 2,
+          "a20_pct": 35,
           "a50_pct": 32,
           "a200_pct": 39
         },
         "Specialty Chemicals": {
           "universe": 20,
           "vcp_count": 0,
-          "a20_pct": 55,
+          "a20_pct": 50,
           "a50_pct": 60,
-          "a200_pct": 75
+          "a200_pct": 70
         },
         "Pharma": {
           "universe": 37,
-          "vcp_count": 6,
-          "a20_pct": 51,
-          "a50_pct": 59,
+          "vcp_count": 8,
+          "a20_pct": 43,
+          "a50_pct": 54,
           "a200_pct": 75
         },
         "Realty": {
           "universe": 12,
           "vcp_count": 2,
-          "a20_pct": 58,
+          "a20_pct": 41,
           "a50_pct": 58,
           "a200_pct": 75
         },
         "Oil Gas & Consumable Fuels": {
           "universe": 19,
           "vcp_count": 1,
-          "a20_pct": 21,
-          "a50_pct": 36,
+          "a20_pct": 68,
+          "a50_pct": 52,
           "a200_pct": 57
         },
         "Consumer Services": {
           "universe": 20,
-          "vcp_count": 3,
-          "a20_pct": 55,
-          "a50_pct": 55,
+          "vcp_count": 5,
+          "a20_pct": 60,
+          "a50_pct": 50,
           "a200_pct": 55
         },
         "Textiles": {
@@ -45090,69 +45090,69 @@
         "Information Technology": {
           "universe": 26,
           "vcp_count": 6,
-          "a20_pct": 30,
-          "a50_pct": 65,
+          "a20_pct": 34,
+          "a50_pct": 61,
           "a200_pct": 42
         },
         "Construction": {
           "universe": 10,
           "vcp_count": 0,
-          "a20_pct": 30,
+          "a20_pct": 50,
           "a50_pct": 30,
           "a200_pct": 30
         },
         "Media Entertainment & Publication": {
           "universe": 5,
           "vcp_count": 1,
-          "a20_pct": 40,
+          "a20_pct": 60,
           "a50_pct": 40,
           "a200_pct": 80
         },
         "Automobile and Auto Components": {
           "universe": 36,
-          "vcp_count": 4,
-          "a20_pct": 41,
-          "a50_pct": 55,
+          "vcp_count": 5,
+          "a20_pct": 52,
+          "a50_pct": 63,
           "a200_pct": 72
         },
         "Consumer Durables": {
           "universe": 14,
           "vcp_count": 1,
-          "a20_pct": 42,
-          "a50_pct": 50,
+          "a20_pct": 35,
+          "a50_pct": 35,
           "a200_pct": 50
         },
         "Hospitals & Healthcare": {
           "universe": 11,
           "vcp_count": 0,
-          "a20_pct": 45,
-          "a50_pct": 36,
-          "a200_pct": 90
+          "a20_pct": 36,
+          "a50_pct": 27,
+          "a200_pct": 81
         },
         "Services": {
           "universe": 14,
           "vcp_count": 1,
-          "a20_pct": 50,
-          "a50_pct": 50,
+          "a20_pct": 57,
+          "a50_pct": 78,
           "a200_pct": 71
         },
         "Agrochemicals & Fertilizers": {
           "universe": 8,
           "vcp_count": 1,
-          "a20_pct": 25,
-          "a50_pct": 37,
-          "a200_pct": 25
+          "a20_pct": 37,
+          "a50_pct": 50,
+          "a200_pct": 37
         },
         "Defense": {
           "universe": 8,
           "vcp_count": 0,
-          "a20_pct": 87,
-          "a50_pct": 87,
-          "a200_pct": 75
+          "a20_pct": 75,
+          "a50_pct": 75,
+          "a200_pct": 87
         },
         "Telecommunication": {
           "universe": 7,
-          "vcp_count": 0,
+          "vcp_count": 1,
           "a20_pct": 28,
           "a50_pct": 28,
           "a200_pct": 14
@@ -45169,32 +45169,32 @@
         "Finance-Investment Mgmt IN": {
           "universe": 13,
           "vcp_count": 0,
-          "a20_pct": 61,
-          "a50_pct": 46,
-          "a200_pct": 69,
+          "a20_pct": 76,
+          "a50_pct": 53,
+          "a200_pct": 84,
           "parent_sector": "NBFCs & Finance"
         },
         "Diversified Operations IN": {
           "universe": 5,
           "vcp_count": 0,
-          "a20_pct": 20,
-          "a50_pct": 20,
-          "a200_pct": 80,
+          "a20_pct": 40,
+          "a50_pct": 40,
+          "a200_pct": 60,
           "parent_sector": "Diversified"
         },
         "Electrical-Power/Equipmt IN": {
           "universe": 15,
           "vcp_count": 3,
-          "a20_pct": 60,
-          "a50_pct": 60,
+          "a20_pct": 53,
+          "a50_pct": 53,
           "a200_pct": 86,
           "parent_sector": "Capital Goods"
         },
         "Bldg-Cement/Concrt/Ag IN": {
           "universe": 10,
           "vcp_count": 0,
-          "a20_pct": 20,
-          "a50_pct": 20,
+          "a20_pct": 40,
+          "a50_pct": 30,
           "a200_pct": 20,
           "parent_sector": "Construction Materials"
         },
@@ -45216,24 +45216,24 @@
         },
         "Steel-Producers IN": {
           "universe": 16,
-          "vcp_count": 4,
-          "a20_pct": 62,
-          "a50_pct": 56,
+          "vcp_count": 6,
+          "a20_pct": 68,
+          "a50_pct": 62,
           "a200_pct": 68,
           "parent_sector": "Metals & Mining"
         },
         "Banks-Money Center IN": {
           "universe": 26,
           "vcp_count": 0,
-          "a20_pct": 50,
+          "a20_pct": 57,
           "a50_pct": 65,
-          "a200_pct": 69,
+          "a200_pct": 73,
           "parent_sector": "Banks"
         },
         "Food-Packaged IN": {
           "universe": 5,
-          "vcp_count": 0,
-          "a20_pct": 40,
+          "vcp_count": 1,
+          "a20_pct": 60,
           "a50_pct": 60,
           "a200_pct": 40,
           "parent_sector": "Fast Moving Consumer Goods"
@@ -45241,7 +45241,7 @@
         "Finance-Mrtg&Rel Svc IN": {
           "universe": 2,
           "vcp_count": 0,
-          "a20_pct": 50,
+          "a20_pct": 0,
           "a50_pct": 0,
           "a200_pct": 0,
           "parent_sector": "NBFCs & Finance"
@@ -45249,8 +45249,8 @@
         "Chemicals-Specialty IN": {
           "universe": 17,
           "vcp_count": 0,
-          "a20_pct": 58,
-          "a50_pct": 58,
+          "a20_pct": 52,
+          "a50_pct": 64,
           "a200_pct": 76,
           "parent_sector": "Specialty Chemicals"
         },
@@ -45258,7 +45258,7 @@
           "universe": 22,
           "vcp_count": 1,
           "a20_pct": 50,
-          "a50_pct": 63,
+          "a50_pct": 59,
           "a200_pct": 59,
           "parent_sector": "NBFCs & Finance"
         },
@@ -45281,8 +45281,8 @@
         "Utility-Electric Power IN": {
           "universe": 10,
           "vcp_count": 0,
-          "a20_pct": 20,
-          "a50_pct": 10,
+          "a20_pct": 0,
+          "a50_pct": 0,
           "a200_pct": 30,
           "parent_sector": "Power"
         },
@@ -45305,16 +45305,16 @@
         "Real Estate Dvlpmt/Ops IN": {
           "universe": 10,
           "vcp_count": 2,
-          "a20_pct": 70,
-          "a50_pct": 70,
+          "a20_pct": 50,
+          "a50_pct": 60,
           "a200_pct": 90,
           "parent_sector": "Realty"
         },
         "Utility-Gas Distribution IN": {
           "universe": 4,
           "vcp_count": 0,
-          "a20_pct": 0,
-          "a50_pct": 0,
+          "a20_pct": 50,
+          "a50_pct": 50,
           "a200_pct": 75,
           "parent_sector": "Oil Gas & Consumable Fuels"
         },
@@ -45346,22 +45346,22 @@
           "universe": 1,
           "vcp_count": 0,
           "a20_pct": 0,
-          "a50_pct": 0,
+          "a50_pct": 100,
           "a200_pct": 0,
           "parent_sector": "Realty"
         },
         "Computer-Tech Services IN": {
           "universe": 18,
           "vcp_count": 3,
-          "a20_pct": 22,
-          "a50_pct": 66,
+          "a20_pct": 27,
+          "a50_pct": 61,
           "a200_pct": 33,
           "parent_sector": "Information Technology"
         },
         "Oil&Gas-Transprt/Pipelne IN": {
           "universe": 3,
           "vcp_count": 0,
-          "a20_pct": 0,
+          "a20_pct": 66,
           "a50_pct": 33,
           "a200_pct": 100,
           "parent_sector": "Oil Gas & Consumable Fuels"
@@ -45369,7 +45369,7 @@
         "Bldg-Heavy Construction IN": {
           "universe": 10,
           "vcp_count": 0,
-          "a20_pct": 30,
+          "a20_pct": 50,
           "a50_pct": 30,
           "a200_pct": 30,
           "parent_sector": "Construction"
@@ -45377,16 +45377,16 @@
         "Comml Svcs-Advertising IN": {
           "universe": 1,
           "vcp_count": 0,
-          "a20_pct": 0,
+          "a20_pct": 100,
           "a50_pct": 100,
           "a200_pct": 100,
           "parent_sector": "Media Entertainment & Publication"
         },
         "Medical-Generic Drugs IN": {
           "universe": 14,
-          "vcp_count": 1,
-          "a20_pct": 71,
-          "a50_pct": 71,
+          "vcp_count": 2,
+          "a20_pct": 50,
+          "a50_pct": 64,
           "a200_pct": 92,
           "parent_sector": "Pharma"
         },
@@ -45401,22 +45401,22 @@
         "Auto/Truck-Original Eqp IN": {
           "universe": 15,
           "vcp_count": 2,
-          "a20_pct": 46,
-          "a50_pct": 60,
+          "a20_pct": 60,
+          "a50_pct": 66,
           "a200_pct": 93,
           "parent_sector": "Automobile and Auto Components"
         },
         "Hsehold-Appliances/Wares IN": {
           "universe": 5,
           "vcp_count": 0,
-          "a20_pct": 60,
-          "a50_pct": 60,
+          "a20_pct": 40,
+          "a50_pct": 20,
           "a200_pct": 40,
           "parent_sector": "Consumer Durables"
         },
         "Medical-Biomed/Biotech IN": {
           "universe": 6,
-          "vcp_count": 1,
+          "vcp_count": 2,
           "a20_pct": 66,
           "a50_pct": 66,
           "a200_pct": 83,
@@ -45425,23 +45425,23 @@
         "Medical-Hospitals IN": {
           "universe": 8,
           "vcp_count": 0,
-          "a20_pct": 37,
-          "a50_pct": 25,
-          "a200_pct": 87,
+          "a20_pct": 25,
+          "a50_pct": 12,
+          "a200_pct": 75,
           "parent_sector": "Hospitals & Healthcare"
         },
         "Auto/Truck-Tires & Misc IN": {
           "universe": 5,
-          "vcp_count": 0,
+          "vcp_count": 1,
           "a20_pct": 40,
-          "a50_pct": 60,
+          "a50_pct": 80,
           "a200_pct": 20,
           "parent_sector": "Automobile and Auto Components"
         },
         "Auto Manufacturers IN": {
           "universe": 13,
           "vcp_count": 2,
-          "a20_pct": 46,
+          "a20_pct": 53,
           "a50_pct": 61,
           "a200_pct": 76,
           "parent_sector": "Automobile and Auto Components"
@@ -45465,7 +45465,7 @@
         "Finance-Invest Bnk/Bkrs IN": {
           "universe": 5,
           "vcp_count": 1,
-          "a20_pct": 20,
+          "a20_pct": 60,
           "a50_pct": 40,
           "a200_pct": 60,
           "parent_sector": "NBFCs & Finance"
@@ -45473,7 +45473,7 @@
         "Retail-Super/Mini Mkts IN": {
           "universe": 2,
           "vcp_count": 0,
-          "a20_pct": 0,
+          "a20_pct": 50,
           "a50_pct": 0,
           "a200_pct": 0,
           "parent_sector": "Consumer Services"
@@ -45505,23 +45505,23 @@
         "Chemicals-Agricultural IN": {
           "universe": 8,
           "vcp_count": 1,
-          "a20_pct": 25,
-          "a50_pct": 37,
-          "a200_pct": 25,
+          "a20_pct": 37,
+          "a50_pct": 50,
+          "a200_pct": 37,
           "parent_sector": "Agrochemicals & Fertilizers"
         },
         "Aerospace/Defense IN": {
           "universe": 5,
           "vcp_count": 0,
-          "a20_pct": 80,
-          "a50_pct": 100,
-          "a200_pct": 60,
+          "a20_pct": 60,
+          "a50_pct": 80,
+          "a200_pct": 80,
           "parent_sector": "Defense"
         },
         "Machinery-Gen Industrial IN": {
           "universe": 7,
           "vcp_count": 1,
-          "a20_pct": 28,
+          "a20_pct": 42,
           "a50_pct": 42,
           "a200_pct": 85,
           "parent_sector": "Capital Goods"
@@ -45529,14 +45529,14 @@
         "Oil&Gas-Refining/Mktg IN": {
           "universe": 7,
           "vcp_count": 1,
-          "a20_pct": 42,
-          "a50_pct": 71,
+          "a20_pct": 100,
+          "a50_pct": 85,
           "a200_pct": 57,
           "parent_sector": "Oil Gas & Consumable Fuels"
         },
         "Telecom Svcs-Wireless IN": {
           "universe": 2,
-          "vcp_count": 0,
+          "vcp_count": 1,
           "a20_pct": 50,
           "a50_pct": 50,
           "a200_pct": 50,
@@ -45546,7 +45546,7 @@
           "universe": 1,
           "vcp_count": 0,
           "a20_pct": 0,
-          "a50_pct": 0,
+          "a50_pct": 100,
           "a200_pct": 0,
           "parent_sector": "Telecommunication"
         },
@@ -45554,7 +45554,7 @@
           "universe": 3,
           "vcp_count": 0,
           "a20_pct": 33,
-          "a50_pct": 0,
+          "a50_pct": 66,
           "a200_pct": 66,
           "parent_sector": "Services"
         },
@@ -45577,8 +45577,8 @@
         "Food-Misc Preparation IN": {
           "universe": 5,
           "vcp_count": 1,
-          "a20_pct": 60,
-          "a50_pct": 40,
+          "a20_pct": 40,
+          "a50_pct": 20,
           "a200_pct": 60,
           "parent_sector": "Fast Moving Consumer Goods"
         },
@@ -45616,7 +45616,7 @@
         },
         "Retail-Internet IN": {
           "universe": 4,
-          "vcp_count": 0,
+          "vcp_count": 1,
           "a20_pct": 75,
           "a50_pct": 75,
           "a200_pct": 50,
@@ -45625,7 +45625,7 @@
         "Leisure-Lodging IN": {
           "universe": 6,
           "vcp_count": 1,
-          "a20_pct": 33,
+          "a20_pct": 50,
           "a50_pct": 33,
           "a200_pct": 50,
           "parent_sector": "Consumer Services"
@@ -45633,7 +45633,7 @@
         "Energy-Coal IN": {
           "universe": 2,
           "vcp_count": 0,
-          "a20_pct": 0,
+          "a20_pct": 50,
           "a50_pct": 0,
           "a200_pct": 0,
           "parent_sector": "Oil Gas & Consumable Fuels"
@@ -45672,7 +45672,7 @@
         },
         "Retail-Restaurants IN": {
           "universe": 3,
-          "vcp_count": 1,
+          "vcp_count": 2,
           "a20_pct": 100,
           "a50_pct": 100,
           "a200_pct": 100,
@@ -45690,22 +45690,22 @@
           "universe": 1,
           "vcp_count": 0,
           "a20_pct": 0,
-          "a50_pct": 100,
+          "a50_pct": 0,
           "a200_pct": 100,
           "parent_sector": "Pharma"
         },
         "Machinery-Farm IN": {
           "universe": 1,
           "vcp_count": 0,
-          "a20_pct": 0,
-          "a50_pct": 0,
+          "a20_pct": 100,
+          "a50_pct": 100,
           "a200_pct": 0,
           "parent_sector": "Automobile and Auto Components"
         },
         "Finance-Commercial Loans IN": {
           "universe": 2,
           "vcp_count": 0,
-          "a20_pct": 100,
+          "a20_pct": 50,
           "a50_pct": 50,
           "a200_pct": 100,
           "parent_sector": "NBFCs & Finance"
@@ -45720,7 +45720,7 @@
         },
         "Insurance-Diversified IN": {
           "universe": 3,
-          "vcp_count": 0,
+          "vcp_count": 1,
           "a20_pct": 33,
           "a50_pct": 33,
           "a200_pct": 66,
@@ -45729,24 +45729,24 @@
         "Tobacco IN": {
           "universe": 2,
           "vcp_count": 0,
-          "a20_pct": 0,
-          "a50_pct": 0,
+          "a20_pct": 50,
+          "a50_pct": 50,
           "a200_pct": 0,
           "parent_sector": "Fast Moving Consumer Goods"
         },
         "Mining-Metal Ores IN": {
           "universe": 7,
-          "vcp_count": 0,
+          "vcp_count": 1,
           "a20_pct": 71,
-          "a50_pct": 85,
-          "a200_pct": 85,
+          "a50_pct": 71,
+          "a200_pct": 71,
           "parent_sector": "Metals & Mining"
         },
         "Insurance-Life IN": {
           "universe": 4,
           "vcp_count": 0,
           "a20_pct": 75,
-          "a50_pct": 25,
+          "a50_pct": 50,
           "a200_pct": 0,
           "parent_sector": "NBFCs & Finance"
         },
@@ -45760,8 +45760,8 @@
         },
         "Metal Proc & Fabrication IN": {
           "universe": 3,
-          "vcp_count": 0,
-          "a20_pct": 33,
+          "vcp_count": 1,
+          "a20_pct": 66,
           "a50_pct": 66,
           "a200_pct": 100,
           "parent_sector": "Metals & Mining"
@@ -45786,7 +45786,7 @@
           "universe": 1,
           "vcp_count": 0,
           "a20_pct": 100,
-          "a50_pct": 100,
+          "a50_pct": 0,
           "a200_pct": 0,
           "parent_sector": "Telecommunication"
         },
@@ -45801,16 +45801,16 @@
         "Transportation-Airline IN": {
           "universe": 1,
           "vcp_count": 0,
-          "a20_pct": 0,
-          "a50_pct": 0,
+          "a20_pct": 100,
+          "a50_pct": 100,
           "a200_pct": 100,
           "parent_sector": "Services"
         },
         "Comml Svcs-Consulting IN": {
           "universe": 2,
           "vcp_count": 0,
-          "a20_pct": 0,
-          "a50_pct": 50,
+          "a20_pct": 50,
+          "a50_pct": 100,
           "a200_pct": 100,
           "parent_sector": "Services"
         },
@@ -45825,7 +45825,7 @@
         "Transportation-Ship IN": {
           "universe": 2,
           "vcp_count": 0,
-          "a20_pct": 100,
+          "a20_pct": 50,
           "a50_pct": 50,
           "a200_pct": 100,
           "parent_sector": "Services"
@@ -45874,7 +45874,7 @@
           "universe": 2,
           "vcp_count": 0,
           "a20_pct": 50,
-          "a50_pct": 50,
+          "a50_pct": 0,
           "a200_pct": 100,
           "parent_sector": "NBFCs & Finance"
         },
@@ -45898,8 +45898,8 @@
           "universe": 2,
           "vcp_count": 0,
           "a20_pct": 50,
-          "a50_pct": 100,
-          "a200_pct": 100,
+          "a50_pct": 50,
+          "a200_pct": 50,
           "parent_sector": "Specialty Chemicals"
         },
         "Leisure-Movies & Related IN": {
@@ -45937,7 +45937,7 @@
         "Finance-Crdtcard/Pmtpr IN": {
           "universe": 1,
           "vcp_count": 0,
-          "a20_pct": 0,
+          "a20_pct": 100,
           "a50_pct": 100,
           "a200_pct": 0,
           "parent_sector": "NBFCs & Finance"
@@ -46001,8 +46001,8 @@
         "Leisure-Services IN": {
           "universe": 1,
           "vcp_count": 0,
-          "a20_pct": 100,
-          "a50_pct": 100,
+          "a20_pct": 0,
+          "a50_pct": 0,
           "a200_pct": 100,
           "parent_sector": "Consumer Services"
         }
