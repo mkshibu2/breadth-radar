@@ -2,10 +2,10 @@ name: Daily VCP Scanner
 
 on:
   schedule:
-    # Runs at 3:45 PM IST (10:15 AM UTC) Monday-Friday to account for GitHub's scheduling delays and finish by 5:00 PM IST.
-    - cron: '15 10 * * 1-5'
-  workflow_dispatch: # Allows you to manually click "Run workflow"
-
+    - cron: '53 15 * * 1-5'
+      timezone: 'Asia/Kolkata'
+  workflow_dispatch:
+  
 # FIX 1: Explicitly grant write permissions so it can push the HTML file (Prevents 128)
 permissions:
   contents: write
@@ -45,7 +45,6 @@ jobs:
           fi
 
       - name: Run VCP Scanner Script
-        continue-on-error: true
         run: python vcp_scanner.py
 
       - name: Commit and Push Results
