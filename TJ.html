@@ -1348,8 +1348,24 @@
       if (t.entry2Qty && t.entry2Price) {
         tranches.push({ label: 'E2', qty: t.entry2Qty, price: t.entry2Price });
       }
+      // Tranche 3
+      if (t.entry3Qty && t.entry3Price) {
+        tranches.push({ label: 'E3', qty: t.entry3Qty, price: t.entry3Price });
+      }
+      // Tranche 4
+      if (t.entry4Qty && t.entry4Price) {
+        tranches.push({ label: 'E4', qty: t.entry4Qty, price: t.entry4Price });
+      }
+      // Tranche 5
+      if (t.entry5Qty && t.entry5Price) {
+        tranches.push({ label: 'E5', qty: t.entry5Qty, price: t.entry5Price });
+      }
+      // Tranche 6
+      if (t.entry6Qty && t.entry6Price) {
+        tranches.push({ label: 'E6', qty: t.entry6Qty, price: t.entry6Price });
+      }
 
-      // Parse extra tranches from remarks
+      // Parse extra tranches from remarks (for backward compatibility or 7+)
       const extraTranches = {};
       const remarks = t.remarks || '';
       const regex = /\[Tranche (\d+): ₹([\d\.,]+) × (\d+)(?:\s+on\s+([^\]]+))?\]/g;
@@ -1362,17 +1378,10 @@
         extraTranches[num] = { price, qty, date };
       }
 
-      // Tranche 3
-      const t3Price = extraTranches[3] ? extraTranches[3].price : t.entry3Price;
-      const t3Qty = extraTranches[3] ? extraTranches[3].qty : t.entry3Qty;
-      if (t3Qty && t3Price) {
-        tranches.push({ label: 'E3', qty: t3Qty, price: t3Price });
-      }
-
-      // Tranches 4+
+      // Tranches 7+
       Object.keys(extraTranches)
         .map(Number)
-        .filter(num => num > 3)
+        .filter(num => num > 6)
         .sort((a, b) => a - b)
         .forEach(num => {
           const et = extraTranches[num];
@@ -1427,6 +1436,9 @@
         entry1Price: num('entry1Price'), entry1Qty: num('entry1Qty'), entry1Amt: num('entry1Amt'),
         entry2Price: num('entry2Price'), entry2Qty: num('entry2Qty'), entry2Amt: num('entry2Amt'),
         entry3Price: num('entry3Price'), entry3Qty: num('entry3Qty'), entry3Amt: num('entry3Amt'),
+        entry4Price: num('entry4Price'), entry4Qty: num('entry4Qty'), entry4Amt: num('entry4Amt'),
+        entry5Price: num('entry5Price'), entry5Qty: num('entry5Qty'), entry5Amt: num('entry5Amt'),
+        entry6Price: num('entry6Price'), entry6Qty: num('entry6Qty'), entry6Amt: num('entry6Amt'),
         avgBuyPrice: num('avgBuyPrice'), totBuyQty: num('totBuyQty'), totBuyAmt: num('totBuyAmt'),
         slPrice: num('slPrice'), slPerShare: num('slPerShare'), slPct: num('slPct'),
         fullQty: num('fullQty'), totLossAtSL: num('totLossAtSL'), brokerage: num('brokerage'),
@@ -1654,10 +1666,11 @@
 
     function aggregateBuy(t) {
       const legs = [
-        [t.entry1Price, t.entry1Qty], [t.entry2Price, t.entry2Qty], [t.entry3Price, t.entry3Qty]
+        [t.entry1Price, t.entry1Qty], [t.entry2Price, t.entry2Qty], [t.entry3Price, t.entry3Qty],
+        [t.entry4Price, t.entry4Qty], [t.entry5Price, t.entry5Qty], [t.entry6Price, t.entry6Qty]
       ].filter(([p, q]) => p != null && q);
       const totBuyQty = legs.reduce((s, [, q]) => s + Number(q), 0);
-      const totBuyAmt = [t.entry1Amt, t.entry2Amt, t.entry3Amt].reduce((s, a) => s + (Number(a) || 0), 0);
+      const totBuyAmt = [t.entry1Amt, t.entry2Amt, t.entry3Amt, t.entry4Amt, t.entry5Amt, t.entry6Amt].reduce((s, a) => s + (Number(a) || 0), 0);
       const avgBuyPrice = totBuyQty ? +(legs.reduce((s, [p, q]) => s + Number(p) * Number(q), 0) / totBuyQty).toFixed(2) : null;
       return { totBuyQty, totBuyAmt, avgBuyPrice };
     }
@@ -1747,7 +1760,7 @@
        ========================================================================= */
     const NAV = [
       { id: 'overview', label: 'Overview', icon: 'M3 13h4v7H3v-7Zm7-7h4v14h-4V6Zm7 4h4v10h-4V10Z' },
-      { id: 'risk', label: 'Position Calc', icon: 'M12 2 3 7l9 5 9-5-9-5Zm-9 10 9 5 9-5M3 17l9 5 9-5' },
+      { id: 'risk', label: 'Position Calculator', icon: 'M12 2 3 7l9 5 9-5-9-5Zm-9 10 9 5 9-5M3 17l9 5 9-5' },
       { id: 'add', label: 'Add Trade', icon: 'M12 5v14M5 12h14' },
       { id: 'trades', label: 'Trade Log', icon: 'M4 5h16M4 12h16M4 19h10' },
       { id: 'expenses', label: 'Expenses', icon: 'M12 1v22m5-18H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
@@ -1831,6 +1844,9 @@
     </div>`).join('');
       document.querySelectorAll('[data-nav]').forEach(el => {
         el.onclick = () => { 
+          if (el.dataset.nav === 'risk') {
+            STATE.prefillPlan = null;
+          }
           STATE.view = el.dataset.nav; 
           renderShell(); 
           toggleMobileMenu(false); 
@@ -3108,6 +3124,15 @@
         } else if (!t.entry3Price) {
           prefillQty = Math.floor(Number(t.fullQty || 0) * 0.2) || '';
           qtyLabel = 'Qty (20%)';
+        } else if (!t.entry4Price) {
+          prefillQty = Math.floor(Number(t.fullQty || 0) * 0.2) || '';
+          qtyLabel = 'Qty (20%)';
+        } else if (!t.entry5Price) {
+          prefillQty = Math.floor(Number(t.fullQty || 0) * 0.2) || '';
+          qtyLabel = 'Qty (20%)';
+        } else if (!t.entry6Price) {
+          prefillQty = Math.floor(Number(t.fullQty || 0) * 0.2) || '';
+          qtyLabel = 'Qty (20%)';
         } else {
           prefillQty = '';
           qtyLabel = 'Qty';
@@ -3145,6 +3170,15 @@
       const t3Price = extraTranches[3] ? extraTranches[3].price : t.entry3Price;
       const t3Qty = extraTranches[3] ? extraTranches[3].qty : t.entry3Qty;
       const t3Amt = extraTranches[3] ? extraTranches[3].amt : t.entry3Amt;
+
+      const t4Price = extraTranches[4] ? extraTranches[4].price : t.entry4Price;
+      const t4Qty = extraTranches[4] ? extraTranches[4].qty : t.entry4Qty;
+
+      const t5Price = extraTranches[5] ? extraTranches[5].price : t.entry5Price;
+      const t5Qty = extraTranches[5] ? extraTranches[5].qty : t.entry5Qty;
+
+      const t6Price = extraTranches[6] ? extraTranches[6].price : t.entry6Price;
+      const t6Qty = extraTranches[6] ? extraTranches[6].qty : t.entry6Qty;
 
 
 
@@ -3264,10 +3298,19 @@
           <!-- Tranche 3 -->
           ${t3Qty && t3Price ? buildTrancheRow(3, `T3${t.entry3Date || (extraTranches[3] && extraTranches[3].date) ? ` (${formatDateDMY(t.entry3Date || extraTranches[3].date)})` : ''}`, t3Price, t3Qty) : ''}
 
+          <!-- Tranche 4 -->
+          ${t4Qty && t4Price ? buildTrancheRow(4, `T4${t.entry4Date || (extraTranches[4] && extraTranches[4].date) ? ` (${formatDateDMY(t.entry4Date || extraTranches[4].date)})` : ''}`, t4Price, t4Qty) : ''}
+
+          <!-- Tranche 5 -->
+          ${t5Qty && t5Price ? buildTrancheRow(5, `T5${t.entry5Date || (extraTranches[5] && extraTranches[5].date) ? ` (${formatDateDMY(t.entry5Date || extraTranches[5].date)})` : ''}`, t5Price, t5Qty) : ''}
+
+          <!-- Tranche 6 -->
+          ${t6Qty && t6Price ? buildTrancheRow(6, `T6${t.entry6Date || (extraTranches[6] && extraTranches[6].date) ? ` (${formatDateDMY(t.entry6Date || extraTranches[6].date)})` : ''}`, t6Price, t6Qty) : ''}
+
           <!-- Extra Tranches -->
           ${Object.keys(extraTranches)
             .map(Number)
-            .filter(num => num > 3)
+            .filter(num => num > 6)
             .sort((a, b) => a - b)
             .map(num => {
               const et = extraTranches[num];
@@ -3292,7 +3335,10 @@
           <div class="field"><label>Price</label><input type="number" step="0.01" id="m_addPrice" value="${prefillPrice}"></div>
           <div class="field"><label>${qtyLabel}</label><input type="text" id="m_addQty" value="${prefillQty}" placeholder="e.g. 100 or 30%"></div>
           <div class="field"><label>Date</label><input type="date" id="m_addDate" value="${todayISO()}"></div>
-          <button class="btn primary" id="m_addLeg" style="margin-top:4px; justify-content:center;">Add Buy Leg</button>
+          <div style="display: flex; gap: 8px; margin-top: 4px;">
+            <button class="btn primary" id="m_planTranche" style="flex: 1; justify-content:center; white-space: nowrap;">Plan Next Tranche</button>
+            <button class="btn primary" id="m_addLeg" style="flex: 1; justify-content:center;">Add Buy Leg</button>
+          </div>
         </div>
       </fieldset>
 
@@ -3427,6 +3473,43 @@
         input.oninput = updateModalPnLAndRisk;
       });
 
+      const planTrancheBtn = $('#m_planTranche');
+      if (planTrancheBtn) {
+        planTrancheBtn.onclick = () => {
+          let activeTrancheCount = 0;
+          if (t.entry1Qty && t.entry1Price) activeTrancheCount++;
+          if (t.entry2Qty && t.entry2Price) activeTrancheCount++;
+          if (t.entry3Qty && t.entry3Price) activeTrancheCount++;
+          if (t.entry4Qty && t.entry4Price) activeTrancheCount++;
+          if (t.entry5Qty && t.entry5Price) activeTrancheCount++;
+          if (t.entry6Qty && t.entry6Price) activeTrancheCount++;
+
+          let nextPct = 0.50;
+          if (activeTrancheCount === 1) nextPct = 0.30;
+          else if (activeTrancheCount === 2) nextPct = 0.20;
+          else if (activeTrancheCount >= 3) nextPct = 0.20;
+
+          let lastEntryPrice = t.entry1Price;
+          if (t.entry2Price) lastEntryPrice = t.entry2Price;
+          if (t.entry3Price) lastEntryPrice = t.entry3Price;
+          if (t.entry4Price) lastEntryPrice = t.entry4Price;
+          if (t.entry5Price) lastEntryPrice = t.entry5Price;
+          if (t.entry6Price) lastEntryPrice = t.entry6Price;
+
+          STATE.prefillPlan = {
+            stock: t.stock,
+            slPrice: t.slPrice,
+            entryPrice: lastEntryPrice || '',
+            entryPct: nextPct,
+            setup: t.setup || ''
+          };
+
+          closeModal();
+          STATE.view = 'risk';
+          renderShell();
+        };
+      }
+
       const addLegBtn = $('#m_addLeg');
       if (addLegBtn) {
         addLegBtn.onclick = async () => {
@@ -3446,28 +3529,46 @@
             updated.entry3Amt = Math.round(price * qty);
             updated.entry3Date = date;
           }
+          else if (!updated.entry4Price) {
+            updated.entry4Price = price;
+            updated.entry4Qty = qty;
+            updated.entry4Amt = Math.round(price * qty);
+            updated.entry4Date = date;
+          }
+          else if (!updated.entry5Price) {
+            updated.entry5Price = price;
+            updated.entry5Qty = qty;
+            updated.entry5Amt = Math.round(price * qty);
+            updated.entry5Date = date;
+          }
+          else if (!updated.entry6Price) {
+            updated.entry6Price = price;
+            updated.entry6Qty = qty;
+            updated.entry6Amt = Math.round(price * qty);
+            updated.entry6Date = date;
+          }
           else {
-            const oldQty = Number(updated.entry3Qty || 0);
-            const oldAmt = Number(updated.entry3Amt || 0);
+            const oldQty = Number(updated.entry6Qty || 0);
+            const oldAmt = Number(updated.entry6Amt || 0);
             const newQty = oldQty + qty;
             const newAmt = oldAmt + Math.round(price * qty);
             const newPrice = newQty ? +(newAmt / newQty).toFixed(2) : 0;
 
             let remarksStr = updated.remarks || '';
-            if (updated.entry3Price && !remarksStr.includes('[Tranche 3:')) {
-              const e3d = updated.entry3Date ? ` on ${formatDateDMY(updated.entry3Date)}` : '';
-              remarksStr = remarksStr.trim() + (remarksStr ? '\n' : '') + `[Tranche 3: ₹${Number(updated.entry3Price).toFixed(2)} × ${updated.entry3Qty}${e3d}]`;
+            if (updated.entry6Price && !remarksStr.includes('[Tranche 6:')) {
+              const e6d = updated.entry6Date ? ` on ${formatDateDMY(updated.entry6Date)}` : '';
+              remarksStr = remarksStr.trim() + (remarksStr ? '\n' : '') + `[Tranche 6: ₹${Number(updated.entry6Price).toFixed(2)} × ${updated.entry6Qty}${e6d}]`;
             }
             const matches = remarksStr.match(/\[Tranche \d+:/g) || [];
-            const nextNum = 3 + matches.length;
+            const nextNum = 6 + matches.length;
             remarksStr = remarksStr.trim() + '\n' + `[Tranche ${nextNum}: ₹${price.toFixed(2)} × ${qty} on ${formatDateDMY(date)}]`;
 
             updated.remarks = remarksStr;
-            updated.entry3Price = newPrice;
-            updated.entry3Qty = newQty;
-            updated.entry3Amt = newAmt;
-            if (!updated.entry3Date) {
-              updated.entry3Date = date;
+            updated.entry6Price = newPrice;
+            updated.entry6Qty = newQty;
+            updated.entry6Amt = newAmt;
+            if (!updated.entry6Date) {
+              updated.entry6Date = date;
             }
           }
           const buy = aggregateBuy(normalizeTrade(updated));
@@ -3621,16 +3722,80 @@
           updated.entry2Date = '';
         }
 
-        // 4. Collect and process Tranche 3 and above
-        const t3AndAbove = [];
+        // 4. Set Tranche 3
+        const t3 = tranchesData[3] || {};
+        if (t3 && t3.price != null && t3.qty) {
+          updated.entry3Price = t3.price;
+          updated.entry3Qty = t3.qty;
+          updated.entry3Amt = Math.round(t3.price * t3.qty);
+          if (!updated.entry3Date) {
+            updated.entry3Date = t.entry3Date || todayISO();
+          }
+        } else {
+          updated.entry3Price = null;
+          updated.entry3Qty = null;
+          updated.entry3Amt = null;
+          updated.entry3Date = '';
+        }
+
+        // 5. Set Tranche 4
+        const t4 = tranchesData[4] || {};
+        if (t4 && t4.price != null && t4.qty) {
+          updated.entry4Price = t4.price;
+          updated.entry4Qty = t4.qty;
+          updated.entry4Amt = Math.round(t4.price * t4.qty);
+          if (!updated.entry4Date) {
+            updated.entry4Date = t.entry4Date || todayISO();
+          }
+        } else {
+          updated.entry4Price = null;
+          updated.entry4Qty = null;
+          updated.entry4Amt = null;
+          updated.entry4Date = '';
+        }
+
+        // 6. Set Tranche 5
+        const t5 = tranchesData[5] || {};
+        if (t5 && t5.price != null && t5.qty) {
+          updated.entry5Price = t5.price;
+          updated.entry5Qty = t5.qty;
+          updated.entry5Amt = Math.round(t5.price * t5.qty);
+          if (!updated.entry5Date) {
+            updated.entry5Date = t.entry5Date || todayISO();
+          }
+        } else {
+          updated.entry5Price = null;
+          updated.entry5Qty = null;
+          updated.entry5Amt = null;
+          updated.entry5Date = '';
+        }
+
+        // 7. Set Tranche 6
+        const t6 = tranchesData[6] || {};
+        if (t6 && t6.price != null && t6.qty) {
+          updated.entry6Price = t6.price;
+          updated.entry6Qty = t6.qty;
+          updated.entry6Amt = Math.round(t6.price * t6.qty);
+          if (!updated.entry6Date) {
+            updated.entry6Date = t.entry6Date || todayISO();
+          }
+        } else {
+          updated.entry6Price = null;
+          updated.entry6Qty = null;
+          updated.entry6Amt = null;
+          updated.entry6Date = '';
+        }
+
+        // 8. Collect and process Tranche 7 and above
+        const t7AndAbove = [];
         Object.keys(tranchesData)
           .map(Number)
-          .filter(num => num >= 3)
+          .filter(num => num >= 7)
           .sort((a, b) => a - b)
           .forEach(num => {
             const tr = tranchesData[num] || {};
             if (tr.price != null && tr.qty) {
-              t3AndAbove.push({ num, price: tr.price, qty: tr.qty });
+              t7AndAbove.push({ num, price: tr.price, qty: tr.qty });
             }
           });
 
@@ -3638,41 +3803,13 @@
         let remarksText = updated.remarks;
         remarksText = remarksText.replace(/\[Tranche \d+:[^\]]+\]\r?\n?/g, '').trim();
 
-        if (t3AndAbove.length === 0) {
-          updated.entry3Price = null;
-          updated.entry3Qty = null;
-          updated.entry3Amt = null;
-          updated.entry3Date = '';
-        } else if (t3AndAbove.length === 1) {
-          updated.entry3Price = t3AndAbove[0].price;
-          updated.entry3Qty = t3AndAbove[0].qty;
-          updated.entry3Amt = Math.round(t3AndAbove[0].price * t3AndAbove[0].qty);
-          if (!updated.entry3Date) {
-            updated.entry3Date = t.entry3Date || (extraTranches[3] && extraTranches[3].date) || todayISO();
-          }
-        } else {
-          // Multiple tranches starting at 3.
-          // Store their weighted average in entry3Price/Qty/Amt
-          const totQty = t3AndAbove.reduce((sum, item) => sum + item.qty, 0);
-          const totAmt = t3AndAbove.reduce((sum, item) => sum + Math.round(item.price * item.qty), 0);
-          updated.entry3Price = totQty ? +(totAmt / totQty).toFixed(2) : null;
-          updated.entry3Qty = totQty;
-          updated.entry3Amt = totAmt;
-          if (!updated.entry3Date) {
-            updated.entry3Date = t.entry3Date || (extraTranches[3] && extraTranches[3].date) || todayISO();
-          }
-
-          // Build remarks representation
+        if (t7AndAbove.length > 0) {
+          // Build remarks representation for tranches 7+
           const trancheLines = [];
-          t3AndAbove.forEach(ta => {
+          t7AndAbove.forEach(ta => {
             let dStr = '';
-            if (ta.num === 3) {
-              const origDate = t.entry3Date || (extraTranches[3] && extraTranches[3].date);
-              if (origDate) dStr = ` on ${formatDateDMY(origDate)}`;
-            } else {
-              const origDate = extraTranches[ta.num] && extraTranches[ta.num].date;
-              if (origDate) dStr = ` on ${formatDateDMY(origDate)}`;
-            }
+            const origDate = extraTranches[ta.num] && extraTranches[ta.num].date;
+            if (origDate) dStr = ` on ${formatDateDMY(origDate)}`;
             trancheLines.push(`[Tranche ${ta.num}: ₹${ta.price.toFixed(2)} × ${ta.qty}${dStr}]`);
           });
           remarksText = remarksText + (remarksText ? '\n' : '') + trancheLines.join('\n');
@@ -3769,57 +3906,147 @@
       const cap = currentCapital();
       const riskPct = Number(STATE.settings.riskPctPerTrade || 0.01);
 
-      const c = computeEntryCalc({
-        capital: cap,
-        riskPct,
-        entryPct: item.entryPct,
-        entryPrice: item.entryPrice,
-        slPrice: item.slPrice,
-        brokerage: Number(STATE.settings.brokeragePerTrade || 60)
-      });
+      // Check if there is an existing open trade for this stock
+      const existing = (STATE.trades || []).find(t => t.status === 'open' && t.stock.toUpperCase() === item.stock.toUpperCase());
 
-      const trade = {
-        status: 'open',
-        openDate: todayISO(),
-        breadth: item.breadth || '',
-        entryPct: item.entryPct,
-        riskPerShare: cap * riskPct * item.entryPct,
-        stock: item.stock,
-        entry1Price: item.entryPrice,
-        entry1Qty: c.entry1Qty || item.qty,
-        entry1Amt: c.entry1Amt || Math.round(item.entryPrice * item.qty),
-        slPrice: item.slPrice,
-        slPerShare: c.slPerShare,
-        slPct: c.slPct,
-        fullQty: c.fullQty,
-        totLossAtSL: c.totLossAtSL,
-        brokerage: Number(STATE.settings.brokeragePerTrade || 60),
-        setup: item.setup || 'Watchlist',
-        remarks: item.setup ? `Executed from planned watchlist (Setup: ${item.setup})` : 'Executed from planned watchlist'
-      };
+      if (existing) {
+        toast(`Adding tranche to existing open trade for ${item.stock}...`, 'info');
+        const updated = { ...existing };
+        const price = item.entryPrice;
+        const qty = item.qty;
+        const date = todayISO();
 
-      trade.totBuyQty = trade.entry1Qty;
-      trade.totBuyAmt = trade.entry1Amt;
-      trade.avgBuyPrice = trade.entry1Price;
+        if (!updated.entry2Price) {
+          updated.entry2Price = price;
+          updated.entry2Qty = qty;
+          updated.entry2Amt = Math.round(price * qty);
+          updated.entry2Date = date;
+        }
+        else if (!updated.entry3Price) {
+          updated.entry3Price = price;
+          updated.entry3Qty = qty;
+          updated.entry3Amt = Math.round(price * qty);
+          updated.entry3Date = date;
+        }
+        else if (!updated.entry4Price) {
+          updated.entry4Price = price;
+          updated.entry4Qty = qty;
+          updated.entry4Amt = Math.round(price * qty);
+          updated.entry4Date = date;
+        }
+        else if (!updated.entry5Price) {
+          updated.entry5Price = price;
+          updated.entry5Qty = qty;
+          updated.entry5Amt = Math.round(price * qty);
+          updated.entry5Date = date;
+        }
+        else if (!updated.entry6Price) {
+          updated.entry6Price = price;
+          updated.entry6Qty = qty;
+          updated.entry6Amt = Math.round(price * qty);
+          updated.entry6Date = date;
+        }
+        else {
+          const oldQty = Number(updated.entry6Qty || 0);
+          const oldAmt = Number(updated.entry6Amt || 0);
+          const newQty = oldQty + qty;
+          const newAmt = oldAmt + Math.round(price * qty);
+          const newPrice = newQty ? +(newAmt / newQty).toFixed(2) : 0;
 
-      const pnlData = computeOpenTradePnL(trade);
-      trade.pnl = pnlData.pnl;
-      trade.pnlPct = pnlData.pnlPct;
+          let remarksStr = updated.remarks || '';
+          if (updated.entry6Price && !remarksStr.includes('[Tranche 6:')) {
+            const e6d = updated.entry6Date ? ` on ${formatDateDMY(updated.entry6Date)}` : '';
+            remarksStr = remarksStr.trim() + (remarksStr ? '\n' : '') + `[Tranche 6: ₹${Number(updated.entry6Price).toFixed(2)} × ${updated.entry6Qty}${e6d}]`;
+          }
+          const matches = remarksStr.match(/\[Tranche \d+:/g) || [];
+          const nextNum = 6 + matches.length;
+          remarksStr = remarksStr.trim() + '\n' + `[Tranche ${nextNum}: ₹${price.toFixed(2)} × ${qty} on ${formatDateDMY(date)}]`;
 
-      toast('Saving trade to Google Sheet...', 'info');
+          updated.remarks = remarksStr;
+          updated.entry6Price = newPrice;
+          updated.entry6Qty = newQty;
+          updated.entry6Amt = newAmt;
+          if (!updated.entry6Date) {
+            updated.entry6Date = date;
+          }
+        }
 
-      try {
-        await apiPost({ action: 'addTrade', trade });
+        const buy = aggregateBuy(normalizeTrade(updated));
+        updated.totBuyQty = buy.totBuyQty;
+        updated.totBuyAmt = buy.totBuyAmt;
+        updated.avgBuyPrice = buy.avgBuyPrice;
 
-        wl.splice(idx, 1);
-        await saveWatchlist(wl);
+        const pnlData = computeOpenTradePnL(updated);
+        updated.pnl = pnlData.pnl;
+        updated.pnlPct = pnlData.pnlPct;
+        if (updated.totLossAtSL) updated.rr = +(updated.pnl / updated.totLossAtSL).toFixed(2);
 
-        await loadAll();
-        STATE.view = 'trades';
-        renderShell();
-        toast(`Successfully logged ${item.stock} to Trade Log!`, 'ok');
-      } catch (err) {
-        toast('Failed to log trade: ' + err.message, 'err');
+        const wlRemark = item.setup ? `Logged planned tranche from watchlist (Setup: ${item.setup})` : 'Logged planned tranche from watchlist';
+        updated.remarks = (updated.remarks || '').trim() + (updated.remarks ? '\n' : '') + wlRemark;
+
+        try {
+          await apiPost({ action: 'updateTrade', trade: updated });
+          wl.splice(idx, 1);
+          await saveWatchlist(wl);
+          await loadAll();
+          STATE.view = 'trades';
+          renderShell();
+          toast(`Successfully logged planned tranche for ${item.stock}!`, 'ok');
+        } catch (err) {
+          toast('Failed to log tranche: ' + err.message, 'err');
+        }
+      } else {
+        // Fallback to current behavior: log a brand new open trade under Tranche 1
+        const c = computeEntryCalc({
+          capital: cap,
+          riskPct,
+          entryPct: item.entryPct,
+          entryPrice: item.entryPrice,
+          slPrice: item.slPrice,
+          brokerage: Number(STATE.settings.brokeragePerTrade || 60)
+        });
+
+        const trade = {
+          status: 'open',
+          openDate: todayISO(),
+          breadth: item.breadth || '',
+          entryPct: item.entryPct,
+          riskPerShare: cap * riskPct * item.entryPct,
+          stock: item.stock,
+          entry1Price: item.entryPrice,
+          entry1Qty: c.entry1Qty || item.qty,
+          entry1Amt: c.entry1Amt || Math.round(item.entryPrice * item.qty),
+          slPrice: item.slPrice,
+          slPerShare: c.slPerShare,
+          slPct: c.slPct,
+          fullQty: c.fullQty,
+          totLossAtSL: c.totLossAtSL,
+          brokerage: Number(STATE.settings.brokeragePerTrade || 60),
+          setup: item.setup || 'Watchlist',
+          remarks: item.setup ? `Executed from planned watchlist (Setup: ${item.setup})` : 'Executed from planned watchlist'
+        };
+
+        trade.totBuyQty = trade.entry1Qty;
+        trade.totBuyAmt = trade.entry1Amt;
+        trade.avgBuyPrice = trade.entry1Price;
+
+        const pnlData = computeOpenTradePnL(trade);
+        trade.pnl = pnlData.pnl;
+        trade.pnlPct = pnlData.pnlPct;
+
+        toast('Saving trade to Google Sheet...', 'info');
+
+        try {
+          await apiPost({ action: 'addTrade', trade });
+          wl.splice(idx, 1);
+          await saveWatchlist(wl);
+          await loadAll();
+          STATE.view = 'trades';
+          renderShell();
+          toast(`Successfully logged ${item.stock} to Trade Log!`, 'ok');
+        } catch (err) {
+          toast('Failed to log trade: ' + err.message, 'err');
+        }
       }
     };
 
@@ -3847,8 +4074,40 @@
       const wl = getWatchlist();
       const editingItem = STATE.editingWlIdx !== null ? wl[STATE.editingWlIdx] : null;
 
+      let rStock = '';
+      let rBreadth = '';
+      let rEntry = '';
+      let rSl = '';
+      let rEntryPct = 50;
+      let rSetup = '';
+      let rQty = '';
+
+      if (editingItem) {
+        rStock = editingItem.stock || '';
+        rBreadth = editingItem.breadth != null ? editingItem.breadth : '';
+        rEntry = editingItem.entryPrice != null ? editingItem.entryPrice : '';
+        rSl = editingItem.slPrice != null ? editingItem.slPrice : '';
+        rEntryPct = editingItem.entryPct != null ? editingItem.entryPct * 100 : 50;
+        rSetup = editingItem.setup || '';
+        rQty = editingItem.qty != null ? editingItem.qty : '';
+      } else if (STATE.prefillPlan) {
+        rStock = STATE.prefillPlan.stock || '';
+        rBreadth = STATE.prefillPlan.breadth != null ? STATE.prefillPlan.breadth : '';
+        rEntry = STATE.prefillPlan.entryPrice != null ? STATE.prefillPlan.entryPrice : '';
+        rSl = STATE.prefillPlan.slPrice != null ? STATE.prefillPlan.slPrice : '';
+        rEntryPct = STATE.prefillPlan.entryPct != null ? STATE.prefillPlan.entryPct * 100 : 50;
+        rSetup = STATE.prefillPlan.setup || '';
+        
+        const entryPriceNum = parseFloat(rEntry);
+        const slPriceNum = parseFloat(rSl);
+        const c = computeEntryCalc({ capital: cap, riskPct, entryPct: rEntryPct / 100, entryPrice: isNaN(entryPriceNum) ? null : entryPriceNum, slPrice: isNaN(slPriceNum) ? null : slPriceNum, brokerage: 0 });
+        if (c.fullQty != null) {
+          rQty = Math.floor(c.fullQty * (rEntryPct / 100));
+        }
+      }
+
       host.innerHTML = `
-    <div class="page-head"><div><h1>Position Calc</h1><p>Position sizing sandbox & planned trades planner</p></div></div>
+    <div class="page-head"><div><h1>Position Calculator</h1><p>Position sizing sandbox & planned trades planner</p></div></div>
     
     <!-- Unified Sandbox Calculator Card -->
     <div class="panel" style="padding: 14px; margin-bottom: 14px;">
@@ -3862,11 +4121,11 @@
         <div class="form-two-col">
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Stock Name:</span>
-            <input type="text" id="r_stock" value="${editingItem ? editingItem.stock : ''}" placeholder="e.g. TITAN" tabindex="1" style="text-transform:uppercase; flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            <input type="text" id="r_stock" value="${rStock}" placeholder="e.g. TITAN" tabindex="1" style="text-transform:uppercase; flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Breadth Score:</span>
-            <input type="number" id="r_breadth" value="${editingItem && editingItem.breadth != null ? editingItem.breadth : ''}" placeholder="e.g. 65" tabindex="2" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            <input type="number" id="r_breadth" value="${rBreadth}" placeholder="e.g. 65" tabindex="2" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
 
           <div class="form-row">
@@ -3880,24 +4139,24 @@
 
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Entry Price (₹):</span>
-            <input type="number" step="0.01" id="r_entry" value="${editingItem ? editingItem.entryPrice : ''}" tabindex="5" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            <input type="number" step="0.01" id="r_entry" value="${rEntry}" tabindex="5" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Stop-Loss (₹):</span>
-            <input type="number" step="0.01" id="r_sl" value="${editingItem ? editingItem.slPrice : ''}" tabindex="6" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            <input type="number" step="0.01" id="r_sl" value="${rSl}" tabindex="6" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
 
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Tranche %:</span>
-            <input type="number" step="0.1" id="r_entryPct" value="${editingItem ? editingItem.entryPct * 100 : 50}" tabindex="7" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            <input type="number" step="0.1" id="r_entryPct" value="${rEntryPct}" tabindex="7" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Setup Strategy:</span>
-            <input type="text" id="r_setup" value="${editingItem && editingItem.setup ? editingItem.setup : ''}" placeholder="e.g. VCP, Pullback" tabindex="8" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            <input type="text" id="r_setup" value="${rSetup}" placeholder="e.g. VCP, Pullback" tabindex="8" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Tranche Qty:</span>
-            <input type="number" id="r_qty" value="${editingItem ? editingItem.qty : ''}" tabindex="9" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            <input type="number" id="r_qty" value="${rQty}" tabindex="9" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
 
           <div class="form-row" style="justify-content: flex-end; gap: 8px;">
@@ -4124,6 +4383,7 @@
         } else {
           currentWl.push(updatedItem);
           await saveWatchlist(currentWl);
+          STATE.prefillPlan = null; // Clear prefill plan
           renderShell();
           toast(`Added ${stock} to planned watchlist!`, 'ok');
         }
