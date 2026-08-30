@@ -1293,6 +1293,10 @@
       trades: [], settings: {}, capitalLog: [], multiYear: [], expenses: [],
       view: 'overview', tradeFilter: 'open', search: '', editingCapitalIndex: null,
       editingWlIdx: null, livePrices: {},
+      monthlySort: { col: 'key', dir: 'desc' },
+      expenseSort: { col: 'date', dir: 'desc' },
+      tradeSort: { col: 'openDate', dir: 'desc' },
+      multiYearSort: { col: 'year', dir: 'asc' },
       customWinRateStart: localStorage.getItem('tj_custom_win_rate_start') || '',
       customWinRateEnd: localStorage.getItem('tj_custom_win_rate_end') || '2026-03-31'
     };
@@ -1921,6 +1925,18 @@
       const selectedFY = STATE.selectedPnlFY || formatFY(STATE.settings.currentFY) || 'All';
       const period = STATE.selectedEquityPeriod || 'All';
       const monthly = monthlyPnL(selectedFY);
+      const mSortCol = (STATE.monthlySort && STATE.monthlySort.col) || 'key';
+      const mSortDir = (STATE.monthlySort && STATE.monthlySort.dir) || 'desc';
+      const monthlySorted = monthly.slice().sort((a, b) => {
+        let vA = a[mSortCol], vB = b[mSortCol];
+        if (mSortCol === 'key') {
+          vA = a.key || ''; vB = b.key || '';
+        } else {
+          vA = Number(vA || 0); vB = Number(vB || 0);
+        }
+        let res = typeof vA === 'number' ? vA - vB : String(vA).localeCompare(String(vB));
+        return mSortDir === 'asc' ? res : -res;
+      });
       const totalExpenses = (STATE.expenses || []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
       const netPnl = s.realizedPnl - totalExpenses;
 
@@ -2006,9 +2022,14 @@
         <div class="panel">
           <div class="panel-head"><h3>Monthly P&amp;L Table</h3></div>
           <div style="overflow-x:auto; max-width:100%; -webkit-overflow-scrolling: touch;">
-          <table style="min-width:420px;"><thead><tr><th>Month</th><th>Won</th><th>Lost</th><th>P/L</th></tr></thead>
+          <table style="min-width:420px;" id="monthlyPnLTable"><thead><tr>
+            <th data-m-sort="key" style="cursor:pointer; user-select:none; font-family:var(--sans);">Month ${mSortCol === 'key' ? (mSortDir === 'asc' ? '▲' : '▼') : ''}</th>
+            <th data-m-sort="won" style="cursor:pointer; user-select:none;">Won ${mSortCol === 'won' ? (mSortDir === 'asc' ? '▲' : '▼') : ''}</th>
+            <th data-m-sort="lost" style="cursor:pointer; user-select:none;">Lost ${mSortCol === 'lost' ? (mSortDir === 'asc' ? '▲' : '▼') : ''}</th>
+            <th data-m-sort="pnl" style="cursor:pointer; user-select:none;">P/L ${mSortCol === 'pnl' ? (mSortDir === 'asc' ? '▲' : '▼') : ''}</th>
+          </tr></thead>
           <tbody>
-            ${monthly.length ? monthly.map(m => `<tr>
+            ${monthlySorted.length ? monthlySorted.map(m => `<tr>
               <td style="font-family:var(--sans);color:var(--sub);">${m.label}</td>
               <td>${m.won}</td><td>${m.lost}</td>
               <td style="color:${m.pnl >= 0 ? 'var(--green)' : 'var(--red)'}">${m.pnl >= 0 ? '+' : ''}${fmt(m.pnl)}</td>
@@ -2031,6 +2052,22 @@
         STATE.selectedPnlFY = e.target.value;
         renderOverview(host);
       };
+
+      const mTable = $('#monthlyPnLTable');
+      if (mTable) {
+        mTable.querySelectorAll('th[data-m-sort]').forEach(th => {
+          th.onclick = () => {
+            const col = th.dataset.mSort;
+            if (STATE.monthlySort.col === col) {
+              STATE.monthlySort.dir = STATE.monthlySort.dir === 'asc' ? 'desc' : 'asc';
+            } else {
+              STATE.monthlySort.col = col;
+              STATE.monthlySort.dir = col === 'key' ? 'desc' : 'desc';
+            }
+            renderOverview(host);
+          };
+        });
+      }
     }
 
     let _equityChart = null;
@@ -2263,14 +2300,30 @@
         `;
       }
 
+      const tCol = (STATE.tradeSort && STATE.tradeSort.col) || 'openDate';
+      const tDir = (STATE.tradeSort && STATE.tradeSort.dir) || 'desc';
+      const sArr = key => tCol === key ? (tDir === 'asc' ? '▲' : '▼') : '';
+
       return `<div style="overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch;"><table style="width: 100%; min-width: 750px;"><thead><tr>
-    <th>Open</th><th>Stock</th><th>Avg Buy</th><th>Qty</th><th>Amount</th><th>SL/TSL</th><th>Status</th>
+    <th data-sort-col="openDate" style="cursor:pointer; user-select:none;">Open ${sArr('openDate')}</th>
+    <th data-sort-col="stock" style="cursor:pointer; user-select:none;">Stock ${sArr('stock')}</th>
+    <th data-sort-col="avgBuyPrice" style="cursor:pointer; user-select:none;">Avg Buy ${sArr('avgBuyPrice')}</th>
+    <th data-sort-col="totBuyQty" style="cursor:pointer; user-select:none;">Qty ${sArr('totBuyQty')}</th>
+    <th data-sort-col="amount" style="cursor:pointer; user-select:none;">Amount ${sArr('amount')}</th>
+    <th data-sort-col="slPrice" style="cursor:pointer; user-select:none;">SL/TSL ${sArr('slPrice')}</th>
+    <th data-sort-col="status" style="cursor:pointer; user-select:none;">Status ${sArr('status')}</th>
     ${isOpenTab ? `
-      <th>P/L at TSL</th><th>P/L at TSL %</th><th>Live P/L</th><th>Live P/L %</th>
+      <th data-sort-col="pnlAtTSL" style="cursor:pointer; user-select:none;">P/L at TSL ${sArr('pnlAtTSL')}</th>
+      <th data-sort-col="pnlAtTSLPct" style="cursor:pointer; user-select:none;">P/L at TSL % ${sArr('pnlAtTSLPct')}</th>
+      <th data-sort-col="livePnl" style="cursor:pointer; user-select:none;">Live P/L ${sArr('livePnl')}</th>
+      <th data-sort-col="livePnlPct" style="cursor:pointer; user-select:none;">Live P/L % ${sArr('livePnlPct')}</th>
     ` : `
-      <th>Exit</th><th>P/L</th><th>P/L %</th><th>R:R</th>
+      <th data-sort-col="closedDate" style="cursor:pointer; user-select:none;">Exit ${sArr('closedDate')}</th>
+      <th data-sort-col="pnl" style="cursor:pointer; user-select:none;">P/L ${sArr('pnl')}</th>
+      <th data-sort-col="pnlPct" style="cursor:pointer; user-select:none;">P/L % ${sArr('pnlPct')}</th>
+      <th data-sort-col="rr" style="cursor:pointer; user-select:none;">R:R ${sArr('rr')}</th>
     `}
-    <th>Days</th>
+    <th data-sort-col="days" style="cursor:pointer; user-select:none;">Days ${sArr('days')}</th>
   </tr></thead><tbody>
     ${rowsHtml}
     ${totalRowHtml}
@@ -2756,18 +2809,70 @@
       return new Blob(byteArrays, { type: mimeType });
     }
 
+    function sortTradesList(list, sortState) {
+      const col = (sortState && sortState.col) || 'openDate';
+      const dir = (sortState && sortState.dir) || 'desc';
+      list.sort((a, b) => {
+        let vA, vB;
+        if (col === 'openDate') { vA = a.openDate || ''; vB = b.openDate || ''; }
+        else if (col === 'stock') { vA = (a.stock || '').toLowerCase(); vB = (b.stock || '').toLowerCase(); }
+        else if (col === 'avgBuyPrice') { vA = Number(a.avgBuyPrice || 0); vB = Number(b.avgBuyPrice || 0); }
+        else if (col === 'totBuyQty') { vA = Number(a.totBuyQty || 0); vB = Number(b.totBuyQty || 0); }
+        else if (col === 'amount') { vA = Number(a.totBuyQty || 0) * Number(a.avgBuyPrice || 0); vB = Number(b.totBuyQty || 0) * Number(b.avgBuyPrice || 0); }
+        else if (col === 'slPrice') { vA = Number(a.slPrice || 0); vB = Number(b.slPrice || 0); }
+        else if (col === 'status') { vA = a.status || ''; vB = b.status || ''; }
+        else if (col === 'closedDate') { vA = a.closedDate || ''; vB = b.closedDate || ''; }
+        else if (col === 'pnl' || col === 'pnlAtTSL') { vA = Number(a.pnl || 0); vB = Number(b.pnl || 0); }
+        else if (col === 'pnlPct' || col === 'pnlAtTSLPct') { vA = Number(a.pnlPct || 0); vB = Number(b.pnlPct || 0); }
+        else if (col === 'rr') { vA = a.rr == null ? -Infinity : Number(a.rr); vB = b.rr == null ? -Infinity : Number(b.rr); }
+        else if (col === 'days') {
+          vA = a.status === 'closed' ? (a.days == null ? -Infinity : Number(a.days)) : (isNaN(new Date(a.openDate)) ? -Infinity : Math.round((new Date() - new Date(a.openDate)) / 86400000));
+          vB = b.status === 'closed' ? (b.days == null ? -Infinity : Number(b.days)) : (isNaN(new Date(b.openDate)) ? -Infinity : Math.round((new Date() - new Date(b.openDate)) / 86400000));
+        }
+        else if (col === 'livePnl' || col === 'livePnlPct') {
+          const lA = STATE.livePrices[a.stock], lB = STATE.livePrices[b.stock];
+          vA = lA != null ? Math.round((lA - Number(a.avgBuyPrice || 0)) * Number(a.totBuyQty || 0)) : -Infinity;
+          vB = lB != null ? Math.round((lB - Number(b.avgBuyPrice || 0)) * Number(b.totBuyQty || 0)) : -Infinity;
+          if (col === 'livePnlPct') {
+            vA = (lA != null && a.totBuyAmt) ? vA / Number(a.totBuyAmt) : -Infinity;
+            vB = (lB != null && b.totBuyAmt) ? vB / Number(b.totBuyAmt) : -Infinity;
+          }
+        } else {
+          vA = a.openDate || ''; vB = b.openDate || '';
+        }
+        let res = typeof vA === 'number' ? vA - vB : String(vA).localeCompare(String(vB));
+        return dir === 'asc' ? res : -res;
+      });
+      return list;
+    }
+
     function renderTradeTable() {
       let list = STATE.trades.slice();
       if (STATE.search) list = list.filter(t => (t.stock || '').toLowerCase().includes(STATE.search.toLowerCase()));
 
       if (STATE.tradeFilter === 'pnl') {
         list = list.filter(t => t.status === 'closed');
+        sortTradesList(list, STATE.tradeSort);
         $('#tradeTableWrap').innerHTML = pnlTableHTML(list);
       } else {
         if (STATE.tradeFilter !== 'all') list = list.filter(t => t.status === STATE.tradeFilter);
-        list.sort((a, b) => (b.openDate || '').localeCompare(a.openDate || ''));
+        sortTradesList(list, STATE.tradeSort);
         $('#tradeTableWrap').innerHTML = tradeTableHTML(list);
       }
+
+      $('#tradeTableWrap').querySelectorAll('th[data-sort-col]').forEach(th => {
+        th.onclick = (e) => {
+          e.stopPropagation();
+          const col = th.dataset.sortCol;
+          if (STATE.tradeSort.col === col) {
+            STATE.tradeSort.dir = STATE.tradeSort.dir === 'asc' ? 'desc' : 'asc';
+          } else {
+            STATE.tradeSort.col = col;
+            STATE.tradeSort.dir = (col === 'stock' || col === 'status') ? 'asc' : 'desc';
+          }
+          renderTradeTable();
+        };
+      });
 
       $('#tradeTableWrap').querySelectorAll('tr[data-id]').forEach(row => {
         row.onclick = () => openTradeModal(STATE.trades.find(t => t.id === row.dataset.id));
@@ -4404,6 +4509,23 @@
        ========================================================================= */
     function renderExpenses(host) {
       const totalExpenses = (STATE.expenses || []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
+      const expSortCol = (STATE.expenseSort && STATE.expenseSort.col) || 'date';
+      const expSortDir = (STATE.expenseSort && STATE.expenseSort.dir) || 'desc';
+
+      const expList = (STATE.expenses || []).map((e, idx) => ({ ...e, _origIdx: idx }));
+      expList.sort((a, b) => {
+        let vA, vB;
+        if (expSortCol === 'date') {
+          vA = a.date || ''; vB = b.date || '';
+        } else if (expSortCol === 'amount') {
+          vA = Number(a.amount || 0); vB = Number(b.amount || 0);
+        } else if (expSortCol === 'note') {
+          vA = (a.note || '').toLowerCase(); vB = (b.note || '').toLowerCase();
+        }
+        let res = typeof vA === 'number' ? vA - vB : String(vA).localeCompare(String(vB));
+        return expSortDir === 'asc' ? res : -res;
+      });
+
       host.innerHTML = `
     <div class="page-head"><div><h1>Expenses</h1><p>Log platform fees, subscriptions, and other non-brokerage trading expenses</p></div></div>
     
@@ -4445,20 +4567,20 @@
           <table style="width: 100%; min-width: 480px; table-layout: fixed;">
             <thead>
               <tr>
-                <th style="width:22%;">Date</th>
-                <th style="width:24%;">Amount</th>
-                <th>Note / Description</th>
+                <th data-exp-sort="date" style="width:22%; cursor:pointer; user-select:none;">Date ${expSortCol === 'date' ? (expSortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                <th data-exp-sort="amount" style="width:24%; cursor:pointer; user-select:none;">Amount ${expSortCol === 'amount' ? (expSortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                <th data-exp-sort="note" style="cursor:pointer; user-select:none;">Note / Description ${expSortCol === 'note' ? (expSortDir === 'asc' ? '▲' : '▼') : ''}</th>
                 <th style="width:56px; text-align: right; padding-right: 8px;">Action</th>
               </tr>
             </thead>
             <tbody>
-              ${(STATE.expenses || []).length ? (STATE.expenses || []).map((e, idx) => `
+              ${expList.length ? expList.map((e) => `
                 <tr>
                   <td style="white-space: normal;">${formatDateDMY(e.date)}</td>
                   <td style="color:var(--red); font-weight:600; white-space: normal;">${fmtRs(e.amount)}</td>
                   <td style="font-family:var(--sans); white-space: normal; color: var(--text); word-break: break-word;">${e.note || ''}</td>
                   <td style="text-align: right; padding-right: 4px;">
-                    <button class="btn danger ghost" style="padding: 3px 5px; font-size: 10px; min-height: auto;" onclick="deleteExpenseItem(${idx})">Del</button>
+                    <button class="btn danger ghost" style="padding: 3px 5px; font-size: 10px; min-height: auto;" onclick="deleteExpenseItem(${e._origIdx})">Del</button>
                   </td>
                 </tr>
               `).join('') : `
@@ -4472,6 +4594,19 @@
       </div>
     </div>
   `;
+
+      host.querySelectorAll('th[data-exp-sort]').forEach(th => {
+        th.onclick = () => {
+          const col = th.dataset.expSort;
+          if (STATE.expenseSort.col === col) {
+            STATE.expenseSort.dir = STATE.expenseSort.dir === 'asc' ? 'desc' : 'asc';
+          } else {
+            STATE.expenseSort.col = col;
+            STATE.expenseSort.dir = col === 'date' ? 'desc' : 'desc';
+          }
+          renderExpenses(host);
+        };
+      });
 
       $('#addExpenseBtn').onclick = async () => {
         const amount = parseFloat($('#e_amount').value);
@@ -4623,11 +4758,39 @@
         const startB = parseInt(b.year.split('-')[0]) || 0;
         return startA - startB;
       });
+
+      // Calculate Cumulative PnL and Compounded Cumulative Return %
+      let runningCumPnl = 0;
+      let compoundFactor = 1.0;
+      rows.forEach(r => {
+        runningCumPnl += Number(r.pnl || 0);
+        r.cumPnl = runningCumPnl;
+        const rPct = Number(r.returnPct || 0);
+        compoundFactor *= (1 + rPct / 100);
+        r.cumReturnPct = (compoundFactor - 1) * 100;
+      });
+
       return rows;
     }
 
     function renderMultiYear(host) {
-      const rows = getMultiYearRowsWithLive();
+      const chronologicalRows = getMultiYearRowsWithLive();
+      const myCol = (STATE.multiYearSort && STATE.multiYearSort.col) || 'year';
+      const myDir = (STATE.multiYearSort && STATE.multiYearSort.dir) || 'asc';
+      const rows = chronologicalRows.slice().sort((a, b) => {
+        let vA = a[myCol], vB = b[myCol];
+        if (myCol === 'year') {
+          vA = parseInt((a.year || '').split('-')[0]) || 0;
+          vB = parseInt((b.year || '').split('-')[0]) || 0;
+        } else {
+          vA = Number(vA || 0); vB = Number(vB || 0);
+        }
+        let res = typeof vA === 'number' ? vA - vB : String(vA).localeCompare(String(vB));
+        return myDir === 'asc' ? res : -res;
+      });
+
+      const sIcon = colKey => myCol === colKey ? (myDir === 'asc' ? '▲' : '▼') : '';
+
       host.innerHTML = `
     <div class="page-head"><div><h1>Multi-Year Record</h1><p>Long-term track record across financial years</p></div>
       <button class="btn primary" id="addYearBtn">+ Add Year</button></div>
@@ -4641,11 +4804,20 @@
             <button class="btn primary" id="saveYearsBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save</button>
           </div>
           <div style="overflow: auto; flex: 1; min-height: 0; width: 100%; max-width: 100%; -webkit-overflow-scrolling: touch;">
-            <table style="width: 100%; min-width: 480px; table-layout: fixed;">
-              <thead><tr><th>Year</th><th>Capital (Avg)</th><th>P/L</th><th>Return %</th></tr></thead>
+            <table style="width: 100%; min-width: 650px; table-layout: fixed;">
+              <thead><tr>
+                <th data-my-sort="year" style="cursor:pointer; user-select:none; width:16%;">Year ${sIcon('year')}</th>
+                <th data-my-sort="openingCap" style="cursor:pointer; user-select:none; width:18%;">Capital (Avg) ${sIcon('openingCap')}</th>
+                <th data-my-sort="pnl" style="cursor:pointer; user-select:none; width:15%;">P/L ${sIcon('pnl')}</th>
+                <th data-my-sort="returnPct" style="cursor:pointer; user-select:none; width:14%;">Return % ${sIcon('returnPct')}</th>
+                <th data-my-sort="cumPnl" style="cursor:pointer; user-select:none; width:19%;">Cum. P/L ${sIcon('cumPnl')}</th>
+                <th data-my-sort="cumReturnPct" style="cursor:pointer; user-select:none; width:18%;">Cum. Return % ${sIcon('cumReturnPct')}</th>
+              </tr></thead>
               <tbody id="myBody">
                 ${rows.map((r, i) => {
         const isLive = r.isLive;
+        const cPnl = Number(r.cumPnl || 0);
+        const cRet = Number(r.cumReturnPct || 0);
         return `<tr class="${isLive ? 'live-row' : ''}">
                   <td style="white-space: nowrap;">
                     <div style="display: flex; align-items: center; gap: 4px; width: 100%;">
@@ -4655,7 +4827,9 @@
                   </td>
                   <td><input data-i="${i}" data-k="openingCap" type="number" step="0.01" value="${Number(r.openingCap || 0).toFixed(2)}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:100%;min-width:0;${isLive ? 'font-weight:bold;' : ''}"></td>
                   <td style="color:${r.pnl >= 0 ? 'var(--green)' : 'var(--red)'}"><input data-i="${i}" data-k="pnl" type="number" step="0.01" value="${Number(r.pnl || 0).toFixed(2)}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:100%;min-width:0;${isLive ? 'font-weight:bold;' : ''}"></td>
-                  <td><input data-i="${i}" data-k="returnPct" type="number" step="0.01" value="${Number(r.returnPct || 0).toFixed(2)}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:100%;min-width:0;${isLive ? 'font-weight:bold;' : ''}"></td>
+                  <td style="color:${r.returnPct >= 0 ? 'var(--green)' : 'var(--red)'}"><input data-i="${i}" data-k="returnPct" type="number" step="0.01" value="${Number(r.returnPct || 0).toFixed(2)}" ${isLive ? 'readonly' : ''} style="background:none;border:none;color:inherit;font-family:var(--mono);width:100%;min-width:0;${isLive ? 'font-weight:bold;' : ''}"></td>
+                  <td style="font-family:var(--mono); font-size:12px; font-weight:600; color:${cPnl >= 0 ? 'var(--green)' : 'var(--red)'}; padding:0 4px;">${cPnl >= 0 ? '+' : ''}${fmtRs(cPnl)}</td>
+                  <td style="font-family:var(--mono); font-size:12px; font-weight:600; color:${cRet >= 0 ? 'var(--green)' : 'var(--red)'}; padding:0 4px;">${cRet >= 0 ? '+' : ''}${cRet.toFixed(2)}%</td>
                 </tr>`
       }).join('')}
               </tbody>
@@ -4689,6 +4863,19 @@
       </div>
     </div>
   `;
+
+      host.querySelectorAll('th[data-my-sort]').forEach(th => {
+        th.onclick = () => {
+          const col = th.dataset.mySort;
+          if (STATE.multiYearSort.col === col) {
+            STATE.multiYearSort.dir = STATE.multiYearSort.dir === 'asc' ? 'desc' : 'asc';
+          } else {
+            STATE.multiYearSort.col = col;
+            STATE.multiYearSort.dir = col === 'year' ? 'asc' : 'desc';
+          }
+          renderMultiYear(host);
+        };
+      });
 
       $('#addYearBtn').onclick = () => {
         STATE.multiYear.push({ year: '', openingCap: 0, pnl: 0, returnPct: 0 });
@@ -4730,7 +4917,7 @@
         catch (err) { toast('Failed: ' + err.message, 'err'); }
       };
 
-      drawMultiYearCharts(rows);
+      drawMultiYearCharts(chronologicalRows);
     }
 
     let _myEquityChart = null;
