@@ -350,13 +350,33 @@
       width: 100%;
     }
 
-    .grid-cards .card-cap { flex: 1.3 1 0; }
-    .grid-cards .card-pnl { flex: 1.3 1 0; }
-    .grid-cards .card-avg { flex: 1.25 1 0; }
-    .grid-cards .card-exp { flex: 1.1 1 0; }
-    .grid-cards .card-win1 { flex: 1.25 1 0; }
-    .grid-cards .card-win2 { flex: 1.25 1 0; }
-    .grid-cards .card-open { flex: 0.8 1 0; }
+    .grid-cards .card-cap {
+      flex: 1.3 1 0;
+    }
+
+    .grid-cards .card-pnl {
+      flex: 1.3 1 0;
+    }
+
+    .grid-cards .card-avg {
+      flex: 1.25 1 0;
+    }
+
+    .grid-cards .card-exp {
+      flex: 1.1 1 0;
+    }
+
+    .grid-cards .card-win1 {
+      flex: 1.25 1 0;
+    }
+
+    .grid-cards .card-win2 {
+      flex: 1.25 1 0;
+    }
+
+    .grid-cards .card-open {
+      flex: 0.8 1 0;
+    }
 
     @media(max-width: 980px) {
       .grid-cards {
@@ -364,6 +384,7 @@
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 12px;
       }
+
       .grid-cards .card-cap,
       .grid-cards .card-pnl,
       .grid-cards .card-avg,
@@ -446,9 +467,9 @@
     }
 
     /* Prevent grid items containing canvas/tables from overflowing */
-    .two-col > div,
-    .expenses-grid > div,
-    .multiyear-container > div {
+    .two-col>div,
+    .expenses-grid>div,
+    .multiyear-container>div {
       min-width: 0;
     }
 
@@ -464,8 +485,9 @@
       border-bottom: 1px solid var(--line);
       z-index: 90;
     }
-    
-    .hamburger-btn, .mobile-refresh-btn {
+
+    .hamburger-btn,
+    .mobile-refresh-btn {
       background: none;
       border: none;
       color: var(--text);
@@ -476,15 +498,18 @@
       padding: 6px;
       border-radius: 4px;
     }
-    .hamburger-btn:hover, .mobile-refresh-btn:hover {
+
+    .hamburger-btn:hover,
+    .mobile-refresh-btn:hover {
       background: var(--panel2);
     }
-    
+
     .brand-mobile {
       display: flex;
       align-items: center;
       gap: 8px;
     }
+
     .brand-mobile .mark {
       width: 22px;
       height: 22px;
@@ -498,6 +523,7 @@
       color: #0a0e14;
       font-size: 11px;
     }
+
     .brand-mobile .name {
       font-weight: 800;
       font-size: 13.5px;
@@ -513,6 +539,7 @@
       opacity: 0;
       transition: opacity 0.25s ease;
     }
+
     .sidebar-backdrop.show {
       display: block;
       opacity: 1;
@@ -525,31 +552,38 @@
       gap: 12px;
       margin-bottom: 18px;
     }
+
     .overview-grid-bottom {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 12px;
       margin-bottom: 18px;
     }
-    .add-trade-container, .calc-container {
+
+    .add-trade-container,
+    .calc-container {
       display: grid;
       grid-template-columns: 1.2fr 1fr;
       gap: 24px;
       align-items: start;
     }
+
     .form-two-col {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px 16px;
     }
+
     .form-row {
       display: flex;
       align-items: center;
       gap: 8px;
     }
+
     .form-row-span-2 {
       grid-column: span 2;
     }
+
     .metrics-grid {
       border-left: 1px solid var(--line-soft);
       padding-left: 24px;
@@ -557,27 +591,32 @@
       grid-template-columns: 1fr 1fr;
       gap: 16px 20px;
     }
+
     .expenses-grid {
       display: grid;
       grid-template-columns: 1fr 1.3fr;
       gap: 14px;
     }
+
     .multiyear-container {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 14px;
     }
+
     .settings-container {
       display: grid;
       grid-template-columns: 1fr 1.1fr;
       gap: 14px;
       align-items: start;
     }
+
     .settings-rules-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px 20px;
     }
+
     .settings-rules-right {
       border-left: 1px solid var(--line-soft);
       padding-left: 20px;
@@ -585,12 +624,14 @@
       align-items: center;
       gap: 8px;
     }
+
     .modal-two-col {
       display: grid;
       grid-template-columns: 1fr 1fr;
       margin-bottom: 14px;
       gap: 14px;
     }
+
     .active-exposure-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -603,13 +644,17 @@
       .mobile-bar {
         display: flex;
       }
+
       .two-col {
         grid-template-columns: 1fr;
       }
+
       .shell {
         grid-template-columns: 1fr;
-        min-height: calc(100vh - 96px); /* ticker + mobile-bar height */
+        min-height: calc(100vh - 96px);
+        /* ticker + mobile-bar height */
       }
+
       .sidebar {
         position: fixed;
         top: 0;
@@ -620,17 +665,25 @@
         transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: 5px 0 25px rgba(0, 0, 0, 0.5);
       }
+
       .sidebar.open {
         left: 0;
       }
+
       .main {
         padding: 16px 16px 40px;
         width: 100%;
       }
-      .add-trade-container, .calc-container, .expenses-grid, .multiyear-container, .settings-container {
+
+      .add-trade-container,
+      .calc-container,
+      .expenses-grid,
+      .multiyear-container,
+      .settings-container {
         grid-template-columns: 1fr;
         gap: 16px;
       }
+
       .metrics-grid {
         border-left: none;
         padding-left: 0;
@@ -643,10 +696,12 @@
       .overview-grid-top {
         grid-template-columns: 1fr 1fr;
       }
+
       .settings-rules-grid {
         grid-template-columns: 1fr;
         gap: 16px;
       }
+
       .settings-rules-right {
         border-left: none;
         padding-left: 0;
@@ -663,70 +718,96 @@
     }
 
     @media(max-width:600px) {
-      .overview-grid-top, .overview-grid-bottom {
+
+      .overview-grid-top,
+      .overview-grid-bottom {
         grid-template-columns: 1fr;
       }
+
       .form-two-col {
         grid-template-columns: 1fr;
         gap: 12px;
       }
-      .form-row, .settings-rules-right {
+
+      .form-row,
+      .settings-rules-right {
         flex-direction: column;
         align-items: flex-start;
         gap: 4px;
       }
-      .form-row span:first-child, .form-row label,
-      .settings-rules-right span:first-child, .settings-rules-right label {
+
+      .form-row span:first-child,
+      .form-row label,
+      .settings-rules-right span:first-child,
+      .settings-rules-right label {
         text-align: left !important;
         width: auto !important;
       }
-      .form-row > input, .form-row > select, .form-row > div,
-      .settings-rules-right > input, .settings-rules-right > select, .settings-rules-right > div {
+
+      .form-row>input,
+      .form-row>select,
+      .form-row>div,
+      .settings-rules-right>input,
+      .settings-rules-right>select,
+      .settings-rules-right>div {
         width: 100% !important;
       }
+
       .form-row-span-2 {
         grid-column: span 1;
       }
+
       .active-exposure-grid {
         grid-template-columns: 1fr 1fr;
         gap: 12px;
       }
+
       .modal {
         padding: 16px;
       }
+
       .my-fixed-h {
         height: 240px !important;
       }
     }
-    
+
     @media(max-width:480px) {
       .active-exposure-grid {
         grid-template-columns: 1fr;
       }
-      .form-grid, .form-grid.c3 {
+
+      .form-grid,
+      .form-grid.c3 {
         grid-template-columns: 1fr;
       }
+
       .toolbar input {
         min-width: 0;
         flex: 1 1 140px;
       }
+
       .page-head h1 {
         font-size: 17px;
       }
+
       .card .num {
         font-size: 19px;
       }
+
       .card {
         padding: 12px 14px;
         min-height: 84px;
       }
+
       .modal {
         padding: 14px;
         border-radius: 10px;
       }
+
       .modal-bg {
         padding: 20px 8px;
       }
+
       .btn {
         padding: 8px 11px;
         font-size: 12.5px;
@@ -1253,12 +1334,14 @@
       border-right: 1px solid var(--line-soft);
       padding-right: 12px;
     }
+
     .pyramid-col-right {
       display: flex;
       flex-direction: column;
       gap: 6px;
       padding-left: 4px;
     }
+
     @media(max-width:600px) {
       .pyramid-col-left {
         border-right: none;
@@ -1266,6 +1349,7 @@
         border-bottom: 1px solid var(--line-soft);
         padding-bottom: 12px;
       }
+
       .pyramid-col-right {
         padding-left: 0;
         padding-top: 12px;
@@ -1584,11 +1668,42 @@
     }
 
     function overviewStats() {
+      const activeFYLabel = formatFY(STATE.settings.currentFY);
       const closed = STATE.trades.filter(t => t.status === 'closed');
       const open = STATE.trades.filter(t => t.status === 'open');
-      const won = closed.filter(t => t.pnl >= 0);
-      const lost = closed.filter(t => t.pnl < 0);
-      const realizedPnl = closed.reduce((s, t) => s + (t.pnl || 0), 0);
+
+      const invested = open.reduce((sum, t) => {
+        const extraExits = {};
+        const remarks = t.remarks || '';
+        const regexExit = /\[Exit (\d+): ₹([\d\.,]+) × (\d+)\]/g;
+        let matchExit;
+        while ((matchExit = regexExit.exec(remarks)) !== null) {
+          const num = parseInt(matchExit[1]);
+          const qty = parseInt(matchExit[3]);
+          extraExits[num] = { qty };
+        }
+        const ex1Qty = extraExits[1] ? extraExits[1].qty : t.exit1Qty;
+        const ex2Qty = extraExits[2] ? extraExits[2].qty : t.exit2Qty;
+        const ex3Qty = extraExits[3] ? extraExits[3].qty : t.exit3Qty;
+        const totExitQty = [ex1Qty, ex2Qty, ex3Qty].reduce((s, q) => s + (Number(q) || 0), 0) + Object.values(extraExits).filter((e, idx) => idx >= 3).reduce((s, e) => s + e.qty, 0);
+        const remainingQty = Number(t.totBuyQty || 0) - totExitQty;
+        return sum + Math.round(remainingQty * Number(t.avgBuyPrice || 0));
+      }, 0);
+
+      const closedFY = activeFYLabel
+        ? closed.filter(t => t.closedDate && formatFY(getFYOfDate(t.closedDate)) === activeFYLabel)
+        : closed;
+      const wonFY = closedFY.filter(t => t.pnl >= 0);
+      const lostFY = closedFY.filter(t => t.pnl < 0);
+      const realizedPnlFY = closedFY.reduce((s, t) => s + (t.pnl || 0), 0);
+
+      const expensesFY = (STATE.expenses || []).filter(e => {
+        if (!activeFYLabel) return true;
+        return e.date && formatFY(getFYOfDate(e.date)) === activeFYLabel;
+      }).reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+      const netPnlFY = realizedPnlFY - expensesFY;
+
       const openRisk = open.reduce((s, t) => {
         const extraExits = {};
         const remarks = t.remarks || '';
@@ -1610,8 +1725,10 @@
         const tradeRisk = riskPerShare > 0 ? Math.round(riskPerShare * remainingQty) : 0;
         return s + tradeRisk;
       }, 0);
+
       const opening = Number(STATE.settings.openingCapitalFY || 0);
       const cap = currentCapital();
+      const cash = cap - invested;
 
       const customStart = STATE.customWinRateStart || getFirstTradeDate();
       const customEnd = STATE.customWinRateEnd || '2026-03-31';
@@ -1623,21 +1740,50 @@
       const wonPost = closedPost.filter(t => t.pnl >= 0);
       const lostPost = closedPost.filter(t => t.pnl < 0);
 
-      const totalWinAmt = won.reduce((sum, t) => sum + (t.pnl || 0), 0);
-      const totalLossAmt = lost.reduce((sum, t) => sum + Math.abs(t.pnl || 0), 0);
-      const avgWin = won.length ? Math.round(totalWinAmt / won.length) : 0;
-      const avgLoss = lost.length ? Math.round(totalLossAmt / lost.length) : 0;
+      const totalWinAmt = wonFY.reduce((sum, t) => sum + (t.pnl || 0), 0);
+      const totalLossAmt = lostFY.reduce((sum, t) => sum + Math.abs(t.pnl || 0), 0);
+      const avgWin = wonFY.length ? Math.round(totalWinAmt / wonFY.length) : 0;
+      const avgLoss = lostFY.length ? Math.round(totalLossAmt / lostFY.length) : 0;
       const winLossRatio = avgLoss ? +(avgWin / avgLoss).toFixed(2) : 0;
-      const expectancy = closed.length ? Math.round(realizedPnl / closed.length) : 0;
-      const expectancyR = closed.length ? +(closed.reduce((sum, t) => sum + (t.rr || 0), 0) / closed.length).toFixed(2) : 0;
+      const expectancy = closedFY.length ? Math.round(netPnlFY / closedFY.length) : 0;
+      const expectancyR = closedFY.length ? +(closedFY.reduce((sum, t) => sum + (t.rr || 0), 0) / closedFY.length).toFixed(2) : 0;
+
+      const allTimeRealizedPnl = closed.reduce((s, t) => s + (t.pnl || 0), 0);
+      const allTimeExpenses = (STATE.expenses || []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
+      const cumPnl = allTimeRealizedPnl - allTimeExpenses;
+
+      const avgCapital = calculateActiveYearAverageCapital();
+      const returnPctFY = avgCapital ? (netPnlFY / avgCapital) : (opening ? netPnlFY / opening : 0);
+
+      // Compute Compounded Cumulative Return %
+      const multiRows = (STATE.multiYear || []).map(r => ({ ...r, returnPct: Number(r.returnPct || 0) }));
+      const activeIdx = multiRows.findIndex(r => formatFY(r.year) === activeFYLabel);
+      if (activeIdx !== -1) {
+        multiRows[activeIdx].returnPct = returnPctFY * 100;
+      } else if (activeFYLabel) {
+        multiRows.push({ year: activeFYLabel, returnPct: returnPctFY * 100 });
+      }
+      multiRows.sort((a, b) => (parseInt((a.year || '').split('-')[0]) || 0) - (parseInt((b.year || '').split('-')[0]) || 0));
+      let compoundFactor = 1.0;
+      multiRows.forEach(r => {
+        compoundFactor *= (1 + Number(r.returnPct || 0) / 100);
+      });
+      const cumReturnPct = compoundFactor - 1;
 
       return {
         capital: cap,
+        invested,
+        cash,
         opening,
-        realizedPnl,
-        returnPct: opening ? realizedPnl / opening : 0,
-        winPct: closed.length ? won.length / closed.length : 0,
-        wonCount: won.length, lostCount: lost.length, openCount: open.length,
+        avgCapital,
+        realizedPnl: realizedPnlFY,
+        expensesFY,
+        netPnlFY,
+        cumPnl,
+        cumReturnPct,
+        returnPct: returnPctFY,
+        winPct: closedFY.length ? wonFY.length / closedFY.length : (closed.length ? won.length / closed.length : 0),
+        wonCount: wonFY.length, lostCount: lostFY.length, openCount: open.length,
         openRisk,
         riskBudget: cap * Number(STATE.settings.riskPctPerTrade || 0.01),
         winPctPre: closedPre.length ? wonPre.length / closedPre.length : 0,
@@ -1654,11 +1800,29 @@
       };
     }
 
+    function renderTicker(s) {
+      const ret = s.returnPct;
+      const cumRet = s.cumReturnPct;
+      const winCls = s.winPct >= 0.5 ? 'up' : 'down';
+      $('#ticker').innerHTML = `
+    <div class="tick"><span class="lbl">Capital</span><span class="val">${fmtRs(s.capital)}</span></div>
+    <div class="tick"><span class="lbl">Invested</span><span class="val flat" style="color:var(--gold);">${fmtRs(s.invested)}</span></div>
+    <div class="tick"><span class="lbl">Cash</span><span class="val flat" style="color:var(--text);">${fmtRs(s.cash)}</span></div>
+    <div class="tick"><span class="lbl">FY P/L</span><span class="val ${s.netPnlFY >= 0 ? 'up' : 'down'}">${s.netPnlFY >= 0 ? '+' : ''}${fmtRs(s.netPnlFY)}</span></div>
+    <div class="tick"><span class="lbl">Return</span><span class="val ${ret >= 0 ? 'up' : 'down'}">${ret >= 0 ? '+' : ''}${fmtPct(ret)}</span></div>
+    <div class="tick"><span class="lbl">Cum. P/L</span><span class="val ${s.cumPnl >= 0 ? 'up' : 'down'}">${s.cumPnl >= 0 ? '+' : ''}${fmtRs(s.cumPnl)}</span></div>
+    <div class="tick"><span class="lbl">Cum. Return</span><span class="val ${cumRet >= 0 ? 'up' : 'down'}">${cumRet >= 0 ? '+' : ''}${fmtPct(cumRet)}</span></div>
+    <div class="tick"><span class="lbl">Win Rate</span><span class="val ${winCls}">${fmtPct(s.winPct)}</span></div>
+    <div class="tick"><span class="lbl">Open Positions</span><span class="val flat">${s.openCount}</span></div>
+    <div class="tick"><span class="lbl">Open Risk</span><span class="val flat">${fmtRs(s.openRisk)}</span></div>
+    <div class="tick"><span class="lbl">Risk Budget / Trade</span><span class="val flat">${fmtRs(s.riskBudget)}</span></div>
+  `;
+    }
+
     /* =========================================================================
        TRADE MATH  (mirrors JL-N calc sheet logic)
        ========================================================================= */
     function computeEntryCalc({ capital, riskPct, entryPct, entryPrice, slPrice, brokerage }) {
-      const slPerShare = (entryPrice != null && slPrice != null) ? +(entryPrice - slPrice).toFixed(4) : null;
       const slPctVal = (slPerShare != null && entryPrice) ? slPerShare / entryPrice : null;
       const riskAt1 = capital * riskPct;
       const fullQty = (slPerShare && slPerShare > 0) ? Math.floor(riskAt1 / slPerShare) : null;
@@ -1734,18 +1898,18 @@
           STATE.multiYear = data.multiYear || [];
           STATE.expenses = data.expenses || [];
           STATE.watchlist = (data.watchlist || []).map(normalizeWatchlist);
-          
+
           renderShell();
           loadedCached = true;
         } catch (e) {
           // Ignore parse errors and fall back to loading screen
         }
       }
-      
+
       if (!loadedCached) {
         $('#app').innerHTML = `<div class="loading-screen"><span class="spinner"></span> Loading your journal…</div>`;
       }
-      
+
       try {
         await loadAll();
         renderShell();
@@ -1847,13 +2011,13 @@
       ${n.label}
     </div>`).join('');
       document.querySelectorAll('[data-nav]').forEach(el => {
-        el.onclick = () => { 
+        el.onclick = () => {
           if (el.dataset.nav === 'risk') {
             STATE.prefillPlan = null;
           }
-          STATE.view = el.dataset.nav; 
-          renderShell(); 
-          toggleMobileMenu(false); 
+          STATE.view = el.dataset.nav;
+          renderShell();
+          toggleMobileMenu(false);
         };
       });
 
@@ -1891,20 +2055,6 @@
       renderView();
     }
 
-    function renderTicker(s) {
-      const ret = s.returnPct;
-      const winCls = s.winPct >= 0.5 ? 'up' : 'down';
-      $('#ticker').innerHTML = `
-    <div class="tick"><span class="lbl">Capital</span><span class="val">${fmtRs(s.capital)}</span></div>
-    <div class="tick"><span class="lbl">FY P/L</span><span class="val ${s.realizedPnl >= 0 ? 'up' : 'down'}">${s.realizedPnl >= 0 ? '+' : ''}${fmtRs(s.realizedPnl)}</span></div>
-    <div class="tick"><span class="lbl">Return</span><span class="val ${ret >= 0 ? 'up' : 'down'}">${ret >= 0 ? '+' : ''}${fmtPct(ret)}</span></div>
-    <div class="tick"><span class="lbl">Win Rate</span><span class="val ${winCls}">${fmtPct(s.winPct)}</span></div>
-    <div class="tick"><span class="lbl">Open Positions</span><span class="val flat">${s.openCount}</span></div>
-    <div class="tick"><span class="lbl">Open Risk</span><span class="val flat">${fmtRs(s.openRisk)}</span></div>
-    <div class="tick"><span class="lbl">Risk Budget / Trade</span><span class="val flat">${fmtRs(s.riskBudget)}</span></div>
-  `;
-    }
-
     function renderView() {
       const host = $('#viewHost');
       if (STATE.view === 'overview') return renderOverview(host);
@@ -1937,8 +2087,8 @@
         let res = typeof vA === 'number' ? vA - vB : String(vA).localeCompare(String(vB));
         return mSortDir === 'asc' ? res : -res;
       });
-      const totalExpenses = (STATE.expenses || []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
-      const netPnl = s.realizedPnl - totalExpenses;
+      const netPnl = s.netPnlFY;
+      const totalExpenses = s.expensesFY;
 
       host.innerHTML = `
     <div class="page-head"><div><h1>Overview</h1><p>Portfolio snapshot for FY ${STATE.settings.currentFY || ''}</p></div></div>
@@ -1948,8 +2098,8 @@
         <div class="lbl">Current Capital</div>
         <div class="num">${fmtRs(s.capital)}</div>
         <div class="sub" style="font-size:11.5px; margin-top:4px;">
-          Invested: <span style="color:var(--text);font-family:var(--mono);">${fmtRs(s.opening + capitalAdditionsExcludingOpening())}</span> 
-          · Gain: <span style="color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'};font-family:var(--mono);font-weight:600;">${netPnl >= 0 ? '+' : ''}${fmtRs(netPnl)}</span>
+          Invested: <span style="color:var(--gold);font-family:var(--mono);font-weight:600;">${fmtRs(s.invested)}</span> 
+          · Cash: <span style="color:var(--text);font-family:var(--mono);font-weight:600;">${fmtRs(s.cash)}</span>
         </div>
       </div>
       <div class="card card-pnl">
@@ -2539,29 +2689,29 @@
     function getAvailablePeriods() {
       const months = new Set();
       const years = new Set();
-      
+
       STATE.trades.forEach(t => {
         if (!t.openDate) return;
         const d = new Date(t.openDate);
         if (isNaN(d)) return;
-        
+
         const y = d.getFullYear();
         const m = String(d.getMonth() + 1).padStart(2, '0');
         months.add(y + '-' + m);
-        
+
         const fyStart = (d.getMonth() < 3) ? y - 1 : y;
         years.add(fyStart + '-' + (fyStart + 1));
       });
-      
+
       const sortedMonths = Array.from(months).sort((a, b) => b.localeCompare(a));
       const sortedFYs = Array.from(years).sort((a, b) => b.localeCompare(a));
-      
+
       return { months: sortedMonths, fys: sortedFYs };
     }
 
     function openExportModal() {
       const periods = getAvailablePeriods();
-      
+
       let monthOpts = periods.months.map(m => {
         const parts = m.split('-');
         const y = parts[0];
@@ -2571,7 +2721,7 @@
         return `<option value="${m}">${lbl}</option>`;
       }).join('');
       if (!monthOpts) monthOpts = `<option value="">No months available</option>`;
-      
+
       let fyOpts = periods.fys.map(fy => {
         const parts = fy.split('-');
         const start = parts[0];
@@ -2580,7 +2730,7 @@
         return `<option value="${fy}">${lbl}</option>`;
       }).join('');
       if (!fyOpts) fyOpts = `<option value="">No FY available</option>`;
-      
+
       const today = new Date().toISOString().split('T')[0];
       const startOfVal = new Date();
       startOfVal.setDate(startOfVal.getDate() - 30);
@@ -2640,11 +2790,11 @@
           <button class="btn primary" id="export_run">Download</button>
         </div>
       `;
-      
+
       $('#modalBody').style.maxWidth = '460px';
       $('#modalBody').innerHTML = modalContent;
       $('#modalBg').classList.add('show');
-      
+
       const typeSelect = $('#export_period_type');
       typeSelect.onchange = () => {
         const val = typeSelect.value;
@@ -2692,7 +2842,7 @@
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
-          
+
           toast('Export success!', 'ok');
           closeModal();
         } catch (err) {
@@ -2787,7 +2937,7 @@
         STATE.customWinRateEnd = end;
         localStorage.setItem('tj_custom_win_rate_start', start);
         localStorage.setItem('tj_custom_win_rate_end', end);
-        
+
         closeModal();
         renderShell();
         toast('Custom period applied', 'ok');
@@ -3128,10 +3278,10 @@
         const brokerage = parseFloat($('#f_brokerage').value) || 0;
 
         const c = computeEntryCalc({ capital, riskPct, entryPct, entryPrice: isNaN(entryPrice) ? null : entryPrice, slPrice: isNaN(slPrice) ? null : slPrice, brokerage });
-        
+
         const userQty = parseFloat($('#f_qty').value);
         const qty = !isNaN(userQty) ? userQty : (c.entry1Qty || 0);
-        
+
         const slPerShare = c.slPerShare;
         const posSize = (entryPrice != null) ? Math.round(entryPrice * qty + brokerage) : null;
         const risk = (slPerShare != null) ? Math.round(qty * slPerShare) : null;
@@ -3163,10 +3313,10 @@
         const brokerage = parseFloat($('#f_brokerage').value) || 0;
         const stock = $('#f_stock').value.trim().toUpperCase();
         if (!stock || isNaN(entryPrice) || isNaN(slPrice)) { toast('Stock, entry price and SL price are required', 'err'); return; }
-        
+
         const capital = parseFloat($('#f_cap').value) || cap;
         const c = computeEntryCalc({ capital, riskPct, entryPct, entryPrice, slPrice, brokerage });
-        
+
         const userQty = parseFloat($('#f_qty').value);
         const qty = !isNaN(userQty) ? userQty : (c.entry1Qty || 0);
         const entryAmt = entryPrice && qty ? Math.round(entryPrice * qty + brokerage) : 0;
@@ -3174,7 +3324,7 @@
 
         const e2p = parseFloat($('#f_e2p').value), e2q = parseFloat($('#f_e2q').value);
         const e3p = parseFloat($('#f_e3p').value), e3q = parseFloat($('#f_e3q').value);
-        
+
         const trade = {
           status: 'open', openDate: $('#f_openDate').value, breadth: $('#f_breadth').value || '',
           entryPct, riskPerShare: capital * riskPct * entryPct, stock,
@@ -3414,13 +3564,13 @@
 
           <!-- Extra Tranches -->
           ${Object.keys(extraTranches)
-            .map(Number)
-            .filter(num => num > 6)
-            .sort((a, b) => a - b)
-            .map(num => {
-              const et = extraTranches[num];
-              return buildTrancheRow(num, `T${num}${et.date ? ` (${formatDateDMY(et.date)})` : ''}`, et.price, et.qty);
-            }).join('')}
+          .map(Number)
+          .filter(num => num > 6)
+          .sort((a, b) => a - b)
+          .map(num => {
+            const et = extraTranches[num];
+            return buildTrancheRow(num, `T${num}${et.date ? ` (${formatDateDMY(et.date)})` : ''}`, et.price, et.qty);
+          }).join('')}
         </div>
       </fieldset>
 
@@ -3488,14 +3638,14 @@
         const priceInputs = Array.from(document.querySelectorAll('.edit-buy-price'));
         const qtyInputs = Array.from(document.querySelectorAll('.edit-buy-qty'));
         const tranchesData = {};
-        
+
         priceInputs.forEach(input => {
           const num = parseInt(input.getAttribute('data-tranche'));
           const val = parseFloat(input.value);
           if (!tranchesData[num]) tranchesData[num] = {};
           tranchesData[num].price = isNaN(val) ? null : val;
         });
-        
+
         qtyInputs.forEach(input => {
           const num = parseInt(input.getAttribute('data-tranche'));
           const val = parseInt(input.value);
@@ -3507,7 +3657,7 @@
         let tempTotQty = 0;
         let tempTotAmt = 0;
         let tempExecAmt = 0;
-        
+
         // Tranche 1
         const t1 = tranchesData[1] || {};
         if (t1.price != null && t1.qty) {
@@ -3515,7 +3665,7 @@
           tempTotAmt += Math.round(t1.price * t1.qty + Number(t.brokerage || 0));
           tempExecAmt += t1.price * t1.qty;
         }
-        
+
         // Tranche 2
         const t2 = tranchesData[2] || {};
         if (t2.price != null && t2.qty) {
@@ -3523,7 +3673,7 @@
           tempTotAmt += Math.round(t2.price * t2.qty);
           tempExecAmt += t2.price * t2.qty;
         }
-        
+
         // Tranches 3 and above
         Object.keys(tranchesData)
           .map(Number)
@@ -3536,7 +3686,7 @@
               tempExecAmt += tr.price * tr.qty;
             }
           });
-          
+
         const tempAvgBuy = tempTotQty ? +(tempExecAmt / tempTotQty).toFixed(2) : 0;
 
         // Update read-only inputs in real-time
@@ -3550,7 +3700,7 @@
         const sl = slInput ? parseFloat(slInput.value) || 0 : 0;
         const tsl = tslInput ? parseFloat(tslInput.value) : NaN;
         const activeSL = !isNaN(tsl) && tsl !== 0 ? tsl : sl;
-        
+
         const tempRemainingQty = tempTotQty - totExitQty;
         const tempRealizedCost = totExitQty * tempAvgBuy;
         const tempRealizedPnL = totExitQty > 0 ? Math.round(totExitAmt - tempRealizedCost) : 0;
@@ -3791,14 +3941,14 @@
         const priceInputs = Array.from(document.querySelectorAll('.edit-buy-price'));
         const qtyInputs = Array.from(document.querySelectorAll('.edit-buy-qty'));
         const tranchesData = {};
-        
+
         priceInputs.forEach(input => {
           const num = parseInt(input.getAttribute('data-tranche'));
           const val = parseFloat(input.value);
           if (!tranchesData[num]) tranchesData[num] = {};
           tranchesData[num].price = isNaN(val) ? null : val;
         });
-        
+
         qtyInputs.forEach(input => {
           const num = parseInt(input.getAttribute('data-tranche'));
           const val = parseInt(input.value);
@@ -4202,7 +4352,7 @@
         rSl = STATE.prefillPlan.slPrice != null ? STATE.prefillPlan.slPrice : '';
         rEntryPct = STATE.prefillPlan.entryPct != null ? STATE.prefillPlan.entryPct * 100 : 50;
         rSetup = STATE.prefillPlan.setup || '';
-        
+
         const entryPriceNum = parseFloat(rEntry);
         const slPriceNum = parseFloat(rSl);
         const c = computeEntryCalc({ capital: cap, riskPct, entryPct: rEntryPct / 100, entryPrice: isNaN(entryPriceNum) ? null : entryPriceNum, slPrice: isNaN(slPriceNum) ? null : slPriceNum, brokerage: 0 });
@@ -4427,10 +4577,10 @@
         const slPrice = parseFloat($('#r_sl').value);
         const entryPct = (parseFloat($('#r_entryPct').value) || 0) / 100;
         const c = computeEntryCalc({ capital, riskPct: rp, entryPct: entryPct, entryPrice: isNaN(entryPrice) ? null : entryPrice, slPrice: isNaN(slPrice) ? null : slPrice, brokerage: 0 });
-        
+
         const userQty = parseFloat($('#r_qty').value);
         const qty = !isNaN(userQty) ? userQty : (c.entry1Qty || 0);
-        
+
         const slPerShare = c.slPerShare;
         const posSize = (entryPrice != null) ? Math.round(entryPrice * qty) : null;
         const risk = (slPerShare != null) ? Math.round(qty * slPerShare) : null;
@@ -4459,7 +4609,7 @@
         }
 
         const c = computeEntryCalc({ capital, riskPct: rp, entryPct: entryPct, entryPrice, slPrice, brokerage: 0 });
-        
+
         const userQty = parseFloat($('#r_qty').value);
         const qty = !isNaN(userQty) ? userQty : (c.entry1Qty || 0);
         const posSize = entryPrice && qty ? Math.round(entryPrice * qty) : 0;
@@ -4728,15 +4878,15 @@
       const activeFYLabel = formatFY(STATE.settings.currentFY);
       if (activeFYLabel) {
         const s = overviewStats();
-        const totalExpenses = (STATE.expenses || []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
-        const netPnl = s.realizedPnl - totalExpenses;
+        const netPnl = s.netPnlFY;
 
         // Use dynamic average capital as base
         const avgCapital = calculateActiveYearAverageCapital();
         const returnPct = avgCapital ? (netPnl / avgCapital) * 100 : 0;
 
-        const idx = rows.findIndex(r => r.year === activeFYLabel);
+        const idx = rows.findIndex(r => formatFY(r.year) === activeFYLabel);
         if (idx !== -1) {
+          rows[idx].year = activeFYLabel;
           rows[idx].openingCap = avgCapital;
           rows[idx].pnl = netPnl;
           rows[idx].returnPct = returnPct;
