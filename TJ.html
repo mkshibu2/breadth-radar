@@ -1393,7 +1393,7 @@
     let STATE = {
       trades: [], settings: {}, capitalLog: [], multiYear: [], expenses: [],
       view: 'overview', tradeFilter: 'open', search: '', editingCapitalIndex: null,
-      editingWlIdx: null, livePrices: {},
+      editingWlIdx: null, editingExpenseIndex: null, livePrices: {},
       monthlySort: { col: 'key', dir: 'desc' },
       expenseSort: { col: 'date', dir: 'desc' },
       tradeSort: { col: 'openDate', dir: 'desc' },
@@ -4898,6 +4898,10 @@
       const expSortCol = (STATE.expenseSort && STATE.expenseSort.col) || 'date';
       const expSortDir = (STATE.expenseSort && STATE.expenseSort.dir) || 'desc';
 
+      const editingExp = (STATE.editingExpenseIndex !== null && STATE.expenses && STATE.expenses[STATE.editingExpenseIndex])
+        ? STATE.expenses[STATE.editingExpenseIndex]
+        : null;
+
       const expList = (STATE.expenses || []).map((e, idx) => ({ ...e, _origIdx: idx }));
       expList.sort((a, b) => {
         let vA, vB;
@@ -4916,28 +4920,31 @@
     <div class="page-head"><div><h1>Expenses</h1><p>Log platform fees, subscriptions, and other non-brokerage trading expenses</p></div></div>
     
     <div class="expenses-grid">
-      <!-- Left Column: Log New Expense -->
+      <!-- Left Column: Log New Expense / Edit Expense -->
       <div class="panel" style="padding: 14px; margin-bottom: 0;">
         <div class="panel-head" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
-          <h3 style="margin: 0;">Log New Expense</h3>
-          <button class="btn silver" id="addExpenseBtn" tabindex="4" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);">Save Log</button>
+          <h3 style="margin: 0;">${editingExp ? 'Edit Expense' : 'Log New Expense'}</h3>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            ${editingExp ? `<button class="btn ghost" id="cancelExpenseEditBtn" tabindex="5" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Cancel</button>` : ''}
+            <button class="btn silver" id="addExpenseBtn" tabindex="4" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);">${editingExp ? 'Update Log' : 'Save Log'}</button>
+          </div>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
           <div class="form-two-col">
             <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 80px; text-align: right;">Date:</span>
-              <input type="date" id="e_date" value="${todayISO()}" tabindex="1" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+              <input type="date" id="e_date" value="${editingExp ? editingExp.date : todayISO()}" tabindex="1" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
             <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 80px; text-align: right;">Amount (₹):</span>
-              <input type="number" id="e_amount" placeholder="e.g. 1500" tabindex="2" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+              <input type="number" id="e_amount" value="${editingExp ? editingExp.amount : ''}" placeholder="e.g. 1500" tabindex="2" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
           </div>
 
           <div class="form-row" style="border-top: 1px solid var(--line-soft); padding-top: 10px;">
             <span style="font-size: 12px; color: var(--dim); width: 80px; text-align: right;">Description:</span>
-            <input type="text" id="e_note" placeholder="e.g. Dhan platform charges, journal subscription" tabindex="3" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            <input type="text" id="e_note" value="${editingExp ? (editingExp.note || '') : ''}" placeholder="e.g. Dhan platform charges, journal subscription" tabindex="3" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
         </div>
       </div>
@@ -4953,20 +4960,23 @@
           <table style="width: 100%; min-width: 480px; table-layout: fixed;">
             <thead>
               <tr>
-                <th data-exp-sort="date" style="width:22%; cursor:pointer; user-select:none;">Date ${expSortCol === 'date' ? (expSortDir === 'asc' ? '▲' : '▼') : ''}</th>
-                <th data-exp-sort="amount" style="width:24%; cursor:pointer; user-select:none;">Amount ${expSortCol === 'amount' ? (expSortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                <th data-exp-sort="date" style="width:20%; cursor:pointer; user-select:none;">Date ${expSortCol === 'date' ? (expSortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                <th data-exp-sort="amount" style="width:22%; cursor:pointer; user-select:none;">Amount ${expSortCol === 'amount' ? (expSortDir === 'asc' ? '▲' : '▼') : ''}</th>
                 <th data-exp-sort="note" style="cursor:pointer; user-select:none;">Note / Description ${expSortCol === 'note' ? (expSortDir === 'asc' ? '▲' : '▼') : ''}</th>
-                <th style="width:56px; text-align: right; padding-right: 8px;">Action</th>
+                <th style="width:85px; text-align: right; padding-right: 8px;">Action</th>
               </tr>
             </thead>
             <tbody>
               ${expList.length ? expList.map((e) => `
-                <tr>
+                <tr style="${STATE.editingExpenseIndex === e._origIdx ? 'background: rgba(212, 162, 78, 0.08); border-left: 3px solid var(--gold);' : ''}">
                   <td style="white-space: normal;">${formatDateDMY(e.date)}</td>
                   <td style="color:var(--red); font-weight:600; white-space: normal;">${fmtRs(e.amount)}</td>
                   <td style="font-family:var(--sans); white-space: normal; color: var(--text); word-break: break-word;">${e.note || ''}</td>
                   <td style="text-align: right; padding-right: 4px;">
-                    <button class="btn danger ghost" style="padding: 3px 5px; font-size: 10px; min-height: auto;" onclick="deleteExpenseItem(${e._origIdx})">Del</button>
+                    <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                      <button class="btn ghost" style="padding: 2px 4px; font-size: 10px; min-height: auto;" onclick="editExpenseItem(${e._origIdx})">Edit</button>
+                      <button class="btn danger ghost" style="padding: 2px 4px; font-size: 10px; min-height: auto;" onclick="deleteExpenseItem(${e._origIdx})">Del</button>
+                    </div>
                   </td>
                 </tr>
               `).join('') : `
@@ -4994,6 +5004,16 @@
         };
       });
 
+      if (editingExp) {
+        const cancelBtn = $('#cancelExpenseEditBtn');
+        if (cancelBtn) {
+          cancelBtn.onclick = () => {
+            STATE.editingExpenseIndex = null;
+            renderExpenses(host);
+          };
+        }
+      }
+
       $('#addExpenseBtn').onclick = async () => {
         const amount = parseFloat($('#e_amount').value);
         const date = $('#e_date').value;
@@ -5002,15 +5022,22 @@
           toast('Please enter a valid date and positive amount', 'err');
           return;
         }
-        $('#addExpenseBtn').innerHTML = '<span class="spinner"></span> Saving…';
+        const isEdit = STATE.editingExpenseIndex !== null;
+        $('#addExpenseBtn').innerHTML = `<span class="spinner"></span> ${isEdit ? 'Updating…' : 'Saving…'}`;
         try {
-          await apiPost({ action: 'addExpense', entry: { date, amount, note } });
+          if (isEdit) {
+            await apiPost({ action: 'updateExpense', index: STATE.editingExpenseIndex, entry: { date, amount, note } });
+            STATE.editingExpenseIndex = null;
+            toast('Expense updated successfully', 'ok');
+          } else {
+            await apiPost({ action: 'addExpense', entry: { date, amount, note } });
+            toast('Expense logged successfully', 'ok');
+          }
           await loadAll();
-          toast('Expense logged successfully', 'ok');
           renderShell();
         } catch (err) {
-          toast('Failed to log expense: ' + err.message, 'err');
-          $('#addExpenseBtn').textContent = 'Save Log';
+          toast(`Failed to ${isEdit ? 'update' : 'log'} expense: ` + err.message, 'err');
+          $('#addExpenseBtn').textContent = isEdit ? 'Update Log' : 'Save Log';
         }
       };
 
@@ -5022,10 +5049,21 @@
       });
     }
 
+    function editExpenseItem(index) {
+      STATE.editingExpenseIndex = index;
+      renderShell();
+    }
+    window.editExpenseItem = editExpenseItem;
+
     async function deleteExpenseItem(index) {
       if (!confirm('Are you sure you want to delete this expense?')) return;
       try {
         await apiPost({ action: 'deleteExpense', index: index });
+        if (STATE.editingExpenseIndex === index) {
+          STATE.editingExpenseIndex = null;
+        } else if (STATE.editingExpenseIndex !== null && STATE.editingExpenseIndex > index) {
+          STATE.editingExpenseIndex--;
+        }
         await loadAll();
         toast('Expense deleted', 'ok');
         renderShell();
