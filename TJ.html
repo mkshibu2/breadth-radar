@@ -1355,6 +1355,23 @@
         padding-top: 12px;
       }
     }
+
+    tr.clickable-row:hover {
+      background: rgba(212, 162, 78, 0.08) !important;
+      transition: background 0.15s ease;
+    }
+
+    @keyframes monthGroupGlow {
+      0% { box-shadow: 0 0 0 2px var(--gold); border-color: var(--gold); }
+      50% { box-shadow: 0 0 16px 4px rgba(212, 162, 78, 0.4); border-color: var(--gold); }
+      100% { box-shadow: none; border-color: var(--line); }
+    }
+
+    .highlight-month-group {
+      animation: monthGroupGlow 2.2s ease-in-out;
+      border-color: var(--gold) !important;
+      border-radius: 6px;
+    }
   </style>
 </head>
 
@@ -1738,6 +1755,14 @@
         map[k].pnl -= Number(e.amount || 0);
       });
       return Object.keys(map).sort().map(k => ({ key: k, label: monthLabel(k), ...map[k] }));
+    }
+
+    function navigateToMonthTrades(monthKey) {
+      if (!monthKey) return;
+      STATE.view = 'trades';
+      STATE.tradeFilter = 'pnl';
+      STATE.selectedTradeMonth = monthKey;
+      renderShell();
     }
 
     function overviewStats() {
@@ -2284,8 +2309,8 @@
             <th data-m-sort="pnl" style="cursor:pointer; user-select:none;">P/L ${mSortCol === 'pnl' ? (mSortDir === 'asc' ? '▲' : '▼') : ''}</th>
           </tr></thead>
           <tbody>
-            ${monthlySorted.length ? monthlySorted.map(m => `<tr>
-              <td style="font-family:var(--sans);color:var(--sub);">${m.label}</td>
+            ${monthlySorted.length ? monthlySorted.map(m => `<tr data-month-key="${m.key}" class="clickable-row" style="cursor:pointer;" title="Click to view trade logs for ${m.label}">
+              <td style="font-family:var(--sans);color:var(--sub);font-weight:500;">${m.label} <span style="font-size:10px; color:var(--gold); opacity:0.8; margin-left:3px;">↗</span></td>
               <td>${m.won}</td><td>${m.lost}</td>
               <td style="color:${m.pnl >= 0 ? 'var(--green)' : 'var(--red)'}">${m.pnl >= 0 ? '+' : ''}${fmt(m.pnl)}</td>
             </tr>`).join('') : `<tr><td colspan="4" style="font-family:var(--sans);color:var(--dim);text-align:center;padding:20px;">No closed trades yet</td></tr>`}
@@ -2320,6 +2345,13 @@
               STATE.monthlySort.dir = col === 'key' ? 'desc' : 'desc';
             }
             renderOverview(host);
+          };
+        });
+
+        mTable.querySelectorAll('tbody tr[data-month-key]').forEach(tr => {
+          tr.onclick = () => {
+            const key = tr.dataset.monthKey;
+            if (key) navigateToMonthTrades(key);
           };
         });
       }
@@ -2379,6 +2411,19 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
+          onHover: (event, chartElement) => {
+            if (event.native && event.native.target) {
+              event.native.target.style.cursor = chartElement.length ? 'pointer' : 'default';
+            }
+          },
+          onClick: (event, elements) => {
+            if (elements && elements.length > 0) {
+              const idx = elements[0].index;
+              if (monthly[idx] && monthly[idx].key) {
+                navigateToMonthTrades(monthly[idx].key);
+              }
+            }
+          },
           scales: {
             x: { grid: { color: '#1a212c' }, ticks: { color: '#5b6576' } },
             y: {
@@ -2615,7 +2660,7 @@
         monthTrades.sort((a, b) => (b.closedDate || '').localeCompare(a.closedDate || ''));
 
         return `
-      <div class="month-group" style="margin-bottom: 24px;">
+      <div class="month-group" id="month-group-${key}" style="margin-bottom: 24px; transition: all 0.3s ease;">
         <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:rgba(255,255,255,.02); border:1px solid var(--line); border-radius:6px; margin-bottom:8px; flex-wrap: wrap; gap: 8px;">
           <h3 style="margin:0; font-size:13.5px; color:var(--text); font-weight:600;">${label}</h3>
           <div style="font-size:12px; display:flex; gap:16px; flex-wrap: wrap;">
@@ -3132,6 +3177,22 @@
       $('#tradeTableWrap').querySelectorAll('tr[data-id]').forEach(row => {
         row.onclick = () => openTradeModal(STATE.trades.find(t => t.id === row.dataset.id));
       });
+
+      if (STATE.selectedTradeMonth) {
+        const targetKey = STATE.selectedTradeMonth;
+        setTimeout(() => {
+          const el = document.getElementById('month-group-' + targetKey);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('highlight-month-group');
+            toast(`Showing trade logs for ${monthLabel(targetKey)}`, 'ok');
+            setTimeout(() => el.classList.remove('highlight-month-group'), 2500);
+          } else {
+            toast(`No trade logs found for ${monthLabel(targetKey)}`, 'info');
+          }
+          STATE.selectedTradeMonth = null;
+        }, 120);
+      }
     }
 
     /* =========================================================================
