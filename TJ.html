@@ -4428,6 +4428,14 @@
         <!-- Right Side: Results Metrics List -->
         <div class="metrics-grid">
           <div>
+            <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Cash Available</div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--green); font-family: var(--mono); margin-top: 2px;" id="r_out_cash">—</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Max Buyable Qty</div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--mono); margin-top: 2px;" id="r_out_maxqty">—</div>
+          </div>
+          <div>
             <div style="font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 600;">Risk / Share</div>
             <div style="font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--mono); margin-top: 2px;" id="r_out_slps">—</div>
           </div>
@@ -4590,6 +4598,12 @@
         const posSize = (entryPrice != null) ? Math.round(entryPrice * qty) : null;
         const risk = (slPerShare != null) ? Math.round(qty * slPerShare) : null;
 
+        const stats = overviewStats();
+        const cashAvailable = Math.max(0, capital - (stats.invested || 0));
+        const maxBuyableQty = (!isNaN(entryPrice) && entryPrice > 0 && cashAvailable > 0) ? Math.floor(cashAvailable / entryPrice) : null;
+
+        $('#r_out_cash').textContent = cashAvailable != null ? fmtRs(cashAvailable) : '—';
+        $('#r_out_maxqty').textContent = maxBuyableQty != null ? maxBuyableQty.toLocaleString() : '—';
         $('#r_out_slps').textContent = c.slPerShare != null ? fmt(c.slPerShare) : '—';
         $('#r_out_slpct').textContent = c.slPct != null ? fmtPct(c.slPct) : '—';
         $('#r_out_full').textContent = c.fullQty != null ? c.fullQty : '—';
