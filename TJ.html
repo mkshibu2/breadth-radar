@@ -1823,6 +1823,7 @@
        TRADE MATH  (mirrors JL-N calc sheet logic)
        ========================================================================= */
     function computeEntryCalc({ capital, riskPct, entryPct, entryPrice, slPrice, brokerage }) {
+      const slPerShare = (entryPrice != null && slPrice != null) ? +(entryPrice - slPrice).toFixed(4) : null;
       const slPctVal = (slPerShare != null && entryPrice) ? slPerShare / entryPrice : null;
       const riskAt1 = capital * riskPct;
       const fullQty = (slPerShare && slPerShare > 0) ? Math.floor(riskAt1 / slPerShare) : null;
@@ -3751,10 +3752,14 @@
           if (t.entry5Price) lastEntryPrice = t.entry5Price;
           if (t.entry6Price) lastEntryPrice = t.entry6Price;
 
+          const addPriceEl = $('#m_addPrice');
+          const customPrice = addPriceEl ? parseFloat(addPriceEl.value) : NaN;
+          const planPrice = !isNaN(customPrice) && customPrice > 0 ? customPrice : (lastEntryPrice || '');
+
           STATE.prefillPlan = {
             stock: t.stock,
             slPrice: t.slPrice,
-            entryPrice: lastEntryPrice || '',
+            entryPrice: planPrice,
             entryPct: nextPct,
             setup: t.setup || ''
           };
