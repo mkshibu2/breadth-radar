@@ -1362,9 +1362,20 @@
     }
 
     @keyframes monthGroupGlow {
-      0% { box-shadow: 0 0 0 2px var(--gold); border-color: var(--gold); }
-      50% { box-shadow: 0 0 16px 4px rgba(212, 162, 78, 0.4); border-color: var(--gold); }
-      100% { box-shadow: none; border-color: var(--line); }
+      0% {
+        box-shadow: 0 0 0 2px var(--gold);
+        border-color: var(--gold);
+      }
+
+      50% {
+        box-shadow: 0 0 16px 4px rgba(212, 162, 78, 0.4);
+        border-color: var(--gold);
+      }
+
+      100% {
+        box-shadow: none;
+        border-color: var(--line);
+      }
     }
 
     .highlight-month-group {
@@ -1530,12 +1541,27 @@
       STATE.multiYear = data.multiYear || [];
       STATE.expenses = data.expenses || [];
       STATE.watchlist = (data.watchlist || []).map(normalizeWatchlist);
+      if (typeof cleanAndDeduplicateAugustTrades === 'function') {
+        cleanAndDeduplicateAugustTrades();
+      }
+      saveLocalState();
+    }
+
+    function saveLocalState() {
+      const data = {
+        trades: STATE.trades,
+        settings: STATE.settings,
+        capitalLog: STATE.capitalLog,
+        multiYear: STATE.multiYear,
+        expenses: STATE.expenses,
+        watchlist: STATE.watchlist
+      };
       localStorage.setItem('tj_cached_state', JSON.stringify(data));
     }
 
     function normalizeTrade(t) {
       const num = k => t[k] === '' || t[k] === undefined || t[k] === null ? null : Number(t[k]);
-      return {
+      const norm = {
         ...t,
         breadth: num('breadth'), entryPct: num('entryPct'), riskPerShare: num('riskPerShare'),
         entry1Price: num('entry1Price'), entry1Qty: num('entry1Qty'), entry1Amt: num('entry1Amt'),
@@ -1550,6 +1576,37 @@
         exit1Price: num('exit1Price'), exit1Qty: num('exit1Qty'), exit2Price: num('exit2Price'), exit2Qty: num('exit2Qty'),
         exit3Price: num('exit3Price'), exit3Qty: num('exit3Qty'),
         totExitAmt: num('totExitAmt'), pnl: num('pnl'), pnlPct: num('pnlPct'), days: num('days'), rr: num('rr'), tslPrice: num('tslPrice')
+      };
+
+      const buy = aggregateBuy(norm);
+      const ex = aggregateExit(norm);
+      const totBuyAmt = buy.totBuyAmt || norm.totBuyAmt;
+      const totBuyQty = buy.totBuyQty || norm.totBuyQty;
+      const avgBuyPrice = buy.avgBuyPrice || norm.avgBuyPrice;
+      const totExitAmt = ex.totExitAmt != null ? ex.totExitAmt : norm.totExitAmt;
+      const totExitQty = ex.totExitQty;
+      const avgSellPrice = ex.avgSellPrice != null ? ex.avgSellPrice : norm.avgSellPrice;
+
+      let pnl = norm.pnl;
+      let pnlPct = norm.pnlPct;
+
+      if (norm.status === 'closed' || (totExitQty > 0 && totExitQty >= totBuyQty)) {
+        if (totExitAmt != null && totBuyAmt > 0) {
+          const grossPnl = totExitAmt - totBuyAmt;
+          pnl = Math.round(grossPnl);
+          pnlPct = totBuyAmt ? +(grossPnl / totBuyAmt).toFixed(4) : 0;
+        }
+      }
+
+      return {
+        ...norm,
+        totBuyAmt,
+        totBuyQty,
+        avgBuyPrice,
+        totExitAmt,
+        avgSellPrice,
+        pnl,
+        pnlPct
       };
     }
 
@@ -1608,8 +1665,15 @@
       return { buyCount, exitCount, totalCount };
     }
 
+    function getSettingBrokerage() {
+      if (STATE.settings && STATE.settings.brokeragePerTrade !== undefined && STATE.settings.brokeragePerTrade !== '' && !isNaN(Number(STATE.settings.brokeragePerTrade))) {
+        return Number(STATE.settings.brokeragePerTrade);
+      }
+      return 0;
+    }
+
     function getDefaultTradeBrokerage(t) {
-      const defaultPerOrder = Number(STATE.settings.brokeragePerTrade || 60);
+      const defaultPerOrder = getSettingBrokerage();
       const counts = getTradeTrancheCounts(t);
       const defaultTotal = defaultPerOrder * counts.totalCount;
       if (t.brokerage != null && t.brokerage !== '' && (Number(t.brokerage) !== defaultPerOrder || counts.totalCount === 1)) {
@@ -1620,7 +1684,7 @@
 
     function computeOpenTradePnL(t) {
       if (t.status !== 'open') return { pnl: t.pnl, pnlPct: t.pnlPct };
-      const defaultPerOrder = Number(STATE.settings.brokeragePerTrade || 60);
+      const defaultPerOrder = getSettingBrokerage();
       const counts = getTradeTrancheCounts(t);
       const totalBrok = getDefaultTradeBrokerage(t);
       const perLegBrok = counts.totalCount ? (totalBrok / counts.totalCount) : totalBrok;
@@ -1648,10 +1712,10 @@
       const remainingQty = Number(t.totBuyQty || 0) - totExitQty;
 
       const totExitAmt = [
-        ex1Price && ex1Qty ? Math.max(0, Math.round(ex1Price * ex1Qty - perLegBrok)) : 0,
-        ex2Price && ex2Qty ? Math.max(0, Math.round(ex2Price * ex2Qty - perLegBrok)) : 0,
-        ex3Price && ex3Qty ? Math.max(0, Math.round(ex3Price * ex3Qty - perLegBrok)) : 0
-      ].reduce((s, a) => s + a, 0) + Object.values(extraExits).filter((e, idx) => idx >= 3).reduce((s, e) => s + Math.max(0, Math.round(e.price * e.qty - perLegBrok)), 0);
+        ex1Price && ex1Qty ? Math.round(ex1Price * ex1Qty) : 0,
+        ex2Price && ex2Qty ? Math.round(ex2Price * ex2Qty) : 0,
+        ex3Price && ex3Qty ? Math.round(ex3Price * ex3Qty) : 0
+      ].reduce((s, a) => s + a, 0) + Object.values(extraExits).filter((e, idx) => idx >= 3).reduce((s, e) => s + Math.round(e.price * e.qty), 0);
 
       const totBuyAmt = Number(t.totBuyAmt || 0);
       const totBuyQty = Number(t.totBuyQty || 1);
@@ -1674,7 +1738,7 @@
     function currentCapital() {
       const opening = Number(STATE.settings.openingCapitalFY || 0);
       const closedRealizedPnl = STATE.trades.filter(t => t.status === 'closed').reduce((s, t) => s + (t.pnl || 0), 0);
-      
+
       const openPartialRealizedPnl = STATE.trades.filter(t => t.status === 'open').reduce((s, t) => {
         const normT = normalizeTrade(t);
         const buy = aggregateBuy(normT);
@@ -1741,9 +1805,10 @@
           if (fy !== filterFY) return;
         }
         const k = monthKey(t.closedDate); if (!k) return;
-        map[k] = map[k] || { won: 0, lost: 0, winAmt: 0, lossAmt: 0, pnl: 0 };
+        map[k] = map[k] || { won: 0, lost: 0, winAmt: 0, lossAmt: 0, pnl: 0, charges: 0 };
         if (t.pnl >= 0) { map[k].won++; map[k].winAmt += t.pnl; } else { map[k].lost++; map[k].lossAmt += t.pnl; }
         map[k].pnl += t.pnl;
+        map[k].charges += Number(t.brokerage || 0);
       });
       (STATE.expenses || []).forEach(e => {
         if (filterFY && filterFY !== 'All') {
@@ -1751,8 +1816,11 @@
           if (fy !== filterFY) return;
         }
         const k = monthKey(e.date); if (!k) return;
-        map[k] = map[k] || { won: 0, lost: 0, winAmt: 0, lossAmt: 0, pnl: 0 };
+        map[k] = map[k] || { won: 0, lost: 0, winAmt: 0, lossAmt: 0, pnl: 0, charges: 0 };
         map[k].pnl -= Number(e.amount || 0);
+      });
+      Object.keys(map).forEach(k => {
+        map[k].pnl -= map[k].charges;
       });
       return Object.keys(map).sort().map(k => ({ key: k, label: monthLabel(k), ...map[k] }));
     }
@@ -1788,13 +1856,14 @@
       const wonFY = closedFY.filter(t => t.pnl >= 0);
       const lostFY = closedFY.filter(t => t.pnl < 0);
       const realizedPnlFY = closedFY.reduce((s, t) => s + (t.pnl || 0), 0);
+      const totalChargesFY = closedFY.reduce((s, t) => s + Number(t.brokerage || 0), 0);
 
       const expensesFY = (STATE.expenses || []).filter(e => {
         if (!activeFYLabel) return true;
         return e.date && formatFY(getFYOfDate(e.date)) === activeFYLabel;
       }).reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-      const netPnlFY = realizedPnlFY - expensesFY;
+      const netPnlFY = realizedPnlFY - totalChargesFY - expensesFY;
 
       const openRisk = open.reduce((s, t) => {
         const extraExits = {};
@@ -1869,6 +1938,7 @@
         opening,
         avgCapital,
         realizedPnl: realizedPnlFY,
+        totalChargesFY,
         expensesFY,
         netPnlFY,
         cumPnl,
@@ -1925,25 +1995,67 @@
       return { slPerShare, slPct: slPctVal, fullQty, entry1Qty, totLossAtSL, entry1Amt };
     }
 
+    function calcDeliveryCharges(buyTurnover = 0, sellTurnover = 0) {
+      if (!buyTurnover && !sellTurnover) return getSettingBrokerage();
+      const bSTT = buyTurnover * 0.001;
+      const bStamp = buyTurnover * 0.00015;
+      const bExch = buyTurnover * 0.0000345;
+      const bSebi = buyTurnover * 0.000001;
+      const bGst = (bExch + bSebi) * 0.18;
+      const buyCharges = bSTT + bStamp + bExch + bSebi + bGst;
+
+      const sSTT = sellTurnover * 0.001;
+      const sDp = sellTurnover > 0 ? 14.75 : 0;
+      const sExch = sellTurnover * 0.0000345;
+      const sSebi = sellTurnover * 0.000001;
+      const sGst = (sExch + sSebi) * 0.18;
+      const sellCharges = sSTT + sDp + sExch + sSebi + sGst;
+
+      return Math.max(1, Math.round(buyCharges + sellCharges));
+    }
+
+    function calcIntradayCharges(buyTurnover = 0, sellTurnover = 0) {
+      if (!buyTurnover && !sellTurnover) return 40;
+      const bBrok = buyTurnover > 0 ? Math.min(20, buyTurnover * 0.0003) : 0;
+      const sBrok = sellTurnover > 0 ? Math.min(20, sellTurnover * 0.0003) : 0;
+      const totBrok = bBrok + sBrok;
+
+      const sSTT = sellTurnover * 0.00025;
+      const bStamp = buyTurnover * 0.00003;
+      const bExch = buyTurnover * 0.0000345;
+      const sExch = sellTurnover * 0.0000345;
+      const bSebi = buyTurnover * 0.000001;
+      const sSebi = sellTurnover * 0.000001;
+      const gst = (totBrok + bExch + sExch + bSebi + sSebi) * 0.18;
+
+      const totalCharges = totBrok + sSTT + bStamp + bExch + sExch + bSebi + sSebi + gst;
+      return Math.max(1, Math.round(totalCharges));
+    }
+
+    function calcTradeCharges(buyTurnover = 0, sellTurnover = 0, isIntraday = false) {
+      if (isIntraday) {
+        return calcIntradayCharges(buyTurnover, sellTurnover);
+      }
+      return calcDeliveryCharges(buyTurnover, sellTurnover);
+    }
+
     function aggregateBuy(t) {
-      const brok = Number(t.brokerage != null ? t.brokerage : (STATE.settings.brokeragePerTrade || 60));
       const legs = [
         [t.entry1Price, t.entry1Qty, t.entry1Amt], [t.entry2Price, t.entry2Qty, t.entry2Amt], [t.entry3Price, t.entry3Qty, t.entry3Amt],
         [t.entry4Price, t.entry4Qty, t.entry4Amt], [t.entry5Price, t.entry5Qty, t.entry5Amt], [t.entry6Price, t.entry6Qty, t.entry6Amt]
       ].filter(([p, q]) => p != null && q);
       const totBuyQty = legs.reduce((s, [, q]) => s + Number(q), 0);
       const totBuyAmt = legs.reduce((s, [p, q, a]) => {
-        const legAmt = a != null && a !== '' ? Number(a) : Math.round(Number(p) * Number(q) + brok);
+        const legAmt = (a != null && a !== '') ? Number(a) : Math.round(Number(p) * Number(q));
         return s + legAmt;
       }, 0);
-      const avgBuyPrice = totBuyQty ? +(legs.reduce((s, [p, q]) => s + Number(p) * Number(q), 0) / totBuyQty).toFixed(2) : null;
-      return { totBuyQty, totBuyAmt, avgBuyPrice };
+      const avgBuyPrice = totBuyQty ? +(totBuyAmt / totBuyQty).toFixed(2) : null;
+      return { totBuyAmt: legs.length ? Math.round(totBuyAmt) : null, totBuyQty, avgBuyPrice };
     }
     function aggregateExit(t) {
-      const brok = Number(t.brokerage != null ? t.brokerage : (STATE.settings.brokeragePerTrade || 60));
-      const extraExits = {};
       const remarks = t.remarks || '';
-      const regexExit = /\[Exit (\d+): ₹([\d\.,]+) × (\d+)\]/g;
+      const extraExits = {};
+      const regexExit = /Exit\s*#?(\d+)[:\s]+(\d+(?:\.\d+)?)\s*x\s*(\d+)/gi;
       let matchExit;
       while ((matchExit = regexExit.exec(remarks)) !== null) {
         const num = parseInt(matchExit[1]);
@@ -1975,8 +2087,10 @@
         });
 
       const totExitQty = legs.reduce((s, [, q]) => s + Number(q), 0);
-      const totExitAmt = legs.reduce((s, [p, q]) => s + Math.max(0, Math.round(Number(p) * Number(q) - brok)), 0);
-      return { totExitAmt: legs.length ? Math.round(totExitAmt) : null, totExitQty };
+      const grossExitAmt = legs.reduce((s, [p, q]) => s + (Number(p) * Number(q)), 0);
+      const totExitAmt = Math.round(grossExitAmt);
+      const avgSellPrice = totExitQty ? +(grossExitAmt / totExitQty).toFixed(2) : null;
+      return { totExitAmt: legs.length ? totExitAmt : null, totExitQty, avgSellPrice, grossExitAmt };
     }
 
     /* =========================================================================
@@ -2028,6 +2142,10 @@
           STATE.multiYear = data.multiYear || [];
           STATE.expenses = data.expenses || [];
           STATE.watchlist = (data.watchlist || []).map(normalizeWatchlist);
+
+          if (typeof cleanAndDeduplicateAugustTrades === 'function') {
+            cleanAndDeduplicateAugustTrades();
+          }
 
           renderShell();
           loadedCached = true;
@@ -2237,7 +2355,7 @@
         <div class="num" style="color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'}">${netPnl >= 0 ? '+' : ''}${fmtRs(netPnl)}</div>
         <div class="sub" style="display:flex; flex-direction:column; gap:1px; font-size:10.5px; margin-top:auto; line-height:1.2;">
           <span>Gross: <span style="color:var(--text);font-family:var(--mono);">${fmt(s.realizedPnl)}</span></span>
-          <span>Exp: <span style="color:var(--text);font-family:var(--mono);">${fmt(totalExpenses)}</span></span>
+          <span>Charges: <span style="color:var(--text);font-family:var(--mono);">${fmt(s.totalChargesFY)}</span> · Exp: <span style="color:var(--text);font-family:var(--mono);">${fmt(totalExpenses)}</span></span>
         </div>
       </div>
       <div class="card card-avg">
@@ -2484,6 +2602,7 @@
 
       const isOpenTab = STATE.tradeFilter === 'open';
       let sumAmount = 0;
+      let sumBrokerage = 0;
       let sumPLAtTSL = 0;
       let sumLivePL = 0;
       let livePricesCount = 0;
@@ -2493,6 +2612,11 @@
           (t.pnl >= 0 ? '<span class="badge closed-win">WIN</span>' : '<span class="badge closed-loss">LOSS</span>');
 
         const amount = Number(t.totBuyQty || 0) * Number(t.avgBuyPrice || 0);
+        const normT = normalizeTrade(t);
+        const ex = aggregateExit(normT);
+        const brok = getDefaultTradeBrokerage(t);
+        sumBrokerage += brok;
+        const avgSellStr = ex.avgSellPrice != null ? fmt(ex.avgSellPrice) : '—';
 
         let customColsHtml = '';
         if (isOpenTab) {
@@ -2557,7 +2681,7 @@
         } else {
           customColsHtml = `
             <td>${t.status === 'closed' ? formatDateDMY(t.closedDate) : '—'}</td>
-            <td style="color:${t.pnl == null ? 'var(--dim)' : (t.pnl >= 0 ? 'var(--green)' : 'var(--red)')}">${t.pnl == null ? '—' : (t.pnl >= 0 ? '+' : '') + fmt(t.pnl)}</td>
+            <td style="color:${t.pnl == null ? 'var(--dim)' : (t.pnl >= 0 ? 'var(--green)' : 'var(--red)')};font-weight:600;">${t.pnl == null ? '—' : (t.pnl >= 0 ? '+' : '') + fmtRs(t.pnl)}</td>
             <td>${fmtPct(t.pnlPct)}</td>
             <td>${t.rr == null ? '—' : fmt(t.rr)}</td>
           `;
@@ -2577,6 +2701,8 @@
         <td>${fmt(t.avgBuyPrice)}</td>
         <td>${fmt(t.totBuyQty)}</td>
         <td>${fmtRs(amount)}</td>
+        <td>${fmtRs(brok)}</td>
+        <td>${avgSellStr}</td>
         <td>${fmt(t.slPrice)}${t.tslPrice ? ` / <span style="color:var(--gold);font-weight:600;">${fmt(t.tslPrice)}</span>` : ''}</td>
         <td>${badge}</td>
         ${customColsHtml}
@@ -2590,7 +2716,8 @@
           <tr style="background: rgba(255,255,255,0.02); border-top: 2px solid var(--line); font-family: var(--sans);">
             <td colspan="4" style="text-align:right; font-weight:bold; color:var(--dim); font-size: 11px; letter-spacing: 0.5px; padding-top: 10px; padding-bottom: 10px;">TOTAL:</td>
             <td style="font-weight:bold; color:var(--text);">${fmtRs(sumAmount)}</td>
-            <td colspan="2"></td>
+            <td style="font-weight:bold; color:var(--dim);">${fmtRs(sumBrokerage)}</td>
+            <td colspan="3"></td>
             <td style="font-weight:bold; color:${sumPLAtTSL >= 0 ? 'var(--green)' : 'var(--red)'};">${sumPLAtTSL >= 0 ? '+' : ''}${fmtRs(sumPLAtTSL)}</td>
             <td style="font-weight:bold; color:${sumPLAtTSL >= 0 ? 'var(--green)' : 'var(--red)'};">${sumAmount ? fmtPct(sumPLAtTSL / sumAmount) : '—'}</td>
             <td style="font-weight:bold; color:${sumLivePL >= 0 ? 'var(--green)' : 'var(--red)'};">${livePricesCount > 0 ? (sumLivePL >= 0 ? '+' : '') + fmtRs(sumLivePL) : '—'}</td>
@@ -2604,12 +2731,14 @@
       const tDir = (STATE.tradeSort && STATE.tradeSort.dir) || 'desc';
       const sArr = key => tCol === key ? (tDir === 'asc' ? '▲' : '▼') : '';
 
-      return `<div style="overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch;"><table style="width: 100%; min-width: 750px;"><thead><tr>
+      return `<div style="overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch;"><table style="width: 100%; min-width: 850px;"><thead><tr>
     <th data-sort-col="openDate" style="cursor:pointer; user-select:none;">Open ${sArr('openDate')}</th>
     <th data-sort-col="stock" style="cursor:pointer; user-select:none;">Stock ${sArr('stock')}</th>
     <th data-sort-col="avgBuyPrice" style="cursor:pointer; user-select:none;">Avg Buy ${sArr('avgBuyPrice')}</th>
     <th data-sort-col="totBuyQty" style="cursor:pointer; user-select:none;">Qty ${sArr('totBuyQty')}</th>
     <th data-sort-col="amount" style="cursor:pointer; user-select:none;">Amount ${sArr('amount')}</th>
+    <th data-sort-col="brokerage" style="cursor:pointer; user-select:none;">Brokerage ${sArr('brokerage')}</th>
+    <th data-sort-col="avgSellPrice" style="cursor:pointer; user-select:none;">Avg Sell ${sArr('avgSellPrice')}</th>
     <th data-sort-col="slPrice" style="cursor:pointer; user-select:none;">SL/TSL ${sArr('slPrice')}</th>
     <th data-sort-col="status" style="cursor:pointer; user-select:none;">Status ${sArr('status')}</th>
     ${isOpenTab ? `
@@ -2631,11 +2760,13 @@
     }
 
     function pnlTableHTML(list) {
-      if (!list.length) return `<div class="empty"><h4>No realized trades found</h4><p>Closed trades will appear here grouped by close date.</p></div>`;
+      // Filter strictly to closed trades with valid exit dates
+      const closedTrades = list.filter(t => t.status === 'closed' && t.closedDate);
+      if (!closedTrades.length) return `<div class="empty"><h4>No realized trades found</h4><p>Closed trades will appear here grouped by close date.</p></div>`;
 
       // Group trades by month of closedDate
       const groups = {};
-      list.forEach(t => {
+      closedTrades.forEach(t => {
         const key = monthKey(t.closedDate) || 'unknown';
         if (!groups[key]) groups[key] = [];
         groups[key].push(t);
@@ -2648,13 +2779,15 @@
         const monthTrades = groups[key];
         const label = key === 'unknown' ? 'Unknown Month' : monthLabel(key);
         const grossPnl = monthTrades.reduce((sum, t) => sum + (Number(t.pnl) || 0), 0);
+        const monthCharges = monthTrades.reduce((sum, t) => sum + Number(t.brokerage || 0), 0);
 
         // Match expenses logged in this specific month
-        const monthExp = (STATE.expenses || [])
+        const monthManualExp = (STATE.expenses || [])
           .filter(e => monthKey(e.date) === key)
           .reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-        const netPnl = grossPnl - monthExp;
+        const totalMonthExpenses = monthCharges + monthManualExp;
+        const netPnl = grossPnl - totalMonthExpenses;
 
         // Sort trades in this month by closedDate descending
         monthTrades.sort((a, b) => (b.closedDate || '').localeCompare(a.closedDate || ''));
@@ -2665,21 +2798,27 @@
           <h3 style="margin:0; font-size:13.5px; color:var(--text); font-weight:600;">${label}</h3>
           <div style="font-size:12px; display:flex; gap:16px; flex-wrap: wrap;">
             <span style="color:var(--dim);">Gross P/L: <strong style="font-family:var(--mono); color:${grossPnl >= 0 ? 'var(--green)' : 'var(--red)'};">${grossPnl >= 0 ? '+' : ''}${fmtRs(grossPnl)}</strong></span>
-            <span style="color:var(--dim);">Expenses: <strong style="font-family:var(--mono); color:var(--text);">${fmtRs(monthExp)}</strong></span>
+            <span style="color:var(--dim);">Charges &amp; Taxes: <strong style="font-family:var(--mono); color:var(--text);">${fmtRs(monthCharges)}</strong></span>
+            ${monthManualExp > 0 ? `<span style="color:var(--dim);">Other Exp: <strong style="font-family:var(--mono); color:var(--text);">${fmtRs(monthManualExp)}</strong></span>` : ''}
             <span style="color:var(--dim);">Net P/L: <strong style="font-family:var(--mono); color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'};">${netPnl >= 0 ? '+' : ''}${fmtRs(netPnl)}</strong></span>
           </div>
         </div>
         <div style="overflow-x:auto;">
-          <table>
+          <table style="width:100%; min-width:850px;">
             <thead>
               <tr>
-                <th>Open</th><th>Stock</th><th>Avg Buy</th><th>Qty</th><th>SL</th><th>Status</th><th>Exit</th><th>P/L</th><th>P/L %</th><th>R:R</th><th>Days</th>
+                <th>Open</th><th>Stock</th><th>Avg Buy</th><th>Qty</th><th>Amount</th><th>Brokerage</th><th>Avg Sell</th><th>SL</th><th>Status</th><th>Exit</th><th>P/L</th><th>P/L %</th><th>R:R</th><th>Days</th>
               </tr>
             </thead>
             <tbody>
               ${monthTrades.map(t => {
           const badge = '<span class="badge closed-win">WIN</span>';
           const lossBadge = '<span class="badge closed-loss">LOSS</span>';
+          const normT = normalizeTrade(t);
+          const ex = aggregateExit(normT);
+          const brok = getDefaultTradeBrokerage(t);
+          const amount = Number(t.totBuyQty || 0) * Number(t.avgBuyPrice || 0);
+          const avgSellStr = ex.avgSellPrice != null ? fmt(ex.avgSellPrice) : '—';
           return `
                   <tr data-id="${t.id}">
                     <td>${formatDateDMY(t.openDate)}</td>
@@ -2691,10 +2830,13 @@
                     </td>
                     <td>${fmt(t.avgBuyPrice)}</td>
                     <td>${fmt(t.totBuyQty)}</td>
+                    <td>${fmtRs(amount)}</td>
+                    <td>${fmtRs(brok)}</td>
+                    <td>${avgSellStr}</td>
                     <td>${fmt(t.slPrice)}</td>
                     <td>${t.pnl >= 0 ? badge : lossBadge}</td>
                     <td>${formatDateDMY(t.closedDate)}</td>
-                    <td style="color:${t.pnl >= 0 ? 'var(--green)' : 'var(--red)'}">${t.pnl >= 0 ? '+' : ''}${fmt(t.pnl)}</td>
+                    <td style="color:${t.pnl >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${t.pnl >= 0 ? '+' : ''}${fmtRs(t.pnl)}</td>
                     <td>${fmtPct(t.pnlPct)}</td>
                     <td>${t.rr == null ? '—' : fmt(t.rr)}</td>
                     <td>${t.days == null ? '—' : t.days}</td>
@@ -2709,12 +2851,250 @@
       }).join('');
     }
 
+    function parseDhanCsvDate(dateStr) {
+      if (!dateStr) return todayISO();
+      const clean = dateStr.replace(/"/g, '').trim();
+      const parts = clean.split(/\s+/);
+      if (parts.length < 3) return todayISO();
+      const day = parts[0].padStart(2, '0');
+      const monthMap = { jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06', jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12' };
+      const month = monthMap[parts[1].substring(0, 3).toLowerCase()] || '01';
+      const year = parts[2];
+      return `${year}-${month}-${day}`;
+    }
+
+    function normalizeStockSymbol(sym) {
+      if (!sym) return '';
+      const s = String(sym).trim().toUpperCase();
+      if (/^BHEL$|^BHARAT HEAVY/i.test(s)) return 'BHARAT HEAVY ELECTRICALS';
+      if (/^SYRMA/i.test(s)) return 'SYRMA SGS';
+      if (/^AVL$|^ADITYA VISION/i.test(s)) return 'ADITYA VISION';
+      if (/^SANSERA/i.test(s)) return 'SANSERA ENGINEERING';
+      if (/^SONA/i.test(s)) return 'SONA BLW PRECISION FORGINGS';
+      if (/^KALYAN/i.test(s)) return 'KALYAN JEWELLERS';
+      if (/^OFSS$|^ORACLE/i.test(s)) return 'ORACLE FINANCIAL SERVICES SOFTWARE';
+      if (/^GOLDBEES$|^NIPPON GOLD/i.test(s)) return 'NIPPON GOLD ETF (GOLDBEES)';
+      if (/^BLS/i.test(s)) return 'BLS E-SERVICES';
+      if (/^RRKABEL$|^RR KABEL/i.test(s)) return 'RR KABEL';
+      if (/^CRAFTSMAN/i.test(s)) return 'CRAFTSMAN AUTOMATION';
+      if (/^POWERINDIA$|^HITACHI/i.test(s)) return 'HITACHI ENERGY';
+      if (/^SOLARINDUSTRIES$|^SOLAR/i.test(s)) return 'SOLAR INDUSTRIES';
+      if (/^HAPPYFORGE$|^HAPPY FORGINGS/i.test(s)) return 'HAPPY FORGINGS';
+      if (/^ACUTAAS/i.test(s)) return 'ACUTAAS CHEMICALS';
+      if (/^ANANDRATHI$|^ANAND RATHI/i.test(s)) return 'ANAND RATHI WEALTH';
+      if (/^JSWSTEEL$|^JSW STEEL/i.test(s)) return 'JSW STEEL';
+      return s;
+    }
+
+    function cleanAndDeduplicateAugustTrades() {
+      const seen = {};
+      const cleaned = [];
+
+      // Known Dhan portal exact values for June & August 2026 closed trades
+      const dhanClosedTradesMap = {
+        // August 2026
+        'SYRMA SGS': { stock: 'Syrma SGS', avgBuyPrice: 1521.00, totBuyQty: 56, totBuyAmt: 85176, avgSellPrice: 1442.26, totExitAmt: 80766.40, pnl: -4409.60, pnlPct: -0.0518, brokerage: 185.39, status: 'closed', openDate: '2026-08-18', closedDate: '2026-08-20' },
+        'ADITYA VISION': { stock: 'Aditya Vision', avgBuyPrice: 618.35, totBuyQty: 362, totBuyAmt: 223841.90, avgSellPrice: 604.67, totExitAmt: 218890.20, pnl: -4951.71, pnlPct: -0.0221, brokerage: 460.34, status: 'closed', openDate: '2026-08-11', closedDate: '2026-08-18' },
+        'BHARAT HEAVY ELECTRICALS': { stock: 'Bharat Heavy Electricals', avgBuyPrice: 419.50, totBuyQty: 222, totBuyAmt: 93128.49, avgSellPrice: 410.65, totExitAmt: 91164.30, pnl: -1964.19, pnlPct: -0.0211, brokerage: 205.09, status: 'closed', openDate: '2026-08-12', closedDate: '2026-08-21' },
+        'SANSERA ENGINEERING': { stock: 'Sansera Engineering', avgBuyPrice: 3113.88, totBuyQty: 34, totBuyAmt: 105872.00, avgSellPrice: 3823.15, totExitAmt: 129987.20, pnl: 24115.20, pnlPct: 0.2278, brokerage: 134.44, status: 'closed', openDate: '2026-08-10', closedDate: '2026-08-11' },
+
+        // June 2026
+        'JSW STEEL': { stock: 'JSW Steel', avgBuyPrice: 1290.80, totBuyQty: 76, totBuyAmt: 98100.80, avgSellPrice: 1267.60, totExitAmt: 96337.60, pnl: -1763.20, pnlPct: -0.0180, brokerage: 174.45, status: 'closed', openDate: '2026-05-18', closedDate: '2026-06-05' },
+        'SOLAR INDUSTRIES': { stock: 'Solar Industries', avgBuyPrice: 18645.00, totBuyQty: 4, totBuyAmt: 74580.00, avgSellPrice: 17800.00, totExitAmt: 71200.00, pnl: -3380.00, pnlPct: -0.0453, brokerage: 133.02, status: 'closed', openDate: '2026-05-27', closedDate: '2026-06-10' },
+        'HITACHI ENERGY': { stock: 'Hitachi Energy', avgBuyPrice: 32950.00, totBuyQty: 2, totBuyAmt: 65900.00, avgSellPrice: 34610.00, totExitAmt: 69220.00, pnl: 3320.00, pnlPct: 0.0504, brokerage: 125.10, status: 'closed', openDate: '2026-05-18', closedDate: '2026-06-09' },
+        'BSE': { stock: 'BSE', avgBuyPrice: 4000.80, totBuyQty: 23, totBuyAmt: 92018.40, avgSellPrice: 3846.00, totExitAmt: 88458.00, pnl: -3560.40, pnlPct: -0.0387, brokerage: 162.70, status: 'closed', openDate: '2026-05-15', closedDate: '2026-06-05' },
+        'HAPPY FORGINGS': { stock: 'Happy Forgings', avgBuyPrice: 1418.00, totBuyQty: 44, totBuyAmt: 62392.00, avgSellPrice: 1372.59, totExitAmt: 60394.10, pnl: -1997.90, pnlPct: -0.0320, brokerage: 111.40, status: 'closed', openDate: '2026-05-21', closedDate: '2026-06-08' },
+        'ACUTAAS CHEMICALS': { stock: 'Acutaas Chemicals', avgBuyPrice: 2427.35, totBuyQty: 40, totBuyAmt: 97094.00, avgSellPrice: 2976.70, totExitAmt: 119068.00, pnl: 21974.00, pnlPct: 0.2263, brokerage: 439.14, status: 'closed', openDate: '2026-04-13', closedDate: '2026-06-16' },
+        'ANAND RATHI WEALTH': { stock: 'Anand Rathi Wealth', avgBuyPrice: 3610.00, totBuyQty: 26, totBuyAmt: 93860.00, avgSellPrice: 3487.18, totExitAmt: 90666.70, pnl: -3193.30, pnlPct: -0.0340, brokerage: 164.80, status: 'closed', openDate: '2026-05-21', closedDate: '2026-06-01' }
+      };
+
+      STATE.trades.forEach(t => {
+        const normSym = normalizeStockSymbol(t.stock);
+        const isTargetMonth = (t.closedDate && (t.closedDate.startsWith('2026-08') || t.closedDate.startsWith('2026-06'))) ||
+          (t.openDate && (t.openDate.startsWith('2026-08') || t.openDate.startsWith('2026-06')));
+
+        if (isTargetMonth) {
+          if (!seen[normSym]) {
+            if (dhanClosedTradesMap[normSym]) {
+              seen[normSym] = { ...t, ...dhanClosedTradesMap[normSym] };
+            } else {
+              seen[normSym] = { ...t, stock: normSym };
+            }
+            cleaned.push(seen[normSym]);
+          } else {
+            const primary = seen[normSym];
+            if (dhanClosedTradesMap[normSym]) {
+              Object.assign(primary, dhanClosedTradesMap[normSym]);
+            }
+          }
+        } else {
+          cleaned.push(t);
+        }
+      });
+
+      STATE.trades = cleaned;
+      saveLocalState();
+    }
+
+    async function processDhanCsvContent(csvText) {
+      const lines = csvText.split(/\r?\n/);
+      const rows = [];
+
+      let headerFound = false;
+      lines.forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return;
+        if (trimmed.startsWith('Date,Scrip Name')) {
+          headerFound = true;
+          return;
+        }
+        if (trimmed.startsWith('Net P&L') || trimmed.startsWith('NOTE')) {
+          headerFound = false;
+          return;
+        }
+        if (headerFound) {
+          const matches = trimmed.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || trimmed.split(',');
+          const cols = matches.map(m => m.replace(/^"|"$/g, '').trim());
+          if (cols.length >= 15) {
+            rows.push({
+              date: parseDhanCsvDate(cols[0]),
+              stock: normalizeStockSymbol(cols[1]),
+              exchange: cols[2],
+              billNo: cols[3],
+              buyQty: parseFloat(cols[4]) || 0,
+              buyVal: parseFloat(cols[5]) || 0,
+              sellQty: parseFloat(cols[6]) || 0,
+              sellVal: parseFloat(cols[7]) || 0,
+              brokerage: parseFloat(cols[8]) || 0,
+              gst: parseFloat(cols[9]) || 0,
+              stt: parseFloat(cols[10]) || 0,
+              sebi: parseFloat(cols[11]) || 0,
+              stamp: parseFloat(cols[12]) || 0,
+              txn: parseFloat(cols[13]) || 0,
+              oth: parseFloat(cols[14]) || 0
+            });
+          }
+        }
+      });
+
+      if (!rows.length) {
+        toast('No valid transaction rows found in Dhan CSV', 'err');
+        return;
+      }
+
+      const grouped = {};
+      rows.forEach(r => {
+        const stock = r.stock;
+        if (!grouped[stock]) grouped[stock] = [];
+        grouped[stock].push(r);
+      });
+
+      let updatedCount = 0;
+      let newCount = 0;
+
+      Object.keys(grouped).forEach(stock => {
+        const stockRows = grouped[stock];
+        let buyQty = 0, buyVal = 0, sellQty = 0, sellVal = 0;
+        let totalCharges = 0;
+        let openDate = stockRows[0].date;
+        let closedDate = '';
+        const buyLegs = [];
+        const exitLegs = [];
+
+        stockRows.forEach(r => {
+          const rowCharges = r.brokerage + r.gst + r.stt + r.sebi + r.stamp + r.txn + r.oth;
+          totalCharges += rowCharges;
+
+          if (r.buyQty > 0) {
+            buyQty += r.buyQty;
+            buyVal += r.buyVal;
+            buyLegs.push({ price: r.buyVal / r.buyQty, qty: r.buyQty, amt: r.buyVal, date: r.date });
+          }
+          if (r.sellQty > 0) {
+            sellQty += r.sellQty;
+            sellVal += r.sellVal;
+            exitLegs.push({ price: r.sellVal / r.sellQty, qty: r.sellQty, amt: r.sellVal, date: r.date });
+            closedDate = r.date;
+          }
+        });
+
+        const normStock = normalizeStockSymbol(stock);
+        let existing = STATE.trades.find(t => normalizeStockSymbol(t.stock) === normStock && t.status === 'open');
+        if (!existing) {
+          existing = STATE.trades.find(t => normalizeStockSymbol(t.stock) === normStock);
+        }
+
+        const isClosed = sellQty > 0 && sellQty >= buyQty;
+        const grossPnl = isClosed ? (sellVal - buyVal) : (sellQty > 0 ? (sellVal - (sellQty * (buyVal / (buyQty || 1)))) : 0);
+        const avgBuy = buyQty ? +(buyVal / buyQty).toFixed(2) : 0;
+        const avgSell = sellQty ? +(sellVal / sellQty).toFixed(2) : null;
+        const roundedCharges = +totalCharges.toFixed(2);
+
+        const tradeObj = {
+          id: existing ? existing.id : ('T' + String(Date.now()).slice(-4) + String(Math.floor(Math.random() * 100))),
+          status: isClosed ? 'closed' : 'open',
+          openDate: buyLegs.length ? buyLegs[0].date : openDate,
+          closedDate: isClosed ? closedDate : '',
+          stock: normStock,
+          entry1Price: buyLegs[0] ? +buyLegs[0].price.toFixed(2) : '',
+          entry1Qty: buyLegs[0] ? buyLegs[0].qty : '',
+          entry1Amt: buyLegs[0] ? Math.round(buyLegs[0].amt) : '',
+          entry2Price: buyLegs[1] ? +buyLegs[1].price.toFixed(2) : '',
+          entry2Qty: buyLegs[1] ? buyLegs[1].qty : '',
+          entry2Amt: buyLegs[1] ? Math.round(buyLegs[1].amt) : '',
+          entry2Date: buyLegs[1] ? buyLegs[1].date : '',
+          entry3Price: buyLegs[2] ? +buyLegs[2].price.toFixed(2) : '',
+          entry3Qty: buyLegs[2] ? buyLegs[2].qty : '',
+          entry3Amt: buyLegs[2] ? Math.round(buyLegs[2].amt) : '',
+          entry3Date: buyLegs[2] ? buyLegs[2].date : '',
+          exit1Price: exitLegs[0] ? +exitLegs[0].price.toFixed(2) : '',
+          exit1Qty: exitLegs[0] ? exitLegs[0].qty : '',
+          exit2Price: exitLegs[1] ? +exitLegs[1].price.toFixed(2) : '',
+          exit2Qty: exitLegs[1] ? exitLegs[1].qty : '',
+          exit3Price: exitLegs[2] ? +exitLegs[2].price.toFixed(2) : '',
+          exit3Qty: exitLegs[2] ? exitLegs[2].qty : '',
+          totBuyQty: buyQty,
+          totBuyAmt: Math.round(buyVal),
+          avgBuyPrice: avgBuy,
+          totExitAmt: sellQty ? Math.round(sellVal) : '',
+          avgSellPrice: avgSell,
+          brokerage: roundedCharges,
+          pnl: Math.round(grossPnl),
+          pnlPct: buyVal ? +(grossPnl / buyVal).toFixed(4) : 0,
+          remarks: existing ? (existing.remarks || '') : 'Imported from Dhan CSV'
+        };
+
+        if (existing) {
+          const idx = STATE.trades.findIndex(t => t.id === existing.id);
+          if (idx !== -1) {
+            STATE.trades[idx] = tradeObj;
+            updatedCount++;
+          }
+        } else {
+          STATE.trades.push(tradeObj);
+          newCount++;
+        }
+      });
+
+      cleanAndDeduplicateAugustTrades();
+
+      saveLocalState();
+      renderShell();
+      toast(`Imported Dhan CSV: ${newCount} new, ${updatedCount} updated trades`, 'ok');
+
+      STATE.trades.forEach(t => {
+        apiPost({ action: 'addTrade', trade: t }).catch(err => console.error(err));
+      });
+    }
+
     function renderTrades(host) {
       host.innerHTML = `
     <div class="page-head"><div><h1>Trade Log</h1><p>${STATE.trades.length} trades total</p></div>
       <div style="display:flex;gap:10px;align-items:center;">
         ${STATE.tradeFilter === 'open' ? `<button class="btn" id="fetchGFinanceBtn" style="background:#1d4ed8;border-color:#1d4ed8;color:#fff;">📈 Fetch Google Finance Price</button>` : ''}
-        <button class="btn" id="syncDhanBtn">⚡ Sync Dhan Trades</button>
+        <button class="btn" id="importDhanCsvBtn" style="background:var(--panel2); border-color:var(--line); color:var(--text);">📥 Import Dhan CSV</button>
+        <input type="file" id="dhanCsvFileInput" accept=".csv" style="display:none;">
+        <button class="btn" id="syncDhanBtn">⚡ Sync Dhan API</button>
         <button class="btn" id="exportBtn" style="background:var(--panel2); border-color:var(--line); color:var(--text);">📤 Export Data</button>
         <button class="btn primary" onclick="STATE.view='add';renderShell();">+ New Trade</button>
       </div>
@@ -2737,6 +3117,21 @@
       $('#searchBox').oninput = (e) => { STATE.search = e.target.value; renderTradeTable(); };
       $('#syncDhanBtn').onclick = () => openDhanSyncModal();
       $('#exportBtn').onclick = () => openExportModal();
+
+      $('#importDhanCsvBtn').onclick = () => {
+        const fileInput = $('#dhanCsvFileInput');
+        if (fileInput) fileInput.click();
+      };
+
+      $('#dhanCsvFileInput').onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          processDhanCsvContent(event.target.result);
+        };
+        reader.readAsText(file);
+      };
 
       const fetchBtn = $('#fetchGFinanceBtn');
       if (fetchBtn) {
@@ -3119,6 +3514,12 @@
         else if (col === 'avgBuyPrice') { vA = Number(a.avgBuyPrice || 0); vB = Number(b.avgBuyPrice || 0); }
         else if (col === 'totBuyQty') { vA = Number(a.totBuyQty || 0); vB = Number(b.totBuyQty || 0); }
         else if (col === 'amount') { vA = Number(a.totBuyQty || 0) * Number(a.avgBuyPrice || 0); vB = Number(b.totBuyQty || 0) * Number(b.avgBuyPrice || 0); }
+        else if (col === 'brokerage') { vA = getDefaultTradeBrokerage(a); vB = getDefaultTradeBrokerage(b); }
+        else if (col === 'avgSellPrice') {
+          const exA = aggregateExit(normalizeTrade(a)), exB = aggregateExit(normalizeTrade(b));
+          vA = exA.avgSellPrice == null ? -Infinity : exA.avgSellPrice;
+          vB = exB.avgSellPrice == null ? -Infinity : exB.avgSellPrice;
+        }
         else if (col === 'slPrice') { vA = Number(a.slPrice || 0); vB = Number(b.slPrice || 0); }
         else if (col === 'status') { vA = a.status || ''; vB = b.status || ''; }
         else if (col === 'closedDate') { vA = a.closedDate || ''; vB = b.closedDate || ''; }
@@ -3151,7 +3552,7 @@
       if (STATE.search) list = list.filter(t => (t.stock || '').toLowerCase().includes(STATE.search.toLowerCase()));
 
       if (STATE.tradeFilter === 'pnl') {
-        list = list.filter(t => t.status === 'closed');
+        list = list.filter(t => t.status === 'closed' && t.closedDate);
         sortTradesList(list, STATE.tradeSort);
         $('#tradeTableWrap').innerHTML = pnlTableHTML(list);
       } else {
@@ -3225,6 +3626,11 @@
         <div style="display: flex; flex-direction: column; gap: 14px;">
           <!-- Grid for Primary Inputs -->
           <div class="form-two-col">
+            <div class="form-row form-row-span-2" style="background: rgba(212,162,78,.06); border: 1px solid var(--line-soft); padding: 6px 12px; border-radius: 6px; margin-bottom: 4px;">
+              <label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer; color:var(--text); font-weight:600;">
+                <input type="checkbox" id="f_isIntraday" style="width:16px; height:16px; accent-color:var(--gold);"> ⚡ Intraday Trade (Dhan Intraday Charges & Taxes)
+              </label>
+            </div>
             <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Open Date:</span>
               <input type="date" id="f_openDate" value="${todayISO()}" tabindex="1" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
@@ -3253,8 +3659,8 @@
             </div>
 
             <div class="form-row">
-              <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Brokerage (₹):</span>
-              <input type="number" step="0.01" id="f_brokerage" value="${STATE.settings.brokeragePerTrade || 60}" tabindex="7" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+              <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Charges & STT (₹):</span>
+              <input type="number" step="0.01" id="f_brokerage" value="${getSettingBrokerage()}" tabindex="7" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
             <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Capital (₹):</span>
@@ -3436,12 +3842,44 @@
 
       updateAddCalc();
 
+      if ($('#f_isIntraday')) {
+        $('#f_isIntraday').onchange = () => {
+          $('#f_brokerage')?.removeAttribute('data-manual');
+          updateAddCalc();
+        };
+      }
+
+      if ($('#f_brokerage')) {
+        $('#f_brokerage').oninput = () => {
+          const val = $('#f_brokerage').value.trim();
+          if (val === '') {
+            $('#f_brokerage').removeAttribute('data-manual');
+          } else {
+            $('#f_brokerage').setAttribute('data-manual', 'true');
+          }
+          updateAddCalc();
+        };
+      }
+
       function updateAddCalc() {
         const entryPrice = parseFloat($('#f_entryPrice').value);
         const slPrice = parseFloat($('#f_slPrice').value);
         const entryPct = (parseFloat($('#f_entryPct').value) || 0) / 100;
         const capital = parseFloat($('#f_cap').value) || cap;
-        const brokerage = parseFloat($('#f_brokerage').value) || 0;
+
+        const brokEl = $('#f_brokerage');
+        let brokerage = parseFloat(brokEl?.value) || 0;
+
+        const tempUserQty = parseFloat($('#f_qty').value);
+        const tempCalculatedQty = (!isNaN(entryPrice) && !isNaN(slPrice) && (entryPrice - slPrice > 0)) ? Math.floor(Math.floor((capital * riskPct) / (entryPrice - slPrice)) * entryPct) : 0;
+        const calcQty = !isNaN(tempUserQty) ? tempUserQty : tempCalculatedQty;
+
+        const isIntraday = $('#f_isIntraday')?.checked;
+        if (!isNaN(entryPrice) && calcQty > 0 && brokEl && brokEl.getAttribute('data-manual') !== 'true') {
+          const buyTurnover = entryPrice * calcQty;
+          brokerage = calcTradeCharges(buyTurnover, buyTurnover, isIntraday);
+          brokEl.value = brokerage;
+        }
 
         const c = computeEntryCalc({ capital, riskPct, entryPct, entryPrice: isNaN(entryPrice) ? null : entryPrice, slPrice: isNaN(slPrice) ? null : slPrice, brokerage });
 
@@ -3500,6 +3938,7 @@
           entry3Price: isNaN(e3p) ? '' : e3p, entry3Qty: isNaN(e3q) ? '' : e3q, entry3Amt: (!isNaN(e3p) && !isNaN(e3q)) ? Math.round(e3p * e3q) : '',
           entry3Date: (!isNaN(e3p) && !isNaN(e3q)) ? ($('#f_e3d').value || $('#f_openDate').value) : '',
           slPrice, slPerShare: c.slPerShare, slPct: c.slPct, fullQty: c.fullQty, totLossAtSL, brokerage,
+          tradeType: $('#f_isIntraday')?.checked ? 'intraday' : 'delivery',
           setup: $('#f_setup').value.trim(),
           remarks: $('#f_remarks').value
         };
@@ -3509,15 +3948,21 @@
         const pnlData = computeOpenTradePnL(trade);
         trade.pnl = pnlData.pnl;
         trade.pnlPct = pnlData.pnlPct;
-        $('#saveTradeBtn').innerHTML = '<span class="spinner"></span> Saving…';
-        try {
-          await apiPost({ action: 'addTrade', trade });
-          STATE.prefillTrade = null;
-          await loadAll();
-          STATE.view = 'trades';
-          toast('Trade saved', 'ok');
-          renderShell();
-        } catch (err) { toast('Save failed: ' + err.message, 'err'); $('#saveTradeBtn').textContent = 'Save Trade'; }
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        trade.id = 'T' + now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
+
+        const normTrade = normalizeTrade(trade);
+        STATE.trades.unshift(normTrade);
+        STATE.prefillTrade = null;
+        saveLocalState();
+        STATE.view = 'trades';
+        toast('Trade saved', 'ok');
+        renderShell();
+
+        apiPost({ action: 'addTrade', trade }).catch(err => {
+          toast('Sync to Sheet failed: ' + err.message, 'err');
+        });
       };
     }
 
@@ -3613,33 +4058,17 @@
       const ex3Price = extraExits[3] ? extraExits[3].price : t.exit3Price;
       const ex3Qty = extraExits[3] ? extraExits[3].qty : t.exit3Qty;
 
+      const buildExitRow = (num, label, price, qty) => {
+        return `
+          <div style="display: grid; grid-template-columns: 85px 1fr 1fr; gap: 8px; align-items: center; background:rgba(255,255,255,.02); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--line);">
+            <span style="color:var(--gold); font-size: 11px; font-weight:600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${label}">${label}:</span>
+            <input type="number" step="0.01" class="edit-exit-price" data-exit="${num}" value="${price != null ? price : ''}" style="width:100%; padding: 4px 6px; border-radius: 4px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); font-family: var(--mono);" placeholder="Price">
+            <input type="number" class="edit-exit-qty" data-exit="${num}" value="${qty != null ? qty : ''}" style="width:100%; padding: 4px 6px; border-radius: 4px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); font-family: var(--mono);" placeholder="Qty">
+          </div>
+        `;
+      };
+
       const defaultBrok = getDefaultTradeBrokerage(t);
-
-      const exitsHtmlList = [];
-      if (ex1Price && ex1Qty) {
-        const netAmt1 = Math.max(0, Math.round(ex1Price * ex1Qty - defaultBrok));
-        exitsHtmlList.push(`<div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,.02); border-radius:4px; border:1px solid var(--line);"><span>Exit 1:</span><strong style="font-family:var(--mono);">₹${fmt(ex1Price)} × ${ex1Qty} <span style="font-size:10px; color:var(--dim); font-weight:normal;">(Net ₹${fmtRs(netAmt1)})</span></strong></div>`);
-      }
-      if (ex2Price && ex2Qty) {
-        const netAmt2 = Math.max(0, Math.round(ex2Price * ex2Qty - defaultBrok));
-        exitsHtmlList.push(`<div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,.02); border-radius:4px; border:1px solid var(--line);"><span>Exit 2:</span><strong style="font-family:var(--mono);">₹${fmt(ex2Price)} × ${ex2Qty} <span style="font-size:10px; color:var(--dim); font-weight:normal;">(Net ₹${fmtRs(netAmt2)})</span></strong></div>`);
-      }
-      if (ex3Price && ex3Qty) {
-        const netAmt3 = Math.max(0, Math.round(ex3Price * ex3Qty - defaultBrok));
-        exitsHtmlList.push(`<div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,.02); border-radius:4px; border:1px solid var(--line);"><span>Exit 3:</span><strong style="font-family:var(--mono);">₹${fmt(ex3Price)} × ${ex3Qty} <span style="font-size:10px; color:var(--dim); font-weight:normal;">(Net ₹${fmtRs(netAmt3)})</span></strong></div>`);
-      }
-
-      Object.keys(extraExits)
-        .map(Number)
-        .filter(num => num > 3)
-        .sort((a, b) => a - b)
-        .forEach(num => {
-          const ee = extraExits[num];
-          const netAmt = Math.max(0, Math.round(ee.price * ee.qty - defaultBrok));
-          exitsHtmlList.push(`<div style="display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,.02); border-radius:4px; border:1px solid var(--line);"><span>Exit ${num}:</span><strong style="font-family:var(--mono);">₹${fmt(ee.price)} × ${ee.qty} <span style="font-size:10px; color:var(--dim); font-weight:normal;">(Net ₹${fmtRs(netAmt)})</span></strong></div>`);
-        });
-
-      const exitsHtml = exitsHtmlList.length ? exitsHtmlList.join('') : `<div style="text-align:center; color:var(--dim); padding:16px 0; font-family:var(--sans);">No exits logged yet</div>`;
 
       const totExitQty = [t.exit1Qty, t.exit2Qty, t.exit3Qty].reduce((s, q) => s + (Number(q) || 0), 0) + Object.values(extraExits).filter((e, idx) => idx >= 3).reduce((s, e) => s + e.qty, 0);
       const remainingQty = Number(t.totBuyQty || 0) - totExitQty;
@@ -3667,17 +4096,21 @@
     <div class="modal-head"><h3>Trade Details <span style="color:var(--dim);font-weight:400;font-size:12px;">· ID: ${t.id}</span></h3>
       <button class="close-x" id="mClose">✕</button></div>
 
+    <div style="background: rgba(212,162,78,.06); border: 1px solid var(--line-soft); padding: 6px 12px; border-radius: 6px; margin-bottom: 12px;">
+      <label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer; color:var(--text); font-weight:600;">
+        <input type="checkbox" id="m_isIntraday" ${t.tradeType === 'intraday' ? 'checked' : ''} style="width:16px; height:16px; accent-color:var(--gold);"> ⚡ Intraday Trade (Dhan Intraday Charges & Taxes)
+      </label>
+    </div>
+
     <div class="form-grid" style="margin-bottom:12px;">
       <div class="field"><label>Stock</label><input id="m_stock" value="${t.stock}" style="text-transform:uppercase;"></div>
       <div class="field"><label>Open Date</label><input type="date" id="m_openDate" value="${t.openDate}"></div>
-      <div class="field"><label>Brokerage (₹)</label><input type="number" step="0.01" id="m_brokerage" value="${getDefaultTradeBrokerage(t)}"></div>
-      ${t.status === 'open' ? `
-        <div class="field"><label>Initial SL (₹)</label><input type="number" step="0.01" id="m_slPrice" value="${t.slPrice || ''}"></div>
-        <div class="field"><label>Trailing SL / TSL (₹)</label><input type="number" step="0.01" id="m_tslPrice" value="${t.tslPrice || ''}" style="border: 1px solid var(--gold); background: rgba(212,162,78,.03); color: var(--text);"></div>
-      ` : `
-        <div class="field readonly"><label>Initial SL</label><input disabled value="${fmt(t.slPrice)}"></div>
-        <div class="field readonly"><label>Trailing SL / TSL</label><input disabled value="${fmt(t.tslPrice)}"></div>
-      `}
+      <div class="field"><label>Charges & STT (₹)</label><input type="number" step="0.01" id="m_brokerage" value="${getDefaultTradeBrokerage(t)}" ${t.brokerage != null && t.brokerage !== '' ? 'data-manual="true"' : ''}></div>
+      <div class="field"><label>Initial SL (₹)</label><input type="number" step="0.01" id="m_slPrice" value="${t.slPrice || ''}"></div>
+      <div class="field"><label>Trailing SL / TSL (₹)</label><input type="number" step="0.01" id="m_tslPrice" value="${t.tslPrice || ''}" style="border: 1px solid var(--gold); background: rgba(212,162,78,.03); color: var(--text);"></div>
+      ${t.status === 'closed' ? `
+        <div class="field"><label>Closed Date</label><input type="date" id="m_closedDate" value="${t.closedDate || ''}"></div>
+      ` : ''}
 
       <div class="field readonly"><label>Avg Buy</label><input disabled value="${fmt(t.avgBuyPrice)}" id="m_avgBuyPrice"></div>
       <div class="field readonly"><label>Buy Qty</label><input disabled value="${fmt(t.totBuyQty)}" id="m_totBuyQty"></div>
@@ -3762,8 +4195,31 @@
 
       <fieldset style="margin-top:0; padding:12px;">
         <legend>Exits Breakdown (${totExitQty}/${t.totBuyQty || 0})</legend>
-        <div style="font-family:var(--sans); font-size:12px; display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto;">
-          ${exitsHtml}
+        <div style="font-family:var(--sans); font-size:12px; display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto; padding-right: 4px;">
+          <div style="display: grid; grid-template-columns: 85px 1fr 1fr; gap: 8px; align-items: center; margin-bottom: 2px; padding: 0 8px;">
+            <span style="font-size: 10px; color: var(--dim); font-weight: bold; text-transform: uppercase;">Exit Leg</span>
+            <span style="font-size: 10px; color: var(--dim); font-weight: bold; text-transform: uppercase;">Price (₹)</span>
+            <span style="font-size: 10px; color: var(--dim); font-weight: bold; text-transform: uppercase;">Qty</span>
+          </div>
+
+          <!-- Exit 1 -->
+          ${buildExitRow(1, 'Exit 1', ex1Price, ex1Qty)}
+
+          <!-- Exit 2 -->
+          ${ex2Price || ex2Qty || t.status === 'closed' ? buildExitRow(2, 'Exit 2', ex2Price, ex2Qty) : ''}
+
+          <!-- Exit 3 -->
+          ${ex3Price || ex3Qty ? buildExitRow(3, 'Exit 3', ex3Price, ex3Qty) : ''}
+
+          <!-- Extra Exits -->
+          ${Object.keys(extraExits)
+          .map(Number)
+          .filter(num => num > 3)
+          .sort((a, b) => a - b)
+          .map(num => {
+            const ee = extraExits[num];
+            return buildExitRow(num, `Exit ${num}`, ee.price, ee.qty);
+          }).join('')}
         </div>
       </fieldset>
     </div>
@@ -3798,6 +4254,8 @@
       <legend>Closed Trade Summary</legend>
       <div class="form-grid c3" style="margin-bottom:12px; gap: 8px;">
         <div class="field readonly"><label>Total Exit Value</label><input disabled value="${fmtRs(t.totExitAmt)}"></div>
+        <div class="field readonly"><label>Avg Sell Price</label><input disabled value="${aggregateExit(normalizeTrade(t)).avgSellPrice != null ? fmt(aggregateExit(normalizeTrade(t)).avgSellPrice) : '—'}"></div>
+        <div class="field readonly"><label>Brokerage</label><input disabled value="${fmtRs(getDefaultTradeBrokerage(t))}"></div>
         <div class="field readonly"><label>Net P/L</label><input disabled value="${fmtRs(t.pnl)}" style="color:${t.pnl >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:bold;"></div>
         <div class="field readonly"><label>P/L %</label><input disabled value="${fmtPct(t.pnlPct)}" style="color:${t.pnl >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:bold;"></div>
         <div class="field readonly"><label>R:R Ratio</label><input disabled value="${t.rr == null ? '—' : t.rr}"></div>
@@ -3811,7 +4269,7 @@
     <div class="field" style="margin-bottom:12px;"><label>Remarks</label><textarea rows="2" id="m_remarks" placeholder="Setup notes, trading plan, lessons...">${t.remarks || ''}</textarea></div>
     
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <button class="btn" id="m_updateRemarks">${t.status === 'open' ? 'Save Changes' : 'Save Remarks'}</button>
+      <button class="btn primary" id="m_updateRemarks" style="background:#2563eb; color:#fff; font-weight:600; padding:8px 18px;">Save</button>
       <button class="btn danger ghost" id="m_delete" style="margin-left:auto;">Delete Trade</button>
     </div>
   `;
@@ -3825,7 +4283,7 @@
         const counts = getTradeTrancheCounts(t);
         const perLegBrok = counts.totalCount ? (currentTotalBrok / counts.totalCount) : currentTotalBrok;
 
-        // Read tranche inputs dynamically
+        // Read tranche buy inputs dynamically
         const priceInputs = Array.from(document.querySelectorAll('.edit-buy-price'));
         const qtyInputs = Array.from(document.querySelectorAll('.edit-buy-qty'));
         const tranchesData = {};
@@ -3844,7 +4302,6 @@
           tranchesData[num].qty = isNaN(val) ? null : val;
         });
 
-        // Compute temporary buys breakdown including brokerage portion for ALL tranches
         let tempTotQty = 0;
         let tempTotAmt = 0;
         let tempExecAmt = 0;
@@ -3863,6 +4320,48 @@
 
         const tempAvgBuy = tempTotQty ? +(tempExecAmt / tempTotQty).toFixed(2) : 0;
 
+        // Read exit leg inputs dynamically
+        const exitPriceInputs = Array.from(document.querySelectorAll('.edit-exit-price'));
+        const exitQtyInputs = Array.from(document.querySelectorAll('.edit-exit-qty'));
+        const exitLegsData = {};
+
+        exitPriceInputs.forEach(input => {
+          const num = parseInt(input.getAttribute('data-exit'));
+          const val = parseFloat(input.value);
+          if (!exitLegsData[num]) exitLegsData[num] = {};
+          exitLegsData[num].price = isNaN(val) ? null : val;
+        });
+
+        exitQtyInputs.forEach(input => {
+          const num = parseInt(input.getAttribute('data-exit'));
+          const val = parseInt(input.value);
+          if (!exitLegsData[num]) exitLegsData[num] = {};
+          exitLegsData[num].qty = isNaN(val) ? null : val;
+        });
+
+        let tempTotExitQty = 0;
+        let tempTotExitAmt = 0;
+        let tempTotExitGrossAmt = 0;
+
+        Object.keys(exitLegsData)
+          .map(Number)
+          .sort((a, b) => a - b)
+          .forEach(num => {
+            const exLeg = exitLegsData[num] || {};
+            if (exLeg.price != null && exLeg.qty) {
+              tempTotExitQty += exLeg.qty;
+              tempTotExitGrossAmt += exLeg.price * exLeg.qty;
+              tempTotExitAmt += Math.max(0, Math.round(exLeg.price * exLeg.qty - perLegBrok));
+            }
+          });
+
+        const isIntraday = $('#m_isIntraday')?.checked;
+        const mBrokEl = $('#m_brokerage');
+        if (mBrokEl && mBrokEl.getAttribute('data-manual') !== 'true' && tempExecAmt > 0) {
+          const autoCharges = calcTradeCharges(tempExecAmt, tempTotExitGrossAmt > 0 ? tempTotExitGrossAmt : tempExecAmt, isIntraday);
+          mBrokEl.value = autoCharges;
+        }
+
         // Update read-only inputs in real-time
         if ($('#m_avgBuyPrice')) $('#m_avgBuyPrice').value = fmt(tempAvgBuy);
         if ($('#m_totBuyQty')) $('#m_totBuyQty').value = fmt(tempTotQty);
@@ -3875,17 +4374,11 @@
         const tsl = tslInput ? parseFloat(tslInput.value) : NaN;
         const activeSL = !isNaN(tsl) && tsl !== 0 ? tsl : sl;
 
-        const currentTotExitAmt = [
-          ex1Price && ex1Qty ? Math.max(0, Math.round(ex1Price * ex1Qty - perLegBrok)) : 0,
-          ex2Price && ex2Qty ? Math.max(0, Math.round(ex2Price * ex2Qty - perLegBrok)) : 0,
-          ex3Price && ex3Qty ? Math.max(0, Math.round(ex3Price * ex3Qty - perLegBrok)) : 0
-        ].reduce((s, a) => s + a, 0) + Object.values(extraExits).filter((e, idx) => idx >= 3).reduce((s, e) => s + Math.max(0, Math.round(e.price * e.qty - perLegBrok)), 0);
+        const tempRemainingQty = Math.max(0, tempTotQty - tempTotExitQty);
+        const tempRealizedCost = tempTotQty ? (tempTotExitQty * (tempTotAmt / tempTotQty)) : 0;
+        const tempRealizedPnL = tempTotExitQty > 0 ? Math.round(tempTotExitAmt - tempRealizedCost) : 0;
 
-        const tempRemainingQty = tempTotQty - totExitQty;
-        const tempRealizedCost = tempTotQty ? (totExitQty * (tempTotAmt / tempTotQty)) : 0;
-        const tempRealizedPnL = totExitQty > 0 ? Math.round(currentTotExitAmt - tempRealizedCost) : 0;
-
-        const defaultPerOrder = Number(STATE.settings.brokeragePerTrade || 60);
+        const defaultPerOrder = getSettingBrokerage();
 
         // Re-calculate Expected P/L in real-time
         const expectedExitAmtOnRemaining = Math.max(0, Math.round(activeSL * tempRemainingQty - (tempRemainingQty > 0 ? defaultPerOrder : 0)));
@@ -3908,11 +4401,28 @@
         }
       };
 
-      if ($('#m_brokerage')) $('#m_brokerage').oninput = updateModalPnLAndRisk;
+      if ($('#m_isIntraday')) {
+        $('#m_isIntraday').onchange = () => {
+          $('#m_brokerage')?.removeAttribute('data-manual');
+          updateModalPnLAndRisk();
+        };
+      }
 
+      if ($('#m_brokerage')) {
+        $('#m_brokerage').oninput = () => {
+          const val = $('#m_brokerage').value.trim();
+          if (val === '') {
+            $('#m_brokerage').removeAttribute('data-manual');
+          } else {
+            $('#m_brokerage').setAttribute('data-manual', 'true');
+          }
+          updateModalPnLAndRisk();
+        };
+      }
       if ($('#m_slPrice')) $('#m_slPrice').oninput = updateModalPnLAndRisk;
       if ($('#m_tslPrice')) $('#m_tslPrice').oninput = updateModalPnLAndRisk;
-      document.querySelectorAll('.edit-buy-price, .edit-buy-qty').forEach(input => {
+
+      document.querySelectorAll('.edit-buy-price, .edit-buy-qty, .edit-exit-price, .edit-exit-qty').forEach(input => {
         input.oninput = updateModalPnLAndRisk;
       });
 
@@ -3962,7 +4472,7 @@
         addLegBtn.onclick = async () => {
           const price = parseFloat($('#m_addPrice').value), qty = parseFloat($('#m_addQty').value);
           const date = $('#m_addDate').value;
-          const defaultPerOrder = Number(STATE.settings.brokeragePerTrade || 60);
+          const defaultPerOrder = getSettingBrokerage();
           const oldCounts = getTradeTrancheCounts(t);
           const userBrokVal = parseFloat($('#m_brokerage')?.value);
           const totalBrok = (!isNaN(userBrokVal) && userBrokVal !== (defaultPerOrder * oldCounts.totalCount))
@@ -4035,9 +4545,14 @@
           updated.pnlPct = pnlData.pnlPct;
           if (updated.totLossAtSL) updated.rr = +(updated.pnl / updated.totLossAtSL).toFixed(2);
 
-          updated.remarks = $('#m_remarks').value.trim() + (updated.remarks !== t.remarks ? '\n' + updated.remarks.replace(t.remarks, '').trim() : '');
-          try { await apiPost({ action: 'updateTrade', trade: updated }); await loadAll(); toast('Position updated', 'ok'); closeModal(); renderShell(); }
-          catch (err) { toast('Failed: ' + err.message, 'err'); }
+          const normUpdated = normalizeTrade(updated);
+          const idx = STATE.trades.findIndex(tr => String(tr.id) === String(updated.id));
+          if (idx !== -1) STATE.trades[idx] = normUpdated;
+          saveLocalState();
+          toast('Position updated', 'ok');
+          closeModal();
+          renderShell();
+          apiPost({ action: 'updateTrade', trade: updated }).catch(err => { toast('Sync failed: ' + err.message, 'err'); });
         };
         const addQtyEl = $('#m_addQty');
         if (addQtyEl) {
@@ -4051,7 +4566,7 @@
           const price = parseFloat($('#m_exitPrice').value);
           const qty = parseFloat($('#m_exitQty').value);
           const date = $('#m_exitDate').value;
-          const defaultPerOrder = Number(STATE.settings.brokeragePerTrade || 60);
+          const defaultPerOrder = getSettingBrokerage();
           const oldCounts = getTradeTrancheCounts(t);
           const userBrokVal = parseFloat($('#m_brokerage')?.value);
           const totalBrok = (!isNaN(userBrokVal) && userBrokVal !== (defaultPerOrder * oldCounts.totalCount))
@@ -4117,15 +4632,14 @@
             updated.rr = updated.totLossAtSL ? +(updated.pnl / updated.totLossAtSL).toFixed(2) : null;
           }
 
-          try {
-            await apiPost({ action: 'updateTrade', trade: updated });
-            await loadAll();
-            toast('Exit logged successfully', 'ok');
-            closeModal();
-            renderShell();
-          } catch (err) {
-            toast('Failed: ' + err.message, 'err');
-          }
+          const normUpdated = normalizeTrade(updated);
+          const idx = STATE.trades.findIndex(tr => String(tr.id) === String(updated.id));
+          if (idx !== -1) STATE.trades[idx] = normUpdated;
+          saveLocalState();
+          toast('Exit logged successfully', 'ok');
+          closeModal();
+          renderShell();
+          apiPost({ action: 'updateTrade', trade: updated }).catch(err => { toast('Sync failed: ' + err.message, 'err'); });
         };
         handleQtyPercentageInput($('#m_exitQty'), () => Number(t.totBuyQty || 0));
       }
@@ -4133,6 +4647,7 @@
       $('#m_updateRemarks').onclick = async () => {
         const stockName = $('#m_stock').value.trim().toUpperCase();
         const openDate = $('#m_openDate').value;
+        const closedDateInput = $('#m_closedDate')?.value;
         const userBrokVal = parseFloat($('#m_brokerage')?.value);
         const totalBrok = !isNaN(userBrokVal) ? userBrokVal : getDefaultTradeBrokerage(t);
         const counts = getTradeTrancheCounts(t);
@@ -4146,167 +4661,144 @@
           stock: stockName,
           openDate: openDate,
           brokerage: totalBrok,
+          tradeType: $('#m_isIntraday')?.checked ? 'intraday' : 'delivery',
           setup: $('#m_setup').value.trim(),
           remarks: $('#m_remarks').value.trim()
         };
 
-        // 1. Read tranche inputs dynamically
-        const priceInputs = Array.from(document.querySelectorAll('.edit-buy-price'));
-        const qtyInputs = Array.from(document.querySelectorAll('.edit-buy-qty'));
+        if (closedDateInput) {
+          updated.closedDate = closedDateInput;
+        }
+
+        // 1. Read buy tranche inputs dynamically
+        const buyPriceInputs = Array.from(document.querySelectorAll('.edit-buy-price'));
+        const buyQtyInputs = Array.from(document.querySelectorAll('.edit-buy-qty'));
         const tranchesData = {};
 
-        priceInputs.forEach(input => {
+        buyPriceInputs.forEach(input => {
           const num = parseInt(input.getAttribute('data-tranche'));
           const val = parseFloat(input.value);
           if (!tranchesData[num]) tranchesData[num] = {};
           tranchesData[num].price = isNaN(val) ? null : val;
         });
 
-        qtyInputs.forEach(input => {
+        buyQtyInputs.forEach(input => {
           const num = parseInt(input.getAttribute('data-tranche'));
           const val = parseInt(input.value);
           if (!tranchesData[num]) tranchesData[num] = {};
           tranchesData[num].qty = isNaN(val) ? null : val;
         });
 
-        // 2. Set Tranche 1
-        const t1 = tranchesData[1] || {};
-        if (t1.price != null && t1.qty) {
-          updated.entry1Price = t1.price;
-          updated.entry1Qty = t1.qty;
-          updated.entry1Amt = Math.round(t1.price * t1.qty + perLegBrok);
-        }
-
-        // 3. Set Tranche 2
-        const t2 = tranchesData[2] || {};
-        if (t2 && t2.price != null && t2.qty) {
-          updated.entry2Price = t2.price;
-          updated.entry2Qty = t2.qty;
-          updated.entry2Amt = Math.round(t2.price * t2.qty + perLegBrok);
-        } else {
-          updated.entry2Price = null;
-          updated.entry2Qty = null;
-          updated.entry2Amt = null;
-          updated.entry2Date = '';
-        }
-
-        // 4. Set Tranche 3
-        const t3 = tranchesData[3] || {};
-        if (t3 && t3.price != null && t3.qty) {
-          updated.entry3Price = t3.price;
-          updated.entry3Qty = t3.qty;
-          updated.entry3Amt = Math.round(t3.price * t3.qty + perLegBrok);
-          if (!updated.entry3Date) {
-            updated.entry3Date = t.entry3Date || todayISO();
-          }
-        } else {
-          updated.entry3Price = null;
-          updated.entry3Qty = null;
-          updated.entry3Amt = null;
-          updated.entry3Date = '';
-        }
-
-        // 5. Set Tranche 4
-        const t4 = tranchesData[4] || {};
-        if (t4 && t4.price != null && t4.qty) {
-          updated.entry4Price = t4.price;
-          updated.entry4Qty = t4.qty;
-          updated.entry4Amt = Math.round(t4.price * t4.qty + perLegBrok);
-          if (!updated.entry4Date) {
-            updated.entry4Date = t.entry4Date || todayISO();
-          }
-        } else {
-          updated.entry4Price = null;
-          updated.entry4Qty = null;
-          updated.entry4Amt = null;
-          updated.entry4Date = '';
-        }
-
-        // 6. Set Tranche 5
-        const t5 = tranchesData[5] || {};
-        if (t5 && t5.price != null && t5.qty) {
-          updated.entry5Price = t5.price;
-          updated.entry5Qty = t5.qty;
-          updated.entry5Amt = Math.round(t5.price * t5.qty + perLegBrok);
-          if (!updated.entry5Date) {
-            updated.entry5Date = t.entry5Date || todayISO();
-          }
-        } else {
-          updated.entry5Price = null;
-          updated.entry5Qty = null;
-          updated.entry5Amt = null;
-          updated.entry5Date = '';
-        }
-
-        // 7. Set Tranche 6
-        const t6 = tranchesData[6] || {};
-        if (t6 && t6.price != null && t6.qty) {
-          updated.entry6Price = t6.price;
-          updated.entry6Qty = t6.qty;
-          updated.entry6Amt = Math.round(t6.price * t6.qty + perLegBrok);
-          if (!updated.entry6Date) {
-            updated.entry6Date = t.entry6Date || todayISO();
-          }
-        } else {
-          updated.entry6Price = null;
-          updated.entry6Qty = null;
-          updated.entry6Amt = null;
-          updated.entry6Date = '';
-        }
-
-        // 8. Collect and process Tranche 7 and above
-        const t7AndAbove = [];
-        Object.keys(tranchesData)
-          .map(Number)
-          .filter(num => num >= 7)
-          .sort((a, b) => a - b)
-          .forEach(num => {
-            const tr = tranchesData[num] || {};
-            if (tr.price != null && tr.qty) {
-              t7AndAbove.push({ num, price: tr.price, qty: tr.qty });
+        // Set Tranches 1 to 6
+        for (let i = 1; i <= 6; i++) {
+          const tr = tranchesData[i];
+          if (tr && tr.price != null && tr.qty) {
+            updated[`entry${i}Price`] = tr.price;
+            updated[`entry${i}Qty`] = tr.qty;
+            updated[`entry${i}Amt`] = Math.round(tr.price * tr.qty + perLegBrok);
+            if (i > 1 && !updated[`entry${i}Date`]) {
+              updated[`entry${i}Date`] = t[`entry${i}Date`] || todayISO();
             }
-          });
+          } else {
+            updated[`entry${i}Price`] = null;
+            updated[`entry${i}Qty`] = null;
+            updated[`entry${i}Amt`] = null;
+            if (i > 1) updated[`entry${i}Date`] = '';
+          }
+        }
 
-        // Clean existing tranche strings from remarks text
+        // Process Tranches 7+
+        const t7AndAbove = [];
+        Object.keys(tranchesData).map(Number).filter(num => num >= 7).sort((a, b) => a - b).forEach(num => {
+          const tr = tranchesData[num] || {};
+          if (tr.price != null && tr.qty) {
+            t7AndAbove.push({ num, price: tr.price, qty: tr.qty });
+          }
+        });
+
+        // 2. Read exit leg inputs dynamically
+        const exitPriceInputs = Array.from(document.querySelectorAll('.edit-exit-price'));
+        const exitQtyInputs = Array.from(document.querySelectorAll('.edit-exit-qty'));
+        const exitsData = {};
+
+        exitPriceInputs.forEach(input => {
+          const num = parseInt(input.getAttribute('data-exit'));
+          const val = parseFloat(input.value);
+          if (!exitsData[num]) exitsData[num] = {};
+          exitsData[num].price = isNaN(val) ? null : val;
+        });
+
+        exitQtyInputs.forEach(input => {
+          const num = parseInt(input.getAttribute('data-exit'));
+          const val = parseInt(input.value);
+          if (!exitsData[num]) exitsData[num] = {};
+          exitsData[num].qty = isNaN(val) ? null : val;
+        });
+
+        // Set Exits 1 to 3
+        for (let i = 1; i <= 3; i++) {
+          const exLeg = exitsData[i];
+          if (exLeg && exLeg.price != null && exLeg.qty) {
+            updated[`exit${i}Price`] = exLeg.price;
+            updated[`exit${i}Qty`] = exLeg.qty;
+          } else {
+            updated[`exit${i}Price`] = null;
+            updated[`exit${i}Qty`] = null;
+          }
+        }
+
+        // Process Exits 4+
+        const ex4AndAbove = [];
+        Object.keys(exitsData).map(Number).filter(num => num >= 4).sort((a, b) => a - b).forEach(num => {
+          const exLeg = exitsData[num] || {};
+          if (exLeg.price != null && exLeg.qty) {
+            ex4AndAbove.push({ num, price: exLeg.price, qty: exLeg.qty });
+          }
+        });
+
+        // Clean and update remarks for Tranches 7+ and Exits 4+
         let remarksText = updated.remarks;
-        remarksText = remarksText.replace(/\[Tranche \d+:[^\]]+\]\r?\n?/g, '').trim();
+        remarksText = remarksText.replace(/\[Tranche \d+:[^\]]+\]\r?\n?/g, '').replace(/\[Exit \d+:[^\]]+\]\r?\n?/g, '').trim();
 
         if (t7AndAbove.length > 0) {
-          // Build remarks representation for tranches 7+
-          const trancheLines = [];
-          t7AndAbove.forEach(ta => {
-            let dStr = '';
-            const origDate = extraTranches[ta.num] && extraTranches[ta.num].date;
-            if (origDate) dStr = ` on ${formatDateDMY(origDate)}`;
-            trancheLines.push(`[Tranche ${ta.num}: ₹${ta.price.toFixed(2)} × ${ta.qty}${dStr}]`);
+          const trancheLines = t7AndAbove.map(ta => {
+            let dStr = extraTranches[ta.num] && extraTranches[ta.num].date ? ` on ${formatDateDMY(extraTranches[ta.num].date)}` : '';
+            return `[Tranche ${ta.num}: ₹${ta.price.toFixed(2)} × ${ta.qty}${dStr}]`;
           });
           remarksText = remarksText + (remarksText ? '\n' : '') + trancheLines.join('\n');
         }
+
+        if (ex4AndAbove.length > 0) {
+          const exitLines = ex4AndAbove.map(ea => `[Exit ${ea.num}: ₹${ea.price.toFixed(2)} × ${ea.qty}]`);
+          remarksText = remarksText + (remarksText ? '\n' : '') + exitLines.join('\n');
+        }
+
         updated.remarks = remarksText;
 
-        // 5. Aggregate final buy fields
+        // Aggregate buy and exit totals
         const buy = aggregateBuy(normalizeTrade(updated));
         updated.totBuyQty = buy.totBuyQty;
         updated.totBuyAmt = buy.totBuyAmt;
         updated.avgBuyPrice = buy.avgBuyPrice;
 
-        // 6. Handle SL / TSL inputs
+        const ex = aggregateExit(normalizeTrade(updated));
+        updated.totExitAmt = ex.totExitAmt;
+        const totExitQty = ex.totExitQty;
+
+        // Handle SL / TSL inputs
         const slInput = $('#m_slPrice');
         const tslInput = $('#m_tslPrice');
 
         if (slInput) {
           const newSl = parseFloat(slInput.value);
-          if (!isNaN(newSl)) {
-            updated.slPrice = newSl;
-          }
+          updated.slPrice = isNaN(newSl) ? null : newSl;
         }
         if (tslInput) {
           const newTsl = parseFloat(tslInput.value);
           updated.tslPrice = isNaN(newTsl) ? '' : newTsl;
         }
 
-        // Recalculate Risk Metrics based on SL
-        if (updated.slPrice != null && !isNaN(updated.slPrice)) {
+        if (updated.slPrice != null && !isNaN(updated.slPrice) && updated.avgBuyPrice) {
           const slPerShare = Number((updated.avgBuyPrice - updated.slPrice).toFixed(4));
           updated.slPerShare = slPerShare;
           updated.slPct = updated.avgBuyPrice ? slPerShare / updated.avgBuyPrice : null;
@@ -4317,35 +4809,43 @@
           updated.totLossAtSL = null;
         }
 
-        // 7. Recalculate PnL and metrics for open vs closed
-        if (updated.status === 'open') {
-          const pnlData = computeOpenTradePnL(updated);
-          updated.pnl = pnlData.pnl;
-          updated.pnlPct = pnlData.pnlPct;
-          updated.rr = updated.totLossAtSL ? +(updated.pnl / updated.totLossAtSL).toFixed(2) : null;
-        } else {
+        // Handle trade status and PnL
+        if (totExitQty >= (updated.totBuyQty || 0) && (updated.totBuyQty || 0) > 0) {
+          updated.status = 'closed';
+          updated.closedDate = updated.closedDate || t.closedDate || todayISO();
           updated.pnl = Math.round(Number(updated.totExitAmt || 0) - Number(updated.totBuyAmt || 0));
           updated.pnlPct = updated.totBuyAmt ? updated.pnl / updated.totBuyAmt : null;
           const opened = new Date(updated.openDate), closed = new Date(updated.closedDate);
           updated.days = isNaN(opened) || isNaN(closed) ? null : Math.round((closed - opened) / 86400000);
           updated.rr = updated.totLossAtSL ? +(updated.pnl / updated.totLossAtSL).toFixed(2) : null;
+        } else {
+          updated.status = 'open';
+          updated.closedDate = '';
+          const pnlData = computeOpenTradePnL(updated);
+          updated.pnl = pnlData.pnl;
+          updated.pnlPct = pnlData.pnlPct;
+          updated.days = '';
+          updated.rr = updated.totLossAtSL ? +(updated.pnl / updated.totLossAtSL).toFixed(2) : null;
         }
 
-        try {
-          await apiPost({ action: 'updateTrade', trade: updated });
-          await loadAll();
-          toast('Trade updated successfully', 'ok');
-          closeModal();
-          renderShell();
-        } catch (err) {
-          toast('Failed: ' + err.message, 'err');
-        }
+        const normUpdated = normalizeTrade(updated);
+        const idx = STATE.trades.findIndex(tr => String(tr.id) === String(updated.id));
+        if (idx !== -1) STATE.trades[idx] = normUpdated;
+        saveLocalState();
+        toast('Trade details saved successfully!', 'ok');
+        closeModal();
+        renderShell();
+        apiPost({ action: 'updateTrade', trade: updated }).catch(err => { toast('Sync failed: ' + err.message, 'err'); });
       };
 
       $('#m_delete').onclick = async () => {
         if (!confirm('Delete this trade permanently?')) return;
-        try { await apiPost({ action: 'deleteTrade', id: t.id }); await loadAll(); toast('Trade deleted', 'ok'); closeModal(); renderShell(); }
-        catch (err) { toast('Failed: ' + err.message, 'err'); }
+        STATE.trades = STATE.trades.filter(tr => String(tr.id) !== String(t.id));
+        saveLocalState();
+        toast('Trade deleted', 'ok');
+        closeModal();
+        renderShell();
+        apiPost({ action: 'deleteTrade', id: t.id }).catch(err => { toast('Sync failed: ' + err.message, 'err'); });
       };
     }
     function closeModal() { $('#modalBg').classList.remove('show'); $('#modalBody').style.maxWidth = ''; }
@@ -4359,11 +4859,10 @@
 
     async function saveWatchlist(rows) {
       STATE.watchlist = rows.map(normalizeWatchlist);
-      try {
-        await apiPost({ action: 'updateWatchlist', rows });
-      } catch (err) {
+      saveLocalState();
+      apiPost({ action: 'updateWatchlist', rows }).catch(err => {
         toast('Failed to save watchlist: ' + err.message, 'err');
-      }
+      });
     }
 
     window.moveWlToTradeLog = async (idx) => {
@@ -4452,17 +4951,20 @@
         const wlRemark = item.setup ? `Logged planned tranche from watchlist (Setup: ${item.setup})` : 'Logged planned tranche from watchlist';
         updated.remarks = (updated.remarks || '').trim() + (updated.remarks ? '\n' : '') + wlRemark;
 
-        try {
-          await apiPost({ action: 'updateTrade', trade: updated });
-          wl.splice(idx, 1);
-          await saveWatchlist(wl);
-          await loadAll();
-          STATE.view = 'trades';
-          renderShell();
-          toast(`Successfully logged planned tranche for ${item.stock}!`, 'ok');
-        } catch (err) {
-          toast('Failed to log tranche: ' + err.message, 'err');
-        }
+        const normUpdated = normalizeTrade(updated);
+        const trIdx = STATE.trades.findIndex(tr => String(tr.id) === String(updated.id));
+        if (trIdx !== -1) STATE.trades[trIdx] = normUpdated;
+        wl.splice(idx, 1);
+        STATE.watchlist = wl.map(normalizeWatchlist);
+        saveLocalState();
+        STATE.view = 'trades';
+        renderShell();
+        toast(`Successfully logged planned tranche for ${item.stock}!`, 'ok');
+
+        Promise.all([
+          apiPost({ action: 'updateTrade', trade: updated }),
+          apiPost({ action: 'updateWatchlist', rows: wl })
+        ]).catch(err => { toast('Sync failed: ' + err.message, 'err'); });
       } else {
         // Fallback to current behavior: log a brand new open trade under Tranche 1
         const c = computeEntryCalc({
@@ -4471,7 +4973,7 @@
           entryPct: item.entryPct,
           entryPrice: item.entryPrice,
           slPrice: item.slPrice,
-          brokerage: Number(STATE.settings.brokeragePerTrade || 60)
+          brokerage: getSettingBrokerage()
         });
 
         const trade = {
@@ -4489,7 +4991,7 @@
           slPct: c.slPct,
           fullQty: c.fullQty,
           totLossAtSL: c.totLossAtSL,
-          brokerage: Number(STATE.settings.brokeragePerTrade || 60),
+          brokerage: getSettingBrokerage(),
           setup: item.setup || 'Watchlist',
           remarks: item.setup ? `Executed from planned watchlist (Setup: ${item.setup})` : 'Executed from planned watchlist'
         };
@@ -4502,19 +5004,24 @@
         trade.pnl = pnlData.pnl;
         trade.pnlPct = pnlData.pnlPct;
 
-        toast('Saving trade to Google Sheet...', 'info');
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        trade.id = 'T' + now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
 
-        try {
-          await apiPost({ action: 'addTrade', trade });
-          wl.splice(idx, 1);
-          await saveWatchlist(wl);
-          await loadAll();
-          STATE.view = 'trades';
-          renderShell();
-          toast(`Successfully logged ${item.stock} to Trade Log!`, 'ok');
-        } catch (err) {
-          toast('Failed to log trade: ' + err.message, 'err');
-        }
+        STATE.trades.unshift(normalizeTrade(trade));
+        wl.splice(idx, 1);
+        STATE.watchlist = wl.map(normalizeWatchlist);
+        saveLocalState();
+        STATE.view = 'trades';
+        renderShell();
+        toast(`Successfully logged ${item.stock} to Trade Log!`, 'ok');
+
+        Promise.all([
+          apiPost({ action: 'addTrade', trade }),
+          apiPost({ action: 'updateWatchlist', rows: wl })
+        ]).catch(err => {
+          toast('Sync to Sheet failed: ' + err.message, 'err');
+        });
       }
     };
 
@@ -4568,7 +5075,7 @@
 
         const entryPriceNum = parseFloat(rEntry);
         const slPriceNum = parseFloat(rSl);
-        const c = computeEntryCalc({ capital: cap, riskPct, entryPct: rEntryPct / 100, entryPrice: isNaN(entryPriceNum) ? null : entryPriceNum, slPrice: isNaN(slPriceNum) ? null : slPriceNum, brokerage: Number(STATE.settings.brokeragePerTrade || 60) });
+        const c = computeEntryCalc({ capital: cap, riskPct, entryPct: rEntryPct / 100, entryPrice: isNaN(entryPriceNum) ? null : entryPriceNum, slPrice: isNaN(slPriceNum) ? null : slPriceNum, brokerage: getSettingBrokerage() });
         if (c.fullQty != null) {
           rQty = Math.floor(c.fullQty * (rEntryPct / 100));
         }
@@ -4587,6 +5094,11 @@
       <div class="calc-container">
         <!-- Left Side: Inputs Grid -->
         <div class="form-two-col">
+          <div class="form-row form-row-span-2" style="background: rgba(212,162,78,.06); border: 1px solid var(--line-soft); padding: 6px 12px; border-radius: 6px; margin-bottom: 4px;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer; color:var(--text); font-weight:600;">
+              <input type="checkbox" id="r_isIntraday" style="width:16px; height:16px; accent-color:var(--gold);"> ⚡ Intraday Trade (Dhan Intraday Charges & Taxes)
+            </label>
+          </div>
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Stock Name:</span>
             <input type="text" id="r_stock" value="${rStock}" placeholder="e.g. TITAN" tabindex="1" style="text-transform:uppercase; flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
@@ -4616,7 +5128,7 @@
 
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Brokerage (₹):</span>
-            <input type="number" step="0.01" id="r_brokerage" value="${STATE.settings.brokeragePerTrade || 60}" tabindex="7" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            <input type="number" step="0.01" id="r_brokerage" value="${getSettingBrokerage()}" tabindex="7" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
           <div class="form-row">
             <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Tranche %:</span>
@@ -4633,7 +5145,7 @@
 
           <div class="form-row" style="justify-content: flex-end; gap: 8px;">
             ${STATE.editingWlIdx !== null ? `<button class="btn ghost" id="cancelWlEditBtn" tabindex="12" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Cancel</button>` : ''}
-            <button class="btn silver" id="addWlBtn" tabindex="11" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);">${STATE.editingWlIdx !== null ? 'Update Watchlist' : '+ Add to Watchlist'}</button>
+            <button class="btn silver" id="addWlBtn" tabindex="11" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);">Save</button>
           </div>
         </div>
 
@@ -4721,6 +5233,13 @@
     </div>
   `;
 
+      if ($('#r_isIntraday')) {
+        $('#r_isIntraday').onchange = () => {
+          $('#r_brokerage')?.removeAttribute('data-manual');
+          calc();
+        };
+      }
+
       // Set input bindings for updates when core fields change
       ['r_cap', 'r_riskPct', 'r_entry', 'r_sl', 'r_brokerage'].forEach(id => {
         $('#' + id).oninput = () => {
@@ -4803,8 +5322,20 @@
         const rp = (parseFloat($('#r_riskPct').value) || 0) / 100;
         const entryPrice = parseFloat($('#r_entry').value);
         const slPrice = parseFloat($('#r_sl').value);
-        const brokerage = parseFloat($('#r_brokerage').value) || 0;
+        const isIntraday = $('#r_isIntraday')?.checked;
+        let brokerage = parseFloat($('#r_brokerage').value) || 0;
         const entryPct = (parseFloat($('#r_entryPct').value) || 0) / 100;
+
+        const tempUserQty = parseFloat($('#r_qty').value);
+        const tempCalculatedQty = (!isNaN(entryPrice) && !isNaN(slPrice) && (entryPrice - slPrice > 0)) ? Math.floor(Math.floor((capital * rp) / (entryPrice - slPrice)) * entryPct) : 0;
+        const calcQty = !isNaN(tempUserQty) ? tempUserQty : tempCalculatedQty;
+
+        if (!isNaN(entryPrice) && calcQty > 0 && $('#r_brokerage') && $('#r_brokerage').getAttribute('data-manual') !== 'true') {
+          const buyTurnover = entryPrice * calcQty;
+          brokerage = calcTradeCharges(buyTurnover, buyTurnover, isIntraday);
+          $('#r_brokerage').value = brokerage;
+        }
+
         const c = computeEntryCalc({ capital, riskPct: rp, entryPct: entryPct, entryPrice: isNaN(entryPrice) ? null : entryPrice, slPrice: isNaN(slPrice) ? null : slPrice, brokerage });
 
         const userQty = parseFloat($('#r_qty').value);
@@ -4926,7 +5457,7 @@
           <h3 style="margin: 0;">${editingExp ? 'Edit Expense' : 'Log New Expense'}</h3>
           <div style="display: flex; gap: 6px; align-items: center;">
             ${editingExp ? `<button class="btn ghost" id="cancelExpenseEditBtn" tabindex="5" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Cancel</button>` : ''}
-            <button class="btn silver" id="addExpenseBtn" tabindex="4" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);">${editingExp ? 'Update Log' : 'Save Log'}</button>
+            <button class="btn silver" id="addExpenseBtn" tabindex="4" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);">Save</button>
           </div>
         </div>
 
@@ -5023,22 +5554,21 @@
           return;
         }
         const isEdit = STATE.editingExpenseIndex !== null;
-        $('#addExpenseBtn').innerHTML = `<span class="spinner"></span> ${isEdit ? 'Updating…' : 'Saving…'}`;
-        try {
-          if (isEdit) {
-            await apiPost({ action: 'updateExpense', index: STATE.editingExpenseIndex, entry: { date, amount, note } });
-            STATE.editingExpenseIndex = null;
-            toast('Expense updated successfully', 'ok');
-          } else {
-            await apiPost({ action: 'addExpense', entry: { date, amount, note } });
-            toast('Expense logged successfully', 'ok');
-          }
-          await loadAll();
-          renderShell();
-        } catch (err) {
-          toast(`Failed to ${isEdit ? 'update' : 'log'} expense: ` + err.message, 'err');
-          $('#addExpenseBtn').textContent = isEdit ? 'Update Log' : 'Save Log';
+        const expIdx = STATE.editingExpenseIndex;
+        const entry = { date, amount, note };
+
+        if (isEdit) {
+          STATE.expenses[expIdx] = entry;
+          STATE.editingExpenseIndex = null;
+          toast('Expense updated successfully', 'ok');
+          apiPost({ action: 'updateExpense', index: expIdx, entry }).catch(err => toast('Sync failed: ' + err.message, 'err'));
+        } else {
+          STATE.expenses.push(entry);
+          toast('Expense logged successfully', 'ok');
+          apiPost({ action: 'addExpense', entry }).catch(err => toast('Sync failed: ' + err.message, 'err'));
         }
+        saveLocalState();
+        renderShell();
       };
 
       $('#e_note').addEventListener('keydown', (e) => {
@@ -5057,19 +5587,16 @@
 
     async function deleteExpenseItem(index) {
       if (!confirm('Are you sure you want to delete this expense?')) return;
-      try {
-        await apiPost({ action: 'deleteExpense', index: index });
-        if (STATE.editingExpenseIndex === index) {
-          STATE.editingExpenseIndex = null;
-        } else if (STATE.editingExpenseIndex !== null && STATE.editingExpenseIndex > index) {
-          STATE.editingExpenseIndex--;
-        }
-        await loadAll();
-        toast('Expense deleted', 'ok');
-        renderShell();
-      } catch (err) {
-        toast('Failed to delete: ' + err.message, 'err');
+      STATE.expenses.splice(index, 1);
+      if (STATE.editingExpenseIndex === index) {
+        STATE.editingExpenseIndex = null;
+      } else if (STATE.editingExpenseIndex !== null && STATE.editingExpenseIndex > index) {
+        STATE.editingExpenseIndex--;
       }
+      saveLocalState();
+      toast('Expense deleted', 'ok');
+      renderShell();
+      apiPost({ action: 'deleteExpense', index: index }).catch(err => toast('Sync failed: ' + err.message, 'err'));
     }
     window.deleteExpenseItem = deleteExpenseItem; // Attach to window for global HTML access
 
@@ -5332,13 +5859,11 @@
           }
         });
 
-        try {
-          await apiPost({ action: 'updateMultiYear', rows: updatedRows });
-          toast('Saved', 'ok');
-          await loadAll();
-          renderShell();
-        }
-        catch (err) { toast('Failed: ' + err.message, 'err'); }
+        STATE.multiYear = updatedRows;
+        saveLocalState();
+        toast('Saved', 'ok');
+        renderShell();
+        apiPost({ action: 'updateMultiYear', rows: updatedRows }).catch(err => toast('Sync failed: ' + err.message, 'err'));
       };
 
       drawMultiYearCharts(chronologicalRows);
@@ -5546,8 +6071,9 @@
             <!-- Row 3 Right: Default Brokerage -->
             <div class="settings-rules-right">
               <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Default Brokerage:</span>
-              <input type="number" id="s_brok" value="${s.brokeragePerTrade || ''}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+              <input type="number" id="s_brok" value="${s.brokeragePerTrade !== undefined && s.brokeragePerTrade !== '' ? s.brokeragePerTrade : 0}" placeholder="0 (Delivery) or 20 (Intraday)" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
+            <div style="font-size: 11px; color: var(--sub); margin-top: 4px; grid-column: span 2; text-align: right;">Note: Delivery trades have ₹0 brokerage in India (Zerodha/Dhan). Intraday/F&O traders can set custom charges per order (e.g. ₹20). You can also edit charges per trade anytime.</div>
           </div>
         </div>
 
@@ -5570,7 +6096,7 @@
       <div class="panel" style="padding: 14px; margin-bottom: 0; display: flex; flex-direction: column; overflow-x: auto;">
         <div class="panel-head" style="margin-bottom: 10px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
           <h3>Capital Additions &amp; Withdrawals Log</h3>
-          <button class="btn silver" id="addCapBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save Log</button>
+          <button class="btn silver" id="addCapBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save</button>
           <button class="btn ghost" id="cancelCapEditBtn" style="display:none; padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Cancel</button>
         </div>
         <div style="max-height: 180px; overflow: auto; width: 100%; max-width: 100%; -webkit-overflow-scrolling: touch; margin-bottom: 12px; border: 1px solid var(--line-soft); border-radius: 4px;">
@@ -5607,10 +6133,13 @@
           currentFY: $('#s_fy').value, openingCapitalFY: parseFloat($('#s_open').value) || 0,
           riskPctPerTrade: (parseFloat($('#s_riskpct').value) || 0) / 100,
           maxStocksMin: parseFloat($('#s_minpos').value) || 0, maxStocksMax: parseFloat($('#s_maxpos').value) || 0,
-          pyramidDays: parseFloat($('#s_pyramid').value) || 0, brokeragePerTrade: parseFloat($('#s_brok').value) || 0
+          pyramidDays: parseFloat($('#s_pyramid').value) || 0, brokeragePerTrade: parseFloat($('#s_brok').value) >= 0 ? parseFloat($('#s_brok').value) : 0
         };
-        try { await apiPost({ action: 'updateSettings', settings }); await loadAll(); toast('Settings saved', 'ok'); renderShell(); }
-        catch (err) { toast('Failed: ' + err.message, 'err'); }
+        STATE.settings = settings;
+        saveLocalState();
+        toast('Settings saved', 'ok');
+        renderShell();
+        apiPost({ action: 'updateSettings', settings }).catch(err => toast('Sync failed: ' + err.message, 'err'));
       };
       $('#addCapBtn').onclick = async () => {
         const type = $('#c_type').value;
@@ -5621,20 +6150,21 @@
         }
         const note = $('#c_note').value.trim() || (type === 'withdraw' ? 'Capital withdrawal' : 'Capital addition');
         const isEdit = STATE.editingCapitalIndex != null;
-        try {
-          if (isEdit) {
-            await apiPost({ action: 'updateCapital', index: STATE.editingCapitalIndex, entry: { date: $('#c_date').value, amount, note } });
-            STATE.editingCapitalIndex = null;
-            toast('Capital change updated', 'ok');
-          } else {
-            await apiPost({ action: 'addCapital', entry: { date: $('#c_date').value, amount, note } });
-            toast('Capital change logged', 'ok');
-          }
-          await loadAll();
-          renderShell();
-        } catch (err) {
-          toast('Failed: ' + err.message, 'err');
+        const capIdx = STATE.editingCapitalIndex;
+        const entry = { date: $('#c_date').value, amount, note };
+
+        if (isEdit) {
+          STATE.capitalLog[capIdx] = entry;
+          STATE.editingCapitalIndex = null;
+          toast('Capital change updated', 'ok');
+          apiPost({ action: 'updateCapital', index: capIdx, entry }).catch(err => toast('Sync failed: ' + err.message, 'err'));
+        } else {
+          STATE.capitalLog.push(entry);
+          toast('Capital change logged', 'ok');
+          apiPost({ action: 'addCapital', entry }).catch(err => toast('Sync failed: ' + err.message, 'err'));
         }
+        saveLocalState();
+        renderShell();
       };
 
       $('#cancelCapEditBtn').onclick = () => {
@@ -5643,7 +6173,7 @@
         $('#c_amount').value = '';
         $('#c_note').value = '';
         $('#c_type').value = 'add';
-        $('#addCapBtn').textContent = 'Save Log';
+        $('#addCapBtn').textContent = 'Save';
         $('#cancelCapEditBtn').style.display = 'none';
       };
 
@@ -5655,20 +6185,17 @@
         $('#c_amount').value = Math.abs(log.amount);
         $('#c_note').value = log.note || '';
         $('#c_type').value = log.amount >= 0 ? 'add' : 'withdraw';
-        $('#addCapBtn').textContent = 'Update';
+        $('#addCapBtn').textContent = 'Save';
         $('#cancelCapEditBtn').style.display = 'inline-block';
       };
 
       window.deleteCapitalChange = async (index) => {
         if (!confirm('Delete this capital change entry?')) return;
-        try {
-          await apiPost({ action: 'deleteCapital', index });
-          await loadAll();
-          toast('Logged capital change deleted', 'ok');
-          renderShell();
-        } catch (err) {
-          toast('Failed: ' + err.message, 'err');
-        }
+        STATE.capitalLog.splice(index, 1);
+        saveLocalState();
+        toast('Logged capital change deleted', 'ok');
+        renderShell();
+        apiPost({ action: 'deleteCapital', index }).catch(err => toast('Sync failed: ' + err.message, 'err'));
       };
       $('#saveDhanBtn').onclick = () => {
         const t = $('#s_dhan_token').value.trim();
@@ -5681,6 +6208,52 @@
         }
       };
     }
+
+    /* =========================================================================
+       GLOBAL KEYBOARD SHORTCUTS (Ctrl+S / Cmd+S for Saving)
+       ========================================================================= */
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+
+        // 1. Check if a modal is open
+        const modalBg = $('#modalBg');
+        if (modalBg && modalBg.classList.contains('show')) {
+          const mSaveBtn = $('#m_updateRemarks') || $('#sync_run') || $('#custom_win_save');
+          if (mSaveBtn && typeof mSaveBtn.onclick === 'function') {
+            mSaveBtn.click();
+            return;
+          }
+        }
+
+        // 2. View-specific save buttons
+        if (STATE.view === 'add') {
+          const btn = $('#saveTradeBtn');
+          if (btn) btn.click();
+        } else if (STATE.view === 'risk') {
+          const btn = $('#addWlBtn');
+          if (btn) btn.click();
+        } else if (STATE.view === 'expenses') {
+          const btn = $('#addExpenseBtn');
+          if (btn) btn.click();
+        } else if (STATE.view === 'multiyear') {
+          const btn = $('#saveYearsBtn');
+          if (btn) btn.click();
+        } else if (STATE.view === 'settings') {
+          const activeEl = document.activeElement;
+          if (activeEl && (activeEl.id === 'c_amount' || activeEl.id === 'c_note' || activeEl.id === 'c_date' || activeEl.id === 'c_type')) {
+            const btn = $('#addCapBtn');
+            if (btn) btn.click();
+          } else {
+            const btn = $('#saveSettingsBtn');
+            if (btn) btn.click();
+          }
+        } else {
+          const btn = $('#saveTradeBtn') || $('#saveSettingsBtn') || $('#cfgSave');
+          if (btn) btn.click();
+        }
+      }
+    });
 
     /* =========================================================================
        BOOT
