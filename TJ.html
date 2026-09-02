@@ -1887,6 +1887,12 @@
         return s + tradeRisk;
       }, 0);
 
+      const openPLAtTSL = open.reduce((s, t) => {
+        const normT = normalizeTrade(t);
+        const openPnL = computeOpenTradePnL(normT);
+        return s + (openPnL ? (openPnL.pnl || 0) : 0);
+      }, 0);
+
       const opening = Number(STATE.settings.openingCapitalFY || 0);
       const cap = currentCapital();
       const cash = cap - invested;
@@ -1947,6 +1953,7 @@
         winPct: closedFY.length ? wonFY.length / closedFY.length : (closed.length ? won.length / closed.length : 0),
         wonCount: wonFY.length, lostCount: lostFY.length, openCount: open.length,
         openRisk,
+        openPLAtTSL,
         riskBudget: cap * Number(STATE.settings.riskPctPerTrade || 0.01),
         winPctPre: closedPre.length ? wonPre.length / closedPre.length : 0,
         wonCountPre: wonPre.length,
@@ -2376,7 +2383,7 @@
       </div>
       <div class="card card-win1" style="cursor:pointer;" onclick="openCustomWinRateModal()"><div class="lbl">Win Rate (${formatDateDMY_MMM(STATE.customWinRateStart || getFirstTradeDate())} to ${formatDateDMY_MMM(STATE.customWinRateEnd || '2026-03-31')})</div><div class="num">${fmtPct(s.winPctPre)}</div><div class="sub">${s.wonCountPre}W / ${s.lostCountPre}L</div></div>
       <div class="card card-win2"><div class="lbl">Win Rate (≥1-Apr-26)</div><div class="num">${fmtPct(s.winPctPost)}</div><div class="sub">${s.wonCountPost}W / ${s.lostCountPost}L</div></div>
-      <div class="card card-open" style="cursor:pointer;" onclick="STATE.view='trades'; STATE.tradeFilter='open'; renderShell();"><div class="lbl">Open Positions</div><div class="num">${s.openCount}</div><div class="sub">${fmtRs(s.openRisk)} at risk</div></div>
+      <div class="card card-open" style="cursor:pointer;" onclick="STATE.view='trades'; STATE.tradeFilter='open'; renderShell();"><div class="lbl">Open Positions</div><div class="num">${s.openCount}</div><div class="sub">${fmtRs(s.openRisk)} at risk · TSL P/L: <span style="color:${s.openPLAtTSL >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${s.openPLAtTSL >= 0 ? '+' : ''}${fmtRs(s.openPLAtTSL)}</span></div></div>
     </div>
 
     <div class="two-col">
@@ -2397,8 +2404,8 @@
           </div>
         </div>
         <div class="panel">
-          <div class="panel-head"><h3>Recent trades</h3><span class="hint" style="cursor:pointer;" onclick="STATE.view='trades';renderShell();">View all →</span></div>
-          ${tradeTableHTML(STATE.trades.slice().sort((a, b) => (b.openDate || '').localeCompare(a.openDate || '')).slice(0, 8), { compact: true })}
+          <div class="panel-head"><h3>Open positions</h3><span class="hint" style="cursor:pointer;" onclick="STATE.view='trades'; STATE.tradeFilter='open'; renderShell();">View all →</span></div>
+          ${tradeTableHTML(STATE.trades.filter(t => t.status === 'open').slice().sort((a, b) => (b.openDate || '').localeCompare(a.openDate || '')), { compact: true, emptyText: 'No open positions', emptySubtext: 'All positions are currently closed.' })}
         </div>
       </div>
       
@@ -2562,7 +2569,7 @@
     function tradeTableHTML(list, opts) {
       opts = opts || {};
       const compact = !!opts.compact;
-      if (!list.length) return `<div class="empty"><h4>No trades to show</h4><p>Add your first trade to get started.</p></div>`;
+      if (!list.length) return `<div class="empty"><h4>${opts.emptyText || 'No trades to show'}</h4><p>${opts.emptySubtext || 'Add your first trade to get started.'}</p></div>`;
 
       if (compact) {
         const rows = list.map(t => {
@@ -2570,19 +2577,39 @@
           const badge = isOpen ? '<span class="badge open">OPEN</span>' :
             (t.pnl >= 0 ? '<span class="badge closed-win">WIN</span>' : '<span class="badge closed-loss">LOSS</span>');
           const amount = Number(t.totBuyQty || 0) * Number(t.avgBuyPrice || 0);
-          let pnlVal = t.pnl, pnlPctVal = t.pnlPct;
+          let ctrBottomContent = '';
           if (isOpen) {
+            const normT = normalizeTrade(t);
+            const openPnL = computeOpenTradePnL(normT);
+            const pnlTSL = openPnL ? openPnL.pnl : null;
+            const pnlTSLPct = openPnL ? openPnL.pnlPct : null;
+            const activeSL = (t.tslPrice != null && t.tslPrice !== '') ? Number(t.tslPrice) : Number(t.slPrice || 0);
+            const slLabel = (t.tslPrice != null && t.tslPrice !== '') ? 'TSL' : 'SL';
+
+            const tslPnlHtml = (pnlTSL != null && activeSL > 0) ?
+              `<span>P/L at ${slLabel}: <span style="color:${pnlTSL >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${pnlTSL >= 0 ? '+' : ''}${fmtRs(pnlTSL)}${pnlTSLPct != null ? ` (${fmtPct(pnlTSLPct)})` : ''}</span></span>` : '';
+
+            let livePnlVal = null, livePnlPctVal = null;
             const livePrice = STATE.livePrices[t.stock];
             if (livePrice != null) {
               const remainingQty = Number(t.totBuyQty || 0);
-              pnlVal = Math.round((livePrice - Number(t.avgBuyPrice || 0)) * remainingQty);
-              pnlPctVal = t.totBuyAmt ? pnlVal / Number(t.totBuyAmt) : null;
-            } else {
-              pnlVal = null; pnlPctVal = null;
+              livePnlVal = Math.round((livePrice - Number(t.avgBuyPrice || 0)) * remainingQty);
+              livePnlPctVal = t.totBuyAmt ? livePnlVal / Number(t.totBuyAmt) : null;
             }
+            const livePnlHtml = livePnlVal != null ?
+              `<span>Live: <span style="color:${livePnlVal >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${livePnlVal >= 0 ? '+' : ''}${fmtRs(livePnlVal)}${livePnlPctVal != null ? ` (${fmtPct(livePnlPctVal)})` : ''}</span></span>` : '';
+
+            if (tslPnlHtml || livePnlHtml) {
+              ctrBottomContent = `<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px 10px; font-size:11.5px;">${tslPnlHtml}${livePnlHtml}</div>`;
+            } else {
+              ctrBottomContent = `<span style="color:var(--dim); font-size:11.5px;">—</span>`;
+            }
+          } else {
+            const pnlVal = t.pnl, pnlPctVal = t.pnlPct;
+            ctrBottomContent = pnlVal == null ? '<span style="color:var(--dim); font-size:11.5px;">—</span>' :
+              `<span style="color:${pnlVal >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600; font-size:11.5px;">P/L: ${pnlVal >= 0 ? '+' : ''}${fmtRs(pnlVal)}${pnlPctVal != null ? ` (${fmtPct(pnlPctVal)})` : ''}</span>`;
           }
-          const pnlHtml = pnlVal == null ? '<span style="color:var(--dim);">—</span>' :
-            `<span style="color:${pnlVal >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${pnlVal >= 0 ? '+' : ''}${fmtRs(pnlVal)}${pnlPctVal != null ? ` (${fmtPct(pnlPctVal)})` : ''}</span>`;
+
           return `
             <div class="compact-trade-row" data-id="${t.id}" onclick="STATE.view='trades';renderShell();">
               <div class="ctr-top">
@@ -2593,7 +2620,7 @@
                 <span>${formatDateDMY(t.openDate)}</span>
                 <span>${fmt(t.totBuyQty)} @ ${fmt(t.avgBuyPrice)} · ${fmtRs(amount)}</span>
               </div>
-              <div class="ctr-bottom">${pnlHtml}</div>
+              <div class="ctr-bottom">${ctrBottomContent}</div>
             </div>
           `;
         }).join('');
