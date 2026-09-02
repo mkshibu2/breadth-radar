@@ -2355,7 +2355,7 @@
         <div class="num" style="color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'}">${netPnl >= 0 ? '+' : ''}${fmtRs(netPnl)}</div>
         <div class="sub" style="display:flex; flex-direction:column; gap:1px; font-size:10.5px; margin-top:auto; line-height:1.2;">
           <span>Gross: <span style="color:var(--text);font-family:var(--mono);">${fmt(s.realizedPnl)}</span></span>
-          <span>Charges: <span style="color:var(--text);font-family:var(--mono);">${fmt(s.totalChargesFY)}</span> · Exp: <span style="color:var(--text);font-family:var(--mono);">${fmt(totalExpenses)}</span></span>
+          <span>Exp &amp; Taxes: <span style="color:var(--text);font-family:var(--mono);">${fmt(s.totalChargesFY + totalExpenses)}</span></span>
         </div>
       </div>
       <div class="card card-avg">
