@@ -111,7 +111,6 @@
 
     .tick {
       display: flex;
-      align-items: baseline;
       gap: 8px;
       padding: 0 18px;
       border-right: 1px solid var(--line-soft);
@@ -1575,7 +1574,11 @@
         fullQty: num('fullQty'), totLossAtSL: num('totLossAtSL'), brokerage: num('brokerage'),
         exit1Price: num('exit1Price'), exit1Qty: num('exit1Qty'), exit2Price: num('exit2Price'), exit2Qty: num('exit2Qty'),
         exit3Price: num('exit3Price'), exit3Qty: num('exit3Qty'),
-        totExitAmt: num('totExitAmt'), pnl: num('pnl'), pnlPct: num('pnlPct'), days: num('days'), rr: num('rr'), tslPrice: num('tslPrice')
+        totExitAmt: num('totExitAmt'), pnl: num('pnl'), pnlPct: num('pnlPct'), days: num('days'), rr: num('rr'), tslPrice: num('tslPrice'),
+        maePrice: num('maePrice'), mfePrice: num('mfePrice'),
+        setup: t.setup || '', sector: t.sector || '',
+        discipline: t.discipline || 'Clean Execution',
+        entryChartUrl: t.entryChartUrl || '', exitChartUrl: t.exitChartUrl || ''
       };
 
       const buy = aggregateBuy(norm);
@@ -1755,7 +1758,7 @@
       const totalExpenses = STATE.expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
       return opening + capitalAdditionsExcludingOpening() + closedRealizedPnl + openPartialRealizedPnl - totalExpenses;
     }
-    function added0() { return 0; }
+
     function capitalAdditionsExcludingOpening() {
       return STATE.capitalLog.filter(c => !/opening/i.test(c.note || '')).reduce((s, c) => s + Number(c.amount || 0), 0);
     }
@@ -2321,11 +2324,139 @@
       if (STATE.view === 'settings') return renderSettings(host);
     }
 
+    function computeEdgeMetrics() {
+      const closedTrades = (STATE.trades || []).filter(t => t.status === 'closed' && t.closedDate);
+
+      // 1. Setup Matrix
+      const setupMap = {};
+      closedTrades.forEach(t => {
+        const setup = (t.setup || 'Untagged').trim() || 'Untagged';
+        if (!setupMap[setup]) setupMap[setup] = { name: setup, count: 0, wins: 0, losses: 0, winPnl: 0, lossPnl: 0, totalPnl: 0, totalR: 0, totalDays: 0 };
+        const s = setupMap[setup];
+        s.count++;
+        const pnl = Number(t.pnl || 0);
+        s.totalPnl += pnl;
+        if (pnl > 0) { s.wins++; s.winPnl += pnl; }
+        else if (pnl < 0) { s.losses++; s.lossPnl += Math.abs(pnl); }
+        if (t.rr != null) s.totalR += Number(t.rr);
+        if (t.days != null) s.totalDays += Number(t.days);
+      });
+      const setups = Object.values(setupMap).map(s => ({
+        ...s,
+        winRate: s.count ? +(s.wins / s.count * 100).toFixed(1) : 0,
+        profitFactor: s.lossPnl > 0 ? +(s.winPnl / s.lossPnl).toFixed(2) : (s.winPnl > 0 ? 99.9 : 0),
+        avgR: s.count ? +(s.totalR / s.count).toFixed(2) : 0,
+        avgDays: s.count ? Math.round(s.totalDays / s.count) : 0
+      })).sort((a, b) => b.totalPnl - a.totalPnl);
+
+      // 2. Mistake / Leak Finder
+      const disciplineMap = {};
+      let cleanPnl = 0, cleanCount = 0;
+      let leakedPnl = 0, mistakeCount = 0;
+      closedTrades.forEach(t => {
+        const disc = t.discipline || 'Clean Execution';
+        const pnl = Number(t.pnl || 0);
+        if (!disciplineMap[disc]) disciplineMap[disc] = { name: disc, count: 0, pnl: 0 };
+        disciplineMap[disc].count++;
+        disciplineMap[disc].pnl += pnl;
+
+        if (disc === 'Clean Execution') {
+          cleanPnl += pnl;
+          cleanCount++;
+        } else {
+          mistakeCount++;
+          if (pnl < 0) leakedPnl += Math.abs(pnl);
+        }
+      });
+      const mistakes = Object.values(disciplineMap).sort((a, b) => a.pnl - b.pnl);
+
+      // 3. R-Multiple Distribution
+      const rBuckets = {
+        '<-2R': 0,
+        '-1R to -2R': 0,
+        '-0.5R to -1R': 0,
+        '0 to -0.5R': 0,
+        '0 to +1R': 0,
+        '+1R to +2R': 0,
+        '+2R to +3R': 0,
+        '+3R to +5R': 0,
+        '>+5R': 0
+      };
+      let winRSum = 0, winRCount = 0;
+      let lossRSum = 0, lossRCount = 0;
+      closedTrades.forEach(t => {
+        let r = t.rr != null ? Number(t.rr) : null;
+        if (r == null && t.totLossAtSL && t.totLossAtSL > 0) {
+          r = +(Number(t.pnl || 0) / t.totLossAtSL).toFixed(2);
+        }
+        if (r == null) return;
+
+        if (r > 0) { winRSum += r; winRCount++; }
+        else if (r < 0) { lossRSum += Math.abs(r); lossRCount++; }
+
+        if (r < -2) rBuckets['<-2R']++;
+        else if (r < -1) rBuckets['-1R to -2R']++;
+        else if (r < -0.5) rBuckets['-0.5R to -1R']++;
+        else if (r <= 0) rBuckets['0 to -0.5R']++;
+        else if (r <= 1) rBuckets['0 to +1R']++;
+        else if (r <= 2) rBuckets['+1R to +2R']++;
+        else if (r <= 3) rBuckets['+2R to +3R']++;
+        else if (r <= 5) rBuckets['+3R to +5R']++;
+        else rBuckets['>+5R']++;
+      });
+      const avgWinR = winRCount ? +(winRSum / winRCount).toFixed(2) : 0;
+      const avgLossR = lossRCount ? +(lossRSum / lossRCount).toFixed(2) : 0;
+      const asymmetryRatio = avgLossR > 0 ? +(avgWinR / avgLossR).toFixed(2) : avgWinR;
+
+      // 4. MAE / MFE Efficiency
+      let maeSum = 0, maeCount = 0;
+      let mfeEfficiencySum = 0, mfeCount = 0;
+      closedTrades.forEach(t => {
+        const buyPrice = Number(t.avgBuyPrice || t.entry1Price || 0);
+        const sellPrice = Number(t.avgSellPrice || t.exit1Price || 0);
+        if (buyPrice <= 0) return;
+
+        if (t.maePrice && t.maePrice < buyPrice) {
+          const dipPct = ((buyPrice - t.maePrice) / buyPrice) * 100;
+          if (t.pnl > 0) { maeSum += dipPct; maeCount++; }
+        }
+
+        if (t.mfePrice && t.mfePrice > buyPrice && sellPrice > buyPrice) {
+          const maxGain = t.mfePrice - buyPrice;
+          const realizedGain = sellPrice - buyPrice;
+          if (maxGain > 0) {
+            const eff = Math.min(100, Math.max(0, (realizedGain / maxGain) * 100));
+            mfeEfficiencySum += eff;
+            mfeCount++;
+          }
+        }
+      });
+      const avgWinningMaePct = maeCount ? +(maeSum / maeCount).toFixed(2) : null;
+      const avgMfeCapturePct = mfeCount ? Math.round(mfeEfficiencySum / mfeCount) : null;
+
+      return {
+        setups,
+        mistakes,
+        cleanPnl,
+        leakedPnl,
+        mistakeCount,
+        rBuckets,
+        avgWinR,
+        avgLossR,
+        asymmetryRatio,
+        avgWinningMaePct,
+        avgMfeCapturePct,
+        totalClosed: closedTrades.length
+      };
+    }
+    window.computeEdgeMetrics = computeEdgeMetrics;
+
     /* =========================================================================
        OVERVIEW
        ========================================================================= */
     function renderOverview(host) {
       const s = overviewStats();
+      const edge = computeEdgeMetrics();
       const availableFYs = getAvailableFYs();
       const selectedFY = STATE.selectedPnlFY || formatFY(STATE.settings.currentFY) || 'All';
       const period = STATE.selectedEquityPeriod || 'All';
@@ -2407,6 +2538,54 @@
           <div class="panel-head"><h3>Open positions</h3><span class="hint" style="cursor:pointer;" onclick="STATE.view='trades'; STATE.tradeFilter='open'; renderShell();">View all →</span></div>
           ${tradeTableHTML(STATE.trades.filter(t => t.status === 'open').slice().sort((a, b) => (b.openDate || '').localeCompare(a.openDate || '')), { compact: true, emptyText: 'No open positions', emptySubtext: 'All positions are currently closed.' })}
         </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Watch List</h3>
+            <span class="hint" style="cursor:pointer;" onclick="STATE.view='risk'; renderShell();">Manage in Calculator →</span>
+          </div>
+          <div style="overflow-x:auto; max-width:100%; -webkit-overflow-scrolling: touch;">
+            <table style="width: 100%;">
+              <thead>
+                <tr>
+                  <th style="font-family:var(--sans);">Stock</th>
+                  <th>Planned Entry</th>
+                  <th>Stop Loss</th>
+                  <th>SL %</th>
+                  <th>Qty</th>
+                  <th>Position Value</th>
+                  <th>Risk at SL</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(() => {
+                  const wl = (typeof getWatchlist === 'function') ? getWatchlist() : (STATE.watchlist || []);
+                  return wl.length ? wl.map((item, idx) => `
+                    <tr style="cursor: pointer;" onclick="editWlItem(${idx})" title="Click to open in Risk Calculator">
+                      <td style="font-family:var(--sans);font-weight:600;color:var(--gold);">
+                        ${item.stock}
+                        ${item.setup ? `<br><span style="font-size:9px;color:var(--dim);background:var(--bg2);padding:1px 4px;border-radius:3px;font-weight:normal;">${item.setup}</span>` : ''}
+                      </td>
+                      <td>${fmt(item.entryPrice)}</td>
+                      <td>${fmt(item.slPrice)}</td>
+                      <td style="color:var(--red);">${fmtPct(item.slPct)}</td>
+                      <td>${item.qty}</td>
+                      <td>${fmtRs(item.posSize)}</td>
+                      <td>${fmtRs(item.risk)}</td>
+                      <td style="text-align:right;">
+                        <div style="display:flex;gap:6px;justify-content:flex-end;">
+                          <button class="btn silver" style="font-size:10px;padding:4px 8px;min-height:auto;" onclick="event.stopPropagation(); moveWlToTradeLog(${idx})">🚀 Buy / Log</button>
+                          <button class="btn danger ghost" style="font-size:10px;padding:4px 8px;min-height:auto;" onclick="event.stopPropagation(); deleteWlItem(${idx})">✕</button>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join('') : `<tr><td colspan="8" style="text-align:center;color:var(--dim);padding:20px;font-family:var(--sans);">No planned trades in watch list</td></tr>`;
+                })()}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
       
       <div>
@@ -2442,6 +2621,183 @@
           </tbody></table>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         TRADING EDGE & EXECUTION INTELLIGENCE DASHBOARD
+         ========================================================================= -->
+    <div style="margin-top: 24px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <h2 style="margin:0; font-size:16px; font-weight:700; color:var(--text); letter-spacing:-0.2px;">🎯 Trading Edge &amp; Execution Intelligence</h2>
+          <span class="badge" style="background:rgba(212,162,78,0.12); color:var(--gold); border:1px solid rgba(212,162,78,0.3); font-size:10px;">Pro Analytics</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--dim);">Optimizing Win Rate, Asymmetry &amp; Discipline</div>
+      </div>
+
+      <!-- Grid of Edge Analytics Cards -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:14px; margin-bottom:14px;">
+
+        <!-- 1. Strategy / Setup Edge Matrix Card -->
+        <div class="panel" style="padding:14px; margin:0; display:flex; flex-direction:column;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:14px;">📈</span>
+              <strong style="font-size:12.5px; color:var(--text);">Strategy / Setup Edge Matrix</strong>
+            </div>
+            <button type="button" class="btn ghost" style="padding:2px 6px; font-size:10px; height:auto;" onclick="showInfoModal('Setup Edge Matrix', 'Compares win rate, profit factor, and expectancy across your trading setups. Professional rule: Double down on setups with Win Rate &gt; 55% and Profit Factor &gt; 1.75; eliminate or refine setups with Profit Factor &lt; 1.0.', 'Benchmark: Win Rate &gt; 55%, Profit Factor &gt; 1.75')">ℹ️ Info</button>
+          </div>
+          <div style="font-size:11px; color:var(--dim); margin-bottom:8px;">Find your highest expectancy setups:</div>
+          <div style="max-height:180px; overflow-y:auto; border:1px solid var(--line-soft); border-radius:4px;">
+            <table style="width:100%; font-size:11px; margin:0;">
+              <thead>
+                <tr>
+                  <th style="padding:4px 6px;">Setup</th>
+                  <th style="padding:4px 6px; text-align:center;">Tr</th>
+                  <th style="padding:4px 6px; text-align:center;">Win %</th>
+                  <th style="padding:4px 6px; text-align:center;">P.Factor</th>
+                  <th style="padding:4px 6px; text-align:right;">Net P/L</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${edge.setups.length ? edge.setups.map((s, idx) => `
+                  <tr onclick="openSetupTradesModal('${s.name.replace(/'/g, "\\'")}')" class="clickable-row" style="cursor:pointer; transition:background 0.15s; ${idx === 0 && s.totalPnl > 0 ? 'background:rgba(212,162,78,0.06);' : ''}" title="Click to view &amp; tag trades for '${s.name}'">
+                    <td style="padding:4px 6px; font-weight:600; color:${idx === 0 && s.totalPnl > 0 ? 'var(--gold)' : 'var(--text)'};">
+                      ${idx === 0 && s.totalPnl > 0 ? '⭐ ' : ''}${s.name} <span style="font-size:9.5px; color:var(--gold); opacity:0.8;">↗</span>
+                    </td>
+                    <td style="padding:4px 6px; text-align:center;">${s.count}</td>
+                    <td style="padding:4px 6px; text-align:center; color:${s.winRate >= 50 ? 'var(--green)' : 'var(--red)'};">${s.winRate}%</td>
+                    <td style="padding:4px 6px; text-align:center; font-family:var(--mono);">${s.profitFactor > 50 ? '∞' : s.profitFactor}</td>
+                    <td style="padding:4px 6px; text-align:right; color:${s.totalPnl >= 0 ? 'var(--green)' : 'var(--red)'}; font-weight:600; font-family:var(--mono);">${s.totalPnl >= 0 ? '+' : ''}${fmtRs(s.totalPnl)}</td>
+                  </tr>
+                `).join('') : `<tr><td colspan="5" style="text-align:center; padding:12px; color:var(--dim);">Tag setups in Trade Form to view matrix</td></tr>`}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 2. Mistake / Leak Finder Card -->
+        <div class="panel" style="padding:14px; margin:0; display:flex; flex-direction:column;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:14px;">🕳️</span>
+              <strong style="font-size:12.5px; color:var(--text);">Discipline &amp; Capital Leak Finder</strong>
+            </div>
+            <button type="button" class="btn ghost" style="padding:2px 6px; font-size:10px; height:auto;" onclick="showInfoModal('Capital Leak Finder', 'Quantifies the exact rupee losses from emotional rule violations (chased entries, moving stops, oversized revenge trades). Eliminating rule breaches is the single fastest way to boost net returns without taking more risk.', 'Benchmark: Clean Execution &gt; 85% of total trades')">ℹ️ Info</button>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+            <div style="background:rgba(255,255,255,0.02); border:1px solid var(--line-soft); border-radius:4px; padding:6px 8px;">
+              <div style="font-size:10px; color:var(--dim);">Clean Discipline P/L</div>
+              <div style="font-size:14px; font-weight:700; color:var(--green); font-family:var(--mono); margin-top:2px;">
+                ${edge.cleanPnl >= 0 ? '+' : ''}${fmtRs(edge.cleanPnl)}
+              </div>
+            </div>
+            <div style="background:rgba(255,92,92,0.06); border:1px solid rgba(255,92,92,0.25); border-radius:4px; padding:6px 8px;">
+              <div style="font-size:10px; color:var(--dim);">Leaked to Mistakes</div>
+              <div style="font-size:14px; font-weight:700; color:var(--red); font-family:var(--mono); margin-top:2px;">
+                -${fmtRs(edge.leakedPnl)}
+              </div>
+            </div>
+          </div>
+          <div style="font-size:11px; color:var(--dim); margin-bottom:4px;">Rule Execution Breakdown:</div>
+          <div style="max-height:120px; overflow-y:auto; border:1px solid var(--line-soft); border-radius:4px;">
+            <table style="width:100%; font-size:10.5px; margin:0;">
+              <tbody>
+                ${edge.mistakes.map(m => `
+                  <tr>
+                    <td style="padding:3px 6px;">
+                      <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${m.name === 'Clean Execution' ? 'var(--green)' : 'var(--red)'}; margin-right:4px;"></span>
+                      ${m.name}
+                    </td>
+                    <td style="padding:3px 6px; text-align:center; color:var(--dim);">${m.count} tr</td>
+                    <td style="padding:3px 6px; text-align:right; font-weight:600; color:${m.pnl >= 0 ? 'var(--green)' : 'var(--red)'}; font-family:var(--mono);">${m.pnl >= 0 ? '+' : ''}${fmtRs(m.pnl)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Second Row of Edge Cards -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:14px;">
+
+        <!-- 3. R-Multiple Distribution Histogram Card -->
+        <div class="panel" style="padding:14px; margin:0; display:flex; flex-direction:column;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:14px;">⚖️</span>
+              <strong style="font-size:12.5px; color:var(--text);">R-Multiple Asymmetry Analyzer</strong>
+            </div>
+            <button type="button" class="btn ghost" style="padding:2px 6px; font-size:10px; height:auto;" onclick="showInfoModal('R-Multiple Asymmetry', 'Displays your trade returns in units of initial risk (1R = Initial Capital Risked). Winning traders have an asymmetric distribution: losses capped at -1R while winners stretch into +2R, +3R, +5R+ runners.', 'Benchmark: Asymmetry Ratio (Avg Win R / Avg Loss R) &gt; 2.0x')">ℹ️ Info</button>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); border:1px solid var(--line-soft); border-radius:4px; padding:6px 10px; margin-bottom:10px;">
+            <div>
+              <span style="font-size:10.5px; color:var(--dim);">Avg Win R:</span>
+              <strong style="color:var(--green); font-family:var(--mono); font-size:12px; margin-left:4px;">+${edge.avgWinR}R</strong>
+            </div>
+            <div>
+              <span style="font-size:10.5px; color:var(--dim);">Avg Loss R:</span>
+              <strong style="color:var(--red); font-family:var(--mono); font-size:12px; margin-left:4px;">-${edge.avgLossR}R</strong>
+            </div>
+            <div>
+              <span style="font-size:10.5px; color:var(--dim);">Asymmetry:</span>
+              <strong style="color:${edge.asymmetryRatio >= 1.5 ? 'var(--gold)' : 'var(--text)'}; font-family:var(--mono); font-size:12px; margin-left:4px;">${edge.asymmetryRatio}x</strong>
+            </div>
+          </div>
+          <div style="font-size:10.5px; color:var(--dim); margin-bottom:6px;">R-Distribution Histogram:</div>
+          <div style="display:grid; grid-template-columns:repeat(9, 1fr); gap:4px; align-items:flex-end; height:75px; padding-bottom:4px; border-bottom:1px solid var(--line-soft);">
+            ${Object.entries(edge.rBuckets).map(([bucket, count]) => {
+              const isWin = bucket.includes('+') || bucket === '>+5R';
+              const maxCount = Math.max(...Object.values(edge.rBuckets), 1);
+              const barHeight = Math.max(8, Math.round((count / maxCount) * 55));
+              return `
+                <div style="display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end;" title="${bucket}: ${count} trades">
+                  <span style="font-size:9px; color:var(--sub); font-family:var(--mono); margin-bottom:2px;">${count || ''}</span>
+                  <div style="width:100%; height:${barHeight}px; background:${isWin ? 'rgba(51,209,122,0.65)' : 'rgba(255,92,92,0.65)'}; border-radius:2px;"></div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(9, 1fr); gap:2px; margin-top:4px;">
+            ${Object.keys(edge.rBuckets).map(b => `
+              <div style="font-size:8px; color:var(--dim); text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${b.replace('to', '~')}</div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- 4. MAE / MFE Execution Efficiency Card -->
+        <div class="panel" style="padding:14px; margin:0; display:flex; flex-direction:column;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:14px;">🎯</span>
+              <strong style="font-size:12.5px; color:var(--text);">MAE / MFE Execution Efficiency</strong>
+            </div>
+            <button type="button" class="btn ghost" style="padding:2px 6px; font-size:10px; height:auto;" onclick="showInfoModal('MAE &amp; MFE Efficiency', 'MAE (Maximum Adverse Excursion) measures the deepest % drawdown your winning trades dipped before running. If your winners never drop more than 2.5%, you can tighten your initial stop loss. MFE (Maximum Favorable Excursion) measures how much of the peak profit you captured before exit.', 'Benchmark: Winning MAE &lt; 2.5%, MFE Capture Efficiency &gt; 60%')">ℹ️ Info</button>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+            <div style="background:rgba(255,255,255,0.02); border:1px solid var(--line-soft); border-radius:4px; padding:8px;">
+              <div style="font-size:10px; color:var(--dim);">Avg Winning MAE Dip</div>
+              <div style="font-size:14px; font-weight:700; color:var(--gold); font-family:var(--mono); margin-top:2px;">
+                ${edge.avgWinningMaePct != null ? `${edge.avgWinningMaePct}%` : '—'}
+              </div>
+              <div style="font-size:9.5px; color:var(--sub); margin-top:2px;">Deepest heat on winners</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.02); border:1px solid var(--line-soft); border-radius:4px; padding:8px;">
+              <div style="font-size:10px; color:var(--dim);">MFE Capture Efficiency</div>
+              <div style="font-size:14px; font-weight:700; color:${(edge.avgMfeCapturePct || 0) >= 50 ? 'var(--green)' : 'var(--gold)'}; font-family:var(--mono); margin-top:2px;">
+                ${edge.avgMfeCapturePct != null ? `${edge.avgMfeCapturePct}%` : '—'}
+              </div>
+              <div style="font-size:9.5px; color:var(--sub); margin-top:2px;">Peak run banked on exit</div>
+            </div>
+          </div>
+          <div style="font-size:11px; color:var(--sub); line-height:1.4; background:rgba(255,255,255,0.02); border:1px solid var(--line-soft); border-radius:4px; padding:8px 10px; margin-top:auto;">
+            💡 <strong>Optimization Tip:</strong> ${edge.avgWinningMaePct && edge.avgWinningMaePct < 3.5 ? `Your winners rarely drop past ${edge.avgWinningMaePct}%. Consider tightening initial stop loss on new entries to improve R:R!` : `Log MAE &amp; MFE prices when editing trades to get precision stop loss recommendations.`}
+          </div>
+        </div>
+
       </div>
     </div>
   `;
@@ -2720,8 +3076,13 @@
         return `<tr data-id="${t.id}">
         <td>${formatDateDMY(t.openDate)}</td>
         <td style="font-family:var(--sans);font-weight:600;padding-top:8px;padding-bottom:8px;">
-          ${t.stock || '—'}
-          <div style="display:flex; flex-wrap:wrap; margin-top:2px;">
+          <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+            <span>${t.stock || '—'}</span>
+            ${(t.entryChartUrl || t.exitChartUrl) ? `<span onclick="event.stopPropagation();openChartViewerModal('${t.id}')" title="View Chart Snapshots" style="cursor:pointer;font-size:11px;">🖼️</span>` : ''}
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:3px; margin-top:3px;">
+            ${t.setup ? `<span class="badge" style="background:rgba(212,162,78,0.12);color:var(--gold);border:1px solid rgba(212,162,78,0.3);font-size:9px;padding:1px 4px;">${t.setup}</span>` : ''}
+            ${(t.discipline && t.discipline !== 'Clean Execution') ? `<span class="badge" style="background:rgba(255,92,92,0.12);color:var(--red);border:1px solid rgba(255,92,92,0.3);font-size:9px;padding:1px 4px;">⚠️ ${t.discipline}</span>` : ''}
             ${getPyramidFillsBadges(t)}
           </div>
         </td>
@@ -2850,8 +3211,13 @@
                   <tr data-id="${t.id}">
                     <td>${formatDateDMY(t.openDate)}</td>
                     <td style="font-family:var(--sans);font-weight:600;padding-top:8px;padding-bottom:8px;">
-                      ${t.stock || '—'}
-                      <div style="display:flex; flex-wrap:wrap; margin-top:2px;">
+                      <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+                        <span>${t.stock || '—'}</span>
+                        ${(t.entryChartUrl || t.exitChartUrl) ? `<span onclick="event.stopPropagation();openChartViewerModal('${t.id}')" title="View Chart Snapshots" style="cursor:pointer;font-size:11px;">🖼️</span>` : ''}
+                      </div>
+                      <div style="display:flex; flex-wrap:wrap; gap:3px; margin-top:3px;">
+                        ${t.setup ? `<span class="badge" style="background:rgba(212,162,78,0.12);color:var(--gold);border:1px solid rgba(212,162,78,0.3);font-size:9px;padding:1px 4px;">${t.setup}</span>` : ''}
+                        ${(t.discipline && t.discipline !== 'Clean Execution') ? `<span class="badge" style="background:rgba(255,92,92,0.12);color:var(--red);border:1px solid rgba(255,92,92,0.3);font-size:9px;padding:1px 4px;">⚠️ ${t.discipline}</span>` : ''}
                         ${getPyramidFillsBadges(t)}
                       </div>
                     </td>
@@ -3516,20 +3882,305 @@
       };
     }
 
-    function base64ToBlob(base64, mimeType) {
-      const byteCharacters = atob(base64);
-      const byteArrays = [];
-      for (let offset = 0; offset < byteCharacters.length; offset += 512) {
-        const slice = byteCharacters.slice(offset, offset + 512);
-        const byteNumbers = new Array(slice.length);
-        for (let i = 0; i < slice.length; i++) {
-          byteNumbers[i] = slice.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        byteArrays.push(byteArray);
-      }
-      return new Blob(byteArrays, { type: mimeType });
+    function showInfoModal(title, text, benchmark) {
+      const modalBg = $('#modalBg');
+      const modalBody = $('#modalBody');
+      if (!modalBg || !modalBody) return;
+
+      modalBody.style.maxWidth = '460px';
+      modalBody.innerHTML = `
+        <div class="modal-head" style="margin-bottom: 12px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:18px;">ℹ️</span>
+            <h3 style="margin:0; font-size:15px;">${title}</h3>
+          </div>
+          <button class="close-x" onclick="closeModal()">✕</button>
+        </div>
+        <div style="font-size:12.5px; color:var(--sub); line-height:1.5; margin-bottom:14px;">
+          ${text}
+        </div>
+        ${benchmark ? `
+          <div style="background:rgba(212,162,78,0.08); border:1px solid rgba(212,162,78,0.25); border-radius:6px; padding:8px 12px; margin-bottom:16px;">
+            <div style="font-size:10px; color:var(--dim); text-transform:uppercase; font-weight:700;">Target Benchmark / Professional Rule</div>
+            <div style="font-size:12px; font-weight:600; color:var(--gold); margin-top:2px;">${benchmark}</div>
+          </div>
+        ` : ''}
+        <div style="display:flex; justify-content:flex-end;">
+          <button class="btn silver" style="padding:4px 14px; font-size:11.5px; height:auto;" onclick="closeModal()">Got it</button>
+        </div>
+      `;
+      modalBg.classList.add('show');
     }
+    window.showInfoModal = showInfoModal;
+
+    function openChartViewerModal(tradeId) {
+      const trade = STATE.trades.find(t => String(t.id) === String(tradeId));
+      if (!trade) { toast('Trade not found', 'err'); return; }
+
+      const modalBg = $('#modalBg');
+      const modalBody = $('#modalBody');
+      if (!modalBg || !modalBody) return;
+
+      modalBody.style.maxWidth = '880px';
+      const hasEntry = !!trade.entryChartUrl;
+      const hasExit = !!trade.exitChartUrl;
+
+      modalBody.innerHTML = `
+        <div class="modal-head" style="margin-bottom: 12px;">
+          <div>
+            <h3 style="margin:0; font-size:15px;">🖼️ Chart Autopsy: ${trade.stock} (${trade.id})</h3>
+            <div style="font-size:11px; color:var(--dim); margin-top:2px;">
+              ${formatDateDMY(trade.openDate)} · Status: <strong>${(trade.status || '').toUpperCase()}</strong> · P/L: <strong style="color:${trade.pnl >= 0 ? 'var(--green)' : 'var(--red)'};">${trade.pnl >= 0 ? '+' : ''}${fmtRs(trade.pnl || 0)}</strong>
+            </div>
+          </div>
+          <button class="close-x" onclick="closeModal()">✕</button>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-bottom:12px; border-bottom:1px solid var(--line-soft); padding-bottom:8px;">
+          ${hasEntry ? `<button class="btn silver" id="tabEntryChart" style="padding:4px 12px; font-size:11.5px; height:auto;">Entry Thesis</button>` : ''}
+          ${hasExit ? `<button class="btn ${hasEntry ? 'ghost' : 'silver'}" id="tabExitChart" style="padding:4px 12px; font-size:11.5px; height:auto;">Exit Outcome</button>` : ''}
+          ${(!hasEntry && !hasExit) ? `<div style="font-size:12px; color:var(--dim);">No chart links attached to this trade. Edit trade to paste TradingView snapshot link (Alt + S).</div>` : ''}
+        </div>
+
+        <div id="chartFrameWrap" style="min-height:360px; max-height:550px; overflow:hidden; border:1px solid var(--line); border-radius:6px; background:#000; display:flex; align-items:center; justify-content:center; position:relative;">
+          ${hasEntry ? `
+            <img id="activeChartImg" src="${trade.entryChartUrl}" style="max-width:100%; max-height:540px; object-fit:contain;" alt="Entry Chart" onerror="this.onerror=null; document.getElementById('chartFrameWrap').innerHTML='<div style=\\'padding:20px;text-align:center;color:var(--dim);\\'><p>Could not preview image directly.</p><a href=\\'${trade.entryChartUrl}\\' target=\\'_blank\\' class=\\'btn silver\\' style=\\'display:inline-block;margin-top:8px;\\'>Open Snapshot in New Tab ↗</a></div>';">
+          ` : (hasExit ? `
+            <img id="activeChartImg" src="${trade.exitChartUrl}" style="max-width:100%; max-height:540px; object-fit:contain;" alt="Exit Chart" onerror="this.onerror=null; document.getElementById('chartFrameWrap').innerHTML='<div style=\\'padding:20px;text-align:center;color:var(--dim);\\'><p>Could not preview image directly.</p><a href=\\'${trade.exitChartUrl}\\' target=\\'_blank\\' class=\\'btn silver\\' style=\\'display:inline-block;margin-top:8px;\\'>Open Snapshot in New Tab ↗</a></div>';">
+          ` : '<div style="color:var(--dim); font-size:12px;">No chart image attached</div>')}
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
+          <span style="font-size:11px; color:var(--dim);">Tip: In TradingView, press <strong>Alt + S</strong> to copy instant image URL (Zero storage used)</span>
+          <button class="btn ghost" onclick="closeModal()">Close</button>
+        </div>
+      `;
+
+      modalBg.classList.add('show');
+
+      const tabEntry = $('#tabEntryChart');
+      const tabExit = $('#tabExitChart');
+      if (tabEntry && tabExit) {
+        tabEntry.onclick = () => {
+          tabEntry.className = 'btn silver';
+          tabExit.className = 'btn ghost';
+          const img = $('#activeChartImg');
+          if (img) img.src = trade.entryChartUrl;
+        };
+        tabExit.onclick = () => {
+          tabExit.className = 'btn silver';
+          tabEntry.className = 'btn ghost';
+          const img = $('#activeChartImg');
+          if (img) img.src = trade.exitChartUrl;
+        };
+      }
+    }
+    window.openChartViewerModal = openChartViewerModal;
+
+    function openSetupTradesModal(setupName) {
+      window._activeSetupFilterName = setupName;
+      if (!window._setupSortDir) window._setupSortDir = 'desc';
+      const modalBg = $('#modalBg');
+      const modalBody = $('#modalBody');
+      if (!modalBg || !modalBody) return;
+
+      const isUntagged = setupName === 'Untagged';
+      const allMatching = (STATE.trades || []).filter(t => {
+        const s = (t.setup || '').trim();
+        if (isUntagged) return !s || s.toLowerCase() === 'untagged';
+        return s.toLowerCase() === setupName.toLowerCase();
+      });
+
+      const sortDir = window._setupSortDir || 'desc';
+
+      modalBody.style.maxWidth = '920px';
+      modalBody.innerHTML = `
+        <div class="modal-head" style="margin-bottom: 12px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:16px;">🔍</span>
+              <h3 style="margin:0; font-size:15px;">Setup Filter: <span style="color:var(--gold);">${setupName}</span></h3>
+              <span class="badge" style="background:rgba(212,162,78,0.15); color:var(--gold); font-size:10px;">${allMatching.length} trades</span>
+            </div>
+            <div style="font-size:11px; color:var(--dim); margin-top:3px;">
+              Click any stock name / row to open full trade details, or use the quick dropdown to tag past trades instantly.
+            </div>
+          </div>
+          <button class="close-x" onclick="closeModal()">✕</button>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <input type="text" id="setupTradesSearchInput" placeholder="Filter by stock (e.g. TITAN) or date..." style="height:28px; padding:4px 8px; font-size:11.5px; background:var(--bg); border:1px solid var(--line); color:var(--text); border-radius:4px; width:220px; outline:none;">
+            <div style="display:flex; align-items:center; gap:5px;">
+              <span style="font-size:11px; color:var(--dim);">Sort:</span>
+              <select id="setupTradesSortSelect" style="height:28px; padding:2px 8px; font-size:11.5px; background:var(--bg); border:1px solid var(--line); color:var(--text); border-radius:4px; outline:none; cursor:pointer;">
+                <option value="desc" ${sortDir === 'desc' ? 'selected' : ''}>Date: Newest First ↓</option>
+                <option value="asc" ${sortDir === 'asc' ? 'selected' : ''}>Date: Oldest First ↑</option>
+              </select>
+            </div>
+          </div>
+          <div style="font-size:11px; color:var(--dim);">
+            Tip: Click <strong>Date</strong> header to toggle sort direction.
+          </div>
+        </div>
+
+        <div id="setupTradesTableWrap" style="max-height:480px; overflow-y:auto; border:1px solid var(--line-soft); border-radius:6px;">
+          ${renderSetupTradesTableHtml(allMatching, setupName)}
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; border-top:1px solid var(--line-soft); padding-top:10px;">
+          <span style="font-size:11px; color:var(--dim);" id="setupTradesCountLbl">Showing ${allMatching.length} trades</span>
+          <button class="btn silver" style="padding:4px 14px; font-size:11.5px; height:auto;" onclick="closeModal()">Done</button>
+        </div>
+      `;
+
+      modalBg.classList.add('show');
+
+      const sortSelect = $('#setupTradesSortSelect');
+      if (sortSelect) {
+        sortSelect.onchange = () => {
+          window._setupSortDir = sortSelect.value;
+          openSetupTradesModal(setupName);
+        };
+      }
+
+      const searchInput = $('#setupTradesSearchInput');
+      if (searchInput) {
+        searchInput.oninput = () => {
+          const q = searchInput.value.trim().toLowerCase();
+          const filtered = allMatching.filter(t => 
+            (t.stock || '').toLowerCase().includes(q) || 
+            (t.openDate || '').includes(q) || 
+            (t.closedDate || '').includes(q)
+          );
+          $('#setupTradesTableWrap').innerHTML = renderSetupTradesTableHtml(filtered, setupName);
+          $('#setupTradesCountLbl').textContent = `Showing ${filtered.length} of ${allMatching.length} trades`;
+        };
+      }
+    }
+    window.openSetupTradesModal = openSetupTradesModal;
+
+    function toggleSetupDateSort(setupName) {
+      window._setupSortDir = (window._setupSortDir === 'asc' ? 'desc' : 'asc');
+      openSetupTradesModal(setupName);
+    }
+    window.toggleSetupDateSort = toggleSetupDateSort;
+
+    function renderSetupTradesTableHtml(list, currentSetupFilter) {
+      if (!list.length) {
+        return `<div style="padding:24px; text-align:center; color:var(--dim); font-size:12px;">No trades found matching this setup.</div>`;
+      }
+
+      const sortDir = window._setupSortDir || 'desc';
+      const sortedList = list.slice().sort((a, b) => {
+        const dA = a.openDate || '';
+        const dB = b.openDate || '';
+        return sortDir === 'asc' ? dA.localeCompare(dB) : dB.localeCompare(dA);
+      });
+
+      const standardSetups = [
+        'VCP Breakout',
+        '20 EMA Pullback',
+        'Cup & Handle',
+        'High Tight Flag',
+        'IPO Base',
+        'Support Bounce',
+        'Momentum / Gap Up',
+        'Long Base',
+        'Base+Flag',
+        'Mean Reversion'
+      ];
+
+      return `
+        <table style="width:100%; font-size:11px; margin:0; border-collapse:collapse;">
+          <thead style="position:sticky; top:0; background:var(--panel); z-index:2; border-bottom:1px solid var(--line);">
+            <tr>
+              <th style="padding:6px 8px; cursor:pointer; user-select:none;" onclick="toggleSetupDateSort('${currentSetupFilter.replace(/'/g, "\\'")}')" title="Click to toggle date sort">
+                Date <span style="color:var(--gold); font-size:10px;">${sortDir === 'asc' ? '▲' : '▼'}</span>
+              </th>
+              <th style="padding:6px 8px;">Stock</th>
+              <th style="padding:6px 8px; text-align:center;">Status</th>
+              <th style="padding:6px 8px; text-align:right;">Buy (₹)</th>
+              <th style="padding:6px 8px; text-align:right;">Sell / Status</th>
+              <th style="padding:6px 8px; text-align:right;">P/L (₹)</th>
+              <th style="padding:6px 8px;">Assign Setup</th>
+              <th style="padding:6px 8px; text-align:center;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sortedList.map(t => {
+              const isOpen = t.status === 'open';
+              const pnlVal = t.pnl;
+              const currentSetup = (t.setup || '').trim();
+              const normT = normalizeTrade(t);
+              const ex = aggregateExit(normT);
+              const avgSellStr = ex.avgSellPrice != null ? fmt(ex.avgSellPrice) : (isOpen ? 'Open' : '—');
+
+              return `
+                <tr style="border-bottom:1px solid var(--line-soft); transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+                  <td style="padding:6px 8px; color:var(--dim); white-space:nowrap;">${formatDateDMY(t.openDate)}</td>
+                  <td style="padding:6px 8px; font-weight:600;">
+                    <div style="display:flex; align-items:center; gap:4px;">
+                      <span style="cursor:pointer; color:var(--text); text-decoration:underline; text-decoration-color:var(--line);" onclick="closeModal(); openTradeModal(STATE.trades.find(x => String(x.id) === '${t.id}'))" title="Click to view full details">
+                        ${t.stock}
+                      </span>
+                      ${(t.entryChartUrl || t.exitChartUrl) ? `<span onclick="event.stopPropagation(); openChartViewerModal('${t.id}')" title="View Chart Snapshots" style="cursor:pointer;font-size:10.5px;">🖼️</span>` : ''}
+                    </div>
+                  </td>
+                  <td style="padding:6px 8px; text-align:center;">
+                    <span class="badge ${isOpen ? 'open' : (pnlVal >= 0 ? 'closed-win' : 'closed-loss')}" style="font-size:9.5px; padding:1px 5px;">
+                      ${isOpen ? 'OPEN' : (pnlVal >= 0 ? 'WIN' : 'LOSS')}
+                    </span>
+                  </td>
+                  <td style="padding:6px 8px; text-align:right; font-family:var(--mono);">${fmt(t.avgBuyPrice)}</td>
+                  <td style="padding:6px 8px; text-align:right; font-family:var(--mono);">${avgSellStr}</td>
+                  <td style="padding:6px 8px; text-align:right; font-family:var(--mono); font-weight:600; color:${pnlVal == null ? 'var(--dim)' : (pnlVal >= 0 ? 'var(--green)' : 'var(--red)')};">
+                    ${pnlVal == null ? '—' : (pnlVal >= 0 ? '+' : '') + fmtRs(pnlVal)}
+                  </td>
+                  <td style="padding:6px 8px;">
+                    <select onchange="quickUpdateTradeSetup('${t.id}', this.value, '${currentSetupFilter.replace(/'/g, "\\'")}')" style="background:var(--bg); border:1px solid var(--line); color:var(--text); border-radius:4px; padding:2px 4px; font-size:11px; height:24px; outline:none; cursor:pointer; width:140px;">
+                      <option value="" ${!currentSetup ? 'selected' : ''}>-- Untagged --</option>
+                      ${standardSetups.map(s => `<option value="${s}" ${currentSetup.toLowerCase() === s.toLowerCase() ? 'selected' : ''}>${s}</option>`).join('')}
+                      ${(currentSetup && !standardSetups.some(s => s.toLowerCase() === currentSetup.toLowerCase())) ? `<option value="${currentSetup}" selected>${currentSetup} (Custom)</option>` : ''}
+                    </select>
+                  </td>
+                  <td style="padding:6px 8px; text-align:center; white-space:nowrap;">
+                    <button class="btn ghost" style="padding:2px 6px; font-size:10px; height:auto;" onclick="closeModal(); openTradeModal(STATE.trades.find(x => String(x.id) === '${t.id}'))">✏️ Edit</button>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+    window.renderSetupTradesTableHtml = renderSetupTradesTableHtml;
+
+    async function quickUpdateTradeSetup(tradeId, newSetup, currentSetupFilter) {
+      const trade = (STATE.trades || []).find(t => String(t.id) === String(tradeId));
+      if (!trade) return;
+
+      const trimmed = newSetup.trim();
+      trade.setup = trimmed;
+      saveLocalState();
+
+      toast(`Updated '${trade.stock}' ➔ ${trimmed || 'Untagged'}`, 'ok');
+
+      apiPost({ action: 'updateTrade', trade }).catch(e => console.error('Sync failed', e));
+
+      // Refresh overview in background so metrics update
+      if (STATE.view === 'overview') {
+        const host = $('#view');
+        if (host) renderOverview(host);
+      }
+
+      // Refresh current modal table
+      if (window._activeSetupFilterName) {
+        openSetupTradesModal(window._activeSetupFilterName);
+      }
+    }
+    window.quickUpdateTradeSetup = quickUpdateTradeSetup;
 
     function sortTradesList(list, sortState) {
       const col = (sortState && sortState.col) || 'openDate';
@@ -3696,11 +4347,41 @@
 
             <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Setup Strategy:</span>
-              <input type="text" id="f_setup" placeholder="e.g. VCP, Pullback" value="" tabindex="9" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+              <input type="text" id="f_setup" list="setupList" placeholder="e.g. VCP Breakout, EMA Pullback" value="" tabindex="9" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+              <datalist id="setupList">
+                <option value="VCP Breakout">
+                <option value="20 EMA Pullback">
+                <option value="Cup & Handle">
+                <option value="High Tight Flag">
+                <option value="IPO Base">
+                <option value="Support Bounce">
+                <option value="Momentum / Gap Up">
+                <option value="Mean Reversion">
+              </datalist>
             </div>
             <div class="form-row">
               <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Tranche Qty:</span>
               <input type="number" id="f_qty" tabindex="10" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+
+            <div class="form-row">
+              <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Sector / Theme:</span>
+              <input type="text" id="f_sector" placeholder="e.g. IT, Auto, Pharma, Banking" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+            <div class="form-row">
+              <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Discipline:</span>
+              <select id="f_discipline" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+                <option value="Clean Execution">Clean Execution (Flawless)</option>
+                <option value="Chased Entry">Chased Entry (FOMO)</option>
+                <option value="Hesitated Entry">Hesitated Entry (Late)</option>
+                <option value="Moved Stop Loss">Moved Stop Loss</option>
+                <option value="Oversized / Revenge">Oversized / Revenge</option>
+                <option value="Early Exit">Early Exit (Impatience)</option>
+              </select>
+            </div>
+            <div class="form-row form-row-span-2">
+              <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right;">Chart Snapshot:</span>
+              <input type="text" id="f_entryChartUrl" placeholder="TradingView Snapshot link (Alt + S)" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
           </div>
 
@@ -3967,6 +4648,9 @@
           slPrice, slPerShare: c.slPerShare, slPct: c.slPct, fullQty: c.fullQty, totLossAtSL, brokerage,
           tradeType: $('#f_isIntraday')?.checked ? 'intraday' : 'delivery',
           setup: $('#f_setup').value.trim(),
+          sector: $('#f_sector') ? $('#f_sector').value.trim() : '',
+          discipline: $('#f_discipline') ? $('#f_discipline').value : 'Clean Execution',
+          entryChartUrl: $('#f_entryChartUrl') ? $('#f_entryChartUrl').value.trim() : '',
           remarks: $('#f_remarks').value
         };
         const buy = aggregateBuy(normalizeTrade(trade));
@@ -4062,7 +4746,6 @@
 
       const t3Price = extraTranches[3] ? extraTranches[3].price : t.entry3Price;
       const t3Qty = extraTranches[3] ? extraTranches[3].qty : t.entry3Qty;
-      const t3Amt = extraTranches[3] ? extraTranches[3].amt : t.entry3Amt;
 
       const t4Price = extraTranches[4] ? extraTranches[4].price : t.entry4Price;
       const t4Qty = extraTranches[4] ? extraTranches[4].qty : t.entry4Qty;
@@ -4072,8 +4755,6 @@
 
       const t6Price = extraTranches[6] ? extraTranches[6].price : t.entry6Price;
       const t6Qty = extraTranches[6] ? extraTranches[6].qty : t.entry6Qty;
-
-
 
       // Exits Breakdown calculations
       const ex1Price = extraExits[1] ? extraExits[1].price : t.exit1Price;
@@ -4110,7 +4791,6 @@
       const totBuyQty = Number(t.totBuyQty || 1);
       const realizedCost = totBuyQty ? (totExitQty * (totBuyAmt / totBuyQty)) : 0;
       const realizedPnL = totExitQty > 0 ? Math.round(totExitAmt - realizedCost) : 0;
-      const realizedPnLPct = realizedCost > 0 ? (realizedPnL / realizedCost) : 0;
       const capitalExposure = remainingQty * Number(t.avgBuyPrice || 0);
 
       const activeSL = (t.tslPrice != null && t.tslPrice !== '') ? Number(t.tslPrice) : Number(t.slPrice || 0);
@@ -4292,7 +4972,82 @@
     </fieldset>
     `}
 
-    <div class="field" style="margin-bottom:12px;"><label>Setup Strategy</label><input type="text" id="m_setup" value="${t.setup || ''}" placeholder="e.g. VCP, Pullback, Cheat"></div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+      <div class="field">
+        <label>Setup Strategy</label>
+        <input type="text" id="m_setup" list="modalSetupList" value="${t.setup || ''}" placeholder="e.g. VCP Breakout, EMA Pullback">
+        <datalist id="modalSetupList">
+          <option value="VCP Breakout">
+          <option value="20 EMA Pullback">
+          <option value="Cup & Handle">
+          <option value="High Tight Flag">
+          <option value="IPO Base">
+          <option value="Support Bounce">
+          <option value="Momentum / Gap Up">
+          <option value="Mean Reversion">
+        </datalist>
+      </div>
+      <div class="field">
+        <label>Sector / Theme</label>
+        <input type="text" id="m_sector" value="${t.sector || ''}" placeholder="e.g. IT, Auto, Pharma">
+      </div>
+    </div>
+
+    <div class="field" style="margin-bottom:10px;">
+      <label>Execution Discipline</label>
+      <select id="m_discipline" style="background:var(--bg); border:1px solid var(--line); color:var(--text); border-radius:4px; padding:5px 8px; font-size:12px; width:100%; height:30px;">
+        <option value="Clean Execution" ${(!t.discipline || t.discipline === 'Clean Execution') ? 'selected' : ''}>Clean Execution (Flawless)</option>
+        <option value="Chased Entry" ${t.discipline === 'Chased Entry' ? 'selected' : ''}>Chased Entry (FOMO)</option>
+        <option value="Hesitated Entry" ${t.discipline === 'Hesitated Entry' ? 'selected' : ''}>Hesitated Entry (Late)</option>
+        <option value="Moved Stop Loss" ${t.discipline === 'Moved Stop Loss' ? 'selected' : ''}>Moved Stop Loss</option>
+        <option value="Oversized / Revenge" ${t.discipline === 'Oversized / Revenge' ? 'selected' : ''}>Oversized / Revenge</option>
+        <option value="Early Exit" ${t.discipline === 'Early Exit' ? 'selected' : ''}>Early Exit (Impatience)</option>
+      </select>
+    </div>
+
+    <!-- MAE & MFE Price Excursions -->
+    <div style="background:rgba(255,255,255,0.02); border:1px solid var(--line-soft); border-radius:6px; padding:10px 12px; margin-bottom:10px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+        <span style="font-size:11px; font-weight:700; color:var(--dim); text-transform:uppercase;">Price Excursions (MAE / MFE)</span>
+        <button type="button" class="btn ghost" style="padding:1px 6px; font-size:10px; height:auto;" onclick="showInfoModal('MAE &amp; MFE Analysis', 'MAE (Maximum Adverse Excursion) is the deepest price drop below buy price. MFE (Maximum Favorable Excursion) is the peak profit price reached before exit. Use these to calibrate stop loss tightness and profit targets.', 'Target: Win MAE &lt; 2.5%, MFE Capture &gt; 60%')">ℹ️</button>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div class="field">
+          <label style="font-size:10.5px; color:var(--dim);">Lowest Price in Trade (MAE ₹)</label>
+          <input type="number" step="0.01" id="m_maePrice" value="${t.maePrice != null ? t.maePrice : ''}" placeholder="e.g. 582.00">
+        </div>
+        <div class="field">
+          <label style="font-size:10.5px; color:var(--dim);">Highest Price in Trade (MFE ₹)</label>
+          <input type="number" step="0.01" id="m_mfePrice" value="${t.mfePrice != null ? t.mfePrice : ''}" placeholder="e.g. 645.00">
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart Snapshots (Alt + S in TradingView) -->
+    <div style="background:rgba(255,255,255,0.02); border:1px solid var(--line-soft); border-radius:6px; padding:10px 12px; margin-bottom:12px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+        <span style="font-size:11px; font-weight:700; color:var(--dim); text-transform:uppercase;">Chart Snapshots (Alt + S in TradingView)</span>
+        <button type="button" class="btn ghost" style="padding:1px 6px; font-size:10px; height:auto;" onclick="showInfoModal('Visual Trade Autopsy', 'Store permanent HD chart links using TradingView Alt+S (zero database storage used). Allows weekend review of entries and exits side-by-side.', 'Benchmark: Log snapshots for all key winners and rule breaches')">ℹ️</button>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div class="field">
+          <label style="font-size:10.5px; color:var(--dim);">Entry Chart URL</label>
+          <input type="text" id="m_entryChartUrl" value="${t.entryChartUrl || ''}" placeholder="https://www.tradingview.com/x/...">
+        </div>
+        <div class="field">
+          <label style="font-size:10.5px; color:var(--dim);">Exit Chart URL</label>
+          <input type="text" id="m_exitChartUrl" value="${t.exitChartUrl || ''}" placeholder="https://www.tradingview.com/x/...">
+        </div>
+      </div>
+      ${(t.entryChartUrl || t.exitChartUrl) ? `
+        <div style="margin-top:8px;">
+          <button type="button" class="btn silver" style="padding:3px 10px; font-size:11px; height:auto;" onclick="openChartViewerModal('${t.id}')">
+            🖼️ Open Chart Snapshots Viewer
+          </button>
+        </div>
+      ` : ''}
+    </div>
+
     <div class="field" style="margin-bottom:12px;"><label>Remarks</label><textarea rows="2" id="m_remarks" placeholder="Setup notes, trading plan, lessons...">${t.remarks || ''}</textarea></div>
     
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -4689,7 +5444,13 @@
           openDate: openDate,
           brokerage: totalBrok,
           tradeType: $('#m_isIntraday')?.checked ? 'intraday' : 'delivery',
-          setup: $('#m_setup').value.trim(),
+          setup: $('#m_setup') ? $('#m_setup').value.trim() : (t.setup || ''),
+          sector: $('#m_sector') ? $('#m_sector').value.trim() : (t.sector || ''),
+          discipline: $('#m_discipline') ? $('#m_discipline').value : (t.discipline || 'Clean Execution'),
+          maePrice: ($('#m_maePrice') && $('#m_maePrice').value !== '') ? parseFloat($('#m_maePrice').value) : null,
+          mfePrice: ($('#m_mfePrice') && $('#m_mfePrice').value !== '') ? parseFloat($('#m_mfePrice').value) : null,
+          entryChartUrl: $('#m_entryChartUrl') ? $('#m_entryChartUrl').value.trim() : (t.entryChartUrl || ''),
+          exitChartUrl: $('#m_exitChartUrl') ? $('#m_exitChartUrl').value.trim() : (t.exitChartUrl || ''),
           remarks: $('#m_remarks').value.trim()
         };
 
@@ -5054,6 +5815,7 @@
 
     window.editWlItem = (idx) => {
       STATE.editingWlIdx = idx;
+      STATE.view = 'risk';
       renderShell();
     };
 
@@ -5475,7 +6237,7 @@
       });
 
       host.innerHTML = `
-    <div class="page-head"><div><h1>Expenses</h1><p>Log platform fees, subscriptions, and other non-brokerage trading expenses</p></div></div>
+    <div class="page-head"><div><h1>Expenses</h1><p>Expenses / charges other than brokerage &amp; taxes (Difference with Trading A/c balance enter here)</p></div></div>
     
     <div class="expenses-grid">
       <!-- Left Column: Log New Expense / Edit Expense -->
@@ -6118,6 +6880,46 @@
             <button class="btn ghost danger" id="disconnectBtn" style="padding: 6px 16px; font-size: 12px; height: 32px; width: auto;">Disconnect (Backend-GS)</button>
           </div>
         </div>
+
+        <!-- Card 3: Dhan Global Transaction Report Reconciler -->
+        <div class="panel" style="padding: 14px; margin-bottom: 0;">
+          <div class="panel-head" style="margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+            <div>
+              <h3 style="margin: 0;">Dhan Report Verifier &amp; Reconciler</h3>
+              <p style="font-size: 11.5px; color: var(--dim); margin: 3px 0 0 0;">Upload your Dhan Global Transaction Report (.csv) to audit &amp; fix discrepancies</p>
+            </div>
+            <span class="badge" style="background: rgba(212, 162, 78, 0.15); color: var(--gold); border: 1px solid rgba(212, 162, 78, 0.3);">Audit Tool</span>
+          </div>
+
+          <div style="background: var(--bg); border: 1px dashed var(--line); border-radius: 6px; padding: 14px; text-align: center; margin: 10px 0; cursor: pointer; transition: all 0.2s;" id="dhanDropZone" onclick="$('#dhanFileInput').click()">
+            <input type="file" id="dhanFileInput" accept=".csv" style="display: none;">
+            <div style="font-size: 22px; margin-bottom: 4px;">📑</div>
+            <div style="font-size: 12px; font-weight: 500; color: var(--text);" id="dhanDropText">Click to select or drag &amp; drop Dhan_GlobalTransaction_Report.csv</div>
+            <div style="font-size: 10.5px; color: var(--dim); margin-top: 2px;">Supports Dhan Console CSV export (From 01-04-XXXX to DD-MM-XXXX)</div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--sub); cursor: pointer;">
+                <input type="checkbox" id="dhanOmitEtfCheck" checked style="cursor: pointer;">
+                Omit ETF transactions (GoldBEES, etc.)
+              </label>
+              <div style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--sub); background: rgba(255,255,255,0.03); border: 1px solid var(--line-soft); border-radius: 4px; padding: 2px 6px;">
+                <span>🔒 Reconciled Up To:</span>
+                <input type="date" id="dhanCutoffDate" value="${(STATE.settings && STATE.settings.reconciledUpToDate) || '2026-08-31'}" style="height: 22px; padding: 1px 4px; font-size: 11px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--text);">
+              </div>
+              ${Object.keys((STATE.settings && STATE.settings.customScripMap) || {}).length ? `
+                <div style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--dim); background: rgba(255,255,255,0.03); border: 1px solid var(--line-soft); border-radius: 4px; padding: 2px 6px;">
+                  <span>📚 Learned Aliases: <strong>${Math.round(Object.keys(STATE.settings.customScripMap).length / 2) || 1}</strong></span>
+                  <button class="btn ghost" style="padding: 1px 5px; font-size: 9.5px; color: var(--red); height: auto; min-height: auto;" onclick="clearCustomScripMap()" title="Reset learned stock aliases">✕ Reset</button>
+                </div>
+              ` : ''}
+            </div>
+            <button class="btn silver" id="dhanVerifyBtn" style="padding: 5px 12px; font-size: 11.5px; height: auto;" disabled>
+              🔍 Verify Report
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="panel" style="padding: 14px; margin-bottom: 0; display: flex; flex-direction: column; overflow-x: auto;">
@@ -6155,12 +6957,24 @@
     </div>
   `;
 
+      const cutoffInput = $('#dhanCutoffDate');
+      if (cutoffInput) {
+        cutoffInput.onchange = () => {
+          if (!STATE.settings) STATE.settings = {};
+          STATE.settings.reconciledUpToDate = cutoffInput.value;
+          saveLocalState();
+          apiPost({ action: 'updateSettings', settings: STATE.settings }).catch(() => {});
+          toast(`Reconciliation cut-off set to ${formatDateDMY(cutoffInput.value)}`, 'ok');
+        };
+      }
+
       $('#saveSettingsBtn').onclick = async () => {
         const settings = {
           currentFY: $('#s_fy').value, openingCapitalFY: parseFloat($('#s_open').value) || 0,
           riskPctPerTrade: (parseFloat($('#s_riskpct').value) || 0) / 100,
           maxStocksMin: parseFloat($('#s_minpos').value) || 0, maxStocksMax: parseFloat($('#s_maxpos').value) || 0,
-          pyramidDays: parseFloat($('#s_pyramid').value) || 0, brokeragePerTrade: parseFloat($('#s_brok').value) >= 0 ? parseFloat($('#s_brok').value) : 0
+          pyramidDays: parseFloat($('#s_pyramid').value) || 0, brokeragePerTrade: parseFloat($('#s_brok').value) >= 0 ? parseFloat($('#s_brok').value) : 0,
+          reconciledUpToDate: $('#dhanCutoffDate') ? $('#dhanCutoffDate').value : ((STATE.settings && STATE.settings.reconciledUpToDate) || '2026-08-31')
         };
         STATE.settings = settings;
         saveLocalState();
@@ -6234,7 +7048,853 @@
           localStorage.removeItem(CFG_KEY); location.reload();
         }
       };
+
+      let _uploadedDhanCsv = null;
+      const dhanFileInput = $('#dhanFileInput');
+      const dhanDropZone = $('#dhanDropZone');
+      const dhanDropText = $('#dhanDropText');
+      const dhanVerifyBtn = $('#dhanVerifyBtn');
+
+      function handleDhanFile(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          _uploadedDhanCsv = e.target.result;
+          if (dhanDropText) dhanDropText.innerHTML = `<strong style="color:var(--gold);">${file.name}</strong> (${(file.size / 1024).toFixed(1)} KB) ready for audit`;
+          if (dhanVerifyBtn) {
+            dhanVerifyBtn.disabled = false;
+            dhanVerifyBtn.classList.add('primary');
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      if (dhanFileInput) {
+        dhanFileInput.onchange = (e) => {
+          handleDhanFile(e.target.files[0]);
+        };
+      }
+
+      if (dhanDropZone) {
+        dhanDropZone.ondragover = (e) => {
+          e.preventDefault();
+          dhanDropZone.style.borderColor = 'var(--gold)';
+        };
+        dhanDropZone.ondragleave = () => {
+          dhanDropZone.style.borderColor = 'var(--line)';
+        };
+        dhanDropZone.ondrop = (e) => {
+          e.preventDefault();
+          dhanDropZone.style.borderColor = 'var(--line)';
+          handleDhanFile(e.dataTransfer.files[0]);
+        };
+      }
+
+      if (dhanVerifyBtn) {
+        dhanVerifyBtn.onclick = () => {
+          if (!_uploadedDhanCsv) return;
+          const omitEtf = $('#dhanOmitEtfCheck')?.checked ?? true;
+          runDhanReportAudit(_uploadedDhanCsv, omitEtf);
+        };
+      }
     }
+
+    /* =========================================================================
+       DHAN GLOBAL TRANSACTION REPORT AUDIT & RECONCILIATION ENGINE
+       ========================================================================= */
+    const DHAN_SCRIP_MAP = {
+      'TD POWER SYSTEMS LTD.': 'TDPOWER',
+      'ACUTAAS CHEMICALS': 'ACUTAAS',
+      'TITAN': 'TITAN',
+      'APAR INDUSTRIES': 'APARIND',
+      'STRIDES PHARMA SCIENCE': 'STAR',
+      'TVS MOTOR COMPANY LIMITED': 'TVS Motors 6% PREF 01-09-2026',
+      'TVS MOTOR COMPANY LTD.': 'TVS Motors 6% PREF 01-09-2026',
+      'CUMMINS': 'CUMMINSIND',
+      'HAPPY FORGINGS': 'HAPPYFORGINGS',
+      'HITACHI ENERGY': 'POWERINDIA',
+      'BSE': 'BSE',
+      'JSW STEEL': 'JSWSTEEL',
+      'ANAND RATHI WEALTH': 'ANANDRATHI',
+      'ANAND RATHI WEALTH LTD.': 'ANANDRATHI',
+      'RR KABEL': 'RRKABEL',
+      'SOLAR INDUSTRIES': 'SOLARINDUSTRIES',
+      'INOX INDIA': 'INOXINDIA',
+      'SIEMENS ENERGY': 'ENRIN(Siemens)',
+      'SIEMENS': 'ENRIN(Siemens)',
+      'BLS E-SERVICES': 'BLSE',
+      'SANSERA ENGINEERING': 'SANSERAENGG',
+      'VIJAYA DIAGNOSTIC CENTRE': 'VIJAYADIAGNOSTOC',
+      'VIJAY DIAGNOSTIC': 'VIJAYADIAGNOSTOC',
+      'SATIN CREDITCARE': 'SATIN',
+      'SATIN CREDITCARE NETWORK': 'SATIN',
+      'HFCL': 'HFCL',
+      'ADITYA VISION': 'AVL',
+      'ASTRA MICROWAVE PRODUCTS': 'AVL',
+      'CRAFTSMAN AUTOMATION': 'CRAFTSMAN',
+      'SONA BLW PRECISION FORGINGS': 'SONACOMS',
+      'BHARAT HEAVY ELECTRICALS': 'BHEL',
+      'SYRMA SGS': 'SYRMA',
+      'SYRMA SGS TECHNOLOGY': 'SYRMA',
+      'KALYAN JEWELLERS': 'KALYANKJIL',
+      'KALYAN JEWELLERS INDIA LTD.': 'KALYANKJIL',
+      'ORACLE FINANCIAL SERVICES SOFTWARE': 'OFSS'
+    };
+
+    function parseDhanDateStr(dStr) {
+      if (!dStr) return null;
+      const months = { 'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06', 'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12' };
+      const mMatch = dStr.match(/(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
+      if (mMatch) {
+        const day = mMatch[1].padStart(2, '0');
+        const mon = months[mMatch[2].toLowerCase()] || '01';
+        const yr = mMatch[3];
+        return `${yr}-${mon}-${day}`;
+      }
+      const dMatch = dStr.match(/(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+      if (dMatch) {
+        return `${dMatch[3]}-${dMatch[2].padStart(2, '0')}-${dMatch[1].padStart(2, '0')}`;
+      }
+      return dStr.substring(0, 10);
+    }
+
+    function runDhanReportAudit(csvText, omitEtf) {
+      window.runDhanReportAudit = runDhanReportAudit;
+      const lines = csvText.split(/\r\n|\n|\r/);
+      let headerIdx = -1;
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].includes('Date') && (lines[i].includes('Scrip Name') || lines[i].includes('Scrip'))) {
+          headerIdx = i;
+          break;
+        }
+      }
+
+      if (headerIdx === -1) {
+        toast('Invalid Dhan Report: Could not locate transaction table header', 'err');
+        return;
+      }
+
+      function splitCSVRow(rowStr) {
+        const result = [];
+        let inQuotes = false;
+        let curr = '';
+        for (let i = 0; i < rowStr.length; i++) {
+          const c = rowStr[i];
+          if (c === '"') {
+            inQuotes = !inQuotes;
+          } else if (c === ',' && !inQuotes) {
+            result.push(curr.trim());
+            curr = '';
+          } else {
+            curr += c;
+          }
+        }
+        result.push(curr.trim());
+        return result;
+      }
+
+      const headers = splitCSVRow(lines[headerIdx]).map(h => h.replace(/^"|"$/g, '').trim());
+      const txns = [];
+      const omittedEtfs = [];
+
+      for (let i = headerIdx + 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        const vals = splitCSVRow(line).map(v => v.replace(/^"|"$/g, '').trim());
+        if (vals.length < 2) continue;
+        const row = {};
+        headers.forEach((h, idx) => {
+          row[h] = vals[idx] !== undefined ? vals[idx] : '';
+        });
+
+        const dateRaw = row['Date'] || '';
+        const scripRaw = row['Scrip Name'] || row['Scrip'] || '';
+        if (!dateRaw || !scripRaw || dateRaw.includes('Net P&L') || dateRaw.includes('NOTE') || dateRaw.includes('Total')) {
+          continue;
+        }
+
+        const isEtf = /(ETF|BEES|GOLD|NIFTY|LIQUID|JUNIOR|MON100|SILVER)/i.test(scripRaw);
+        if (omitEtf && isEtf) {
+          omittedEtfs.push({
+            date: parseDhanDateStr(dateRaw),
+            scrip: scripRaw,
+            buyQty: parseFloat((row['Buy Qty.'] || '0').replace(/,/g, '')) || 0,
+            buyVal: parseFloat((row['Buy Value'] || '0').replace(/,/g, '')) || 0,
+            sellQty: parseFloat((row['Sell Qty.'] || '0').replace(/,/g, '')) || 0,
+            sellVal: parseFloat((row['Sell Value'] || '0').replace(/,/g, '')) || 0
+          });
+          continue;
+        }
+
+        txns.push({
+          date: parseDhanDateStr(dateRaw),
+          scrip: scripRaw,
+          buyQty: parseFloat((row['Buy Qty.'] || '0').replace(/,/g, '')) || 0,
+          buyVal: parseFloat((row['Buy Value'] || '0').replace(/,/g, '')) || 0,
+          sellQty: parseFloat((row['Sell Qty.'] || '0').replace(/,/g, '')) || 0,
+          sellVal: parseFloat((row['Sell Value'] || '0').replace(/,/g, '')) || 0,
+          brokerage: parseFloat((row['Brokerage'] || '0').replace(/,/g, '')) || 0,
+          gst: parseFloat((row['GST'] || '0').replace(/,/g, '')) || 0,
+          stt: parseFloat((row['STT'] || '0').replace(/,/g, '')) || 0,
+          sebi: parseFloat((row['SEBI Fees'] || '0').replace(/,/g, '')) || 0,
+          stamp: parseFloat((row['Stamp Duty'] || '0').replace(/,/g, '')) || 0,
+          txnChg: parseFloat((row['Txn. Charges'] || '0').replace(/,/g, '')) || 0,
+          othChg: parseFloat((row['Oth. Charges'] || '0').replace(/,/g, '')) || 0,
+          grossAmt: parseFloat((row['Gross Amount'] || '0').replace(/,/g, '')) || 0
+        });
+      }
+
+      if (!txns.length && !omittedEtfs.length) {
+        toast('No transaction records found in the uploaded file', 'err');
+        return;
+      }
+
+      // Group Dhan transactions by scrip
+      const scripGroups = {};
+      txns.forEach(t => {
+        if (!scripGroups[t.scrip]) {
+          scripGroups[t.scrip] = {
+            scrip: t.scrip,
+            buyQty: 0,
+            buyVal: 0,
+            sellQty: 0,
+            sellVal: 0,
+            entries: [],
+            exits: []
+          };
+        }
+        const g = scripGroups[t.scrip];
+        if (t.buyQty > 0) {
+          g.buyQty += t.buyQty;
+          g.buyVal += t.buyVal;
+          g.entries.push(t);
+        }
+        if (t.sellQty > 0) {
+          g.sellQty += t.sellQty;
+          g.sellVal += t.sellVal;
+          g.exits.push(t);
+        }
+      });
+
+      function getJournalSymbol(scripName) {
+        const upper = (scripName || '').trim().toUpperCase();
+        if (DHAN_SCRIP_MAP[upper]) return DHAN_SCRIP_MAP[upper];
+        for (const [k, v] of Object.entries(DHAN_SCRIP_MAP)) {
+          if (upper.includes(k) || k.includes(upper)) return v;
+        }
+        const found = STATE.trades.find(tr => {
+          const s = (tr.stock || '').toUpperCase();
+          return upper.includes(s) || s.includes(upper);
+        });
+        if (found) return found.stock;
+        return upper.split(' ')[0];
+      }
+
+      function stocksMatch(s1, s2) {
+        const a = (s1 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const b = (s2 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (a === b) return true;
+        if (a.includes(b) || b.includes(a)) return true;
+        if (a.startsWith(b) || b.startsWith(a)) return true;
+        if (a.includes('KALYAN') && b.includes('KALYAN')) return true;
+        if ((a.includes('ORACLE') || a.includes('OFSS')) && (b.includes('ORACLE') || b.includes('OFSS'))) return true;
+        if (a.includes('HAPPYFORG') && b.includes('HAPPYFORG')) return true;
+        if (a.includes('TVS') && b.includes('TVS')) return true;
+        if (a.includes('BLS') && b.includes('BLS')) return true;
+        if (a.includes('SONA') && b.includes('SONA')) return true;
+        if (a.includes('KABEL') && b.includes('KABEL')) return true;
+        return false;
+      }
+
+      function isTxnTradeMatch(t, tr) {
+        if (!t || !tr) return false;
+        const stockName = tr.stock || '';
+        const cMap = (STATE.settings && STATE.settings.customScripMap) || {};
+        const mappedByScrip = cMap[(t.scrip || '').trim().toUpperCase()];
+        const mappedBySymbol = cMap[(t.symbol || '').trim().toUpperCase()];
+        if (mappedByScrip && stocksMatch(mappedByScrip, stockName)) return true;
+        if (mappedBySymbol && stocksMatch(mappedBySymbol, stockName)) return true;
+
+        if (stocksMatch(t.symbol, stockName)) return true;
+        if (stocksMatch(t.scrip, stockName)) return true;
+        return false;
+      }
+
+      window._lastDhanCsv = csvText;
+      const cutoff = (STATE.settings && STATE.settings.reconciledUpToDate) || '2026-08-31';
+      txns.forEach(t => t.symbol = getJournalSymbol(t.scrip));
+
+      // Separate pre-cutoff vs post-cutoff transactions
+      const preCutoffTxns = txns.filter(t => t.date <= cutoff);
+      const postCutoffTxns = txns.filter(t => t.date > cutoff);
+
+      const matchedTrades = [];
+      const discrepancies = [];
+      const suggestedMappings = [];
+
+      // 1. Audit post-cutoff transactions against journal trades
+      postCutoffTxns.forEach(t => {
+        const cand = STATE.trades.filter(tr => isTxnTradeMatch(t, tr));
+        if (!cand.length) return;
+
+        // If sell transaction:
+        if (t.sellQty > 0) {
+          // Check if there is an open trade in journal (even if bought prior to cutoff!)
+          const openTrade = cand.find(tr => tr.status === 'open');
+          if (openTrade) {
+            t.matched = true;
+            discrepancies.push({
+              id: openTrade.id,
+              type: 'OPEN_CLOSED_IN_DHAN',
+              badge: 'OPEN → CLOSED',
+              stock: openTrade.stock,
+              scrip: t.scrip,
+              curStatus: 'open',
+              newStatus: 'closed',
+              closedDate: t.date,
+              exitQty: t.sellQty,
+              exitPrice: t.sellQty > 0 ? (t.sellVal / t.sellQty) : 0,
+              totExitAmt: t.sellVal,
+              totBuyAmt: Number(openTrade.totBuyAmt || 0),
+              pnl: t.sellVal - Number(openTrade.totBuyAmt || 0),
+              pnlPct: (((t.sellVal - Number(openTrade.totBuyAmt || 0)) / Number(openTrade.totBuyAmt || 1)) * 100).toFixed(2),
+              desc: `Trade is OPEN in journal (bought on ${formatDateDMY(openTrade.openDate)}), but Dhan reports exit of ${t.sellQty} shares on ${formatDateDMY(t.date)} for ${fmtRs(t.sellVal)}.`
+            });
+            return;
+          }
+
+          // Check if there is already a closed trade matching this exit
+          const closedTrade = cand.find(tr => {
+            const cDate = String(tr.closedDate || '').substring(0, 10);
+            return cDate === t.date || Math.abs(Number(tr.totExitAmt || 0) - t.sellVal) < 150 || Math.abs(Number(tr.exit1Qty || tr.totBuyQty || 0) - t.sellQty) < 0.5;
+          });
+
+          if (closedTrade) {
+            t.matched = true;
+            matchedTrades.push({ stock: closedTrade.stock, id: closedTrade.id, status: 'closed', qty: closedTrade.totBuyQty, note: `Confirmed closed on ${formatDateDMY(t.date)}` });
+            return;
+          }
+        }
+
+        // If buy transaction:
+        if (t.buyQty > 0) {
+          const matchingBuyTrade = cand.find(tr => {
+            const oDate = String(tr.openDate || '').substring(0, 10);
+            return oDate === t.date || Math.abs(Number(tr.totBuyQty || 0) - t.buyQty) < 0.5;
+          });
+          if (matchingBuyTrade) {
+            t.matched = true;
+            matchedTrades.push({ stock: matchingBuyTrade.stock, id: matchingBuyTrade.id, status: matchingBuyTrade.status, qty: matchingBuyTrade.totBuyQty, note: 'Confirmed buy & verified with Dhan' });
+          }
+        }
+      });
+
+      // 2. Identify any unmatched post-cutoff transactions
+      const unmatchedTxns = postCutoffTxns.filter(t => !t.matched);
+      const unmatchedGroups = {};
+      unmatchedTxns.forEach(t => {
+        if (!unmatchedGroups[t.symbol]) unmatchedGroups[t.symbol] = [];
+        unmatchedGroups[t.symbol].push(t);
+      });
+
+      Object.keys(unmatchedGroups).forEach(sym => {
+        const g = unmatchedGroups[sym];
+        const totBuy = g.reduce((sum, t) => sum + t.buyQty, 0);
+        const totBuyVal = g.reduce((sum, t) => sum + t.buyVal, 0);
+        const totSell = g.reduce((sum, t) => sum + t.sellQty, 0);
+        const totSellVal = g.reduce((sum, t) => sum + t.sellVal, 0);
+        const avgBuy = totBuy > 0 ? totBuyVal / totBuy : 0;
+        const avgSell = totSell > 0 ? totSellVal / totSell : 0;
+        const buyDates = g.filter(t => t.buyQty > 0).map(t => t.date);
+        const sellDates = g.filter(t => t.sellQty > 0).map(t => t.date);
+
+        // Check for heuristic candidate match (same quantity & close date alignment)
+        const targetQty = totSell > 0 ? totSell : totBuy;
+        const targetDate = sellDates[0] || buyDates[0];
+        const candByQtyDate = STATE.trades.find(tr => {
+          const trQty = Number(tr.exit1Qty || tr.totBuyQty || 0);
+          if (Math.abs(trQty - targetQty) >= 0.5) return false;
+          const trDate = String(tr.closedDate || tr.openDate || '').substring(0, 10);
+          if (!trDate || !targetDate) return false;
+          if (trDate === targetDate) return true;
+          const diffDays = Math.abs(new Date(trDate) - new Date(targetDate)) / (1000 * 3600 * 24);
+          return diffDays <= 7;
+        });
+
+        if (candByQtyDate) {
+          suggestedMappings.push({
+            dhanScrip: g[0].scrip,
+            dhanSymbol: sym,
+            dhanDate: targetDate,
+            dhanQty: targetQty,
+            dhanVal: totSellVal || totBuyVal,
+            journalStock: candByQtyDate.stock,
+            tradeId: candByQtyDate.id,
+            journalDate: candByQtyDate.closedDate || candByQtyDate.openDate,
+            journalQty: Number(candByQtyDate.exit1Qty || candByQtyDate.totBuyQty || 0),
+            reason: `Exact Qty (${targetQty}) & Date (${formatDateDMY(targetDate)}) alignment`
+          });
+          return;
+        }
+
+        // If only sell occurred post-cutoff (buy was before cutoff):
+        if (totBuy === 0 && totSell > 0) {
+          const candAll = STATE.trades.filter(tr => isTxnTradeMatch(g[0], tr));
+          const openCand = candAll.find(tr => tr.status === 'open');
+          if (openCand) {
+            discrepancies.push({
+              id: openCand.id,
+              type: 'OPEN_CLOSED_IN_DHAN',
+              badge: 'OPEN → CLOSED',
+              stock: openCand.stock,
+              scrip: g[0].scrip,
+              curStatus: 'open',
+              newStatus: 'closed',
+              closedDate: sellDates.length ? sellDates[sellDates.length - 1] : todayISO(),
+              exitQty: totSell,
+              exitPrice: avgSell,
+              totExitAmt: totSellVal,
+              totBuyAmt: Number(openCand.totBuyAmt || 0),
+              pnl: totSellVal - Number(openCand.totBuyAmt || 0),
+              pnlPct: (((totSellVal - Number(openCand.totBuyAmt || 0)) / Number(openCand.totBuyAmt || 1)) * 100).toFixed(2),
+              desc: `Open trade exited in Dhan on ${formatDateDMY(sellDates[0])} for ${fmtRs(totSellVal)}.`
+            });
+            return;
+          }
+
+          const closedCand = candAll.find(tr => {
+            const cDate = String(tr.closedDate || '').substring(0, 10);
+            return (sellDates.includes(cDate)) || Math.abs(Number(tr.totExitAmt || 0) - totSellVal) < 150;
+          });
+          if (closedCand) {
+            matchedTrades.push({ stock: closedCand.stock, id: closedCand.id, status: 'closed', qty: closedCand.totBuyQty, note: `Confirmed closed & reconciled` });
+            return;
+          }
+
+          // Unmatched sell without buy - don't calculate bogus P&L
+          discrepancies.push({
+            type: 'UNMATCHED_EXIT',
+            badge: 'UNMATCHED EXIT',
+            stock: sym,
+            scrip: g[0].scrip,
+            status: 'closed',
+            openDate: null,
+            closedDate: sellDates[sellDates.length - 1] || todayISO(),
+            totBuyQty: 0,
+            avgBuyPrice: 0,
+            totBuyAmt: 0,
+            exitQty: totSell,
+            exitPrice: avgSell,
+            totExitAmt: totSellVal,
+            pnl: 0,
+            pnlPct: '0.00',
+            desc: `Dhan executed exit of ${totSell} shares on ${sellDates.join(', ') || '—'} for ${fmtRs(totSellVal)}, but no matching position found in journal. (Position was opened prior to ${formatDateDMY(cutoff)}).`
+          });
+        } else {
+          // Genuinely missing trade with post-cutoff buys
+          discrepancies.push({
+            type: 'MISSING_IN_JOURNAL',
+            badge: 'MISSING TRADE',
+            stock: sym,
+            scrip: g[0].scrip,
+            status: totSell >= totBuy && totSell > 0 ? 'closed' : 'open',
+            openDate: buyDates[0] || todayISO(),
+            closedDate: sellDates.length ? sellDates[sellDates.length - 1] : (totSell >= totBuy ? todayISO() : null),
+            totBuyQty: totBuy,
+            avgBuyPrice: avgBuy,
+            totBuyAmt: totBuyVal,
+            exitQty: totSell,
+            exitPrice: avgSell,
+            totExitAmt: totSellVal,
+            pnl: totSellVal > 0 ? (totSellVal - totBuyVal) : 0,
+            pnlPct: totSellVal > 0 ? (((totSellVal - totBuyVal) / (totBuyVal || 1)) * 100).toFixed(2) : 0,
+            desc: `Trade exists in Dhan report but is completely missing from journal. (${totBuy} bought on ${buyDates.join(', ') || '—'}${totSell > 0 ? `, ${totSell} sold on ${sellDates.join(', ') || '—'}` : ''})`
+          });
+        }
+      });
+
+      // Scoped charges calculation strictly for post-cutoff period
+      const postCutoffActiveTxns = postCutoffTxns.length ? postCutoffTxns : txns;
+      const reportStart = postCutoffActiveTxns.length ? postCutoffActiveTxns[0].date : cutoff;
+      const reportEnd = postCutoffActiveTxns.length ? postCutoffActiveTxns[postCutoffActiveTxns.length - 1].date : todayISO();
+
+      const scopedCharges = {
+        brokerage: postCutoffActiveTxns.reduce((s, t) => s + t.brokerage, 0),
+        gst: postCutoffActiveTxns.reduce((s, t) => s + t.gst, 0),
+        stt: postCutoffActiveTxns.reduce((s, t) => s + t.stt, 0),
+        sebi: postCutoffActiveTxns.reduce((s, t) => s + t.sebi, 0),
+        stamp: postCutoffActiveTxns.reduce((s, t) => s + t.stamp, 0),
+        txnChg: postCutoffActiveTxns.reduce((s, t) => s + t.txnChg, 0),
+        othChg: postCutoffActiveTxns.reduce((s, t) => s + t.othChg, 0),
+        journalTradeBrokerage: STATE.trades.filter(tr => {
+          const cDate = String(tr.closedDate || '').substring(0, 10);
+          const oDate = String(tr.openDate || '').substring(0, 10);
+          return (cDate && cDate > cutoff && cDate <= reportEnd) || (!cDate && oDate > cutoff && oDate <= reportEnd);
+        }).reduce((s, t) => s + Number(t.brokerage || 0), 0),
+        journalExpenses: (STATE.expenses || []).filter(e => {
+          const eDate = String(e.date || '').substring(0, 10);
+          return eDate > cutoff && eDate <= reportEnd;
+        }).reduce((s, e) => s + Number(e.amount || 0), 0),
+        firstDate: reportStart,
+        lastDate: reportEnd,
+        cutoffDate: cutoff
+      };
+      scopedCharges.totalDhanCharges = scopedCharges.brokerage + scopedCharges.gst + scopedCharges.stt + scopedCharges.sebi + scopedCharges.stamp + scopedCharges.txnChg + scopedCharges.othChg;
+      scopedCharges.totalJournalAccounted = scopedCharges.journalTradeBrokerage + scopedCharges.journalExpenses;
+      scopedCharges.variance = scopedCharges.totalDhanCharges - scopedCharges.totalJournalAccounted;
+
+      openDhanAuditModal({
+        matchedTrades,
+        discrepancies,
+        suggestedMappings,
+        omittedEtfs,
+        chargesSummary: scopedCharges,
+        cutoff,
+        preCutoffCount: preCutoffTxns.length
+      });
+    }
+
+    function openDhanAuditModal(data) {
+      const { matchedTrades, discrepancies, suggestedMappings, omittedEtfs, chargesSummary, cutoff, preCutoffCount } = data;
+      const modalBg = $('#modalBg');
+      const modalBody = $('#modalBody');
+      if (!modalBg || !modalBody) return;
+
+      modalBody.style.maxWidth = '820px';
+      modalBody.innerHTML = `
+        <div class="modal-head">
+          <div>
+            <h3 style="margin:0;">Dhan Report Verification Results</h3>
+            <p style="font-size:11.5px;color:var(--dim);margin:2px 0 0 0;">Comparison between Dhan Global Transaction Report and your Journal Database</p>
+          </div>
+          <button class="close-x" onclick="closeModal()">×</button>
+        </div>
+
+        <!-- Pre-Cutoff Locked Notification -->
+        <div style="background: rgba(51, 209, 122, 0.08); border: 1px solid rgba(51, 209, 122, 0.25); border-radius: 6px; padding: 7px 12px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; flex-wrap: wrap; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: 6px; color: var(--green);">
+            <span>🛡️</span>
+            <strong>Pre-Cutoff Locked:</strong>
+            <span style="color: var(--sub);">All data on or before <strong>${formatDateDMY(cutoff || '2026-08-31')}</strong> is treated as Reconciliation Completed.</span>
+          </div>
+          <span class="badge" style="background: rgba(51,209,122,0.15); color: var(--green); border: 1px solid rgba(51,209,122,0.3); font-size: 10px;">Audit Period: Post-${formatDateDMY(cutoff || '2026-08-31')}</span>
+        </div>
+
+        ${suggestedMappings && suggestedMappings.length ? `
+          <!-- Stock Name Match Suggestions Card -->
+          <div style="background: rgba(212, 162, 78, 0.08); border: 1px solid rgba(212, 162, 78, 0.35); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 15px;">🔍</span>
+                <strong style="font-size: 12.5px; color: var(--gold);">Stock Name Match Suggestions (${suggestedMappings.length})</strong>
+              </div>
+              <span style="font-size: 11px; color: var(--dim);">Exact date &amp; quantity matches detected under different naming</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              ${suggestedMappings.map((s, sIdx) => `
+                <div id="sugItem_${sIdx}" style="background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                  <div>
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                      <span style="font-weight: 700; color: var(--text); font-size: 13px;">${s.dhanScrip}</span>
+                      <span style="color: var(--dim); font-size: 11px;">(${s.dhanSymbol})</span>
+                      <span style="color: var(--gold); font-size: 12px;">➔</span>
+                      <span style="font-weight: 700; color: var(--gold); font-size: 13px;">${s.journalStock}</span>
+                      <span class="badge" style="font-size: 9.5px; padding: 1px 6px;">${s.tradeId}</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--sub); margin-top: 3px;">
+                      ${s.reason} · Dhan ${s.dhanQty} shares on ${formatDateDMY(s.dhanDate)} (${fmtRs(s.dhanVal)})
+                    </div>
+                  </div>
+                  <button class="btn silver" style="padding: 4px 12px; font-size: 11.5px; height: auto; min-height: auto; font-weight: 600;" onclick="acceptScripMapping('${s.dhanScrip.replace(/'/g, "\\'")}', '${s.dhanSymbol.replace(/'/g, "\\'")}', '${s.journalStock.replace(/'/g, "\\'")}', ${sIdx})">
+                    ✓ Accept &amp; Link
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:10px;margin-bottom:16px;">
+          <div style="background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px;text-align:center;">
+            <div style="font-size:11px;color:var(--dim);">Matched Trades</div>
+            <div style="font-size:20px;font-weight:700;color:var(--green);margin-top:2px;">${matchedTrades.length}</div>
+          </div>
+          <div style="background:var(--bg);border:1px solid ${discrepancies.length ? 'rgba(255,92,92,0.4)' : 'var(--line)'};border-radius:6px;padding:10px;text-align:center;">
+            <div style="font-size:11px;color:var(--dim);">Trade Discrepancies</div>
+            <div style="font-size:20px;font-weight:700;color:${discrepancies.length ? 'var(--red)' : 'var(--green)'};margin-top:2px;">${discrepancies.length}</div>
+          </div>
+          <div style="background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px;text-align:center;">
+            <div style="font-size:11px;color:var(--dim);">Omitted ETFs (LT)</div>
+            <div style="font-size:20px;font-weight:700;color:var(--gold);margin-top:2px;">${omittedEtfs.length}</div>
+          </div>
+        </div>
+
+        ${chargesSummary ? `
+          <!-- Brokerage & Statutory Charges Audit Card -->
+          <div style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:14px;">📊</span>
+                <strong style="font-size:12.5px;color:var(--text);">Brokerage &amp; Statutory Charges Verification</strong>
+              </div>
+              <span class="badge" style="font-size:10px;background:rgba(212,162,78,0.12);color:var(--gold);border:1px solid rgba(212,162,78,0.3);">
+                Report: ${chargesSummary.firstDate || 'Start'} to ${chargesSummary.lastDate || 'End'}
+              </span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:8px;margin-bottom:10px;">
+              <div style="background:rgba(255,255,255,0.02);border:1px solid var(--line-soft);border-radius:4px;padding:8px;">
+                <div style="font-size:10.5px;color:var(--dim);">Total Charges in Dhan</div>
+                <div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--mono);margin-top:2px;">${fmtRs(chargesSummary.totalDhanCharges)}</div>
+                <div style="font-size:9.5px;color:var(--sub);margin-top:2px;">STT: ${fmtRs(chargesSummary.stt)} · Brok: ${fmtRs(chargesSummary.brokerage)} · Stamp: ${fmtRs(chargesSummary.stamp)}</div>
+              </div>
+
+              <div style="background:rgba(255,255,255,0.02);border:1px solid var(--line-soft);border-radius:4px;padding:8px;">
+                <div style="font-size:10.5px;color:var(--dim);">Accounted in Journal</div>
+                <div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--mono);margin-top:2px;">${fmtRs(chargesSummary.totalJournalAccounted)}</div>
+                <div style="font-size:9.5px;color:var(--sub);margin-top:2px;">Trades Brok: ${fmtRs(chargesSummary.journalTradeBrokerage)} · Expenses: ${fmtRs(chargesSummary.journalExpenses)}</div>
+              </div>
+
+              <div style="background:rgba(255,255,255,0.02);border:1px solid var(--line-soft);border-radius:4px;padding:8px;">
+                <div style="font-size:10.5px;color:var(--dim);">Unreconciled Variance</div>
+                <div style="font-size:14px;font-weight:700;color:${chargesSummary.variance > 5 ? 'var(--gold)' : 'var(--green)'};font-family:var(--mono);margin-top:2px;">
+                  ${chargesSummary.variance > 0 ? '+' : ''}${fmtRs(chargesSummary.variance)}
+                </div>
+                <div style="font-size:9.5px;color:var(--sub);margin-top:2px;">Difference with trading account balance</div>
+              </div>
+            </div>
+
+            ${chargesSummary.variance > 5 ? `
+              <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(212,162,78,0.06);border:1px dashed rgba(212,162,78,0.3);border-radius:4px;padding:8px 10px;flex-wrap:wrap;gap:6px;">
+                <span style="font-size:11px;color:var(--sub);">
+                  Unaccounted charges of <strong>${fmtRs(chargesSummary.variance)}</strong> can be logged directly into your <strong>Expenses</strong> tab to reconcile with your broker ledger:
+                </span>
+                <button class="btn silver" id="logChargesToExpensesBtn" style="padding:3px 10px;font-size:11px;height:auto;min-height:auto;">
+                  📥 Log ${fmtRs(chargesSummary.variance)} to Expenses Tab
+                </button>
+              </div>
+            ` : chargesSummary.variance < -5 ? `
+              <div style="font-size:11px;color:var(--green);display:flex;align-items:center;gap:6px;background:rgba(51,209,122,0.06);border:1px solid rgba(51,209,122,0.2);border-radius:4px;padding:6px 10px;">
+                <span>✓</span>
+                <span>Journal charges (${fmtRs(chargesSummary.totalJournalAccounted)}) include pre-cutoff entry brokerage (${fmtRs(Math.abs(chargesSummary.variance))}) on carryover trades. Exit charges in Dhan (${fmtRs(chargesSummary.totalDhanCharges)}) are 100% verified &amp; balanced!</span>
+              </div>
+            ` : `
+              <div style="font-size:11px;color:var(--green);display:flex;align-items:center;gap:4px;">
+                ✓ Brokerage &amp; statutory charges are fully reconciled with your journal!
+              </div>
+            `}
+          </div>
+        ` : ''}
+
+        ${discrepancies.length === 0 ? `
+          <div style="background:rgba(51,209,122,0.08);border:1px solid rgba(51,209,122,0.3);border-radius:8px;padding:18px;text-align:center;margin-bottom:16px;">
+            <div style="font-size:24px;margin-bottom:6px;">🎉</div>
+            <div style="font-size:14px;font-weight:600;color:var(--green);">Database is 100% Reconciled!</div>
+            <div style="font-size:12px;color:var(--sub);margin-top:4px;">All trades in your journal match the Dhan Global Transaction Report perfectly. No discrepancies found.</div>
+          </div>
+        ` : `
+          <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:12px;font-weight:600;color:var(--text);">Discrepancies to Correct (${discrepancies.length}):</div>
+            <label style="font-size:11px;color:var(--dim);cursor:pointer;display:flex;align-items:center;gap:4px;">
+              <input type="checkbox" id="selectAllDhanFixes" checked onchange="document.querySelectorAll('.dhan-fix-check').forEach(c => c.checked = this.checked)">
+              Select All
+            </label>
+          </div>
+
+          <div style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-right:4px;margin-bottom:16px;">
+            ${discrepancies.map((d, idx) => `
+              <div style="background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:12px;display:flex;align-items:flex-start;gap:10px;">
+                <input type="checkbox" class="dhan-fix-check" data-idx="${idx}" checked style="margin-top:4px;cursor:pointer;">
+                <div style="flex:1;">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+                    <span style="font-family:var(--sans);font-weight:700;color:var(--gold);font-size:13px;">${d.stock}</span>
+                    <span style="font-size:11px;color:var(--dim);">(${d.scrip})</span>
+                    <span class="badge" style="font-size:9.5px;padding:1px 6px;${d.type === 'OPEN_CLOSED_IN_DHAN' ? 'background:rgba(255,92,92,0.15);color:var(--red);border:1px solid rgba(255,92,92,0.3);' : d.type === 'MISSING_IN_JOURNAL' ? 'background:rgba(212,162,78,0.15);color:var(--gold);border:1px solid rgba(212,162,78,0.3);' : 'background:rgba(255,165,0,0.15);color:#ffa500;border:1px solid rgba(255,165,0,0.3);'}">${d.badge}</span>
+                  </div>
+                  <div style="font-size:11.5px;color:var(--sub);line-height:1.4;">${d.desc}</div>
+                  ${d.pnl !== undefined && d.pnl !== 0 ? `
+                    <div style="font-size:11.5px;margin-top:4px;">
+                      P/L Impact: <strong style="color:${d.pnl >= 0 ? 'var(--green)' : 'var(--red)'};font-family:var(--mono);">${d.pnl >= 0 ? '+' : ''}${fmtRs(d.pnl)} (${d.pnlPct}%)</strong>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+
+        ${omittedEtfs.length ? `
+          <details style="margin-bottom:16px;background:var(--bg);border:1px solid var(--line-soft);border-radius:6px;padding:8px 12px;font-size:11.5px;">
+            <summary style="cursor:pointer;color:var(--dim);font-weight:500;">
+              🛡️ View ${omittedEtfs.length} Omitted ETF Transactions (Long-term investments)
+            </summary>
+            <div style="margin-top:8px;max-height:120px;overflow-y:auto;">
+              ${omittedEtfs.map(e => `
+                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--line-soft);color:var(--sub);">
+                  <span>${e.date} · <strong>${e.scrip}</strong></span>
+                  <span>${e.buyQty ? `Buy ${e.buyQty} (${fmtRs(e.buyVal)})` : `Sell ${e.sellQty} (${fmtRs(e.sellVal)})`}</span>
+                </div>
+              `).join('')}
+            </div>
+          </details>
+        ` : ''}
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;border-top:1px solid var(--line-soft);padding-top:14px;">
+          <button class="btn ghost" onclick="closeModal()">Close</button>
+          ${discrepancies.length > 0 ? `
+            <button class="btn silver" id="applyDhanFixesBtn" style="border:1px solid rgba(255,255,255,0.4);box-shadow:0 0 8px rgba(255,255,255,0.25);">
+              ⚡ Apply Selected Corrections (${discrepancies.length})
+            </button>
+          ` : ''}
+        </div>
+      `;
+
+      modalBg.classList.add('show');
+
+      const logExpBtn = $('#logChargesToExpensesBtn');
+      if (logExpBtn && chargesSummary) {
+        logExpBtn.onclick = async () => {
+          logExpBtn.disabled = true;
+          logExpBtn.innerHTML = '<span class="spinner"></span> Logging…';
+          const entry = {
+            date: chargesSummary.lastDate || todayISO(),
+            amount: Math.round(chargesSummary.variance * 100) / 100,
+            note: 'Dhan Charges reconciliation (Difference with trading a/c)'
+          };
+          if (!STATE.expenses) STATE.expenses = [];
+          STATE.expenses.push(entry);
+          saveLocalState();
+          apiPost({ action: 'addExpense', entry }).catch(err => console.error(err));
+          logExpBtn.textContent = '✅ Logged to Expenses!';
+          logExpBtn.style.color = 'var(--green)';
+          toast(`Logged ${fmtRs(entry.amount)} to Expenses tab!`, 'ok');
+        };
+      }
+
+      const applyBtn = $('#applyDhanFixesBtn');
+      if (applyBtn) {
+        applyBtn.onclick = async () => {
+          applyBtn.disabled = true;
+          applyBtn.innerHTML = '<span class="spinner"></span> Applying fixes…';
+          const checkedIndices = Array.from(document.querySelectorAll('.dhan-fix-check:checked')).map(c => parseInt(c.dataset.idx));
+
+          if (!checkedIndices.length) {
+            toast('Please select at least one discrepancy to fix', 'info');
+            applyBtn.disabled = false;
+            applyBtn.textContent = `⚡ Apply Selected Corrections (${discrepancies.length})`;
+            return;
+          }
+
+          let appliedCount = 0;
+          for (const idx of checkedIndices) {
+            const d = discrepancies[idx];
+            if (!d) continue;
+
+            if (d.type === 'OPEN_CLOSED_IN_DHAN') {
+              const trade = STATE.trades.find(t => t.id === d.id);
+              if (trade) {
+                trade.status = 'closed';
+                trade.closedDate = d.closedDate;
+                trade.exit1Qty = d.exitQty;
+                trade.exit1Price = d.exitPrice;
+                trade.totExitAmt = d.totExitAmt;
+                trade.pnl = d.pnl;
+                trade.pnlPct = parseFloat(d.pnlPct);
+                trade.remarks = (trade.remarks ? trade.remarks + ' | ' : '') + `Closed via Dhan Report (${d.closedDate})`;
+                apiPost({ action: 'updateTrade', trade }).catch(e => console.error(e));
+                appliedCount++;
+              }
+            } else if (d.type === 'MISSING_IN_JOURNAL') {
+              // Prevent duplicates if already in journal
+              const alreadyExists = STATE.trades.some(t => stocksMatch(t.stock, d.stock) && (t.openDate === d.openDate || (t.closedDate && t.closedDate === d.closedDate)));
+              if (alreadyExists) continue;
+
+              let maxNum = 0;
+              STATE.trades.forEach(t => {
+                const match = (t.id || '').match(/^T0*(\d+)$/);
+                if (match) {
+                  const n = parseInt(match[1]);
+                  if (n > maxNum) maxNum = n;
+                }
+              });
+              const newId = 'T' + String(maxNum + 1).padStart(4, '0');
+              const newTrade = {
+                id: newId,
+                status: d.status,
+                openDate: d.openDate,
+                closedDate: d.closedDate,
+                stock: d.stock,
+                entry1Date: d.openDate,
+                entry1Qty: d.totBuyQty,
+                entry1Price: d.avgBuyPrice,
+                entry1Amt: d.totBuyAmt,
+                totBuyQty: d.totBuyQty,
+                avgBuyPrice: d.avgBuyPrice,
+                totBuyAmt: d.totBuyAmt,
+                exit1Qty: d.exitQty || null,
+                exit1Price: d.exitPrice || null,
+                totExitAmt: d.totExitAmt || 0,
+                pnl: d.pnl || 0,
+                pnlPct: parseFloat(d.pnlPct || 0),
+                remarks: 'Added via Dhan Report sync',
+                tradeType: 'Delivery'
+              };
+              STATE.trades.unshift(normalizeTrade(newTrade));
+              apiPost({ action: 'addTrade', trade: newTrade }).catch(e => console.error(e));
+              appliedCount++;
+            } else if (d.type === 'QTY_OR_VALUE_MISMATCH') {
+              const trade = STATE.trades.find(t => t.id === d.id);
+              if (trade) {
+                trade.totBuyQty = d.dhanQty;
+                trade.totBuyAmt = d.dhanBuyAmt;
+                trade.avgBuyPrice = d.avgBuyPrice;
+                if (d.dhanExitAmt > 0) {
+                  trade.exit1Qty = d.dhanQty;
+                  trade.exit1Price = d.exitPrice;
+                  trade.totExitAmt = d.dhanExitAmt;
+                  trade.pnl = d.dhanExitAmt - d.dhanBuyAmt;
+                  trade.pnlPct = parseFloat((((d.dhanExitAmt - d.dhanBuyAmt) / d.dhanBuyAmt) * 100).toFixed(2));
+                }
+                apiPost({ action: 'updateTrade', trade }).catch(e => console.error(e));
+                appliedCount++;
+              }
+            }
+          }
+
+          saveLocalState();
+          closeModal();
+          toast(`Successfully applied and synced ${appliedCount} trade corrections!`, 'ok');
+          renderShell();
+        };
+      }
+    }
+
+    window.acceptScripMapping = (scrip, symbol, journalStock, sIdx) => {
+      if (!STATE.settings) STATE.settings = {};
+      if (!STATE.settings.customScripMap) STATE.settings.customScripMap = {};
+      STATE.settings.customScripMap[scrip.toUpperCase()] = journalStock;
+      STATE.settings.customScripMap[symbol.toUpperCase()] = journalStock;
+      saveLocalState();
+      apiPost({ action: 'updateSettings', settings: STATE.settings }).catch(e => console.error(e));
+      toast(`Linked '${scrip}' ➔ '${journalStock}'! Mapping saved.`, 'ok');
+      const item = document.getElementById(`sugItem_${sIdx}`);
+      if (item) {
+        item.innerHTML = `<span style="color:var(--green);font-size:11.5px;font-weight:600;">✓ Linked to <strong>${journalStock}</strong>! System remembered this alias.</span>`;
+      }
+      if (window._lastDhanCsv && typeof window.runDhanReportAudit === 'function') {
+        setTimeout(() => window.runDhanReportAudit(window._lastDhanCsv, true), 500);
+      }
+    };
+
+    window.clearCustomScripMap = () => {
+      if (confirm('Reset all learned stock name aliases?')) {
+        if (STATE.settings) STATE.settings.customScripMap = {};
+        saveLocalState();
+        apiPost({ action: 'updateSettings', settings: STATE.settings }).catch(() => {});
+        toast('Learned stock aliases reset', 'info');
+        renderShell();
+      }
+    };
 
     /* =========================================================================
        GLOBAL KEYBOARD SHORTCUTS (Ctrl+S / Cmd+S for Saving)
