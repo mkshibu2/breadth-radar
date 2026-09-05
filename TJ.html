@@ -2173,7 +2173,7 @@
       const expectancyR = closedFY.length ? +(closedFY.reduce((sum, t) => sum + (t.rr || 0), 0) / closedFY.length).toFixed(2) : 0;
 
       const allTimeExpenses = snap.totalExpenses;
-      const cumPnl = snap.closedRealizedPnl - snap.closedTradeCharges - allTimeExpenses;
+      const cumPnl = snap.closedRealizedPnl - snap.closedTradeCharges - allTimeExpenses + (snap.ledgerAdjustment || 0);
 
       // Actual Deposited Capital (Opening + Net Capital Additions from Capital Log)
       const depositedCapital = Number(STATE.settings.openingCapitalFY || 0) + capitalAdditionsExcludingOpening();
@@ -6445,17 +6445,17 @@
         $('#r_out_slps').textContent = c.slPerShare != null ? fmt(c.slPerShare) : '—';
         $('#r_out_slpct').textContent = c.slPct != null ? fmtPct(c.slPct) : '—';
         $('#r_out_full').textContent = c.fullQty != null ? c.fullQty : '—';
-        
+
         const exceedsCash = posSize != null && cashAvailable != null && posSize > cashAvailable;
         const exceedsQty = maxBuyableQty != null && qty > maxBuyableQty;
-        
+
         const qtyEl = $('#r_out_qty');
         if (qtyEl) {
           qtyEl.textContent = qty;
           qtyEl.style.color = exceedsQty ? 'var(--red)' : 'var(--text)';
           qtyEl.title = exceedsQty ? 'Warning: Planned quantity exceeds maximum buyable quantity from available cash!' : '';
         }
-        
+
         const amtEl = $('#r_out_amt');
         if (amtEl) {
           amtEl.textContent = posSize != null ? fmtRs(posSize) : '—';
@@ -6534,15 +6534,15 @@
       // Available Financial Years
       const availableFYs = getAvailableFYs();
       const currentFYLabel = STATE.settings && STATE.settings.currentFY ? formatFY(STATE.settings.currentFY) : (availableFYs[0] || '2026-27');
-      
+
       if (!STATE.ledgerFY) {
         STATE.ledgerFY = currentFYLabel;
       }
-      
+
       const todayStr = todayISO();
       let fromDate = STATE.ledgerFrom;
       let toDate = STATE.ledgerTo;
-      
+
       if (!fromDate || !toDate) {
         const fyParts = (STATE.ledgerFY === 'All' || STATE.ledgerFY === 'Custom' ? currentFYLabel : STATE.ledgerFY).split('-');
         const startYr = parseInt(fyParts[0], 10) || 2026;
