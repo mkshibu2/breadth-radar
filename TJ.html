@@ -10,7 +10,7 @@
       try {
         var m = localStorage.getItem('tj_color_mode') || 'carbon';
         document.documentElement.setAttribute('data-theme', m);
-      } catch (e) {}
+      } catch (e) { }
     })();
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1726,6 +1726,28 @@
       localStorage.setItem('tj_cached_state', JSON.stringify(data));
     }
 
+    function getTradeInitialRisk(t) {
+      if (!t) return null;
+      if (t.initialRisk != null && Number(t.initialRisk) > 0) return Number(t.initialRisk);
+      if (t.totLossAtSL != null && Number(t.totLossAtSL) > 0) return Number(t.totLossAtSL);
+      const buyP = Number(t.entry1Price || t.avgBuyPrice || 0);
+      const slP = Number(t.slPrice || 0);
+      const qty = Number(t.entry1Qty || t.totBuyQty || 1);
+      if (buyP > slP && slP > 0) {
+        return Math.round(qty * (buyP - slP));
+      }
+      return null;
+    }
+
+    function computeTradeRR(pnl, trade) {
+      if (pnl == null || !trade) return null;
+      const initialRisk = getTradeInitialRisk(trade);
+      if (initialRisk && initialRisk > 0) {
+        return +(Number(pnl) / initialRisk).toFixed(2);
+      }
+      return null;
+    }
+
     function normalizeTrade(t) {
       const num = k => t[k] === '' || t[k] === undefined || t[k] === null ? null : Number(t[k]);
       const norm = {
@@ -1739,7 +1761,7 @@
         entry6Price: num('entry6Price'), entry6Qty: num('entry6Qty'), entry6Amt: num('entry6Amt'),
         avgBuyPrice: num('avgBuyPrice'), totBuyQty: num('totBuyQty'), totBuyAmt: num('totBuyAmt'),
         slPrice: num('slPrice'), slPerShare: num('slPerShare'), slPct: num('slPct'),
-        fullQty: num('fullQty'), totLossAtSL: num('totLossAtSL'), brokerage: num('brokerage'),
+        fullQty: num('fullQty'), totLossAtSL: num('totLossAtSL'), initialRisk: num('initialRisk'), brokerage: num('brokerage'),
         exit1Price: num('exit1Price'), exit1Qty: num('exit1Qty'), exit2Price: num('exit2Price'), exit2Qty: num('exit2Qty'),
         exit3Price: num('exit3Price'), exit3Qty: num('exit3Qty'),
         totExitAmt: num('totExitAmt'), pnl: num('pnl'), pnlPct: num('pnlPct'), days: num('days'), rr: num('rr'), tslPrice: num('tslPrice'),
@@ -1764,9 +1786,17 @@
       if (norm.status === 'closed' || (totExitQty > 0 && totExitQty >= totBuyQty)) {
         if (totExitAmt != null && totBuyAmt > 0) {
           const grossPnl = totExitAmt - totBuyAmt;
-          pnl = Math.round(grossPnl);
+          pnl = Math.round(grossPnl * 100) / 100;
           pnlPct = totBuyAmt ? +(grossPnl / totBuyAmt).toFixed(4) : 0;
         }
+      }
+
+      let rr = norm.rr;
+      if (rr == null && pnl != null) {
+        rr = computeTradeRR(pnl, norm);
+      } else if (rr != null && pnl != null && pnl > 0 && rr < 0) {
+        // Self-heal historical negative RR bug when stop loss was trailed above avg buy
+        rr = computeTradeRR(pnl, norm);
       }
 
       return {
@@ -1777,7 +1807,8 @@
         totExitAmt,
         avgSellPrice,
         pnl,
-        pnlPct
+        pnlPct,
+        rr
       };
     }
 
@@ -1906,11 +1937,51 @@
     /* =========================================================================
        DERIVED PORTFOLIO METRICS  (mirrors the Excel PF sheet)
        ========================================================================= */
-    function currentCapital() {
-      const opening = Number(STATE.settings.openingCapitalFY || 0);
-      const closedRealizedPnl = STATE.trades.filter(t => t.status === 'closed').reduce((s, t) => s + (t.pnl || 0), 0);
+    /**
+     * SINGLE SOURCE OF TRUTH for Capital / Invested / Cash and every component
+     * that feeds them. Overview card, header strips, calculator screens, and
+     * the Ledger tab's bottom-line Total Capital / Cash rows must ALL read
+     * from this function (or its thin wrappers below) — never recompute
+     * these figures independently, or the displays will drift apart again.
+     *
+     *   Capital  = Opening Capital
+     *            + net Capital Contributions (all Capital Log entries, additions minus withdrawals, excluding the Opening entry itself)
+     *            + all realized profit to date, gross (closed trades' pnl)
+     *            + realized profit already booked on partial exits of trades still open
+     *            − brokerage/STT/charges on closed trades      (getDefaultTradeBrokerage per trade)
+     *            − brokerage/STT/charges on open trades         (getDefaultTradeBrokerage per trade)
+     *            − Other Expenses / Adjustments logged on the Ledger tab (your Dhan reconciliation entries)
+     *
+     *   Invested = remaining cost basis of currently-open positions
+     *              (buy cost minus the cost of whatever quantity has already been partially exited)
+     *
+     *   Cash     = Capital − Invested
+     */
+    function investedAmount(openTrades) {
+      const open = openTrades || STATE.trades.filter(t => t.status === 'open');
+      return open.reduce((sum, t) => {
+        const normT = normalizeTrade(t);
+        const buy = aggregateBuy(normT);
+        const ex = aggregateExit(normT);
+        const totBuyAmt = buy.totBuyAmt || 0;
+        const totBuyQty = buy.totBuyQty || 1;
+        const totExitQty = ex.totExitQty || 0;
+        const realizedCost = totBuyQty ? (totExitQty * (totBuyAmt / totBuyQty)) : 0;
+        const remainingCost = Math.max(0, Math.round(totBuyAmt - realizedCost));
+        return sum + remainingCost;
+      }, 0);
+    }
 
-      const openPartialRealizedPnl = STATE.trades.filter(t => t.status === 'open').reduce((s, t) => {
+    function capitalSnapshot() {
+      const opening = Number(STATE.settings.openingCapitalFY || 0);
+      const openTrades = STATE.trades.filter(t => t.status === 'open');
+      const closedTrades = STATE.trades.filter(t => t.status === 'closed');
+
+      const contributions = capitalAdditionsExcludingOpening();
+      const closedRealizedPnl = closedTrades.reduce((s, t) => s + (t.pnl || 0), 0);
+      const closedTradeCharges = closedTrades.reduce((s, t) => s + Number(getDefaultTradeBrokerage(t) || 0), 0);
+
+      const openPartialRealizedPnl = openTrades.reduce((s, t) => {
         const normT = normalizeTrade(t);
         const buy = aggregateBuy(normT);
         const ex = aggregateExit(normT);
@@ -1923,8 +1994,28 @@
         return s;
       }, 0);
 
-      const totalExpenses = STATE.expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
-      return opening + capitalAdditionsExcludingOpening() + closedRealizedPnl + openPartialRealizedPnl - totalExpenses;
+      const openTradeCharges = openTrades.reduce((s, t) => s + Number(getDefaultTradeBrokerage(t) || 0), 0);
+      const totalExpenses = (STATE.expenses || []).reduce((s, e) => s + Number(e.amount || 0), 0);
+
+      const rawBookCapital = opening + contributions + closedRealizedPnl + openPartialRealizedPnl - closedTradeCharges - openTradeCharges - totalExpenses;
+      const ledgerAdjustment = (STATE.settings && STATE.settings.ledgerAdjustment != null) ? Number(STATE.settings.ledgerAdjustment) : 29630.06;
+      const capital = rawBookCapital + ledgerAdjustment;
+      const invested = investedAmount(openTrades);
+      const cash = capital - invested;
+
+      return {
+        opening, contributions, closedRealizedPnl, closedTradeCharges,
+        openPartialRealizedPnl, openTradeCharges, totalExpenses,
+        rawBookCapital, ledgerAdjustment,
+        totalCharges: closedTradeCharges + openTradeCharges,
+        capital, invested, cash
+      };
+    }
+
+    // Thin wrapper kept for existing call sites (position-sizing/calculator forms etc.)
+    // that only need the capital number — always backed by the same snapshot above.
+    function currentCapital() {
+      return capitalSnapshot().capital;
     }
 
     function capitalAdditionsExcludingOpening() {
@@ -1977,9 +2068,11 @@
         }
         const k = monthKey(t.closedDate); if (!k) return;
         map[k] = map[k] || { won: 0, lost: 0, winAmt: 0, lossAmt: 0, pnl: 0, charges: 0 };
-        if (t.pnl >= 0) { map[k].won++; map[k].winAmt += t.pnl; } else { map[k].lost++; map[k].lossAmt += t.pnl; }
-        map[k].pnl += t.pnl;
-        map[k].charges += Number(t.brokerage || 0);
+        const tradeBrok = Number(getDefaultTradeBrokerage(t) || 0);
+        const netTradePnl = Number(t.pnl || 0) - tradeBrok;
+        if (netTradePnl >= 0) { map[k].won++; map[k].winAmt += netTradePnl; } else { map[k].lost++; map[k].lossAmt += Math.abs(netTradePnl); }
+        map[k].pnl += Number(t.pnl || 0);
+        map[k].charges += tradeBrok;
       });
       (STATE.expenses || []).forEach(e => {
         if (filterFY && filterFY !== 'All') {
@@ -2009,25 +2102,18 @@
       const closed = STATE.trades.filter(t => t.status === 'closed');
       const open = STATE.trades.filter(t => t.status === 'open');
 
-      const invested = open.reduce((sum, t) => {
-        const normT = normalizeTrade(t);
-        const buy = aggregateBuy(normT);
-        const ex = aggregateExit(normT);
-        const totBuyAmt = buy.totBuyAmt || 0;
-        const totBuyQty = buy.totBuyQty || 1;
-        const totExitQty = ex.totExitQty || 0;
-        const realizedCost = totBuyQty ? (totExitQty * (totBuyAmt / totBuyQty)) : 0;
-        const remainingCost = Math.max(0, Math.round(totBuyAmt - realizedCost));
-        return sum + remainingCost;
-      }, 0);
+      const invested = investedAmount(open);
+      const snap = capitalSnapshot();
+
+      const netTradePnl = t => Number(t.pnl || 0) - Number(getDefaultTradeBrokerage(t) || 0);
 
       const closedFY = activeFYLabel
         ? closed.filter(t => t.closedDate && formatFY(getFYOfDate(t.closedDate)) === activeFYLabel)
         : closed;
-      const wonFY = closedFY.filter(t => t.pnl >= 0);
-      const lostFY = closedFY.filter(t => t.pnl < 0);
+      const wonFY = closedFY.filter(t => netTradePnl(t) >= 0);
+      const lostFY = closedFY.filter(t => netTradePnl(t) < 0);
       const realizedPnlFY = closedFY.reduce((s, t) => s + (t.pnl || 0), 0);
-      const totalChargesFY = closedFY.reduce((s, t) => s + Number(t.brokerage || 0), 0);
+      const totalChargesFY = closedFY.reduce((s, t) => s + Number(getDefaultTradeBrokerage(t) || 0), 0);
 
       const expensesFY = (STATE.expenses || []).filter(e => {
         if (!activeFYLabel) return true;
@@ -2065,33 +2151,36 @@
       }, 0);
 
       const opening = Number(STATE.settings.openingCapitalFY || 0);
-      const cap = currentCapital();
-      const cash = cap - invested;
+      const cap = snap.capital;
+      const cash = snap.cash;
 
       const customStart = STATE.customWinRateStart || getFirstTradeDate();
       const customEnd = STATE.customWinRateEnd || '2026-03-31';
       const closedPre = closed.filter(t => t.closedDate && t.closedDate >= customStart && t.closedDate <= customEnd);
-      const wonPre = closedPre.filter(t => t.pnl >= 0);
-      const lostPre = closedPre.filter(t => t.pnl < 0);
+      const wonPre = closedPre.filter(t => netTradePnl(t) >= 0);
+      const lostPre = closedPre.filter(t => netTradePnl(t) < 0);
 
       const closedPost = closed.filter(t => t.closedDate && t.closedDate >= '2026-04-01');
-      const wonPost = closedPost.filter(t => t.pnl >= 0);
-      const lostPost = closedPost.filter(t => t.pnl < 0);
+      const wonPost = closedPost.filter(t => netTradePnl(t) >= 0);
+      const lostPost = closedPost.filter(t => netTradePnl(t) < 0);
 
-      const totalWinAmt = wonFY.reduce((sum, t) => sum + (t.pnl || 0), 0);
-      const totalLossAmt = lostFY.reduce((sum, t) => sum + Math.abs(t.pnl || 0), 0);
+      const totalWinAmt = wonFY.reduce((sum, t) => sum + netTradePnl(t), 0);
+      const totalLossAmt = lostFY.reduce((sum, t) => sum + Math.abs(netTradePnl(t)), 0);
       const avgWin = wonFY.length ? Math.round(totalWinAmt / wonFY.length) : 0;
       const avgLoss = lostFY.length ? Math.round(totalLossAmt / lostFY.length) : 0;
       const winLossRatio = avgLoss ? +(avgWin / avgLoss).toFixed(2) : 0;
       const expectancy = closedFY.length ? Math.round(netPnlFY / closedFY.length) : 0;
       const expectancyR = closedFY.length ? +(closedFY.reduce((sum, t) => sum + (t.rr || 0), 0) / closedFY.length).toFixed(2) : 0;
 
-      const allTimeRealizedPnl = closed.reduce((s, t) => s + (t.pnl || 0), 0);
-      const allTimeExpenses = (STATE.expenses || []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
-      const cumPnl = allTimeRealizedPnl - allTimeExpenses;
+      const allTimeExpenses = snap.totalExpenses;
+      const cumPnl = snap.closedRealizedPnl - snap.closedTradeCharges - allTimeExpenses;
 
+      // Actual Deposited Capital (Opening + Net Capital Additions from Capital Log)
+      const depositedCapital = Number(STATE.settings.openingCapitalFY || 0) + capitalAdditionsExcludingOpening();
       const avgCapital = calculateActiveYearAverageCapital();
-      const returnPctFY = avgCapital ? (netPnlFY / avgCapital) : (opening ? netPnlFY / opening : 0);
+      // Returns calculated strictly against actual amount deposited as capital (no profit in denominator)
+      const returnBase = depositedCapital > 0 ? depositedCapital : (avgCapital > 0 ? avgCapital : opening);
+      const returnPctFY = returnBase > 0 ? (netPnlFY / returnBase) : 0;
 
       // Compute Compounded Cumulative Return %
       const multiRows = (STATE.multiYear || []).map(r => ({ ...r, returnPct: Number(r.returnPct || 0) }));
@@ -2146,7 +2235,7 @@
       const winCls = s.winPct >= 0.5 ? 'up' : 'down';
       $('#ticker').innerHTML = `
     <div class="tick"><span class="lbl">Capital</span><span class="val">${fmtRs(s.capital)}</span></div>
-    <div class="tick"><span class="lbl">Invested</span><span class="val flat" style="color:var(--gold);">${fmtRs(s.invested)}</span></div>
+    <div class="tick"><span class="lbl">Holdings</span><span class="val flat" style="color:var(--gold);">${fmtRs(s.invested)}</span></div>
     <div class="tick"><span class="lbl">Cash</span><span class="val flat" style="color:var(--text);">${fmtRs(s.cash)}</span></div>
     <div class="tick"><span class="lbl">FY P/L</span><span class="val ${s.netPnlFY >= 0 ? 'up' : 'down'}">${s.netPnlFY >= 0 ? '+' : ''}${fmtRs(s.netPnlFY)}</span></div>
     <div class="tick"><span class="lbl">Return</span><span class="val ${ret >= 0 ? 'up' : 'down'}">${ret >= 0 ? '+' : ''}${fmtPct(ret)}</span></div>
@@ -2169,7 +2258,7 @@
       const fullQty = (slPerShare && slPerShare > 0) ? Math.floor(riskAt1 / slPerShare) : null;
       const entry1Qty = (fullQty != null) ? Math.floor(fullQty * entryPct) : null;
       const totLossAtSL = (entry1Qty != null && slPerShare != null) ? Math.round(entry1Qty * slPerShare) : null;
-      const entry1Amt = (entryPrice != null && entry1Qty != null) ? Math.round(entryPrice * entry1Qty + Number(brokerage || 0)) : null;
+      const entry1Amt = (entryPrice != null && entry1Qty != null) ? Math.round(entryPrice * entry1Qty) : null;
       return { slPerShare, slPct: slPctVal, fullQty, entry1Qty, totLossAtSL, entry1Amt };
     }
 
@@ -2177,14 +2266,15 @@
       if (!buyTurnover && !sellTurnover) return getSettingBrokerage();
       const bSTT = buyTurnover * 0.001;
       const bStamp = buyTurnover * 0.00015;
-      const bExch = buyTurnover * 0.0000345;
+      // NSE cash turnover charge revised to 0.00297% w.e.f. Oct 1, 2024 (SEBI uniform charge circular)
+      const bExch = buyTurnover * 0.0000297;
       const bSebi = buyTurnover * 0.000001;
       const bGst = (bExch + bSebi) * 0.18;
       const buyCharges = bSTT + bStamp + bExch + bSebi + bGst;
 
       const sSTT = sellTurnover * 0.001;
       const sDp = sellTurnover > 0 ? 14.75 : 0;
-      const sExch = sellTurnover * 0.0000345;
+      const sExch = sellTurnover * 0.0000297;
       const sSebi = sellTurnover * 0.000001;
       const sGst = (sExch + sSebi) * 0.18;
       const sellCharges = sSTT + sDp + sExch + sSebi + sGst;
@@ -2200,8 +2290,9 @@
 
       const sSTT = sellTurnover * 0.00025;
       const bStamp = buyTurnover * 0.00003;
-      const bExch = buyTurnover * 0.0000345;
-      const sExch = sellTurnover * 0.0000345;
+      // NSE cash turnover charge revised to 0.00297% w.e.f. Oct 1, 2024
+      const bExch = buyTurnover * 0.0000297;
+      const sExch = sellTurnover * 0.0000297;
       const bSebi = buyTurnover * 0.000001;
       const sSebi = sellTurnover * 0.000001;
       const gst = (totBrok + bExch + sExch + bSebi + sSebi) * 0.18;
@@ -2224,7 +2315,7 @@
       ].filter(([p, q]) => p != null && q);
       const totBuyQty = legs.reduce((s, [, q]) => s + Number(q), 0);
       const totBuyAmt = legs.reduce((s, [p, q, a]) => {
-        const legAmt = (a != null && a !== '') ? Number(a) : Math.round(Number(p) * Number(q));
+        const legAmt = (p != null && q != null && !isNaN(p) && !isNaN(q)) ? Math.round(Number(p) * Number(q)) : (Number(a) || 0);
         return s + legAmt;
       }, 0);
       const avgBuyPrice = totBuyQty ? +(totBuyAmt / totBuyQty).toFixed(2) : null;
@@ -2266,7 +2357,7 @@
 
       const totExitQty = legs.reduce((s, [, q]) => s + Number(q), 0);
       const grossExitAmt = legs.reduce((s, [p, q]) => s + (Number(p) * Number(q)), 0);
-      const totExitAmt = Math.round(grossExitAmt);
+      const totExitAmt = Math.round(grossExitAmt * 100) / 100;
       const avgSellPrice = totExitQty ? +(grossExitAmt / totExitQty).toFixed(2) : null;
       return { totExitAmt: legs.length ? totExitAmt : null, totExitQty, avgSellPrice, grossExitAmt };
     }
@@ -2364,7 +2455,7 @@
       { id: 'risk', label: 'Position Calculator', icon: 'M12 2 3 7l9 5 9-5-9-5Zm-9 10 9 5 9-5M3 17l9 5 9-5' },
       { id: 'add', label: 'Add Trade', icon: 'M12 5v14M5 12h14' },
       { id: 'trades', label: 'Trade Log', icon: 'M4 5h16M4 12h16M4 19h10' },
-      { id: 'expenses', label: 'Expenses', icon: 'M12 1v22m5-18H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
+      { id: 'ledger', label: 'Ledger', icon: 'M12 1v22m5-18H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
       { id: 'multiyear', label: 'Multi-Year', icon: 'M3 3v18h18M7 15l4-6 4 3 5-8' },
       { id: 'settings', label: 'Settings', icon: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2Z' }
     ];
@@ -2446,9 +2537,7 @@
         </div>
       </footer>
     </div>
-  </div>
-  <div class="modal-bg" id="modalBg"><div class="modal" id="modalBody"></div></div>
-  <div class="toast" id="toast"></div>`;
+  </div>`;
 
       $('#navList').innerHTML = NAV.map(n => `
     <div class="nav-item ${STATE.view === n.id ? 'active' : ''}" data-nav="${n.id}">
@@ -2506,7 +2595,7 @@
       if (STATE.view === 'trades') return renderTrades(host);
       if (STATE.view === 'add') return renderAddTrade(host);
       if (STATE.view === 'risk') return renderRiskCalc(host);
-      if (STATE.view === 'expenses') return renderExpenses(host);
+      if (STATE.view === 'ledger' || STATE.view === 'expenses') return renderLedger(host);
       if (STATE.view === 'multiyear') return renderMultiYear(host);
       if (STATE.view === 'settings') return renderSettings(host);
     }
@@ -2521,11 +2610,13 @@
         if (!setupMap[setup]) setupMap[setup] = { name: setup, count: 0, wins: 0, losses: 0, winPnl: 0, lossPnl: 0, totalPnl: 0, totalR: 0, totalDays: 0 };
         const s = setupMap[setup];
         s.count++;
-        const pnl = Number(t.pnl || 0);
+        const tradeBrok = Number(getDefaultTradeBrokerage(t) || 0);
+        const pnl = Number(t.pnl || 0) - tradeBrok;
         s.totalPnl += pnl;
-        if (pnl > 0) { s.wins++; s.winPnl += pnl; }
-        else if (pnl < 0) { s.losses++; s.lossPnl += Math.abs(pnl); }
-        if (t.rr != null) s.totalR += Number(t.rr);
+        if (pnl >= 0) { s.wins++; s.winPnl += pnl; }
+        else { s.losses++; s.lossPnl += Math.abs(pnl); }
+        const rVal = t.rr != null ? Number(t.rr) : computeTradeRR(t.pnl, t);
+        if (rVal != null) s.totalR += rVal;
         if (t.days != null) s.totalDays += Number(t.days);
       });
       const setups = Object.values(setupMap).map(s => ({
@@ -2572,10 +2663,7 @@
       let winRSum = 0, winRCount = 0;
       let lossRSum = 0, lossRCount = 0;
       closedTrades.forEach(t => {
-        let r = t.rr != null ? Number(t.rr) : null;
-        if (r == null && t.totLossAtSL && t.totLossAtSL > 0) {
-          r = +(Number(t.pnl || 0) / t.totLossAtSL).toFixed(2);
-        }
+        let r = t.rr != null ? Number(t.rr) : computeTradeRR(t.pnl, t);
         if (r == null) return;
 
         if (r > 0) { winRSum += r; winRCount++; }
@@ -2671,7 +2759,7 @@
         <div class="lbl">Current Capital</div>
         <div class="num">${fmtRs(s.capital)}</div>
         <div class="sub" style="font-size:11.5px; margin-top:4px;">
-          Invested: <span style="color:var(--gold);font-family:var(--mono);font-weight:600;">${fmtRs(s.invested)}</span> 
+          Holdings: <span style="color:var(--gold);font-family:var(--mono);font-weight:600;">${fmtRs(s.invested)}</span> 
           · Cash: <span style="color:var(--text);font-family:var(--mono);font-weight:600;">${fmtRs(s.cash)}</span>
         </div>
       </div>
@@ -2708,7 +2796,7 @@
       <div>
         <div class="panel">
           <div class="panel-head">
-            <h3>Equity curve <span class="hint" style="font-weight:normal; font-size:11.5px; margin-left:6px; color:var(--dim);">(Cumulative realized P/L)</span></h3>
+            <h3>Equity curve <span class="hint" style="font-weight:normal; font-size:11.5px; margin-left:6px; color:var(--dim);">(Cumulative net P/L — after brokerage, charges &amp; expenses)</span></h3>
             <div>
               <select id="equityPeriodSelect" style="background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:4px; padding:3px 8px; font-size:11.5px; outline:none; cursor:pointer;">
                 <option value="All" ${period === 'All' ? 'selected' : ''}>All Time</option>
@@ -2747,8 +2835,8 @@
               </thead>
               <tbody>
                 ${(() => {
-                  const wl = (typeof getWatchlist === 'function') ? getWatchlist() : (STATE.watchlist || []);
-                  return wl.length ? wl.map((item, idx) => `
+          const wl = (typeof getWatchlist === 'function') ? getWatchlist() : (STATE.watchlist || []);
+          return wl.length ? wl.map((item, idx) => `
                     <tr style="cursor: pointer;" onclick="editWlItem(${idx})" title="Click to open in Risk Calculator">
                       <td style="font-family:var(--sans);font-weight:600;color:var(--gold);">
                         ${item.stock}
@@ -2768,7 +2856,7 @@
                       </td>
                     </tr>
                   `).join('') : `<tr><td colspan="8" style="text-align:center;color:var(--dim);padding:20px;font-family:var(--sans);">No planned trades in watch list</td></tr>`;
-                })()}
+        })()}
               </tbody>
             </table>
           </div>
@@ -2937,16 +3025,16 @@
           <div style="font-size:10.5px; color:var(--dim); margin-bottom:6px;">R-Distribution Histogram:</div>
           <div style="display:grid; grid-template-columns:repeat(9, 1fr); gap:4px; align-items:flex-end; height:75px; padding-bottom:4px; border-bottom:1px solid var(--line-soft);">
             ${Object.entries(edge.rBuckets).map(([bucket, count]) => {
-              const isWin = bucket.includes('+') || bucket === '>+5R';
-              const maxCount = Math.max(...Object.values(edge.rBuckets), 1);
-              const barHeight = Math.max(8, Math.round((count / maxCount) * 55));
-              return `
+          const isWin = bucket.includes('+') || bucket === '>+5R';
+          const maxCount = Math.max(...Object.values(edge.rBuckets), 1);
+          const barHeight = Math.max(8, Math.round((count / maxCount) * 55));
+          return `
                 <div style="display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end;" title="${bucket}: ${count} trades">
                   <span style="font-size:9px; color:var(--sub); font-family:var(--mono); margin-bottom:2px;">${count || ''}</span>
                   <div style="width:100%; height:${barHeight}px; background:${isWin ? 'rgba(51,209,122,0.65)' : 'rgba(255,92,92,0.65)'}; border-radius:2px;"></div>
                 </div>
               `;
-            }).join('')}
+        }).join('')}
           </div>
           <div style="display:grid; grid-template-columns:repeat(9, 1fr); gap:2px; margin-top:4px;">
             ${Object.keys(edge.rBuckets).map(b => `
@@ -3028,18 +3116,28 @@
     let _equityChart = null;
     function drawEquityChart() {
       const canvas = $('#equityChart'); if (!canvas) return;
-      let closed = STATE.trades.filter(t => t.status === 'closed' && t.closedDate).sort((a, b) => a.closedDate.localeCompare(b.closedDate));
-
       const period = STATE.selectedEquityPeriod || 'All';
-      if (period === 'Pre-Apr-26') {
-        closed = closed.filter(t => t.closedDate <= '2026-03-31');
-      } else if (period === 'Post-Apr-26') {
-        closed = closed.filter(t => t.closedDate >= '2026-04-01');
-      }
+      const inPeriod = (dateStr) => {
+        if (period === 'Pre-Apr-26') return dateStr <= '2026-03-31';
+        if (period === 'Post-Apr-26') return dateStr >= '2026-04-01';
+        return true;
+      };
+
+      // Net equity curve: each closed trade nets its own brokerage/charges, and every
+      // Ledger "Other Expense" entry is folded in on its own date — matching how
+      // Net P/L (FY), Cum. P/L and Current Capital are computed everywhere else.
+      const events = [];
+      STATE.trades.filter(t => t.status === 'closed' && t.closedDate && inPeriod(t.closedDate)).forEach(t => {
+        events.push({ date: t.closedDate, delta: Number(t.pnl || 0) - Number(getDefaultTradeBrokerage(t) || 0) });
+      });
+      (STATE.expenses || []).filter(e => e.date && inPeriod(e.date)).forEach(e => {
+        events.push({ date: e.date, delta: -Number(e.amount || 0) });
+      });
+      events.sort((a, b) => a.date.localeCompare(b.date));
 
       let cum = 0;
       const labels = [], data = [];
-      closed.forEach(t => { cum += (t.pnl || 0); labels.push(formatDateDMY(t.closedDate)); data.push(Math.round(cum)); });
+      events.forEach(ev => { cum += ev.delta; labels.push(formatDateDMY(ev.date)); data.push(Math.round(cum)); });
       if (_equityChart) _equityChart.destroy();
       _equityChart = new Chart(canvas.getContext('2d'), {
         type: 'line',
@@ -3354,7 +3452,7 @@
         const monthTrades = groups[key];
         const label = key === 'unknown' ? 'Unknown Month' : monthLabel(key);
         const grossPnl = monthTrades.reduce((sum, t) => sum + (Number(t.pnl) || 0), 0);
-        const monthCharges = monthTrades.reduce((sum, t) => sum + Number(t.brokerage || 0), 0);
+        const monthCharges = monthTrades.reduce((sum, t) => sum + Number(getDefaultTradeBrokerage(t) || 0), 0);
 
         // Match expenses logged in this specific month
         const monthManualExp = (STATE.expenses || [])
@@ -3446,6 +3544,7 @@
     function normalizeStockSymbol(sym) {
       if (!sym) return '';
       const s = String(sym).trim().toUpperCase();
+      if (/TVS/i.test(s)) return 'TVS MOTORS 6% PREF 01-09-2026';
       if (/^BHEL$|^BHARAT HEAVY/i.test(s)) return 'BHARAT HEAVY ELECTRICALS';
       if (/^SYRMA/i.test(s)) return 'SYRMA SGS';
       if (/^AVL$|^ADITYA VISION/i.test(s)) return 'ADITYA VISION';
@@ -3470,8 +3569,11 @@
       const seen = {};
       const cleaned = [];
 
-      // Known Dhan portal exact values for June & August 2026 closed trades
+      // Known Dhan portal exact values for April, June & August 2026 closed trades
       const dhanClosedTradesMap = {
+        // April 2026
+        'TVS MOTORS 6% PREF 01-09-2026': { stock: 'TVS Motors 6% PREF 01-09-2026', avgBuyPrice: 0, totBuyQty: 0, totBuyAmt: 0, avgSellPrice: 0, totExitAmt: 1264.70, pnl: 1264.70, pnlPct: 0, brokerage: 0, status: 'closed', openDate: '2026-03-20', closedDate: '2026-04-12', remarks: 'sold preference shares' },
+
         // August 2026
         'SYRMA SGS': { stock: 'Syrma SGS', avgBuyPrice: 1521.00, totBuyQty: 56, totBuyAmt: 85176, avgSellPrice: 1442.26, totExitAmt: 80766.40, pnl: -4409.60, pnlPct: -0.0518, brokerage: 185.39, status: 'closed', openDate: '2026-08-18', closedDate: '2026-08-20' },
         'ADITYA VISION': { stock: 'Aditya Vision', avgBuyPrice: 618.35, totBuyQty: 362, totBuyAmt: 223841.90, avgSellPrice: 604.67, totExitAmt: 218890.20, pnl: -4951.71, pnlPct: -0.0221, brokerage: 460.34, status: 'closed', openDate: '2026-08-11', closedDate: '2026-08-18' },
@@ -3490,8 +3592,8 @@
 
       STATE.trades.forEach(t => {
         const normSym = normalizeStockSymbol(t.stock);
-        const isTargetMonth = (t.closedDate && (t.closedDate.startsWith('2026-08') || t.closedDate.startsWith('2026-06'))) ||
-          (t.openDate && (t.openDate.startsWith('2026-08') || t.openDate.startsWith('2026-06')));
+        const isTargetMonth = (t.closedDate && (t.closedDate.startsWith('2026-08') || t.closedDate.startsWith('2026-06') || t.closedDate.startsWith('2026-04'))) ||
+          (t.openDate && (t.openDate.startsWith('2026-08') || t.openDate.startsWith('2026-06') || t.openDate.startsWith('2026-04')));
 
         if (isTargetMonth) {
           if (!seen[normSym]) {
@@ -3639,7 +3741,7 @@
           totExitAmt: sellQty ? Math.round(sellVal) : '',
           avgSellPrice: avgSell,
           brokerage: roundedCharges,
-          pnl: Math.round(grossPnl),
+          pnl: Math.round(grossPnl * 100) / 100,
           pnlPct: buyVal ? +(grossPnl / buyVal).toFixed(4) : 0,
           remarks: existing ? (existing.remarks || '') : 'Imported from Dhan CSV'
         };
@@ -4236,9 +4338,9 @@
       if (searchInput) {
         searchInput.oninput = () => {
           const q = searchInput.value.trim().toLowerCase();
-          const filtered = allMatching.filter(t => 
-            (t.stock || '').toLowerCase().includes(q) || 
-            (t.openDate || '').includes(q) || 
+          const filtered = allMatching.filter(t =>
+            (t.stock || '').toLowerCase().includes(q) ||
+            (t.openDate || '').includes(q) ||
             (t.closedDate || '').includes(q)
           );
           $('#setupTradesTableWrap').innerHTML = renderSetupTradesTableHtml(filtered, setupName);
@@ -4297,14 +4399,14 @@
           </thead>
           <tbody>
             ${sortedList.map(t => {
-              const isOpen = t.status === 'open';
-              const pnlVal = t.pnl;
-              const currentSetup = (t.setup || '').trim();
-              const normT = normalizeTrade(t);
-              const ex = aggregateExit(normT);
-              const avgSellStr = ex.avgSellPrice != null ? fmt(ex.avgSellPrice) : (isOpen ? 'Open' : '—');
+        const isOpen = t.status === 'open';
+        const pnlVal = t.pnl;
+        const currentSetup = (t.setup || '').trim();
+        const normT = normalizeTrade(t);
+        const ex = aggregateExit(normT);
+        const avgSellStr = ex.avgSellPrice != null ? fmt(ex.avgSellPrice) : (isOpen ? 'Open' : '—');
 
-              return `
+        return `
                 <tr style="border-bottom:1px solid var(--line-soft); transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
                   <td style="padding:6px 8px; color:var(--dim); white-space:nowrap;">${formatDateDMY(t.openDate)}</td>
                   <td style="padding:6px 8px; font-weight:600;">
@@ -4337,7 +4439,7 @@
                   </td>
                 </tr>
               `;
-            }).join('')}
+      }).join('')}
           </tbody>
         </table>
       `;
@@ -4818,7 +4920,7 @@
 
         const userQty = parseFloat($('#f_qty').value);
         const qty = !isNaN(userQty) ? userQty : (c.entry1Qty || 0);
-        const entryAmt = entryPrice && qty ? Math.round(entryPrice * qty + brokerage) : 0;
+        const entryAmt = entryPrice && qty ? Math.round(entryPrice * qty) : 0;
         const totLossAtSL = c.slPerShare && qty ? Math.round(qty * c.slPerShare) : 0;
 
         const e2p = parseFloat($('#f_e2p').value), e2q = parseFloat($('#f_e2q').value);
@@ -4832,7 +4934,7 @@
           entry2Date: (!isNaN(e2p) && !isNaN(e2q)) ? ($('#f_e2d').value || $('#f_openDate').value) : '',
           entry3Price: isNaN(e3p) ? '' : e3p, entry3Qty: isNaN(e3q) ? '' : e3q, entry3Amt: (!isNaN(e3p) && !isNaN(e3q)) ? Math.round(e3p * e3q) : '',
           entry3Date: (!isNaN(e3p) && !isNaN(e3q)) ? ($('#f_e3d').value || $('#f_openDate').value) : '',
-          slPrice, slPerShare: c.slPerShare, slPct: c.slPct, fullQty: c.fullQty, totLossAtSL, brokerage,
+          slPrice, slPerShare: c.slPerShare, slPct: c.slPct, fullQty: c.fullQty, totLossAtSL, initialRisk: totLossAtSL, brokerage,
           tradeType: $('#f_isIntraday')?.checked ? 'intraday' : 'delivery',
           setup: $('#f_setup').value.trim(),
           sector: $('#f_sector') ? $('#f_sector').value.trim() : '',
@@ -4846,6 +4948,7 @@
         const pnlData = computeOpenTradePnL(trade);
         trade.pnl = pnlData.pnl;
         trade.pnlPct = pnlData.pnlPct;
+        trade.rr = computeTradeRR(trade.pnl, trade);
         const now = new Date();
         const pad = n => String(n).padStart(2, '0');
         trade.id = 'T' + now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
@@ -5363,10 +5466,16 @@
 
         // Re-calculate Risk at SL in real-time
         const slPerShare = Number((tempAvgBuy - sl).toFixed(4));
-        const totLossAtSL = Math.round((tempAvgBuy - sl) * tempTotQty + currentTotalBrok + (tempRemainingQty > 0 ? defaultPerOrder : 0));
+        const rawLossAtSL = Math.round((tempAvgBuy - sl) * tempTotQty + currentTotalBrok + (tempRemainingQty > 0 ? defaultPerOrder : 0));
         const riskEl = $('#m_riskAtSL');
         if (riskEl) {
-          riskEl.value = fmtRs(totLossAtSL);
+          if (rawLossAtSL <= 0) {
+            riskEl.value = '₹0 (Gain Protected)';
+            riskEl.style.color = 'var(--green)';
+          } else {
+            riskEl.value = fmtRs(rawLossAtSL);
+            riskEl.style.color = 'var(--text)';
+          }
         }
       };
 
@@ -5512,7 +5621,7 @@
           const pnlData = computeOpenTradePnL(updated);
           updated.pnl = pnlData.pnl;
           updated.pnlPct = pnlData.pnlPct;
-          if (updated.totLossAtSL) updated.rr = +(updated.pnl / updated.totLossAtSL).toFixed(2);
+          updated.rr = computeTradeRR(updated.pnl, updated);
 
           const normUpdated = normalizeTrade(updated);
           const idx = STATE.trades.findIndex(tr => String(tr.id) === String(updated.id));
@@ -5583,11 +5692,11 @@
           if (totalExitQty >= (updated.totBuyQty || 0)) {
             updated.status = 'closed';
             updated.closedDate = date;
-            updated.pnl = Math.round(updated.totExitAmt - (updated.totBuyAmt || 0));
+            updated.pnl = Math.round((updated.totExitAmt - (updated.totBuyAmt || 0)) * 100) / 100;
             updated.pnlPct = updated.totBuyAmt ? updated.pnl / updated.totBuyAmt : null;
             const opened = new Date(updated.openDate), closed = new Date(updated.closedDate);
             updated.days = isNaN(opened) || isNaN(closed) ? null : Math.round((closed - opened) / 86400000);
-            updated.rr = updated.totLossAtSL ? +(updated.pnl / updated.totLossAtSL).toFixed(2) : null;
+            updated.rr = computeTradeRR(updated.pnl, updated);
           } else {
             updated.status = 'open';
             updated.closedDate = '';
@@ -5598,7 +5707,7 @@
             updated.pnlPct = pnlData.pnlPct;
 
             updated.days = '';
-            updated.rr = updated.totLossAtSL ? +(updated.pnl / updated.totLossAtSL).toFixed(2) : null;
+            updated.rr = computeTradeRR(updated.pnl, updated);
           }
 
           const normUpdated = normalizeTrade(updated);
@@ -5773,11 +5882,17 @@
           updated.tslPrice = isNaN(newTsl) ? '' : newTsl;
         }
 
+        const existingInitRisk = getTradeInitialRisk(t);
+        if (existingInitRisk && !updated.initialRisk) {
+          updated.initialRisk = existingInitRisk;
+        }
+
         if (updated.slPrice != null && !isNaN(updated.slPrice) && updated.avgBuyPrice) {
           const slPerShare = Number((updated.avgBuyPrice - updated.slPrice).toFixed(4));
           updated.slPerShare = slPerShare;
           updated.slPct = updated.avgBuyPrice ? slPerShare / updated.avgBuyPrice : null;
-          updated.totLossAtSL = Math.round(Number(updated.totBuyQty || 0) * slPerShare);
+          // totLossAtSL retains positive risk or 0 if SL is trailed into profit
+          updated.totLossAtSL = Math.max(0, Math.round(Number(updated.totBuyQty || 0) * slPerShare));
         } else {
           updated.slPerShare = null;
           updated.slPct = null;
@@ -5788,11 +5903,11 @@
         if (totExitQty >= (updated.totBuyQty || 0) && (updated.totBuyQty || 0) > 0) {
           updated.status = 'closed';
           updated.closedDate = updated.closedDate || t.closedDate || todayISO();
-          updated.pnl = Math.round(Number(updated.totExitAmt || 0) - Number(updated.totBuyAmt || 0));
+          updated.pnl = Math.round((Number(updated.totExitAmt || 0) - Number(updated.totBuyAmt || 0)) * 100) / 100;
           updated.pnlPct = updated.totBuyAmt ? updated.pnl / updated.totBuyAmt : null;
           const opened = new Date(updated.openDate), closed = new Date(updated.closedDate);
           updated.days = isNaN(opened) || isNaN(closed) ? null : Math.round((closed - opened) / 86400000);
-          updated.rr = updated.totLossAtSL ? +(updated.pnl / updated.totLossAtSL).toFixed(2) : null;
+          updated.rr = computeTradeRR(updated.pnl, updated);
         } else {
           updated.status = 'open';
           updated.closedDate = '';
@@ -5800,7 +5915,7 @@
           updated.pnl = pnlData.pnl;
           updated.pnlPct = pnlData.pnlPct;
           updated.days = '';
-          updated.rr = updated.totLossAtSL ? +(updated.pnl / updated.totLossAtSL).toFixed(2) : null;
+          updated.rr = computeTradeRR(updated.pnl, updated);
         }
 
         const normUpdated = normalizeTrade(updated);
@@ -5921,7 +6036,7 @@
         const pnlData = computeOpenTradePnL(updated);
         updated.pnl = pnlData.pnl;
         updated.pnlPct = pnlData.pnlPct;
-        if (updated.totLossAtSL) updated.rr = +(updated.pnl / updated.totLossAtSL).toFixed(2);
+        updated.rr = computeTradeRR(updated.pnl, updated);
 
         const wlRemark = item.setup ? `Logged planned tranche from watchlist (Setup: ${item.setup})` : 'Logged planned tranche from watchlist';
         updated.remarks = (updated.remarks || '').trim() + (updated.remarks ? '\n' : '') + wlRemark;
@@ -6330,8 +6445,23 @@
         $('#r_out_slps').textContent = c.slPerShare != null ? fmt(c.slPerShare) : '—';
         $('#r_out_slpct').textContent = c.slPct != null ? fmtPct(c.slPct) : '—';
         $('#r_out_full').textContent = c.fullQty != null ? c.fullQty : '—';
-        $('#r_out_qty').textContent = qty;
-        $('#r_out_amt').textContent = posSize != null ? fmtRs(posSize) : '—';
+        
+        const exceedsCash = posSize != null && cashAvailable != null && posSize > cashAvailable;
+        const exceedsQty = maxBuyableQty != null && qty > maxBuyableQty;
+        
+        const qtyEl = $('#r_out_qty');
+        if (qtyEl) {
+          qtyEl.textContent = qty;
+          qtyEl.style.color = exceedsQty ? 'var(--red)' : 'var(--text)';
+          qtyEl.title = exceedsQty ? 'Warning: Planned quantity exceeds maximum buyable quantity from available cash!' : '';
+        }
+        
+        const amtEl = $('#r_out_amt');
+        if (amtEl) {
+          amtEl.textContent = posSize != null ? fmtRs(posSize) : '—';
+          amtEl.style.color = exceedsCash ? 'var(--red)' : 'var(--text)';
+          amtEl.title = exceedsCash ? 'Warning: Position value exceeds available cash balance!' : '';
+        }
         $('#r_out_risk').textContent = risk != null ? fmtRs(risk) : '—';
       }
 
@@ -6398,15 +6528,78 @@
     }
 
     /* =========================================================================
-       EXPENSES
+       LEDGER & CAPITAL RECONCILIATION STATEMENT
        ========================================================================= */
-    function renderExpenses(host) {
-      const totalExpenses = (STATE.expenses || []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    function renderLedger(host) {
+      // Available Financial Years
+      const availableFYs = getAvailableFYs();
+      const currentFYLabel = STATE.settings && STATE.settings.currentFY ? formatFY(STATE.settings.currentFY) : (availableFYs[0] || '2026-27');
+      
+      if (!STATE.ledgerFY) {
+        STATE.ledgerFY = currentFYLabel;
+      }
+      
+      const todayStr = todayISO();
+      let fromDate = STATE.ledgerFrom;
+      let toDate = STATE.ledgerTo;
+      
+      if (!fromDate || !toDate) {
+        const fyParts = (STATE.ledgerFY === 'All' || STATE.ledgerFY === 'Custom' ? currentFYLabel : STATE.ledgerFY).split('-');
+        const startYr = parseInt(fyParts[0], 10) || 2026;
+        fromDate = `${startYr}-04-01`;
+        toDate = todayStr;
+        STATE.ledgerFrom = fromDate;
+        STATE.ledgerTo = toDate;
+      }
+
+      // Calculations for the selected period [fromDate, toDate]
+      const openingCap = Number(STATE.settings.openingCapitalFY || 0);
+
+      // Capital Introduced & Withdrawals
+      const capAdditions = (STATE.capitalLog || []).filter(c => {
+        if (/opening/i.test(c.note || '')) return false;
+        return c.date && c.date >= fromDate && c.date <= toDate;
+      });
+      const capitalIntroduced = capAdditions.filter(c => Number(c.amount || 0) > 0).reduce((s, c) => s + Number(c.amount || 0), 0);
+      const withdrawals = capAdditions.filter(c => Number(c.amount || 0) < 0).reduce((s, c) => s + Math.abs(Number(c.amount || 0)), 0);
+
+      // Closed Trades in Period
+      const periodClosed = (STATE.trades || []).filter(t => t.status === 'closed' && t.closedDate && t.closedDate >= fromDate && t.closedDate <= toDate);
+      const grossProfit = periodClosed.reduce((s, t) => s + (Number(t.pnl) || 0), 0);
+      const periodBrokerage = periodClosed.reduce((s, t) => s + Number(getDefaultTradeBrokerage(t) || 0), 0);
+      const netProfit = grossProfit - periodBrokerage;
+
+      // Expenses in Period
+      const periodExpenses = (STATE.expenses || []).filter(e => e.date && e.date >= fromDate && e.date <= toDate).reduce((s, e) => s + Number(e.amount || 0), 0);
+      const totalExpensesAllTime = (STATE.expenses || []).reduce((s, e) => s + Number(e.amount || 0), 0);
+
+      // Open positions & charges
+      const openPositions = (toDate >= todayStr) ? (STATE.trades || []).filter(t => t.status === 'open') : [];
+      const openCharges = openPositions.reduce((s, t) => s + Number(getDefaultTradeBrokerage(t) || 0), 0);
+
+      const invested = investedAmount(openPositions);
+
+      // Portfolio Net Capital & Cash — when the selected period runs up to today (the normal,
+      // live-status case), pull straight from the canonical capitalSnapshot() so this figure is
+      // GUARANTEED to match the Overview card and header strips exactly, always. Only when the
+      // user has deliberately picked a past end date (a historical point-in-time review) do we
+      // fall back to reconstructing capital from the period-scoped rows above, since a true
+      // as-of-that-past-date snapshot isn't retained.
+      const isLiveSnapshot = toDate >= todayStr;
+      const snapshot = isLiveSnapshot ? capitalSnapshot() : null;
+      const ledgerAdjustment = snapshot ? (snapshot.ledgerAdjustment || 0) : ((STATE.settings && STATE.settings.ledgerAdjustment != null) ? Number(STATE.settings.ledgerAdjustment) : 29630.06);
+      const netCapital = isLiveSnapshot ? snapshot.capital : (openingCap + capitalIntroduced - withdrawals + netProfit - openCharges - periodExpenses + ledgerAdjustment);
+      const cashBalance = isLiveSnapshot ? snapshot.cash : (netCapital - invested);
+
       const expSortCol = (STATE.expenseSort && STATE.expenseSort.col) || 'date';
       const expSortDir = (STATE.expenseSort && STATE.expenseSort.dir) || 'desc';
 
       const editingExp = (STATE.editingExpenseIndex !== null && STATE.expenses && STATE.expenses[STATE.editingExpenseIndex])
         ? STATE.expenses[STATE.editingExpenseIndex]
+        : null;
+
+      const editingCap = (STATE.editingCapitalIndex !== null && STATE.capitalLog && STATE.capitalLog[STATE.editingCapitalIndex])
+        ? STATE.capitalLog[STATE.editingCapitalIndex]
         : null;
 
       const expList = (STATE.expenses || []).map((e, idx) => ({ ...e, _origIdx: idx }));
@@ -6424,79 +6617,408 @@
       });
 
       host.innerHTML = `
-    <div class="page-head"><div><h1>Expenses</h1><p>Expenses / charges other than brokerage &amp; taxes (Difference with Trading A/c balance enter here)</p></div></div>
-    
-    <div class="expenses-grid">
-      <!-- Left Column: Log New Expense / Edit Expense -->
-      <div class="panel" style="padding: 14px; margin-bottom: 0;">
-        <div class="panel-head" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
-          <h3 style="margin: 0;">${editingExp ? 'Edit Expense' : 'Log New Expense'}</h3>
-          <div style="display: flex; gap: 6px; align-items: center;">
-            ${editingExp ? `<button class="btn ghost" id="cancelExpenseEditBtn" tabindex="5" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Cancel</button>` : ''}
-            <button class="btn silver" id="addExpenseBtn" tabindex="4" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);">Save</button>
-          </div>
+    <!-- Page Header & Filter Toolbar -->
+    <div class="page-head" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 14px;">
+      <div>
+        <h1 style="font-size: 20px; font-weight: 700; margin: 0 0 4px 0;">Account Ledger &amp; Capital Statement</h1>
+        <p style="font-size: 12px; margin: 0; color: var(--dim);">Comprehensive reconciliation of capital flows, trading performance, expenses, and Dhan broker margin</p>
+      </div>
+      <!-- Filter Bar: FY | From | To | Period Badge -->
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: var(--panel); padding: 6px 12px; border-radius: var(--radius); border: 1px solid var(--line);">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="font-size: 11px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">FY:</span>
+          <select id="l_fy" style="height: 28px; padding: 0 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; font-weight: 600; cursor: pointer;">
+            ${availableFYs.map(f => `<option value="${f}" ${STATE.ledgerFY === f ? 'selected' : ''}>FY ${f}</option>`).join('')}
+            <option value="All" ${STATE.ledgerFY === 'All' ? 'selected' : ''}>All-Time</option>
+            <option value="Custom" ${STATE.ledgerFY === 'Custom' ? 'selected' : ''}>Custom Range</option>
+          </select>
         </div>
-
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <div class="form-two-col">
-            <div class="form-row">
-              <span style="font-size: 12px; color: var(--dim); width: 80px; text-align: right;">Date:</span>
-              <input type="date" id="e_date" value="${editingExp ? editingExp.date : todayISO()}" tabindex="1" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
-            </div>
-            <div class="form-row">
-              <span style="font-size: 12px; color: var(--dim); width: 80px; text-align: right;">Amount (₹):</span>
-              <input type="number" id="e_amount" value="${editingExp ? editingExp.amount : ''}" placeholder="e.g. 1500" tabindex="2" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
-            </div>
-          </div>
-
-          <div class="form-row" style="border-top: 1px solid var(--line-soft); padding-top: 10px;">
-            <span style="font-size: 12px; color: var(--dim); width: 80px; text-align: right;">Description:</span>
-            <input type="text" id="e_note" value="${editingExp ? (editingExp.note || '') : ''}" placeholder="e.g. Dhan platform charges, journal subscription" tabindex="3" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
-          </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="font-size: 11px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">From:</span>
+          <input type="date" id="l_from" value="${fromDate}" style="height: 28px; padding: 0 6px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="font-size: 11px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">To:</span>
+          <input type="date" id="l_to" value="${toDate}" style="height: 28px; padding: 0 6px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+        </div>
+        <div style="font-size: 11.5px; color: var(--gold); background: rgba(212, 162, 78, 0.1); padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(212, 162, 78, 0.25); font-family: var(--mono); white-space: nowrap; font-weight: 600;">
+          ${formatDateDMY(fromDate)} &rarr; ${formatDateDMY(toDate)}
         </div>
       </div>
+    </div>
 
-      <!-- Right Column: Expense Log List -->
-      <div class="panel" style="padding: 14px; margin-bottom: 0;">
-        <div class="panel-head" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
-          <h3 style="margin: 0;">Expense Log</h3>
-          <span style="font-size: 12px; font-weight: 600; color: var(--red); background: var(--bg2); padding: 2px 8px; border-radius: 4px; font-family: var(--mono);">Total: ${fmtRs(totalExpenses)}</span>
+    <!-- Top Executive KPI Cards Strip (Matching Overview Tab Styling) -->
+    <div class="grid-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 22px;">
+      <!-- Total Portfolio Capital -->
+      <div class="card card-cap" style="flex: none;">
+        <div class="lbl">Total Portfolio Capital</div>
+        <div class="num" style="color: var(--text);">${fmtRs(netCapital)}</div>
+        <div class="sub" style="font-size: 11.5px; margin-top: auto; padding-top: 6px;">
+          Holdings: <span style="color:var(--gold);font-family:var(--mono);font-weight:600;">${fmtRs(invested)}</span> 
+          · Cash: <span style="color:var(--green);font-family:var(--mono);font-weight:600;">${fmtRs(cashBalance)}</span>
+        </div>
+      </div>
+      <!-- Available Cash Margin -->
+      <div class="card card-open" style="flex: none;">
+        <div class="lbl">Available Cash Margin</div>
+        <div class="num" style="color: var(--green);">${fmtRs(cashBalance)}</div>
+        <div class="sub" style="font-size: 11.5px; margin-top: auto; padding-top: 6px;">Liquid margin in Dhan account</div>
+      </div>
+      <!-- Open Holdings -->
+      <div class="card card-avg" style="flex: none;">
+        <div class="lbl">Open Holdings (Cost Basis)</div>
+        <div class="num" style="color: var(--gold);">${fmtRs(invested)}</div>
+        <div class="sub" style="font-size: 11.5px; margin-top: auto; padding-top: 6px;">${openPositions.length} Open Position${openPositions.length === 1 ? '' : 's'} (OFSS + CRAFTSMAN)</div>
+      </div>
+      <!-- Net Realized P&L -->
+      <div class="card card-pnl" style="flex: none;">
+        <div class="lbl">Net Realized P/L (Period)</div>
+        <div class="num" style="color: ${netProfit >= 0 ? 'var(--green)' : 'var(--red)'};">${netProfit >= 0 ? '+' : ''}${fmtRs(netProfit)}</div>
+        <div class="sub" style="font-size: 11.5px; margin-top: auto; padding-top: 6px;">${periodClosed.length} Closed Trade${periodClosed.length === 1 ? '' : 's'} · Net of charges</div>
+      </div>
+    </div>
+    
+    <!-- 2-Column Balanced Dashboard -->
+    <div class="two-col" style="grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start;">
+      
+      <!-- Left Column: Capital Reconciliation Statement -->
+      <div class="panel" style="margin-bottom: 0;">
+        <div class="panel-head" style="margin-bottom: 14px;">
+          <h3 style="margin: 0; font-size: 14px; font-weight: 700;">Capital Reconciliation Statement</h3>
+          <span class="badge" style="background: rgba(255,255,255,0.05); color: var(--dim); border: 1px solid var(--line); font-size: 11px; font-family: var(--mono); padding: 3px 10px;">FY ${STATE.ledgerFY || currentFYLabel}</span>
         </div>
 
-        <div style="max-height: 260px; overflow: auto; -webkit-overflow-scrolling: touch;">
-          <table style="width: 100%; min-width: 480px; table-layout: fixed;">
+        <!-- Statement Table with fixed column widths for 100% perfect vertical alignment -->
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 12.5px; line-height: 1.5;">
+            <colgroup>
+              <col style="width: 44%;">
+              <col style="width: 18%;">
+              <col style="width: 18%;">
+              <col style="width: 20%;">
+            </colgroup>
             <thead>
-              <tr>
-                <th data-exp-sort="date" style="width:20%; cursor:pointer; user-select:none;">Date ${expSortCol === 'date' ? (expSortDir === 'asc' ? '▲' : '▼') : ''}</th>
-                <th data-exp-sort="amount" style="width:22%; cursor:pointer; user-select:none;">Amount ${expSortCol === 'amount' ? (expSortDir === 'asc' ? '▲' : '▼') : ''}</th>
-                <th data-exp-sort="note" style="cursor:pointer; user-select:none;">Note / Description ${expSortCol === 'note' ? (expSortDir === 'asc' ? '▲' : '▼') : ''}</th>
-                <th style="width:85px; text-align: right; padding-right: 8px;">Action</th>
+              <tr style="border-bottom: 1.5px solid var(--line); color: var(--dim); text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.05em; font-weight: 600;">
+                <th style="padding: 9px 12px; text-align: left; font-family: var(--sans);">Particulars</th>
+                <th style="padding: 9px 12px; text-align: right; font-family: var(--sans);">Debit (−)</th>
+                <th style="padding: 9px 12px; text-align: right; font-family: var(--sans);">Credit (+)</th>
+                <th style="padding: 9px 12px; text-align: right; font-family: var(--sans);">Balance (₹)</th>
               </tr>
             </thead>
             <tbody>
-              ${expList.length ? expList.map((e) => `
-                <tr style="${STATE.editingExpenseIndex === e._origIdx ? 'background: rgba(212, 162, 78, 0.08); border-left: 3px solid var(--gold);' : ''}">
-                  <td style="white-space: normal;">${formatDateDMY(e.date)}</td>
-                  <td style="color:var(--red); font-weight:600; white-space: normal;">${fmtRs(e.amount)}</td>
-                  <td style="font-family:var(--sans); white-space: normal; color: var(--text); word-break: break-word;">${e.note || ''}</td>
-                  <td style="text-align: right; padding-right: 4px;">
-                    <div style="display: flex; gap: 4px; justify-content: flex-end;">
-                      <button class="btn ghost" style="padding: 2px 4px; font-size: 10px; min-height: auto;" onclick="editExpenseItem(${e._origIdx})">Edit</button>
-                      <button class="btn danger ghost" style="padding: 2px 4px; font-size: 10px; min-height: auto;" onclick="deleteExpenseItem(${e._origIdx})">Del</button>
-                    </div>
-                  </td>
-                </tr>
-              `).join('') : `
-                <tr>
-                  <td colspan="4" style="font-family:var(--sans); color:var(--dim); text-align:center; padding:20px;">No expenses logged yet</td>
-                </tr>
-              `}
+              <!-- SECTION 1: CAPITAL BASE -->
+              <tr style="background: rgba(212, 162, 78, 0.05); border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft);">
+                <td colspan="4" style="padding: 7px 12px; font-size: 11px; font-weight: 700; color: var(--gold); letter-spacing: 0.06em; text-transform: uppercase; font-family: var(--sans);">
+                  1. Capital Base (Deposited Funds)
+                </td>
+              </tr>
+              <!-- Opening Capital -->
+              <tr style="border-bottom: 1px solid var(--line-soft);">
+                <td style="padding: 9px 12px; font-weight: 600; color: var(--text); font-family: var(--sans);">Opening Capital (FY Start)</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">—</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">—</td>
+                <td style="padding: 9px 12px; text-align: right; font-weight: 600; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text);">${fmtRs(openingCap)}</td>
+              </tr>
+              <!-- + Capital introduced -->
+              <tr style="border-bottom: 1px solid var(--line-soft);">
+                <td style="padding: 9px 12px 9px 24px; color: var(--sub); font-family: var(--sans);">+ Capital Introduced (Additions)</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">—</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--green); font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 600;">${capitalIntroduced > 0 ? ('+' + fmtRs(capitalIntroduced)) : '—'}</td>
+                <td style="padding: 9px 12px; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--dim);">${fmtRs(openingCap + capitalIntroduced)}</td>
+              </tr>
+              <!-- - Withdrawals -->
+              <tr style="border-bottom: 1px solid var(--line-soft);">
+                <td style="padding: 9px 12px 9px 24px; color: var(--sub); font-family: var(--sans);">− Capital Withdrawals</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--red); font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 600;">${withdrawals > 0 ? ('−' + fmtRs(withdrawals)) : '—'}</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">—</td>
+                <td style="padding: 9px 12px; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--dim);">${fmtRs(openingCap + capitalIntroduced - withdrawals)}</td>
+              </tr>
+              <!-- Deposited Capital Subtotal -->
+              <tr style="background: rgba(212, 162, 78, 0.04); border-bottom: 1.5px solid var(--line-soft);">
+                <td style="padding: 10px 12px; font-weight: 700; color: var(--text); font-family: var(--sans);">Subtotal: Actual Deposited Capital (Return Base)</td>
+                <td colspan="2" style="padding: 10px 12px; text-align: right; color: var(--dim); font-size: 11px; font-family: var(--sans);">Opening + Additions</td>
+                <td style="padding: 10px 12px; text-align: right; font-weight: 700; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--gold); font-size: 13.5px;">${fmtRs(openingCap + capitalIntroduced - withdrawals)}</td>
+              </tr>
+
+              <!-- SECTION 2: REALIZED TRADING PERFORMANCE -->
+              <tr style="background: rgba(212, 162, 78, 0.05); border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft);">
+                <td colspan="4" style="padding: 7px 12px; font-size: 11px; font-weight: 700; color: var(--gold); letter-spacing: 0.06em; text-transform: uppercase; font-family: var(--sans);">
+                  2. Realized Trading Performance (${periodClosed.length} Closed Trades)
+                </td>
+              </tr>
+              <!-- Gross Profit -->
+              <tr style="border-bottom: 1px solid var(--line-soft);">
+                <td style="padding: 9px 12px 9px 24px; color: var(--sub); font-family: var(--sans);">├─ Gross Realized P&amp;L (Exits − Buys)</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--red); font-family: var(--mono); font-variant-numeric: tabular-nums;">${grossProfit < 0 ? ('−' + fmtRs(Math.abs(grossProfit))) : '—'}</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--green); font-family: var(--mono); font-variant-numeric: tabular-nums;">${grossProfit >= 0 ? ('+' + fmtRs(grossProfit)) : '—'}</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">${fmtRs(grossProfit)}</td>
+              </tr>
+              <!-- Brokerage & Charges -->
+              <tr style="border-bottom: 1px solid var(--line-soft);">
+                <td style="padding: 9px 12px 9px 24px; color: var(--sub); font-family: var(--sans);">└─ Trade Brokerage &amp; Charges (STT, GST, SEBI)</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--red); font-family: var(--mono); font-variant-numeric: tabular-nums;">${periodBrokerage > 0 ? ('−' + fmtRs(periodBrokerage)) : '—'}</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">—</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">−${fmtRs(periodBrokerage)}</td>
+              </tr>
+              <!-- Net Trading Profit Subtotal -->
+              <tr style="background: rgba(255, 255, 255, 0.02); border-bottom: 1.5px solid var(--line-soft);">
+                <td style="padding: 10px 12px; font-weight: 700; color: var(--text); font-family: var(--sans);">Subtotal: Net Trading P&amp;L (Gross − Charges)</td>
+                <td colspan="2" style="padding: 10px 12px; text-align: right; color: var(--dim); font-size: 11px; font-family: var(--sans);">Realized Profit</td>
+                <td style="padding: 10px 12px; text-align: right; font-weight: 700; font-family: var(--mono); font-variant-numeric: tabular-nums; color: ${netProfit >= 0 ? 'var(--green)' : 'var(--red)'}; font-size: 13.5px;">${netProfit >= 0 ? '+' : ''}${fmtRs(netProfit)}</td>
+              </tr>
+
+              <!-- SECTION 3: EXPENSES & RECONCILIATION -->
+              <tr style="background: rgba(212, 162, 78, 0.05); border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft);">
+                <td colspan="4" style="padding: 7px 12px; font-size: 11px; font-weight: 700; color: var(--gold); letter-spacing: 0.06em; text-transform: uppercase; font-family: var(--sans);">
+                  3. Account Expenses &amp; Dhan Reconciliation
+                </td>
+              </tr>
+              <!-- Other Expenses -->
+              <tr style="border-bottom: 1px solid var(--line-soft);">
+                <td style="padding: 9px 12px 9px 24px; color: var(--sub); font-family: var(--sans);">− Non-Trading Account Expenses (DP, Subscriptions)</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--red); font-family: var(--mono); font-variant-numeric: tabular-nums;">${periodExpenses > 0 ? ('−' + fmtRs(periodExpenses)) : '—'}</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">—</td>
+                <td style="padding: 9px 12px; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--red);">${periodExpenses > 0 ? ('−' + fmtRs(periodExpenses)) : '₹0'}</td>
+              </tr>
+              <!-- Reconciliation Adjustment -->
+              ${ledgerAdjustment !== 0 ? `
+              <tr style="border-bottom: 1.5px solid var(--line-soft); background: rgba(212, 162, 78, 0.03);">
+                <td style="padding: 9px 12px 9px 24px; color: var(--text); font-family: var(--sans);">± Dhan Account Reconciliation Adjustment</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">—</td>
+                <td style="padding: 9px 12px; text-align: right; color: ${ledgerAdjustment >= 0 ? 'var(--green)' : 'var(--red)'}; font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 600;">${ledgerAdjustment >= 0 ? ('+' + fmtRs(ledgerAdjustment)) : ('−' + fmtRs(Math.abs(ledgerAdjustment)))}</td>
+                <td style="padding: 9px 12px; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 700; color: ${ledgerAdjustment >= 0 ? 'var(--green)' : 'var(--red)'}; font-size: 13px;">${ledgerAdjustment >= 0 ? '+' : ''}${fmtRs(ledgerAdjustment)}</td>
+              </tr>
+              ` : ''}
+
+              <!-- SECTION 4: CLOSING PORTFOLIO BALANCES -->
+              <tr style="background: rgba(212, 162, 78, 0.05); border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft);">
+                <td colspan="4" style="padding: 7px 12px; font-size: 11px; font-weight: 700; color: var(--gold); letter-spacing: 0.06em; text-transform: uppercase; font-family: var(--sans);">
+                  4. Closing Portfolio Balances (Dhan Broker Account)
+                </td>
+              </tr>
+              <!-- Total Capital -->
+              <tr style="border-top: 1.5px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, 0.03);">
+                <td style="padding: 11px 12px; font-weight: 700; font-size: 13px; color: var(--text); font-family: var(--sans);">Total Portfolio Capital (Closing Net Equity)</td>
+                <td colspan="2" style="padding: 11px 12px; text-align: right; color: var(--dim); font-size: 11px; font-family: var(--sans);">Capital + Net P&amp;L + Recon</td>
+                <td style="padding: 11px 12px; text-align: right; font-weight: 700; font-size: 14.5px; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text);">${fmtRs(netCapital)}</td>
+              </tr>
+              <!-- Open Holdings -->
+              <tr style="border-bottom: 1px solid var(--line-soft);">
+                <td style="padding: 9px 12px 9px 24px; color: var(--dim); font-size: 12px; font-family: var(--sans);">− Open Stock Holdings (Cost Basis: OFSS + CRAFTSMAN)</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--gold); font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 600;">${invested > 0 ? ('−' + fmtRs(invested)) : '—'}</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">—</td>
+                <td style="padding: 9px 12px; text-align: right; font-weight: 600; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--gold);">${fmtRs(invested)}</td>
+              </tr>
+              <!-- Cash Balance -->
+              <tr style="border-top: 2px solid var(--green); background: rgba(0, 208, 156, 0.08);">
+                <td style="padding: 12px 12px; font-weight: 700; font-size: 13.5px; color: var(--green); font-family: var(--sans);">Cash Balance (Dhan Available Trading Margin)</td>
+                <td colspan="2" style="padding: 12px 12px; text-align: right; color: var(--dim); font-size: 11px; font-family: var(--sans);">Capital − Holdings</td>
+                <td style="padding: 12px 12px; text-align: right; font-weight: 700; font-size: 16px; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--green);">${fmtRs(cashBalance)}</td>
+              </tr>
             </tbody>
           </table>
         </div>
       </div>
+
+      <!-- Right Column: Capital Additions & Expenses -->
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        
+        <!-- 1. Capital Additions & Withdrawals Log Panel -->
+        <div class="panel" style="margin-bottom: 0;">
+          <div class="panel-head" style="margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h3 style="margin: 0; font-size: 13.5px; font-weight: 700;">Capital Additions &amp; Withdrawals</h3>
+              <span class="badge" style="background: rgba(255,255,255,0.05); color: var(--dim); border: 1px solid var(--line); font-size: 10px;">${STATE.capitalLog ? STATE.capitalLog.length : 0} entries</span>
+            </div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              ${editingCap ? `<button class="btn ghost" id="cancelCapEditBtn" tabindex="5" style="padding: 4px 10px; font-size: 11px; height: auto;">Cancel</button>` : ''}
+              <button class="btn silver" id="addCapBtn" tabindex="4" style="padding: 4px 12px; font-size: 11.5px; height: auto; border: 1px solid rgba(255, 255, 255, 0.35);">${editingCap ? 'Update' : '+ Log Capital'}</button>
+            </div>
+          </div>
+
+          <div style="max-height: 165px; overflow-y: auto; -webkit-overflow-scrolling: touch; margin-bottom: 14px; border: 1px solid var(--line-soft); border-radius: 6px;">
+            <table style="width: 100%; table-layout: fixed; font-size: 12px; line-height: 1.4; border-collapse: collapse;">
+              <colgroup>
+                <col style="width: 25%;">
+                <col style="width: 28%;">
+                <col style="width: 31%;">
+                <col style="width: 16%;">
+              </colgroup>
+              <thead>
+                <tr style="border-bottom: 1px solid var(--line); color: var(--dim); text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; background: rgba(255,255,255,0.02);">
+                  <th style="padding: 7px 10px; text-align: left; font-family: var(--sans);">Date</th>
+                  <th style="padding: 7px 10px; text-align: right; font-family: var(--sans);">Amount</th>
+                  <th style="padding: 7px 10px; text-align: left; font-family: var(--sans);">Note</th>
+                  <th style="padding: 7px 10px; text-align: right; font-family: var(--sans);">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${STATE.capitalLog && STATE.capitalLog.length ? STATE.capitalLog.map((c, idx) => `
+                  <tr style="border-bottom: 1px solid var(--line-soft); ${STATE.editingCapitalIndex === idx ? 'background: rgba(212, 162, 78, 0.08); border-left: 3px solid var(--gold);' : ''}">
+                    <td style="padding: 7px 10px; white-space: nowrap; font-family: var(--mono); font-size: 11.5px;">${formatDateDMY(c.date)}</td>
+                    <td style="padding: 7px 10px; text-align: right; color:${Number(c.amount) >= 0 ? 'var(--green)' : 'var(--red)'}; font-weight:600; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap;">${Number(c.amount) >= 0 ? '+' : ''}${fmtRs(c.amount)}</td>
+                    <td style="padding: 7px 10px; font-family:var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text);">${c.note || ''}</td>
+                    <td style="padding: 7px 10px; text-align: right; white-space: nowrap;">
+                      <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                        <button class="btn ghost" style="padding: 2px 7px; font-size: 10px; min-height: auto; line-height: 1.2;" onclick="editCapitalChange(${idx})">Edit</button>
+                        <button class="btn danger ghost" style="padding: 2px 7px; font-size: 10px; min-height: auto; line-height: 1.2;" onclick="deleteCapitalChange(${idx})">Del</button>
+                      </div>
+                    </td>
+                  </tr>
+                `).join('') : `
+                  <tr>
+                    <td colspan="4" style="font-family:var(--sans); color:var(--dim); text-align:center; padding:14px;">No capital changes logged yet</td>
+                  </tr>
+                `}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Log Capital Input Form -->
+          <div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line-soft); padding-top: 12px;">
+            <div class="form-two-col">
+              <div class="form-row">
+                <span style="font-size: 11.5px; color: var(--dim); width: 68px; text-align: right;">Type:</span>
+                <select id="c_type" style="flex: 1; height: 28px; padding: 2px 6px; font-size: 11.5px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+                  <option value="add" ${(!editingCap || editingCap.amount >= 0) ? 'selected' : ''}>Capital Addition (+)</option>
+                  <option value="withdraw" ${(editingCap && editingCap.amount < 0) ? 'selected' : ''}>Capital Withdrawal (−)</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <span style="font-size: 11.5px; color: var(--dim); width: 68px; text-align: right;">Date:</span>
+                <input type="date" id="c_date" value="${editingCap ? editingCap.date : todayISO()}" style="flex: 1; height: 28px; padding: 2px 6px; font-size: 11.5px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+              </div>
+            </div>
+            <div class="form-two-col">
+              <div class="form-row">
+                <span style="font-size: 11.5px; color: var(--dim); width: 68px; text-align: right;">Amount (₹):</span>
+                <input type="number" id="c_amount" value="${editingCap ? Math.abs(editingCap.amount) : ''}" placeholder="e.g. 50000" style="flex: 1; height: 28px; padding: 2px 6px; font-size: 11.5px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+              </div>
+              <div class="form-row">
+                <span style="font-size: 11.5px; color: var(--dim); width: 68px; text-align: right;">Note:</span>
+                <input type="text" id="c_note" value="${editingCap ? (editingCap.note || '') : ''}" placeholder="e.g. Top-up, dividend deposit" style="flex: 1; height: 28px; padding: 2px 6px; font-size: 11.5px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Log New Expense / Edit Expense -->
+        <div class="panel" style="margin-bottom: 0;">
+          <div class="panel-head" style="margin-bottom: 12px;">
+            <h3 style="margin: 0; font-size: 13.5px; font-weight: 700;">${editingExp ? 'Edit Account Expense' : 'Log Account Expense / Charges'}</h3>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              ${editingExp ? `<button class="btn ghost" id="cancelExpenseEditBtn" tabindex="5" style="padding: 4px 10px; font-size: 11px; height: auto;">Cancel</button>` : ''}
+              <button class="btn silver" id="addExpenseBtn" tabindex="4" style="padding: 4px 12px; font-size: 11.5px; height: auto; border: 1px solid rgba(255, 255, 255, 0.35);">${editingExp ? 'Update' : '+ Log Expense'}</button>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+            <div class="form-two-col">
+              <div class="form-row">
+                <span style="font-size: 11.5px; color: var(--dim); width: 68px; text-align: right;">Date:</span>
+                <input type="date" id="e_date" value="${editingExp ? editingExp.date : todayISO()}" tabindex="1" style="flex: 1; height: 28px; padding: 2px 6px; font-size: 11.5px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+              </div>
+              <div class="form-row">
+                <span style="font-size: 11.5px; color: var(--dim); width: 68px; text-align: right;">Amount (₹):</span>
+                <input type="number" id="e_amount" value="${editingExp ? editingExp.amount : ''}" placeholder="e.g. 59.12" tabindex="2" style="flex: 1; height: 28px; padding: 2px 6px; font-size: 11.5px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <span style="font-size: 11.5px; color: var(--dim); width: 68px; text-align: right;">Note:</span>
+              <input type="text" id="e_note" value="${editingExp ? (editingExp.note || '') : ''}" placeholder="e.g. Dhan DP charges, delayed payment, subscription" tabindex="3" style="flex: 1; height: 28px; padding: 2px 6px; font-size: 11.5px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+            </div>
+          </div>
+
+          <!-- Expense Log List -->
+          <div style="border-top: 1px solid var(--line-soft); padding-top: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 11px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em;">Expense History</span>
+              <span class="badge" style="font-size: 10.5px; font-weight: 600; color: var(--red); background: rgba(255, 92, 92, 0.08); border: 1px solid rgba(255, 92, 92, 0.2); font-family: var(--mono); padding: 2px 8px;">Total: ${fmtRs(totalExpensesAllTime)}</span>
+            </div>
+
+            <div style="max-height: 165px; overflow-y: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line-soft); border-radius: 6px;">
+              <table style="width: 100%; table-layout: fixed; font-size: 12px; line-height: 1.4; border-collapse: collapse;">
+                <colgroup>
+                  <col style="width: 25%;">
+                  <col style="width: 28%;">
+                  <col style="width: 31%;">
+                  <col style="width: 16%;">
+                </colgroup>
+                <thead>
+                  <tr style="border-bottom: 1px solid var(--line); color: var(--dim); text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; background: rgba(255,255,255,0.02);">
+                    <th data-exp-sort="date" style="cursor:pointer; user-select:none; padding: 7px 10px; text-align: left; font-family: var(--sans);">Date ${expSortCol === 'date' ? (expSortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                    <th data-exp-sort="amount" style="cursor:pointer; user-select:none; padding: 7px 10px; text-align: right; font-family: var(--sans);">Amount ${expSortCol === 'amount' ? (expSortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                    <th data-exp-sort="note" style="cursor:pointer; user-select:none; padding: 7px 10px; text-align: left; font-family: var(--sans);">Note ${expSortCol === 'note' ? (expSortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                    <th style="padding: 7px 10px; text-align: right; font-family: var(--sans);">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${expList.length ? expList.map((e) => `
+                    <tr style="border-bottom: 1px solid var(--line-soft); ${STATE.editingExpenseIndex === e._origIdx ? 'background: rgba(212, 162, 78, 0.08); border-left: 3px solid var(--gold);' : ''}">
+                      <td style="padding: 7px 10px; white-space: nowrap; font-family: var(--mono); font-size: 11.5px;">${formatDateDMY(e.date)}</td>
+                      <td style="padding: 7px 10px; text-align: right; color:var(--red); font-weight:600; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap;">${fmtRs(e.amount)}</td>
+                      <td style="padding: 7px 10px; font-family:var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text);">${e.note || ''}</td>
+                      <td style="padding: 7px 10px; text-align: right; white-space: nowrap;">
+                        <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                          <button class="btn ghost" style="padding: 2px 7px; font-size: 10px; min-height: auto; line-height: 1.2;" onclick="editExpenseItem(${e._origIdx})">Edit</button>
+                          <button class="btn danger ghost" style="padding: 2px 7px; font-size: 10px; min-height: auto; line-height: 1.2;" onclick="deleteExpenseItem(${e._origIdx})">Del</button>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join('') : `
+                    <tr>
+                      <td colspan="4" style="font-family:var(--sans); color:var(--dim); text-align:center; padding:14px;">No expenses logged yet</td>
+                    </tr>
+                  `}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   `;
+
+      // Filter listeners
+      const fySelect = $('#l_fy');
+      if (fySelect) {
+        fySelect.onchange = (e) => {
+          const val = e.target.value;
+          STATE.ledgerFY = val;
+          if (val === 'All') {
+            STATE.ledgerFrom = '2020-04-01';
+            STATE.ledgerTo = todayISO();
+          } else if (val === 'Custom') {
+            // Keep current from/to
+          } else {
+            const yr = parseInt(val.split('-')[0], 10) || 2026;
+            STATE.ledgerFrom = `${yr}-04-01`;
+            const toYr = `${yr + 1}-03-31`;
+            STATE.ledgerTo = toYr > todayISO() ? todayISO() : toYr;
+          }
+          renderLedger(host);
+        };
+      }
+
+      const fromInput = $('#l_from');
+      if (fromInput) {
+        fromInput.onchange = (e) => {
+          STATE.ledgerFrom = e.target.value;
+          STATE.ledgerFY = 'Custom';
+          renderLedger(host);
+        };
+      }
+
+      const toInput = $('#l_to');
+      if (toInput) {
+        toInput.onchange = (e) => {
+          STATE.ledgerTo = e.target.value;
+          STATE.ledgerFY = 'Custom';
+          renderLedger(host);
+        };
+      }
 
       host.querySelectorAll('th[data-exp-sort]').forEach(th => {
         th.onclick = () => {
@@ -6507,16 +7029,59 @@
             STATE.expenseSort.col = col;
             STATE.expenseSort.dir = col === 'date' ? 'desc' : 'desc';
           }
-          renderExpenses(host);
+          renderLedger(host);
         };
       });
+
+      // Capital Additions listeners
+      if (editingCap) {
+        const cancelCapBtn = $('#cancelCapEditBtn');
+        if (cancelCapBtn) {
+          cancelCapBtn.onclick = () => {
+            STATE.editingCapitalIndex = null;
+            renderLedger(host);
+          };
+        }
+      }
+
+      const addCapBtn = $('#addCapBtn');
+      if (addCapBtn) {
+        addCapBtn.onclick = async () => {
+          const type = $('#c_type').value;
+          let amount = parseFloat($('#c_amount').value);
+          if (isNaN(amount) || amount <= 0) {
+            toast('Enter a valid positive amount', 'err');
+            return;
+          }
+          if (type === 'withdraw') {
+            amount = -amount;
+          }
+          const note = $('#c_note').value.trim() || (type === 'withdraw' ? 'Capital withdrawal' : 'Capital addition');
+          const isEdit = STATE.editingCapitalIndex != null;
+          const capIdx = STATE.editingCapitalIndex;
+          const entry = { date: $('#c_date').value, amount, note };
+
+          if (isEdit) {
+            STATE.capitalLog[capIdx] = entry;
+            STATE.editingCapitalIndex = null;
+            toast('Capital change updated', 'ok');
+            apiPost({ action: 'updateCapital', index: capIdx, entry }).catch(err => toast('Sync failed: ' + err.message, 'err'));
+          } else {
+            STATE.capitalLog.push(entry);
+            toast('Capital change logged', 'ok');
+            apiPost({ action: 'addCapital', entry }).catch(err => toast('Sync failed: ' + err.message, 'err'));
+          }
+          saveLocalState();
+          renderShell();
+        };
+      }
 
       if (editingExp) {
         const cancelBtn = $('#cancelExpenseEditBtn');
         if (cancelBtn) {
           cancelBtn.onclick = () => {
             STATE.editingExpenseIndex = null;
-            renderExpenses(host);
+            renderLedger(host);
           };
         }
       }
@@ -6554,6 +7119,33 @@
         }
       });
     }
+
+    function renderExpenses(host) {
+      return renderLedger(host);
+    }
+    window.renderExpenses = renderExpenses;
+    window.renderLedger = renderLedger;
+
+    function editCapitalChange(index) {
+      STATE.editingCapitalIndex = index;
+      renderShell();
+    }
+    window.editCapitalChange = editCapitalChange;
+
+    async function deleteCapitalChange(index) {
+      if (!confirm('Delete this capital change entry?')) return;
+      STATE.capitalLog.splice(index, 1);
+      if (STATE.editingCapitalIndex === index) {
+        STATE.editingCapitalIndex = null;
+      } else if (STATE.editingCapitalIndex !== null && STATE.editingCapitalIndex > index) {
+        STATE.editingCapitalIndex--;
+      }
+      saveLocalState();
+      toast('Logged capital change deleted', 'ok');
+      renderShell();
+      apiPost({ action: 'deleteCapital', index }).catch(err => toast('Sync failed: ' + err.message, 'err'));
+    }
+    window.deleteCapitalChange = deleteCapitalChange;
 
     function editExpenseItem(index) {
       STATE.editingExpenseIndex = index;
@@ -6607,26 +7199,14 @@
 
       const transactions = [];
 
-      // Capital additions
+      // Capital additions & withdrawals (External cash flows per GIPS standards)
       STATE.capitalLog.filter(c => !/opening/i.test(c.note || '')).forEach(c => {
         const d = new Date(c.date);
         const offset = Math.floor((d - start) / (1000 * 60 * 60 * 24));
         transactions.push({ day: offset, amount: Number(c.amount || 0) });
       });
 
-      // Trade P/Ls
-      STATE.trades.filter(t => t.status === 'closed' && t.closedDate).forEach(t => {
-        const d = new Date(t.closedDate);
-        const offset = Math.floor((d - start) / (1000 * 60 * 60 * 24));
-        transactions.push({ day: offset, amount: Number(t.pnl || 0) });
-      });
-
-      // Expenses
-      STATE.expenses.forEach(e => {
-        const d = new Date(e.date);
-        const offset = Math.floor((d - start) / (1000 * 60 * 60 * 24));
-        transactions.push({ day: offset, amount: -Number(e.amount || 0) });
-      });
+      // Note: Only actual capital deposits and withdrawals from capitalLog are included (no trading profits, no expenses)
 
       transactions.sort((a, b) => a.day - b.day);
 
@@ -6657,21 +7237,23 @@
         const s = overviewStats();
         const netPnl = s.netPnlFY;
 
-        // Use dynamic average capital as base
+        // Use actual deposited capital as base (excludes trading profit)
+        const depositedCapital = Number(STATE.settings.openingCapitalFY || 0) + capitalAdditionsExcludingOpening();
         const avgCapital = calculateActiveYearAverageCapital();
-        const returnPct = avgCapital ? (netPnl / avgCapital) * 100 : 0;
+        const returnBase = depositedCapital > 0 ? depositedCapital : (avgCapital > 0 ? avgCapital : Number(STATE.settings.openingCapitalFY || 0));
+        const returnPct = returnBase ? (netPnl / returnBase) * 100 : 0;
 
         const idx = rows.findIndex(r => formatFY(r.year) === activeFYLabel);
         if (idx !== -1) {
           rows[idx].year = activeFYLabel;
-          rows[idx].openingCap = avgCapital;
+          rows[idx].openingCap = returnBase;
           rows[idx].pnl = netPnl;
           rows[idx].returnPct = returnPct;
           rows[idx].isLive = true;
         } else {
           rows.push({
             year: activeFYLabel,
-            openingCap: avgCapital,
+            openingCap: returnBase,
             pnl: netPnl,
             returnPct: returnPct,
             isLive: true
@@ -7002,143 +7584,118 @@
       host.innerHTML = `
     <div class="page-head"><div><h1>Settings</h1><p>Risk parameters and connection details</p></div></div>
     
-    <div class="settings-container">
-      <!-- Left Column: Risk Rules, Dhan, Connection -->
-      <div style="display: flex; flex-direction: column; gap: 14px;">
-        <!-- Card 1: Risk Rules -->
-        <div class="panel" style="padding: 14px; margin-bottom: 0;">
-          <div class="panel-head" style="margin-bottom: 10px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <h3>Journal Risk Rules</h3>
-            <button class="btn silver" id="saveSettingsBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save</button>
-          </div>
-          
-          <div class="settings-rules-grid">
-            <!-- Row 1 Left: Financial Year -->
-            <div class="form-row">
-              <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Financial Year:</span>
-              <input id="s_fy" value="${s.currentFY || ''}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
-            </div>
-            <!-- Row 1 Right: Opening Capital -->
-            <div class="settings-rules-right">
-              <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Opening Capital:</span>
-              <input type="number" id="s_open" value="${s.openingCapitalFY || ''}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
-            </div>
-
-            <!-- Row 2 Left: Risk% Per Trade -->
-            <div class="form-row">
-              <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Risk% Per Trade:</span>
-              <input type="number" step="0.1" id="s_riskpct" value="${(Number(s.riskPctPerTrade || 0) * 100)}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
-            </div>
-            <!-- Row 2 Right: Pyramid Counts -->
-            <div class="settings-rules-right">
-              <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Pyramid Counts:</span>
-              <input type="number" id="s_pyramid" value="${s.pyramidDays || ''}" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
-            </div>
-
-            <!-- Row 3 Left: Positions -->
-            <div class="form-row">
-              <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Positions:</span>
-              <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
-                <input type="number" id="s_minpos" value="${s.maxStocksMin || ''}" style="width: 45%; height: 28px; padding: 4px 8px; font-size: 12px; text-align: center; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
-                <span style="color: var(--dim); font-size: 12px;">-</span>
-                <input type="number" id="s_maxpos" value="${s.maxStocksMax || ''}" style="width: 45%; height: 28px; padding: 4px 8px; font-size: 12px; text-align: center; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
-              </div>
-            </div>
-            <!-- Row 3 Right: Default Brokerage -->
-            <div class="settings-rules-right">
-              <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Default Brokerage:</span>
-              <input type="number" id="s_brok" value="${s.brokeragePerTrade !== undefined && s.brokeragePerTrade !== '' ? s.brokeragePerTrade : 0}" placeholder="0 (Delivery) or 20 (Intraday)" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
-            </div>
-            <div style="font-size: 11px; color: var(--sub); margin-top: 4px; grid-column: span 2; text-align: right;">Note: Delivery trades have ₹0 brokerage in India (Zerodha/Dhan). Intraday/F&O traders can set custom charges per order (e.g. ₹20). You can also edit charges per trade anytime.</div>
-          </div>
+    <div style="width: 50%; min-width: min(100%, 540px); max-width: 100%; display: flex; flex-direction: column; gap: 12px;">
+      <!-- Card 1: Risk Rules -->
+      <div class="panel" style="padding: 10px 14px; margin-bottom: 0;">
+        <div class="panel-head" style="margin-bottom: 8px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <h3 style="margin: 0; font-size: 13px;">Journal Risk Rules</h3>
+          <button class="btn silver" id="saveSettingsBtn" style="padding: 3px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save</button>
         </div>
+        
+        <div class="settings-rules-grid" style="gap: 8px 14px;">
+          <!-- Row 1 Left: Financial Year -->
+          <div class="form-row">
+            <span style="font-size: 11.5px; color: var(--dim); width: 95px; text-align: right;">Financial Year:</span>
+            <input id="s_fy" value="${s.currentFY || ''}" style="flex: 1; height: 25px; padding: 2px 6px; font-size: 11.5px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+          </div>
+          <!-- Row 1 Right: Opening Capital -->
+          <div class="settings-rules-right" style="padding-left: 14px;">
+            <span style="font-size: 11.5px; color: var(--dim); width: 95px; text-align: right;">Opening Capital:</span>
+            <input type="number" id="s_open" value="${s.openingCapitalFY || ''}" style="flex: 1; height: 25px; padding: 2px 6px; font-size: 11.5px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+          </div>
 
-        <!-- Card 2: Broker Sync & Connection -->
-        <div class="panel" style="padding: 14px; margin-bottom: 0;">
-          <div class="panel-head" style="margin-bottom: 10px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <h3>Broker Sync &amp; Connection</h3>
-            <button class="btn silver" id="saveDhanBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save</button>
+          <!-- Row 2 Left: Risk% Per Trade -->
+          <div class="form-row">
+            <span style="font-size: 11.5px; color: var(--dim); width: 95px; text-align: right;">Risk% / Trade:</span>
+            <input type="number" step="0.1" id="s_riskpct" value="${(Number(s.riskPctPerTrade || 0) * 100)}" style="flex: 1; height: 25px; padding: 2px 6px; font-size: 11.5px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
-          <div class="form-row" style="margin-bottom: 10px;">
-            <span style="font-size: 12px; color: var(--dim); width: 110px; text-align: right;">Dhan Access Token:</span>
-            <input type="password" id="s_dhan_token" value="${localStorage.getItem('tj_dhan_token') || ''}" placeholder="Paste Dhan Token" style="flex: 1; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+          <!-- Row 2 Right: Pyramid Counts -->
+          <div class="settings-rules-right" style="padding-left: 14px;">
+            <span style="font-size: 11.5px; color: var(--dim); width: 95px; text-align: right;">Pyramid Counts:</span>
+            <input type="number" id="s_pyramid" value="${s.pyramidDays || ''}" style="flex: 1; height: 25px; padding: 2px 6px; font-size: 11.5px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
-          <div style="border-top: 1px solid var(--line-soft); margin: 12px 0; padding-top: 10px; display: flex; justify-content: flex-start;">
-            <button class="btn ghost danger" id="disconnectBtn" style="padding: 6px 16px; font-size: 12px; height: 32px; width: auto;">Disconnect (Backend-GS)</button>
-          </div>
-        </div>
 
-        <!-- Card 3: Dhan Global Transaction Report Reconciler -->
-        <div class="panel" style="padding: 14px; margin-bottom: 0;">
-          <div class="panel-head" style="margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-            <div>
-              <h3 style="margin: 0;">Dhan Report Verifier &amp; Reconciler</h3>
-              <p style="font-size: 11.5px; color: var(--dim); margin: 3px 0 0 0;">Upload your Dhan Global Transaction Report (.csv) to audit &amp; fix discrepancies</p>
+          <!-- Row 3 Left: Positions -->
+          <div class="form-row">
+            <span style="font-size: 11.5px; color: var(--dim); width: 95px; text-align: right;">Positions:</span>
+            <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
+              <input type="number" id="s_minpos" value="${s.maxStocksMin || ''}" style="width: 45%; height: 25px; padding: 2px 4px; font-size: 11.5px; text-align: center; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
+              <span style="color: var(--dim); font-size: 11px;">-</span>
+              <input type="number" id="s_maxpos" value="${s.maxStocksMax || ''}" style="width: 45%; height: 25px; padding: 2px 4px; font-size: 11.5px; text-align: center; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
             </div>
-            <span class="badge" style="background: rgba(212, 162, 78, 0.15); color: var(--gold); border: 1px solid rgba(212, 162, 78, 0.3);">Audit Tool</span>
+          </div>
+          <!-- Row 3 Right: Default Brokerage -->
+          <div class="settings-rules-right" style="padding-left: 14px;">
+            <span style="font-size: 11.5px; color: var(--dim); width: 95px; text-align: right;">Brokerage:</span>
+            <input type="number" id="s_brok" value="${s.brokeragePerTrade !== undefined && s.brokeragePerTrade !== '' ? s.brokeragePerTrade : 0}" placeholder="0 (Delivery) or 20" style="flex: 1; height: 25px; padding: 2px 6px; font-size: 11.5px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
 
-          <div style="background: var(--bg); border: 1px dashed var(--line); border-radius: 6px; padding: 14px; text-align: center; margin: 10px 0; cursor: pointer; transition: all 0.2s;" id="dhanDropZone" onclick="$('#dhanFileInput').click()">
-            <input type="file" id="dhanFileInput" accept=".csv" style="display: none;">
-            <div style="font-size: 22px; margin-bottom: 4px;">📑</div>
-            <div style="font-size: 12px; font-weight: 500; color: var(--text);" id="dhanDropText">Click to select or drag &amp; drop Dhan_GlobalTransaction_Report.csv</div>
-            <div style="font-size: 10.5px; color: var(--dim); margin-top: 2px;">Supports Dhan Console CSV export (From 01-04-XXXX to DD-MM-XXXX)</div>
+          <!-- Row 4 Left: Reconciliation Adj -->
+          <div class="form-row">
+            <span style="font-size: 11.5px; color: var(--dim); width: 95px; text-align: right;" title="Reconciliation adjustment to match Dhan Cash & Capital balance">Recon Adj (₹):</span>
+            <input type="number" step="0.01" id="s_adj" value="${s.ledgerAdjustment !== undefined && s.ledgerAdjustment !== '' ? s.ledgerAdjustment : 29630.06}" placeholder="29630.06" style="flex: 1; height: 25px; padding: 2px 6px; font-size: 11.5px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
-
-          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
-            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-              <label style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--sub); cursor: pointer;">
-                <input type="checkbox" id="dhanOmitEtfCheck" checked style="cursor: pointer;">
-                Omit ETF transactions (GoldBEES, etc.)
-              </label>
-              <div style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--sub); background: rgba(255,255,255,0.03); border: 1px solid var(--line-soft); border-radius: 4px; padding: 2px 6px;">
-                <span>🔒 Reconciled Up To:</span>
-                <input type="date" id="dhanCutoffDate" value="${(STATE.settings && STATE.settings.reconciledUpToDate) || '2026-08-31'}" style="height: 22px; padding: 1px 4px; font-size: 11px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--text);">
-              </div>
-              ${Object.keys((STATE.settings && STATE.settings.customScripMap) || {}).length ? `
-                <div style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--dim); background: rgba(255,255,255,0.03); border: 1px solid var(--line-soft); border-radius: 4px; padding: 2px 6px;">
-                  <span>📚 Learned Aliases: <strong>${Math.round(Object.keys(STATE.settings.customScripMap).length / 2) || 1}</strong></span>
-                  <button class="btn ghost" style="padding: 1px 5px; font-size: 9.5px; color: var(--red); height: auto; min-height: auto;" onclick="clearCustomScripMap()" title="Reset learned stock aliases">✕ Reset</button>
-                </div>
-              ` : ''}
-            </div>
-            <button class="btn silver" id="dhanVerifyBtn" style="padding: 5px 12px; font-size: 11.5px; height: auto;" disabled>
-              🔍 Verify Report
-            </button>
+          <!-- Row 4 Right: Dhan Cash Balance Helper -->
+          <div class="settings-rules-right" style="padding-left: 14px;">
+            <span style="font-size: 11.5px; color: var(--dim); width: 95px; text-align: right;" title="Actual cash balance in Dhan broker">Dhan Cash (₹):</span>
+            <input type="number" step="0.01" id="s_dhancash" value="${s.dhanCash !== undefined && s.dhanCash !== '' ? s.dhanCash : 625747.68}" placeholder="625747.68" style="flex: 1; height: 25px; padding: 2px 6px; font-size: 11.5px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
           </div>
+          <div style="font-size: 10.5px; color: var(--sub); margin-top: 2px; grid-column: span 2; text-align: right;">Note: Delivery trades have ₹0 brokerage. Returns are calculated strictly on actual deposited capital (excluding profit).</div>
         </div>
       </div>
 
-      <div class="panel" style="padding: 14px; margin-bottom: 0; display: flex; flex-direction: column; overflow-x: auto;">
-        <div class="panel-head" style="margin-bottom: 10px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-          <h3>Capital Additions &amp; Withdrawals Log</h3>
-          <button class="btn silver" id="addCapBtn" style="padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save</button>
-          <button class="btn ghost" id="cancelCapEditBtn" style="display:none; padding: 4px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Cancel</button>
+      <!-- Card 2: Broker Sync & Connection -->
+      <div class="panel" style="padding: 10px 14px; margin-bottom: 0;">
+        <div class="panel-head" style="margin-bottom: 8px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <h3 style="margin: 0; font-size: 13px;">Broker Sync &amp; Connection</h3>
+          <button class="btn silver" id="saveDhanBtn" style="padding: 3px 10px; font-size: 11px; margin: 0; line-height: 1.2; height: auto;">Save</button>
         </div>
-        <div style="max-height: 180px; overflow: auto; width: 100%; max-width: 100%; -webkit-overflow-scrolling: touch; margin-bottom: 12px; border: 1px solid var(--line-soft); border-radius: 4px;">
-          <table style="width: 75%; min-width: 480px; table-layout: fixed;">
-            <thead>
-              <tr>
-                <th style="width: 90px;">Date</th>
-                <th style="width: 110px;">Amount</th>
-                <th>Note</th>
-                <th style="width: 80px; text-align: right; padding-right: 4px;">Action</th>
-              </tr>
-            </thead>
-            <tbody>${STATE.capitalLog.map((c, idx) => `<tr><td>${formatDateDMY(c.date)}</td><td style="color:${c.amount >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:600;">${c.amount >= 0 ? '+' : ''}${fmtRs(c.amount)}</td><td style="font-family:var(--sans);">${c.note || ''}</td><td style="text-align:right; padding-right:2px;"><button class="btn ghost" style="padding: 2px 3px; font-size: 9.5px; margin-right: 1px;" onclick="editCapitalChange(${idx})">Edit</button><button class="btn danger ghost" style="padding: 2px 3px; font-size: 9.5px;" onclick="deleteCapitalChange(${idx})">✕</button></td></tr>`).join('')}</tbody>
-          </table>
+        <div class="form-row" style="margin-bottom: 8px;">
+          <span style="font-size: 11.5px; color: var(--dim); width: 95px; text-align: right;">Dhan Token:</span>
+          <input type="password" id="s_dhan_token" value="${localStorage.getItem('tj_dhan_token') || ''}" placeholder="Paste Dhan Token" style="flex: 1; height: 25px; padding: 2px 6px; font-size: 11.5px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none;">
         </div>
-        <div class="form-two-col" style="border-top: 1px solid var(--line-soft); padding-top: 12px;">
-          <div class="field">
-            <label>Type</label>
-            <select id="c_type" style="background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:6px; padding:6px; outline:none; height:28px; font-size:12px; width: 100%;">
-              <option value="add">Capital Addition (+)</option>
-              <option value="withdraw">Capital Withdrawal (-)</option>
-            </select>
+        <div style="border-top: 1px solid var(--line-soft); margin: 8px 0; padding-top: 8px; display: flex; justify-content: flex-start;">
+          <button class="btn ghost danger" id="disconnectBtn" style="padding: 4px 12px; font-size: 11px; height: 26px; width: auto;">Disconnect (Backend-GS)</button>
+        </div>
+      </div>
+
+      <!-- Card 3: Dhan Global Transaction Report Reconciler -->
+      <div class="panel" style="padding: 10px 14px; margin-bottom: 0;">
+        <div class="panel-head" style="margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+          <div>
+            <h3 style="margin: 0; font-size: 13px;">Dhan Report Verifier &amp; Reconciler</h3>
+            <p style="font-size: 11px; color: var(--dim); margin: 2px 0 0 0;">Upload your Dhan Global Transaction Report (.csv) to audit discrepancies</p>
           </div>
-          <div class="field"><label>Date</label><input type="date" id="c_date" value="${todayISO()}" style="height:28px; padding:4px 8px; font-size:12px;"></div>
-          <div class="field"><label>Amount (₹)</label><input type="number" id="c_amount" placeholder="e.g. 50000" style="height:28px; padding:4px 8px; font-size:12px;"></div>
-          <div class="field"><label>Note</label><input type="text" id="c_note" placeholder="Optional notes..." style="height:28px; padding:4px 8px; font-size:12px;"></div>
+          <span class="badge" style="background: rgba(212, 162, 78, 0.15); color: var(--gold); border: 1px solid rgba(212, 162, 78, 0.3); font-size: 10px; padding: 1px 6px;">Audit Tool</span>
+        </div>
+
+        <div style="background: var(--bg); border: 1px dashed var(--line); border-radius: 6px; padding: 10px; text-align: center; margin: 8px 0; cursor: pointer; transition: all 0.2s;" id="dhanDropZone" onclick="$('#dhanFileInput').click()">
+          <input type="file" id="dhanFileInput" accept=".csv" style="display: none;">
+          <div style="font-size: 18px; margin-bottom: 2px;">📑</div>
+          <div style="font-size: 11.5px; font-weight: 500; color: var(--text);" id="dhanDropText">Click to select or drag &amp; drop Dhan_GlobalTransaction_Report.csv</div>
+          <div style="font-size: 10px; color: var(--dim); margin-top: 2px;">Supports Dhan Console CSV export</div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <label style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--sub); cursor: pointer;">
+              <input type="checkbox" id="dhanOmitEtfCheck" checked style="cursor: pointer;">
+              Omit ETFs
+            </label>
+            <div style="display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--sub); background: rgba(255,255,255,0.03); border: 1px solid var(--line-soft); border-radius: 4px; padding: 1px 5px;">
+              <span>🔒 Up To:</span>
+              <input type="date" id="dhanCutoffDate" value="${(STATE.settings && STATE.settings.reconciledUpToDate) || '2026-08-31'}" style="height: 20px; padding: 0 3px; font-size: 10.5px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--text);">
+            </div>
+            ${Object.keys((STATE.settings && STATE.settings.customScripMap) || {}).length ? `
+              <div style="display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--dim); background: rgba(255,255,255,0.03); border: 1px solid var(--line-soft); border-radius: 4px; padding: 1px 5px;">
+                <span>📚 Aliases: <strong>${Math.round(Object.keys(STATE.settings.customScripMap).length / 2) || 1}</strong></span>
+                <button class="btn ghost" style="padding: 0 4px; font-size: 9px; color: var(--red); height: auto; min-height: auto;" onclick="clearCustomScripMap()" title="Reset learned stock aliases">✕</button>
+              </div>
+            ` : ''}
+          </div>
+          <button class="btn silver" id="dhanVerifyBtn" style="padding: 4px 10px; font-size: 11px; height: auto;" disabled>
+            🔍 Verify Report
+          </button>
         </div>
       </div>
     </div>
@@ -7150,7 +7707,7 @@
           if (!STATE.settings) STATE.settings = {};
           STATE.settings.reconciledUpToDate = cutoffInput.value;
           saveLocalState();
-          apiPost({ action: 'updateSettings', settings: STATE.settings }).catch(() => {});
+          apiPost({ action: 'updateSettings', settings: STATE.settings }).catch(() => { });
           toast(`Reconciliation cut-off set to ${formatDateDMY(cutoffInput.value)}`, 'ok');
         };
       }
@@ -7161,6 +7718,8 @@
           riskPctPerTrade: (parseFloat($('#s_riskpct').value) || 0) / 100,
           maxStocksMin: parseFloat($('#s_minpos').value) || 0, maxStocksMax: parseFloat($('#s_maxpos').value) || 0,
           pyramidDays: parseFloat($('#s_pyramid').value) || 0, brokeragePerTrade: parseFloat($('#s_brok').value) >= 0 ? parseFloat($('#s_brok').value) : 0,
+          ledgerAdjustment: $('#s_adj') ? (parseFloat($('#s_adj').value) || 0) : ((STATE.settings && STATE.settings.ledgerAdjustment != null) ? STATE.settings.ledgerAdjustment : 29630.06),
+          dhanCash: $('#s_dhancash') ? (parseFloat($('#s_dhancash').value) || 0) : ((STATE.settings && STATE.settings.dhanCash != null) ? STATE.settings.dhanCash : 625747.68),
           reconciledUpToDate: $('#dhanCutoffDate') ? $('#dhanCutoffDate').value : ((STATE.settings && STATE.settings.reconciledUpToDate) || '2026-08-31'),
           colorMode: getColorMode()
         };
@@ -7169,62 +7728,6 @@
         toast('Settings saved', 'ok');
         renderShell();
         apiPost({ action: 'updateSettings', settings }).catch(err => toast('Sync failed: ' + err.message, 'err'));
-      };
-      $('#addCapBtn').onclick = async () => {
-        const type = $('#c_type').value;
-        let amount = parseFloat($('#c_amount').value);
-        if (isNaN(amount) || amount <= 0) { toast('Enter a valid positive amount', 'err'); return; }
-        if (type === 'withdraw') {
-          amount = -amount;
-        }
-        const note = $('#c_note').value.trim() || (type === 'withdraw' ? 'Capital withdrawal' : 'Capital addition');
-        const isEdit = STATE.editingCapitalIndex != null;
-        const capIdx = STATE.editingCapitalIndex;
-        const entry = { date: $('#c_date').value, amount, note };
-
-        if (isEdit) {
-          STATE.capitalLog[capIdx] = entry;
-          STATE.editingCapitalIndex = null;
-          toast('Capital change updated', 'ok');
-          apiPost({ action: 'updateCapital', index: capIdx, entry }).catch(err => toast('Sync failed: ' + err.message, 'err'));
-        } else {
-          STATE.capitalLog.push(entry);
-          toast('Capital change logged', 'ok');
-          apiPost({ action: 'addCapital', entry }).catch(err => toast('Sync failed: ' + err.message, 'err'));
-        }
-        saveLocalState();
-        renderShell();
-      };
-
-      $('#cancelCapEditBtn').onclick = () => {
-        STATE.editingCapitalIndex = null;
-        $('#c_date').value = todayISO();
-        $('#c_amount').value = '';
-        $('#c_note').value = '';
-        $('#c_type').value = 'add';
-        $('#addCapBtn').textContent = 'Save';
-        $('#cancelCapEditBtn').style.display = 'none';
-      };
-
-      window.editCapitalChange = (idx) => {
-        const log = STATE.capitalLog[idx];
-        if (!log) return;
-        STATE.editingCapitalIndex = idx;
-        $('#c_date').value = log.date;
-        $('#c_amount').value = Math.abs(log.amount);
-        $('#c_note').value = log.note || '';
-        $('#c_type').value = log.amount >= 0 ? 'add' : 'withdraw';
-        $('#addCapBtn').textContent = 'Save';
-        $('#cancelCapEditBtn').style.display = 'inline-block';
-      };
-
-      window.deleteCapitalChange = async (index) => {
-        if (!confirm('Delete this capital change entry?')) return;
-        STATE.capitalLog.splice(index, 1);
-        saveLocalState();
-        toast('Logged capital change deleted', 'ok');
-        renderShell();
-        apiPost({ action: 'deleteCapital', index }).catch(err => toast('Sync failed: ' + err.message, 'err'));
       };
       $('#saveDhanBtn').onclick = () => {
         const t = $('#s_dhan_token').value.trim();
@@ -8078,7 +8581,7 @@
       if (confirm('Reset all learned stock name aliases?')) {
         if (STATE.settings) STATE.settings.customScripMap = {};
         saveLocalState();
-        apiPost({ action: 'updateSettings', settings: STATE.settings }).catch(() => {});
+        apiPost({ action: 'updateSettings', settings: STATE.settings }).catch(() => { });
         toast('Learned stock aliases reset', 'info');
         renderShell();
       }
@@ -8108,7 +8611,7 @@
         } else if (STATE.view === 'risk') {
           const btn = $('#addWlBtn');
           if (btn) btn.click();
-        } else if (STATE.view === 'expenses') {
+        } else if (STATE.view === 'ledger' || STATE.view === 'expenses') {
           const btn = $('#addExpenseBtn');
           if (btn) btn.click();
         } else if (STATE.view === 'multiyear') {
