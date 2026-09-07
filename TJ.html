@@ -1896,8 +1896,10 @@
 
     function normalizeTrade(t) {
       const num = k => t[k] === '' || t[k] === undefined || t[k] === null ? null : Number(t[k]);
+      const tradeId = (t && t.id != null) ? String(t.id).trim() : '';
       const norm = {
         ...t,
+        id: tradeId,
         breadth: num('breadth'), entryPct: num('entryPct'), riskPerShare: num('riskPerShare'),
         entry1Price: num('entry1Price'), entry1Qty: num('entry1Qty'), entry1Amt: num('entry1Amt'),
         entry2Price: num('entry2Price'), entry2Qty: num('entry2Qty'), entry2Amt: num('entry2Amt'),
@@ -2796,6 +2798,9 @@
         </div>
       </footer>
     </div>
+  </div>
+  <div class="modal-bg" id="modalBg">
+    <div class="modal" id="modalBody"></div>
   </div>`;
 
       $('#navList').innerHTML = NAV.map(n => `
@@ -3685,6 +3690,9 @@
         <td>${badge}</td>
         ${customColsHtml}
         <td>${daysVal}</td>
+        <td style="text-align:center; white-space:nowrap;">
+          <button class="btn ghost edit-trade-btn" data-id="${t.id}" style="padding:2px 8px; font-size:11px; height:auto; color:var(--text); border-color:var(--line);" title="Edit Trade Details">✏️ Edit</button>
+        </td>
       </tr>`;
       }).join('');
 
@@ -3700,6 +3708,7 @@
             <td style="font-weight:bold; color:${sumPLAtTSL >= 0 ? 'var(--green)' : 'var(--red)'};">${sumAmount ? fmtPct(sumPLAtTSL / sumAmount) : '—'}</td>
             <td style="font-weight:bold; color:${sumLivePL >= 0 ? 'var(--green)' : 'var(--red)'};">${livePricesCount > 0 ? (sumLivePL >= 0 ? '+' : '') + fmtRs(sumLivePL) : '—'}</td>
             <td style="font-weight:bold; color:${sumLivePL >= 0 ? 'var(--green)' : 'var(--red)'};">${(livePricesCount > 0 && sumAmount) ? fmtPct(sumLivePL / sumAmount) : '—'}</td>
+            <td></td>
             <td></td>
           </tr>
         `;
@@ -3731,6 +3740,7 @@
       <th data-sort-col="rr" style="cursor:pointer; user-select:none;">R:R ${sArr('rr')}</th>
     `}
     <th data-sort-col="days" style="cursor:pointer; user-select:none;">Days ${sArr('days')}</th>
+    <th style="text-align:center; width:70px;">Action</th>
   </tr></thead><tbody>
     ${rowsHtml}
     ${totalRowHtml}
@@ -3759,13 +3769,13 @@
         const grossPnl = monthTrades.reduce((sum, t) => sum + (Number(t.pnl) || 0), 0);
         const monthCharges = monthTrades.reduce((sum, t) => sum + Number(getDefaultTradeBrokerage(t) || 0), 0);
 
-        // Match expenses logged in this specific month
+        // Match expenses logged in this specific month (signed: -ve for expense, +ve for income)
         const monthManualExp = (STATE.expenses || [])
           .filter(e => monthKey(e.date) === key)
           .reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-        const totalMonthExpenses = monthCharges + monthManualExp;
-        const netPnl = grossPnl - totalMonthExpenses;
+        // Net P/L = Gross P/L + Charges & Taxes (as negative debit) + manual expense figure
+        const netPnl = grossPnl - monthCharges + monthManualExp;
 
         // Sort trades in this month by closedDate descending
         monthTrades.sort((a, b) => (b.closedDate || '').localeCompare(a.closedDate || ''));
@@ -3775,17 +3785,17 @@
         <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:rgba(255,255,255,.02); border:1px solid var(--line); border-radius:6px; margin-bottom:8px; flex-wrap: wrap; gap: 8px;">
           <h3 style="margin:0; font-size:13.5px; color:var(--text); font-weight:600;">${label}</h3>
           <div style="font-size:12px; display:flex; gap:16px; flex-wrap: wrap;">
-            <span style="color:var(--dim);">Gross P/L: <strong style="font-family:var(--mono); color:${grossPnl >= 0 ? 'var(--green)' : 'var(--red)'};">${grossPnl >= 0 ? '+' : ''}${fmtRs(grossPnl)}</strong></span>
-            <span style="color:var(--dim);">Charges &amp; Taxes: <strong style="font-family:var(--mono); color:var(--text);">${fmtRs(monthCharges)}</strong></span>
-            ${monthManualExp > 0 ? `<span style="color:var(--dim);">Other Exp: <strong style="font-family:var(--mono); color:var(--text);">${fmtRs(monthManualExp)}</strong></span>` : ''}
-            <span style="color:var(--dim);">Net P/L: <strong style="font-family:var(--mono); color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'};">${netPnl >= 0 ? '+' : ''}${fmtRs(netPnl)}</strong></span>
+            <span style="color:var(--dim);">Gross P/L: <strong style="font-family:var(--mono); color:${grossPnl >= 0 ? 'var(--green)' : 'var(--red)'};">${grossPnl >= 0 ? '+' : '-'}${fmtRs(Math.abs(grossPnl))}</strong></span>
+            <span style="color:var(--dim);">Charges &amp; Taxes: <strong style="font-family:var(--mono); color:${monthCharges > 0 ? 'var(--red)' : 'var(--text)'};">${monthCharges > 0 ? ('-' + fmtRs(monthCharges)) : fmtRs(0)}</strong></span>
+            ${monthManualExp !== 0 ? `<span style="color:var(--dim);">${monthManualExp < 0 ? 'Other Exp' : 'Other Income'}: <strong style="font-family:var(--mono); color:${monthManualExp >= 0 ? 'var(--green)' : 'var(--red)'};">${monthManualExp >= 0 ? '+' : '-'}${fmtRs(Math.abs(monthManualExp))}</strong></span>` : ''}
+            <span style="color:var(--dim);">Net P/L: <strong style="font-family:var(--mono); color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'};">${netPnl >= 0 ? '+' : '-'}${fmtRs(Math.abs(netPnl))}</strong></span>
           </div>
         </div>
         <div style="overflow-x:auto;">
           <table style="width:100%; min-width:850px;">
             <thead>
               <tr>
-                <th>Open</th><th>Stock</th><th>Avg Buy</th><th>Qty</th><th>Amount</th><th>Brokerage</th><th>Avg Sell</th><th>SL</th><th>Status</th><th>Exit</th><th>P/L</th><th>P/L %</th><th>R:R</th><th>Days</th>
+                <th>Open</th><th>Stock</th><th>Avg Buy</th><th>Qty</th><th>Amount</th><th>Brokerage</th><th>Avg Sell</th><th>SL</th><th>Status</th><th>Exit</th><th>P/L</th><th>P/L %</th><th>R:R</th><th>Days</th><th style="text-align:center; width:70px;">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -3823,6 +3833,9 @@
                     <td>${fmtPct(t.pnlPct)}</td>
                     <td>${t.rr == null ? '—' : fmt(t.rr)}</td>
                     <td>${t.days == null ? '—' : t.days}</td>
+                    <td style="text-align:center; white-space:nowrap;">
+                      <button class="btn ghost edit-trade-btn" data-id="${t.id}" style="padding:2px 8px; font-size:11px; height:auto; color:var(--text); border-color:var(--line);" title="Edit Trade Details">✏️ Edit</button>
+                    </td>
                   </tr>
                 `;
         }).join('')}
@@ -4052,7 +4065,7 @@
         };
 
         if (existing) {
-          const idx = STATE.trades.findIndex(t => t.id === existing.id);
+          const idx = STATE.trades.findIndex(t => String(t.id).trim() === String(existing.id).trim());
           if (idx !== -1) {
             STATE.trades[idx] = tradeObj;
             updatedCount++;
@@ -4147,6 +4160,7 @@
     }
 
     function openDhanSyncModal() {
+      ensureModalElements();
       const token = localStorage.getItem('tj_dhan_token') || '';
       if (!token) {
         toast('Please enter your Dhan Access Token in Settings first!', 'err');
@@ -4242,6 +4256,7 @@
     }
 
     function openExportModal() {
+      ensureModalElements();
       const periods = getAvailablePeriods();
 
       let monthOpts = periods.months.map(m => {
@@ -4477,6 +4492,7 @@
     }
 
     function showInfoModal(title, text, benchmark) {
+      ensureModalElements();
       const modalBg = $('#modalBg');
       const modalBody = $('#modalBody');
       if (!modalBg || !modalBody) return;
@@ -4508,6 +4524,7 @@
     window.showInfoModal = showInfoModal;
 
     function openChartViewerModal(tradeId) {
+      ensureModalElements();
       const trade = STATE.trades.find(t => String(t.id) === String(tradeId));
       if (!trade) { toast('Trade not found', 'err'); return; }
 
@@ -4572,6 +4589,7 @@
     window.openChartViewerModal = openChartViewerModal;
 
     function openSetupTradesModal(setupName) {
+      ensureModalElements();
       window._activeSetupFilterName = setupName;
       if (!window._setupSortDir) window._setupSortDir = 'desc';
       const modalBg = $('#modalBg');
@@ -4848,7 +4866,30 @@
       });
 
       $('#tradeTableWrap').querySelectorAll('tr[data-id]').forEach(row => {
-        row.onclick = () => openTradeModal(STATE.trades.find(t => t.id === row.dataset.id));
+        row.style.cursor = 'pointer';
+        row.onclick = (e) => {
+          if (e.target.closest('button, a, select, input')) return;
+          const tradeId = row.dataset.id;
+          const trade = STATE.trades.find(t => String(t.id).trim() === String(tradeId).trim());
+          if (trade) {
+            openTradeModal(trade);
+          } else {
+            console.warn('Trade not found for id:', tradeId);
+          }
+        };
+      });
+
+      $('#tradeTableWrap').querySelectorAll('.edit-trade-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const tradeId = btn.dataset.id;
+          const trade = STATE.trades.find(t => String(t.id).trim() === String(tradeId).trim());
+          if (trade) {
+            openTradeModal(trade);
+          } else {
+            console.warn('Trade not found for id:', tradeId);
+          }
+        };
       });
 
       if (STATE.selectedTradeMonth) {
@@ -5272,10 +5313,33 @@
       };
     }
 
+    function ensureModalElements() {
+      let bg = document.getElementById('modalBg');
+      let body = document.getElementById('modalBody');
+      if (!bg) {
+        bg = document.createElement('div');
+        bg.className = 'modal-bg';
+        bg.id = 'modalBg';
+        document.body.appendChild(bg);
+      }
+      if (!body) {
+        body = document.createElement('div');
+        body.className = 'modal';
+        body.id = 'modalBody';
+        bg.appendChild(body);
+      }
+      return { bg, body };
+    }
+
     /* =========================================================================
        TRADE MODAL (view / add pyramid / close / delete)
        ========================================================================= */
     function openTradeModal(t) {
+      ensureModalElements();
+      if (!t) {
+        toast('Trade details not found', 'err');
+        return;
+      }
       const buildTrancheRow = (num, label, price, qty) => {
         return `
           <div style="display: grid; grid-template-columns: 85px 1fr 1fr; gap: 8px; align-items: center; background:rgba(255,255,255,.02); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--line);">
@@ -5316,8 +5380,8 @@
       const extraExits = {};
       const remarks = t.remarks || '';
 
-      // Parse buys
-      const regex = /\[Tranche (\d+): ₹([\d\.,]+) × (\d+)(?:\s+on\s+([^\]]+))?\]/g;
+      // Parse buys (support both x and ×, with or without ₹)
+      const regex = /\[Tranche (\d+): ?(?:₹)?([\d\.,]+) [×x] (\d+)(?:\s+on\s+([^\]]+))?\]/gi;
       let match;
       while ((match = regex.exec(remarks)) !== null) {
         const num = parseInt(match[1]);
@@ -5328,8 +5392,8 @@
         extraTranches[num] = { price, qty, amt, date };
       }
 
-      // Parse exits
-      const regexExit = /\[Exit (\d+): ₹([\d\.,]+) × (\d+)\]/g;
+      // Parse exits (support both x and ×, with or without ₹)
+      const regexExit = /\[Exit (\d+): ?(?:₹)?([\d\.,]+) [×x] (\d+)\]/gi;
       let matchExit;
       while ((matchExit = regexExit.exec(remarks)) !== null) {
         const num = parseInt(matchExit[1]);
@@ -5395,8 +5459,10 @@
       const expectedPnL = Math.round(expectedPnLOnRemaining + realizedPnL);
 
       $('#modalBody').innerHTML = `
-    <div class="modal-head"><h3>Trade Details <span style="color:var(--dim);font-weight:400;font-size:12px;">· ID: ${t.id}</span></h3>
-      <button class="close-x" id="mClose">✕</button></div>
+    <div class="modal-head">
+      <div><h3 style="margin:0;">Trade Details <span style="color:var(--dim);font-weight:400;font-size:12px;">· ID: ${t.id || '—'}</span></h3></div>
+      <button class="close-x" id="mClose">✕</button>
+    </div>
 
     <div style="background: rgba(212,162,78,.06); border: 1px solid var(--line-soft); padding: 6px 12px; border-radius: 6px; margin-bottom: 12px;">
       <label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer; color:var(--text); font-weight:600;">
@@ -5646,7 +5712,7 @@
     <div class="field" style="margin-bottom:12px;"><label>Remarks</label><textarea rows="2" id="m_remarks" placeholder="Setup notes, trading plan, lessons...">${t.remarks || ''}</textarea></div>
     
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <button class="btn primary" id="m_updateRemarks" style="background:#2563eb; color:#fff; font-weight:600; padding:8px 18px;">Save</button>
+      <button class="btn primary" id="m_updateRemarks" style="background:#2563eb; color:#fff; font-weight:600; padding:8px 18px;">Save Changes</button>
       <button class="btn danger ghost" id="m_delete" style="margin-left:auto;">Delete Trade</button>
     </div>
   `;
@@ -6243,7 +6309,12 @@
         apiPost({ action: 'deleteTrade', id: t.id }).catch(err => { toast('Sync failed: ' + err.message, 'err'); });
       };
     }
-    function closeModal() { $('#modalBg').classList.remove('show'); $('#modalBody').style.maxWidth = ''; }
+    function closeModal() {
+      const bg = document.getElementById('modalBg');
+      const body = document.getElementById('modalBody');
+      if (bg) bg.classList.remove('show');
+      if (body) body.style.maxWidth = '';
+    }
 
     /* =========================================================================
        RISK / POSITION SIZE CALCULATOR (standalone, no save)
@@ -8843,6 +8914,7 @@
     }
 
     function openDhanAuditModal(data) {
+      ensureModalElements();
       const { matchedTrades, discrepancies, suggestedMappings, omittedEtfs, chargesSummary, cutoff, preCutoffCount } = data;
       const modalBg = $('#modalBg');
       const modalBody = $('#modalBody');
@@ -9079,7 +9151,7 @@
             if (!d) continue;
 
             if (d.type === 'OPEN_CLOSED_IN_DHAN') {
-              const trade = STATE.trades.find(t => t.id === d.id);
+              const trade = STATE.trades.find(t => String(t.id).trim() === String(d.id).trim());
               if (trade) {
                 trade.status = 'closed';
                 trade.closedDate = d.closedDate;
@@ -9099,7 +9171,7 @@
 
               let maxNum = 0;
               STATE.trades.forEach(t => {
-                const match = (t.id || '').match(/^T0*(\d+)$/);
+                const match = String(t.id || '').match(/^T0*(\d+)$/);
                 if (match) {
                   const n = parseInt(match[1]);
                   if (n > maxNum) maxNum = n;
@@ -9131,7 +9203,7 @@
               apiPost({ action: 'addTrade', trade: newTrade }).catch(e => console.error(e));
               appliedCount++;
             } else if (d.type === 'QTY_OR_VALUE_MISMATCH') {
-              const trade = STATE.trades.find(t => t.id === d.id);
+              const trade = STATE.trades.find(t => String(t.id).trim() === String(d.id).trim());
               if (trade) {
                 trade.totBuyQty = d.dhanQty;
                 trade.totBuyAmt = d.dhanBuyAmt;
@@ -9188,6 +9260,10 @@
        GLOBAL KEYBOARD SHORTCUTS (Ctrl+S / Cmd+S for Saving)
        ========================================================================= */
     window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+        return;
+      }
       if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
         e.preventDefault();
 
