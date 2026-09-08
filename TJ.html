@@ -807,6 +807,28 @@
     }
 
     /* Dedicated responsive Settings layout */
+    .settings-top-grid,
+    .settings-bottom-grid {
+      display: grid;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .settings-top-grid {
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    }
+
+    .settings-bottom-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+    }
+
+    @media(max-width: 960px) {
+      .settings-top-grid,
+      .settings-bottom-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .settings-grid-two-col {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -8245,124 +8267,214 @@
        ========================================================================= */
     function renderSettings(host) {
       const s = STATE.settings;
+      const snap = capitalSnapshot();
+      const liveCash = (snap && !isNaN(snap.cash)) ? snap.cash : 0;
+      const liveCashFormatted = (liveCash % 1 === 0) ? liveCash : Number(liveCash.toFixed(2));
+      const savedDefBrok = sessionStorage.getItem('tj_calc_def_brok') || '';
+      const savedActCash = sessionStorage.getItem('tj_calc_act_cash') || '';
       host.innerHTML = `
     <div class="page-head"><div><h1>Settings</h1><p>Risk parameters and connection details</p></div></div>
     
-    <div style="max-width: 820px; width: 100%; display: flex; flex-direction: column; gap: 14px;">
-      <!-- Card 1: General Settings -->
-      <div class="panel" style="padding: 14px; margin-bottom: 0;">
-        <div class="panel-head" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-          <h3 style="margin: 0; font-size: 13.5px; font-weight: 700;">General Settings</h3>
-          <button class="btn silver" id="saveSettingsBtn" style="padding: 4px 12px; font-size: 11.5px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.35);">Save</button>
-        </div>
-        
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <!-- Row 1: FY & Opening Capital -->
-          <div class="settings-grid-two-col">
-            <div class="form-row">
-              <span style="font-size: 12px; color: var(--dim); width: 115px; text-align: right; flex-shrink: 0;">Financial Year:</span>
-              <input id="s_fy" value="${s.currentFY || ''}" style="flex: 1; min-width: 0; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
-            </div>
-            <div class="form-row">
-              <span style="font-size: 12px; color: var(--dim); width: 115px; text-align: right; flex-shrink: 0;">Opening Capital:</span>
-              <input type="number" id="s_open" value="${s.openingCapitalFY || ''}" placeholder="e.g. 500000" style="flex: 1; min-width: 0; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
-            </div>
+    <div style="max-width: 1140px; width: 100%; display: flex; flex-direction: column; gap: 14px;">
+      <!-- Row 1: General Settings (Left) & Brok+Charges adjustment Calculator (Right) -->
+      <div class="settings-top-grid">
+        <!-- Card 1: General Settings -->
+        <div class="panel" style="padding: 14px; margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
+          <div class="panel-head" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+            <h3 style="margin: 0; font-size: 13.5px; font-weight: 700;">General Settings</h3>
+            <button class="btn silver" id="saveSettingsBtn" style="padding: 4px 12px; font-size: 11.5px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.35);">Save</button>
           </div>
-
-          <!-- Row 2: Risk% Per Trade & Pyramid Counts -->
-          <div class="settings-grid-two-col">
-            <div class="form-row">
-              <span style="font-size: 12px; color: var(--dim); width: 115px; text-align: right; flex-shrink: 0;">Risk% / Trade:</span>
-              <input type="number" step="0.1" id="s_riskpct" value="${(Number(s.riskPctPerTrade || 0) * 100)}" placeholder="e.g. 1.0" style="flex: 1; min-width: 0; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
-            </div>
-            <div class="form-row">
-              <span style="font-size: 12px; color: var(--dim); width: 115px; text-align: right; flex-shrink: 0;">Pyramid Counts:</span>
-              <input type="number" id="s_pyramid" value="${s.pyramidDays || ''}" placeholder="e.g. 3" style="flex: 1; min-width: 0; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
-            </div>
-          </div>
-
-          <!-- Row 3: Positions & Brokerage -->
-          <div class="settings-grid-two-col">
-            <div class="form-row">
-              <span style="font-size: 12px; color: var(--dim); width: 115px; text-align: right; flex-shrink: 0;">Positions:</span>
-              <div style="display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0;">
-                <input type="number" id="s_minpos" value="${s.maxStocksMin || ''}" placeholder="Min" style="flex: 1; min-width: 0; width: 0; height: 28px; padding: 4px 8px; font-size: 12px; text-align: center; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
-                <span style="color: var(--dim); font-size: 12px; flex-shrink: 0;">–</span>
-                <input type="number" id="s_maxpos" value="${s.maxStocksMax || ''}" placeholder="Max" style="flex: 1; min-width: 0; width: 0; height: 28px; padding: 4px 8px; font-size: 12px; text-align: center; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
+          
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Row 1: FY & Opening Capital -->
+            <div class="settings-grid-two-col">
+              <div class="form-row">
+                <span style="font-size: 12px; color: var(--dim); width: 115px; text-align: right; flex-shrink: 0;">Financial Year:</span>
+                <input id="s_fy" value="${s.currentFY || ''}" style="flex: 1; min-width: 0; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
+              </div>
+              <div class="form-row">
+                <span style="font-size: 12px; color: var(--dim); width: 115px; text-align: right; flex-shrink: 0;">Opening Capital:</span>
+                <input type="number" id="s_open" value="${s.openingCapitalFY || ''}" placeholder="e.g. 500000" style="flex: 1; min-width: 0; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
               </div>
             </div>
-            <div class="form-row">
-              <span style="font-size: 12px; color: var(--dim); width: 115px; text-align: right; flex-shrink: 0;">Brokerage (₹):</span>
-              <input type="number" id="s_brok" value="${s.brokeragePerTrade !== undefined && s.brokeragePerTrade !== '' ? s.brokeragePerTrade : 0}" placeholder="0 (Delivery) or 20" style="flex: 1; min-width: 0; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
+
+            <!-- Row 2: Risk% Per Trade & Pyramid Counts -->
+            <div class="settings-grid-two-col">
+              <div class="form-row">
+                <span style="font-size: 12px; color: var(--dim); width: 115px; text-align: right; flex-shrink: 0;">Risk% / Trade:</span>
+                <input type="number" step="0.1" id="s_riskpct" value="${(Number(s.riskPctPerTrade || 0) * 100)}" placeholder="e.g. 1.0" style="flex: 1; min-width: 0; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
+              </div>
+              <div class="form-row">
+                <span style="font-size: 12px; color: var(--dim); width: 115px; text-align: right; flex-shrink: 0;">Pyramid Counts:</span>
+                <input type="number" id="s_pyramid" value="${s.pyramidDays || ''}" placeholder="e.g. 3" style="flex: 1; min-width: 0; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
+              </div>
+            </div>
+
+            <!-- Row 3: Positions & Brokerage -->
+            <div class="settings-grid-two-col">
+              <div class="form-row">
+                <span style="font-size: 12px; color: var(--dim); width: 115px; text-align: right; flex-shrink: 0;">Positions:</span>
+                <div style="display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0;">
+                  <input type="number" id="s_minpos" value="${s.maxStocksMin || ''}" placeholder="Min" style="flex: 1; min-width: 0; width: 0; height: 28px; padding: 4px 8px; font-size: 12px; text-align: center; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
+                  <span style="color: var(--dim); font-size: 12px; flex-shrink: 0;">–</span>
+                  <input type="number" id="s_maxpos" value="${s.maxStocksMax || ''}" placeholder="Max" style="flex: 1; min-width: 0; width: 0; height: 28px; padding: 4px 8px; font-size: 12px; text-align: center; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
+                </div>
+              </div>
+              <div class="form-row">
+                <span style="font-size: 12px; color: var(--dim); width: 115px; text-align: right; flex-shrink: 0;">Brokerage (₹):</span>
+                <input type="number" id="s_brok" value="${s.brokeragePerTrade !== undefined && s.brokeragePerTrade !== '' ? s.brokeragePerTrade : 0}" placeholder="0 (Delivery) or 20" style="flex: 1; min-width: 0; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
+              </div>
+            </div>
+
+            <!-- Row 4: Dhan Cash & Trading A/c Difference -->
+            <div class="settings-grid-two-col">
+              <div class="form-row">
+                <span style="font-size: 12px; color: var(--dim); width: 115px; text-align: right; flex-shrink: 0;" title="Actual cash balance in Dhan broker account">Dhan Cash (₹):</span>
+                <input type="number" step="0.01" id="s_dhancash" value="${s.dhanCash !== undefined && s.dhanCash !== '' ? s.dhanCash : 625747.68}" placeholder="625747.68" style="flex: 1; min-width: 0; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
+              </div>
+              <div class="form-row">
+                <span style="font-size: 12px; color: var(--dim); width: 115px; text-align: right; flex-shrink: 0;" title="Difference from Trading A/c treated as profit before 31.03.2026">Pre-2026 Diff (₹):</span>
+                <input type="number" step="0.01" id="s_pre2026diff" value="${s.pre2026ProfitDiff !== undefined && s.pre2026ProfitDiff !== '' ? s.pre2026ProfitDiff : 2149.44}" placeholder="2149.44" style="flex: 1; min-width: 0; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
+              </div>
             </div>
           </div>
+        </div>
 
-          <!-- Row 4: Dhan Cash & Trading A/c Difference -->
-          <div class="settings-grid-two-col">
-            <div class="form-row">
-              <span style="font-size: 12px; color: var(--dim); width: 115px; text-align: right; flex-shrink: 0;" title="Actual cash balance in Dhan broker account">Dhan Cash (₹):</span>
-              <input type="number" step="0.01" id="s_dhancash" value="${s.dhanCash !== undefined && s.dhanCash !== '' ? s.dhanCash : 625747.68}" placeholder="625747.68" style="flex: 1; min-width: 0; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
-            </div>
-            <div class="form-row">
-              <span style="font-size: 12px; color: var(--dim); width: 115px; text-align: right; flex-shrink: 0;" title="Difference from Trading A/c treated as profit before 31.03.2026">Pre-2026 Diff (₹):</span>
-              <input type="number" step="0.01" id="s_pre2026diff" value="${s.pre2026ProfitDiff !== undefined && s.pre2026ProfitDiff !== '' ? s.pre2026ProfitDiff : 2149.44}" placeholder="2149.44" style="flex: 1; min-width: 0; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Card 2: Broker Sync & Connection -->
-      <div class="panel" style="padding: 14px; margin-bottom: 0;">
-        <div class="panel-head" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-          <h3 style="margin: 0; font-size: 13.5px; font-weight: 700;">Broker Sync &amp; Connection</h3>
-          <button class="btn silver" id="saveDhanBtn" style="padding: 4px 12px; font-size: 11.5px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.35);">Save</button>
-        </div>
-        <div class="form-row" style="margin-bottom: 10px;">
-          <span style="font-size: 12px; color: var(--dim); width: 115px; text-align: right; flex-shrink: 0;">Dhan Token:</span>
-          <input type="password" id="s_dhan_token" value="${localStorage.getItem('tj_dhan_token') || ''}" placeholder="Paste Dhan Token" style="flex: 1; min-width: 0; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
-        </div>
-        <div style="border-top: 1px solid var(--line-soft); margin-top: 10px; padding-top: 10px; display: flex; justify-content: flex-start;">
-          <button class="btn ghost danger" id="disconnectBtn" style="padding: 4px 12px; font-size: 11.5px; height: 28px; width: auto;">Disconnect (Backend-GS)</button>
-        </div>
-      </div>
-
-      <!-- Card 3: Dhan Global Transaction Report Reconciler -->
-      <div class="panel" style="padding: 14px; margin-bottom: 0;">
-        <div class="panel-head" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <!-- Card: Brok+Charges adjustment Calculator -->
+        <div class="panel" style="padding: 14px; margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
           <div>
-            <h3 style="margin: 0; font-size: 13.5px; font-weight: 700;">Dhan Report Verifier &amp; Reconciler</h3>
-            <p style="font-size: 11.5px; color: var(--dim); margin: 2px 0 0 0;">Upload your Dhan Global Transaction Report (.csv) to audit discrepancies</p>
-          </div>
-          <span class="badge" style="background: rgba(212, 162, 78, 0.15); color: var(--gold); border: 1px solid rgba(212, 162, 78, 0.3); font-size: 10.5px; padding: 2px 8px;">Audit Tool</span>
-        </div>
-
-        <div style="background: var(--bg); border: 1px dashed var(--line); border-radius: 6px; padding: 12px; text-align: center; margin: 8px 0; cursor: pointer; transition: all 0.2s;" id="dhanDropZone" onclick="$('#dhanFileInput').click()">
-          <input type="file" id="dhanFileInput" accept=".csv" style="display: none;">
-          <div style="font-size: 20px; margin-bottom: 4px;">📑</div>
-          <div style="font-size: 12px; font-weight: 500; color: var(--text);" id="dhanDropText">Click to select or drag &amp; drop Dhan_GlobalTransaction_Report.csv</div>
-          <div style="font-size: 10.5px; color: var(--dim); margin-top: 2px;">Supports Dhan Console CSV export</div>
-        </div>
-
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <label style="display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--sub); cursor: pointer;">
-              <input type="checkbox" id="dhanOmitEtfCheck" checked style="cursor: pointer; accent-color: var(--gold);">
-              Omit ETFs
-            </label>
-            <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--sub); background: rgba(255,255,255,0.03); border: 1px solid var(--line-soft); border-radius: 4px; padding: 2px 6px;">
-              <span>🔒 Up To:</span>
-              <input type="date" id="dhanCutoffDate" value="${(STATE.settings && STATE.settings.reconciledUpToDate) || '2026-08-31'}" style="height: 22px; padding: 0 4px; font-size: 11px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--text);">
-            </div>
-            ${Object.keys((STATE.settings && STATE.settings.customScripMap) || {}).length ? `
-              <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--dim); background: rgba(255,255,255,0.03); border: 1px solid var(--line-soft); border-radius: 4px; padding: 2px 6px;">
-                <span>📚 Aliases: <strong>${Math.round(Object.keys(STATE.settings.customScripMap).length / 2) || 1}</strong></span>
-                <button class="btn ghost" style="padding: 0 4px; font-size: 9.5px; color: var(--red); height: auto; min-height: auto;" onclick="clearCustomScripMap()" title="Reset learned stock aliases">✕</button>
+            <div class="panel-head" style="margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+              <div>
+                <h3 style="margin: 0; font-size: 13.5px; font-weight: 700;">Brok+Charges adjustment Calculator</h3>
               </div>
-            ` : ''}
+              <span class="badge" style="background: rgba(90, 169, 255, 0.12); color: var(--blue); border: 1px solid rgba(90, 169, 255, 0.28); font-size: 10px; padding: 2px 7px;">Auto Detect</span>
+            </div>
+
+            <div style="background: var(--bg); border: 1px solid var(--line); border-radius: 6px; overflow: hidden;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <tbody>
+                  <tr style="border-bottom: 1px solid var(--line-soft);">
+                    <td style="padding: 7px 10px; font-weight: 600; color: var(--sub); width: 50%; vertical-align: middle;">
+                      Default Brok+Charges
+                    </td>
+                    <td style="padding: 5px 8px; vertical-align: middle;">
+                      <input type="number" step="any" id="calc_adj_default_brok" value="${savedDefBrok}" placeholder="e.g. 260" 
+                        style="width: 100%; height: 26px; padding: 3px 8px; font-size: 12px; font-family: var(--mono); background: var(--panel); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
+                    </td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid var(--line-soft);">
+                    <td style="padding: 7px 10px; font-weight: 600; color: var(--sub); vertical-align: middle;">
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span>Journal Cash Balance</span>
+                        <span style="font-size: 9.5px; color: var(--blue); background: rgba(90, 169, 255, 0.12); padding: 1px 5px; border-radius: 3px;">Auto</span>
+                      </div>
+                    </td>
+                    <td style="padding: 5px 8px; vertical-align: middle;">
+                      <div style="display: flex; align-items: center; gap: 4px;">
+                        <input type="number" step="any" id="calc_adj_journal_cash" value="${liveCashFormatted}" 
+                          style="flex: 1; min-width: 0; height: 26px; padding: 3px 8px; font-size: 12px; font-family: var(--mono); background: var(--panel); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
+                        <button type="button" id="calc_adj_sync_cash" title="Reset to live Journal Cash" class="btn ghost" 
+                          style="padding: 0 6px; height: 26px; min-height: 26px; font-size: 12px; color: var(--sub); line-height: 1;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--sub)'">↻</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid var(--line);">
+                    <td style="padding: 7px 10px; font-weight: 600; color: var(--sub); vertical-align: middle;">
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span>Actual Cash Balance</span>
+                        <button type="button" id="calc_adj_use_dhan" title="Load from Dhan Cash in settings" 
+                          style="background: none; border: none; padding: 0; font-size: 10px; color: var(--gold); cursor: pointer; text-decoration: underline;">From Dhan</button>
+                      </div>
+                    </td>
+                    <td style="padding: 5px 8px; vertical-align: middle;">
+                      <input type="number" step="any" id="calc_adj_actual_cash" value="${savedActCash}" placeholder="e.g. 825100" 
+                        style="width: 100%; height: 26px; padding: 3px 8px; font-size: 12px; font-family: var(--mono); background: var(--panel); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
+                    </td>
+                  </tr>
+                  <tr style="background: rgba(212, 162, 78, 0.08);">
+                    <td style="padding: 8px 10px; font-weight: 700; color: var(--text); vertical-align: middle; font-size: 12px;">
+                      Calculated Brok+Charges
+                    </td>
+                    <td style="padding: 5px 8px; vertical-align: middle;">
+                      <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                        <span id="calc_adj_result" style="font-size: 14px; font-weight: 700; font-family: var(--mono); color: var(--gold);">—</span>
+                        <button type="button" id="calc_adj_copy_btn" class="btn silver" 
+                          style="padding: 2px 7px; font-size: 10.5px; height: 22px; line-height: 1; border: 1px solid rgba(255, 255, 255, 0.25); display: none;" title="Copy to clipboard">Copy</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-          <button class="btn silver" id="dhanVerifyBtn" style="padding: 4px 12px; font-size: 11.5px; height: auto;" disabled>
-            🔍 Verify Report
-          </button>
+          <div id="calc_adj_diff_note" style="font-size: 11px; color: var(--dim); margin-top: 8px; font-family: var(--sans);">
+            Auto calculates on entering figures
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Broker Sync (Left) & Dhan Report Verifier (Right) -->
+      <div class="settings-bottom-grid">
+        <!-- Card 2: Broker Sync & Connection -->
+        <div class="panel" style="padding: 14px; margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div class="panel-head" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+              <h3 style="margin: 0; font-size: 13.5px; font-weight: 700;">Broker Sync &amp; Connection</h3>
+              <button class="btn silver" id="saveDhanBtn" style="padding: 4px 12px; font-size: 11.5px; margin: 0; line-height: 1.2; height: auto; border: 1px solid rgba(255, 255, 255, 0.35);">Save</button>
+            </div>
+            <div class="form-row" style="margin-bottom: 10px;">
+              <span style="font-size: 12px; color: var(--dim); width: 100px; text-align: right; flex-shrink: 0;">Dhan Token:</span>
+              <input type="password" id="s_dhan_token" value="${localStorage.getItem('tj_dhan_token') || ''}" placeholder="Paste Dhan Token" style="flex: 1; min-width: 0; height: 28px; padding: 4px 8px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
+            </div>
+            <div style="font-size: 11px; color: var(--dim); line-height: 1.4; margin-top: 6px;">
+              Saved locally on your browser. Used for syncing orders and ledger details.
+            </div>
+          </div>
+          <div style="border-top: 1px solid var(--line-soft); margin-top: 12px; padding-top: 10px; display: flex; justify-content: flex-start;">
+            <button class="btn ghost danger" id="disconnectBtn" style="padding: 4px 12px; font-size: 11.5px; height: 28px; width: auto;">Disconnect (Backend-GS)</button>
+          </div>
+        </div>
+
+        <!-- Card 3: Dhan Global Transaction Report Reconciler -->
+        <div class="panel" style="padding: 14px; margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div class="panel-head" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+              <div>
+                <h3 style="margin: 0; font-size: 13.5px; font-weight: 700;">Dhan Report Verifier &amp; Reconciler</h3>
+                <p style="font-size: 11.5px; color: var(--dim); margin: 2px 0 0 0;">Upload your Dhan Global Transaction Report (.csv) to audit discrepancies</p>
+              </div>
+              <span class="badge" style="background: rgba(212, 162, 78, 0.15); color: var(--gold); border: 1px solid rgba(212, 162, 78, 0.3); font-size: 10.5px; padding: 2px 8px;">Audit Tool</span>
+            </div>
+
+            <div style="background: var(--bg); border: 1px dashed var(--line); border-radius: 6px; padding: 12px; text-align: center; margin: 8px 0; cursor: pointer; transition: all 0.2s;" id="dhanDropZone" onclick="$('#dhanFileInput').click()">
+              <input type="file" id="dhanFileInput" accept=".csv" style="display: none;">
+              <div style="font-size: 20px; margin-bottom: 4px;">📑</div>
+              <div style="font-size: 12px; font-weight: 500; color: var(--text);" id="dhanDropText">Click to select or drag &amp; drop Dhan_GlobalTransaction_Report.csv</div>
+              <div style="font-size: 10.5px; color: var(--dim); margin-top: 2px;">Supports Dhan Console CSV export</div>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <label style="display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--sub); cursor: pointer;">
+                <input type="checkbox" id="dhanOmitEtfCheck" checked style="cursor: pointer; accent-color: var(--gold);">
+                Omit ETFs
+              </label>
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--sub); background: rgba(255,255,255,0.03); border: 1px solid var(--line-soft); border-radius: 4px; padding: 2px 6px;">
+                <span>🔒 Up To:</span>
+                <input type="date" id="dhanCutoffDate" value="${(STATE.settings && STATE.settings.reconciledUpToDate) || '2026-08-31'}" style="height: 22px; padding: 0 4px; font-size: 11px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--text);">
+              </div>
+              ${Object.keys((STATE.settings && STATE.settings.customScripMap) || {}).length ? `
+                <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--dim); background: rgba(255,255,255,0.03); border: 1px solid var(--line-soft); border-radius: 4px; padding: 2px 6px;">
+                  <span>📚 Aliases: <strong>${Math.round(Object.keys(STATE.settings.customScripMap).length / 2) || 1}</strong></span>
+                  <button class="btn ghost" style="padding: 0 4px; font-size: 9.5px; color: var(--red); height: auto; min-height: auto;" onclick="clearCustomScripMap()" title="Reset learned stock aliases">✕</button>
+                </div>
+              ` : ''}
+            </div>
+            <button class="btn silver" id="dhanVerifyBtn" style="padding: 4px 12px; font-size: 11.5px; height: auto;" disabled>
+              🔍 Verify Report
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -8407,6 +8519,128 @@
           localStorage.removeItem(CFG_KEY); location.reload();
         }
       };
+
+      // Brok+Charges adjustment Calculator logic
+      const calcDefBrokInput = $('#calc_adj_default_brok');
+      const calcJournalCashInput = $('#calc_adj_journal_cash');
+      const calcActualCashInput = $('#calc_adj_actual_cash');
+      const calcResultEl = $('#calc_adj_result');
+      const calcCopyBtn = $('#calc_adj_copy_btn');
+      const calcNoteEl = $('#calc_adj_diff_note');
+      const calcSyncCashBtn = $('#calc_adj_sync_cash');
+      const calcUseDhanBtn = $('#calc_adj_use_dhan');
+
+      function doRecalcAdjustment() {
+        if (!calcDefBrokInput || !calcJournalCashInput || !calcActualCashInput) return;
+
+        const parseVal = (str) => {
+          if (str == null) return NaN;
+          const clean = String(str).replace(/,/g, '').trim();
+          if (clean === '') return NaN;
+          const n = Number(clean);
+          return isNaN(n) ? NaN : n;
+        };
+
+        const defBrok = parseVal(calcDefBrokInput.value);
+        const jCash = parseVal(calcJournalCashInput.value);
+        const actCash = parseVal(calcActualCashInput.value);
+
+        try {
+          if (calcDefBrokInput.value.trim() !== '') sessionStorage.setItem('tj_calc_def_brok', calcDefBrokInput.value);
+          if (calcActualCashInput.value.trim() !== '') sessionStorage.setItem('tj_calc_act_cash', calcActualCashInput.value);
+        } catch (e) { }
+
+        if (isNaN(defBrok) || isNaN(jCash) || isNaN(actCash)) {
+          if (calcResultEl) {
+            calcResultEl.textContent = '—';
+            calcResultEl.style.color = 'var(--dim)';
+          }
+          if (calcCopyBtn) calcCopyBtn.style.display = 'none';
+          if (calcNoteEl) {
+            if (isNaN(defBrok) && isNaN(actCash)) {
+              calcNoteEl.innerHTML = `<span style="color:var(--dim);">Enter Default Brok and Actual Cash Balance to calculate</span>`;
+            } else if (isNaN(defBrok)) {
+              calcNoteEl.innerHTML = `<span style="color:var(--dim);">Enter Default Brok+Charges</span>`;
+            } else if (isNaN(actCash)) {
+              calcNoteEl.innerHTML = `<span style="color:var(--dim);">Enter Actual Cash Balance</span>`;
+            } else {
+              calcNoteEl.innerHTML = `<span style="color:var(--dim);">Enter required values</span>`;
+            }
+          }
+          return;
+        }
+
+        // Formula: A + (B - C)
+        const diff = jCash - actCash;
+        const calculatedBrok = defBrok + diff;
+        const roundedBrok = Math.round(calculatedBrok * 100) / 100;
+        const displayVal = roundedBrok.toLocaleString('en-IN', {
+          minimumFractionDigits: (roundedBrok % 1 === 0 ? 0 : 2),
+          maximumFractionDigits: 2
+        });
+
+        if (calcResultEl) {
+          calcResultEl.textContent = displayVal;
+          calcResultEl.style.color = roundedBrok >= 0 ? 'var(--gold)' : 'var(--red)';
+        }
+
+        if (calcCopyBtn) {
+          calcCopyBtn.style.display = 'inline-flex';
+          calcCopyBtn.onclick = () => {
+            const copyText = String(roundedBrok);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(copyText).then(() => {
+                toast(`Copied ${copyText} to clipboard!`, 'ok');
+              }).catch(() => {
+                toast(`Result: ${copyText}`, 'ok');
+              });
+            } else {
+              toast(`Result: ${copyText}`, 'ok');
+            }
+          };
+        }
+
+        if (calcNoteEl) {
+          if (Math.abs(diff) < 0.005) {
+            calcNoteEl.innerHTML = `<span style="color:var(--green); font-weight:600;">✓ Exact match</span> <span style="color:var(--sub);">(Journal &amp; Actual cash are equal)</span>`;
+          } else if (diff > 0) {
+            calcNoteEl.innerHTML = `<span style="color:var(--sub);">Journal cash is higher by <strong>${fmtRs(diff)}</strong> → Brok increased by <strong>${fmtRs(diff)}</strong></span>`;
+          } else {
+            calcNoteEl.innerHTML = `<span style="color:var(--sub);">Journal cash is lower by <strong>${fmtRs(Math.abs(diff))}</strong> → Brok reduced by <strong>${fmtRs(Math.abs(diff))}</strong></span>`;
+          }
+        }
+      }
+
+      if (calcDefBrokInput) calcDefBrokInput.addEventListener('input', doRecalcAdjustment);
+      if (calcJournalCashInput) calcJournalCashInput.addEventListener('input', doRecalcAdjustment);
+      if (calcActualCashInput) calcActualCashInput.addEventListener('input', doRecalcAdjustment);
+
+      if (calcSyncCashBtn) {
+        calcSyncCashBtn.onclick = () => {
+          const freshCash = (capitalSnapshot() && !isNaN(capitalSnapshot().cash)) ? capitalSnapshot().cash : 0;
+          const val = (freshCash % 1 === 0) ? freshCash : Number(freshCash.toFixed(2));
+          calcJournalCashInput.value = val;
+          doRecalcAdjustment();
+          toast(`Journal Cash re-synced: ${fmtRs(val)}`, 'ok');
+        };
+      }
+
+      if (calcUseDhanBtn) {
+        calcUseDhanBtn.onclick = () => {
+          const dhanInput = $('#s_dhancash');
+          const val = dhanInput ? dhanInput.value : ((STATE.settings && STATE.settings.dhanCash != null) ? STATE.settings.dhanCash : '');
+          if (val !== '' && val != null) {
+            calcActualCashInput.value = val;
+            doRecalcAdjustment();
+            toast(`Loaded Dhan Cash: ${fmtRs(Number(val))}`, 'ok');
+          } else {
+            toast('Dhan Cash is empty in General Settings', 'warn');
+          }
+        };
+      }
+
+      // Initial calculation run if values present
+      doRecalcAdjustment();
 
       let _uploadedDhanCsv = null;
       const dhanFileInput = $('#dhanFileInput');
