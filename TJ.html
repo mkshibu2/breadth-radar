@@ -720,9 +720,9 @@
       min-width: 0;
     }
 
-    .form-row > input,
-    .form-row > select,
-    .form-row > div {
+    .form-row>input,
+    .form-row>select,
+    .form-row>div {
       min-width: 0;
     }
 
@@ -738,7 +738,7 @@
       align-items: start;
     }
 
-    .ledger-container > div {
+    .ledger-container>div {
       min-width: 0;
     }
 
@@ -755,7 +755,7 @@
       min-width: 0;
     }
 
-    .ledger-form-row > span {
+    .ledger-form-row>span {
       font-size: 11.5px;
       color: var(--dim);
       width: 75px;
@@ -763,8 +763,8 @@
       flex-shrink: 0;
     }
 
-    .ledger-form-row > input,
-    .ledger-form-row > select {
+    .ledger-form-row>input,
+    .ledger-form-row>select {
       flex: 1;
       min-width: 0;
       width: 0;
@@ -787,12 +787,15 @@
     .recon-table td {
       white-space: normal !important;
     }
+
     .recon-table td:not(:first-child) {
       white-space: nowrap !important;
     }
+
     .recon-desktop-table {
       display: block;
     }
+
     .recon-mobile-card {
       display: none;
     }
@@ -801,6 +804,7 @@
       .recon-desktop-table {
         display: none !important;
       }
+
       .recon-mobile-card {
         display: flex !important;
       }
@@ -823,6 +827,7 @@
     }
 
     @media(max-width: 960px) {
+
       .settings-top-grid,
       .settings-bottom-grid {
         grid-template-columns: 1fr;
@@ -969,6 +974,7 @@
     }
 
     @media(max-width:760px) {
+
       .modal-two-col,
       .settings-grid-two-col {
         grid-template-columns: 1fr;
@@ -5480,6 +5486,12 @@
       const expectedPnLOnRemaining = remainingQty > 0 ? (expectedExitAmtOnRemaining - remainingCost) : 0;
       const expectedPnL = Math.round(expectedPnLOnRemaining + realizedPnL);
 
+      const snap = capitalSnapshot();
+      const liveCash = (snap && !isNaN(snap.cash)) ? snap.cash : 0;
+      const liveCashFormatted = (liveCash % 1 === 0) ? liveCash : Number(liveCash.toFixed(2));
+      const savedDefBrok = sessionStorage.getItem('tj_calc_def_brok') || getDefaultTradeBrokerage(t) || '';
+      const savedActCash = sessionStorage.getItem('tj_calc_act_cash') || ((STATE.settings && STATE.settings.dhanCash != null) ? STATE.settings.dhanCash : '');
+
       $('#modalBody').innerHTML = `
     <div class="modal-head">
       <div><h3 style="margin:0;">Trade Details <span style="color:var(--dim);font-weight:400;font-size:12px;">· ID: ${t.id || '—'}</span></h3></div>
@@ -5731,7 +5743,54 @@
       ` : ''}
     </div>
 
-    <div class="field" style="margin-bottom:12px;"><label>Remarks</label><textarea rows="2" id="m_remarks" placeholder="Setup notes, trading plan, lessons...">${t.remarks || ''}</textarea></div>
+    <div class="field" style="margin-bottom:10px;"><label>Remarks</label><textarea rows="2" id="m_remarks" placeholder="Setup notes, trading plan, lessons...">${t.remarks || ''}</textarea></div>
+    
+    <!-- Footer: Brok+Charges Adjustment Calculator -->
+    <div style="background: rgba(212,162,78,.04); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; margin-bottom: 12px;">
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span style="font-size:11px; font-weight:700; color:var(--gold); display:flex; align-items:center; gap:3px; white-space:nowrap;" title="Brok+Charges Adjustment Calculator">
+            ⚡ Adj Calc:
+          </span>
+
+          <!-- Def Brok -->
+          <div style="display:flex; align-items:center; gap:4px;">
+            <label for="m_calc_adj_default_brok" style="font-size:11px; color:var(--dim); margin:0; font-weight:600; white-space:nowrap;" title="CurrentBrok+Charges">C.Brok:</label>
+            <input type="number" step="any" id="m_calc_adj_default_brok" value="${savedDefBrok}" placeholder="Brok"
+              style="width:70px; height:24px; padding:2px 6px; font-size:11.5px; font-family:var(--mono); background:var(--bg); border:1px solid var(--line); color:var(--text); border-radius:4px; outline:none; box-sizing:border-box;">
+          </div>
+
+          <!-- Journal Cash -->
+          <div style="display:flex; align-items:center; gap:4px;">
+            <label for="m_calc_adj_journal_cash" style="font-size:11px; color:var(--dim); margin:0; font-weight:600; white-space:nowrap;" title="Journal Cash Balance">Jnl-Cash:</label>
+            <div style="display:flex; align-items:center; gap:2px;">
+              <input type="number" step="any" id="m_calc_adj_journal_cash" value="${liveCashFormatted}" placeholder="Journal"
+                style="width:90px; height:24px; padding:2px 6px; font-size:11.5px; font-family:var(--mono); background:var(--bg); border:1px solid var(--line); color:var(--text); border-radius:4px; outline:none; box-sizing:border-box;">
+              <button type="button" id="m_calc_adj_sync_cash" title="Reset to live Journal Cash" class="btn ghost"
+                style="padding:0 5px; height:24px; min-height:24px; font-size:11px; color:var(--sub); line-height:1;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--sub)'">↻</button>
+            </div>
+          </div>
+
+          <!-- Actual Cash -->
+          <div style="display:flex; align-items:center; gap:4px;">
+            <label for="m_calc_adj_actual_cash" style="font-size:11px; color:var(--dim); margin:0; font-weight:600; white-space:nowrap;" title="Actual Cash Balance">Actl-CB:</label>
+            <input type="number" step="any" id="m_calc_adj_actual_cash" value="${savedActCash}" placeholder="Actual"
+              style="width:90px; height:24px; padding:2px 6px; font-size:11.5px; font-family:var(--mono); background:var(--bg); border:1px solid var(--line); color:var(--text); border-radius:4px; outline:none; box-sizing:border-box;">
+          </div>
+        </div>
+
+        <!-- Calculated Result & Action Buttons -->
+        <div style="display:flex; align-items:center; gap:6px; margin-left:auto;">
+          <span style="font-size:11.5px; color:var(--sub); font-weight:600;">=</span>
+          <span id="m_calc_adj_result" style="font-size:13px; font-weight:700; font-family:var(--mono); color:var(--gold); min-width:35px; text-align:right;">—</span>
+          <button type="button" id="m_calc_adj_apply_btn" class="btn primary"
+            style="padding:2px 8px; font-size:10.5px; height:22px; line-height:1; background:var(--gold); color:#121822; font-weight:700; border:none; display:none;" title="Apply to Charges & STT above">Apply</button>
+        </div>
+      </div>
+      <div id="m_calc_adj_diff_note" style="font-size:10.5px; color:var(--dim); margin-top:4px; font-family:var(--sans); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+        Auto calculates on entering figures
+      </div>
+    </div>
     
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
       <button class="btn primary" id="m_updateRemarks" style="background:#2563eb; color:#fff; font-weight:600; padding:8px 18px;">Save Changes</button>
@@ -6330,6 +6389,114 @@
         renderShell();
         apiPost({ action: 'deleteTrade', id: t.id }).catch(err => { toast('Sync failed: ' + err.message, 'err'); });
       };
+
+      // Modal Brok+Charges adjustment Calculator logic
+      const mCalcDefBrokInput = $('#m_calc_adj_default_brok');
+      const mCalcJournalCashInput = $('#m_calc_adj_journal_cash');
+      const mCalcActualCashInput = $('#m_calc_adj_actual_cash');
+      const mCalcResultEl = $('#m_calc_adj_result');
+      const mCalcApplyBtn = $('#m_calc_adj_apply_btn');
+      const mCalcNoteEl = $('#m_calc_adj_diff_note');
+      const mCalcSyncCashBtn = $('#m_calc_adj_sync_cash');
+
+      let currentMCalculatedBrok = null;
+
+      function doRecalcModalAdjustment() {
+        if (!mCalcDefBrokInput || !mCalcJournalCashInput || !mCalcActualCashInput) return;
+
+        const parseVal = (str) => {
+          if (str == null) return NaN;
+          const clean = String(str).replace(/,/g, '').trim();
+          if (clean === '') return NaN;
+          const n = Number(clean);
+          return isNaN(n) ? NaN : n;
+        };
+
+        const defBrok = parseVal(mCalcDefBrokInput.value);
+        const jCash = parseVal(mCalcJournalCashInput.value);
+        const actCash = parseVal(mCalcActualCashInput.value);
+
+        try {
+          if (mCalcDefBrokInput.value.trim() !== '') sessionStorage.setItem('tj_calc_def_brok', mCalcDefBrokInput.value);
+          if (mCalcActualCashInput.value.trim() !== '') sessionStorage.setItem('tj_calc_act_cash', mCalcActualCashInput.value);
+        } catch (e) { }
+
+        if (isNaN(defBrok) || isNaN(jCash) || isNaN(actCash)) {
+          currentMCalculatedBrok = null;
+          if (mCalcResultEl) {
+            mCalcResultEl.textContent = '—';
+            mCalcResultEl.style.color = 'var(--dim)';
+          }
+          if (mCalcApplyBtn) mCalcApplyBtn.style.display = 'none';
+          if (mCalcNoteEl) {
+            if (isNaN(defBrok) && isNaN(actCash)) {
+              mCalcNoteEl.innerHTML = `<span style="color:var(--dim);">Enter Def Brok and Act Cash to calculate</span>`;
+            } else if (isNaN(defBrok)) {
+              mCalcNoteEl.innerHTML = `<span style="color:var(--dim);">Enter Def Brok</span>`;
+            } else if (isNaN(actCash)) {
+              mCalcNoteEl.innerHTML = `<span style="color:var(--dim);">Enter Act Cash</span>`;
+            } else {
+              mCalcNoteEl.innerHTML = `<span style="color:var(--dim);">Enter required values</span>`;
+            }
+          }
+          return;
+        }
+
+        // Formula: A + (B - C)
+        const diff = jCash - actCash;
+        const calculatedBrok = defBrok + diff;
+        const roundedBrok = Math.round(calculatedBrok * 100) / 100;
+        currentMCalculatedBrok = roundedBrok;
+        const displayVal = roundedBrok.toLocaleString('en-IN', {
+          minimumFractionDigits: (roundedBrok % 1 === 0 ? 0 : 2),
+          maximumFractionDigits: 2
+        });
+
+        if (mCalcResultEl) {
+          mCalcResultEl.textContent = displayVal;
+          mCalcResultEl.style.color = roundedBrok >= 0 ? 'var(--gold)' : 'var(--red)';
+        }
+
+        if (mCalcApplyBtn) {
+          mCalcApplyBtn.style.display = 'inline-flex';
+          mCalcApplyBtn.onclick = () => {
+            const brokInput = $('#m_brokerage');
+            if (brokInput && currentMCalculatedBrok !== null) {
+              brokInput.value = currentMCalculatedBrok;
+              brokInput.setAttribute('data-manual', 'true');
+              updateModalPnLAndRisk();
+              toast(`Applied ₹${currentMCalculatedBrok} to Charges & STT`, 'ok');
+            }
+          };
+        }
+
+        if (mCalcNoteEl) {
+          if (Math.abs(diff) < 0.005) {
+            mCalcNoteEl.innerHTML = `<span style="color:var(--green); font-weight:600;">✓ Exact match</span> <span style="color:var(--sub);">(Journal &amp; Actual cash equal)</span>`;
+          } else if (diff > 0) {
+            mCalcNoteEl.innerHTML = `<span style="color:var(--sub);">Journal cash higher by <strong>${fmtRs(diff)}</strong> → Brok +<strong>${fmtRs(diff)}</strong></span>`;
+          } else {
+            mCalcNoteEl.innerHTML = `<span style="color:var(--sub);">Journal cash lower by <strong>${fmtRs(Math.abs(diff))}</strong> → Brok −<strong>${fmtRs(Math.abs(diff))}</strong></span>`;
+          }
+        }
+      }
+
+      if (mCalcDefBrokInput) mCalcDefBrokInput.addEventListener('input', doRecalcModalAdjustment);
+      if (mCalcJournalCashInput) mCalcJournalCashInput.addEventListener('input', doRecalcModalAdjustment);
+      if (mCalcActualCashInput) mCalcActualCashInput.addEventListener('input', doRecalcModalAdjustment);
+
+      if (mCalcSyncCashBtn) {
+        mCalcSyncCashBtn.onclick = () => {
+          const freshCash = (capitalSnapshot() && !isNaN(capitalSnapshot().cash)) ? capitalSnapshot().cash : 0;
+          const val = (freshCash % 1 === 0) ? freshCash : Number(freshCash.toFixed(2));
+          mCalcJournalCashInput.value = val;
+          doRecalcModalAdjustment();
+          toast(`Journal Cash re-synced: ${fmtRs(val)}`, 'ok');
+        };
+      }
+
+      // Initial calculation run if values present
+      doRecalcModalAdjustment();
     }
     function closeModal() {
       const bg = document.getElementById('modalBg');
@@ -8267,16 +8434,11 @@
        ========================================================================= */
     function renderSettings(host) {
       const s = STATE.settings;
-      const snap = capitalSnapshot();
-      const liveCash = (snap && !isNaN(snap.cash)) ? snap.cash : 0;
-      const liveCashFormatted = (liveCash % 1 === 0) ? liveCash : Number(liveCash.toFixed(2));
-      const savedDefBrok = sessionStorage.getItem('tj_calc_def_brok') || '';
-      const savedActCash = sessionStorage.getItem('tj_calc_act_cash') || '';
       host.innerHTML = `
     <div class="page-head"><div><h1>Settings</h1><p>Risk parameters and connection details</p></div></div>
     
     <div style="max-width: 1140px; width: 100%; display: flex; flex-direction: column; gap: 14px;">
-      <!-- Row 1: General Settings (Left) & Brok+Charges adjustment Calculator (Right) -->
+      <!-- Row 1: General Settings (Left) & Broker Sync & Connection (Right) -->
       <div class="settings-top-grid">
         <!-- Card 1: General Settings -->
         <div class="panel" style="padding: 14px; margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
@@ -8340,81 +8502,6 @@
           </div>
         </div>
 
-        <!-- Card: Brok+Charges adjustment Calculator -->
-        <div class="panel" style="padding: 14px; margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
-          <div>
-            <div class="panel-head" style="margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
-              <div>
-                <h3 style="margin: 0; font-size: 13.5px; font-weight: 700;">Brok+Charges adjustment Calculator</h3>
-              </div>
-              <span class="badge" style="background: rgba(90, 169, 255, 0.12); color: var(--blue); border: 1px solid rgba(90, 169, 255, 0.28); font-size: 10px; padding: 2px 7px;">Auto Detect</span>
-            </div>
-
-            <div style="background: var(--bg); border: 1px solid var(--line); border-radius: 6px; overflow: hidden;">
-              <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                <tbody>
-                  <tr style="border-bottom: 1px solid var(--line-soft);">
-                    <td style="padding: 7px 10px; font-weight: 600; color: var(--sub); width: 50%; vertical-align: middle;">
-                      Default Brok+Charges
-                    </td>
-                    <td style="padding: 5px 8px; vertical-align: middle;">
-                      <input type="number" step="any" id="calc_adj_default_brok" value="${savedDefBrok}" placeholder="e.g. 260" 
-                        style="width: 100%; height: 26px; padding: 3px 8px; font-size: 12px; font-family: var(--mono); background: var(--panel); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
-                    </td>
-                  </tr>
-                  <tr style="border-bottom: 1px solid var(--line-soft);">
-                    <td style="padding: 7px 10px; font-weight: 600; color: var(--sub); vertical-align: middle;">
-                      <div style="display: flex; align-items: center; justify-content: space-between;">
-                        <span>Journal Cash Balance</span>
-                        <span style="font-size: 9.5px; color: var(--blue); background: rgba(90, 169, 255, 0.12); padding: 1px 5px; border-radius: 3px;">Auto</span>
-                      </div>
-                    </td>
-                    <td style="padding: 5px 8px; vertical-align: middle;">
-                      <div style="display: flex; align-items: center; gap: 4px;">
-                        <input type="number" step="any" id="calc_adj_journal_cash" value="${liveCashFormatted}" 
-                          style="flex: 1; min-width: 0; height: 26px; padding: 3px 8px; font-size: 12px; font-family: var(--mono); background: var(--panel); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
-                        <button type="button" id="calc_adj_sync_cash" title="Reset to live Journal Cash" class="btn ghost" 
-                          style="padding: 0 6px; height: 26px; min-height: 26px; font-size: 12px; color: var(--sub); line-height: 1;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--sub)'">↻</button>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr style="border-bottom: 1px solid var(--line);">
-                    <td style="padding: 7px 10px; font-weight: 600; color: var(--sub); vertical-align: middle;">
-                      <div style="display: flex; align-items: center; justify-content: space-between;">
-                        <span>Actual Cash Balance</span>
-                        <button type="button" id="calc_adj_use_dhan" title="Load from Dhan Cash in settings" 
-                          style="background: none; border: none; padding: 0; font-size: 10px; color: var(--gold); cursor: pointer; text-decoration: underline;">From Dhan</button>
-                      </div>
-                    </td>
-                    <td style="padding: 5px 8px; vertical-align: middle;">
-                      <input type="number" step="any" id="calc_adj_actual_cash" value="${savedActCash}" placeholder="e.g. 825100" 
-                        style="width: 100%; height: 26px; padding: 3px 8px; font-size: 12px; font-family: var(--mono); background: var(--panel); border: 1px solid var(--line); color: var(--text); border-radius: 4px; outline: none; box-sizing: border-box;">
-                    </td>
-                  </tr>
-                  <tr style="background: rgba(212, 162, 78, 0.08);">
-                    <td style="padding: 8px 10px; font-weight: 700; color: var(--text); vertical-align: middle; font-size: 12px;">
-                      Calculated Brok+Charges
-                    </td>
-                    <td style="padding: 5px 8px; vertical-align: middle;">
-                      <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
-                        <span id="calc_adj_result" style="font-size: 14px; font-weight: 700; font-family: var(--mono); color: var(--gold);">—</span>
-                        <button type="button" id="calc_adj_copy_btn" class="btn silver" 
-                          style="padding: 2px 7px; font-size: 10.5px; height: 22px; line-height: 1; border: 1px solid rgba(255, 255, 255, 0.25); display: none;" title="Copy to clipboard">Copy</button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div id="calc_adj_diff_note" style="font-size: 11px; color: var(--dim); margin-top: 8px; font-family: var(--sans);">
-            Auto calculates on entering figures
-          </div>
-        </div>
-      </div>
-
-      <!-- Row 2: Broker Sync (Left) & Dhan Report Verifier (Right) -->
-      <div class="settings-bottom-grid">
         <!-- Card 2: Broker Sync & Connection -->
         <div class="panel" style="padding: 14px; margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
           <div>
@@ -8434,47 +8521,45 @@
             <button class="btn ghost danger" id="disconnectBtn" style="padding: 4px 12px; font-size: 11.5px; height: 28px; width: auto;">Disconnect (Backend-GS)</button>
           </div>
         </div>
+      </div>
 
-        <!-- Card 3: Dhan Global Transaction Report Reconciler -->
-        <div class="panel" style="padding: 14px; margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
+      <!-- Row 2: Dhan Global Transaction Report Reconciler (Full Width) -->
+      <div class="panel" style="padding: 14px; margin-bottom: 0;">
+        <div class="panel-head" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
           <div>
-            <div class="panel-head" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-              <div>
-                <h3 style="margin: 0; font-size: 13.5px; font-weight: 700;">Dhan Report Verifier &amp; Reconciler</h3>
-                <p style="font-size: 11.5px; color: var(--dim); margin: 2px 0 0 0;">Upload your Dhan Global Transaction Report (.csv) to audit discrepancies</p>
-              </div>
-              <span class="badge" style="background: rgba(212, 162, 78, 0.15); color: var(--gold); border: 1px solid rgba(212, 162, 78, 0.3); font-size: 10.5px; padding: 2px 8px;">Audit Tool</span>
-            </div>
-
-            <div style="background: var(--bg); border: 1px dashed var(--line); border-radius: 6px; padding: 12px; text-align: center; margin: 8px 0; cursor: pointer; transition: all 0.2s;" id="dhanDropZone" onclick="$('#dhanFileInput').click()">
-              <input type="file" id="dhanFileInput" accept=".csv" style="display: none;">
-              <div style="font-size: 20px; margin-bottom: 4px;">📑</div>
-              <div style="font-size: 12px; font-weight: 500; color: var(--text);" id="dhanDropText">Click to select or drag &amp; drop Dhan_GlobalTransaction_Report.csv</div>
-              <div style="font-size: 10.5px; color: var(--dim); margin-top: 2px;">Supports Dhan Console CSV export</div>
-            </div>
+            <h3 style="margin: 0; font-size: 13.5px; font-weight: 700;">Dhan Report Verifier &amp; Reconciler</h3>
+            <p style="font-size: 11.5px; color: var(--dim); margin: 2px 0 0 0;">Upload your Dhan Global Transaction Report (.csv) to audit discrepancies</p>
           </div>
+          <span class="badge" style="background: rgba(212, 162, 78, 0.15); color: var(--gold); border: 1px solid rgba(212, 162, 78, 0.3); font-size: 10.5px; padding: 2px 8px;">Audit Tool</span>
+        </div>
 
-          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <label style="display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--sub); cursor: pointer;">
-                <input type="checkbox" id="dhanOmitEtfCheck" checked style="cursor: pointer; accent-color: var(--gold);">
-                Omit ETFs
-              </label>
-              <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--sub); background: rgba(255,255,255,0.03); border: 1px solid var(--line-soft); border-radius: 4px; padding: 2px 6px;">
-                <span>🔒 Up To:</span>
-                <input type="date" id="dhanCutoffDate" value="${(STATE.settings && STATE.settings.reconciledUpToDate) || '2026-08-31'}" style="height: 22px; padding: 0 4px; font-size: 11px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--text);">
-              </div>
-              ${Object.keys((STATE.settings && STATE.settings.customScripMap) || {}).length ? `
-                <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--dim); background: rgba(255,255,255,0.03); border: 1px solid var(--line-soft); border-radius: 4px; padding: 2px 6px;">
-                  <span>📚 Aliases: <strong>${Math.round(Object.keys(STATE.settings.customScripMap).length / 2) || 1}</strong></span>
-                  <button class="btn ghost" style="padding: 0 4px; font-size: 9.5px; color: var(--red); height: auto; min-height: auto;" onclick="clearCustomScripMap()" title="Reset learned stock aliases">✕</button>
-                </div>
-              ` : ''}
+        <div style="background: var(--bg); border: 1px dashed var(--line); border-radius: 6px; padding: 12px; text-align: center; margin: 8px 0; cursor: pointer; transition: all 0.2s;" id="dhanDropZone" onclick="$('#dhanFileInput').click()">
+          <input type="file" id="dhanFileInput" accept=".csv" style="display: none;">
+          <div style="font-size: 20px; margin-bottom: 4px;">📑</div>
+          <div style="font-size: 12px; font-weight: 500; color: var(--text);" id="dhanDropText">Click to select or drag &amp; drop Dhan_GlobalTransaction_Report.csv</div>
+          <div style="font-size: 10.5px; color: var(--dim); margin-top: 2px;">Supports Dhan Console CSV export</div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <label style="display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--sub); cursor: pointer;">
+              <input type="checkbox" id="dhanOmitEtfCheck" checked style="cursor: pointer; accent-color: var(--gold);">
+              Omit ETFs
+            </label>
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--sub); background: rgba(255,255,255,0.03); border: 1px solid var(--line-soft); border-radius: 4px; padding: 2px 6px;">
+              <span>🔒 Up To:</span>
+              <input type="date" id="dhanCutoffDate" value="${(STATE.settings && STATE.settings.reconciledUpToDate) || '2026-08-31'}" style="height: 22px; padding: 0 4px; font-size: 11px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--text);">
             </div>
-            <button class="btn silver" id="dhanVerifyBtn" style="padding: 4px 12px; font-size: 11.5px; height: auto;" disabled>
-              🔍 Verify Report
-            </button>
+            ${Object.keys((STATE.settings && STATE.settings.customScripMap) || {}).length ? `
+              <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--dim); background: rgba(255,255,255,0.03); border: 1px solid var(--line-soft); border-radius: 4px; padding: 2px 6px;">
+                <span>📚 Aliases: <strong>${Math.round(Object.keys(STATE.settings.customScripMap).length / 2) || 1}</strong></span>
+                <button class="btn ghost" style="padding: 0 4px; font-size: 9.5px; color: var(--red); height: auto; min-height: auto;" onclick="clearCustomScripMap()" title="Reset learned stock aliases">✕</button>
+              </div>
+            ` : ''}
           </div>
+          <button class="btn silver" id="dhanVerifyBtn" style="padding: 4px 12px; font-size: 11.5px; height: auto;" disabled>
+            🔍 Verify Report
+          </button>
         </div>
       </div>
     </div>
@@ -8519,128 +8604,6 @@
           localStorage.removeItem(CFG_KEY); location.reload();
         }
       };
-
-      // Brok+Charges adjustment Calculator logic
-      const calcDefBrokInput = $('#calc_adj_default_brok');
-      const calcJournalCashInput = $('#calc_adj_journal_cash');
-      const calcActualCashInput = $('#calc_adj_actual_cash');
-      const calcResultEl = $('#calc_adj_result');
-      const calcCopyBtn = $('#calc_adj_copy_btn');
-      const calcNoteEl = $('#calc_adj_diff_note');
-      const calcSyncCashBtn = $('#calc_adj_sync_cash');
-      const calcUseDhanBtn = $('#calc_adj_use_dhan');
-
-      function doRecalcAdjustment() {
-        if (!calcDefBrokInput || !calcJournalCashInput || !calcActualCashInput) return;
-
-        const parseVal = (str) => {
-          if (str == null) return NaN;
-          const clean = String(str).replace(/,/g, '').trim();
-          if (clean === '') return NaN;
-          const n = Number(clean);
-          return isNaN(n) ? NaN : n;
-        };
-
-        const defBrok = parseVal(calcDefBrokInput.value);
-        const jCash = parseVal(calcJournalCashInput.value);
-        const actCash = parseVal(calcActualCashInput.value);
-
-        try {
-          if (calcDefBrokInput.value.trim() !== '') sessionStorage.setItem('tj_calc_def_brok', calcDefBrokInput.value);
-          if (calcActualCashInput.value.trim() !== '') sessionStorage.setItem('tj_calc_act_cash', calcActualCashInput.value);
-        } catch (e) { }
-
-        if (isNaN(defBrok) || isNaN(jCash) || isNaN(actCash)) {
-          if (calcResultEl) {
-            calcResultEl.textContent = '—';
-            calcResultEl.style.color = 'var(--dim)';
-          }
-          if (calcCopyBtn) calcCopyBtn.style.display = 'none';
-          if (calcNoteEl) {
-            if (isNaN(defBrok) && isNaN(actCash)) {
-              calcNoteEl.innerHTML = `<span style="color:var(--dim);">Enter Default Brok and Actual Cash Balance to calculate</span>`;
-            } else if (isNaN(defBrok)) {
-              calcNoteEl.innerHTML = `<span style="color:var(--dim);">Enter Default Brok+Charges</span>`;
-            } else if (isNaN(actCash)) {
-              calcNoteEl.innerHTML = `<span style="color:var(--dim);">Enter Actual Cash Balance</span>`;
-            } else {
-              calcNoteEl.innerHTML = `<span style="color:var(--dim);">Enter required values</span>`;
-            }
-          }
-          return;
-        }
-
-        // Formula: A + (B - C)
-        const diff = jCash - actCash;
-        const calculatedBrok = defBrok + diff;
-        const roundedBrok = Math.round(calculatedBrok * 100) / 100;
-        const displayVal = roundedBrok.toLocaleString('en-IN', {
-          minimumFractionDigits: (roundedBrok % 1 === 0 ? 0 : 2),
-          maximumFractionDigits: 2
-        });
-
-        if (calcResultEl) {
-          calcResultEl.textContent = displayVal;
-          calcResultEl.style.color = roundedBrok >= 0 ? 'var(--gold)' : 'var(--red)';
-        }
-
-        if (calcCopyBtn) {
-          calcCopyBtn.style.display = 'inline-flex';
-          calcCopyBtn.onclick = () => {
-            const copyText = String(roundedBrok);
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-              navigator.clipboard.writeText(copyText).then(() => {
-                toast(`Copied ${copyText} to clipboard!`, 'ok');
-              }).catch(() => {
-                toast(`Result: ${copyText}`, 'ok');
-              });
-            } else {
-              toast(`Result: ${copyText}`, 'ok');
-            }
-          };
-        }
-
-        if (calcNoteEl) {
-          if (Math.abs(diff) < 0.005) {
-            calcNoteEl.innerHTML = `<span style="color:var(--green); font-weight:600;">✓ Exact match</span> <span style="color:var(--sub);">(Journal &amp; Actual cash are equal)</span>`;
-          } else if (diff > 0) {
-            calcNoteEl.innerHTML = `<span style="color:var(--sub);">Journal cash is higher by <strong>${fmtRs(diff)}</strong> → Brok increased by <strong>${fmtRs(diff)}</strong></span>`;
-          } else {
-            calcNoteEl.innerHTML = `<span style="color:var(--sub);">Journal cash is lower by <strong>${fmtRs(Math.abs(diff))}</strong> → Brok reduced by <strong>${fmtRs(Math.abs(diff))}</strong></span>`;
-          }
-        }
-      }
-
-      if (calcDefBrokInput) calcDefBrokInput.addEventListener('input', doRecalcAdjustment);
-      if (calcJournalCashInput) calcJournalCashInput.addEventListener('input', doRecalcAdjustment);
-      if (calcActualCashInput) calcActualCashInput.addEventListener('input', doRecalcAdjustment);
-
-      if (calcSyncCashBtn) {
-        calcSyncCashBtn.onclick = () => {
-          const freshCash = (capitalSnapshot() && !isNaN(capitalSnapshot().cash)) ? capitalSnapshot().cash : 0;
-          const val = (freshCash % 1 === 0) ? freshCash : Number(freshCash.toFixed(2));
-          calcJournalCashInput.value = val;
-          doRecalcAdjustment();
-          toast(`Journal Cash re-synced: ${fmtRs(val)}`, 'ok');
-        };
-      }
-
-      if (calcUseDhanBtn) {
-        calcUseDhanBtn.onclick = () => {
-          const dhanInput = $('#s_dhancash');
-          const val = dhanInput ? dhanInput.value : ((STATE.settings && STATE.settings.dhanCash != null) ? STATE.settings.dhanCash : '');
-          if (val !== '' && val != null) {
-            calcActualCashInput.value = val;
-            doRecalcAdjustment();
-            toast(`Loaded Dhan Cash: ${fmtRs(Number(val))}`, 'ok');
-          } else {
-            toast('Dhan Cash is empty in General Settings', 'warn');
-          }
-        };
-      }
-
-      // Initial calculation run if values present
-      doRecalcAdjustment();
 
       let _uploadedDhanCsv = null;
       const dhanFileInput = $('#dhanFileInput');
