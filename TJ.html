@@ -5489,8 +5489,9 @@
       const snap = capitalSnapshot();
       const liveCash = (snap && !isNaN(snap.cash)) ? snap.cash : 0;
       const liveCashFormatted = (liveCash % 1 === 0) ? liveCash : Number(liveCash.toFixed(2));
-      const savedDefBrok = sessionStorage.getItem('tj_calc_def_brok') || getDefaultTradeBrokerage(t) || '';
+      const initialBrok = getDefaultTradeBrokerage(t) != null ? getDefaultTradeBrokerage(t) : '';
       const savedActCash = sessionStorage.getItem('tj_calc_act_cash') || ((STATE.settings && STATE.settings.dhanCash != null) ? STATE.settings.dhanCash : '');
+      try { sessionStorage.removeItem('tj_calc_def_brok'); } catch (e) { }
 
       $('#modalBody').innerHTML = `
     <div class="modal-head">
@@ -5756,7 +5757,7 @@
           <!-- Def Brok -->
           <div style="display:flex; align-items:center; gap:4px;">
             <label for="m_calc_adj_default_brok" style="font-size:11px; color:var(--dim); margin:0; font-weight:600; white-space:nowrap;" title="CurrentBrok+Charges">C.Brok:</label>
-            <input type="number" step="any" id="m_calc_adj_default_brok" value="${savedDefBrok}" placeholder="Brok"
+            <input type="number" step="any" id="m_calc_adj_default_brok" value="${initialBrok}" placeholder="Brok"
               style="width:70px; height:24px; padding:2px 6px; font-size:11.5px; font-family:var(--mono); background:var(--bg); border:1px solid var(--line); color:var(--text); border-radius:4px; outline:none; box-sizing:border-box;">
           </div>
 
@@ -5801,7 +5802,8 @@
       $('#mClose').onclick = closeModal;
       $('#modalBg').onclick = (e) => { if (e.target.id === 'modalBg') closeModal(); };
 
-      const updateModalPnLAndRisk = () => {
+      let doRecalcModalAdjustment;
+      const updateModalPnLAndRisk = (skipAdjSync = false) => {
         const brokInputVal = parseFloat($('#m_brokerage')?.value);
         const currentTotalBrok = !isNaN(brokInputVal) ? brokInputVal : getDefaultTradeBrokerage(t);
         const counts = getTradeTrancheCounts(t);
@@ -5886,6 +5888,17 @@
           mBrokEl.value = autoCharges;
         }
 
+        // Keep Adj Calc C.Brok filled with the same amount as Charges & STT (₹)
+        if (!skipAdjSync) {
+          const mCalcDefBrokInput = $('#m_calc_adj_default_brok');
+          if (mCalcDefBrokInput && mBrokEl && mBrokEl.value !== '') {
+            mCalcDefBrokInput.value = mBrokEl.value;
+            if (typeof doRecalcModalAdjustment === 'function') {
+              doRecalcModalAdjustment();
+            }
+          }
+        }
+
         // Update read-only inputs in real-time
         if ($('#m_avgBuyPrice')) $('#m_avgBuyPrice').value = fmt(tempAvgBuy);
         if ($('#m_totBuyQty')) $('#m_totBuyQty').value = fmt(tempTotQty);
@@ -5947,6 +5960,13 @@
             $('#m_brokerage').setAttribute('data-manual', 'true');
           }
           updateModalPnLAndRisk();
+          const mCalcDefBrok = $('#m_calc_adj_default_brok');
+          if (mCalcDefBrok) {
+            mCalcDefBrok.value = $('#m_brokerage').value;
+            if (typeof doRecalcModalAdjustment === 'function') {
+              doRecalcModalAdjustment();
+            }
+          }
         };
       }
       if ($('#m_slPrice')) $('#m_slPrice').oninput = updateModalPnLAndRisk;
@@ -6401,7 +6421,7 @@
 
       let currentMCalculatedBrok = null;
 
-      function doRecalcModalAdjustment() {
+      doRecalcModalAdjustment = function() {
         if (!mCalcDefBrokInput || !mCalcJournalCashInput || !mCalcActualCashInput) return;
 
         const parseVal = (str) => {
@@ -6417,7 +6437,6 @@
         const actCash = parseVal(mCalcActualCashInput.value);
 
         try {
-          if (mCalcDefBrokInput.value.trim() !== '') sessionStorage.setItem('tj_calc_def_brok', mCalcDefBrokInput.value);
           if (mCalcActualCashInput.value.trim() !== '') sessionStorage.setItem('tj_calc_act_cash', mCalcActualCashInput.value);
         } catch (e) { }
 
@@ -6464,7 +6483,7 @@
             if (brokInput && currentMCalculatedBrok !== null) {
               brokInput.value = currentMCalculatedBrok;
               brokInput.setAttribute('data-manual', 'true');
-              updateModalPnLAndRisk();
+              updateModalPnLAndRisk(true);
               toast(`Applied ₹${currentMCalculatedBrok} to Charges & STT`, 'ok');
             }
           };
@@ -6495,7 +6514,8 @@
         };
       }
 
-      // Initial calculation run if values present
+      // Initial calculation run & sync
+      updateModalPnLAndRisk();
       doRecalcModalAdjustment();
     }
     function closeModal() {
