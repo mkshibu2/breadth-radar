@@ -64,7 +64,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 16px;
+      padding: 0 clamp(20px, 3.2vw, 52px);
       height: 42px;
       background: var(--bg2);
       border-bottom: 1px solid var(--border);
@@ -163,7 +163,7 @@
       display: flex;
       align-items: center;
       gap: 5px;
-      padding: 4px 16px;
+      padding: 4px clamp(20px, 3.2vw, 52px);
       background: var(--bg2);
       border-bottom: 1px solid var(--border);
       flex-wrap: wrap
@@ -490,11 +490,14 @@
     }
 
     .page {
-      padding: 10px 12px;
+      padding: 12px clamp(20px, 3.2vw, 52px);
       display: flex;
       flex-direction: column;
       gap: 8px;
-      max-width: 100%;
+      max-width: 1760px;
+      margin: 0 auto;
+      width: 100%;
+      box-sizing: border-box;
       overflow: hidden
     }
 
@@ -509,18 +512,17 @@
 
     .analysis-strip {
       display: grid;
-      grid-template-columns: minmax(315px, 1fr) 175px 145px 155px 135px 155px 140px 150px;
+      grid-template-columns: minmax(230px, 1.85fr) repeat(7, minmax(0, 1fr));
       background: var(--bg3);
       border: 1px solid var(--border);
       border-top: none;
       border-radius: 0 0 6px 6px;
-      overflow-x: auto;
-      overflow-y: hidden;
+      overflow: hidden;
       margin-bottom: 0
     }
 
     .as-cell {
-      padding: 12px 16px;
+      padding: 10px 12px;
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
@@ -2664,6 +2666,29 @@
       }
     }
 
+    @media(max-width:1150px) {
+      .analysis-strip {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .analysis-strip > .as-cell:first-child {
+        grid-column: 1 / -1;
+        border-bottom: 1px solid var(--border);
+        border-right: none;
+      }
+      .analysis-strip > .as-cell {
+        border-bottom: 1px solid var(--border);
+      }
+      .analysis-strip > .as-cell:nth-child(5n) {
+        border-right: none;
+      }
+      .analysis-strip > .as-cell:last-child {
+        border-right: none;
+      }
+      .analysis-strip > .as-cell:nth-child(n+6) {
+        border-bottom: none;
+      }
+    }
+
     @media(max-width:900px) {
       .dash-grid {
         grid-template-columns: 1fr
@@ -2714,7 +2739,23 @@
       }
 
       .analysis-strip {
-        grid-template-columns: minmax(315px, 1fr) 175px 145px 155px 135px 155px 140px 150px
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .analysis-strip > .as-cell:first-child {
+        grid-column: 1 / -1;
+        border-bottom: 1px solid var(--border);
+        border-right: none;
+      }
+      .analysis-strip > .as-cell {
+        border-bottom: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+      }
+      .analysis-strip > .as-cell:nth-child(2n) {
+        border-right: none;
+      }
+      .analysis-strip > .as-cell:last-child,
+      .analysis-strip > .as-cell:nth-last-child(2) {
+        border-bottom: none;
       }
 
       .msem-grid {
