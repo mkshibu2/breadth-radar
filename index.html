@@ -1391,7 +1391,8 @@
                     <div class="msem-exp-fill" id="msem-exp-fill" style="width:0%"></div>
                   </div>
                   <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim);margin-top:2px">
-                    <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+                    <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+                  </div>
                 </div>
                 <div style="font-size:11px;color:var(--sub);line-height:1.5" id="msem-exp-note">Save EOD data to
                   calculate exposure.</div>
@@ -1451,20 +1452,79 @@
         <div class="card" id="bsr-module-card" style="border-top:2px solid var(--purple)">
           <div class="card-head">
             <div class="card-title">
-              <span style="color:var(--purple)">Breakout Trade Log (BSR)</span>
+              <span style="color:var(--purple)">Breakout Success Rate (BSR)</span>
               <button class="info-btn" onclick="showInfoTip('bsr-tracker',this)" title="About this indicator">i</button>
             </div>
-            <span style="font-size:9px;color:var(--sub)">✓ Success ≥5% above pivot · ✗ Fail: close below pivot after 3d
-              · ⏳ Stale: pending >60d</span>
+            <span style="font-size:9px;color:var(--sub)">✓ Win ≥5% above pivot · ✗ Loss: hit stop / close below pivot · ⏳ Stale: pending >60d</span>
           </div>
 
-          <div class="bsr-filter-row" id="bsr-filter-row">
-            <button class="bsr-filter-btn active" id="bsr-f-all" onclick="bsrSetFilter('all')">All</button>
-            <button class="bsr-filter-btn" id="bsr-f-pending" onclick="bsrSetFilter('pending')">⏳ Pending</button>
-            <button class="bsr-filter-btn" id="bsr-f-success" onclick="bsrSetFilter('success')">✓ Success</button>
-            <button class="bsr-filter-btn" id="bsr-f-failed" onclick="bsrSetFilter('failed')">✗ Failed</button>
-            <button class="bsr-filter-btn" id="bsr-f-stale" onclick="bsrSetFilter('stale')">⏳ Stale</button>
-            <span class="bsr-filter-label" id="bsr-filter-label"></span>
+          <!-- BSR Mode Selector -->
+          <div class="bsr-mode-selector-wrap">
+            <div class="bsr-mode-selector">
+              <button type="button" class="bsr-mode-tab active" id="bsr-mode-btn-quick" onclick="bsrSetMode('quick')">
+                <span>⚡</span> Quick Ratio (/10)
+              </button>
+              <button type="button" class="bsr-mode-tab" id="bsr-mode-btn-log" onclick="bsrSetMode('log')">
+                <span>📋</span> Detailed Trade Log
+              </button>
+            </div>
+            <span class="bsr-active-source-badge" id="bsr-source-badge">⚡ Active: Quick Ratio (/10)</span>
+          </div>
+
+          <!-- Quick Ratio Panel -->
+          <div id="bsr-quick-panel" class="bsr-quick-panel">
+            <div class="bsr-quick-grid">
+              <div class="bsr-quick-box bsr-box-won">
+                <div class="bsr-quick-header">
+                  <span class="bsr-quick-tag tag-won">WIN</span>
+                  <label for="bsr-quick-won">Won Break Outs</label>
+                </div>
+                <div class="bsr-quick-input-wrap">
+                  <input type="number" id="bsr-quick-won" min="0" max="10" step="1" placeholder="7"
+                    oninput="bsrQuickOnInput('won')" onchange="bsrQuickSaveAndApply()">
+                  <span class="bsr-quick-denom">/ 10</span>
+                </div>
+                <div class="bsr-quick-hint">Breakouts gaining ≥ 5%</div>
+              </div>
+
+              <div class="bsr-quick-box bsr-box-lost">
+                <div class="bsr-quick-header">
+                  <span class="bsr-quick-tag tag-lost">LOSS</span>
+                  <label for="bsr-quick-lost">Lost Break Outs</label>
+                </div>
+                <div class="bsr-quick-input-wrap">
+                  <input type="number" id="bsr-quick-lost" min="0" max="10" step="1" placeholder="3"
+                    oninput="bsrQuickOnInput('lost')" onchange="bsrQuickSaveAndApply()">
+                  <span class="bsr-quick-denom">/ 10</span>
+                </div>
+                <div class="bsr-quick-hint">Stopped out or failed</div>
+              </div>
+
+              <div class="bsr-quick-calc-box">
+                <div class="bsr-qcalc-lbl">Derived BSR Score</div>
+                <div class="bsr-qcalc-val" id="bsr-qcalc-val">—</div>
+                <div class="bsr-qcalc-zone" id="bsr-qcalc-zone">Enter Won/Lost</div>
+                <div class="bsr-quick-btn-row">
+                  <button type="button" class="btn-bsr-apply" onclick="bsrQuickSaveAndApply()">✓ Apply Score</button>
+                  <button type="button" class="btn-bsr-reset" onclick="bsrQuickReset()" title="Reset inputs">↺ Clear</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Presets -->
+            <div class="bsr-quick-presets">
+              <span class="bsr-qp-lbl">1-Click Presets:</span>
+              <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(8,2)">8 Won (80%)</button>
+              <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(7,3)">7 Won (70%)</button>
+              <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(6,4)">6 Won (60%)</button>
+              <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(5,5)">5 Won (50%)</button>
+              <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(4,6)">4 Won (40%)</button>
+              <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(3,7)">3 Won (30%)</button>
+            </div>
+            <div class="bsr-quick-note">
+              💡 <b>Direct Entry:</b> Derive your BSR Score instantly without filling individual trade logs. Automatically syncs to Top Status Strip, RPG Arc Gauge, and Market Summary.
+            </div>
+            <div id="bsr-sync-indicator" style="font-size:10px;margin-top:6px;font-weight:600;display:flex;align-items:center;gap:6px"></div>
           </div>
 
           <div class="bsr-hero">
@@ -1510,8 +1570,18 @@
             </div>
           </div>
 
-          <div class="bsr-add-form">
-            <div class="bsr-form-grid">
+          <div id="bsr-log-controls" style="display:none">
+            <div class="bsr-filter-row" id="bsr-filter-row">
+              <button class="bsr-filter-btn active" id="bsr-f-all" onclick="bsrSetFilter('all')">All</button>
+              <button class="bsr-filter-btn" id="bsr-f-pending" onclick="bsrSetFilter('pending')">⏳ Pending</button>
+              <button class="bsr-filter-btn" id="bsr-f-success" onclick="bsrSetFilter('success')">✓ Success</button>
+              <button class="bsr-filter-btn" id="bsr-f-failed" onclick="bsrSetFilter('failed')">✗ Failed</button>
+              <button class="bsr-filter-btn" id="bsr-f-stale" onclick="bsrSetFilter('stale')">⏳ Stale</button>
+              <span class="bsr-filter-label" id="bsr-filter-label"></span>
+            </div>
+
+            <div class="bsr-add-form">
+              <div class="bsr-form-grid">
               <div class="bsr-field">
                 <label>Symbol</label>
                 <input type="text" id="bsr-sym" placeholder="RELIANCE" style="text-transform:uppercase">
@@ -1545,6 +1615,7 @@
             <div style="font-size:11px;opacity:0;transition:opacity .4s;margin-top:4px;min-height:16px" id="bsr-msg">
             </div>
           </div>
+        </div>
 
           <div class="card-head" style="border-top:1px solid var(--border);cursor:pointer"
             onclick="toggleCollapse('bsr-table-collapsible','bsr-toggle-icon')">
@@ -2650,5 +2721,7 @@
   </div>
 
 </body>
+
+</html>
 
 </html>

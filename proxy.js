@@ -1,8 +1,6 @@
 const http = require('http');
 const https = require('https');
 const url = require('url');
-const fs = require('fs');
-const path = require('path');
 
 const PORT = 9090;
 
@@ -11,7 +9,6 @@ const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, access-token, client-id');
-  res.setHeader('Access-Control-Allow-Private-Network', 'true');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
@@ -20,80 +17,6 @@ const server = http.createServer((req, res) => {
   }
 
   const parsedUrl = url.parse(req.url, true);
-  const pathname = parsedUrl.pathname;
-
-  // Serve static files from current directory
-  if (!pathname.startsWith('/dhan/') && !parsedUrl.query.url && !pathname.startsWith('/local/') && !pathname.startsWith('/local-api/')) {
-    const safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
-    const filePath = path.join(__dirname, safePath === '/' ? '/index.html' : safePath);
-    
-    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-      const ext = path.extname(filePath).toLowerCase();
-      let contentType = 'text/plain';
-      if (ext === '.html') contentType = 'text/html';
-      else if (ext === '.css') contentType = 'text/css';
-      else if (ext === '.js') contentType = 'text/javascript';
-      else if (ext === '.json') contentType = 'application/json';
-      else if (ext === '.png') contentType = 'image/png';
-      else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
-      else if (ext === '.svg') contentType = 'image/svg+xml';
-      else if (ext === '.ico') contentType = 'image/x-icon';
-
-      res.writeHead(200, { 'Content-Type': contentType });
-      fs.createReadStream(filePath).pipe(res);
-      return;
-    }
-  }
-
-  // 1.25. Route local API requests (starts with /local-api/)
-  if (parsedUrl.pathname.startsWith('/local-api/')) {
-    const apiPath = parsedUrl.pathname.replace('/local-api/', '');
-    
-    if (apiPath === 'fetch-eod') {
-      const dateVal = parsedUrl.query.date || 'today';
-      const { exec } = require('child_process');
-      const cmd = `python automate_eod.py --date "${dateVal}"`;
-      
-      console.log(`[Local API] Running: ${cmd}`);
-      exec(cmd, (error, stdout, stderr) => {
-        if (error) {
-          console.error(`Error running automate_eod.py: ${error.message}`);
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: error.message, stderr: stderr }));
-          return;
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(stdout);
-      });
-      return;
-    }
-  }
-
-  // 1.5. Route local file requests (starts with /local/)
-  if (parsedUrl.pathname.startsWith('/local/')) {
-    const filename = parsedUrl.pathname.replace('/local/', '');
-    const fs = require('fs');
-    const path = require('path');
-    const filePath = path.join(__dirname, filename);
-    
-    // Safety check to prevent directory traversal
-    if (filePath.startsWith(__dirname)) {
-      fs.readFile(filePath, (err, data) => {
-        if (err) {
-          res.writeHead(404, { 'Content-Type': 'text/plain' });
-          res.end(`File not found: ${filename}`);
-        } else {
-          let contentType = 'text/plain';
-          if (filename.endsWith('.json')) contentType = 'application/json';
-          else if (filename.endsWith('.csv')) contentType = 'text/csv';
-          else if (filename.endsWith('.html')) contentType = 'text/html';
-          res.writeHead(200, { 'Content-Type': contentType });
-          res.end(data);
-        }
-      });
-      return;
-    }
-  }
 
   // 1. Route Dhan requests (starts with /dhan/)
   if (parsedUrl.pathname.startsWith('/dhan/')) {
