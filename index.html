@@ -16,7 +16,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@600;700;800&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="index.css?v=2.4.2">
 </head>
 
 <body>
@@ -1524,7 +1524,7 @@
             <div class="bsr-quick-note">
               💡 <b>Direct Entry:</b> Derive your BSR Score instantly without filling individual trade logs. Automatically syncs to Top Status Strip, RPG Arc Gauge, and Market Summary.
             </div>
-            <div id="bsr-sync-indicator" style="font-size:10px;margin-top:6px;font-weight:600;display:flex;align-items:center;gap:6px"></div>
+            <div id="bsr-save-flash" style="font-size:11px;margin-top:8px;font-weight:700;color:var(--lime);display:none;opacity:0;transition:opacity .35s;align-items:center;gap:6px">✓ BSR Score Saved</div>
           </div>
 
           <div class="bsr-hero">
@@ -1570,7 +1570,8 @@
             </div>
           </div>
 
-          <div id="bsr-log-controls" style="display:none">
+          <!-- Detailed Trade Log Section -->
+          <div id="bsr-log-section" style="display:none">
             <div class="bsr-filter-row" id="bsr-filter-row">
               <button class="bsr-filter-btn active" id="bsr-f-all" onclick="bsrSetFilter('all')">All</button>
               <button class="bsr-filter-btn" id="bsr-f-pending" onclick="bsrSetFilter('pending')">⏳ Pending</button>
@@ -1582,54 +1583,50 @@
 
             <div class="bsr-add-form">
               <div class="bsr-form-grid">
-              <div class="bsr-field">
-                <label>Symbol</label>
-                <input type="text" id="bsr-sym" placeholder="RELIANCE" style="text-transform:uppercase">
+                <div class="bsr-field">
+                  <label>Symbol</label>
+                  <input type="text" id="bsr-sym" placeholder="RELIANCE" style="text-transform:uppercase">
+                </div>
+                <div class="bsr-field">
+                  <label>Pivot &#8377;</label>
+                  <input type="number" id="bsr-pivot" placeholder="2450.00" step="0.05" min="0">
+                </div>
+                <div class="bsr-field">
+                  <label>Stop Loss &#8377;</label>
+                  <input type="number" id="bsr-stop" placeholder="auto (-5%)" step="0.05" min="0">
+                </div>
+                <div class="bsr-field">
+                  <label>Current &#8377;</label>
+                  <input type="number" id="bsr-curr" placeholder="2510.00" step="0.05" min="0">
+                </div>
+                <div class="bsr-field">
+                  <label>Breakout Date</label>
+                  <input type="date" id="bsr-date">
+                </div>
+                <div style="display:flex;align-items:flex-end">
+                  <button class="btn-bsr-add" onclick="bsrAdd()">+ Add Trade</button>
+                </div>
               </div>
-              <div class="bsr-field">
-                <label>Pivot &#8377;</label>
-                <input type="number" id="bsr-pivot" placeholder="2450.00" step="0.05" min="0">
+              <div style="font-size:8.5px;color:var(--sub);margin-top:4px">
+                &#9432; Click any price in table to update &nbsp;|&nbsp; <b style="color:var(--lime)">Success:</b>
+                ≥Pivot×1.05 &nbsp;|&nbsp; <b style="color:var(--red)">Fail:</b> ≤Stop Loss &nbsp;|&nbsp; <b
+                  style="color:var(--yellow)">Pending:</b> Active &nbsp;|&nbsp; <b
+                  style="color:var(--teal)">Expectancy:</b> Avg R of resolved trades
               </div>
-              <div class="bsr-field">
-                <label>Stop Loss &#8377;</label>
-                <input type="number" id="bsr-stop" placeholder="auto (-5%)" step="0.05" min="0">
-              </div>
-              <div class="bsr-field">
-                <label>Current &#8377;</label>
-                <input type="number" id="bsr-curr" placeholder="2510.00" step="0.05" min="0">
-              </div>
-              <div class="bsr-field">
-                <label>Breakout Date</label>
-                <input type="date" id="bsr-date">
-              </div>
-              <div style="display:flex;align-items:flex-end">
-                <button class="btn-bsr-add" onclick="bsrAdd()">+ Add Trade</button>
+              <div style="font-size:11px;opacity:0;transition:opacity .4s;margin-top:4px;min-height:16px" id="bsr-msg">
               </div>
             </div>
-            <div style="font-size:8.5px;color:var(--sub);margin-top:4px">
-              &#9432; Click any price in table to update &nbsp;|&nbsp; <b style="color:var(--lime)">Success:</b>
-              ≥Pivot×1.05 &nbsp;|&nbsp; <b style="color:var(--red)">Fail:</b> ≤Stop Loss &nbsp;|&nbsp; <b
-                style="color:var(--yellow)">Pending:</b> Active &nbsp;|&nbsp; <b
-                style="color:var(--teal)">Expectancy:</b> Avg R of resolved trades
-            </div>
-            <div style="font-size:11px;opacity:0;transition:opacity .4s;margin-top:4px;min-height:16px" id="bsr-msg">
-            </div>
-          </div>
-        </div>
 
-          <div class="card-head" style="border-top:1px solid var(--border);cursor:pointer"
-            onclick="toggleCollapse('bsr-table-collapsible','bsr-toggle-icon')">
-            <div class="card-title">BSR Trade Log</div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <button class="info-btn" onclick="event.stopPropagation();showInfoTip('bsr-tracker',this)"
-                title="About this indicator">i</button>
-              <button class="card-action btn-export" onclick="event.stopPropagation();bsrExport()"
-                style="border-color:rgba(167,139,250,.28);color:var(--purple)">&#8595; Export CSV</button>
-              <span id="bsr-toggle-icon"
-                style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block">&#9660;</span>
+            <div class="card-head" style="border-top:1px solid var(--border);padding:8px 12px">
+              <div class="card-title" style="font-size:12px">BSR Trade Log</div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <button class="info-btn" onclick="showInfoTip('bsr-tracker',this)"
+                  title="About this indicator">i</button>
+                <button class="card-action btn-export" onclick="bsrExport()"
+                  style="border-color:rgba(167,139,250,.28);color:var(--purple)">&#8595; Export CSV</button>
+              </div>
             </div>
-          </div>
-          <div id="bsr-table-collapsible" style="display:none">
+
             <div class="bsr-table-wrap">
               <table class="bsr-table">
                 <thead>
@@ -1704,7 +1701,7 @@
     </div>
   </div>
 
-  <script src="index.js"></script>
+  <script src="index.js?v=2.4.2"></script>
 
   <div id="sector-drill-overlay"
     style="display:none;position:fixed;inset:0;background:rgba(3,3,5,.85);z-index:5000;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)"

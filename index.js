@@ -165,7 +165,7 @@ const _mem = {}; const _store = (() => {
 }; const lsDel = k => {
   if (_store) try { _store.removeItem(k); } catch (e) { }
   delete _mem[k];
-}; const LS_DATA = 'nse_breadth_v3'; const LS_KEY = 'nse_jb_key'; const LS_BIN = 'nse_jb_bin'; const loadLocal = () => { try { return JSON.parse(lsGet(LS_DATA)) || []; } catch (e) { return []; } }; const saveLocal = d => lsSet(LS_DATA, JSON.stringify(d.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 150))); const LS_BSR = 'nse_bsr_v1'; const LS_BSR_MODE = 'nse_bsr_mode_v1'; const LS_BSR_QUICK = 'nse_bsr_quick_v1'; const bsrLoad = () => { try { return JSON.parse(lsGet(LS_BSR)) || []; } catch (e) { return []; } }; const bsrSave = d => lsSet(LS_BSR, JSON.stringify(d)); const bsrGetMode = () => lsGet(LS_BSR_MODE) || 'quick'; const bsrSetMode = (m) => { lsSet(LS_BSR_MODE, m); bsrUpdateModeUI(); bsrRenderAll(); renderRPG(); renderMarketSummary(); renderMarketCycle(); pushToCloud(); }; const bsrQuickLoad = () => { try { return JSON.parse(lsGet(LS_BSR_QUICK)) || { won: null, lost: null, total: 10 }; } catch (e) { return { won: null, lost: null, total: 10 }; } }; const bsrQuickSave = d => lsSet(LS_BSR_QUICK, JSON.stringify(d)); const LS_SRT = 'nse_srt_v1'; const LS_CAPITAL = 'nse_capital_v1'; const getCapital = () => { const v = parseInt(localStorage.getItem(LS_CAPITAL)); return (!isNaN(v) && v > 0) ? v : 500000; }; const setCapital = v => localStorage.setItem(LS_CAPITAL, v); function capitalSave() {
+}; const LS_DATA = 'nse_breadth_v3'; const LS_KEY = 'nse_jb_key'; const LS_BIN = 'nse_jb_bin'; const loadLocal = () => { try { return JSON.parse(lsGet(LS_DATA)) || []; } catch (e) { return []; } }; const saveLocal = d => lsSet(LS_DATA, JSON.stringify(d.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 150))); const LS_BSR = 'nse_bsr_v1'; const LS_BSR_MODE = 'nse_bsr_mode_v1'; const LS_BSR_QUICK = 'nse_bsr_quick_v1'; const bsrLoad = () => { try { return JSON.parse(lsGet(LS_BSR)) || []; } catch (e) { return []; } }; const bsrSave = d => lsSet(LS_BSR, JSON.stringify(d)); const bsrGetMode = () => { const m = lsGet(LS_BSR_MODE); if (m === 'quick' || m === 'log') return m; const q = bsrQuickLoad(); if (q && q.won !== null && q.won !== undefined && q.won !== '') return 'quick'; if (bsrLoad().length > 0) return 'log'; return 'quick'; }; const bsrSetMode = (m) => { lsSet(LS_BSR_MODE, m); bsrUpdateModeUI(); bsrRenderAll(); renderRPG(); renderMarketSummary(); renderMarketCycle(); pushToCloud(); }; const bsrQuickLoad = () => { try { return JSON.parse(lsGet(LS_BSR_QUICK)) || { won: null, lost: null, total: 10 }; } catch (e) { return { won: null, lost: null, total: 10 }; } }; const bsrQuickSave = d => lsSet(LS_BSR_QUICK, JSON.stringify(d)); const LS_SRT = 'nse_srt_v1'; const LS_CAPITAL = 'nse_capital_v1'; const getCapital = () => { const v = parseInt(localStorage.getItem(LS_CAPITAL)); return (!isNaN(v) && v > 0) ? v : 500000; }; const setCapital = v => localStorage.setItem(LS_CAPITAL, v); function capitalSave() {
   const inp = document.getElementById('capital-input'); if (!inp) return; const val = parseInt(inp.value); if (isNaN(val) || val < 10000) { inp.style.borderColor = 'var(--red)'; setTimeout(() => { inp.style.borderColor = 'var(--border)'; }, 1500); return; }
   setCapital(val); inp.style.borderColor = 'var(--teal)'; setTimeout(() => { inp.style.borderColor = 'var(--border)'; }, 1500); renderMarketSummary();
 }
@@ -1210,12 +1210,12 @@ async function testConnection() {
 async function pullFromCloud(key, bin) {
   const cfg = key ? { key, bin } : getCfg(); if (!cfg.key || !cfg.bin) { setupFlash('No credentials configured', 'var(--orange)'); return; }
   setSyncStatus('syncing', 'Pulling…'); try {
-    const raw = await jbRead(cfg.key, cfg.bin); const cloudRecs = Array.isArray(raw) ? raw : (raw.records || []); const cloudBsr = Array.isArray(raw) ? [] : (raw.bsr || []); const cloudMpm = Array.isArray(raw) ? [] : (raw.mpm || []); const cloudFtd = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd || []) : []; const cloudSrt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.srt || []) : []; saveLocal(mergeByKey(cloudRecs, loadLocal(), r => r.date)); bsrSave(mergeByKey(cloudBsr, bsrLoad(), t => t.id)); mpmSave(mergeByKey(cloudMpm, mpmLoad(), d => d.date)); srtSave(mergeByKey(cloudSrt, srtLoad(), s => s.id)); const mergedFtd = mergeByKey(cloudFtd, ftdLoad(), d => d.id).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ftdScanUndercutAll(); if (typeof raw === 'object' && !Array.isArray(raw)) { if (raw.bsrMode) lsSet(LS_BSR_MODE, raw.bsrMode); if (raw.bsrQuick) bsrQuickSave(raw.bsrQuick); } const cloudWatchlists = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccWatchlists : null; const cloudSymbolFlags = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccSymbolFlags : null; if (cloudWatchlists) {
+    const raw = await jbRead(cfg.key, cfg.bin); const cloudRecs = Array.isArray(raw) ? raw : (raw.records || []); const cloudBsr = Array.isArray(raw) ? [] : (raw.bsr || []); const cloudMpm = Array.isArray(raw) ? [] : (raw.mpm || []); const cloudFtd = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd || []) : []; const cloudSrt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.srt || []) : []; saveLocal(mergeByKey(cloudRecs, loadLocal(), r => r.date)); bsrSave(mergeByKey(cloudBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); mpmSave(mergeByKey(cloudMpm, mpmLoad(), d => d.date)); srtSave(mergeByKey(cloudSrt, srtLoad(), s => s.id)); const mergedFtd = mergeByKey(cloudFtd, ftdLoad(), d => d.id).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ftdScanUndercutAll(); if (typeof raw === 'object' && !Array.isArray(raw)) { if (raw.bsrMode) lsSet(LS_BSR_MODE, raw.bsrMode); if (raw.bsrQuick) bsrQuickSave(raw.bsrQuick); } const cloudWatchlists = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccWatchlists : null; const cloudSymbolFlags = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccSymbolFlags : null; if (cloudWatchlists) {
       _sccWatchlists = cloudWatchlists; if (cloudSymbolFlags) _sccSymbolFlags = cloudSymbolFlags; localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists)); localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags)); if (!_sccWatchlists[_sccActiveWatchlist] && !_sccActiveWatchlist.startsWith('__flag_')) { const keys = Object.keys(_sccWatchlists); _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main"; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); }
       if (_sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else if (_sccActiveWatchlist !== 'VCP') { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; }
       _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null;
     }
-    const merged = loadLocal(); setSyncStatus('ok', 'Synced'); setupFlash(`✓ Pulled — ${merged.length} breadth + ${bsrLoad().length} BSR + ${mpmLoad().length} MPM + ${srtLoad().length} sectors`, 'var(--lime)'); renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); renderAnalysisFTD(); srtRender(); sccWlRenderTabs(); sccWatchlistRender(); sccWatchlistFetchAll();
+    const merged = loadLocal(); setSyncStatus('ok', 'Synced'); setupFlash(`✓ Pulled — ${merged.length} breadth + ${bsrLoad().length} BSR + ${mpmLoad().length} MPM + ${srtLoad().length} sectors`, 'var(--lime)'); renderAll(); bsrRenderAll(); mpmRenderAll(); renderRPG(); renderMarketSummary(); renderMarketCycle(); ftdRender(); renderAnalysisFTD(); srtRender(); sccWlRenderTabs(); sccWatchlistRender(); sccWatchlistFetchAll();
   } catch (e) { setSyncStatus('err', 'Sync Error'); setupFlash('✗ Pull failed: ' + e.message, 'var(--red)'); }
 }
 async function pushToCloud() {
@@ -2145,7 +2145,7 @@ async function seedHistoricalData() {
 (async function init() {
   document.getElementById('hdr-date').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }); const _etEl = document.getElementById('entry-today'); if (_etEl) _etEl.textContent = todayISO(); const _bsrDate = document.getElementById('bsr-date'); if (_bsrDate) _bsrDate.value = todayISO(); seedHistoricalData(); if (initGuestMode()) return; const cfg = getCfg(); if (!cfg.key || !cfg.bin) { setSyncStatus('warn', 'Not Configured · Click to Setup'); } else {
     setSyncStatus('syncing', 'Syncing…'); try {
-      const payload = await jbRead(cfg.key, cfg.bin); const isLegacy = Array.isArray(payload); const cRec = isLegacy ? payload : (payload.records || []); saveLocal(mergeByKey(cRec, loadLocal(), r => r.date)); const cBsr = isLegacy ? [] : (payload.bsr || []); bsrSave(mergeByKey(cBsr, bsrLoad(), t => t.id)); if (!isLegacy && payload.bsrMode) lsSet(LS_BSR_MODE, payload.bsrMode); if (!isLegacy && payload.bsrQuick) bsrQuickSave(payload.bsrQuick); const cMpm = isLegacy ? [] : (payload.mpm || []); mpmSave(mergeByKey(cMpm, mpmLoad(), d => d.date)); const cFtd = isLegacy ? [] : (payload.ftd || []); const mergedFtd = mergeByKey(cFtd, ftdLoad(), d => d.id).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ftdScanUndercutAll(); const cSrt = isLegacy ? [] : (payload.srt || []); srtSave(mergeByKey(cSrt, srtLoad(), s => s.id)); const cloudWatchlists = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccWatchlists : null; const cloudSymbolFlags = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccSymbolFlags : null; if (cloudWatchlists) {
+      const payload = await jbRead(cfg.key, cfg.bin); const isLegacy = Array.isArray(payload); const cRec = isLegacy ? payload : (payload.records || []); saveLocal(mergeByKey(cRec, loadLocal(), r => r.date)); const cBsr = isLegacy ? [] : (payload.bsr || []); bsrSave(mergeByKey(cBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); if (!isLegacy && payload.bsrMode) lsSet(LS_BSR_MODE, payload.bsrMode); if (!isLegacy && payload.bsrQuick) bsrQuickSave(payload.bsrQuick); const cMpm = isLegacy ? [] : (payload.mpm || []); mpmSave(mergeByKey(cMpm, mpmLoad(), d => d.date)); const cFtd = isLegacy ? [] : (payload.ftd || []); const mergedFtd = mergeByKey(cFtd, ftdLoad(), d => d.id).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ftdScanUndercutAll(); const cSrt = isLegacy ? [] : (payload.srt || []); srtSave(mergeByKey(cSrt, srtLoad(), s => s.id)); const cloudWatchlists = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccWatchlists : null; const cloudSymbolFlags = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccSymbolFlags : null; if (cloudWatchlists) {
         _sccWatchlists = cloudWatchlists; if (cloudSymbolFlags) _sccSymbolFlags = cloudSymbolFlags; localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists)); localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags)); if (!_sccWatchlists[_sccActiveWatchlist] && !_sccActiveWatchlist.startsWith('__flag_')) { const keys = Object.keys(_sccWatchlists); _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main"; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); }
         if (_sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else if (_sccActiveWatchlist !== 'VCP') { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; }
         _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null;
@@ -2153,7 +2153,7 @@ async function seedHistoricalData() {
       const recCount = loadLocal().length; const bsrCount = bsrLoad().length; const mpmCount = mpmLoad().length; const srtCount = srtLoad().filter(s => s.id !== 'NIFTY50').length; setSyncStatus('ok', 'Synced'); console.log('[Init] Synced — Records:', recCount, 'BSR:', bsrCount, 'MPM:', mpmCount);
     } catch (e) { setSyncStatus('warn', 'Offline · Local data shown'); console.warn('[Init] Cloud pull failed:', e.message); }
   }
-  renderAll(); bsrRenderAll(); mpmRenderAll(); eodAutoFill(); cpUpdateHomeStatus();
+  renderAll(); bsrRenderAll(); mpmRenderAll(); renderRPG(); renderMarketSummary(); renderMarketCycle(); eodAutoFill(); cpUpdateHomeStatus();
 })(); window.addEventListener('resize', () => { setTimeout(() => { renderChart(loadLocal()); bsrRenderChart(); renderA1Sparkline(loadLocal()); if (typeof brrgDraw === 'function') brrgDraw(); if (document.getElementById('sector-drill-overlay') && document.getElementById('sector-drill-overlay').style.display !== 'none' && _sdActiveTab === 'charts' && _sdChartsLayout === 'auto') { sdRenderCharts(_sdCurrentSector, _sdCurrentData); } if (document.getElementById('chart-max-overlay') && document.getElementById('chart-max-overlay').style.display !== 'none' && _sdMaximizedChartSymbol) { drawMaxChart(); } const sccChartPane = document.getElementById('scc-pane-chart'); if (sccChartPane && sccChartPane.style.display !== 'none') { const count = sccChartGetCount(); for (let i = 0; i < count; i++) { sccChartRenderPanel(i); } } }, 100); }); window.addEventListener('load', () => { setTimeout(() => { renderA1Sparkline(loadLocal()); renderChart(loadLocal()); brrgRebuildChips(); if (typeof brrgDraw === 'function') brrgDraw(); }, 300); }); (function setupResizeObservers() {
   const _origErr = window.onerror; window.onerror = function (msg, src, line, col, err) { if (typeof msg === 'string' && msg.includes('ResizeObserver loop')) return true; return _origErr ? _origErr(msg, src, line, col, err) : false; }; const chartWrap = document.querySelector('.chart-canvas-wrap'); const bsrWrap = document.querySelector('.bsr-canvas-wrap'); let chartRafId = null, bsrRafId = null; const ssWrap = document.getElementById('ss-chart-wrap'); if (window.ResizeObserver && ssWrap) { let ssCellRafId = null; const roCell = new ResizeObserver(() => { if (ssCellRafId) cancelAnimationFrame(ssCellRafId); ssCellRafId = requestAnimationFrame(() => { renderA1Sparkline(loadLocal()); ssCellRafId = null; }); }); roCell.observe(ssWrap); }
   if (window.ResizeObserver && chartWrap) {
@@ -2177,27 +2177,7 @@ function bsrCalcR(trade) { const pivot = +trade.pivot; const curr = +trade.curr;
 function bsrEval(trade) { const pivot = +trade.pivot, curr = +trade.curr; const stop = trade.stop ? +trade.stop : pivot * 0.95; const days = bsrDaysSince(trade.date); if (curr <= stop) return 'failed'; if (curr >= pivot * 1.05) return 'success'; if (days > 60) return 'stale'; return 'pending'; }
 function bsrIsResolved(trade) { const s = bsrEval(trade); return s === 'success' || s === 'failed'; }
 function bsrZone(pct) { if (pct >= 80) return { name: 'STRONG BREAKOUT ENV', color: 'var(--purple)', bg: 'rgba(168,85,247,0.12)' }; if (pct >= 65) return { name: 'HEALTHY ENVIRONMENT', color: 'var(--green)', bg: 'rgba(34,197,94,0.12)' }; if (pct >= 50) return { name: 'MIXED CONDITIONS', color: 'var(--yellow)', bg: 'rgba(250,204,21,0.12)' }; if (pct >= 30) return { name: 'WEAK BREAKOUTS', color: 'var(--orange)', bg: 'rgba(251,146,60,0.12)' }; return { name: 'AVOID BREAKOUTS', color: 'var(--red)', bg: 'rgba(248,113,113,0.12)' }; }
-function bsrGetEffectiveStats() {
-  const mode = bsrGetMode();
-  const trades = bsrLoad();
-  if (mode === 'quick') {
-    const q = bsrQuickLoad();
-    const won = (q.won !== null && q.won !== undefined && q.won !== '') ? Math.max(0, parseInt(q.won, 10)) : null;
-    const lost = (q.lost !== null && q.lost !== undefined && q.lost !== '') ? Math.max(0, parseInt(q.lost, 10)) : null;
-    const totalBase = (q.total !== null && q.total !== undefined && q.total !== '') ? parseInt(q.total, 10) : 10;
-    if (won !== null && lost !== null && (won + lost) > 0) {
-      const evalTotal = won + lost;
-      const pct = Math.round((won / evalTotal) * 100);
-      const zone = bsrZone(pct);
-      const pend = Math.max(0, totalBase - evalTotal);
-      return { mode: 'quick', pct, succ: won, fail: lost, pend, stale: 0, total: evalTotal, totalBase, zone, expectancy: `${pct}% Win`, isDeclining: false };
-    } else if (won !== null && totalBase > 0) {
-      const pct = Math.round((won / totalBase) * 100);
-      const zone = bsrZone(pct);
-      return { mode: 'quick', pct, succ: won, fail: Math.max(0, totalBase - won), pend: 0, stale: 0, total: totalBase, totalBase, zone, expectancy: `${pct}% Win`, isDeclining: false };
-    }
-    return { mode: 'quick', pct: null, succ: 0, fail: 0, pend: 0, stale: 0, total: 0, totalBase, zone: { name: 'No Data', color: 'var(--dim)', bg: 'transparent' }, expectancy: '—', isDeclining: false };
-  }
+function bsrCalcLogStats(trades) {
   const results = trades.map(t => bsrEval(t));
   const succ = results.filter(r => r === 'success').length;
   const fail = results.filter(r => r === 'failed').length;
@@ -2222,17 +2202,53 @@ function bsrGetEffectiveStats() {
   }
   return { mode: 'log', pct, succ, fail, pend, stale, total, tradesCount: trades.length, zone, expectancy, isDeclining };
 }
+
+function bsrGetEffectiveStats() {
+  const mode = bsrGetMode();
+  const trades = bsrLoad();
+  const q = bsrQuickLoad();
+  const won = (q.won !== null && q.won !== undefined && q.won !== '') ? Math.max(0, parseInt(q.won, 10)) : null;
+  const lost = (q.lost !== null && q.lost !== undefined && q.lost !== '') ? Math.max(0, parseInt(q.lost, 10)) : null;
+  const totalBase = (q.total !== null && q.total !== undefined && q.total !== '') ? parseInt(q.total, 10) : 10;
+  if (mode === 'quick') {
+    if (won !== null && lost !== null && (won + lost) > 0) {
+      const evalTotal = won + lost;
+      const pct = Math.round((won / evalTotal) * 100);
+      const zone = bsrZone(pct);
+      const pend = Math.max(0, totalBase - evalTotal);
+      return { mode: 'quick', pct, succ: won, fail: lost, pend, stale: 0, total: evalTotal, totalBase, zone, expectancy: `${pct}% Win`, isDeclining: false };
+    } else if (won !== null && totalBase > 0) {
+      const pct = Math.round((won / totalBase) * 100);
+      const zone = bsrZone(pct);
+      return { mode: 'quick', pct, succ: won, fail: Math.max(0, totalBase - won), pend: 0, stale: 0, total: totalBase, totalBase, zone, expectancy: `${pct}% Win`, isDeclining: false };
+    } else if (trades.length > 0) {
+      const logStats = bsrCalcLogStats(trades);
+      return { ...logStats, mode: 'quick', isFallback: true };
+    }
+    return { mode: 'quick', pct: null, succ: 0, fail: 0, pend: 0, stale: 0, total: 0, totalBase, zone: { name: 'No Data', color: 'var(--dim)', bg: 'transparent' }, expectancy: '—', isDeclining: false };
+  }
+  if (trades.length > 0) {
+    return bsrCalcLogStats(trades);
+  } else if (won !== null) {
+    const evalTotal = (won + (lost || 0)) || totalBase;
+    const pct = Math.round((won / evalTotal) * 100);
+    const zone = bsrZone(pct);
+    return { mode: 'log', pct, succ: won, fail: lost || 0, pend: 0, stale: 0, total: evalTotal, totalBase, zone, expectancy: `${pct}% Win`, isDeclining: false, tradesCount: 0 };
+  }
+  return { mode: 'log', pct: null, succ: 0, fail: 0, pend: 0, stale: 0, total: 0, tradesCount: 0, zone: { name: 'No Data', color: 'var(--dim)', bg: 'transparent' }, expectancy: '—', isDeclining: false };
+}
+
 function bsrUpdateModeUI() {
   const mode = bsrGetMode();
   const btnQuick = document.getElementById('bsr-mode-btn-quick');
   const btnLog = document.getElementById('bsr-mode-btn-log');
   const pnlQuick = document.getElementById('bsr-quick-panel');
-  const logControls = document.getElementById('bsr-log-controls');
+  const logSection = document.getElementById('bsr-log-section') || document.getElementById('bsr-log-controls');
   const badge = document.getElementById('bsr-source-badge');
   if (btnQuick) btnQuick.classList.toggle('active', mode === 'quick');
   if (btnLog) btnLog.classList.toggle('active', mode === 'log');
   if (pnlQuick) pnlQuick.style.display = (mode === 'quick') ? 'block' : 'none';
-  if (logControls) logControls.style.display = (mode === 'log') ? 'block' : 'none';
+  if (logSection) logSection.style.display = (mode === 'log') ? 'block' : 'none';
   if (badge) {
     if (mode === 'quick') {
       badge.textContent = '⚡ Active: Quick Ratio (/10)';
@@ -2256,18 +2272,12 @@ function bsrUpdateModeUI() {
     inpLost.value = (q.lost !== null && q.lost !== undefined) ? q.lost : '';
   }
   bsrQuickCalcPreview();
-  const syncInd = document.getElementById('bsr-sync-indicator');
-  if (syncInd) {
-    const cfg = getCfg();
-    if (cfg.key && cfg.bin) {
-      syncInd.innerHTML = '☁ <span style="color:var(--lime)">Cloud Sync Enabled:</span> All BSR entries sync to JSONBin and automatically reflect on all your devices.';
-      syncInd.style.color = 'var(--sub)';
-    } else {
-      syncInd.innerHTML = '⚠ <span style="color:var(--orange)">Local only:</span> <a href="javascript:void(0)" onclick="openControlPanel(\'sync\')" style="color:var(--teal);text-decoration:underline">Configure Cloud Sync</a> with your Bin ID & Key so BSR reflects on all your devices.';
-      syncInd.style.color = 'var(--sub)';
-    }
+  if (mode === 'log') {
+    bsrRenderTable(bsrLoad());
+    bsrRenderChart();
   }
 }
+
 function bsrQuickCalcPreview() {
   const inpWon = document.getElementById('bsr-quick-won');
   const inpLost = document.getElementById('bsr-quick-lost');
@@ -2291,6 +2301,7 @@ function bsrQuickCalcPreview() {
   valEl.style.color = z.color;
   if (zoneEl) { zoneEl.textContent = z.name; zoneEl.style.color = z.color; }
 }
+
 function bsrQuickOnInput(source) {
   const inpWon = document.getElementById('bsr-quick-won');
   const inpLost = document.getElementById('bsr-quick-lost');
@@ -2305,6 +2316,37 @@ function bsrQuickOnInput(source) {
   }
   bsrQuickCalcPreview();
 }
+
+function flashBsrSaved(msg) {
+  const text = msg || '✓ BSR Score Saved';
+  const el = document.getElementById('bsr-save-flash');
+  if (el) {
+    el.textContent = text;
+    el.style.color = (text.startsWith('⚠') || text.startsWith('✗')) ? 'var(--orange)' : 'var(--lime)';
+    el.style.display = 'inline-flex';
+    void el.offsetWidth;
+    el.style.opacity = '1';
+    clearTimeout(el._fadeTimer);
+    clearTimeout(el._hideTimer);
+    el._fadeTimer = setTimeout(() => {
+      el.style.opacity = '0';
+      el._hideTimer = setTimeout(() => {
+        el.style.display = 'none';
+      }, 400);
+    }, 3500);
+  }
+  const logMsg = document.getElementById('bsr-msg');
+  if (logMsg) {
+    logMsg.textContent = text;
+    logMsg.style.color = (text.startsWith('⚠') || text.startsWith('✗')) ? 'var(--orange)' : 'var(--lime)';
+    logMsg.style.opacity = '1';
+    clearTimeout(logMsg._fadeTimer);
+    logMsg._fadeTimer = setTimeout(() => {
+      logMsg.style.opacity = '0';
+    }, 3500);
+  }
+}
+
 async function bsrQuickSaveAndApply() {
   const inpWon = document.getElementById('bsr-quick-won');
   const inpLost = document.getElementById('bsr-quick-lost');
@@ -2318,19 +2360,15 @@ async function bsrQuickSaveAndApply() {
   renderRPG();
   renderMarketSummary();
   renderMarketCycle();
+  flashBsrSaved('✓ BSR Score Saved');
   const cfg = getCfg();
   if (cfg.key && cfg.bin) {
-    bsrFlash('☁ Syncing BSR to cloud for all devices…', 'var(--teal)');
-    const pushed = await pushToCloud();
-    if (pushed) {
-      bsrFlash(`✓ BSR Quick Ratio applied & synced to cloud (${won !== null ? won : 0} Won / ${lost !== null ? lost : 0} Lost) — active across all devices`, 'var(--lime)');
-    } else {
-      bsrFlash(`⚠ Saved locally, but cloud push failed. Check network or JSONBin key.`, 'var(--orange)');
-    }
-  } else {
-    bsrFlash(`⚠ BSR Quick Ratio applied locally only — configure Cloud Sync (JSONBin) to reflect on other devices`, 'var(--orange)');
+    pushToCloud().then(pushed => {
+      if (pushed) flashBsrSaved('✓ BSR Score Saved');
+    });
   }
 }
+
 function bsrQuickSetPreset(won, lost) {
   const inpWon = document.getElementById('bsr-quick-won');
   const inpLost = document.getElementById('bsr-quick-lost');
@@ -2338,6 +2376,7 @@ function bsrQuickSetPreset(won, lost) {
   if (inpLost) { inpLost.value = lost; inpLost.dataset.autoFilled = 'false'; }
   bsrQuickSaveAndApply();
 }
+
 async function bsrQuickReset() {
   const inpWon = document.getElementById('bsr-quick-won');
   const inpLost = document.getElementById('bsr-quick-lost');
@@ -2349,25 +2388,24 @@ async function bsrQuickReset() {
   renderRPG();
   renderMarketSummary();
   renderMarketCycle();
+  flashBsrSaved('↺ BSR Score Reset');
   const cfg = getCfg();
   if (cfg.key && cfg.bin) {
     await pushToCloud();
-    bsrFlash('↺ BSR Quick Ratio cleared & synced to cloud', 'var(--orange)');
-  } else {
-    bsrFlash('↺ BSR Quick Ratio cleared locally', 'var(--orange)');
   }
 }
+
 let _bsrFilter = 'all'; function bsrSetFilter(f) { _bsrFilter = f;['all', 'pending', 'success', 'failed', 'stale'].forEach(k => { const btn = document.getElementById('bsr-f-' + k); if (btn) btn.classList.toggle('active', k === f); }); bsrRenderTable(bsrLoad()); }
 function bsrAdd() {
-  const sym = document.getElementById('bsr-sym').value.trim().toUpperCase(); const pivot = document.getElementById('bsr-pivot').value.trim(); const stopInput = document.getElementById('bsr-stop').value.trim(); const curr = document.getElementById('bsr-curr').value.trim(); const date = document.getElementById('bsr-date').value; if (!sym || !pivot || !date) { bsrFlash('⚠ Symbol, Pivot Price and Date are required', 'var(--orange)'); return; }
-  const pivotVal = parseFloat(pivot); const stopVal = stopInput ? parseFloat(stopInput) : pivotVal * 0.95; const trades = bsrLoad(); const id = Date.now().toString(); trades.push({ id, sym, pivot: pivotVal, stop: stopVal, curr: curr ? parseFloat(curr) : pivotVal, date, _updatedAt: Date.now() }); bsrSave(trades); bsrFlash(`✓ Added ${sym} — pivot ₹${pivotVal}`, 'var(--lime)');['bsr-sym', 'bsr-pivot', 'bsr-stop', 'bsr-curr'].forEach(i => { const el = document.getElementById(i); if (el) el.value = ''; }); const dateEl = document.getElementById('bsr-date'); if (dateEl) dateEl.value = ''; bsrRenderAll(); pushToCloud();
+  const sym = document.getElementById('bsr-sym').value.trim().toUpperCase(); const pivot = document.getElementById('bsr-pivot').value.trim(); const stopInput = document.getElementById('bsr-stop').value.trim(); const curr = document.getElementById('bsr-curr').value.trim(); const date = document.getElementById('bsr-date').value; if (!sym || !pivot || !date) { flashBsrSaved('⚠ Symbol, Pivot Price and Date are required'); return; }
+  const pivotVal = parseFloat(pivot); const stopVal = stopInput ? parseFloat(stopInput) : pivotVal * 0.95; const trades = bsrLoad(); const id = Date.now().toString(); trades.push({ id, sym, pivot: pivotVal, stop: stopVal, curr: curr ? parseFloat(curr) : pivotVal, date, _updatedAt: Date.now() }); bsrSave(trades); flashBsrSaved(`✓ Added ${sym} — BSR Score Saved`);['bsr-sym', 'bsr-pivot', 'bsr-stop', 'bsr-curr'].forEach(i => { const el = document.getElementById(i); if (el) el.value = ''; }); const dateEl = document.getElementById('bsr-date'); if (dateEl) dateEl.value = ''; bsrRenderAll(); renderRPG(); renderMarketSummary(); renderMarketCycle(); pushToCloud();
 }
-function bsrDelete(id) { if (!confirm('Remove this trade?')) return; const trades = bsrLoad().filter(t => t.id !== id); bsrSave(trades); bsrRenderAll(); pushToCloud(); }
+function bsrDelete(id) { if (!confirm('Remove this trade?')) return; const trades = bsrLoad().filter(t => t.id !== id); bsrSave(trades); bsrRenderAll(); renderRPG(); renderMarketSummary(); renderMarketCycle(); pushToCloud(); }
 function bsrUpdatePrice(id, newPrice) {
-  const trades = bsrLoad(); const t = trades.find(x => x.id === id); if (!t) return; const prevStatus = bsrEval(t); t.curr = parseFloat(newPrice); t._updatedAt = Date.now(); const newStatus = bsrEval(t); bsrSave(trades); if (prevStatus !== newStatus) { if (newStatus === 'success') bsrFlash('🎯 ' + t.sym + ' → Success! ≥5% above pivot', 'var(--lime)'); else if (newStatus === 'failed') bsrFlash('✗ ' + t.sym + ' → Failed — hit stop loss', 'var(--red)'); else if (newStatus === 'stale') bsrFlash('⏳ ' + t.sym + ' → Stale — pending >60 days', 'var(--dim)'); }
-  bsrRenderAll(); pushToCloud();
+  const trades = bsrLoad(); const t = trades.find(x => x.id === id); if (!t) return; const prevStatus = bsrEval(t); t.curr = parseFloat(newPrice); t._updatedAt = Date.now(); const newStatus = bsrEval(t); bsrSave(trades); if (prevStatus !== newStatus) { if (newStatus === 'success') flashBsrSaved('🎯 ' + t.sym + ' → Success! ≥5% above pivot'); else if (newStatus === 'failed') flashBsrSaved('✗ ' + t.sym + ' → Failed — hit stop loss'); else if (newStatus === 'stale') flashBsrSaved('⏳ ' + t.sym + ' → Stale — pending >60 days'); } else { flashBsrSaved('✓ BSR Score Saved'); }
+  bsrRenderAll(); renderRPG(); renderMarketSummary(); renderMarketCycle(); pushToCloud();
 }
-function bsrFlash(msg, color) { const el = document.getElementById('bsr-msg'); if (el) { el.textContent = msg; el.style.color = color; el.style.opacity = '1'; setTimeout(() => el.style.opacity = '0', 4000); } }
+function bsrFlash(msg, color) { flashBsrSaved(msg); }
 function bsrRenderHero(trades) {
   const _d = { textContent: '', innerHTML: '', style: {}, className: '' }; const el = id => document.getElementById(id) || _d;
   const stats = bsrGetEffectiveStats();
@@ -2632,7 +2670,39 @@ function cfgClearCreds() { if (!confirm('Remove cloud credentials from this devi
 function applyGuestMode() { document.body.classList.add('guest-mode'); const badge = document.getElementById('guest-badge'); const banner = document.getElementById('guest-banner'); if (badge) badge.classList.add('visible'); if (banner) banner.classList.add('visible'); window._guestMode = true; window._origPushToCloud = window.pushToCloud; window.pushToCloud = async () => { console.log('[Guest] pushToCloud blocked'); }; setSyncStatus('ok', 'Guest View · Read-Only'); const syncBtn = document.querySelector('.sync-status'); if (syncBtn) syncBtn.style.borderColor = 'rgba(232,184,75,.3)'; }
 async function cfgConnectGuest() {
   const binEl = document.getElementById('cfg-guest-bin'); const bin = binEl ? binEl.value.trim() : ''; if (!bin) { cfgBanner('⚠ Please enter the Bin ID from the dashboard owner.', 'warn', 'cfg-guest-msg'); return; }
-  cfgBanner('🔄 Connecting to shared bin…', 'inf', 'cfg-guest-msg'); try { const payload = await jbReadPublic(bin); const recs = Array.isArray(payload) ? payload : (payload.records || []); const bsr = Array.isArray(payload) ? [] : (payload.bsr || []); const mpm = Array.isArray(payload) ? [] : (payload.mpm || []); const ftd = Array.isArray(payload) ? [] : (payload.ftd || []); const srt = Array.isArray(payload) ? [] : (payload.srt || []); saveLocal(recs); bsrSave(bsr); mpmSave(mpm); ftdSaveData(ftd.sort((a, b) => b.date.localeCompare(a.date))); srtSave(srt); lsSet(LS_GUEST_BIN, bin); cfgBanner(`✅ Connected! ${recs.length} records · ${bsr.length} BSR · ${mpm.length} MPM · ${srt.length} sectors loaded.`, 'ok', 'cfg-guest-msg'); const exitBtn = document.getElementById('cfg-exit-guest-btn'); if (exitBtn) exitBtn.style.display = 'inline-block'; applyGuestMode(); renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender(); slhRender(); setTimeout(closeCfgModal, 2000); } catch (e) { cfgBanner('✗ ' + e.message + '\n\nMake sure the Bin is set to Public on jsonbin.io.', 'err', 'cfg-guest-msg'); }
+  cfgBanner('🔄 Connecting to shared bin…', 'inf', 'cfg-guest-msg'); try {
+    const payload = await jbReadPublic(bin);
+    const recs = Array.isArray(payload) ? payload : (payload.records || []);
+    const bsr = Array.isArray(payload) ? [] : (payload.bsr || []);
+    const mpm = Array.isArray(payload) ? [] : (payload.mpm || []);
+    const ftd = Array.isArray(payload) ? [] : (payload.ftd || []);
+    const srt = Array.isArray(payload) ? [] : (payload.srt || []);
+    saveLocal(recs);
+    bsrSave(mergeByKey(bsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date)));
+    mpmSave(mpm);
+    ftdSaveData(ftd.sort((a, b) => b.date.localeCompare(a.date)));
+    srtSave(srt);
+    if (typeof payload === 'object' && !Array.isArray(payload)) {
+      if (payload.bsrMode) lsSet(LS_BSR_MODE, payload.bsrMode);
+      if (payload.bsrQuick) bsrQuickSave(payload.bsrQuick);
+    }
+    lsSet(LS_GUEST_BIN, bin);
+    cfgBanner(`✅ Connected! ${recs.length} records · ${bsr.length} BSR · ${mpm.length} MPM · ${srt.length} sectors loaded.`, 'ok', 'cfg-guest-msg');
+    const exitBtn = document.getElementById('cfg-exit-guest-btn'); if (exitBtn) exitBtn.style.display = 'inline-block';
+    applyGuestMode();
+    renderAll();
+    bsrRenderAll();
+    mpmRenderAll();
+    renderRPG();
+    renderMarketSummary();
+    renderMarketCycle();
+    ftdRender();
+    srtRender();
+    slhRender();
+    setTimeout(closeCfgModal, 2000);
+  } catch (e) {
+    cfgBanner('✗ ' + e.message + '\n\nMake sure the Bin is set to Public on jsonbin.io.', 'err', 'cfg-guest-msg');
+  }
 }
 async function jbReadPublic(bin) {
   const r = await fetch(`${JB}/b/${bin}/latest`); if (!r.ok) { if (r.status === 401) throw new Error('Bin is private. Ask the owner to make it Public on jsonbin.io.'); throw new Error('Read failed: ' + r.status); }
@@ -2641,7 +2711,39 @@ async function jbReadPublic(bin) {
 async function guestPullData() {
   const guestBin = lsGet(LS_GUEST_BIN); if (!guestBin) { alert('No guest bin configured.'); return; }
   const btn = document.getElementById('guest-pull-btn'); if (btn) { btn.disabled = true; btn.textContent = '🔄 Pulling…'; }
-  setSyncStatus('syncing', 'Syncing...'); try { const payload = await jbReadPublic(guestBin); const recs = Array.isArray(payload) ? payload : (payload.records || []); const bsr = Array.isArray(payload) ? [] : (payload.bsr || []); const mpm = Array.isArray(payload) ? [] : (payload.mpm || []); const ftd = Array.isArray(payload) ? [] : (payload.ftd || []); const srt = Array.isArray(payload) ? [] : (payload.srt || []); saveLocal(recs); bsrSave(bsr); mpmSave(mpm); ftdSaveData(ftd.sort((a, b) => b.date.localeCompare(a.date))); srtSave(srt); setSyncStatus('ok', `Guest · ${recs.length}rec · ${mpm.length}mpm · ${srt.length}sec`); renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender(); slhRender(); flash('✅ Data pulled successfully from cloud!', 'var(--lime)'); } catch (e) { setSyncStatus('err', 'Guest · Pull Failed'); flash('✗ Pull failed: ' + e.message, 'var(--red)'); } finally { if (btn) { btn.disabled = false; btn.textContent = '🔄 Pull Data'; } }
+  setSyncStatus('syncing', 'Syncing...'); try {
+    const payload = await jbReadPublic(guestBin);
+    const recs = Array.isArray(payload) ? payload : (payload.records || []);
+    const bsr = Array.isArray(payload) ? [] : (payload.bsr || []);
+    const mpm = Array.isArray(payload) ? [] : (payload.mpm || []);
+    const ftd = Array.isArray(payload) ? [] : (payload.ftd || []);
+    const srt = Array.isArray(payload) ? [] : (payload.srt || []);
+    saveLocal(recs);
+    bsrSave(mergeByKey(bsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date)));
+    mpmSave(mpm);
+    ftdSaveData(ftd.sort((a, b) => b.date.localeCompare(a.date)));
+    srtSave(srt);
+    if (typeof payload === 'object' && !Array.isArray(payload)) {
+      if (payload.bsrMode) lsSet(LS_BSR_MODE, payload.bsrMode);
+      if (payload.bsrQuick) bsrQuickSave(payload.bsrQuick);
+    }
+    setSyncStatus('ok', `Guest · ${recs.length}rec · ${mpm.length}mpm · ${srt.length}sec`);
+    renderAll();
+    bsrRenderAll();
+    mpmRenderAll();
+    renderRPG();
+    renderMarketSummary();
+    renderMarketCycle();
+    ftdRender();
+    srtRender();
+    slhRender();
+    flash('✅ Data pulled successfully from cloud!', 'var(--lime)');
+  } catch (e) {
+    setSyncStatus('err', 'Guest · Pull Failed');
+    flash('✗ Pull failed: ' + e.message, 'var(--red)');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Pull Data'; }
+  }
 }
 function cfgExitGuest() { if (!confirm('Exit Guest Mode?\n\nThis will clear the guest data from this browser. You can reconnect anytime with the Bin ID.')) return; lsDel(LS_GUEST_BIN); document.body.classList.remove('guest-mode'); window._guestMode = false; if (window._origPushToCloud) window.pushToCloud = window._origPushToCloud; const badge = document.getElementById('guest-badge'); const banner = document.getElementById('guest-banner'); if (badge) badge.classList.remove('visible'); if (banner) banner.classList.remove('visible'); saveLocal([]); bsrSave([]); mpmSave([]); ftdSaveData([]); setSyncStatus('warn', 'Not Configured · Click to Setup'); renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender(); slhRender(); closeCfgModal(); }
 function cfgCopyGuestLink() {
@@ -2650,8 +2752,122 @@ function cfgCopyGuestLink() {
 }
 function initGuestMode() {
   try { const urlParams = new URLSearchParams(window.location.search); const queryBin = urlParams.get('bin') || urlParams.get('guest_bin') || urlParams.get('share'); if (queryBin) { lsSet(LS_GUEST_BIN, queryBin.trim()); window.history.replaceState({}, document.title, window.location.pathname); } } catch (e) { console.error('[Guest] URL parsing failed:', e); }
-  const guestBin = lsGet(LS_GUEST_BIN); if (!guestBin) return false; applyGuestMode(); const exitBtn = document.getElementById('cfg-exit-guest-btn'); if (exitBtn) exitBtn.style.display = 'inline-block'; const binEl = document.getElementById('cfg-guest-bin'); if (binEl) binEl.value = guestBin; jbReadPublic(guestBin).then(payload => { const recs = Array.isArray(payload) ? payload : (payload.records || []); const bsr = Array.isArray(payload) ? [] : (payload.bsr || []); const mpm = Array.isArray(payload) ? [] : (payload.mpm || []); const ftd = Array.isArray(payload) ? [] : (payload.ftd || []); const srt = Array.isArray(payload) ? [] : (payload.srt || []); saveLocal(recs); bsrSave(bsr); mpmSave(mpm); ftdSaveData(ftd.sort((a, b) => b.date.localeCompare(a.date))); srtSave(srt); if (typeof payload === 'object' && !Array.isArray(payload)) { if (payload.bsrMode) lsSet(LS_BSR_MODE, payload.bsrMode); if (payload.bsrQuick) bsrQuickSave(payload.bsrQuick); } setSyncStatus('ok', `Guest · ${recs.length}rec · ${mpm.length}mpm · ${srt.length}sec`); renderAll(); bsrRenderAll(); mpmRenderAll(); ftdRender(); srtRender(); slhRender(); }).catch(e => { setSyncStatus('err', 'Guest · Pull Failed'); console.warn('[Guest] Refresh failed:', e.message); }); return true;
+  const guestBin = lsGet(LS_GUEST_BIN); if (!guestBin) return false; applyGuestMode(); const exitBtn = document.getElementById('cfg-exit-guest-btn'); if (exitBtn) exitBtn.style.display = 'inline-block'; const binEl = document.getElementById('cfg-guest-bin'); if (binEl) binEl.value = guestBin; jbReadPublic(guestBin).then(payload => {
+    const recs = Array.isArray(payload) ? payload : (payload.records || []);
+    const bsr = Array.isArray(payload) ? [] : (payload.bsr || []);
+    const mpm = Array.isArray(payload) ? [] : (payload.mpm || []);
+    const ftd = Array.isArray(payload) ? [] : (payload.ftd || []);
+    const srt = Array.isArray(payload) ? [] : (payload.srt || []);
+    saveLocal(recs);
+    bsrSave(mergeByKey(bsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date)));
+    mpmSave(mpm);
+    ftdSaveData(ftd.sort((a, b) => b.date.localeCompare(a.date)));
+    srtSave(srt);
+    if (typeof payload === 'object' && !Array.isArray(payload)) {
+      if (payload.bsrMode) lsSet(LS_BSR_MODE, payload.bsrMode);
+      if (payload.bsrQuick) bsrQuickSave(payload.bsrQuick);
+    }
+    setSyncStatus('ok', `Guest · ${recs.length}rec · ${mpm.length}mpm · ${srt.length}sec`);
+    renderAll();
+    bsrRenderAll();
+    mpmRenderAll();
+    renderRPG();
+    renderMarketSummary();
+    renderMarketCycle();
+    ftdRender();
+    srtRender();
+    slhRender();
+  }).catch(e => { setSyncStatus('err', 'Guest · Pull Failed'); console.warn('[Guest] Refresh failed:', e.message); }); return true;
 }
+
+// Auto-sync across devices on tab visibility change & focus (e.g. switching back to browser on mobile)
+let _lastAutoPullTime = 0;
+async function pullFromCloudSilently() {
+  const cfg = getCfg();
+  if (!cfg.key || !cfg.bin) return;
+  try {
+    const raw = await jbRead(cfg.key, cfg.bin);
+    const isLegacy = Array.isArray(raw);
+    const cloudRecs = isLegacy ? raw : (raw.records || []);
+    const cloudBsr = isLegacy ? [] : (raw.bsr || []);
+    const cloudMpm = isLegacy ? [] : (raw.mpm || []);
+    const cloudFtd = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd || []) : [];
+    const cloudSrt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.srt || []) : [];
+    saveLocal(mergeByKey(cloudRecs, loadLocal(), r => r.date));
+    bsrSave(mergeByKey(cloudBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date)));
+    mpmSave(mergeByKey(cloudMpm, mpmLoad(), d => d.date));
+    srtSave(mergeByKey(cloudSrt, srtLoad(), s => s.id));
+    const mergedFtd = mergeByKey(cloudFtd, ftdLoad(), d => d.id).sort((a, b) => b.date.localeCompare(a.date));
+    ftdSaveData(mergedFtd);
+    ftdScanUndercutAll();
+    if (typeof raw === 'object' && !Array.isArray(raw)) {
+      if (raw.bsrMode) lsSet(LS_BSR_MODE, raw.bsrMode);
+      if (raw.bsrQuick) bsrQuickSave(raw.bsrQuick);
+    }
+    setSyncStatus('ok', 'Synced');
+    renderAll();
+    bsrRenderAll();
+    mpmRenderAll();
+    renderRPG();
+    renderMarketSummary();
+    renderMarketCycle();
+  } catch (e) {
+    console.warn('[AutoSync] pull failed:', e.message);
+  }
+}
+async function guestPullDataSilently() {
+  const guestBin = lsGet(LS_GUEST_BIN);
+  if (!guestBin) return;
+  try {
+    const payload = await jbReadPublic(guestBin);
+    const recs = Array.isArray(payload) ? payload : (payload.records || []);
+    const bsr = Array.isArray(payload) ? [] : (payload.bsr || []);
+    const mpm = Array.isArray(payload) ? [] : (payload.mpm || []);
+    const ftd = Array.isArray(payload) ? [] : (payload.ftd || []);
+    const srt = Array.isArray(payload) ? [] : (payload.srt || []);
+    saveLocal(recs);
+    bsrSave(mergeByKey(bsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date)));
+    mpmSave(mpm);
+    ftdSaveData(ftd.sort((a, b) => b.date.localeCompare(a.date)));
+    srtSave(srt);
+    if (typeof payload === 'object' && !Array.isArray(payload)) {
+      if (payload.bsrMode) lsSet(LS_BSR_MODE, payload.bsrMode);
+      if (payload.bsrQuick) bsrQuickSave(payload.bsrQuick);
+    }
+    renderAll();
+    bsrRenderAll();
+    mpmRenderAll();
+    renderRPG();
+    renderMarketSummary();
+    renderMarketCycle();
+  } catch (e) {
+    console.warn('[GuestAutoSync] failed:', e.message);
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    const now = Date.now();
+    if (now - (_lastAutoPullTime || 0) > 15000) {
+      _lastAutoPullTime = now;
+      if (isGuestMode()) {
+        guestPullDataSilently();
+      } else {
+        pullFromCloudSilently();
+      }
+    }
+  }
+});
+window.addEventListener('focus', () => {
+  const now = Date.now();
+  if (now - (_lastAutoPullTime || 0) > 15000) {
+    _lastAutoPullTime = now;
+    if (isGuestMode()) {
+      guestPullDataSilently();
+    } else {
+      pullFromCloudSilently();
+    }
+  }
+});
 function openAboutModal() { document.getElementById('about-modal-overlay').classList.add('open'); }
 function closeAboutModal() { document.getElementById('about-modal-overlay').classList.remove('open'); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeMaximizedChart(); closeAboutModal(); closeCfgModal(); sectorDrillClose(); } }); const LS_SECTOR_STOCKS = 'nse_sector_stocks_v1'; const LS_N500_CSV = 'nse_n500csv_v1'; const LS_FILTER_STOCKS_CSV = 'nse_filter_stocks_csv_v1'; let _sectorStocksCache = null; let _n500CsvCache = null; let _filterStocksCache = null; let _sdCurrentSector = ''; let _sdCurrentData = null; let _sdActiveTab = 'vcp'; let _sdSearchQuery = ''; let _sdChartsSource = 'vcp'; let _sdChartsPage = 0; let _sdChartsPerPage = 9; let _sdChartsInterval = 'D'; let _sdChartsLayout = 'auto'; let _sdAutoChartsLimit = 12; let _sdChartType = 'volume_candles'; let _sdSortBy = 'score'; let _sdMaximizedChartSymbol = null; let _sdMaximizedChartCompany = null; let _sdMaximizedChartStats = '';
