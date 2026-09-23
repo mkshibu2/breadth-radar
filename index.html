@@ -1477,7 +1477,7 @@
               <div class="bsr-quick-box bsr-box-won">
                 <div class="bsr-quick-header">
                   <span class="bsr-quick-tag tag-won">WIN</span>
-                  <label for="bsr-quick-won">Won Break Outs</label>
+                  <label for="bsr-quick-won">Won Breakouts</label>
                 </div>
                 <div class="bsr-quick-input-wrap">
                   <input type="number" id="bsr-quick-won" min="0" max="10" step="1" placeholder="7"
@@ -1490,7 +1490,7 @@
               <div class="bsr-quick-box bsr-box-lost">
                 <div class="bsr-quick-header">
                   <span class="bsr-quick-tag tag-lost">LOSS</span>
-                  <label for="bsr-quick-lost">Lost Break Outs</label>
+                  <label for="bsr-quick-lost">Lost Breakouts</label>
                 </div>
                 <div class="bsr-quick-input-wrap">
                   <input type="number" id="bsr-quick-lost" min="0" max="10" step="1" placeholder="3"
@@ -1505,8 +1505,9 @@
                 <div class="bsr-qcalc-val" id="bsr-qcalc-val">—</div>
                 <div class="bsr-qcalc-zone" id="bsr-qcalc-zone">Enter Won/Lost</div>
                 <div class="bsr-quick-btn-row">
-                  <button type="button" class="btn-bsr-apply" onclick="bsrQuickSaveAndApply()">✓ Apply Score</button>
+                  <button type="button" class="btn-bsr-apply" id="btn-bsr-apply" onclick="bsrQuickSaveAndApply()">✓ Apply Score</button>
                   <button type="button" class="btn-bsr-reset" onclick="bsrQuickReset()" title="Reset inputs">↺ Clear</button>
+                  <span id="bsr-apply-badge" class="bsr-apply-badge"></span>
                 </div>
               </div>
             </div>
