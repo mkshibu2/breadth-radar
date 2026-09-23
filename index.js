@@ -2451,25 +2451,53 @@ async function bsrQuickSaveAndApply() {
     }, 1800);
   }
 
+  const cfg = getCfg();
+  const hasCloud = !!(cfg.key && cfg.bin);
+
   // Inline badge feedback
   if (badge) {
-    badge.textContent = '✓ Saved & Synced';
-    badge.classList.add('visible');
-    clearTimeout(badge._timer);
-    badge._timer = setTimeout(() => {
-      badge.classList.remove('visible');
-    }, 2500);
+    if (hasCloud) {
+      badge.innerHTML = '☁ Syncing…';
+      badge.style.color = 'var(--teal)';
+      badge.classList.add('visible');
+    } else {
+      badge.innerHTML = '✓ Saved Locally <span style="opacity:.7;font-weight:400">(Cloud not setup)</span>';
+      badge.style.color = 'var(--orange)';
+      badge.classList.add('visible');
+      clearTimeout(badge._timer);
+      badge._timer = setTimeout(() => {
+        badge.classList.remove('visible');
+      }, 3500);
+    }
   }
 
   const stats = bsrGetEffectiveStats();
   const pctStr = stats.pct !== null ? stats.pct + '%' : '—';
-  flashBsrSaved(`✓ BSR Score ${pctStr} Applied — Saved to Dashboard & Cloud`);
-  flash(`✓ BSR Score ${pctStr} Applied — Synced to Dashboard & Cloud`, 'var(--lime)');
 
-  const cfg = getCfg();
-  if (cfg.key && cfg.bin) {
+  if (!hasCloud) {
+    flashBsrSaved(`✓ BSR Score ${pctStr} Saved Locally · Cloud not configured (setup JSONBin in Control Panel)`);
+    flash(`✓ BSR Score ${pctStr} Saved Locally`, 'var(--lime)');
+  } else {
+    flashBsrSaved(`⏳ BSR Score ${pctStr} Saving to Cloud…`);
     pushToCloud().then(pushed => {
-      if (pushed) flashBsrSaved(`✓ BSR Score ${pctStr} Saved to Cloud`);
+      if (pushed) {
+        if (badge) {
+          badge.innerHTML = '☁ Cloud Synced ✓';
+          badge.style.color = 'var(--lime)';
+          clearTimeout(badge._timer);
+          badge._timer = setTimeout(() => {
+            badge.classList.remove('visible');
+          }, 3000);
+        }
+        flashBsrSaved(`✓ BSR Score ${pctStr} Successfully Updated on Cloud (JSONBin)`);
+        flash(`✓ BSR Score ${pctStr} Updated on Cloud`, 'var(--lime)');
+      } else {
+        if (badge) {
+          badge.innerHTML = '⚠ Cloud Sync Error';
+          badge.style.color = 'var(--red)';
+        }
+        flashBsrSaved(`⚠ BSR Score saved locally, but Cloud sync failed`);
+      }
     });
   }
 }
