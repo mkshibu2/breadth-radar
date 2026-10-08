@@ -2220,8 +2220,11 @@
         ? Number(STATE.settings.pre2026ProfitDiff)
         : 2149.44;
 
-      // Current Capital Total Formula: Capital Invested + Cumulative P&L + Difference from Trading A/c
-      const capital = totalBeforeDiff + pre2026ProfitDiff;
+      const openTradeCharges = openTrades.reduce((s, t) => s + Number(getDefaultTradeBrokerage(t) || 0), 0);
+      const closedTradeCharges = closedTrades.reduce((s, t) => s + Number(getDefaultTradeBrokerage(t) || 0), 0);
+
+      // Current Capital Total Formula: Capital Invested + Cumulative P&L + Difference from Trading A/c - Open Trade Charges
+      const capital = totalBeforeDiff + pre2026ProfitDiff - openTradeCharges;
       const invested = investedAmount(openTrades);
       const cash = capital - invested;
 
@@ -2238,9 +2241,9 @@
         rawBookCapital: capital,
         ledgerAdjustment: pre2026ProfitDiff,
         totalExpenses: (STATE.expenses || []).reduce((s, e) => s + Number(e.amount || 0), 0),
-        closedTradeCharges: closedTrades.reduce((s, t) => s + Number(getDefaultTradeBrokerage(t) || 0), 0),
-        openTradeCharges: openTrades.reduce((s, t) => s + Number(getDefaultTradeBrokerage(t) || 0), 0),
-        totalCharges: 0
+        closedTradeCharges,
+        openTradeCharges,
+        totalCharges: closedTradeCharges + openTradeCharges
       };
     }
 
@@ -7522,6 +7525,16 @@
           </div>
           ` : ''}
 
+          ${openCharges > 0 ? `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line-soft);">
+            <div>
+              <div style="font-size: 12.5px; color: var(--sub);">− Charges &amp; STT on Open Trades</div>
+              <div style="font-size: 10.5px; color: var(--dim);">${openPositions.length} Open Position${openPositions.length > 1 ? 's' : ''}</div>
+            </div>
+            <div style="font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--red);">−${fmtRs(openCharges)}</div>
+          </div>
+          ` : ''}
+
           <!-- Section 4: Closing Portfolio Balances -->
           <div style="background: rgba(212, 162, 78, 0.08); border-left: 3px solid var(--gold); padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px;">
             4. Closing Portfolio Balances (Dhan Account)
@@ -7530,7 +7543,7 @@
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 9px 10px; border-bottom: 1px solid var(--line-soft); background: rgba(255, 255, 255, 0.02);">
             <div>
               <div style="font-size: 12.5px; font-weight: 700; color: var(--text);">Total Portfolio Capital</div>
-              <div style="font-size: 10.5px; color: var(--dim);">Invested + Cum. P&amp;L + Pre-2026 Diff</div>
+              <div style="font-size: 10.5px; color: var(--dim);">Invested + Cum. P&amp;L + Pre-2026 Diff${openCharges > 0 ? ' − Open Charges' : ''}</div>
             </div>
             <div style="font-family: var(--mono); font-size: 14.5px; font-weight: 700; color: var(--text);">${fmtRs(netCapital)}</div>
           </div>
