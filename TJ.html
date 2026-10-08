@@ -2254,7 +2254,7 @@
     }
 
     function capitalAdditionsExcludingOpening() {
-      return STATE.capitalLog.filter(c => !/opening/i.test(c.note || '')).reduce((s, c) => s + Number(c.amount || 0), 0);
+      return STATE.capitalLog.filter(c => !/opening/i.test(c.note || '') && Number(c.amount || 0) > 0).reduce((s, c) => s + Number(c.amount || 0), 0);
     }
     function monthKey(dateStr) { if (!dateStr) return null; const d = new Date(dateStr); return isNaN(d) ? null : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
     function monthLabel(key) { const [y, m] = key.split('-'); return new Date(y, m - 1, 1).toLocaleString('en-US', { month: 'short', year: '2-digit' }); }
@@ -2452,21 +2452,23 @@
 
       const allTimeExpenses = snap.totalExpenses;
 
-      // Actual Deposited Capital (Opening + Net Capital Additions from Capital Log)
-      const depositedCapital = Number(STATE.settings.openingCapitalFY || 0) + capitalAdditionsExcludingOpening();
+      // Time-Weighted Daily Average Capital (weights capital by exact days held in account)
       const avgCapital = calculateActiveYearAverageCapital();
-      // Returns calculated strictly against actual amount deposited as capital (no profit in denominator)
-      const returnBase = depositedCapital > 0 ? depositedCapital : (avgCapital > 0 ? avgCapital : opening);
+      const depositedCapital = Number(STATE.settings.openingCapitalFY || 0) + capitalAdditionsExcludingOpening();
+      const returnBase = avgCapital > 0
+        ? avgCapital
+        : (snap.capitalInvested > 0 ? snap.capitalInvested : (depositedCapital > 0 ? depositedCapital : (opening > 0 ? opening : (cap > 0 ? cap : 0))));
+      // Returns calculated strictly against Time-Weighted Daily Average Capital
       const returnPctFY = returnBase > 0 ? (netPnlFY / returnBase) : 0;
 
-      // Normalize multi-year rows for accurate compounding and cumulative P/L
+      // Normalize multi-year rows for accurate cumulative P/L
       const multiRows = (STATE.multiYear || [])
         .filter(r => !activeFYLabel || formatFY(r.year) !== activeFYLabel)
         .map(r => {
-          const cap = Number(r.openingCap || 0);
-          const pnl = Number(r.pnl || 0);
-          const ret = cap > 0 ? (pnl / cap) * 100 : (Math.abs(Number(r.returnPct || 0)) <= 1 && Number(r.returnPct || 0) !== 0 ? Number(r.returnPct) * 100 : Number(r.returnPct || 0));
-          return { ...r, openingCap: cap, pnl: pnl, returnPct: ret };
+          const c = Number(r.openingCap || 0);
+          const p = Number(r.pnl || 0);
+          const ret = c > 0 ? (p / c) * 100 : (Math.abs(Number(r.returnPct || 0)) <= 1 && Number(r.returnPct || 0) !== 0 ? Number(r.returnPct) * 100 : Number(r.returnPct || 0));
+          return { ...r, openingCap: c, pnl: p, returnPct: ret };
         });
 
       if (activeFYLabel) {
@@ -2475,14 +2477,13 @@
 
       multiRows.sort((a, b) => (parseInt(String(a.year || '').split('-')[0]) || 0) - (parseInt(String(b.year || '').split('-')[0]) || 0));
 
-      let compoundFactor = 1.0;
       let totalHistoricalPnl = 0;
       multiRows.forEach(r => {
-        compoundFactor *= (1 + Number(r.returnPct || 0) / 100);
         totalHistoricalPnl += Number(r.pnl || 0);
       });
-      const cumReturnPct = compoundFactor - 1;
-      const cumPnl = totalHistoricalPnl;
+      const cumPnl = (snap.cumulativePnl !== undefined && snap.cumulativePnl !== null) ? snap.cumulativePnl : totalHistoricalPnl;
+      // Cum. Return strictly calculated based on Time-Weighted Capital in generating cumulative profit
+      const cumReturnPct = returnBase > 0 ? (cumPnl / returnBase) : 0;
 
       return {
         capital: cap,
@@ -2490,6 +2491,7 @@
         cash,
         opening,
         avgCapital,
+        returnBase,
         realizedPnl: realizedPnlFY,
         totalChargesFY,
         expensesFY,
@@ -2525,14 +2527,15 @@
       const ret = s.returnPct;
       const cumRet = s.cumReturnPct;
       const winCls = s.winPct >= 0.5 ? 'up' : 'down';
+      const avgCapTip = (s.returnBase || s.avgCapital) ? ` title="Time-Weighted Avg Capital: ${fmtRs(s.returnBase || s.avgCapital)}"` : '';
       $('#ticker').innerHTML = `
     <div class="tick"><span class="lbl">Capital</span><span class="val">${fmtRs(s.capital)}</span></div>
     <div class="tick"><span class="lbl">Holdings</span><span class="val flat" style="color:var(--gold);">${fmtRs(s.invested)}</span></div>
     <div class="tick"><span class="lbl">Cash</span><span class="val cash-glow">${fmtRs(s.cash)}</span></div>
     <div class="tick"><span class="lbl">FY P/L</span><span class="val ${s.netPnlFY >= 0 ? 'up' : 'down'}">${s.netPnlFY >= 0 ? '+' : ''}${fmtRs(s.netPnlFY)}</span></div>
-    <div class="tick"><span class="lbl">Return</span><span class="val ${ret >= 0 ? 'up' : 'down'}">${ret >= 0 ? '+' : ''}${fmtPct(ret)}</span></div>
+    <div class="tick"${avgCapTip}><span class="lbl">Return</span><span class="val ${ret >= 0 ? 'up' : 'down'}">${ret >= 0 ? '+' : ''}${fmtPct(ret)}</span></div>
     <div class="tick"><span class="lbl">Cum. P/L</span><span class="val ${s.cumPnl >= 0 ? 'up' : 'down'}">${s.cumPnl >= 0 ? '+' : ''}${fmtRs(s.cumPnl)}</span></div>
-    <div class="tick"><span class="lbl">Cum. Return</span><span class="val ${cumRet >= 0 ? 'up' : 'down'}">${cumRet >= 0 ? '+' : ''}${fmtPct(cumRet)}</span></div>
+    <div class="tick"${avgCapTip}><span class="lbl">Cum. Return</span><span class="val ${cumRet >= 0 ? 'up' : 'down'}">${cumRet >= 0 ? '+' : ''}${fmtPct(cumRet)}</span></div>
     <div class="tick"><span class="lbl">Win Rate</span><span class="val ${winCls}">${fmtPct(s.winPct)}</span></div>
     <div class="tick"><span class="lbl">Open Positions</span><span class="val flat">${s.openCount}</span></div>
     <div class="tick"><span class="lbl">Open Risk</span><span class="val flat">${fmtRs(s.openRisk)}</span></div>
@@ -7175,8 +7178,7 @@
       const capitalInvestedTotal = snapshot.capitalInvested;
       const cumulativePnlTotal = snapshot.cumulativePnl;
       const totalBeforeDiff = snapshot.totalBeforeDiff;
-      const pre2026ProfitDiff = snapshot.pre2026ProfitDiff;
-      const netCapital = isLiveSnapshot ? snapshot.capital : (openingCap + capitalIntroduced - withdrawals + netProfit - openCharges + periodExpenses + pre2026ProfitDiff);
+      const netCapital = isLiveSnapshot ? snapshot.capital : (openingCap + capitalIntroduced + netProfit - openCharges + periodExpenses + pre2026ProfitDiff);
       const cashBalance = isLiveSnapshot ? snapshot.cash : (netCapital - invested);
 
       const activeFYLabel = formatFY(STATE.settings && STATE.settings.currentFY);
@@ -7370,7 +7372,7 @@
                 </td>
                 <td style="padding: 10px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">—</td>
                 <td style="padding: 10px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">—</td>
-                <td style="padding: 10px 12px; text-align: right; font-weight: 700; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text); font-size: 13.5px;">${fmtRs(isLiveSnapshot ? totalBeforeDiff : (openingCap + capitalIntroduced - withdrawals + netProfit))}</td>
+                <td style="padding: 10px 12px; text-align: right; font-weight: 700; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text); font-size: 13.5px;">${fmtRs(isLiveSnapshot ? totalBeforeDiff : (openingCap + capitalIntroduced + netProfit))}</td>
               </tr>
 
               <!-- SECTION 3: EXPENSES & RECONCILIATION -->
@@ -7499,7 +7501,7 @@
               <div style="font-size: 12.5px; font-weight: 700; color: var(--text);">Total (Invested + Cum. P&amp;L)</div>
               <div style="font-size: 10.5px; font-weight: 600; color: ${(isLiveSnapshot ? cumulativePnlTotal : netProfit) >= 0 ? 'var(--green)' : 'var(--red)'}; font-family: var(--mono);">Cum. P&amp;L: ${(isLiveSnapshot ? cumulativePnlTotal : netProfit) >= 0 ? '+' : ''}${fmtRs(isLiveSnapshot ? cumulativePnlTotal : netProfit)}</div>
             </div>
-            <div style="font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--text);">${fmtRs(isLiveSnapshot ? totalBeforeDiff : (openingCap + capitalIntroduced - withdrawals + netProfit))}</div>
+            <div style="font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--text);">${fmtRs(isLiveSnapshot ? totalBeforeDiff : (openingCap + capitalIntroduced + netProfit))}</div>
           </div>
 
           <!-- Section 3: Difference from Trading A/c & Reconciliation -->
@@ -7916,10 +7918,21 @@
        MULTI-YEAR RECORD
        ========================================================================= */
     function calculateActiveYearAverageCapital() {
-      const opening = Number(STATE.settings.openingCapitalFY || 0);
-      const startDateStr = STATE.settings.currentFY ? (STATE.settings.currentFY.split('-')[0] + '-04-01') : '2026-04-01';
+      let opening = Number(STATE.settings.openingCapitalFY || 0);
+      if (!opening && STATE.capitalLog) {
+        const opEntry = STATE.capitalLog.find(c => /opening/i.test(c.note || ''));
+        if (opEntry) opening = Number(opEntry.amount || 0);
+      }
+
+      const activeFY = STATE.settings.currentFY || '2026-27';
+      const startYear = parseInt(activeFY.split('-')[0]) || 2026;
+      const startDateStr = `${startYear}-04-01`;
+      const endDateStr = `${startYear + 1}-03-31`;
+
       const start = new Date(startDateStr);
-      const end = new Date(); // today
+      const fyEnd = new Date(endDateStr);
+      const today = new Date();
+      const end = today < fyEnd ? today : fyEnd;
 
       if (isNaN(start.getTime())) return opening;
 
@@ -7929,14 +7942,16 @@
 
       const transactions = [];
 
-      // Capital additions & withdrawals (External cash flows per GIPS standards)
-      STATE.capitalLog.filter(c => !/opening/i.test(c.note || '')).forEach(c => {
+      // Time-weighted flows: accurately captures original investment period, withdrawal period, and re-investments
+      (STATE.capitalLog || []).filter(c => {
+        if (/opening/i.test(c.note || '')) return false;
+        if (c.date && c.date < startDateStr) return false;
+        return true;
+      }).forEach(c => {
         const d = new Date(c.date);
         const offset = Math.floor((d - start) / (1000 * 60 * 60 * 24));
         transactions.push({ day: offset, amount: Number(c.amount || 0) });
       });
-
-      // Note: Only actual capital deposits and withdrawals from capitalLog are included (no trading profits, no expenses)
 
       transactions.sort((a, b) => a.day - b.day);
 
@@ -7957,7 +7972,8 @@
         timeWeightedSum += currentCap * (totalDays - lastDay);
       }
 
-      return timeWeightedSum / totalDays;
+      const avgCap = totalDays > 0 ? (timeWeightedSum / totalDays) : opening;
+      return Math.round(avgCap > 0 ? avgCap : (opening > 0 ? opening : currentCap));
     }
 
     function getMultiYearRowsWithLive() {
@@ -7983,10 +7999,13 @@
       if (activeFYLabel) {
         const netPnl = getActiveFYNetPnl();
 
-        // Use actual deposited capital as base (excludes trading profit)
-        const depositedCapital = Number(STATE.settings.openingCapitalFY || 0) + capitalAdditionsExcludingOpening();
+        // Use Time-Weighted Daily Average Capital as base (weights capital by exact days held in account)
         const avgCapital = calculateActiveYearAverageCapital();
-        const returnBase = depositedCapital > 0 ? depositedCapital : (avgCapital > 0 ? avgCapital : Number(STATE.settings.openingCapitalFY || 0));
+        const snap = capitalSnapshot();
+        const depositedCapital = Number(STATE.settings.openingCapitalFY || 0) + capitalAdditionsExcludingOpening();
+        const returnBase = avgCapital > 0
+          ? avgCapital
+          : ((snap && snap.capitalInvested > 0) ? snap.capitalInvested : (depositedCapital > 0 ? depositedCapital : Number(STATE.settings.openingCapitalFY || 0)));
         const returnPct = returnBase ? (netPnl / returnBase) * 100 : 0;
 
         rows.push({
