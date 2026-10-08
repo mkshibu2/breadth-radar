@@ -77,7 +77,24 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // 2. Route Yahoo Finance / Chart requests (using ?url= parameter)
+  // 2. Route Local Scanner requests (/run-scanner)
+  if (parsedUrl.pathname === '/run-scanner') {
+    const { exec } = require('child_process');
+    console.log('[Proxy Scanner] Running vcp_scanner.py locally...');
+    exec('python vcp_scanner.py', { cwd: __dirname }, (error, stdout, stderr) => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      if (error) {
+        console.error('[Proxy Scanner Error]:', error.message);
+        res.end(JSON.stringify({ success: false, error: error.message }));
+      } else {
+        console.log('[Proxy Scanner] Completed successfully.');
+        res.end(JSON.stringify({ success: true, message: 'Scan completed locally' }));
+      }
+    });
+    return;
+  }
+
+  // 3. Route Yahoo Finance / Chart requests (using ?url= parameter)
   const targetUrl = parsedUrl.query.url;
   if (!targetUrl) {
     res.writeHead(400, { 'Content-Type': 'text/plain' });

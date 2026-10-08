@@ -2,8 +2,10 @@ name: Daily VCP Scanner
 
 on:
   schedule:
-    - cron: '53 15 * * 1-5'
-      timezone: 'Asia/Kolkata'
+    # 10:25 UTC = 15:55 IST (3:55 PM IST, Monday - Friday)
+    - cron: '25 10 * * 1-5'
+    # 10:45 UTC = 16:15 IST (4:15 PM IST, Monday - Friday backup after complete market settlement)
+    - cron: '45 10 * * 1-5'
   workflow_dispatch:
   
 # FIX 1: Explicitly grant write permissions so it can push the HTML file (Prevents 128)

@@ -1914,6 +1914,7 @@
       <div class="cp-tabs">
         <div class="cp-tab active" id="cp-tab-eod" onclick="cpSwitchTab('eod')">📋 EOD Entry</div>
         <div class="cp-tab" id="cp-tab-past" onclick="cpSwitchTab('past')">📅 Past Entry</div>
+        <div class="cp-tab" id="cp-tab-scanner" onclick="cpSwitchTab('scanner')" style="color:var(--blue)">⚡ Scanner</div>
         <div class="cp-tab" id="cp-tab-sync" onclick="cpSwitchTab('sync')">☁ Sync</div>
         <div class="cp-tab" id="cp-tab-dhan" onclick="cpSwitchTab('dhan')" style="color:var(--teal)">🏦 Dhan</div>
       </div>
@@ -1928,6 +1929,9 @@
             <button class="btn btn-sec" id="btn-fetch-today"
               style="font-size:11px;padding:4px 10px;color:var(--teal);border-color:rgba(45,212,191,.3)"
               onclick="fetchAndAutofillToday()">⚡ Fetch & Autofill</button>
+            <button class="btn btn-sec" id="btn-quick-scan"
+              style="font-size:11px;padding:4px 10px;color:var(--blue);border-color:rgba(59,130,246,.3)"
+              onclick="cpTriggerScan()" title="Trigger Daily VCP Scanner">🚀 Run Scan</button>
             <button class="btn btn-sec" style="font-size:11px;padding:4px 10px" onclick="clearInputs()">✕ Clear</button>
           </div>
 
@@ -2167,6 +2171,70 @@
               style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);margin-bottom:8px">
               Already saved — click any row to edit</div>
             <div id="past-seed-list" style="max-height:260px;overflow-y:auto"></div>
+          </div>
+        </div>
+
+        <div class="cp-section" id="cp-sec-scanner">
+          <div class="cp-section-title">DAILY VCP SCANNER &amp; AUTOMATION</div>
+          <p style="font-size:12px;color:var(--sub);margin-bottom:14px">
+            Trigger the full scanning pipeline. It executes <code>automate_eod.py</code> and <code>vcp_scanner.py</code> on GitHub Actions, generating updated screener results and sector breadth metrics.
+          </p>
+
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+              <div>
+                <div style="font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px">
+                  <span>🚀 Trigger Daily Scan</span>
+                  <span id="scan-engine-badge" style="font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.3)">GitHub Actions Cloud</span>
+                </div>
+                <div style="font-size:11px;color:var(--dim);margin-top:3px" id="scan-last-status">Click below to dispatch the scan workflow.</div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <button class="btn btn-primary" id="btn-start-scan" onclick="cpTriggerScan()" style="background:var(--blue);color:#fff;font-weight:700;padding:7px 16px;font-size:12px">
+                  ▶ Run Scan Now
+                </button>
+                <a class="btn btn-sec" id="btn-gh-action-link" href="https://github.com/mkshibu2/breadth-radar/actions/workflows/update_screener.yaml" target="_blank" style="font-size:11px;padding:6px 12px;color:var(--sub)">
+                  GitHub Actions ↗
+                </a>
+              </div>
+            </div>
+
+            <!-- Live Progress / Console Box -->
+            <div id="scan-progress-box" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:12px;margin-top:10px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span id="scan-spinner" style="display:inline-block">⏳</span>
+                  <span id="scan-progress-title" style="font-size:12px;font-weight:600;color:var(--text)">Scan in progress...</span>
+                </div>
+                <span id="scan-timer" style="font-family:var(--mono);font-size:11px;color:var(--dim)">0s</span>
+              </div>
+              <div id="scan-progress-msg" style="font-size:11px;color:var(--sub);line-height:1.5">Dispatching workflow to GitHub Actions...</div>
+              <div id="scan-result-links" style="display:none;margin-top:10px;gap:8px;flex-wrap:wrap">
+                <a href="vcp_scanner_results.html" target="_blank" class="btn btn-sec" style="font-size:11px;padding:4px 10px;color:var(--blue);border-color:rgba(59,130,246,.3)">📊 View Screener Results ↗</a>
+                <button class="btn btn-sec" onclick="if(typeof sccFetchData==='function')sccFetchData();" style="font-size:11px;padding:4px 10px;color:var(--teal)">↻ Refresh Sector Breadth</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- GitHub Token Configuration -->
+          <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:6px">
+              <span>🔑 GitHub Personal Access Token (PAT)</span>
+              <span style="font-size:9.5px;color:var(--dim);font-weight:400">(Saved locally on this device)</span>
+            </div>
+            <div style="font-size:11px;color:var(--sub);line-height:1.5;margin-bottom:8px">
+              To trigger the scan in 1 click from your browser, enter a GitHub Personal Access Token with <b>Actions: Write</b> (or classic <b>repo</b>) scope.
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+              <input type="password" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off"
+                style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 10px;border-radius:4px;outline:none">
+              <button class="btn btn-sec" onclick="saveGhToken()" style="font-size:11px;padding:6px 12px;color:var(--teal);border-color:rgba(45,212,191,.3)">Save Token</button>
+              <button class="btn btn-sec" onclick="clearGhToken()" style="font-size:11px;padding:6px 10px;color:var(--dim)">Clear</button>
+            </div>
+            <div style="font-size:10px;color:var(--dim);display:flex;justify-content:space-between">
+              <span id="gh-token-status">Token: Not saved</span>
+              <a href="https://github.com/settings/tokens/new?scopes=repo&description=BreadthRadarScannerTrigger" target="_blank" style="color:var(--accent)">Create Token on GitHub ↗</a>
+            </div>
           </div>
         </div>
 

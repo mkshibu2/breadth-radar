@@ -2718,7 +2718,231 @@ function mpmRenderAll() { const days = mpmLoad(); mpmRenderHero(days); mpmRender
 function bsrRenderAll() { const trades = bsrLoad(); bsrRenderHero(trades); bsrRenderTable(trades); bsrRenderChart(); renderRPG(); renderMarketSummary(); renderMarketCycle(); bsrUpdateModeUI(); }
 function openControlPanel(tab) { const overlay = document.getElementById('cp-overlay'); if (!overlay) return; overlay.classList.add('open'); cpSwitchTab(tab || 'eod'); const el = document.getElementById('entry-today'); if (el) el.textContent = todayISO(); cpRefreshSyncState(); if (tab === 'past') renderPastSeedList(); }
 function closeControlPanel() { const overlay = document.getElementById('cp-overlay'); if (overlay) overlay.classList.remove('open'); }
-function cpSwitchTab(tab) { ['eod', 'past', 'sync'].forEach(t => { const tb = document.getElementById('cp-tab-' + t); const sc = document.getElementById('cp-sec-' + t); if (tb) tb.classList.toggle('active', t === tab); if (sc) sc.classList.toggle('active', t === tab); }); if (tab === 'past') renderPastSeedList(); if (tab === 'sync') cpRefreshSyncState(); }
+function cpSwitchTab(tab) {
+  ['eod', 'past', 'scanner', 'sync', 'dhan'].forEach(t => {
+    const tb = document.getElementById('cp-tab-' + t);
+    const sc = document.getElementById('cp-sec-' + t);
+    if (tb) tb.classList.toggle('active', t === tab);
+    if (sc) sc.classList.toggle('active', t === tab);
+  });
+  if (tab === 'past') renderPastSeedList();
+  if (tab === 'sync') cpRefreshSyncState();
+  if (tab === 'scanner') cpRefreshScannerState();
+}
+
+const LS_GH_PAT = 'nse_gh_pat_v1';
+function getGhToken() { return lsGet(LS_GH_PAT) || ''; }
+function saveGhToken() {
+  const inp = document.getElementById('gh-token-input');
+  if (!inp) return;
+  const val = inp.value.trim();
+  if (!val) { alert('Please enter a GitHub Personal Access Token.'); return; }
+  lsSet(LS_GH_PAT, val);
+  cpRefreshScannerState();
+  setupFlash('GitHub Token Saved', 'var(--teal)');
+}
+function clearGhToken() {
+  if (!confirm('Remove GitHub token from this device?')) return;
+  lsDel(LS_GH_PAT);
+  const inp = document.getElementById('gh-token-input');
+  if (inp) inp.value = '';
+  cpRefreshScannerState();
+  setupFlash('GitHub Token Cleared', 'var(--yellow)');
+}
+function cpRefreshScannerState() {
+  const token = getGhToken();
+  const inp = document.getElementById('gh-token-input');
+  const statusEl = document.getElementById('gh-token-status');
+  if (inp && token) inp.value = token;
+  if (statusEl) {
+    if (token) {
+      statusEl.innerHTML = `<span style="color:var(--lime);font-weight:600">✓ Token saved (${token.substring(0, 4)}••••${token.slice(-4)})</span>`;
+    } else {
+      statusEl.innerHTML = `<span style="color:var(--dim)">Token: Not configured</span>`;
+    }
+  }
+}
+
+let _scanPollInterval = null;
+let _scanStartTime = null;
+
+async function cpTriggerScan() {
+  cpSwitchTab('scanner');
+
+  const progressBox = document.getElementById('scan-progress-box');
+  const progressTitle = document.getElementById('scan-progress-title');
+  const progressMsg = document.getElementById('scan-progress-msg');
+  const timerEl = document.getElementById('scan-timer');
+  const linksEl = document.getElementById('scan-result-links');
+  const spinnerEl = document.getElementById('scan-spinner');
+  const startBtn = document.getElementById('btn-start-scan');
+  const quickBtn = document.getElementById('btn-quick-scan');
+
+  const token = getGhToken();
+  if (!token) {
+    if (progressBox) progressBox.style.display = 'block';
+    if (progressTitle) {
+      progressTitle.textContent = 'GitHub Token Required for 1-Click Scan';
+      progressTitle.style.color = 'var(--yellow)';
+    }
+    if (progressMsg) {
+      progressMsg.innerHTML = 'Enter a GitHub Personal Access Token below to trigger scans directly with 1 click, or <a href="https://github.com/mkshibu2/breadth-radar/actions/workflows/update_screener.yaml" target="_blank" style="color:var(--accent);font-weight:700">Open GitHub Actions ↗</a> to run manually.';
+    }
+    const inp = document.getElementById('gh-token-input');
+    if (inp) inp.focus();
+    return;
+  }
+
+  if (_scanPollInterval) clearInterval(_scanPollInterval);
+
+  if (progressBox) progressBox.style.display = 'block';
+  if (linksEl) linksEl.style.display = 'none';
+  if (spinnerEl) spinnerEl.style.display = 'inline-block';
+  if (startBtn) startBtn.disabled = true;
+  if (quickBtn) quickBtn.disabled = true;
+
+  _scanStartTime = Date.now();
+  const updateTimer = () => {
+    if (timerEl && _scanStartTime) {
+      const elapsed = Math.round((Date.now() - _scanStartTime) / 1000);
+      const m = Math.floor(elapsed / 60);
+      const s = elapsed % 60;
+      timerEl.textContent = (m > 0 ? `${m}m ` : '') + `${s}s`;
+    }
+  };
+  updateTimer();
+  const timerInterval = setInterval(updateTimer, 1000);
+
+  if (progressTitle) {
+    progressTitle.textContent = '🚀 Dispatching Workflow to GitHub Actions...';
+    progressTitle.style.color = 'var(--blue)';
+  }
+  if (progressMsg) progressMsg.textContent = 'Sending workflow_dispatch signal to update_screener.yaml...';
+
+  const repoOwner = 'mkshibu2';
+  const repoName = 'breadth-radar';
+  const workflowFile = 'update_screener.yaml';
+  const dispatchUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/actions/workflows/${workflowFile}/dispatches`;
+
+  try {
+    const res = await fetch(dispatchUrl, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/vnd.github+json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ ref: 'main' })
+    });
+
+    if (res.status === 204 || res.status === 200) {
+      if (progressTitle) progressTitle.textContent = '⏳ Queued on GitHub Actions...';
+      if (progressMsg) progressMsg.textContent = 'Workflow dispatched! Waiting for GitHub runner to pick up the job...';
+
+      const dispatchTime = Date.now();
+
+      _scanPollInterval = setInterval(async () => {
+        try {
+          const runsRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/actions/workflows/${workflowFile}/runs?per_page=3`, {
+            headers: {
+              'Accept': 'application/vnd.github+json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (!runsRes.ok) return;
+          const runsData = await runsRes.json();
+          const runs = runsData.workflow_runs || [];
+
+          let activeRun = runs.find(r => {
+            const createdAt = new Date(r.created_at).getTime();
+            return (createdAt >= dispatchTime - 30000);
+          });
+          if (!activeRun && runs.length > 0) activeRun = runs[0];
+
+          if (activeRun) {
+            const ghLink = document.getElementById('btn-gh-action-link');
+            if (ghLink) ghLink.href = activeRun.html_url;
+
+            if (activeRun.status === 'queued') {
+              if (progressTitle) progressTitle.textContent = `⏳ Job Queued on GitHub (#${activeRun.run_number})`;
+              if (progressMsg) progressMsg.innerHTML = `Runner is initializing. <a href="${activeRun.html_url}" target="_blank" style="color:var(--accent)">View live on GitHub ↗</a>`;
+            } else if (activeRun.status === 'in_progress') {
+              if (progressTitle) {
+                progressTitle.textContent = `⚙️ Scanning in Progress (#${activeRun.run_number})`;
+                progressTitle.style.color = 'var(--teal)';
+              }
+              if (progressMsg) progressMsg.innerHTML = `Running Python EOD automation &amp; VCP scan across NSE universe... <a href="${activeRun.html_url}" target="_blank" style="color:var(--accent)">View run ↗</a>`;
+            } else if (activeRun.status === 'completed') {
+              clearInterval(_scanPollInterval);
+              clearInterval(timerInterval);
+              if (startBtn) startBtn.disabled = false;
+              if (quickBtn) quickBtn.disabled = false;
+              if (spinnerEl) spinnerEl.style.display = 'none';
+
+              if (activeRun.conclusion === 'success') {
+                if (progressTitle) {
+                  progressTitle.textContent = `✅ Scan Completed Successfully! (#${activeRun.run_number})`;
+                  progressTitle.style.color = 'var(--lime)';
+                }
+                if (progressMsg) {
+                  progressMsg.innerHTML = `VCP Screener Results &amp; Sector Breadth have been updated and pushed to GitHub!`;
+                }
+                if (linksEl) linksEl.style.display = 'flex';
+                if (typeof sccFetchData === 'function') sccFetchData();
+              } else {
+                if (progressTitle) {
+                  progressTitle.textContent = `❌ Scan Finished: ${activeRun.conclusion || 'Failed'} (#${activeRun.run_number})`;
+                  progressTitle.style.color = 'var(--red)';
+                }
+                if (progressMsg) {
+                  progressMsg.innerHTML = `The workflow encountered an issue. <a href="${activeRun.html_url}" target="_blank" style="color:var(--accent)">View error logs on GitHub ↗</a>`;
+                }
+              }
+            }
+          }
+        } catch (pollErr) {
+          console.warn('Poll error:', pollErr);
+        }
+      }, 4000);
+
+    } else {
+      clearInterval(timerInterval);
+      if (startBtn) startBtn.disabled = false;
+      if (quickBtn) quickBtn.disabled = false;
+      if (spinnerEl) spinnerEl.style.display = 'none';
+
+      const errText = await res.text();
+      let errMsg = `GitHub API returned ${res.status}`;
+      try {
+        const j = JSON.parse(errText);
+        if (j.message) errMsg = j.message;
+      } catch (e) { }
+
+      if (progressTitle) {
+        progressTitle.textContent = '❌ Dispatch Failed';
+        progressTitle.style.color = 'var(--red)';
+      }
+      if (progressMsg) {
+        if (res.status === 401 || res.status === 403) {
+          progressMsg.innerHTML = `Token authorization error: <b>${errMsg}</b>.<br>Make sure your GitHub Token has <b>Actions: Write</b> (or classic <b>repo</b>) scope.`;
+        } else {
+          progressMsg.textContent = `Error: ${errMsg}`;
+        }
+      }
+    }
+  } catch (err) {
+    clearInterval(timerInterval);
+    if (startBtn) startBtn.disabled = false;
+    if (quickBtn) quickBtn.disabled = false;
+    if (spinnerEl) spinnerEl.style.display = 'none';
+
+    if (progressTitle) {
+      progressTitle.textContent = '❌ Network Error';
+      progressTitle.style.color = 'var(--red)';
+    }
+    if (progressMsg) progressMsg.textContent = `Failed to contact GitHub API: ${err.message}`;
+  }
+}
+
 function cpRefreshSyncState() {
   const cfg = getCfg(); const configured = document.getElementById('cp-sync-configured'); const setup = document.getElementById('cp-sync-setup'); if (!configured || !setup) return; if (cfg.key && cfg.bin) { configured.style.display = 'block'; setup.style.display = 'none'; const disp = document.getElementById('cp-sync-binid-display'); if (disp) disp.textContent = 'Bin ID: ' + cfg.bin; } else {
     configured.style.display = 'none'; setup.style.display = 'block'; if (cfg.key) { const k = document.getElementById('cfg-key'); if (k) k.value = cfg.key; }
