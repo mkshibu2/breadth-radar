@@ -1854,12 +1854,24 @@
           tranches.push({ label: `E${num}`, qty: et.qty, price: et.price });
         });
 
-      return tranches.map(tr => `
+      let badgesHtml = tranches.map(tr => `
         <span style="font-size: 9px; font-family: var(--mono); background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 4px; padding: 1px 4px; color: var(--sub); display: inline-flex; align-items: center; gap: 3px; margin-right: 4px; margin-top: 3px;">
           <strong style="color: var(--gold); font-size: 8.5px;">${tr.label}</strong>
           <span>${tr.qty}@₹${fmt(tr.price)}</span>
         </span>
       `).join('');
+
+      if (t.status === 'open' && t.plannedTranche && t.plannedTranche.qty && t.plannedTranche.price) {
+        const pt = t.plannedTranche;
+        const ptNum = pt.trancheNum || (tranches.length + 1);
+        badgesHtml += `
+          <span style="font-size: 9px; font-family: var(--mono); background: rgba(90, 169, 255, 0.12); border: 1px dashed var(--blue); border-radius: 4px; padding: 1px 5px; color: var(--blue); display: inline-flex; align-items: center; gap: 3px; margin-right: 4px; margin-top: 3px; cursor: pointer;" onclick="event.stopPropagation(); openTradeModal(STATE.trades.find(x => String(x.id) === '${t.id}'))" title="Planned Tranche ${ptNum} (Awaiting Execution) - Click to view/execute">
+            <strong style="color: var(--blue); font-size: 8.5px;">⏳ T${ptNum} Plan</strong>
+            <span>${pt.qty}@₹${fmt(pt.price)}</span>
+          </span>
+        `;
+      }
+      return badgesHtml;
     }
 
     /* =========================================================================
@@ -1886,6 +1898,24 @@
       return j;
     }
 
+    function syncPlannedTranches() {
+      if (!STATE.trades || !STATE.watchlist) return;
+      STATE.trades.forEach(t => {
+        if (t.status === 'open' && !t.plannedTranche) {
+          const item = STATE.watchlist.find(w => (w.tradeId && String(w.tradeId) === String(t.id)) || (w.isTranche && w.stock && w.stock.toUpperCase() === t.stock.toUpperCase()));
+          if (item && item.entryPrice && item.qty) {
+            t.plannedTranche = {
+              price: item.entryPrice,
+              qty: item.qty,
+              date: item.date || '',
+              trancheNum: item.trancheNum || 2,
+              setup: item.setup || ''
+            };
+          }
+        }
+      });
+    }
+
     async function loadAll() {
       const data = await apiGet();
       STATE.trades = (data.trades || []).map(normalizeTrade);
@@ -1897,6 +1927,7 @@
       if (typeof cleanAndDeduplicateAugustTrades === 'function') {
         cleanAndDeduplicateAugustTrades();
       }
+      syncPlannedTranches();
       saveLocalState();
     }
 
@@ -1937,6 +1968,23 @@
     function normalizeTrade(t) {
       const num = k => t[k] === '' || t[k] === undefined || t[k] === null ? null : Number(t[k]);
       const tradeId = (t && t.id != null) ? String(t.id).trim() : '';
+
+      let plannedTranche = t.plannedTranche || null;
+      if (typeof plannedTranche === 'string') {
+        try { plannedTranche = JSON.parse(plannedTranche); } catch (e) { plannedTranche = null; }
+      }
+      if (plannedTranche && plannedTranche.price && plannedTranche.qty) {
+        plannedTranche = {
+          price: Number(plannedTranche.price),
+          qty: Number(plannedTranche.qty),
+          date: plannedTranche.date || '',
+          trancheNum: Number(plannedTranche.trancheNum) || 2,
+          setup: plannedTranche.setup || ''
+        };
+      } else {
+        plannedTranche = null;
+      }
+
       const norm = {
         ...t,
         id: tradeId,
@@ -1956,7 +2004,8 @@
         maePrice: num('maePrice'), mfePrice: num('mfePrice'),
         setup: t.setup || '', sector: t.sector || '',
         discipline: t.discipline || 'Clean Execution',
-        entryChartUrl: t.entryChartUrl || '', exitChartUrl: t.exitChartUrl || ''
+        entryChartUrl: t.entryChartUrl || '', exitChartUrl: t.exitChartUrl || '',
+        plannedTranche
       };
 
       const buy = aggregateBuy(norm);
@@ -1996,7 +2045,8 @@
         avgSellPrice,
         pnl,
         pnlPct,
-        rr
+        rr,
+        plannedTranche
       };
     }
 
@@ -2011,7 +2061,10 @@
         posSize: num('posSize'),
         risk: num('risk'),
         entryPct: num('entryPct'),
-        breadth: num('breadth')
+        breadth: num('breadth'),
+        isTranche: !!w.isTranche,
+        tradeId: (w.tradeId != null) ? String(w.tradeId).trim() : '',
+        trancheNum: num('trancheNum')
       };
     }
 
@@ -2053,6 +2106,24 @@
 
       const totalCount = buyCount + exitCount;
       return { buyCount, exitCount, totalCount };
+    }
+
+    function getNextTrancheInfo(t) {
+      if (!t) return { nextNum: 2, nextPct: 0.30, suggestedQty: 0, label: 'Tranche 2' };
+      const counts = getTradeTrancheCounts(t);
+      const nextNum = Math.max(2, counts.buyCount + 1);
+      let nextPct = 0.30;
+      if (nextNum === 2) nextPct = 0.30;
+      else if (nextNum === 3) nextPct = 0.20;
+      else nextPct = 0.20;
+
+      let suggestedQty = 0;
+      if (t.fullQty && !isNaN(t.fullQty) && Number(t.fullQty) > 0) {
+        suggestedQty = Math.floor(Number(t.fullQty) * nextPct);
+      } else if (t.entry1Qty) {
+        suggestedQty = Math.floor(Number(t.entry1Qty) * (nextPct / 0.5));
+      }
+      return { nextNum, nextPct, suggestedQty, label: `Tranche ${nextNum}` };
     }
 
     function getSettingBrokerage() {
@@ -2722,6 +2793,7 @@
           if (typeof cleanAndDeduplicateAugustTrades === 'function') {
             cleanAndDeduplicateAugustTrades();
           }
+          syncPlannedTranches();
 
           if (STATE.settings && STATE.settings.colorMode && !localStorage.getItem('tj_color_mode')) {
             setColorMode(STATE.settings.colorMode, false);
@@ -3171,6 +3243,7 @@
                     <tr style="cursor: pointer;" onclick="editWlItem(${idx})" title="Click to open in Risk Calculator">
                       <td style="font-family:var(--sans);font-weight:600;color:var(--gold);">
                         ${item.stock}
+                        ${(item.isTranche || (item.setup && item.setup.includes('Tranche'))) ? `<span class="badge" style="background:rgba(90,169,255,0.15);color:var(--blue);border:1px solid rgba(90,169,255,0.3);font-size:9px;padding:1px 4px;border-radius:3px;font-weight:normal;margin-left:4px;">T${item.trancheNum || 2} Plan</span>` : ''}
                         ${item.setup ? `<br><span style="font-size:9px;color:var(--dim);background:var(--bg2);padding:1px 4px;border-radius:3px;font-weight:normal;">${item.setup}</span>` : ''}
                       </td>
                       <td>${fmt(item.entryPrice)}</td>
@@ -3181,7 +3254,9 @@
                       <td>${fmtRs(item.risk)}</td>
                       <td style="text-align:right;">
                         <div style="display:flex;gap:6px;justify-content:flex-end;">
-                          <button class="btn silver" style="font-size:10px;padding:4px 8px;min-height:auto;" onclick="event.stopPropagation(); moveWlToTradeLog(${idx})">🚀 Buy / Log</button>
+                          <button class="btn ${item.isTranche ? 'primary' : 'silver'}" style="font-size:10px;padding:4px 8px;min-height:auto;${item.isTranche ? 'background:var(--green);border-color:var(--green);' : ''}" onclick="event.stopPropagation(); moveWlToTradeLog(${idx})">
+                            ${item.isTranche ? '⚡ Mark Bought' : '🚀 Buy / Log'}
+                          </button>
                           <button class="btn danger ghost" style="font-size:10px;padding:4px 8px;min-height:auto;" onclick="event.stopPropagation(); deleteWlItem(${idx})">✕</button>
                         </div>
                       </td>
@@ -5380,6 +5455,194 @@
     /* =========================================================================
        TRADE MODAL (view / add pyramid / close / delete)
        ========================================================================= */
+    async function executeTrancheForTrade(t, fillDetails) {
+      if (!t) return null;
+      const price = parseFloat(fillDetails.price);
+      const qty = parseFloat(fillDetails.qty);
+      const date = fillDetails.date || todayISO();
+      if (isNaN(price) || isNaN(qty) || qty <= 0) {
+        toast('Invalid price or quantity for tranche execution', 'err');
+        return null;
+      }
+
+      const defaultPerOrder = getSettingBrokerage();
+      const oldCounts = getTradeTrancheCounts(t);
+      const totalBrok = (fillDetails.brokerage != null && !isNaN(fillDetails.brokerage))
+        ? Number(fillDetails.brokerage)
+        : (t.brokerage != null && Number(t.brokerage) > 0 ? Number(t.brokerage) + defaultPerOrder : defaultPerOrder * (oldCounts.totalCount + 1));
+      const perLegBrok = totalBrok / (oldCounts.totalCount + 1);
+
+      const updated = { ...t, brokerage: totalBrok };
+      if (!updated.entry2Price) {
+        updated.entry2Price = price;
+        updated.entry2Qty = qty;
+        updated.entry2Amt = Math.round(price * qty + perLegBrok);
+        updated.entry2Date = date;
+      } else if (!updated.entry3Price) {
+        updated.entry3Price = price;
+        updated.entry3Qty = qty;
+        updated.entry3Amt = Math.round(price * qty + perLegBrok);
+        updated.entry3Date = date;
+      } else if (!updated.entry4Price) {
+        updated.entry4Price = price;
+        updated.entry4Qty = qty;
+        updated.entry4Amt = Math.round(price * qty + perLegBrok);
+        updated.entry4Date = date;
+      } else if (!updated.entry5Price) {
+        updated.entry5Price = price;
+        updated.entry5Qty = qty;
+        updated.entry5Amt = Math.round(price * qty + perLegBrok);
+        updated.entry5Date = date;
+      } else if (!updated.entry6Price) {
+        updated.entry6Price = price;
+        updated.entry6Qty = qty;
+        updated.entry6Amt = Math.round(price * qty + perLegBrok);
+        updated.entry6Date = date;
+      } else {
+        const oldQty = Number(updated.entry6Qty || 0);
+        const oldAmt = Number(updated.entry6Amt || 0);
+        const newQty = oldQty + qty;
+        const newAmt = oldAmt + Math.round(price * qty + perLegBrok);
+        const newPrice = newQty ? +(newAmt / newQty).toFixed(2) : 0;
+
+        let remarksStr = updated.remarks || '';
+        if (updated.entry6Price && !remarksStr.includes('[Tranche 6:')) {
+          const e6d = updated.entry6Date ? ` on ${formatDateDMY(updated.entry6Date)}` : '';
+          remarksStr = remarksStr.trim() + (remarksStr ? '\n' : '') + `[Tranche 6: ₹${Number(updated.entry6Price).toFixed(2)} × ${updated.entry6Qty}${e6d}]`;
+        }
+        const matches = remarksStr.match(/\[Tranche \d+:/g) || [];
+        const nextNum = 6 + matches.length;
+        remarksStr = remarksStr.trim() + '\n' + `[Tranche ${nextNum}: ₹${price.toFixed(2)} × ${qty} on ${formatDateDMY(date)}]`;
+
+        updated.remarks = remarksStr;
+        updated.entry6Price = newPrice;
+        updated.entry6Qty = newQty;
+        updated.entry6Amt = newAmt;
+        if (!updated.entry6Date) updated.entry6Date = date;
+      }
+
+      const buy = aggregateBuy(normalizeTrade(updated));
+      updated.totBuyQty = buy.totBuyQty;
+      updated.totBuyAmt = buy.totBuyAmt;
+      updated.avgBuyPrice = buy.avgBuyPrice;
+
+      const pnlData = computeOpenTradePnL(updated);
+      updated.pnl = pnlData.pnl;
+      updated.pnlPct = pnlData.pnlPct;
+      updated.rr = computeTradeRR(updated.pnl, updated);
+
+      // Clear plannedTranche on this trade
+      updated.plannedTranche = null;
+
+      // Remove from STATE.watchlist
+      const wl = getWatchlist();
+      const wlIdx = wl.findIndex(w => (w.tradeId && String(w.tradeId) === String(t.id)) || (w.isTranche && w.stock && w.stock.toUpperCase() === t.stock.toUpperCase()));
+      if (wlIdx !== -1) {
+        wl.splice(wlIdx, 1);
+        STATE.watchlist = wl.map(normalizeWatchlist);
+      }
+
+      const normUpdated = normalizeTrade(updated);
+      const trIdx = STATE.trades.findIndex(tr => String(tr.id) === String(updated.id));
+      if (trIdx !== -1) STATE.trades[trIdx] = normUpdated;
+
+      saveLocalState();
+      renderShell();
+      toast(`Tranche executed & marked as bought for ${t.stock}!`, 'ok');
+
+      Promise.all([
+        apiPost({ action: 'updateTrade', trade: updated }),
+        apiPost({ action: 'updateWatchlist', rows: STATE.watchlist })
+      ]).catch(err => { toast('Sync failed: ' + err.message, 'err'); });
+
+      return normUpdated;
+    }
+
+    function promptExecuteTranche(t, pt) {
+      ensureModalElements();
+      const planned = pt || t.plannedTranche || {};
+      const price = planned.price || t.plannedTranche?.price || t.entry1Price || '';
+      const qty = planned.qty || t.plannedTranche?.qty || '';
+      const trancheNum = planned.trancheNum || t.plannedTranche?.trancheNum || (getNextTrancheInfo(t).nextNum);
+
+      const modalBg = $('#modalBg');
+      const modalBody = $('#modalBody');
+      if (!modalBg || !modalBody) return;
+
+      modalBody.style.maxWidth = '420px';
+      modalBody.innerHTML = `
+        <div class="modal-head">
+          <h3 style="margin:0;">⚡ Execute Tranche ${trancheNum} · ${t.stock}</h3>
+          <button class="close-x" id="execCloseBtn">✕</button>
+        </div>
+        <p style="color:var(--sub); font-size:12px; margin-top:6px; margin-bottom:14px; line-height:1.4;">
+          Confirm execution fill to mark this planned tranche as bought. This will update the open position's average price and share count.
+        </p>
+
+        <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+          <div class="field">
+            <label>Fill Price (₹)</label>
+            <input type="number" step="0.01" id="exec_price" value="${price}" style="font-family:var(--mono);">
+          </div>
+          <div class="field">
+            <label>Filled Qty</label>
+            <input type="number" id="exec_qty" value="${qty}" style="font-family:var(--mono);">
+          </div>
+          <div class="field">
+            <label>Execution Date</label>
+            <input type="date" id="exec_date" value="${todayISO()}">
+          </div>
+          <div class="field readonly">
+            <label>Turnover (₹)</label>
+            <input type="text" id="exec_turnover" disabled value="${fmtRs(Math.round(Number(price || 0) * Number(qty || 0)))}" style="font-family:var(--mono);">
+          </div>
+        </div>
+
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button class="btn ghost" id="execCancelBtn">Cancel</button>
+          <button class="btn primary" id="execConfirmBtn" style="background:var(--green); border-color:var(--green); font-weight:600;">
+            ✓ Confirm Execution
+          </button>
+        </div>
+      `;
+      modalBg.classList.add('show');
+
+      const updateTurnover = () => {
+        const p = parseFloat($('#exec_price').value) || 0;
+        const q = parseFloat($('#exec_qty').value) || 0;
+        const toEl = $('#exec_turnover');
+        if (toEl) toEl.value = fmtRs(Math.round(p * q));
+      };
+      if ($('#exec_price')) $('#exec_price').oninput = updateTurnover;
+      if ($('#exec_qty')) $('#exec_qty').oninput = updateTurnover;
+
+      const closeAndReopen = () => {
+        closeModal();
+        const currentT = STATE.trades.find(x => String(x.id) === String(t.id));
+        if (currentT) openTradeModal(currentT);
+      };
+
+      $('#execCloseBtn').onclick = closeAndReopen;
+      $('#execCancelBtn').onclick = closeAndReopen;
+
+      $('#execConfirmBtn').onclick = async () => {
+        const p = parseFloat($('#exec_price').value);
+        const q = parseFloat($('#exec_qty').value);
+        const d = $('#exec_date').value || todayISO();
+        if (isNaN(p) || p <= 0 || isNaN(q) || q <= 0) {
+          toast('Please enter valid fill price and quantity', 'err');
+          return;
+        }
+        $('#execConfirmBtn').innerHTML = '<span class="spinner"></span> Executing…';
+        $('#execConfirmBtn').disabled = true;
+
+        const updated = await executeTrancheForTrade(t, { price: p, qty: q, date: d });
+        closeModal();
+        if (updated) openTradeModal(updated);
+      };
+    }
+    window.promptExecuteTranche = promptExecuteTranche;
+
     function openTradeModal(t) {
       ensureModalElements();
       if (!t) {
@@ -5396,30 +5659,17 @@
         `;
       };
 
+      const ptInfo = getNextTrancheInfo(t);
+      const nextTrancheNum = ptInfo.nextNum;
+      const nextSuggestedQty = ptInfo.suggestedQty;
+      const nextTranchePct = ptInfo.nextPct;
+      let qtyLabel = `Qty (${Math.round(nextTranchePct * 100)}%)`;
+
       let prefillPrice = '';
-      let prefillQty = '';
-      let qtyLabel = 'Qty';
-      if (t.status === 'open') {
-        if (!t.entry2Price) {
-          prefillQty = Math.floor(Number(t.fullQty || 0) * 0.3) || '';
-          qtyLabel = 'Qty (30%)';
-        } else if (!t.entry3Price) {
-          prefillQty = Math.floor(Number(t.fullQty || 0) * 0.2) || '';
-          qtyLabel = 'Qty (20%)';
-        } else if (!t.entry4Price) {
-          prefillQty = Math.floor(Number(t.fullQty || 0) * 0.2) || '';
-          qtyLabel = 'Qty (20%)';
-        } else if (!t.entry5Price) {
-          prefillQty = Math.floor(Number(t.fullQty || 0) * 0.2) || '';
-          qtyLabel = 'Qty (20%)';
-        } else if (!t.entry6Price) {
-          prefillQty = Math.floor(Number(t.fullQty || 0) * 0.2) || '';
-          qtyLabel = 'Qty (20%)';
-        } else {
-          prefillQty = '';
-          qtyLabel = 'Qty';
-        }
-      }
+      let prefillQty = nextSuggestedQty || '';
+
+      const hasPlannedTranche = !!(t.plannedTranche && t.plannedTranche.qty && t.plannedTranche.price);
+      const plannedTrancheData = hasPlannedTranche ? t.plannedTranche : null;
 
       // Parse extra tranches from remarks
       const extraTranches = {};
@@ -5611,6 +5861,15 @@
             const et = extraTranches[num];
             return buildTrancheRow(num, `T${num}${et.date ? ` (${formatDateDMY(et.date)})` : ''}`, et.price, et.qty);
           }).join('')}
+
+          ${hasPlannedTranche ? `
+          <!-- Planned Tranche (Awaiting Execution) in Buys Breakdown -->
+          <div style="display: grid; grid-template-columns: 85px 1fr 1fr; gap: 8px; align-items: center; background:rgba(90,169,255,.05); padding: 4px 8px; border-radius: 4px; border: 1px dashed var(--blue); margin-top:2px;" title="Planned Tranche awaiting execution">
+            <span style="color:var(--blue); font-size: 11px; font-weight:600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">⏳ T${plannedTrancheData.trancheNum || nextTrancheNum} (Plan):</span>
+            <span style="font-family:var(--mono); font-size: 12px; color:var(--text); padding-left: 2px;">₹${fmt(plannedTrancheData.price)}</span>
+            <span style="font-family:var(--mono); font-size: 12px; color:var(--text); padding-left: 2px;">${plannedTrancheData.qty}</span>
+          </div>
+          ` : ''}
         </div>
       </fieldset>
 
@@ -5648,14 +5907,43 @@
     ${t.status === 'open' ? `
     <div class="modal-two-col">
       <fieldset style="margin-top:0; padding:12px;">
-        <legend>Add pyramid entry</legend>
-        <div class="form-grid" style="grid-template-columns: 1fr; gap: 8px;">
-          <div class="field"><label>Price</label><input type="number" step="0.01" id="m_addPrice" value="${prefillPrice}"></div>
-          <div class="field"><label>${qtyLabel}</label><input type="text" id="m_addQty" value="${prefillQty}" placeholder="e.g. 100 or 30%"></div>
-          <div class="field"><label>Date</label><input type="date" id="m_addDate" value="${todayISO()}"></div>
-          <div style="display: flex; gap: 8px; margin-top: 4px;">
-            <button class="btn primary" id="m_planTranche" style="flex: 1; justify-content:center; white-space: nowrap;">Plan Next Tranche</button>
-            <button class="btn primary" id="m_addLeg" style="flex: 1; justify-content:center;">Add Buy Leg</button>
+        <legend>Tranche Management (T${nextTrancheNum})</legend>
+        ${hasPlannedTranche ? `
+        <div id="plannedTrancheDisplayCard" style="background: rgba(90, 169, 255, 0.08); border: 1px dashed var(--blue); border-radius: 6px; padding: 10px; margin-bottom: 8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+            <span style="font-size: 11px; font-weight: 700; color: var(--blue); display: flex; align-items: center; gap: 4px;">
+              ⏳ Planned Tranche ${plannedTrancheData.trancheNum || nextTrancheNum} (Planning Phase)
+            </span>
+            <span style="font-size: 10px; color: var(--dim);">${plannedTrancheData.date ? formatDateDMY(plannedTrancheData.date) : 'Pending Fill'}</span>
+          </div>
+          <div style="font-size: 12.5px; font-family: var(--mono); color: var(--text); margin-bottom: 8px;">
+            <strong>${plannedTrancheData.qty} shares</strong> @ <strong>₹${fmt(plannedTrancheData.price)}</strong>
+            <span style="color:var(--dim); font-size:11px; margin-left: 4px;">· Est. ${fmtRs(Math.round(plannedTrancheData.qty * plannedTrancheData.price))}</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn primary" id="m_execPlannedBtn" style="flex: 2; justify-content: center; background: var(--green); border-color: var(--green); font-size: 11px; padding: 4px 8px; font-weight:600;">
+              ⚡ Execute / Mark as Bought
+            </button>
+            <button class="btn ghost" id="m_editPlannedBtn" style="flex: 1; justify-content: center; font-size: 11px; padding: 4px 6px;">
+              ✏️ Edit
+            </button>
+            <button class="btn danger ghost" id="m_cancelPlannedBtn" style="justify-content: center; font-size: 11px; padding: 4px 8px;" title="Cancel Planned Tranche">
+              ✕
+            </button>
+          </div>
+        </div>
+        ` : ''}
+
+        <div id="pyramidFormWrap" style="${hasPlannedTranche ? 'display:none;' : ''}">
+          <div class="form-grid" style="grid-template-columns: 1fr; gap: 8px;">
+            <div class="field"><label>Trigger / Planned Price (₹)</label><input type="number" step="0.01" id="m_addPrice" value="${prefillPrice}"></div>
+            <div class="field"><label>${qtyLabel}</label><input type="text" id="m_addQty" value="${prefillQty}" placeholder="e.g. 100 or ${Math.round(nextTranchePct * 100)}%"></div>
+            <div class="field"><label>Planned Date</label><input type="date" id="m_addDate" value="${todayISO()}"></div>
+            <div style="display: flex; gap: 6px; margin-top: 4px;">
+              <button class="btn primary" id="m_planTrancheDirect" style="flex: 1.2; justify-content:center; white-space: nowrap; font-size: 11px; padding: 5px 6px; background: rgba(90, 169, 255, 0.15); border: 1px solid var(--blue); color: var(--blue);" title="Save as Planned Trade without buying yet">📋 Plan Tranche ${nextTrancheNum}</button>
+              <button class="btn ghost" id="m_planTrancheCalc" style="flex: 0.9; justify-content:center; white-space: nowrap; font-size: 11px; padding: 5px 6px;" title="Size in Position Calculator">📐 Calculator</button>
+              <button class="btn silver" id="m_addLeg" style="flex: 1; justify-content:center; font-size: 11px; padding: 5px 6px;" title="Immediately add bought leg">⚡ Instant Buy</button>
+            </div>
           </div>
         </div>
       </fieldset>
@@ -5994,39 +6282,98 @@
         input.oninput = updateModalPnLAndRisk;
       });
 
-      const planTrancheBtn = $('#m_planTranche');
-      if (planTrancheBtn) {
-        planTrancheBtn.onclick = () => {
-          let activeTrancheCount = 0;
-          if (t.entry1Qty && t.entry1Price) activeTrancheCount++;
-          if (t.entry2Qty && t.entry2Price) activeTrancheCount++;
-          if (t.entry3Qty && t.entry3Price) activeTrancheCount++;
-          if (t.entry4Qty && t.entry4Price) activeTrancheCount++;
-          if (t.entry5Qty && t.entry5Price) activeTrancheCount++;
-          if (t.entry6Qty && t.entry6Price) activeTrancheCount++;
+      // 1. Direct In-Modal Save as Planned Tranche (Option 1 - Primary)
+      const planDirectBtn = $('#m_planTrancheDirect');
+      if (planDirectBtn) {
+        planDirectBtn.onclick = async () => {
+          const price = parseFloat($('#m_addPrice').value);
+          let rawQty = $('#m_addQty').value.trim();
+          let qty = parseFloat(rawQty);
+          if (rawQty.endsWith('%')) {
+            const pct = parseFloat(rawQty) / 100;
+            qty = Math.floor(Number(t.fullQty || t.totBuyQty || 0) * pct);
+          }
+          const date = $('#m_addDate').value || todayISO();
 
-          let nextPct = 0.50;
-          if (activeTrancheCount === 1) nextPct = 0.30;
-          else if (activeTrancheCount === 2) nextPct = 0.20;
-          else if (activeTrancheCount >= 3) nextPct = 0.20;
+          if (isNaN(price) || price <= 0 || isNaN(qty) || qty <= 0) {
+            toast('Please enter valid price and quantity to plan tranche', 'err');
+            return;
+          }
 
+          const { nextNum, nextPct } = getNextTrancheInfo(t);
+          const plannedTranche = {
+            price,
+            qty,
+            date,
+            trancheNum: nextNum,
+            setup: t.setup || ''
+          };
+
+          t.plannedTranche = plannedTranche;
+
+          // Sync with STATE.watchlist
+          const wl = getWatchlist();
+          const existingWlIdx = wl.findIndex(w => (w.tradeId && String(w.tradeId) === String(t.id)) || (w.isTranche && w.stock && w.stock.toUpperCase() === t.stock.toUpperCase()));
+          const wlItem = {
+            stock: t.stock,
+            entryPrice: price,
+            slPrice: t.tslPrice || t.slPrice || null,
+            slPct: t.slPct || null,
+            qty: qty,
+            posSize: Math.round(price * qty),
+            risk: (t.slPrice || t.tslPrice) ? Math.round(qty * Math.abs(price - Number(t.tslPrice || t.slPrice))) : 0,
+            entryPct: nextPct,
+            setup: `Tranche ${nextNum} Add-on`,
+            isTranche: true,
+            tradeId: t.id,
+            trancheNum: nextNum
+          };
+
+          if (existingWlIdx !== -1) {
+            wl[existingWlIdx] = wlItem;
+          } else {
+            wl.push(wlItem);
+          }
+          STATE.watchlist = wl.map(normalizeWatchlist);
+
+          const trIdx = STATE.trades.findIndex(tr => String(tr.id) === String(t.id));
+          if (trIdx !== -1) STATE.trades[trIdx] = normalizeTrade(t);
+
+          saveLocalState();
+          toast(`Planned Tranche ${nextNum} saved for ${t.stock}!`, 'ok');
+          openTradeModal(t);
+
+          Promise.all([
+            apiPost({ action: 'updateTrade', trade: t }),
+            apiPost({ action: 'updateWatchlist', rows: STATE.watchlist })
+          ]).catch(err => console.error('Sync error:', err));
+        };
+      }
+
+      // 2. Plan via Position Calculator (Option 2 - Secondary)
+      const planCalcBtn = $('#m_planTrancheCalc');
+      if (planCalcBtn) {
+        planCalcBtn.onclick = () => {
+          const { nextNum, nextPct } = getNextTrancheInfo(t);
+          const addPriceEl = $('#m_addPrice');
+          const customPrice = addPriceEl ? parseFloat(addPriceEl.value) : NaN;
           let lastEntryPrice = t.entry1Price;
           if (t.entry2Price) lastEntryPrice = t.entry2Price;
           if (t.entry3Price) lastEntryPrice = t.entry3Price;
           if (t.entry4Price) lastEntryPrice = t.entry4Price;
           if (t.entry5Price) lastEntryPrice = t.entry5Price;
           if (t.entry6Price) lastEntryPrice = t.entry6Price;
-
-          const addPriceEl = $('#m_addPrice');
-          const customPrice = addPriceEl ? parseFloat(addPriceEl.value) : NaN;
           const planPrice = !isNaN(customPrice) && customPrice > 0 ? customPrice : (lastEntryPrice || '');
 
           STATE.prefillPlan = {
             stock: t.stock,
-            slPrice: t.slPrice,
+            slPrice: t.tslPrice || t.slPrice,
             entryPrice: planPrice,
             entryPct: nextPct,
-            setup: t.setup || ''
+            setup: `Tranche ${nextNum} Add-on`,
+            isTranche: true,
+            tradeId: t.id,
+            trancheNum: nextNum
           };
 
           closeModal();
@@ -6035,92 +6382,82 @@
         };
       }
 
+      // 3. Execute / Mark as bought button from card
+      const execPlannedBtn = $('#m_execPlannedBtn');
+      if (execPlannedBtn) {
+        execPlannedBtn.onclick = () => {
+          promptExecuteTranche(t, plannedTrancheData);
+        };
+      }
+
+      // 4. Edit planned tranche button from card
+      const editPlannedBtn = $('#m_editPlannedBtn');
+      if (editPlannedBtn) {
+        editPlannedBtn.onclick = () => {
+          if (plannedTrancheData) {
+            $('#m_addPrice').value = plannedTrancheData.price || '';
+            $('#m_addQty').value = plannedTrancheData.qty || '';
+            if (plannedTrancheData.date) $('#m_addDate').value = plannedTrancheData.date;
+          }
+          const card = $('#plannedTrancheDisplayCard');
+          if (card) card.style.display = 'none';
+          const formWrap = $('#pyramidFormWrap');
+          if (formWrap) formWrap.style.display = 'block';
+          $('#m_addPrice').focus();
+        };
+      }
+
+      // 5. Cancel planned tranche button from card
+      const cancelPlannedBtn = $('#m_cancelPlannedBtn');
+      if (cancelPlannedBtn) {
+        cancelPlannedBtn.onclick = async () => {
+          if (!confirm(`Cancel planned tranche for ${t.stock}?`)) return;
+          t.plannedTranche = null;
+          const wl = getWatchlist();
+          const wlIdx = wl.findIndex(w => (w.tradeId && String(w.tradeId) === String(t.id)) || (w.isTranche && w.stock && w.stock.toUpperCase() === t.stock.toUpperCase()));
+          if (wlIdx !== -1) {
+            wl.splice(wlIdx, 1);
+            STATE.watchlist = wl.map(normalizeWatchlist);
+          }
+          const trIdx = STATE.trades.findIndex(tr => String(tr.id) === String(t.id));
+          if (trIdx !== -1) STATE.trades[trIdx] = normalizeTrade(t);
+          saveLocalState();
+          toast(`Planned tranche cancelled for ${t.stock}`, 'info');
+          openTradeModal(t);
+
+          Promise.all([
+            apiPost({ action: 'updateTrade', trade: t }),
+            apiPost({ action: 'updateWatchlist', rows: STATE.watchlist })
+          ]).catch(err => console.error('Sync error:', err));
+        };
+      }
+
+      // 6. Direct instant buy leg (Add Buy Leg)
       const addLegBtn = $('#m_addLeg');
       if (addLegBtn) {
         addLegBtn.onclick = async () => {
-          const price = parseFloat($('#m_addPrice').value), qty = parseFloat($('#m_addQty').value);
-          const date = $('#m_addDate').value;
-          const defaultPerOrder = getSettingBrokerage();
-          const oldCounts = getTradeTrancheCounts(t);
+          const price = parseFloat($('#m_addPrice').value);
+          let rawQty = $('#m_addQty').value.trim();
+          let qty = parseFloat(rawQty);
+          if (rawQty.endsWith('%')) {
+            const pct = parseFloat(rawQty) / 100;
+            qty = Math.floor(Number(t.fullQty || t.totBuyQty || 0) * pct);
+          }
+          const date = $('#m_addDate').value || todayISO();
+          if (isNaN(price) || isNaN(qty) || qty <= 0) {
+            toast('Enter price and qty', 'err');
+            return;
+          }
           const userBrokVal = parseFloat($('#m_brokerage')?.value);
-          const totalBrok = (!isNaN(userBrokVal) && userBrokVal !== (defaultPerOrder * oldCounts.totalCount))
-            ? userBrokVal
-            : defaultPerOrder * (oldCounts.totalCount + 1);
-          const perLegBrok = totalBrok / (oldCounts.totalCount + 1);
-
-          if (isNaN(price) || isNaN(qty)) { toast('Enter price and qty', 'err'); return; }
-          const updated = { ...t, brokerage: totalBrok };
-          if (!updated.entry2Price) {
-            updated.entry2Price = price;
-            updated.entry2Qty = qty;
-            updated.entry2Amt = Math.round(price * qty + perLegBrok);
-            updated.entry2Date = date;
-          }
-          else if (!updated.entry3Price) {
-            updated.entry3Price = price;
-            updated.entry3Qty = qty;
-            updated.entry3Amt = Math.round(price * qty + perLegBrok);
-            updated.entry3Date = date;
-          }
-          else if (!updated.entry4Price) {
-            updated.entry4Price = price;
-            updated.entry4Qty = qty;
-            updated.entry4Amt = Math.round(price * qty + perLegBrok);
-            updated.entry4Date = date;
-          }
-          else if (!updated.entry5Price) {
-            updated.entry5Price = price;
-            updated.entry5Qty = qty;
-            updated.entry5Amt = Math.round(price * qty + perLegBrok);
-            updated.entry5Date = date;
-          }
-          else if (!updated.entry6Price) {
-            updated.entry6Price = price;
-            updated.entry6Qty = qty;
-            updated.entry6Amt = Math.round(price * qty + perLegBrok);
-            updated.entry6Date = date;
-          }
-          else {
-            const oldQty = Number(updated.entry6Qty || 0);
-            const oldAmt = Number(updated.entry6Amt || 0);
-            const newQty = oldQty + qty;
-            const newAmt = oldAmt + Math.round(price * qty + perLegBrok);
-            const newPrice = newQty ? +(newAmt / newQty).toFixed(2) : 0;
-
-            let remarksStr = updated.remarks || '';
-            if (updated.entry6Price && !remarksStr.includes('[Tranche 6:')) {
-              const e6d = updated.entry6Date ? ` on ${formatDateDMY(updated.entry6Date)}` : '';
-              remarksStr = remarksStr.trim() + (remarksStr ? '\n' : '') + `[Tranche 6: ₹${Number(updated.entry6Price).toFixed(2)} × ${updated.entry6Qty}${e6d}]`;
-            }
-            const matches = remarksStr.match(/\[Tranche \d+:/g) || [];
-            const nextNum = 6 + matches.length;
-            remarksStr = remarksStr.trim() + '\n' + `[Tranche ${nextNum}: ₹${price.toFixed(2)} × ${qty} on ${formatDateDMY(date)}]`;
-
-            updated.remarks = remarksStr;
-            updated.entry6Price = newPrice;
-            updated.entry6Qty = newQty;
-            updated.entry6Amt = newAmt;
-            if (!updated.entry6Date) {
-              updated.entry6Date = date;
-            }
-          }
-          const buy = aggregateBuy(normalizeTrade(updated));
-          updated.totBuyQty = buy.totBuyQty; updated.totBuyAmt = buy.totBuyAmt; updated.avgBuyPrice = buy.avgBuyPrice;
-
-          // Re-calculate Expected P/L for open position
-          const pnlData = computeOpenTradePnL(updated);
-          updated.pnl = pnlData.pnl;
-          updated.pnlPct = pnlData.pnlPct;
-          updated.rr = computeTradeRR(updated.pnl, updated);
-
-          const normUpdated = normalizeTrade(updated);
-          const idx = STATE.trades.findIndex(tr => String(tr.id) === String(updated.id));
-          if (idx !== -1) STATE.trades[idx] = normUpdated;
-          saveLocalState();
-          toast('Position updated', 'ok');
+          await executeTrancheForTrade(t, {
+            price,
+            qty,
+            date,
+            brokerage: isNaN(userBrokVal) ? null : userBrokVal
+          });
           closeModal();
-          renderShell();
-          apiPost({ action: 'updateTrade', trade: updated }).catch(err => { toast('Sync failed: ' + err.message, 'err'); });
+          const updated = STATE.trades.find(x => String(x.id) === String(t.id));
+          if (updated) openTradeModal(updated);
         };
         const addQtyEl = $('#m_addQty');
         if (addQtyEl) {
@@ -6567,97 +6904,18 @@
       const riskPct = Number(STATE.settings.riskPctPerTrade || 0.01);
 
       // Check if there is an existing open trade for this stock
-      const existing = (STATE.trades || []).find(t => t.status === 'open' && t.stock.toUpperCase() === item.stock.toUpperCase());
+      const existing = (STATE.trades || []).find(t => t.status === 'open' && (
+        (item.tradeId && String(t.id) === String(item.tradeId)) ||
+        t.stock.toUpperCase() === item.stock.toUpperCase()
+      ));
 
       if (existing) {
-        toast(`Adding tranche to existing open trade for ${item.stock}...`, 'info');
-        const updated = { ...existing };
-        const price = item.entryPrice;
-        const qty = item.qty;
-        const date = todayISO();
-
-        if (!updated.entry2Price) {
-          updated.entry2Price = price;
-          updated.entry2Qty = qty;
-          updated.entry2Amt = Math.round(price * qty);
-          updated.entry2Date = date;
-        }
-        else if (!updated.entry3Price) {
-          updated.entry3Price = price;
-          updated.entry3Qty = qty;
-          updated.entry3Amt = Math.round(price * qty);
-          updated.entry3Date = date;
-        }
-        else if (!updated.entry4Price) {
-          updated.entry4Price = price;
-          updated.entry4Qty = qty;
-          updated.entry4Amt = Math.round(price * qty);
-          updated.entry4Date = date;
-        }
-        else if (!updated.entry5Price) {
-          updated.entry5Price = price;
-          updated.entry5Qty = qty;
-          updated.entry5Amt = Math.round(price * qty);
-          updated.entry5Date = date;
-        }
-        else if (!updated.entry6Price) {
-          updated.entry6Price = price;
-          updated.entry6Qty = qty;
-          updated.entry6Amt = Math.round(price * qty);
-          updated.entry6Date = date;
-        }
-        else {
-          const oldQty = Number(updated.entry6Qty || 0);
-          const oldAmt = Number(updated.entry6Amt || 0);
-          const newQty = oldQty + qty;
-          const newAmt = oldAmt + Math.round(price * qty);
-          const newPrice = newQty ? +(newAmt / newQty).toFixed(2) : 0;
-
-          let remarksStr = updated.remarks || '';
-          if (updated.entry6Price && !remarksStr.includes('[Tranche 6:')) {
-            const e6d = updated.entry6Date ? ` on ${formatDateDMY(updated.entry6Date)}` : '';
-            remarksStr = remarksStr.trim() + (remarksStr ? '\n' : '') + `[Tranche 6: ₹${Number(updated.entry6Price).toFixed(2)} × ${updated.entry6Qty}${e6d}]`;
-          }
-          const matches = remarksStr.match(/\[Tranche \d+:/g) || [];
-          const nextNum = 6 + matches.length;
-          remarksStr = remarksStr.trim() + '\n' + `[Tranche ${nextNum}: ₹${price.toFixed(2)} × ${qty} on ${formatDateDMY(date)}]`;
-
-          updated.remarks = remarksStr;
-          updated.entry6Price = newPrice;
-          updated.entry6Qty = newQty;
-          updated.entry6Amt = newAmt;
-          if (!updated.entry6Date) {
-            updated.entry6Date = date;
-          }
-        }
-
-        const buy = aggregateBuy(normalizeTrade(updated));
-        updated.totBuyQty = buy.totBuyQty;
-        updated.totBuyAmt = buy.totBuyAmt;
-        updated.avgBuyPrice = buy.avgBuyPrice;
-
-        const pnlData = computeOpenTradePnL(updated);
-        updated.pnl = pnlData.pnl;
-        updated.pnlPct = pnlData.pnlPct;
-        updated.rr = computeTradeRR(updated.pnl, updated);
-
-        const wlRemark = item.setup ? `Logged planned tranche from watchlist (Setup: ${item.setup})` : 'Logged planned tranche from watchlist';
-        updated.remarks = (updated.remarks || '').trim() + (updated.remarks ? '\n' : '') + wlRemark;
-
-        const normUpdated = normalizeTrade(updated);
-        const trIdx = STATE.trades.findIndex(tr => String(tr.id) === String(updated.id));
-        if (trIdx !== -1) STATE.trades[trIdx] = normUpdated;
-        wl.splice(idx, 1);
-        STATE.watchlist = wl.map(normalizeWatchlist);
-        saveLocalState();
-        STATE.view = 'trades';
-        renderShell();
-        toast(`Successfully logged planned tranche for ${item.stock}!`, 'ok');
-
-        Promise.all([
-          apiPost({ action: 'updateTrade', trade: updated }),
-          apiPost({ action: 'updateWatchlist', rows: wl })
-        ]).catch(err => { toast('Sync failed: ' + err.message, 'err'); });
+        promptExecuteTranche(existing, {
+          price: item.entryPrice,
+          qty: item.qty,
+          date: todayISO(),
+          trancheNum: item.trancheNum || getNextTrancheInfo(existing).nextNum
+        });
       } else {
         // Fallback to current behavior: log a brand new open trade under Tranche 1
         const c = computeEntryCalc({
@@ -6726,6 +6984,16 @@
 
     window.deleteWlItem = async (idx) => {
       const wl = getWatchlist();
+      const item = wl[idx];
+      if (item && (item.isTranche || item.tradeId)) {
+        const parentTrade = (STATE.trades || []).find(t => t.status === 'open' && (String(t.id) === String(item.tradeId) || t.stock.toUpperCase() === item.stock.toUpperCase()));
+        if (parentTrade) {
+          parentTrade.plannedTranche = null;
+          const trIdx = STATE.trades.findIndex(t => String(t.id) === String(parentTrade.id));
+          if (trIdx !== -1) STATE.trades[trIdx] = normalizeTrade(parentTrade);
+          apiPost({ action: 'updateTrade', trade: parentTrade }).catch(e => console.error(e));
+        }
+      }
       wl.splice(idx, 1);
       if (STATE.editingWlIdx === idx) {
         STATE.editingWlIdx = null;
@@ -6777,6 +7045,19 @@
 
       host.innerHTML = `
     <div class="page-head"><div><h1>Position Calculator</h1><p>Position sizing sandbox & planned trades planner</p></div></div>
+    
+    ${STATE.prefillPlan && STATE.prefillPlan.isTranche ? `
+    <div style="background: rgba(88, 166, 255, 0.08); border: 1px dashed var(--blue, #58a6ff); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; font-size: 12px;">
+      <div>
+        <strong style="color: var(--blue, #58a6ff); display: flex; align-items: center; gap: 6px;">
+          ⏳ Planning Tranche ${STATE.prefillPlan.trancheNum || 2} for Open Trade: ${STATE.prefillPlan.stock}
+        </strong>
+        <div style="color: var(--dim); margin-top: 2px;">
+          Position sizing prefilled for ${STATE.prefillPlan.stock}. Review or tweak price/quantity below. When you click <strong>Add to Planned Watchlist</strong>, it will be saved as a <em>Planned Tranche</em> and cross-linked with this open trade. It will only be marked bought when executed.
+        </div>
+      </div>
+      <button class="btn silver ghost" style="font-size: 11px; padding: 3px 8px; min-height: auto;" onclick="STATE.prefillPlan = null; renderShell();">✕ Cancel</button>
+    </div>` : ''}
     
     <!-- Unified Sandbox Calculator Card -->
     <div class="panel" style="padding: 14px; margin-bottom: 14px;">
@@ -6907,7 +7188,7 @@
         <tbody>
           ${wl.length ? wl.map((item, idx) => `
             <tr style="cursor: pointer; ${STATE.editingWlIdx === idx ? 'background: rgba(212, 162, 78, 0.08); border-left: 3.5px solid var(--gold);' : ''}" onclick="editWlItem(${idx})">
-              <td style="font-family:var(--sans);font-weight:600;color:var(--gold);">${STATE.editingWlIdx === idx ? '⚡ ' : ''}${item.stock}${item.setup ? `<br><span style="font-size:9px;color:var(--dim);background:var(--bg2);padding:1px 4px;border-radius:3px;font-weight:normal;">${item.setup}</span>` : ''}</td>
+              <td style="font-family:var(--sans);font-weight:600;color:var(--gold);">${STATE.editingWlIdx === idx ? '⚡ ' : ''}${item.stock}${item.isTranche ? `<span style="display:inline-block;padding:1px 6px;border-radius:10px;font-size:9.5px;font-weight:700;color:var(--blue);background:rgba(88,166,255,0.12);border:1px dashed var(--blue);margin-left:4px;">T${item.trancheNum || 2} Plan</span>` : ''}${item.setup ? `<br><span style="font-size:9px;color:var(--dim);background:var(--bg2);padding:1px 4px;border-radius:3px;font-weight:normal;">${item.setup}</span>` : ''}</td>
               <td>${fmt(item.entryPrice)}</td>
               <td>${fmt(item.slPrice)}</td>
               <td style="color:var(--red);">${fmtPct(item.slPct)}</td>
@@ -6916,7 +7197,11 @@
               <td>${fmtRs(item.risk)}</td>
               <td>
                 <div style="display:flex;gap:6px;">
-                  <button class="btn silver" style="font-size:10px;padding:4px 8px;min-height:auto;" onclick="event.stopPropagation(); moveWlToTradeLog(${idx})">🚀 Buy / Log</button>
+                  ${item.isTranche ? `
+                    <button class="btn blue" style="font-size:10px;padding:4px 8px;min-height:auto;background:rgba(88,166,255,0.18);border:1px solid var(--blue);color:var(--blue);" onclick="event.stopPropagation(); moveWlToTradeLog(${idx})">⚡ Mark Bought</button>
+                  ` : `
+                    <button class="btn silver" style="font-size:10px;padding:4px 8px;min-height:auto;" onclick="event.stopPropagation(); moveWlToTradeLog(${idx})">🚀 Buy / Log</button>
+                  `}
                   <button class="btn danger ghost" style="font-size:10px;padding:4px 8px;min-height:auto;" onclick="event.stopPropagation(); deleteWlItem(${idx})">✕ Remove</button>
                 </div>
               </td>
@@ -7092,6 +7377,17 @@
         const risk = c.slPerShare && qty ? Math.round(qty * c.slPerShare + brokerage) : 0;
 
         const currentWl = getWatchlist();
+        const isTranchePrefill = !!(STATE.prefillPlan && STATE.prefillPlan.isTranche);
+        const trancheMeta = isTranchePrefill ? {
+          isTranche: true,
+          tradeId: STATE.prefillPlan.tradeId,
+          trancheNum: STATE.prefillPlan.trancheNum
+        } : (STATE.editingWlIdx !== null && currentWl[STATE.editingWlIdx]?.isTranche ? {
+          isTranche: true,
+          tradeId: currentWl[STATE.editingWlIdx].tradeId,
+          trancheNum: currentWl[STATE.editingWlIdx].trancheNum
+        } : {});
+
         const updatedItem = {
           stock,
           entryPrice,
@@ -7102,21 +7398,46 @@
           risk,
           entryPct,
           breadth,
-          setup
+          setup,
+          ...trancheMeta
         };
+
+        // If this is a planned tranche, cross-link it to the parent trade
+        if (updatedItem.isTranche) {
+          const parentTrade = (STATE.trades || []).find(t =>
+            (updatedItem.tradeId && String(t.id) === String(updatedItem.tradeId)) ||
+            (t.stock.toUpperCase() === updatedItem.stock.toUpperCase() && t.status === 'open')
+          );
+          if (parentTrade) {
+            updatedItem.tradeId = parentTrade.id;
+            parentTrade.plannedTranche = {
+              price: entryPrice,
+              qty: qty,
+              date: todayISO(),
+              trancheNum: updatedItem.trancheNum || 2,
+              setup: setup || `Tranche ${updatedItem.trancheNum || 2} Add-on`
+            };
+            const trIdx = STATE.trades.findIndex(t => String(t.id) === String(parentTrade.id));
+            if (trIdx !== -1) STATE.trades[trIdx] = normalizeTrade(parentTrade);
+            apiPost({ action: 'updateTrade', trade: parentTrade }).catch(e => console.warn('Trade sync error:', e));
+          }
+        }
 
         if (STATE.editingWlIdx !== null) {
           currentWl[STATE.editingWlIdx] = updatedItem;
           STATE.editingWlIdx = null;
+          saveLocalState();
           await saveWatchlist(currentWl);
           renderShell();
           toast(`Updated ${stock} in planned watchlist!`, 'ok');
         } else {
           currentWl.push(updatedItem);
-          await saveWatchlist(currentWl);
+          const wasTranche = isTranchePrefill;
           STATE.prefillPlan = null; // Clear prefill plan
+          saveLocalState();
+          await saveWatchlist(currentWl);
           renderShell();
-          toast(`Added ${stock} to planned watchlist!`, 'ok');
+          toast(wasTranche ? `Planned Tranche saved for ${stock}!` : `Added ${stock} to planned watchlist!`, 'ok');
         }
       };
 
