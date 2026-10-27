@@ -1243,7 +1243,7 @@ async function saveToday() {
   const today = todayISO(); const allData = loadLocal(); const data = allData.filter(r => r.date !== today); const vol = g('i-vol'); const row = { date: today, adv, dec, unc: g('i-unc'), hi: g('i-hi'), lo: g('i-lo'), e20, s50, s200, nifty: g('i-nifty'), niftyLow: g('i-nifty-low'), vol, notes: g('i-notes'), _updatedAt: Date.now() }; row.score = calcScore(row); const z = getZone(row.score); row.zone = z.name; row.r = z.r; data.push(row); const sorted = data.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30); saveLocal(sorted); const niftyClose = parseFloat(row.nifty); const niftyVol = parseFloat(row.vol); if (!isNaN(niftyClose) && !isNaN(niftyVol)) { const prevRow = allData.find(r => r.date !== today && r.nifty); const prevClose = prevRow ? parseFloat(prevRow.nifty) : NaN; const prevVol = prevRow ? parseFloat(prevRow.vol) : NaN; if (!isNaN(prevClose) && !isNaN(prevVol)) { const dtype = niftyClose > prevClose && niftyVol > prevVol ? 'acc' : niftyClose < prevClose && niftyVol > prevVol ? 'dist' : 'neutral'; const mpmDays = mpmLoad().filter(d => d.date !== today); const alreadyHasMpm = mpmLoad().some(d => d.date === today); if (!alreadyHasMpm) { mpmDays.unshift({ id: 'eod_' + today, date: today, close: niftyClose, pclose: prevClose, vol: niftyVol, pvol: prevVol, dtype, auto: true, _updatedAt: Date.now() }); mpmSave(mpmDays); } } }
   const voidMsg = ftdScanUndercutAll(); if (voidMsg) { flash('⚠ Rally Attempt VOIDED — ' + voidMsg, 'var(--red)'); }
   const nClose2 = parseFloat(row.nifty); const nLow2 = parseFloat(row.niftyLow) || nClose2 || 0; const prevRow2 = sorted.find(r => r.date !== today); const prevClose2 = prevRow2 ? parseFloat(prevRow2.nifty) : NaN; const prevVol2 = prevRow2 ? parseFloat(prevRow2.vol) : NaN; const nVol2 = parseFloat(row.vol); const movePct = (!isNaN(nClose2) && !isNaN(prevClose2) && prevClose2 > 0) ? +((nClose2 - prevClose2) / prevClose2 * 100).toFixed(2) : 0; const volUp = (!isNaN(nVol2) && !isNaN(prevVol2)) ? nVol2 > prevVol2 : false; const isAttemptDay = document.getElementById('i-ftd-attempt') && document.getElementById('i-ftd-attempt').checked; const isFtdDay = document.getElementById('i-ftd-followthrough') && document.getElementById('i-ftd-followthrough').checked; const { status: ftdStatus, rallyDay: currentRallyDay } = ftdComputeState(); const hasActiveAttempt = (ftdStatus === 'watching' || ftdStatus === 'confirmed'); let autoType = null; let isAuto = true; if (isAttemptDay) { autoType = 'attempt'; isAuto = false; } else if (isFtdDay) { autoType = 'followthrough'; isAuto = false; } else if (hasActiveAttempt && currentRallyDay >= FTD_MIN_DAY && movePct >= FTD_MIN_MOVE && volUp) { autoType = 'followthrough'; isAuto = true; } else if (!isNaN(nClose2) && !isNaN(prevClose2) && movePct < 0 && volUp) { autoType = 'distribution'; isAuto = true; }
-  if (autoType) { let ftdDays = ftdLoad().filter(d => d.date !== today); ftdDays.unshift({ id: Date.now(), date: today, _updatedAt: Date.now(), close: nClose2 || 0, prev: prevClose2 || 0, low: nLow2 || 0, movePct, volUp, type: autoType, auto: isAuto }); ftdSaveData(ftdDays); if (autoType === 'followthrough') { flash((isAuto ? '🎯 Follow-Through Day AUTO-DETECTED' : '🚀 Follow-Through Day MANUALLY LOGGED') + ' — Day ' + (currentRallyDay + 1) + ' · +' + movePct + '% · Vol ↑', 'var(--lime)'); } else if (autoType === 'distribution') { flash('📉 Distribution Day auto-logged — Close↓ + Vol↑', 'var(--orange)'); } }
+  if (autoType) { let ftdDays = ftdLoad().filter(d => d.date !== today); ftdDays.unshift({ id: Date.now(), date: today, _updatedAt: Date.now(), close: nClose2 || 0, prev: prevClose2 || 0, low: nLow2 || 0, movePct, volUp, type: autoType, auto: isAuto }); ftdSaveData(ftdDays); ftdScanUndercutAll(); if (autoType === 'followthrough') { flash((isAuto ? '🎯 Follow-Through Day AUTO-DETECTED' : '🚀 Follow-Through Day MANUALLY LOGGED') + ' — Day ' + (currentRallyDay + 1) + ' · +' + movePct + '% · Vol ↑', 'var(--lime)'); } else if (autoType === 'distribution') { flash('📉 Distribution Day auto-logged — Close↓ + Vol↑', 'var(--orange)'); } }
   flash(`✓ Saved — Score: ${row.score}  Zone: ${z.name}  R: ${z.r}`, 'var(--lime)'); clearInputs(); renderAll(); cpUpdateHomeStatus(); await pushToCloud();
 }
 function clearInputs() { ['i-adv', 'i-dec', 'i-unc', 'i-hi', 'i-lo', 'i-e20', 'i-s50', 'i-s200', 'i-nifty', 'i-nifty-low', 'i-vol', 'i-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); const cb = document.getElementById('i-ftd-attempt'); if (cb) cb.checked = false; const cbF = document.getElementById('i-ftd-followthrough'); if (cbF) cbF.checked = false; eodAutoFill(); }
@@ -1896,35 +1896,133 @@ function ftdComputeState() {
 }
 function ftdScanUndercutAll() {
   const ftdDays = ftdLoad(); if (!ftdDays.length) return null;
-  const attemptEntry = ftdDays.find(d => d.type === 'attempt' || d.type === 'followthrough' || (d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void'));
-  if (!attemptEntry) return null;
-  const hasExplicitDay1Low = parseFloat(attemptEntry.low || 0) > 0 && parseFloat(attemptEntry.low) < parseFloat(attemptEntry.close || Infinity);
-  const day1Ref = parseFloat(attemptEntry.low || attemptEntry.close || 0);
-  if (!day1Ref || day1Ref <= 0) return null;
-  const records = loadLocal().filter(r => r.date > attemptEntry.date).sort((a, b) => a.date.localeCompare(a.date));
-  let undercutDate = null, undercutValue = null;
-  for (const r of records) {
-    const lowVal = parseFloat(r.niftyLow || 0);
-    const closeVal = parseFloat(r.nifty || 0);
-    const testVal = (hasExplicitDay1Low && lowVal > 0) ? lowVal : (closeVal > 0 ? closeVal : lowVal);
-    if (testVal > 0 && testVal < day1Ref) { undercutDate = r.date; undercutValue = testVal; break; }
-  }
-  if (!undercutDate) {
-    const hasAutoVoided = ftdDays.some(d => d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void');
-    if (hasAutoVoided) {
-      ftdSaveData(ftdDays.map(d => {
-        if (d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void') {
-          const origType = d._origType || 'attempt'; const r = Object.assign({}, d);
-          delete r.voidedBy; delete r.voidReason; delete r._origType; r.type = origType; r._updatedAt = Date.now(); return r;
+  const records = loadLocal(); if (!records.length) return null;
+
+  const getRecordLow = r => {
+    if (!r) return 0;
+    const l = parseFloat(r.niftyLow || 0);
+    const c = parseFloat(r.nifty || 0);
+    return (l > 0) ? l : (c > 0 ? c : 0);
+  };
+
+  // 1. Gather all Day 1 attempt candidates (active 'attempt' or auto-voided 'attempt')
+  const attempts = ftdDays.filter(d => d.type === 'attempt' || (d.type === 'void' && d._origType === 'attempt' && d.voidReason !== 'Manual void'))
+    .sort((a, b) => a.date.localeCompare(b.date)); // Chronological order (oldest to newest)
+
+  let targetAttempt = null;
+  if (attempts.length > 0) {
+    // Check chronologically: find the earliest unbroken rally attempt that is still active,
+    // or the latest attempt if earlier ones were genuinely undercut.
+    for (let i = 0; i < attempts.length; i++) {
+      const att = attempts[i];
+      let lowRef = parseFloat(att.low || 0);
+      if (!lowRef || lowRef <= 0) {
+        const rec = records.find(r => r.date === att.date);
+        if (rec) lowRef = getRecordLow(rec);
+      }
+      if (!lowRef || lowRef <= 0) lowRef = parseFloat(att.close || 0);
+
+      const nextAttDate = (i < attempts.length - 1) ? attempts[i + 1].date : null;
+      const interimRecs = records.filter(r => r.date > att.date && (!nextAttDate || r.date < nextAttDate))
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+      let interimUndercut = false;
+      for (const ir of interimRecs) {
+        const rl = getRecordLow(ir);
+        if (rl > 0 && rl < lowRef) {
+          interimUndercut = true;
+          break;
         }
-        return d;
-      }));
+      }
+      if (!interimUndercut) {
+        targetAttempt = att;
+        break;
+      }
+    }
+    if (!targetAttempt) {
+      targetAttempt = attempts[attempts.length - 1];
+    }
+  } else {
+    // Fallback only if user logged an FTD without Day 1
+    const ftds = ftdDays.filter(d => d.type === 'followthrough' || (d.type === 'void' && d._origType === 'followthrough' && d.voidReason !== 'Manual void'))
+      .sort((a, b) => b.date.localeCompare(a.date));
+    if (ftds.length > 0) targetAttempt = ftds[0];
+  }
+
+  if (!targetAttempt) return null;
+
+  // 2. Determine benchmark rally low (from Day 1 of rally attempt)
+  let day1Ref = parseFloat(targetAttempt.low || 0);
+  if (!day1Ref || day1Ref <= 0) {
+    const rec = records.find(r => r.date === targetAttempt.date);
+    if (rec) day1Ref = getRecordLow(rec);
+  }
+  if (!day1Ref || day1Ref <= 0) {
+    day1Ref = parseFloat(targetAttempt.close || 0);
+  }
+  if (!day1Ref || day1Ref <= 0) return null;
+
+  // 3. Scan all subsequent sessions in strict chronological order (a.date vs b.date)
+  const postRecords = records.filter(r => r.date > targetAttempt.date)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  let undercutDate = null, undercutValue = null;
+  for (const r of postRecords) {
+    const testVal = getRecordLow(r);
+    if (testVal > 0 && testVal < day1Ref) {
+      undercutDate = r.date;
+      undercutValue = testVal;
+      break;
+    }
+  }
+
+  if (!undercutDate) {
+    // 4. NO UNDERCUT: Rally is valid and active!
+    let hasChanges = false;
+    const cleaned = ftdDays.map(d => {
+      if (d.date >= targetAttempt.date) {
+        if (d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void') {
+          hasChanges = true;
+          const origType = d._origType || (d.date === targetAttempt.date ? 'attempt' : 'followthrough');
+          const r = Object.assign({}, d);
+          delete r.voidedBy; delete r.voidReason; delete r._origType;
+          r.type = origType;
+          r._updatedAt = Date.now();
+          return r;
+        }
+      }
+      return d;
+    });
+
+    // Remove any spurious duplicate 'attempt' entries on dates strictly after targetAttempt.date
+    // since targetAttempt is unbroken (they cannot be Day 1s inside an ongoing rally)
+    const filteredCleaned = cleaned.filter(d => {
+      if (d.date > targetAttempt.date && (d.type === 'attempt' || d._origType === 'attempt')) {
+        hasChanges = true;
+        return false;
+      }
+      return true;
+    });
+
+    if (hasChanges) {
+      ftdSaveData(filteredCleaned);
     }
     return null;
   }
+
+  // 5. UNDERCUT: Mark attempt and any FTD up to undercutDate as void
   const updated = ftdDays.map(d => {
-    if ((d.type === 'attempt' || d.type === 'followthrough') && d.date <= undercutDate) {
-      return { ...d, type: 'void', _origType: d.type, _updatedAt: Date.now(), voidedBy: undercutDate, voidReason: 'Low undercut (' + undercutValue + ' < rally low ' + day1Ref + ' on ' + undercutDate + ')' };
+    if (d.date >= targetAttempt.date && d.date <= undercutDate) {
+      if (d.type === 'attempt' || d.type === 'followthrough') {
+        return {
+          ...d,
+          type: 'void',
+          _origType: d.type,
+          _updatedAt: Date.now(),
+          voidedBy: undercutDate,
+          voidReason: 'Low undercut (' + undercutValue + ' < rally low ' + day1Ref + ' on ' + undercutDate + ')'
+        };
+      }
     }
     return d;
   });
