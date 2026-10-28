@@ -1242,8 +1242,8 @@ async function saveToday() {
   const g = id => document.getElementById(id).value.trim(); const adv = g('i-adv'), dec = g('i-dec'), e20 = g('i-e20'), s50 = g('i-s50'), s200 = g('i-s200'); if (!adv && !dec && !e20 && !s50) { flash('⚠ Enter at least Advances + Declines or EMA/SMA values', 'var(--orange)'); return; }
   const today = todayISO(); const allData = loadLocal(); const data = allData.filter(r => r.date !== today); const vol = g('i-vol'); const row = { date: today, adv, dec, unc: g('i-unc'), hi: g('i-hi'), lo: g('i-lo'), e20, s50, s200, nifty: g('i-nifty'), niftyLow: g('i-nifty-low'), vol, notes: g('i-notes'), _updatedAt: Date.now() }; row.score = calcScore(row); const z = getZone(row.score); row.zone = z.name; row.r = z.r; data.push(row); const sorted = data.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30); saveLocal(sorted); const niftyClose = parseFloat(row.nifty); const niftyVol = parseFloat(row.vol); if (!isNaN(niftyClose) && !isNaN(niftyVol)) { const prevRow = allData.find(r => r.date !== today && r.nifty); const prevClose = prevRow ? parseFloat(prevRow.nifty) : NaN; const prevVol = prevRow ? parseFloat(prevRow.vol) : NaN; if (!isNaN(prevClose) && !isNaN(prevVol)) { const dtype = niftyClose > prevClose && niftyVol > prevVol ? 'acc' : niftyClose < prevClose && niftyVol > prevVol ? 'dist' : 'neutral'; const mpmDays = mpmLoad().filter(d => d.date !== today); const alreadyHasMpm = mpmLoad().some(d => d.date === today); if (!alreadyHasMpm) { mpmDays.unshift({ id: 'eod_' + today, date: today, close: niftyClose, pclose: prevClose, vol: niftyVol, pvol: prevVol, dtype, auto: true, _updatedAt: Date.now() }); mpmSave(mpmDays); } } }
   const voidMsg = ftdScanUndercutAll(); if (voidMsg) { flash('⚠ Rally Attempt VOIDED — ' + voidMsg, 'var(--red)'); }
-  const nClose2 = parseFloat(row.nifty); const nLow2 = parseFloat(row.niftyLow) || nClose2 || 0; const prevRow2 = sorted.find(r => r.date !== today); const prevClose2 = prevRow2 ? parseFloat(prevRow2.nifty) : NaN; const prevVol2 = prevRow2 ? parseFloat(prevRow2.vol) : NaN; const nVol2 = parseFloat(row.vol); const movePct = (!isNaN(nClose2) && !isNaN(prevClose2) && prevClose2 > 0) ? +((nClose2 - prevClose2) / prevClose2 * 100).toFixed(2) : 0; const volUp = (!isNaN(nVol2) && !isNaN(prevVol2)) ? nVol2 > prevVol2 : false; const isAttemptDay = document.getElementById('i-ftd-attempt') && document.getElementById('i-ftd-attempt').checked; const isFtdDay = document.getElementById('i-ftd-followthrough') && document.getElementById('i-ftd-followthrough').checked; const { status: ftdStatus, rallyDay: currentRallyDay } = ftdComputeState(); const hasActiveAttempt = (ftdStatus === 'watching' || ftdStatus === 'confirmed'); let autoType = null; let isAuto = true; if (isAttemptDay) { autoType = 'attempt'; isAuto = false; } else if (isFtdDay) { autoType = 'followthrough'; isAuto = false; } else if (hasActiveAttempt && currentRallyDay >= FTD_MIN_DAY && movePct >= FTD_MIN_MOVE && volUp) { autoType = 'followthrough'; isAuto = true; } else if (!isNaN(nClose2) && !isNaN(prevClose2) && movePct < 0 && volUp) { autoType = 'distribution'; isAuto = true; }
-  if (autoType) { let ftdDays = ftdLoad().filter(d => d.date !== today); ftdDays.unshift({ id: Date.now(), date: today, _updatedAt: Date.now(), close: nClose2 || 0, prev: prevClose2 || 0, low: nLow2 || 0, movePct, volUp, type: autoType, auto: isAuto }); ftdSaveData(ftdDays); ftdScanUndercutAll(); if (autoType === 'followthrough') { flash((isAuto ? '🎯 Follow-Through Day AUTO-DETECTED' : '🚀 Follow-Through Day MANUALLY LOGGED') + ' — Day ' + (currentRallyDay + 1) + ' · +' + movePct + '% · Vol ↑', 'var(--lime)'); } else if (autoType === 'distribution') { flash('📉 Distribution Day auto-logged — Close↓ + Vol↑', 'var(--orange)'); } }
+  const nClose2 = parseFloat(row.nifty); const nLow2 = parseFloat(row.niftyLow) || nClose2 || 0; const prevRow2 = sorted.find(r => r.date !== today); const prevClose2 = prevRow2 ? parseFloat(prevRow2.nifty) : NaN; const prevVol2 = prevRow2 ? parseFloat(prevRow2.vol) : NaN; const nVol2 = parseFloat(row.vol); const movePct = (!isNaN(nClose2) && !isNaN(prevClose2) && prevClose2 > 0) ? +((nClose2 - prevClose2) / prevClose2 * 100).toFixed(2) : 0; const volUp = (!isNaN(nVol2) && !isNaN(prevVol2)) ? nVol2 > prevVol2 : false; const isAttemptDay = document.getElementById('i-ftd-attempt') && document.getElementById('i-ftd-attempt').checked; const isFtdDay = document.getElementById('i-ftd-followthrough') && document.getElementById('i-ftd-followthrough').checked; const { status: ftdStatus, rallyDay: currentRallyDay } = ftdComputeState(); const hasActiveAttempt = (ftdStatus === 'watching' || ftdStatus === 'confirmed'); let autoType = null; let isAuto = true; if (isAttemptDay) { autoType = 'attempt'; isAuto = false; } else if (isFtdDay) { autoType = 'followthrough'; isAuto = false; } else if (hasActiveAttempt && currentRallyDay >= FTD_MIN_DAY && movePct >= FTD_MIN_MOVE && volUp) { autoType = 'followthrough'; isAuto = true; } else if (!hasActiveAttempt && !isNaN(nClose2) && !isNaN(prevClose2) && movePct > 0) { autoType = 'attempt'; isAuto = true; } else if (!isNaN(nClose2) && !isNaN(prevClose2) && movePct < 0 && volUp) { autoType = 'distribution'; isAuto = true; }
+  if (autoType) { let ftdDays = ftdLoad().filter(d => d.date !== today); ftdDays.unshift({ id: Date.now(), date: today, _updatedAt: Date.now(), close: nClose2 || 0, prev: prevClose2 || 0, low: nLow2 || 0, movePct, volUp, type: autoType, auto: isAuto }); ftdSaveData(ftdDays); ftdScanUndercutAll(); if (autoType === 'followthrough') { flash((isAuto ? '🎯 Follow-Through Day AUTO-DETECTED' : '🚀 Follow-Through Day MANUALLY LOGGED') + ' — Day ' + (currentRallyDay + 1) + ' · +' + movePct + '% · Vol ↑', 'var(--lime)'); } else if (autoType === 'attempt') { flash((isAuto ? '📍 Day 1 of Rally Attempt AUTO-DETECTED' : '📍 Day 1 of Rally Attempt LOGGED') + ' — Benchmark Rally Low: ' + nLow2, 'var(--yellow)'); } else if (autoType === 'distribution') { flash('📉 Distribution Day auto-logged — Close↓ + Vol↑', 'var(--orange)'); } }
   flash(`✓ Saved — Score: ${row.score}  Zone: ${z.name}  R: ${z.r}`, 'var(--lime)'); clearInputs(); renderAll(); cpUpdateHomeStatus(); await pushToCloud();
 }
 function clearInputs() { ['i-adv', 'i-dec', 'i-unc', 'i-hi', 'i-lo', 'i-e20', 'i-s50', 'i-s200', 'i-nifty', 'i-nifty-low', 'i-vol', 'i-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); const cb = document.getElementById('i-ftd-attempt'); if (cb) cb.checked = false; const cbF = document.getElementById('i-ftd-followthrough'); if (cbF) cbF.checked = false; eodAutoFill(); }
@@ -1693,7 +1693,7 @@ function renderAnalysisFTD() {
         banner.style.background = ftdPowerWindow ? 'rgba(74,222,128,.15)' : 'rgba(74,222,128,.10)';
         banner.style.color = 'var(--lime)';
         banner.style.borderTop = '1px solid rgba(74,222,128,.25)';
-        banner.textContent = ftdPowerWindow ? '🚀 FTD Day ' + rallyDay + ' — Power Window (Days 4–7). Strongest confirmation. Pilot entries if leading stocks break from base patterns on volume.' : '✅ FTD Day ' + rallyDay + ' — Rally confirmed. Pilot entries OK. Confirm with leading stock breakouts on volume.';
+        banner.textContent = ftdPowerWindow ? '🚀 FTD Day ' + rallyDay + ' — Power Window (Days 3–7). Strongest confirmation. Pilot entries if leading stocks break from base patterns on volume.' : '✅ FTD Day ' + rallyDay + ' — Rally confirmed. Pilot entries OK. Confirm with leading stock breakouts on volume.';
       }
     }
   } else if (status === 'watching') {
@@ -1703,14 +1703,14 @@ function renderAnalysisFTD() {
     const bannerBdr = inPowerWindow ? '1px solid rgba(45,212,191,.25)' : '1px solid rgba(250,204,21,.2)';
     el('as-ftd-status').textContent = 'Pending';
     el('as-ftd-status').style.color = bannerColor;
-    el('as-ftd-sub').textContent = inPowerWindow ? `Day ${rallyDay} of Attempt · Power Window (Days 4–7) · Need >1.5% on higher vol` : rallyDay < FTD_MIN_DAY ? `Day ${rallyDay} of Attempt · FTD eligible on Day 4+ (>1.5% on vol↑)` : `Day ${rallyDay} of Attempt · Watching for FTD`;
+    el('as-ftd-sub').textContent = inPowerWindow ? `Day ${rallyDay} of Attempt · Power Window (Days 3–7) · Need >1.5% on higher vol` : rallyDay < FTD_MIN_DAY ? `Day ${rallyDay} of Attempt · FTD eligible on Day 3+ (>1.5% on vol↑)` : `Day ${rallyDay} of Attempt · Watching for FTD`;
     el('as-ftd-pills').innerHTML = `<span class="as-pill" style="background:rgba(45,212,191,.12);color:var(--teal);border-color:rgba(45,212,191,.3)">Day ${rallyDay}</span><span class="as-pill" style="border-color:rgba(45,212,191,.3);color:var(--teal)">Awaiting FTD</span>`;
     if (banner) {
       banner.style.display = 'block';
       banner.style.background = bannerBg;
       banner.style.color = bannerColor;
       banner.style.borderTop = bannerBdr;
-      banner.textContent = rallyDay < FTD_MIN_DAY ? `⏳ Day ${rallyDay} of Rally Attempt — Waiting for Day 4+ to look for a Follow-Through Day.` : inPowerWindow ? `🎯 Day ${rallyDay} of Rally Attempt — Power Window (Days 4–7). Need Nifty 50 close > 1.5% on higher volume.` : `⏳ Day ${rallyDay} of Rally Attempt — Watching for FTD. Need close > 1.5% on higher vol.`;
+      banner.textContent = rallyDay < FTD_MIN_DAY ? `⏳ Day ${rallyDay} of Rally Attempt — Waiting for Day 3+ to look for a Follow-Through Day.` : inPowerWindow ? `🎯 Day ${rallyDay} of Rally Attempt — Power Window (Days 3–7). Need Nifty 50 close > 1.5% on higher volume.` : `⏳ Day ${rallyDay} of Rally Attempt — Watching for FTD. Need close > 1.5% on higher vol.`;
     }
   } else {
     el('as-ftd-status').textContent = 'No Attempt';
@@ -1836,7 +1836,7 @@ function ftdReset() {
   if (!confirm('Reset current rally attempt? This clears ALL FTD log entries.\n\nUse this to start tracking a completely fresh rally attempt.')) return;
   ftdSaveData([]); ftdRender(); renderAnalysisFTD(); renderMarketCycle(); renderMarketSummary(); pushToCloud(); flash('FTD tracker reset — ready for fresh rally attempt.', 'var(--lime)');
 }
-const FTD_MIN_DAY = 4; const FTD_MIN_MOVE = 1.5; const FTD_POWER_MAX = 7;
+const FTD_MIN_DAY = 3; const FTD_MIN_MOVE = 1.5; const FTD_POWER_MAX = 7;
 function ftdComputeState() {
   const days = ftdLoad(); const records = loadLocal(); const mpmDays = mpmLoad();
   const recentSignificant = days.find(d => d.type !== 'distribution');
@@ -1969,7 +1969,8 @@ function ftdScanUndercutAll() {
   let undercutDate = null, undercutValue = null;
   for (const r of postRecords) {
     const testVal = getRecordLow(r);
-    if (testVal > 0 && testVal < day1Ref) {
+    const isFtdSession = ftdDays.some(d => d.date === r.date && (d.type === 'followthrough' || d._origType === 'followthrough'));
+    if (testVal > 0 && testVal < day1Ref && !isFtdSession) {
       undercutDate = r.date;
       undercutValue = testVal;
       break;
@@ -2103,8 +2104,8 @@ function ftdRender() {
     const bannerColor = inPowerWindow ? 'var(--teal)' : 'var(--yellow)';
     const bannerBg = inPowerWindow ? 'rgba(45,212,191,.08)' : 'rgba(250,204,21,.08)';
     const bannerBdr = inPowerWindow ? '1px solid rgba(45,212,191,.25)' : '1px solid rgba(250,204,21,.2)';
-    const sub = rallyDay < FTD_MIN_DAY ? `Day ${rallyDay} of Attempt · FTD eligible on Day 4+ (>1.5% on vol↑)` : inPowerWindow ? `Day ${rallyDay} of Attempt · Power Window (Days 4–7) · Need close > 1.5% on higher vol` : `Day ${rallyDay} of Attempt · Watching for FTD (outside peak power window)`;
-    const msg = rallyDay < FTD_MIN_DAY ? `⏳ Day ${rallyDay} of Attempt — Per O'Neil rules, Follow-Through Day eligibility begins on Day 4 or later.` : inPowerWindow ? `🎯 Day ${rallyDay} of Rally Attempt — Power Window (Days 4–7). Need Nifty 50 close > 1.5% on higher volume.` : `⏳ Rally Attempt Day ${rallyDay} — Waiting for FTD. Power window (Days 4–7) has passed; any FTD now carries less conviction.`;
+    const sub = rallyDay < FTD_MIN_DAY ? `Day ${rallyDay} of Attempt · FTD eligible on Day 3+ (>1.5% on vol↑)` : inPowerWindow ? `Day ${rallyDay} of Attempt · Power Window (Days 3–7) · Need close > 1.5% on higher vol` : `Day ${rallyDay} of Attempt · Watching for FTD (outside peak power window)`;
+    const msg = rallyDay < FTD_MIN_DAY ? `⏳ Day ${rallyDay} of Attempt — Per O'Neil rules, Follow-Through Day eligibility begins on Day 3 or later.` : inPowerWindow ? `🎯 Day ${rallyDay} of Rally Attempt — Power Window (Days 3–7). Need Nifty 50 close > 1.5% on higher volume.` : `⏳ Rally Attempt Day ${rallyDay} — Waiting for FTD. Power window (Days 4–7) has passed; any FTD now carries less conviction.`;
     set('ftd-status', 'textContent', 'Pending');
     sty('ftd-status', 'color', bannerColor);
     set('ftd-status-sub', 'textContent', sub);
@@ -2243,7 +2244,7 @@ async function seedHistoricalData() {
   if (loadLocal().length > 0) return; const seedData = [{ date: '2026-03-12', adv: 312, dec: 174, unc: 14, hi: 28, lo: 6, e20: 54, s50: 42, s200: 38, nifty: 0, notes: 'ET seed' }, { date: '2026-03-11', adv: 425, dec: 75, unc: 0, hi: 0, lo: 0, e20: 39, s50: 35, s200: 37, nifty: 22342.95, notes: 'ET seed' }, { date: '2026-03-10', adv: 425, dec: 75, unc: 0, hi: 0, lo: 0, e20: 28, s50: 31, s200: 37, nifty: 22342.95, notes: 'ET seed' }, { date: '2026-03-06', adv: 170, dec: 330, unc: 0, hi: 0, lo: 0, e20: 20, s50: 29, s200: 29, nifty: 22481.30, notes: 'ET seed' }, { date: '2026-03-05', adv: 383, dec: 117, unc: 0, hi: 0, lo: 0, e20: 23, s50: 29, s200: 31, nifty: 22697.80, notes: 'ET seed' }, { date: '2026-03-04', adv: 54, dec: 446, unc: 0, hi: 0, lo: 0, e20: 14, s50: 26, s200: 28, nifty: 22409.80, notes: 'ET seed' }, { date: '2026-03-02', adv: 56, dec: 444, unc: 0, hi: 0, lo: 0, e20: 26, s50: 33, s200: 31, nifty: 22835.95, notes: 'ET seed' }, { date: '2026-02-27', adv: 118, dec: 382, unc: 0, hi: 0, lo: 0, e20: 39, s50: 42, s200: 35, nifty: 23166.85, notes: 'ET seed' }, { date: '2026-02-26', adv: 260, dec: 240, unc: 0, hi: 0, lo: 0, e20: 52, s50: 49, s200: 38, nifty: 23448.50, notes: 'ET seed' }, { date: '2026-02-25', adv: 314, dec: 186, unc: 0, hi: 0, lo: 0, e20: 53, s50: 49, s200: 38, nifty: 23403.80, notes: 'ET seed' }, { date: '2026-02-24', adv: 182, dec: 318, unc: 0, hi: 0, lo: 0, e20: 47, s50: 44, s200: 36, nifty: 23304.60, notes: 'ET seed' }, { date: '2026-02-23', adv: 298, dec: 202, unc: 0, hi: 0, lo: 0, e20: 53, s50: 48, s200: 37, nifty: 23484.95, notes: 'ET seed' }, { date: '2026-02-20', adv: 255, dec: 245, unc: 0, hi: 0, lo: 0, e20: 51, s50: 46, s200: 36, nifty: 23395.00, notes: 'ET seed' }, { date: '2026-02-19', adv: 68, dec: 432, unc: 0, hi: 0, lo: 0, e20: 52, s50: 44, s200: 36, nifty: 23297.45, notes: 'ET seed' }, { date: '2026-02-18', adv: 292, dec: 208, unc: 0, hi: 0, lo: 0, e20: 65, s50: 53, s200: 40, nifty: 23645.80, notes: 'ET seed' }, { date: '2026-02-17', adv: 337, dec: 163, unc: 0, hi: 0, lo: 0, e20: 65, s50: 48, s200: 39, nifty: 23540.05, notes: 'ET seed' }, { date: '2026-02-16', adv: 293, dec: 207, unc: 0, hi: 0, lo: 0, e20: 58, s50: 44, s200: 37, nifty: 23472.45, notes: 'ET seed' }, { date: '2026-02-13', adv: 70, dec: 430, unc: 0, hi: 0, lo: 0, e20: 55, s50: 42, s200: 38, nifty: 23313.15, notes: 'ET seed' }, { date: '2026-02-12', adv: 136, dec: 364, unc: 0, hi: 0, lo: 0, e20: 71, s50: 50, s200: 41, nifty: 23651.55, notes: 'ET seed' }, { date: '2026-02-11', adv: 238, dec: 262, unc: 0, hi: 0, lo: 0, e20: 76, s50: 55, s200: 44, nifty: 23783.05, notes: 'ET seed' }, { date: '2026-02-10', adv: 292, dec: 208, unc: 0, hi: 0, lo: 0, e20: 78, s50: 54, s200: 42, nifty: 23753.75, notes: 'ET seed' }, { date: '2026-02-09', adv: 422, dec: 78, unc: 0, hi: 0, lo: 0, e20: 75, s50: 51, s200: 41, nifty: 23683.40, notes: 'ET seed' }, { date: '2026-02-06', adv: 214, dec: 286, unc: 0, hi: 0, lo: 0, e20: 55, s50: 41, s200: 37, nifty: 23434.00, notes: 'ET seed' }, { date: '2026-02-05', adv: 214, dec: 286, unc: 0, hi: 0, lo: 0, e20: 55, s50: 39, s200: 36, nifty: 23411.70, notes: 'ET seed' }, { date: '2026-02-04', adv: 160, dec: 340, unc: 0, hi: 0, lo: 0, e20: 59, s50: 41, s200: 37, nifty: 23534.95, notes: 'ET seed' }, { date: '2026-02-03', adv: 329, dec: 171, unc: 0, hi: 0, lo: 0, e20: 52, s50: 38, s200: 37, nifty: 23446.30, notes: 'ET seed' }, { date: '2026-02-02', adv: 448, dec: 52, unc: 0, hi: 0, lo: 0, e20: 24, s50: 23, s200: 30, nifty: 22837.00, notes: 'ET seed' }, { date: '2026-02-01', adv: 313, dec: 187, unc: 0, hi: 0, lo: 0, e20: 17, s50: 19, s200: 27, nifty: 22611.30, notes: 'ET seed' }, { date: '2026-01-30', adv: 120, dec: 380, unc: 0, hi: 0, lo: 0, e20: 30, s50: 29, s200: 32, nifty: 23079.50, notes: 'ET seed' }, { date: '2026-01-29', adv: 328, dec: 172, unc: 0, hi: 0, lo: 0, e20: 21, s50: 23, s200: 31, nifty: 23134.80, notes: 'ET seed' },]; const existing = loadLocal(); const existingDates = new Set(existing.map(r => r.date)); const toAdd = seedData.filter(r => !existingDates.has(r.date)).map(r => { r.score = calcScore(r); const z = getZone(r.score); r.zone = z.name; r.r = z.r; return r; }); if (toAdd.length > 0) { saveLocal([...existing, ...toAdd]); }
 }
 (async function init() {
-  document.getElementById('hdr-date').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }); const _etEl = document.getElementById('entry-today'); if (_etEl) _etEl.textContent = todayISO(); const _bsrDate = document.getElementById('bsr-date'); if (_bsrDate) _bsrDate.value = todayISO(); seedHistoricalData(); if (initGuestMode()) return; const cfg = getCfg(); if (!cfg.key || !cfg.bin) { setSyncStatus('warn', 'Not Configured · Click to Setup'); } else {
+  document.getElementById('hdr-date').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }); const _etEl = document.getElementById('entry-today'); if (_etEl) _etEl.textContent = todayISO(); const _bsrDate = document.getElementById('bsr-date'); if (_bsrDate) _bsrDate.value = todayISO(); seedHistoricalData(); ensureOctoberDataSeeded(); if (initGuestMode()) return; const cfg = getCfg(); if (!cfg.key || !cfg.bin) { setSyncStatus('warn', 'Not Configured · Click to Setup'); } else {
     setSyncStatus('syncing', 'Syncing…'); try {
       const payload = await jbRead(cfg.key, cfg.bin); const isLegacy = Array.isArray(payload); const cRec = isLegacy ? payload : (payload.records || []); saveLocal(mergeByKey(cRec, loadLocal(), r => r.date)); const cBsr = isLegacy ? [] : (payload.bsr || []); bsrSave(mergeByKey(cBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); if (!isLegacy && payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt); if (!isLegacy && payload.bsrQuick) mergeBsrQuick(payload.bsrQuick); const cMpm = isLegacy ? [] : (payload.mpm || []); mpmSave(mergeByKey(cMpm, mpmLoad(), d => d.date)); const cFtd = isLegacy ? [] : (payload.ftd || []); const mergedFtd = mergeByKey(cFtd, ftdLoad(), d => d.id).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ftdScanUndercutAll(); const cSrt = isLegacy ? [] : (payload.srt || []); srtSave(mergeByKey(cSrt, srtLoad(), s => s.id)); const cloudWatchlists = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccWatchlists : null; const cloudSymbolFlags = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccSymbolFlags : null; if (cloudWatchlists) {
         _sccWatchlists = cloudWatchlists; if (cloudSymbolFlags) _sccSymbolFlags = cloudSymbolFlags; localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists)); localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags)); if (!_sccWatchlists[_sccActiveWatchlist] && !_sccActiveWatchlist.startsWith('__flag_')) { const keys = Object.keys(_sccWatchlists); _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main"; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); }
@@ -4337,3 +4338,91 @@ function sdChangeSector(sec) { const dropdown = document.getElementById('sd-sect
 document.addEventListener('click', () => { const dropdown = document.getElementById('sd-sector-dropdown'); if (dropdown) dropdown.style.display = 'none'; });
 function sdChangeSector(sec) { const dropdown = document.getElementById('sd-sector-dropdown'); if (dropdown) dropdown.style.display = 'none'; sectorDrillOpen(sec, _sdActiveTab); }
 document.addEventListener('click', () => { const dropdown = document.getElementById('sd-sector-dropdown'); if (dropdown) dropdown.style.display = 'none'; });
+function ensureOctoberDataSeeded() {
+  try {
+    // 1. Seed October Breadth Records if missing
+    const existingRecs = loadLocal();
+    const hasOctRecords = existingRecs.some(r => r.date && r.date.startsWith('2026-10'));
+    const octRecords = [
+      { date: '2026-10-28', adv: 255, dec: 240, unc: 9, hi: 22, lo: 18, e20: 45, s50: 38, s200: 38, nifty: 22698.85, niftyLow: 22497.70, vol: 35.00, notes: 'Current session' },
+      { date: '2026-10-27', adv: 270, dec: 225, unc: 9, hi: 24, lo: 16, e20: 47, s50: 38, s200: 38, nifty: 22749.75, niftyLow: 22636.85, vol: 40.09, notes: 'Consolidation' },
+      { date: '2026-10-26', adv: 290, dec: 205, unc: 9, hi: 25, lo: 18, e20: 46, s50: 38, s200: 38, nifty: 22753.20, niftyLow: 22387.35, vol: 31.02, notes: 'Bounce from support' },
+      { date: '2026-10-23', adv: 180, dec: 315, unc: 9, hi: 18, lo: 25, e20: 41, s50: 36, s200: 38, nifty: 22600.00, niftyLow: 22372.00, vol: 36.42, notes: 'Support test, low held' },
+      { date: '2026-10-22', adv: 195, dec: 300, unc: 9, hi: 20, lo: 22, e20: 44, s50: 38, s200: 38, nifty: 22687.65, niftyLow: 22554.85, vol: 39.16, notes: 'Consolidation' },
+      { date: '2026-10-21', adv: 240, dec: 255, unc: 9, hi: 24, lo: 16, e20: 48, s50: 40, s200: 39, nifty: 22811.35, niftyLow: 22649.90, vol: 32.47, notes: 'Consolidation' },
+      { date: '2026-10-19', adv: 220, dec: 275, unc: 9, hi: 28, lo: 14, e20: 52, s50: 42, s200: 39, nifty: 22888.95, niftyLow: 22845.00, vol: 28.58, notes: 'Pullback' },
+      { date: '2026-10-16', adv: 430, dec: 70, unc: 4, hi: 42, lo: 5, e20: 58, s50: 44, s200: 40, nifty: 23146.15, niftyLow: 22913.80, vol: 39.16, notes: 'Uptrend continuation' },
+      { date: '2026-10-15', adv: 410, dec: 88, unc: 6, hi: 35, lo: 8, e20: 52, s50: 40, s200: 38, nifty: 22997.35, niftyLow: 22637.40, vol: 37.08, notes: 'Upside expansion' },
+      { date: '2026-10-14', adv: 245, dec: 250, unc: 9, hi: 22, lo: 12, e20: 40, s50: 34, s200: 36, nifty: 22622.70, niftyLow: 22558.95, vol: 33.32, notes: 'Consolidation post-FTD' },
+      { date: '2026-10-13', adv: 395, dec: 102, unc: 7, hi: 25, lo: 10, e20: 42, s50: 35, s200: 36, nifty: 22721.95, niftyLow: 22288.45, vol: 30.89, notes: '🚀 Follow-Through Day (FTD) +1.60% on vol' },
+      { date: '2026-10-12', adv: 210, dec: 285, unc: 9, hi: 15, lo: 18, e20: 29, s50: 28, s200: 33, nifty: 22363.35, niftyLow: 22304.45, vol: 25.88, notes: 'Day 2 testing low, held above bottom' },
+      { date: '2026-10-09', adv: 340, dec: 155, unc: 9, hi: 18, lo: 22, e20: 32, s50: 30, s200: 34, nifty: 22520.45, niftyLow: 22179.90, vol: 29.62, notes: '📍 Day 1 of Rally Attempt off 22179.90 bottom' },
+      { date: '2026-10-08', adv: 145, dec: 355, unc: 4, hi: 12, lo: 45, e20: 22, s50: 26, s200: 32, nifty: 22231.80, niftyLow: 22179.90, vol: 35.75, notes: 'Market bottom / selling climax' }
+    ];
+    if (!hasOctRecords) {
+      const formatted = octRecords.map(r => {
+        r.score = calcScore(r);
+        const z = getZone(r.score);
+        r.zone = z.name;
+        r.r = z.r;
+        r._updatedAt = Date.now();
+        return r;
+      });
+      saveLocal([...formatted, ...existingRecs]);
+    }
+
+    // 2. Ensure October FTD entries are seeded and confirmed
+    let ftdData = ftdLoad();
+    const hasOctFtd = ftdData.some(d => d.date === '2026-10-13' && d.type === 'followthrough');
+    if (!hasOctFtd) {
+      const octFtdEntries = [
+        {
+          id: 1728820800000,
+          date: '2026-10-13',
+          _updatedAt: Date.now(),
+          close: 22721.95,
+          prev: 22363.35,
+          low: 22288.45,
+          movePct: 1.60,
+          volUp: true,
+          type: 'followthrough',
+          auto: true
+        },
+        {
+          id: 1728475200000,
+          date: '2026-10-09',
+          _updatedAt: Date.now(),
+          close: 22520.45,
+          prev: 22231.80,
+          low: 22179.90,
+          movePct: 1.30,
+          volUp: false,
+          type: 'attempt',
+          auto: true
+        }
+      ];
+      // Filter out any stale/voided attempts for these two dates
+      const cleanFtd = ftdData.filter(d => d.date !== '2026-10-13' && d.date !== '2026-10-09');
+      ftdSaveData([...octFtdEntries, ...cleanFtd].sort((a, b) => b.date.localeCompare(a.date)));
+    }
+
+    // 3. Ensure MPM accumulation day on Oct 13 exists
+    let mpmData = mpmLoad();
+    if (!mpmData.some(d => d.date === '2026-10-13')) {
+      mpmData.unshift({
+        id: 'eod_2026-10-13',
+        date: '2026-10-13',
+        close: 22721.95,
+        pclose: 22363.35,
+        vol: 30.89,
+        pvol: 25.88,
+        dtype: 'acc',
+        auto: true,
+        _updatedAt: Date.now()
+      });
+      mpmSave(mpmData);
+    }
+  } catch (e) {
+    console.warn('[ensureOctoberDataSeeded] error:', e);
+  }
+}

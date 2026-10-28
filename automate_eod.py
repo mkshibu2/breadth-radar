@@ -52,6 +52,348 @@ def suppress_output():
             sys.stdout = old_out
             sys.stderr = old_err
 
+
+# ==============================================================================
+# FTD (Follow-Through Day) Automation Engine
+# Based on William J. O'Neil / CAN SLIM methodology adapted for Nifty 50
+# ==============================================================================
+FTD_MIN_DAY = 3
+FTD_MIN_MOVE = 1.5
+FTD_POWER_MAX = 7
+
+def count_distribution_days(mpm_days, attempt_date=None):
+    """
+    Count active distribution days in the last 25 sessions since attempt_date,
+    applying O'Neil's 5% cancellation rule.
+    """
+    if not mpm_days:
+        return 0
+    all_mpm = mpm_days
+    last25 = mpm_days[:25]
+    active_count = 0
+    for d in last25:
+        if d.get("dtype") != "dist":
+            continue
+        close = float(d.get("close") or 0)
+        pclose = float(d.get("pclose") or 0)
+        move_pct = ((close - pclose) / pclose * 100) if pclose > 0 else 0
+        if move_pct > -0.2:
+            continue
+        if attempt_date and d.get("date", "") < attempt_date:
+            continue
+        # Cancellation rule: any subsequent day closes >= close * 1.05
+        is_cancelled = False
+        for x in all_mpm:
+            if x.get("date", "") > d.get("date", ""):
+                x_close = float(x.get("close") or 0)
+                if x_close >= close * 1.05:
+                    is_cancelled = True
+                    break
+        if not is_cancelled:
+            active_count += 1
+    return active_count
+
+def compute_ftd_state(ftd_days, records, mpm_days):
+    """
+    Evaluate FTD market state:
+    Returns dict:
+      status: 'none' | 'watching' | 'confirmed' | 'void' | 'correction'
+      rally_day: int
+      ftd_confirmed: bool
+      ftd_power_window: bool
+      latest_ftd: dict or None
+      dist_count: int
+      is_correction: bool
+    """
+    if not ftd_days:
+        return {
+            "status": "none",
+            "rally_day": 0,
+            "ftd_confirmed": False,
+            "ftd_power_window": False,
+            "void_active": False,
+            "latest_ftd": None,
+            "is_correction": False,
+            "dist_count": 0
+        }
+
+    recent_sig = None
+    for d in ftd_days:
+        if d.get("type") != "distribution":
+            recent_sig = d
+            break
+
+    if recent_sig and recent_sig.get("type") == "void":
+        return {
+            "status": "void",
+            "rally_day": 0,
+            "ftd_confirmed": False,
+            "ftd_power_window": False,
+            "void_active": True,
+            "latest_ftd": None,
+            "is_correction": False,
+            "void_reason": recent_sig.get("voidReason", "Attempt voided"),
+            "dist_count": 0
+        }
+
+    void_idx = next((i for i, d in enumerate(ftd_days) if d.get("type") == "void"), -1)
+    active_days = ftd_days[:void_idx] if void_idx >= 0 else ftd_days
+
+    attempts = [d for d in active_days if d.get("type") == "attempt"]
+    ftds = [d for d in active_days if d.get("type") == "followthrough"]
+
+    if not attempts and not ftds:
+        return {
+            "status": "none",
+            "rally_day": 0,
+            "ftd_confirmed": False,
+            "ftd_power_window": False,
+            "void_active": False,
+            "latest_ftd": None,
+            "is_correction": False,
+            "dist_count": 0
+        }
+
+    attempt_date = attempts[0].get("date") if attempts else (ftds[0].get("date") if ftds else None)
+    sessions_since_d1 = len([r for r in records if r.get("date", "") >= attempt_date]) if attempt_date else 0
+    non_dist_count = len([d for d in active_days if attempt_date and d.get("date", "") >= attempt_date and d.get("type") != "distribution"])
+    rally_day = max(sessions_since_d1, non_dist_count)
+
+    dist_count = count_distribution_days(mpm_days, attempt_date)
+
+    current_rally_ftds = [d for d in ftds if d.get("date", "") >= attempt_date] if attempt_date else (ftds if not attempts else [])
+    latest_ftd = current_rally_ftds[0] if current_rally_ftds else None
+
+    ftd_day_of_rally = len([r for r in records if attempt_date and r.get("date", "") >= attempt_date and r.get("date", "") <= latest_ftd.get("date", "")]) if latest_ftd else 0
+    ftd_day_check = ftd_day_of_rally if ftd_day_of_rally > 0 else rally_day
+
+    ftd_meets_min = False
+    if latest_ftd:
+        m_pct = float(latest_ftd.get("movePct") or 0)
+        v_up = latest_ftd.get("volUp") is True
+        if latest_ftd.get("auto"):
+            ftd_meets_min = (ftd_day_check >= FTD_MIN_DAY and m_pct >= FTD_MIN_MOVE and v_up)
+        else:
+            ftd_meets_min = (ftd_day_check >= FTD_MIN_DAY and m_pct >= FTD_MIN_MOVE)
+
+    if ftd_meets_min:
+        post_ftd_records = [r for r in records if r.get("date", "") >= latest_ftd.get("date", "")]
+        post_ftd_closes = [float(r.get("nifty") or 0) for r in post_ftd_records if float(r.get("nifty") or 0) > 0]
+        max_post_ftd = max(post_ftd_closes) if post_ftd_closes else 0.0
+        curr_nifty = float(records[0].get("nifty") or 0) if records else 0.0
+        decline_from_high = round((max_post_ftd - curr_nifty) / max_post_ftd * 100, 1) if (max_post_ftd > 0 and curr_nifty > 0) else 0.0
+
+        is_corr = (dist_count >= 5) or (decline_from_high >= 6.0)
+        if is_corr:
+            return {
+                "status": "correction",
+                "rally_day": rally_day,
+                "ftd_confirmed": False,
+                "ftd_power_window": False,
+                "void_active": False,
+                "latest_ftd": None,
+                "is_correction": True,
+                "dist_count": dist_count,
+                "decline_from_high": decline_from_high
+            }
+
+        return {
+            "status": "confirmed",
+            "rally_day": rally_day,
+            "ftd_confirmed": True,
+            "ftd_power_window": (ftd_day_check <= FTD_POWER_MAX),
+            "void_active": False,
+            "latest_ftd": latest_ftd,
+            "is_correction": False,
+            "dist_count": dist_count,
+            "decline_from_high": decline_from_high
+        }
+
+    if dist_count >= 5:
+        return {
+            "status": "correction",
+            "rally_day": rally_day,
+            "ftd_confirmed": False,
+            "ftd_power_window": False,
+            "void_active": False,
+            "latest_ftd": None,
+            "is_correction": True,
+            "dist_count": dist_count
+        }
+
+    if attempts or ftds:
+        return {
+            "status": "watching",
+            "rally_day": rally_day,
+            "ftd_confirmed": False,
+            "ftd_power_window": False,
+            "void_active": False,
+            "latest_ftd": None,
+            "is_correction": False,
+            "dist_count": dist_count
+        }
+
+    return {
+        "status": "none",
+        "rally_day": 0,
+        "ftd_confirmed": False,
+        "ftd_power_window": False,
+        "void_active": False,
+        "latest_ftd": None,
+        "is_correction": False,
+        "dist_count": 0
+    }
+
+def scan_undercut_all(ftd_days, records):
+    if not ftd_days or not records:
+        return ftd_days, None
+
+    def get_rec_low(r):
+        if not r: return 0.0
+        l = float(r.get("niftyLow") or 0)
+        c = float(r.get("nifty") or 0)
+        return l if l > 0 else (c if c > 0 else 0.0)
+
+    attempts = [d for d in ftd_days if d.get("type") == "attempt" or (d.get("type") == "void" and d.get("_origType") == "attempt" and d.get("voidReason") != "Manual void")]
+    attempts.sort(key=lambda x: x.get("date", ""))
+
+    target_attempt = None
+    if attempts:
+        for i, att in enumerate(attempts):
+            low_ref = float(att.get("low") or 0)
+            if low_ref <= 0:
+                rec = next((r for r in records if r.get("date") == att.get("date")), None)
+                if rec: low_ref = get_rec_low(rec)
+            if low_ref <= 0:
+                low_ref = float(att.get("close") or 0)
+
+            next_att_date = attempts[i + 1].get("date") if i < len(attempts) - 1 else None
+            interim_recs = [r for r in records if r.get("date", "") > att.get("date", "") and (not next_att_date or r.get("date", "") < next_att_date)]
+            interim_undercut = any(0 < get_rec_low(ir) < low_ref for ir in interim_recs)
+            if not interim_undercut:
+                target_attempt = att
+                break
+        if not target_attempt:
+            target_attempt = attempts[-1]
+    else:
+        ftds = [d for d in ftd_days if d.get("type") == "followthrough" or (d.get("type") == "void" and d.get("_origType") == "followthrough" and d.get("voidReason") != "Manual void")]
+        ftds.sort(key=lambda x: x.get("date", ""), reverse=True)
+        if ftds: target_attempt = ftds[0]
+
+    if not target_attempt:
+        return ftd_days, None
+
+    day1_ref = float(target_attempt.get("low") or 0)
+    if day1_ref <= 0:
+        rec = next((r for r in records if r.get("date") == target_attempt.get("date")), None)
+        if rec: day1_ref = get_rec_low(rec)
+    if day1_ref <= 0:
+        day1_ref = float(target_attempt.get("close") or 0)
+    if day1_ref <= 0:
+        return ftd_days, None
+
+    post_records = [r for r in records if r.get("date", "") > target_attempt.get("date", "")]
+    post_records.sort(key=lambda x: x.get("date", ""))
+
+    undercut_date, undercut_val = None, None
+    for r in post_records:
+        test_val = get_rec_low(r)
+        # An FTD confirmation session closing up strongly is not an undercut
+        is_ftd_day = any(d.get("date") == r.get("date") and d.get("type") == "followthrough" for d in ftd_days)
+        if 0 < test_val < day1_ref and not is_ftd_day:
+            undercut_date = r.get("date")
+            undercut_val = test_val
+            break
+
+    now_ms = int(time.time() * 1000)
+    if not undercut_date:
+        cleaned = []
+        for d in ftd_days:
+            item = dict(d)
+            if item.get("date", "") >= target_attempt.get("date", ""):
+                if item.get("type") == "void" and item.get("voidedBy") and item.get("voidReason") != "Manual void":
+                    orig = item.get("_origType") or ("attempt" if item.get("date") == target_attempt.get("date") else "followthrough")
+                    item.pop("voidedBy", None)
+                    item.pop("voidReason", None)
+                    item.pop("_origType", None)
+                    item["type"] = orig
+                    item["_updatedAt"] = now_ms
+            if item.get("date", "") > target_attempt.get("date", "") and (item.get("type") == "attempt" or item.get("_origType") == "attempt"):
+                continue
+            cleaned.append(item)
+        return cleaned, None
+
+    voided = []
+    for d in ftd_days:
+        item = dict(d)
+        if target_attempt.get("date", "") <= item.get("date", "") <= undercut_date:
+            if item.get("type") in ("attempt", "followthrough"):
+                item["_origType"] = item.get("type")
+                item["type"] = "void"
+                item["_updatedAt"] = now_ms
+                item["voidedBy"] = undercut_date
+                item["voidReason"] = f"Low undercut ({undercut_val} < rally low {day1_ref} on {undercut_date})"
+        voided.append(item)
+    return voided, f"Rally low {day1_ref} undercut by {undercut_val} on {undercut_date}"
+
+def update_ftd_daily(ftd_days, records, mpm_days, target_date_str, nifty_close, nifty_low, nifty_vol, prev_close, prev_vol):
+    if ftd_days is None:
+        ftd_days = []
+
+    ftd_days, void_msg = scan_undercut_all(ftd_days, records)
+    if void_msg:
+        print(f"⚠️ FTD Undercut Alert: {void_msg}", file=sys.stderr)
+
+    move_pct = round((nifty_close - prev_close) / prev_close * 100, 2) if prev_close > 0 else 0.0
+    vol_up = (nifty_vol > prev_vol) if (nifty_vol > 0 and prev_vol > 0) else False
+
+    state = compute_ftd_state(ftd_days, records, mpm_days)
+    curr_status = state["status"]
+    curr_rally_day = state["rally_day"]
+    has_active_attempt = (curr_status in ("watching", "confirmed"))
+
+    auto_type = None
+
+    if has_active_attempt and (curr_rally_day + 1 >= FTD_MIN_DAY) and (move_pct >= FTD_MIN_MOVE) and vol_up:
+        auto_type = "followthrough"
+    elif (not has_active_attempt) and (move_pct > 0):
+        auto_type = "attempt"
+        # Benchmark rally low should be the cycle bottom (min of today low and preceding breakdown low)
+        prev_rec = next((r for r in records if r.get("date", "") < target_date_str and float(r.get("niftyLow") or 0) > 0), None)
+        p_low = float(prev_rec.get("niftyLow") or 0) if prev_rec else 0
+        if 0 < p_low < nifty_low:
+            nifty_low = p_low
+    elif move_pct < 0 and vol_up:
+        auto_type = "distribution"
+
+    now_ms = int(time.time() * 1000)
+    existing_today = next((d for d in ftd_days if d.get("date") == target_date_str), None)
+
+    if existing_today and not existing_today.get("auto", True):
+        pass  # Respect manual entry
+    elif auto_type:
+        ftd_days = [d for d in ftd_days if d.get("date") != target_date_str]
+        new_entry = {
+            "id": now_ms,
+            "date": target_date_str,
+            "_updatedAt": now_ms,
+            "close": nifty_close,
+            "prev": prev_close,
+            "low": nifty_low,
+            "movePct": move_pct,
+            "volUp": vol_up,
+            "type": auto_type,
+            "auto": True
+        }
+        ftd_days.insert(0, new_entry)
+
+    ftd_days, void_msg2 = scan_undercut_all(ftd_days, records)
+    ftd_days.sort(key=lambda x: x.get("date", ""), reverse=True)
+    ftd_days = ftd_days[:100]
+
+    final_state = compute_ftd_state(ftd_days, records, mpm_days)
+    return ftd_days, final_state, auto_type
+
 def main():
     parser = argparse.ArgumentParser(description="Automate EOD Breadth and Nifty calculation and sync to JSONBin.")
     parser.add_argument("--date", type=str, default="today", help="Date in YYYY-MM-DD format or 'today'")
@@ -390,6 +732,30 @@ def main():
         # Sort and limit to 150 items as per mpmSave()
         mpm_list.sort(key=lambda x: x.get("date", ""), reverse=True)
         payload["mpm"] = mpm_list[:150]
+
+        # Auto-update FTD array
+        if "ftd" not in payload or not isinstance(payload["ftd"], list):
+            payload["ftd"] = []
+
+        payload["ftd"], ftd_state, auto_type = update_ftd_daily(
+            payload["ftd"],
+            payload["records"],
+            payload["mpm"],
+            target_date_str,
+            nifty_close,
+            nifty_low,
+            nifty_vol,
+            prev_close,
+            prev_vol
+        )
+        if auto_type == "followthrough":
+            print(f"🚀 [FTD Engine] Follow-Through Day AUTO-CONFIRMED on {target_date_str}! (Day {ftd_state['rally_day']})")
+        elif auto_type == "attempt":
+            print(f"📍 [FTD Engine] Day 1 of Rally Attempt AUTO-DETECTED on {target_date_str}! Benchmark Low: {nifty_low}")
+        elif auto_type == "distribution":
+            print(f"⚠️ [FTD Engine] Distribution Day logged on {target_date_str}")
+
+        print(f"📊 [FTD Engine] State: {ftd_state['status'].upper()} | Rally Day: {ftd_state['rally_day']} | FTD Confirmed: {ftd_state['ftd_confirmed']} | Dist Days: {ftd_state['dist_count']}")
 
     # Update timestamp
     payload["_pushedAt"] = int(datetime.now().timestamp() * 1000)
