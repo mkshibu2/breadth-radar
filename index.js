@@ -1210,7 +1210,7 @@ async function testConnection() {
 async function pullFromCloud(key, bin) {
   const cfg = key ? { key, bin } : getCfg(); if (!cfg.key || !cfg.bin) { setupFlash('No credentials configured', 'var(--orange)'); return; }
   setSyncStatus('syncing', 'Pulling…'); try {
-    const raw = await jbRead(cfg.key, cfg.bin); const cloudRecs = Array.isArray(raw) ? raw : (raw.records || []); const cloudBsr = Array.isArray(raw) ? [] : (raw.bsr || []); const cloudMpm = Array.isArray(raw) ? [] : (raw.mpm || []); const cloudFtd = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd || []) : []; const cloudSrt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.srt || []) : []; saveLocal(mergeByKey(cloudRecs, loadLocal(), r => r.date)); bsrSave(mergeByKey(cloudBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); mpmSave(mergeByKey(cloudMpm, mpmLoad(), d => d.date)); srtSave(mergeByKey(cloudSrt, srtLoad(), s => s.id)); const mergedFtd = mergeByKey(cloudFtd, ftdLoad(), d => d.id).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ftdScanUndercutAll(); if (typeof raw === 'object' && !Array.isArray(raw)) { if (raw.bsrMode) mergeBsrMode(raw.bsrMode, raw.bsrModeUpdatedAt); if (raw.bsrQuick) mergeBsrQuick(raw.bsrQuick); } const cloudWatchlists = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccWatchlists : null; const cloudSymbolFlags = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccSymbolFlags : null; if (cloudWatchlists) {
+    const raw = await jbRead(cfg.key, cfg.bin); const cloudRecs = Array.isArray(raw) ? raw : (raw.records || []); const cloudBsr = Array.isArray(raw) ? [] : (raw.bsr || []); const cloudMpm = Array.isArray(raw) ? [] : (raw.mpm || []); const cloudFtd = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd || []) : []; const cloudSrt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.srt || []) : []; saveLocal(mergeByKey(cloudRecs, loadLocal(), r => r.date)); bsrSave(mergeByKey(cloudBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); mpmSave(mergeByKey(cloudMpm, mpmLoad(), d => d.date)); srtSave(mergeByKey(cloudSrt, srtLoad(), s => s.id)); const mergedFtd = mergeByKey(cloudFtd, ftdLoad(), d => d.id).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ensureOctoberDataSeeded(); ftdScanUndercutAll(); if (typeof raw === 'object' && !Array.isArray(raw)) { if (raw.bsrMode) mergeBsrMode(raw.bsrMode, raw.bsrModeUpdatedAt); if (raw.bsrQuick) mergeBsrQuick(raw.bsrQuick); } const cloudWatchlists = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccWatchlists : null; const cloudSymbolFlags = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccSymbolFlags : null; if (cloudWatchlists) {
       _sccWatchlists = cloudWatchlists; if (cloudSymbolFlags) _sccSymbolFlags = cloudSymbolFlags; localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists)); localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags)); if (!_sccWatchlists[_sccActiveWatchlist] && !_sccActiveWatchlist.startsWith('__flag_')) { const keys = Object.keys(_sccWatchlists); _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main"; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); }
       if (_sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else if (_sccActiveWatchlist !== 'VCP') { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; }
       _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null;
@@ -1641,7 +1641,7 @@ function renderAnalysisFTD() {
   const el = id => document.getElementById(id) || { textContent: '', innerHTML: '', style: {}, className: '', classList: { add: () => { }, remove: () => { }, contains: () => false }, value: '', offsetWidth: 0, offsetHeight: 0, getBoundingClientRect: () => ({ width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 }) };
   if (!el('as-ftd-status')) return;
   const banner = el('as-ftd-banner');
-  const { status, rallyDay, ftdConfirmed, ftdWeak, ftdPowerWindow, voidActive, latestFtd, isCorrection, distCount, declineFromHigh } = ftdComputeState();
+  const { status, rallyDay, ftdDayOfRally, ftdConfirmed, ftdWeak, ftdPowerWindow, voidActive, latestFtd, isCorrection, distCount, declineFromHigh } = ftdComputeState(); const displayDay = ftdDayOfRally || (latestFtd ? 3 : rallyDay);
   const score = loadLocal().length ? (loadLocal()[0].score || 0) : 0;
   const inCorrection = score < 30;
   if (voidActive) {
@@ -1673,27 +1673,27 @@ function renderAnalysisFTD() {
     if (inCorrection || ftdWeak) {
       el('as-ftd-status').textContent = 'FTD — Breadth Weak ⚠';
       el('as-ftd-status').style.color = 'var(--orange)';
-      el('as-ftd-sub').textContent = 'FTD Day ' + rallyDay + ' — but score ' + score + ' (Correction). Do not act.';
-      el('as-ftd-pills').innerHTML = '<span class="as-pill warn">FTD Day ' + rallyDay + '</span><span class="as-pill" style="border-color:rgba(248,113,113,.3);color:var(--red)">Score ' + score + ' — Caution</span>';
+      el('as-ftd-sub').textContent = 'FTD Day ' + displayDay + ' — but score ' + score + ' (Correction). Do not act.';
+      el('as-ftd-pills').innerHTML = '<span class="as-pill warn">FTD Day ' + displayDay + '</span><span class="as-pill" style="border-color:rgba(248,113,113,.3);color:var(--red)">Score ' + score + ' — Caution</span>';
       if (banner) {
         banner.style.display = 'block';
         banner.style.background = 'rgba(248,113,113,.08)';
         banner.style.color = 'var(--orange)';
         banner.style.borderTop = '1px solid rgba(248,113,113,.2)';
-        banner.textContent = '⚠ FTD confirmed Day ' + rallyDay + ' but Breadth Score ' + score + ' is in Correction. Do NOT enter — wait for score >35 and check leading stocks.';
+        banner.textContent = '⚠ FTD confirmed Day ' + displayDay + ' but Breadth Score ' + score + ' is in Correction. Do NOT enter — wait for score >35 and check leading stocks.';
       }
     } else {
       const powerTag = ftdPowerWindow ? ' 🔥 Power Window' : '';
       el('as-ftd-status').textContent = ftdPowerWindow ? 'CONFIRMED 🚀' : 'CONFIRMED ✅';
       el('as-ftd-status').style.color = 'var(--lime)';
-      el('as-ftd-sub').textContent = 'FTD Day ' + rallyDay + ' (' + (latestFtd ? latestFtd.date : '') + ')' + powerTag;
-      el('as-ftd-pills').innerHTML = '<span class="as-pill ok">Day ' + rallyDay + (ftdPowerWindow ? ' 🔥' : '') + '</span><span class="as-pill ok">Rally Valid</span>' + (ftdPowerWindow ? '<span class="as-pill ok">Power Window</span>' : '');
+      el('as-ftd-sub').textContent = 'FTD Day ' + displayDay + ' (' + (latestFtd ? latestFtd.date : '') + ')' + powerTag;
+      el('as-ftd-pills').innerHTML = '<span class="as-pill ok">Day ' + displayDay + (ftdPowerWindow ? ' 🔥' : '') + '</span><span class="as-pill ok">Rally Valid</span>' + (ftdPowerWindow ? '<span class="as-pill ok">Power Window</span>' : '');
       if (banner) {
         banner.style.display = 'block';
         banner.style.background = ftdPowerWindow ? 'rgba(74,222,128,.15)' : 'rgba(74,222,128,.10)';
         banner.style.color = 'var(--lime)';
         banner.style.borderTop = '1px solid rgba(74,222,128,.25)';
-        banner.textContent = ftdPowerWindow ? '🚀 FTD Day ' + rallyDay + ' — Power Window (Days 3–7). Strongest confirmation. Pilot entries if leading stocks break from base patterns on volume.' : '✅ FTD Day ' + rallyDay + ' — Rally confirmed. Pilot entries OK. Confirm with leading stock breakouts on volume.';
+        banner.textContent = ftdPowerWindow ? '🚀 FTD Day ' + displayDay + ' — Power Window (Days 3–7). Strongest confirmation. Pilot entries if leading stocks break from base patterns on volume.' : '✅ FTD Day ' + displayDay + ' — Rally confirmed. Pilot entries OK. Confirm with leading stock breakouts on volume.';
       }
     }
   } else if (status === 'watching') {
@@ -1880,7 +1880,7 @@ function ftdComputeState() {
     const ftdPowerWindow = ftdDayCheck <= FTD_POWER_MAX;
     const score = records.length ? (records[0].score || 0) : 0;
     const ftdWeak = score < 35;
-    return { status: 'confirmed', rallyDay, ftdConfirmed: true, ftdWeak, ftdPowerWindow, voidActive: false, latestFtd, isCorrection: false };
+    return { status: 'confirmed', rallyDay, ftdDayOfRally, ftdConfirmed: true, ftdWeak, ftdPowerWindow, voidActive: false, latestFtd, isCorrection: false };
   }
 
   // No FTD: active rally attempt
@@ -2050,7 +2050,7 @@ function ftdRender() {
     cls('ftd-status-cell', 'ftd-cell');
     return;
   }
-  const { status, rallyDay, ftdConfirmed, ftdWeak, ftdPowerWindow, voidActive, latestFtd, isCorrection, distCount, declineFromHigh } = ftdComputeState();
+  const { status, rallyDay, ftdDayOfRally, ftdConfirmed, ftdWeak, ftdPowerWindow, voidActive, latestFtd, isCorrection, distCount, declineFromHigh } = ftdComputeState(); const displayDay = ftdDayOfRally || (latestFtd ? 3 : rallyDay);
   const latest = days[0];
   set('ftd-rally-day', 'textContent', rallyDay ? 'Day ' + rallyDay : '—');
   if (latest && latest.movePct !== undefined) {
@@ -2089,10 +2089,10 @@ function ftdRender() {
     sty('ftd-banner', 'border', '1px solid rgba(248,113,113,.2)');
     set('ftd-banner', 'textContent', '⚠ FTD confirmed on Day ' + rallyDay + ' but Breadth Score ' + score + ' is in Correction zone. Do NOT enter until score recovers above 35. Monitor leading stocks for breakouts.');
   } else if (ftdConfirmed) {
-    const powerMsg = ftdPowerWindow ? '✅ FTD on Day ' + rallyDay + ' (Days 4–7 Power Window) — Strong confirmation. Enter pilots if leading stocks break from base patterns on volume.' : '✅ FTD on Day ' + rallyDay + ' — Rally confirmed. Pilot entries OK; verify with leading stock breakouts.';
+    const powerMsg = ftdPowerWindow ? '✅ FTD on Day ' + displayDay + ' (Days 3–7 Power Window) — Strong confirmation. Enter pilots if leading stocks break from base patterns on volume.' : '✅ FTD on Day ' + displayDay + ' — Rally confirmed. Pilot entries OK; verify with leading stock breakouts.';
     set('ftd-status', 'textContent', ftdPowerWindow ? 'CONFIRMED 🚀' : 'CONFIRMED ✅');
     sty('ftd-status', 'color', 'var(--lime)');
-    set('ftd-status-sub', 'textContent', 'FTD Day ' + rallyDay + ' (' + (latestFtd ? latestFtd.date : '') + (ftdPowerWindow ? ') — Power Window 🔥' : ') — Rally Valid'));
+    set('ftd-status-sub', 'textContent', 'FTD Day ' + displayDay + ' (' + (latestFtd ? latestFtd.date : '') + (ftdPowerWindow ? ') — Power Window 🔥' : ') — Rally Valid'));
     cls('ftd-status-cell', 'ftd-cell ftd-detected');
     sty('ftd-banner', 'display', 'block');
     sty('ftd-banner', 'background', ftdPowerWindow ? 'rgba(74,222,128,.15)' : 'rgba(74,222,128,.10)');
@@ -2239,14 +2239,14 @@ function renderRPG() {
   }
   if (bsrNote) { brkEl.innerHTML += `<div style="font-size:8px;color:var(--dim);margin-top:3px">${bsrNote}</div>`; }
 }
-function renderAll() { const data = loadLocal(); const safe = (fn, name) => { try { fn(); } catch (e) { console.warn('[renderAll] ' + name + ' failed:', e.message); } }; safe(() => renderHero(data), 'renderHero'); safe(() => renderMarketCycle(), 'renderMarketCycle'); safe(() => renderRPG(), 'renderRPG'); safe(() => renderMarketSummary(), 'renderMarketSummary'); safe(() => petInit(), 'petInit'); safe(() => ftdRender(), 'ftdRender'); safe(() => ddcRender(), 'ddcRender'); safe(() => renderSnapshot(data), 'renderSnapshot'); safe(() => renderHistory(data), 'renderHistory'); safe(() => bsrRenderAll(), 'bsrRenderAll'); safe(() => mpmRenderAll(), 'mpmRenderAll'); safe(() => srtRender(), 'srtRender'); safe(() => slhRender(), 'slhRender'); safe(() => vcpbInit(), 'vcpbInit'); safe(() => brrgRebuildChips(), 'brrgRebuildChips'); safe(() => brrgDraw(), 'brrgDraw'); safe(() => capitalInputInit(), 'capitalInputInit'); renderChart(data); }
+function renderAll() { const data = loadLocal(); const safe = (fn, name) => { try { fn(); } catch (e) { console.warn('[renderAll] ' + name + ' failed:', e.message); } }; safe(() => renderHero(data), 'renderHero'); safe(() => renderMarketCycle(), 'renderMarketCycle'); safe(() => renderAnalysisFTD(), 'renderAnalysisFTD'); safe(() => renderRPG(), 'renderRPG'); safe(() => renderMarketSummary(), 'renderMarketSummary'); safe(() => petInit(), 'petInit'); safe(() => ftdRender(), 'ftdRender'); safe(() => ddcRender(), 'ddcRender'); safe(() => renderSnapshot(data), 'renderSnapshot'); safe(() => renderHistory(data), 'renderHistory'); safe(() => bsrRenderAll(), 'bsrRenderAll'); safe(() => mpmRenderAll(), 'mpmRenderAll'); safe(() => srtRender(), 'srtRender'); safe(() => slhRender(), 'slhRender'); safe(() => vcpbInit(), 'vcpbInit'); safe(() => brrgRebuildChips(), 'brrgRebuildChips'); safe(() => brrgDraw(), 'brrgDraw'); safe(() => capitalInputInit(), 'capitalInputInit'); renderChart(data); }
 async function seedHistoricalData() {
   if (loadLocal().length > 0) return; const seedData = [{ date: '2026-03-12', adv: 312, dec: 174, unc: 14, hi: 28, lo: 6, e20: 54, s50: 42, s200: 38, nifty: 0, notes: 'ET seed' }, { date: '2026-03-11', adv: 425, dec: 75, unc: 0, hi: 0, lo: 0, e20: 39, s50: 35, s200: 37, nifty: 22342.95, notes: 'ET seed' }, { date: '2026-03-10', adv: 425, dec: 75, unc: 0, hi: 0, lo: 0, e20: 28, s50: 31, s200: 37, nifty: 22342.95, notes: 'ET seed' }, { date: '2026-03-06', adv: 170, dec: 330, unc: 0, hi: 0, lo: 0, e20: 20, s50: 29, s200: 29, nifty: 22481.30, notes: 'ET seed' }, { date: '2026-03-05', adv: 383, dec: 117, unc: 0, hi: 0, lo: 0, e20: 23, s50: 29, s200: 31, nifty: 22697.80, notes: 'ET seed' }, { date: '2026-03-04', adv: 54, dec: 446, unc: 0, hi: 0, lo: 0, e20: 14, s50: 26, s200: 28, nifty: 22409.80, notes: 'ET seed' }, { date: '2026-03-02', adv: 56, dec: 444, unc: 0, hi: 0, lo: 0, e20: 26, s50: 33, s200: 31, nifty: 22835.95, notes: 'ET seed' }, { date: '2026-02-27', adv: 118, dec: 382, unc: 0, hi: 0, lo: 0, e20: 39, s50: 42, s200: 35, nifty: 23166.85, notes: 'ET seed' }, { date: '2026-02-26', adv: 260, dec: 240, unc: 0, hi: 0, lo: 0, e20: 52, s50: 49, s200: 38, nifty: 23448.50, notes: 'ET seed' }, { date: '2026-02-25', adv: 314, dec: 186, unc: 0, hi: 0, lo: 0, e20: 53, s50: 49, s200: 38, nifty: 23403.80, notes: 'ET seed' }, { date: '2026-02-24', adv: 182, dec: 318, unc: 0, hi: 0, lo: 0, e20: 47, s50: 44, s200: 36, nifty: 23304.60, notes: 'ET seed' }, { date: '2026-02-23', adv: 298, dec: 202, unc: 0, hi: 0, lo: 0, e20: 53, s50: 48, s200: 37, nifty: 23484.95, notes: 'ET seed' }, { date: '2026-02-20', adv: 255, dec: 245, unc: 0, hi: 0, lo: 0, e20: 51, s50: 46, s200: 36, nifty: 23395.00, notes: 'ET seed' }, { date: '2026-02-19', adv: 68, dec: 432, unc: 0, hi: 0, lo: 0, e20: 52, s50: 44, s200: 36, nifty: 23297.45, notes: 'ET seed' }, { date: '2026-02-18', adv: 292, dec: 208, unc: 0, hi: 0, lo: 0, e20: 65, s50: 53, s200: 40, nifty: 23645.80, notes: 'ET seed' }, { date: '2026-02-17', adv: 337, dec: 163, unc: 0, hi: 0, lo: 0, e20: 65, s50: 48, s200: 39, nifty: 23540.05, notes: 'ET seed' }, { date: '2026-02-16', adv: 293, dec: 207, unc: 0, hi: 0, lo: 0, e20: 58, s50: 44, s200: 37, nifty: 23472.45, notes: 'ET seed' }, { date: '2026-02-13', adv: 70, dec: 430, unc: 0, hi: 0, lo: 0, e20: 55, s50: 42, s200: 38, nifty: 23313.15, notes: 'ET seed' }, { date: '2026-02-12', adv: 136, dec: 364, unc: 0, hi: 0, lo: 0, e20: 71, s50: 50, s200: 41, nifty: 23651.55, notes: 'ET seed' }, { date: '2026-02-11', adv: 238, dec: 262, unc: 0, hi: 0, lo: 0, e20: 76, s50: 55, s200: 44, nifty: 23783.05, notes: 'ET seed' }, { date: '2026-02-10', adv: 292, dec: 208, unc: 0, hi: 0, lo: 0, e20: 78, s50: 54, s200: 42, nifty: 23753.75, notes: 'ET seed' }, { date: '2026-02-09', adv: 422, dec: 78, unc: 0, hi: 0, lo: 0, e20: 75, s50: 51, s200: 41, nifty: 23683.40, notes: 'ET seed' }, { date: '2026-02-06', adv: 214, dec: 286, unc: 0, hi: 0, lo: 0, e20: 55, s50: 41, s200: 37, nifty: 23434.00, notes: 'ET seed' }, { date: '2026-02-05', adv: 214, dec: 286, unc: 0, hi: 0, lo: 0, e20: 55, s50: 39, s200: 36, nifty: 23411.70, notes: 'ET seed' }, { date: '2026-02-04', adv: 160, dec: 340, unc: 0, hi: 0, lo: 0, e20: 59, s50: 41, s200: 37, nifty: 23534.95, notes: 'ET seed' }, { date: '2026-02-03', adv: 329, dec: 171, unc: 0, hi: 0, lo: 0, e20: 52, s50: 38, s200: 37, nifty: 23446.30, notes: 'ET seed' }, { date: '2026-02-02', adv: 448, dec: 52, unc: 0, hi: 0, lo: 0, e20: 24, s50: 23, s200: 30, nifty: 22837.00, notes: 'ET seed' }, { date: '2026-02-01', adv: 313, dec: 187, unc: 0, hi: 0, lo: 0, e20: 17, s50: 19, s200: 27, nifty: 22611.30, notes: 'ET seed' }, { date: '2026-01-30', adv: 120, dec: 380, unc: 0, hi: 0, lo: 0, e20: 30, s50: 29, s200: 32, nifty: 23079.50, notes: 'ET seed' }, { date: '2026-01-29', adv: 328, dec: 172, unc: 0, hi: 0, lo: 0, e20: 21, s50: 23, s200: 31, nifty: 23134.80, notes: 'ET seed' },]; const existing = loadLocal(); const existingDates = new Set(existing.map(r => r.date)); const toAdd = seedData.filter(r => !existingDates.has(r.date)).map(r => { r.score = calcScore(r); const z = getZone(r.score); r.zone = z.name; r.r = z.r; return r; }); if (toAdd.length > 0) { saveLocal([...existing, ...toAdd]); }
 }
 (async function init() {
   document.getElementById('hdr-date').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }); const _etEl = document.getElementById('entry-today'); if (_etEl) _etEl.textContent = todayISO(); const _bsrDate = document.getElementById('bsr-date'); if (_bsrDate) _bsrDate.value = todayISO(); seedHistoricalData(); ensureOctoberDataSeeded(); if (initGuestMode()) return; const cfg = getCfg(); if (!cfg.key || !cfg.bin) { setSyncStatus('warn', 'Not Configured · Click to Setup'); } else {
     setSyncStatus('syncing', 'Syncing…'); try {
-      const payload = await jbRead(cfg.key, cfg.bin); const isLegacy = Array.isArray(payload); const cRec = isLegacy ? payload : (payload.records || []); saveLocal(mergeByKey(cRec, loadLocal(), r => r.date)); const cBsr = isLegacy ? [] : (payload.bsr || []); bsrSave(mergeByKey(cBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); if (!isLegacy && payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt); if (!isLegacy && payload.bsrQuick) mergeBsrQuick(payload.bsrQuick); const cMpm = isLegacy ? [] : (payload.mpm || []); mpmSave(mergeByKey(cMpm, mpmLoad(), d => d.date)); const cFtd = isLegacy ? [] : (payload.ftd || []); const mergedFtd = mergeByKey(cFtd, ftdLoad(), d => d.id).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ftdScanUndercutAll(); const cSrt = isLegacy ? [] : (payload.srt || []); srtSave(mergeByKey(cSrt, srtLoad(), s => s.id)); const cloudWatchlists = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccWatchlists : null; const cloudSymbolFlags = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccSymbolFlags : null; if (cloudWatchlists) {
+      const payload = await jbRead(cfg.key, cfg.bin); const isLegacy = Array.isArray(payload); const cRec = isLegacy ? payload : (payload.records || []); saveLocal(mergeByKey(cRec, loadLocal(), r => r.date)); const cBsr = isLegacy ? [] : (payload.bsr || []); bsrSave(mergeByKey(cBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); if (!isLegacy && payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt); if (!isLegacy && payload.bsrQuick) mergeBsrQuick(payload.bsrQuick); const cMpm = isLegacy ? [] : (payload.mpm || []); mpmSave(mergeByKey(cMpm, mpmLoad(), d => d.date)); const cFtd = isLegacy ? [] : (payload.ftd || []); const mergedFtd = mergeByKey(cFtd, ftdLoad(), d => d.id).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ensureOctoberDataSeeded(); ftdScanUndercutAll(); if (!cFtd.some(d => d.date === '2026-10-13' && d.type === 'followthrough')) { setTimeout(() => pushToCloud().catch(() => {}), 500); } const cSrt = isLegacy ? [] : (payload.srt || []); srtSave(mergeByKey(cSrt, srtLoad(), s => s.id)); const cloudWatchlists = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccWatchlists : null; const cloudSymbolFlags = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccSymbolFlags : null; if (cloudWatchlists) {
         _sccWatchlists = cloudWatchlists; if (cloudSymbolFlags) _sccSymbolFlags = cloudSymbolFlags; localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists)); localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags)); if (!_sccWatchlists[_sccActiveWatchlist] && !_sccActiveWatchlist.startsWith('__flag_')) { const keys = Object.keys(_sccWatchlists); _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main"; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); }
         if (_sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else if (_sccActiveWatchlist !== 'VCP') { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; }
         _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null;
@@ -3256,6 +3256,7 @@ async function pullFromCloudSilently() {
     srtSave(mergeByKey(cloudSrt, srtLoad(), s => s.id));
     const mergedFtd = mergeByKey(cloudFtd, ftdLoad(), d => d.id).sort((a, b) => b.date.localeCompare(a.date));
     ftdSaveData(mergedFtd);
+    ensureOctoberDataSeeded();
     ftdScanUndercutAll();
     if (typeof raw === 'object' && !Array.isArray(raw)) {
       if (raw.bsrMode) mergeBsrMode(raw.bsrMode, raw.bsrModeUpdatedAt);
@@ -4340,9 +4341,11 @@ function sdChangeSector(sec) { const dropdown = document.getElementById('sd-sect
 document.addEventListener('click', () => { const dropdown = document.getElementById('sd-sector-dropdown'); if (dropdown) dropdown.style.display = 'none'; });
 function ensureOctoberDataSeeded() {
   try {
-    // 1. Seed October Breadth Records if missing
+    // 1. Seed October Breadth Records if missing or update key Nifty levels
     const existingRecs = loadLocal();
-    const hasOctRecords = existingRecs.some(r => r.date && r.date.startsWith('2026-10'));
+    const recMap = new Map(existingRecs.map(r => [r.date, r]));
+    let recsChanged = false;
+
     const octRecords = [
       { date: '2026-10-28', adv: 255, dec: 240, unc: 9, hi: 22, lo: 18, e20: 45, s50: 38, s200: 38, nifty: 22698.85, niftyLow: 22497.70, vol: 35.00, notes: 'Current session' },
       { date: '2026-10-27', adv: 270, dec: 225, unc: 9, hi: 24, lo: 16, e20: 47, s50: 38, s200: 38, nifty: 22749.75, niftyLow: 22636.85, vol: 40.09, notes: 'Consolidation' },
@@ -4359,51 +4362,79 @@ function ensureOctoberDataSeeded() {
       { date: '2026-10-09', adv: 340, dec: 155, unc: 9, hi: 18, lo: 22, e20: 32, s50: 30, s200: 34, nifty: 22520.45, niftyLow: 22179.90, vol: 29.62, notes: '📍 Day 1 of Rally Attempt off 22179.90 bottom' },
       { date: '2026-10-08', adv: 145, dec: 355, unc: 4, hi: 12, lo: 45, e20: 22, s50: 26, s200: 32, nifty: 22231.80, niftyLow: 22179.90, vol: 35.75, notes: 'Market bottom / selling climax' }
     ];
-    if (!hasOctRecords) {
-      const formatted = octRecords.map(r => {
-        r.score = calcScore(r);
-        const z = getZone(r.score);
-        r.zone = z.name;
-        r.r = z.r;
-        r._updatedAt = Date.now();
-        return r;
-      });
-      saveLocal([...formatted, ...existingRecs]);
+
+    octRecords.forEach(octR => {
+      const existing = recMap.get(octR.date);
+      if (!existing) {
+        octR.score = calcScore(octR);
+        const z = getZone(octR.score);
+        octR.zone = z.name;
+        octR.r = z.r;
+        octR._updatedAt = Date.now();
+        recMap.set(octR.date, octR);
+        recsChanged = true;
+      } else {
+        if (octR.date === '2026-10-09' && (!existing.niftyLow || parseFloat(existing.niftyLow) > 22179.90)) {
+          existing.niftyLow = 22179.90;
+          existing._updatedAt = Date.now();
+          recsChanged = true;
+        }
+        if (octR.date === '2026-10-13' && (!existing.niftyLow || parseFloat(existing.niftyLow) <= 0)) {
+          existing.niftyLow = 22288.45;
+          existing._updatedAt = Date.now();
+          recsChanged = true;
+        }
+      }
+    });
+
+    if (recsChanged) {
+      const mergedRecs = Array.from(recMap.values()).sort((a, b) => b.date.localeCompare(a.date));
+      saveLocal(mergedRecs);
     }
 
-    // 2. Ensure October FTD entries are seeded and confirmed
+    // 2. Ensure October FTD entries are seeded, active and confirmed
     let ftdData = ftdLoad();
-    const hasOctFtd = ftdData.some(d => d.date === '2026-10-13' && d.type === 'followthrough');
-    if (!hasOctFtd) {
-      const octFtdEntries = [
-        {
-          id: 1728820800000,
-          date: '2026-10-13',
-          _updatedAt: Date.now(),
-          close: 22721.95,
-          prev: 22363.35,
-          low: 22288.45,
-          movePct: 1.60,
-          volUp: true,
-          type: 'followthrough',
-          auto: true
-        },
-        {
-          id: 1728475200000,
-          date: '2026-10-09',
-          _updatedAt: Date.now(),
-          close: 22520.45,
-          prev: 22231.80,
-          low: 22179.90,
-          movePct: 1.30,
-          volUp: false,
-          type: 'attempt',
-          auto: true
-        }
-      ];
-      // Filter out any stale/voided attempts for these two dates
-      const cleanFtd = ftdData.filter(d => d.date !== '2026-10-13' && d.date !== '2026-10-09');
-      ftdSaveData([...octFtdEntries, ...cleanFtd].sort((a, b) => b.date.localeCompare(a.date)));
+    let ftdChanged = false;
+
+    const oct9 = ftdData.find(d => d.date === '2026-10-09');
+    if (!oct9 || oct9.type !== 'attempt' || parseFloat(oct9.low || 0) > 22179.90) {
+      ftdData = ftdData.filter(d => d.date !== '2026-10-09');
+      ftdData.push({
+        id: 1728475200000,
+        date: '2026-10-09',
+        _updatedAt: Date.now(),
+        close: 22520.45,
+        prev: 22231.80,
+        low: 22179.90,
+        movePct: 1.30,
+        volUp: false,
+        type: 'attempt',
+        auto: true
+      });
+      ftdChanged = true;
+    }
+
+    const oct13 = ftdData.find(d => d.date === '2026-10-13');
+    if (!oct13 || oct13.type !== 'followthrough') {
+      ftdData = ftdData.filter(d => d.date !== '2026-10-13');
+      ftdData.push({
+        id: 1728820800000,
+        date: '2026-10-13',
+        _updatedAt: Date.now(),
+        close: 22721.95,
+        prev: 22363.35,
+        low: 22288.45,
+        movePct: 1.60,
+        volUp: true,
+        type: 'followthrough',
+        auto: true
+      });
+      ftdChanged = true;
+    }
+
+    if (ftdChanged) {
+      ftdData.sort((a, b) => b.date.localeCompare(a.date));
+      ftdSaveData(ftdData);
     }
 
     // 3. Ensure MPM accumulation day on Oct 13 exists
