@@ -4387,25 +4387,30 @@ function ensureOctoberDataSeeded() {
     let recsChanged = false;
 
     const octRecords = [
-      { date: '2026-10-28', adv: 255, dec: 240, unc: 9, hi: 22, lo: 18, e20: 45, s50: 38, s200: 38, nifty: 22698.85, niftyLow: 22497.70, vol: 35.00, notes: 'Current session' },
-      { date: '2026-10-27', adv: 270, dec: 225, unc: 9, hi: 24, lo: 16, e20: 47, s50: 38, s200: 38, nifty: 22749.75, niftyLow: 22636.85, vol: 40.09, notes: 'Consolidation' },
-      { date: '2026-10-26', adv: 290, dec: 205, unc: 9, hi: 25, lo: 18, e20: 46, s50: 38, s200: 38, nifty: 22753.20, niftyLow: 22387.35, vol: 31.02, notes: 'Bounce from support' },
-      { date: '2026-10-23', adv: 180, dec: 315, unc: 9, hi: 18, lo: 25, e20: 41, s50: 36, s200: 38, nifty: 22600.00, niftyLow: 22372.00, vol: 36.42, notes: 'Support test, low held' },
-      { date: '2026-10-22', adv: 195, dec: 300, unc: 9, hi: 20, lo: 22, e20: 44, s50: 38, s200: 38, nifty: 22687.65, niftyLow: 22554.85, vol: 39.16, notes: 'Consolidation' },
-      { date: '2026-10-21', adv: 240, dec: 255, unc: 9, hi: 24, lo: 16, e20: 48, s50: 40, s200: 39, nifty: 22811.35, niftyLow: 22649.90, vol: 32.47, notes: 'Consolidation' },
-      { date: '2026-10-19', adv: 220, dec: 275, unc: 9, hi: 28, lo: 14, e20: 52, s50: 42, s200: 39, nifty: 22888.95, niftyLow: 22845.00, vol: 28.58, notes: 'Pullback' },
-      { date: '2026-10-16', adv: 430, dec: 70, unc: 4, hi: 42, lo: 5, e20: 58, s50: 44, s200: 40, nifty: 23146.15, niftyLow: 22913.80, vol: 39.16, notes: 'Uptrend continuation' },
-      { date: '2026-10-15', adv: 410, dec: 88, unc: 6, hi: 35, lo: 8, e20: 52, s50: 40, s200: 38, nifty: 22997.35, niftyLow: 22637.40, vol: 37.08, notes: 'Upside expansion' },
-      { date: '2026-10-14', adv: 245, dec: 250, unc: 9, hi: 22, lo: 12, e20: 40, s50: 34, s200: 36, nifty: 22622.70, niftyLow: 22558.95, vol: 33.32, notes: 'Consolidation post-FTD' },
-      { date: '2026-10-13', adv: 395, dec: 102, unc: 7, hi: 25, lo: 10, e20: 42, s50: 35, s200: 36, nifty: 22721.95, niftyLow: 22288.45, vol: 30.89, notes: '🚀 Follow-Through Day (FTD) +1.60% on vol' },
-      { date: '2026-10-12', adv: 210, dec: 285, unc: 9, hi: 15, lo: 18, e20: 29, s50: 28, s200: 33, nifty: 22363.35, niftyLow: 22304.45, vol: 25.88, notes: 'Day 2 testing low, held above bottom' },
-      { date: '2026-10-09', adv: 340, dec: 155, unc: 9, hi: 18, lo: 22, e20: 32, s50: 30, s200: 34, nifty: 22520.45, niftyLow: 22179.90, vol: 29.62, notes: '📍 Day 1 of Rally Attempt off 22179.90 bottom' },
-      { date: '2026-10-08', adv: 145, dec: 355, unc: 4, hi: 12, lo: 45, e20: 22, s50: 26, s200: 32, nifty: 22231.80, niftyLow: 22179.90, vol: 35.75, notes: 'Market bottom / selling climax' }
+      { date: '2026-10-29', adv: 293, dec: 203, unc: 1, hi: 8, lo: 9, e20: 31.2, s50: 19.5, s200: 32.6, nifty: 22866.35, niftyLow: 22656.75, vol: 19.26, notes: 'Current session' },
+      { date: '2026-10-28', adv: 148, dec: 154, unc: 2, hi: 6, lo: 18, e20: 28.3, s50: 21.7, s200: 31.6, nifty: 22698.85, niftyLow: 22497.70, vol: 23.72, notes: '' },
+      { date: '2026-10-27', adv: 353, dec: 146, unc: 0, hi: 7, lo: 25, e20: 25.7, s50: 17.6, s200: 32.3, nifty: 22749.75, niftyLow: 22636.85, vol: 37.14, notes: '' },
+      { date: '2026-10-26', adv: 337, dec: 162, unc: 0, hi: 3, lo: 66, e20: 15.6, s50: 13.0, s200: 29.1, nifty: 22753.20, niftyLow: 22387.35, vol: 27.26, notes: '' },
+      { date: '2026-10-23', adv: 39, dec: 460, unc: 0, hi: 3, lo: 110, e20: 11.0, s50: 10.0, s200: 25.3, nifty: 22600.00, niftyLow: 22372.00, vol: 30.67, notes: '' },
+      { date: '2026-10-22', adv: 141, dec: 357, unc: 1, hi: 3, lo: 71, e20: 17.2, s50: 13.6, s200: 30.3, nifty: 22687.65, niftyLow: 22554.85, vol: 34.58, notes: '' },
+      { date: '2026-10-21', adv: 82, dec: 416, unc: 1, hi: 3, lo: 62, e20: 17.8, s50: 13.8, s200: 32.1, nifty: 22811.35, niftyLow: 22649.90, vol: 31.24, notes: '' },
+      { date: '2026-10-19', adv: 86, dec: 412, unc: 1, hi: 4, lo: 23, e20: 25.1, s50: 18.6, s200: 37.5, nifty: 22888.95, niftyLow: 22845.00, vol: 26.88, notes: '' },
+      { date: '2026-10-16', adv: 258, dec: 240, unc: 1, hi: 7, lo: 15, e20: 33.3, s50: 22.2, s200: 39.7, nifty: 23146.15, niftyLow: 22913.80, vol: 42.14, notes: '' },
+      { date: '2026-10-15', adv: 207, dec: 291, unc: 1, hi: 4, lo: 13, e20: 30.9, s50: 20.2, s200: 40.5, nifty: 22997.35, niftyLow: 22637.40, vol: 34.22, notes: '' },
+      { date: '2026-10-14', adv: 244, dec: 255, unc: 0, hi: 3, lo: 8, e20: 34.7, s50: 24.0, s200: 40.9, nifty: 22622.70, niftyLow: 22558.95, vol: 30.73, notes: '' },
+      { date: '2026-10-13', adv: 369, dec: 130, unc: 0, hi: 4, lo: 16, e20: 29.5, s50: 20.8, s200: 39.3, nifty: 22721.95, niftyLow: 22288.45, vol: 28.21, notes: '🚀 Follow-Through Day (FTD) +1.60% on vol' },
+      { date: '2026-10-12', adv: 270, dec: 227, unc: 2, hi: 4, lo: 15, e20: 22.4, s50: 19.6, s200: 37.7, nifty: 22363.35, niftyLow: 22304.45, vol: 23.91, notes: '' },
+      { date: '2026-10-09', adv: 352, dec: 147, unc: 0, hi: 3, lo: 27, e20: 18.6, s50: 17.2, s200: 37.5, nifty: 22520.45, niftyLow: 22179.90, vol: 28.06, notes: '📍 Day 1 of Rally Attempt off 22179.90 bottom' },
+      { date: '2026-10-08', adv: 36, dec: 463, unc: 0, hi: 1, lo: 58, e20: 13.0, s50: 14.0, s200: 35.5, nifty: 22231.80, niftyLow: 22179.90, vol: 34.28, notes: 'Market bottom / selling climax' },
+      { date: '2026-10-07', adv: 147, dec: 351, unc: 1, hi: 10, lo: 24, e20: 27.1, s50: 22.6, s200: 37.5, nifty: 22603.05, niftyLow: 22546.30, vol: 32.64, notes: '' },
+      { date: '2026-10-06', adv: 358, dec: 139, unc: 2, hi: 5, lo: 8, e20: 26.9, s50: 23.4, s200: 39.1, nifty: 22776.10, niftyLow: 22561.60, vol: 28.71, notes: '' },
+      { date: '2026-10-05', adv: 272, dec: 226, unc: 1, hi: 0, lo: 23, e20: 15.4, s50: 20.0, s200: 38.1, nifty: 22555.75, niftyLow: 22397.10, vol: 38.38, notes: '' },
+      { date: '2026-10-01', adv: 111, dec: 387, unc: 1, hi: 2, lo: 68, e20: 12.0, s50: 16.6, s200: 37.7, nifty: 22421.95, niftyLow: 22217.30, vol: 39.27, notes: '' }
     ];
 
     octRecords.forEach(octR => {
       const existing = recMap.get(octR.date);
-      if (!existing) {
+      if (!existing || existing.adv > 400 || existing.e20 > 40 || existing.notes === 'Consolidation' || existing.notes === 'Bounce from support') {
         octR.score = calcScore(octR);
         const z = getZone(octR.score);
         octR.zone = z.name;
@@ -4413,17 +4418,6 @@ function ensureOctoberDataSeeded() {
         octR._updatedAt = Date.now();
         recMap.set(octR.date, octR);
         recsChanged = true;
-      } else {
-        if (octR.date === '2026-10-09' && (!existing.niftyLow || parseFloat(existing.niftyLow) > 22179.90)) {
-          existing.niftyLow = 22179.90;
-          existing._updatedAt = Date.now();
-          recsChanged = true;
-        }
-        if (octR.date === '2026-10-13' && (!existing.niftyLow || parseFloat(existing.niftyLow) <= 0)) {
-          existing.niftyLow = 22288.45;
-          existing._updatedAt = Date.now();
-          recsChanged = true;
-        }
       }
     });
 
@@ -4499,9 +4493,11 @@ function ensureOctoberDataSeeded() {
       ftdChanged = true;
     }
 
-    if (ftdChanged) {
-      ftdData.sort((a, b) => b.date.localeCompare(a.date));
-      ftdSaveData(ftdData);
+    if (ftdChanged || recsChanged) {
+      if (ftdChanged) {
+        ftdData.sort((a, b) => b.date.localeCompare(a.date));
+        ftdSaveData(ftdData);
+      }
       const cfg = getCfg();
       if (cfg && cfg.key && cfg.bin) {
         setTimeout(() => { pushToCloud().catch(() => {}); }, 1200);
