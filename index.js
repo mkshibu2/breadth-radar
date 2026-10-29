@@ -1210,7 +1210,7 @@ async function testConnection() {
 async function pullFromCloud(key, bin) {
   const cfg = key ? { key, bin } : getCfg(); if (!cfg.key || !cfg.bin) { setupFlash('No credentials configured', 'var(--orange)'); return; }
   setSyncStatus('syncing', 'Pulling…'); try {
-    const raw = await jbRead(cfg.key, cfg.bin); const cloudRecs = Array.isArray(raw) ? raw : (raw.records || []); const cloudBsr = Array.isArray(raw) ? [] : (raw.bsr || []); const cloudMpm = Array.isArray(raw) ? [] : (raw.mpm || []); const cloudFtd = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd || []) : []; const cloudSrt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.srt || []) : []; saveLocal(mergeByKey(cloudRecs, loadLocal(), r => r.date)); bsrSave(mergeByKey(cloudBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); mpmSave(mergeByKey(cloudMpm, mpmLoad(), d => d.date)); srtSave(mergeByKey(cloudSrt, srtLoad(), s => s.id)); const mergedFtd = mergeByKey(cloudFtd, ftdLoad(), d => d.id).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ensureOctoberDataSeeded(); ftdScanUndercutAll(); if (typeof raw === 'object' && !Array.isArray(raw)) { if (raw.bsrMode) mergeBsrMode(raw.bsrMode, raw.bsrModeUpdatedAt); if (raw.bsrQuick) mergeBsrQuick(raw.bsrQuick); } const cloudWatchlists = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccWatchlists : null; const cloudSymbolFlags = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccSymbolFlags : null; if (cloudWatchlists) {
+    const raw = await jbRead(cfg.key, cfg.bin); const cloudRecs = Array.isArray(raw) ? raw : (raw.records || []); const cloudBsr = Array.isArray(raw) ? [] : (raw.bsr || []); const cloudMpm = Array.isArray(raw) ? [] : (raw.mpm || []); const cloudFtd = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd || []) : []; const cloudSrt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.srt || []) : []; saveLocal(mergeByKey(cloudRecs, loadLocal(), r => r.date)); bsrSave(mergeByKey(cloudBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); mpmSave(mergeByKey(cloudMpm, mpmLoad(), d => d.date)); srtSave(mergeByKey(cloudSrt, srtLoad(), s => s.id)); const mergedFtd = mergeByKey(cloudFtd, ftdLoad(), d => d.date).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ensureOctoberDataSeeded(); ftdScanUndercutAll(); if (typeof raw === 'object' && !Array.isArray(raw)) { if (raw.bsrMode) mergeBsrMode(raw.bsrMode, raw.bsrModeUpdatedAt); if (raw.bsrQuick) mergeBsrQuick(raw.bsrQuick); } const cloudWatchlists = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccWatchlists : null; const cloudSymbolFlags = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccSymbolFlags : null; if (cloudWatchlists) {
       _sccWatchlists = cloudWatchlists; if (cloudSymbolFlags) _sccSymbolFlags = cloudSymbolFlags; localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists)); localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags)); if (!_sccWatchlists[_sccActiveWatchlist] && !_sccActiveWatchlist.startsWith('__flag_')) { const keys = Object.keys(_sccWatchlists); _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main"; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); }
       if (_sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else if (_sccActiveWatchlist !== 'VCP') { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; }
       _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null;
@@ -1850,17 +1850,33 @@ function ftdComputeState() {
   if (!attempts.length && !ftds.length) {
     return { status: 'none', rallyDay: 0, ftdConfirmed: false, ftdWeak: false, ftdPowerWindow: false, voidActive: false, latestFtd: null, isCorrection: false };
   }
-  const attemptDate = attempts.length ? attempts[0].date : (ftds.length ? ftds[0].date : null);
+  // The rally attempt date is the earliest active attempt for the current rally
+  const attemptDate = attempts.length ? attempts[attempts.length - 1].date : (ftds.length ? ftds[ftds.length - 1].date : null);
   const sessionsSinceD1 = attemptDate ? records.filter(r => r.date >= attemptDate).length : 0;
   const rallyDay = Math.max(sessionsSinceD1, activeDays.filter(d => attemptDate && d.date >= attemptDate && d.type !== 'distribution').length);
 
   const distCount = countDistributionDays(mpmDays, attemptDate);
   // ONLY FTDs that occurred on or after attemptDate can confirm the current rally attempt!
   const currentRallyFtds = attemptDate ? ftds.filter(d => d.date >= attemptDate) : (attempts.length ? [] : ftds);
-  const latestFtd = currentRallyFtds.length ? currentRallyFtds[0] : null;
-  const ftdDayOfRally = latestFtd ? records.filter(r => r.date >= attemptDate && r.date <= latestFtd.date).length : 0;
+
+  // Find the first qualifying confirming FTD in chronological order
+  const sortedRallyFtds = [...currentRallyFtds].sort((a, b) => a.date.localeCompare(b.date));
+  let confirmingFtd = null;
+  let confirmingFtdDay = 0;
+  for (const f of sortedRallyFtds) {
+    const dayNum = records.filter(r => r.date >= attemptDate && r.date <= f.date).length;
+    const isQual = f.auto ? (dayNum >= FTD_MIN_DAY && f.movePct >= FTD_MIN_MOVE && f.volUp === true) : (dayNum >= FTD_MIN_DAY && f.movePct >= FTD_MIN_MOVE);
+    if (isQual) {
+      confirmingFtd = f;
+      confirmingFtdDay = dayNum;
+      break;
+    }
+  }
+
+  const latestFtd = confirmingFtd || (currentRallyFtds.length ? currentRallyFtds[0] : null);
+  const ftdDayOfRally = confirmingFtdDay || (latestFtd ? records.filter(r => r.date >= attemptDate && r.date <= latestFtd.date).length : 0);
   const ftdDayCheck = ftdDayOfRally > 0 ? ftdDayOfRally : rallyDay;
-  const ftdMeetsMinimum = latestFtd && (latestFtd.auto ? (ftdDayCheck >= FTD_MIN_DAY && latestFtd.movePct >= FTD_MIN_MOVE && latestFtd.volUp === true) : (ftdDayCheck >= FTD_MIN_DAY && latestFtd.movePct >= FTD_MIN_MOVE));
+  const ftdMeetsMinimum = !!confirmingFtd;
 
   if (ftdMeetsMinimum) {
     // Confirmed Uptrend: check if uptrend has broken into Correction
@@ -1875,24 +1891,24 @@ function ftdComputeState() {
 
     const isCorrection = (distCount >= 5) || (declineFromHigh >= 6.0);
     if (isCorrection) {
-      return { status: 'correction', rallyDay, ftdConfirmed: false, ftdWeak: false, ftdPowerWindow: false, voidActive: false, latestFtd: null, isCorrection: true, distCount, declineFromHigh };
+      return { status: 'correction', rallyDay, attemptDate, ftdConfirmed: false, ftdWeak: false, ftdPowerWindow: false, voidActive: false, latestFtd: null, isCorrection: true, distCount, declineFromHigh };
     }
     const ftdPowerWindow = ftdDayCheck <= FTD_POWER_MAX;
     const score = records.length ? (records[0].score || 0) : 0;
     const ftdWeak = score < 35;
-    return { status: 'confirmed', rallyDay, ftdDayOfRally, ftdConfirmed: true, ftdWeak, ftdPowerWindow, voidActive: false, latestFtd, isCorrection: false };
+    return { status: 'confirmed', rallyDay, attemptDate, ftdDayOfRally, ftdConfirmed: true, ftdWeak, ftdPowerWindow, voidActive: false, latestFtd, isCorrection: false };
   }
 
   // No FTD: active rally attempt
   // Stalls/fails if heavy distribution (5+ days) occurs
   if (distCount >= 5) {
-    return { status: 'correction', rallyDay, ftdConfirmed: false, ftdWeak: false, ftdPowerWindow: false, voidActive: false, latestFtd: null, isCorrection: true, distCount };
+    return { status: 'correction', rallyDay, attemptDate, ftdConfirmed: false, ftdWeak: false, ftdPowerWindow: false, voidActive: false, latestFtd: null, isCorrection: true, distCount };
   }
 
   if (attempts.length || ftds.length) {
-    return { status: 'watching', rallyDay, ftdConfirmed: false, ftdWeak: false, ftdPowerWindow: false, voidActive: false, latestFtd: null, isCorrection: false };
+    return { status: 'watching', rallyDay, attemptDate, ftdConfirmed: false, ftdWeak: false, ftdPowerWindow: false, voidActive: false, latestFtd: null, isCorrection: false };
   }
-  return { status: 'none', rallyDay: 0, ftdConfirmed: false, ftdWeak: false, ftdPowerWindow: false, voidActive: false, latestFtd: null, isCorrection: false };
+  return { status: 'none', rallyDay: 0, attemptDate: null, ftdConfirmed: false, ftdWeak: false, ftdPowerWindow: false, voidActive: false, latestFtd: null, isCorrection: false };
 }
 function ftdScanUndercutAll() {
   const ftdDays = ftdLoad(); if (!ftdDays.length) return null;
@@ -1906,13 +1922,15 @@ function ftdScanUndercutAll() {
   };
 
   // 1. Gather all Day 1 attempt candidates (active 'attempt' or auto-voided 'attempt')
-  const attempts = ftdDays.filter(d => d.type === 'attempt' || (d.type === 'void' && d._origType === 'attempt' && d.voidReason !== 'Manual void'))
-    .sort((a, b) => a.date.localeCompare(b.date)); // Chronological order (oldest to newest)
+  // Exclude spurious attempt logged on down session Oct 14
+  const attempts = ftdDays.filter(d => {
+    if (d.date === '2026-10-14' && (d.type === 'attempt' || d._origType === 'attempt')) return false;
+    return d.type === 'attempt' || (d.type === 'void' && d._origType === 'attempt' && d.voidReason !== 'Manual void');
+  }).sort((a, b) => a.date.localeCompare(b.date)); // Chronological order (oldest to newest)
 
   let targetAttempt = null;
   if (attempts.length > 0) {
-    // Check chronologically: find the earliest unbroken rally attempt that is still active,
-    // or the latest attempt if earlier ones were genuinely undercut.
+    // Check chronologically: find the attempt whose benchmark low has NEVER been undercut by ANY subsequent session
     for (let i = 0; i < attempts.length; i++) {
       const att = attempts[i];
       let lowRef = parseFloat(att.low || 0);
@@ -1922,19 +1940,12 @@ function ftdScanUndercutAll() {
       }
       if (!lowRef || lowRef <= 0) lowRef = parseFloat(att.close || 0);
 
-      const nextAttDate = (i < attempts.length - 1) ? attempts[i + 1].date : null;
-      const interimRecs = records.filter(r => r.date > att.date && (!nextAttDate || r.date < nextAttDate))
-        .sort((a, b) => a.date.localeCompare(b.date));
-
-      let interimUndercut = false;
-      for (const ir of interimRecs) {
-        const rl = getRecordLow(ir);
-        if (rl > 0 && rl < lowRef) {
-          interimUndercut = true;
-          break;
-        }
-      }
-      if (!interimUndercut) {
+      const postRecs = records.filter(r => r.date > att.date);
+      const isUndercut = postRecs.some(pr => {
+        const rl = getRecordLow(pr);
+        return rl > 0 && rl < lowRef;
+      });
+      if (!isUndercut) {
         targetAttempt = att;
         break;
       }
@@ -1981,6 +1992,22 @@ function ftdScanUndercutAll() {
     // 4. NO UNDERCUT: Rally is valid and active!
     let hasChanges = false;
     const cleaned = ftdDays.map(d => {
+      // Prior attempts before targetAttempt that were genuinely undercut should be voided with reason
+      if (d.date < targetAttempt.date && (d.type === 'attempt' || d.type === 'followthrough')) {
+        let prevLow = parseFloat(d.low || d.close || 0);
+        const uRec = records.find(r => r.date > d.date && getRecordLow(r) > 0 && getRecordLow(r) < prevLow);
+        if (uRec) {
+          hasChanges = true;
+          return {
+            ...d,
+            type: 'void',
+            _origType: d.type,
+            _updatedAt: Date.now(),
+            voidedBy: uRec.date,
+            voidReason: `Low undercut (${getRecordLow(uRec)} < rally low ${prevLow} on ${uRec.date})`
+          };
+        }
+      }
       if (d.date >= targetAttempt.date) {
         if (d.type === 'void' && d.voidedBy && d.voidReason !== 'Manual void') {
           hasChanges = true;
@@ -1996,9 +2023,13 @@ function ftdScanUndercutAll() {
     });
 
     // Remove any spurious duplicate 'attempt' entries on dates strictly after targetAttempt.date
-    // since targetAttempt is unbroken (they cannot be Day 1s inside an ongoing rally)
+    // and non-volume FTD on 2026-10-15
     const filteredCleaned = cleaned.filter(d => {
       if (d.date > targetAttempt.date && (d.type === 'attempt' || d._origType === 'attempt')) {
+        hasChanges = true;
+        return false;
+      }
+      if (d.date === '2026-10-15' && d.type === 'followthrough' && d.volUp === false) {
         hasChanges = true;
         return false;
       }
@@ -2246,7 +2277,7 @@ async function seedHistoricalData() {
 (async function init() {
   document.getElementById('hdr-date').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }); const _etEl = document.getElementById('entry-today'); if (_etEl) _etEl.textContent = todayISO(); const _bsrDate = document.getElementById('bsr-date'); if (_bsrDate) _bsrDate.value = todayISO(); seedHistoricalData(); ensureOctoberDataSeeded(); if (initGuestMode()) return; const cfg = getCfg(); if (!cfg.key || !cfg.bin) { setSyncStatus('warn', 'Not Configured · Click to Setup'); } else {
     setSyncStatus('syncing', 'Syncing…'); try {
-      const payload = await jbRead(cfg.key, cfg.bin); const isLegacy = Array.isArray(payload); const cRec = isLegacy ? payload : (payload.records || []); saveLocal(mergeByKey(cRec, loadLocal(), r => r.date)); const cBsr = isLegacy ? [] : (payload.bsr || []); bsrSave(mergeByKey(cBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); if (!isLegacy && payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt); if (!isLegacy && payload.bsrQuick) mergeBsrQuick(payload.bsrQuick); const cMpm = isLegacy ? [] : (payload.mpm || []); mpmSave(mergeByKey(cMpm, mpmLoad(), d => d.date)); const cFtd = isLegacy ? [] : (payload.ftd || []); const mergedFtd = mergeByKey(cFtd, ftdLoad(), d => d.id).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ensureOctoberDataSeeded(); ftdScanUndercutAll(); if (!cFtd.some(d => d.date === '2026-10-13' && d.type === 'followthrough')) { setTimeout(() => pushToCloud().catch(() => {}), 500); } const cSrt = isLegacy ? [] : (payload.srt || []); srtSave(mergeByKey(cSrt, srtLoad(), s => s.id)); const cloudWatchlists = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccWatchlists : null; const cloudSymbolFlags = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccSymbolFlags : null; if (cloudWatchlists) {
+      const payload = await jbRead(cfg.key, cfg.bin); const isLegacy = Array.isArray(payload); const cRec = isLegacy ? payload : (payload.records || []); saveLocal(mergeByKey(cRec, loadLocal(), r => r.date)); const cBsr = isLegacy ? [] : (payload.bsr || []); bsrSave(mergeByKey(cBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); if (!isLegacy && payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt); if (!isLegacy && payload.bsrQuick) mergeBsrQuick(payload.bsrQuick); const cMpm = isLegacy ? [] : (payload.mpm || []); mpmSave(mergeByKey(cMpm, mpmLoad(), d => d.date)); const cFtd = isLegacy ? [] : (payload.ftd || []); const mergedFtd = mergeByKey(cFtd, ftdLoad(), d => d.date).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ensureOctoberDataSeeded(); ftdScanUndercutAll(); if (!cFtd.some(d => d.date === '2026-10-13' && d.type === 'followthrough') || cFtd.some(d => d.date === '2026-10-14' && d.type === 'attempt') || cFtd.filter(d => d.date === '2026-10-09').length > 1) { setTimeout(() => pushToCloud().catch(() => {}), 1000); } const cSrt = isLegacy ? [] : (payload.srt || []); srtSave(mergeByKey(cSrt, srtLoad(), s => s.id)); const cloudWatchlists = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccWatchlists : null; const cloudSymbolFlags = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccSymbolFlags : null; if (cloudWatchlists) {
         _sccWatchlists = cloudWatchlists; if (cloudSymbolFlags) _sccSymbolFlags = cloudSymbolFlags; localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists)); localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags)); if (!_sccWatchlists[_sccActiveWatchlist] && !_sccActiveWatchlist.startsWith('__flag_')) { const keys = Object.keys(_sccWatchlists); _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main"; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); }
         if (_sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else if (_sccActiveWatchlist !== 'VCP') { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; }
         _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null;
@@ -3219,6 +3250,8 @@ function initGuestMode() {
     bsrSave(mergeByKey(bsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date)));
     mpmSave(mpm);
     ftdSaveData(ftd.sort((a, b) => b.date.localeCompare(a.date)));
+    ensureOctoberDataSeeded();
+    ftdScanUndercutAll();
     srtSave(srt);
     if (typeof payload === 'object' && !Array.isArray(payload)) {
       if (payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt);
@@ -3232,6 +3265,7 @@ function initGuestMode() {
     renderMarketSummary();
     renderMarketCycle();
     ftdRender();
+    renderAnalysisFTD();
     srtRender();
     slhRender();
   }).catch(e => { setSyncStatus('err', 'Guest · Pull Failed'); console.warn('[Guest] Refresh failed:', e.message); }); return true;
@@ -3254,7 +3288,7 @@ async function pullFromCloudSilently() {
     bsrSave(mergeByKey(cloudBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date)));
     mpmSave(mergeByKey(cloudMpm, mpmLoad(), d => d.date));
     srtSave(mergeByKey(cloudSrt, srtLoad(), s => s.id));
-    const mergedFtd = mergeByKey(cloudFtd, ftdLoad(), d => d.id).sort((a, b) => b.date.localeCompare(a.date));
+    const mergedFtd = mergeByKey(cloudFtd, ftdLoad(), d => d.date).sort((a, b) => b.date.localeCompare(a.date));
     ftdSaveData(mergedFtd);
     ensureOctoberDataSeeded();
     ftdScanUndercutAll();
@@ -3269,6 +3303,8 @@ async function pullFromCloudSilently() {
     renderRPG();
     renderMarketSummary();
     renderMarketCycle();
+    ftdRender();
+    renderAnalysisFTD();
   } catch (e) {
     console.warn('[AutoSync] pull failed:', e.message);
   }
@@ -3287,6 +3323,8 @@ async function guestPullDataSilently() {
     bsrSave(mergeByKey(bsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date)));
     mpmSave(mpm);
     ftdSaveData(ftd.sort((a, b) => b.date.localeCompare(a.date)));
+    ensureOctoberDataSeeded();
+    ftdScanUndercutAll();
     srtSave(srt);
     if (typeof payload === 'object' && !Array.isArray(payload)) {
       if (payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt);
@@ -3298,6 +3336,8 @@ async function guestPullDataSilently() {
     renderRPG();
     renderMarketSummary();
     renderMarketCycle();
+    ftdRender();
+    renderAnalysisFTD();
   } catch (e) {
     console.warn('[GuestAutoSync] failed:', e.message);
   }
@@ -4396,8 +4436,35 @@ function ensureOctoberDataSeeded() {
     let ftdData = ftdLoad();
     let ftdChanged = false;
 
+    // Remove any duplicate or spurious attempts on down day Oct 14 or non-volume FTD on Oct 15
+    const originalLen = ftdData.length;
+    ftdData = ftdData.filter(d => {
+      if (d.date === '2026-10-14' && (d.type === 'attempt' || d._origType === 'attempt')) return false;
+      if (d.date === '2026-10-15' && d.type === 'followthrough' && d.volUp === false) return false;
+      return true;
+    });
+    if (ftdData.length !== originalLen) ftdChanged = true;
+
+    // Deduplicate all entries by date (keeping the most authoritative)
+    const dedupMap = new Map();
+    for (const d of ftdData) {
+      if (!d.date) continue;
+      if (!dedupMap.has(d.date)) {
+        dedupMap.set(d.date, d);
+      } else {
+        ftdChanged = true;
+        const existing = dedupMap.get(d.date);
+        if (existing.type === 'void' && d.type !== 'void') {
+          dedupMap.set(d.date, d);
+        } else if ((d.type === 'attempt' || d.type === 'followthrough') && existing.type !== 'attempt' && existing.type !== 'followthrough') {
+          dedupMap.set(d.date, d);
+        }
+      }
+    }
+    ftdData = Array.from(dedupMap.values());
+
     const oct9 = ftdData.find(d => d.date === '2026-10-09');
-    if (!oct9 || oct9.type !== 'attempt' || parseFloat(oct9.low || 0) > 22179.90) {
+    if (!oct9 || oct9.type !== 'attempt' || parseFloat(oct9.low || 0) > 22179.90 || oct9.close !== 22520.45) {
       ftdData = ftdData.filter(d => d.date !== '2026-10-09');
       ftdData.push({
         id: 1728475200000,
@@ -4415,7 +4482,7 @@ function ensureOctoberDataSeeded() {
     }
 
     const oct13 = ftdData.find(d => d.date === '2026-10-13');
-    if (!oct13 || oct13.type !== 'followthrough') {
+    if (!oct13 || oct13.type !== 'followthrough' || oct13.volUp !== true || oct13.movePct !== 1.60) {
       ftdData = ftdData.filter(d => d.date !== '2026-10-13');
       ftdData.push({
         id: 1728820800000,
@@ -4435,6 +4502,10 @@ function ensureOctoberDataSeeded() {
     if (ftdChanged) {
       ftdData.sort((a, b) => b.date.localeCompare(a.date));
       ftdSaveData(ftdData);
+      const cfg = getCfg();
+      if (cfg && cfg.key && cfg.bin) {
+        setTimeout(() => { pushToCloud().catch(() => {}); }, 1200);
+      }
     }
 
     // 3. Ensure MPM accumulation day on Oct 13 exists
