@@ -75,16 +75,21 @@ CFG = {
     'min_60d_return':  25.0,   # %
     'pref_90d_return': 30.0,   # %
 
-    # 52-week high proximity
+    # 52-week proximity & conventional Stage-2
     'max_dist_52w_high': -25.0,  # % — reject below this
+    'min_dist_52w_low':   25.0,  # % — conventional Minervini Stage 2 minimum above 52W low
 
     # Consolidation
     'max_drawdown_30d': -25.0,   # % — reject below this
+    'max_base_depth':   -35.0,   # % — reject bases deeper than 35%
 
     # ATR contraction
     'atr_contraction_threshold': 0.85,
 
-    # Scoring weights
+    # Breakout relative volume threshold
+    'breakout_rel_vol': 120.0,   # % of 20-day average volume
+
+    # Scoring weights (60:40 preserved)
     'vcp_weight':        0.60,
     'leadership_weight': 0.40,
 
@@ -116,6 +121,7 @@ def sma(series, period):
     return series.rolling(period).mean()
 
 BULK_STOCK_DATA = {}
+BENCHMARK_HISTORY = None
 
 # ═══════════════════════════════════════════════════════════════════════
 #  DATA FETCH (Yahoo Finance)
@@ -152,29 +158,72 @@ def check_liquidity(df, info):
     return ok, round(avg_vol), round(avg_turnover, 2), round(market_cap)
 
 # ═══════════════════════════════════════════════════════════════════════
-#  PART 3 — MINERVINI TREND TEMPLATE
+#  PART 3 — MINERVINI TREND TEMPLATE (Mandatory Qualification Gate)
 # ═══════════════════════════════════════════════════════════════════════
 def trend_template(df):
-    c      = df['Close']
-    e10    = ema(c, 10).iloc[-1]
-    e20    = ema(c, 20).iloc[-1]
-    e50    = ema(c, 50).iloc[-1]
-    s150   = sma(c, 150).iloc[-1]
-    s200   = sma(c, 200).iloc[-1]
-    close  = c.iloc[-1]
+    """
+    Mandatory Moving-Average Hierarchy:
+      1. 10 EMA > 20 EMA > 150 SMA > 200 SMA
+      2. Close > 10 EMA
+      3. Close > 150 SMA and Close > 200 SMA
+      4. 200 SMA is rising (evaluated over prior month / 21 sessions)
 
-    conds = [
-        close  > e10,
-        e10    > e20,
-        e20    > e50,
-        e50    > s150,
-        s150   > s200,
-        close  > s150,
-        close  > s200,
-    ]
-    score = sum(conds) / len(conds) * 35
-    passed = sum(conds)
-    return round(score, 1), passed, len(conds)
+    Supplementary Trend-Quality & Conventional Minervini Metrics:
+      - Close > 50 EMA
+      - 20 EMA > 50 EMA
+      - 50 EMA > 150 SMA
+      - Close >= 25% above 52-week low
+    """
+    c = df['Close']
+    if len(c) < 222:
+        return 0.0, 0, 4, False, {}, 0.0
+
+    close = c.iloc[-1]
+    e10   = ema(c, 10).iloc[-1]
+    e20   = ema(c, 20).iloc[-1]
+    e50   = ema(c, 50).iloc[-1]
+    s150  = sma(c, 150).iloc[-1]
+    
+    s200_series = sma(c, 200)
+    s200        = s200_series.iloc[-1]
+    s200_prev   = s200_series.iloc[-22] if len(s200_series) >= 222 else s200_series.iloc[0]
+    s200_rising = bool(s200 > s200_prev)
+
+    # 4 Mandatory Conditions
+    c_hierarchy   = bool(e10 > e20 and e20 > s150 and s150 > s200)
+    c_close_e10   = bool(close > e10)
+    c_close_long  = bool(close > s150 and close > s200)
+    c_s200_rising = s200_rising
+
+    mandatory_conds = {
+        '10EMA > 20EMA > 150SMA > 200SMA': c_hierarchy,
+        'Close > 10EMA': c_close_e10,
+        'Close > 150SMA & 200SMA': c_close_long,
+        '200SMA Rising (1-Mo)': c_s200_rising,
+    }
+    mandatory_passed = sum(mandatory_conds.values())
+    mandatory_total  = len(mandatory_conds)
+    mandatory_ok     = (mandatory_passed == mandatory_total)
+
+    # Supplementary Trend Quality Metrics
+    l252 = df['Low'].iloc[-252:].min() if len(df) >= 252 else df['Low'].min()
+    dist_52w_low = round((close - l252) / l252 * 100, 1) if l252 > 0 else 0.0
+    c_52w_low    = bool(dist_52w_low >= CFG.get('min_dist_52w_low', 25.0))
+
+    supp_conds = {
+        'Close > 50EMA': bool(close > e50),
+        '20EMA > 50EMA': bool(e20 > e50),
+        '50EMA > 150SMA': bool(e50 > s150),
+        'Close >= 25% Above 52W Low': c_52w_low,
+    }
+    supp_passed = sum(supp_conds.values())
+
+    # Points for Leadership Score (max 35 pts):
+    # Mandatory contributes 25 pts; supplementary quality contributes 10 pts.
+    score = (mandatory_passed / mandatory_total * 25.0) + (supp_passed / len(supp_conds) * 10.0)
+
+    all_details = {**mandatory_conds, **supp_conds}
+    return round(score, 1), mandatory_passed, mandatory_total, mandatory_ok, all_details, dist_52w_low
 
 # ═══════════════════════════════════════════════════════════════════════
 #  PART 4 — PRIOR ADVANCE
@@ -222,37 +271,98 @@ def high_proximity(df):
     return dist, pts, round(h252, 2), round(l252, 2), qualifies
 
 # ═══════════════════════════════════════════════════════════════════════
-#  PART 6 — CONSOLIDATION / DRAWDOWN
+#  PART 6 — BASE IDENTIFICATION & CONSOLIDATION
 # ═══════════════════════════════════════════════════════════════════════
+def detect_base(df):
+    """
+    Identifies the active consolidation base:
+    - Finds the primary base peak (swing high) in the last 15-90 days.
+    - Finds the base low since that peak.
+    - Evaluates base depth, length, and position within the base.
+    """
+    c = df['Close']
+    h = df['High']
+    l = df['Low']
+    n = min(len(df), 90)
+
+    recent_h = h.iloc[-n:]
+    recent_l = l.iloc[-n:]
+    cur = c.iloc[-1]
+
+    lookback_h = recent_h.iloc[:-3] if len(recent_h) > 5 else recent_h
+    base_peak_val = float(lookback_h.max())
+    peak_idx = int(lookback_h.values.argmax())
+
+    base_h_slice = recent_h.iloc[peak_idx:]
+    base_l_slice = recent_l.iloc[peak_idx:]
+
+    base_high = float(base_h_slice.max())
+    base_low = float(base_l_slice.min())
+    base_length = len(base_h_slice)
+
+    base_depth = round((base_low - base_high) / base_high * 100, 1) if base_high > 0 else 0.0
+    base_drawdown = round((cur - base_high) / base_high * 100, 1) if base_high > 0 else 0.0
+
+    base_range = base_high - base_low
+    base_position = round((cur - base_low) / base_range * 100, 1) if base_range > 0 else 50.0
+    upper_half = base_position >= 50.0
+    upper_third = base_position >= 66.7
+
+    h30 = h.iloc[-30:].max() if len(h) >= 30 else h.max()
+    dd_30 = round((cur - h30) / h30 * 100, 1) if h30 > 0 else 0.0
+
+    if base_drawdown >= -5:
+        base_type = 'Shelf'
+    elif base_drawdown >= -12:
+        base_type = 'Flat Base'
+    elif base_drawdown >= -22:
+        base_type = 'Cup'
+    elif base_drawdown >= -30:
+        base_type = 'Deep Cup'
+    else:
+        base_type = 'Too Deep'
+
+    return {
+        'base_high': round(base_high, 2),
+        'base_low': round(base_low, 2),
+        'base_length': base_length,
+        'base_depth': base_depth,
+        'base_drawdown': base_drawdown,
+        'base_position': base_position,
+        'upper_half': upper_half,
+        'upper_third': upper_third,
+        'dd_30': dd_30,
+        'base_type': base_type,
+        'peak_idx': peak_idx
+    }
+
 def consolidation(df):
-    c        = df['Close']
-    h30      = df['High'].iloc[-30:].max()
-    cur      = c.iloc[-1]
-    drawdown = round((cur - h30) / h30 * 100, 1)
+    base_info = detect_base(df)
+    dd = base_info['base_drawdown']
+    dd_30 = base_info['dd_30']
+    
+    eff_dd = dd_30 if dd_30 < dd else dd
 
-    if   drawdown >= -5:   pts = 20
-    elif drawdown >= -10:  pts = 16
-    elif drawdown >= -15:  pts = 12
-    elif drawdown >= -20:  pts = 8
-    elif drawdown >= -25:  pts = 4
-    else:                  pts = 0
+    if   eff_dd >= -5:   pts = 20
+    elif eff_dd >= -10:  pts = 16
+    elif eff_dd >= -15:  pts = 12
+    elif eff_dd >= -20:  pts = 8
+    elif eff_dd >= -25:  pts = 4
+    else:                pts = 0
 
-    qualifies  = drawdown >= CFG['max_drawdown_30d']
-    base_type  = ('Shelf'     if drawdown >= -5  else
-                  'Flat Base' if drawdown >= -15 else
-                  'Cup'       if drawdown >= -25 else 'Too Deep')
-    return drawdown, pts, qualifies, base_type
+    qualifies = eff_dd >= CFG['max_drawdown_30d']
+    return eff_dd, pts, qualifies, base_info['base_type'], base_info
 
 # ═══════════════════════════════════════════════════════════════════════
-#  PART 7 — VOLUME DRY-UP
+#  PART 7 — VOLUME DRY-UP & BREAKOUT METRICS
 # ═══════════════════════════════════════════════════════════════════════
 def volume_dryup(df):
     v         = df['Volume']
     vol_r     = v.iloc[-10:].mean()
     vol_l     = v.iloc[-30:-10].mean()
-    if vol_l <= 0: return 0.0, 0, False
+    if vol_l <= 0: return 0.0, 0, False, 100.0, False
     contraction = (vol_r / vol_l - 1) * 100
-    dryup       = contraction < 0
+    dryup       = bool(contraction < 0)
 
     if   contraction <= -60: pts = 20
     elif contraction <= -40: pts = 16
@@ -260,7 +370,13 @@ def volume_dryup(df):
     elif contraction < 0:    pts = 6
     else:                    pts = 0
 
-    return round(contraction, 1), pts, dryup
+    # Breakout relative volume: today's volume vs 20-day average
+    v20_avg = v.iloc[-20:].mean() if len(v) >= 20 else v.mean()
+    today_vol = v.iloc[-1]
+    rel_vol_pct = round((today_vol / v20_avg) * 100, 1) if v20_avg > 0 else 100.0
+    breakout_vol_active = bool(rel_vol_pct >= CFG.get('breakout_rel_vol', 120.0))
+
+    return round(contraction, 1), pts, dryup, rel_vol_pct, breakout_vol_active
 
 # ═══════════════════════════════════════════════════════════════════════
 #  PART 8 — ATR CONTRACTION
@@ -282,84 +398,153 @@ def atr_contraction(df):
     return ratio, pts, contracting
 
 # ═══════════════════════════════════════════════════════════════════════
-#  PART 9 — TIGHTNESS DETECTION
+#  PART 9 — TIGHTNESS DETECTION (High-Low & Closing Spread)
 # ═══════════════════════════════════════════════════════════════════════
 def tightness(df):
     h10 = df['High'].iloc[-10:].max()
     l10 = df['Low'].iloc[-10:].min()
-    if l10 <= 0: return 99.0, 0
-    tight = round((h10 - l10) / l10 * 100, 1)
+    c = df['Close']
+    if l10 <= 0 or len(c) < 10: return 99.0, 0, 99.0, 99.0
+    hl_tight_10 = round((h10 - l10) / l10 * 100, 1)
 
-    if   tight <= 5:  pts = 20
-    elif tight <= 8:  pts = 16
-    elif tight <= 10: pts = 12
-    elif tight <= 15: pts = 6
-    else:             pts = 0
+    c5_max = c.iloc[-5:].max()
+    c5_min = c.iloc[-5:].min()
+    close_tight_5 = round((c5_max - c5_min) / c5_min * 100, 1) if c5_min > 0 else hl_tight_10
 
-    return tight, pts
+    c10_max = c.iloc[-10:].max()
+    c10_min = c.iloc[-10:].min()
+    close_tight_10 = round((c10_max - c10_min) / c10_min * 100, 1) if c10_min > 0 else hl_tight_10
+
+    if hl_tight_10 <= 5 or close_tight_5 <= 3.0:
+        pts = 20
+    elif hl_tight_10 <= 8 or close_tight_5 <= 4.5:
+        pts = 16
+    elif hl_tight_10 <= 10 or close_tight_10 <= 6.0:
+        pts = 12
+    elif hl_tight_10 <= 15:
+        pts = 6
+    else:
+        pts = 0
+
+    return hl_tight_10, pts, close_tight_5, close_tight_10
 
 # ═══════════════════════════════════════════════════════════════════════
-#  PART 10 — TRUE VCP PULLBACK SEQUENCE
+#  PART 10 — TRUE VCP PULLBACK SEQUENCE WITHIN BASE
 # ═══════════════════════════════════════════════════════════════════════
-def vcp_pullbacks(df):
-    c    = df['Close'].iloc[-90:].reset_index(drop=True)
-    n    = len(c)
-    troughs = []
-    for i in range(5, n - 5):
-        if c.iloc[i] == c.iloc[i-5:i+5].min():
-            troughs.append((i, c.iloc[i]))
+def vcp_pullbacks(df, base_info=None):
+    if base_info is None:
+        base_info = detect_base(df)
+        
+    base_len = max(10, base_info.get('base_length', 30))
+    c = df['Close'].iloc[-base_len:].reset_index(drop=True)
+    h = df['High'].iloc[-base_len:].reset_index(drop=True)
+    l = df['Low'].iloc[-base_len:].reset_index(drop=True)
+    n = len(c)
 
+    if n < 8:
+        return 0, [], 'Insufficient base data'
+
+    window = 3 if n < 40 else 4
     peaks = []
-    for i in range(5, n - 5):
-        if c.iloc[i] == c.iloc[i-5:i+5].max():
-            peaks.append((i, c.iloc[i]))
+    troughs = []
+
+    for i in range(window, n - window):
+        if h.iloc[i] == h.iloc[i - window : i + window + 1].max():
+            peaks.append((i, h.iloc[i]))
+        if l.iloc[i] == l.iloc[i - window : i + window + 1].min():
+            troughs.append((i, l.iloc[i]))
 
     pullbacks = []
     for t_idx, t_val in troughs:
         prior_peaks = [(p_i, p_v) for p_i, p_v in peaks if p_i < t_idx]
         if not prior_peaks: continue
         p_i, p_v = prior_peaks[-1]
-        if p_v > 0:
-            depth = (t_val - p_v) / p_v * 100
-            pullbacks.append(round(abs(depth), 1))
+        if p_v > 0 and t_val < p_v:
+            depth = round((p_v - t_val) / p_v * 100, 1)
+            if depth >= 2.0:
+                pullbacks.append(depth)
 
     pullbacks = pullbacks[-4:]
 
     bonus = 0
+    vcp_quality = 'No Sequence'
+
     if len(pullbacks) >= 2:
-        contractions = sum(1 for i in range(1, len(pullbacks))
-                          if pullbacks[i] < pullbacks[i-1])
+        contractions = sum(1 for i in range(1, len(pullbacks)) if pullbacks[i] < pullbacks[i-1])
         ratio = contractions / (len(pullbacks) - 1)
-        if   ratio == 1.0: bonus = 10
-        elif ratio >= 0.67: bonus = 7
-        elif ratio >= 0.5:  bonus = 4
-        else:               bonus = 1
+        if ratio == 1.0 and len(pullbacks) >= 3:
+            bonus = 10
+            vcp_quality = 'Textbook VCP (3+ contracting)'
+        elif ratio == 1.0 and len(pullbacks) == 2:
+            bonus = 7
+            vcp_quality = 'Clean VCP (2 contracting)'
+        elif ratio >= 0.5:
+            bonus = 4
+            vcp_quality = 'Developing Contraction'
+        else:
+            bonus = 0
+            vcp_quality = 'Irregular Waves'
+    elif len(pullbacks) == 1:
+        if pullbacks[0] <= 8.0 and base_info.get('upper_half', False):
+            bonus = 5
+            vcp_quality = 'Tight Shallow Base'
+        elif pullbacks[0] <= 15.0:
+            bonus = 3
+            vcp_quality = 'Single Base Contraction'
 
-    return bonus, pullbacks
+    return bonus, pullbacks, vcp_quality
 
 # ═══════════════════════════════════════════════════════════════════════
-#  PART 11 — RS PROXY
+#  PART 11 — RELATIVE STRENGTH (RS_Proxy_Percentile vs Benchmark)
 # ═══════════════════════════════════════════════════════════════════════
-def rs_proxy_raw(df):
+def rs_proxy_raw(df, bench_df=None):
+    """
+    Evaluates relative performance over approx 3M (63d), 6M (126d), and 12M (252d)
+    relative to the benchmark (Nifty 500 / Nifty 50).
+    """
     c   = df['Close']
     cur = c.iloc[-1]
-    def ret(n):
-        idx = max(0, len(c) - n - 1)
-        p   = c.iloc[idx]
-        return (cur / p - 1) * 100 if p > 0 else 0.0
-    r63  = ret(63)
-    r126 = ret(126)
-    r252 = ret(252)
-    composite = r63 * 0.4 + r126 * 0.3 + r252 * 0.3
+    def ret(series, n):
+        idx = max(0, len(series) - n - 1)
+        p   = series.iloc[idx]
+        return (series.iloc[-1] / p - 1) * 100 if p > 0 else 0.0
+
+    r63  = ret(c, 63)
+    r126 = ret(c, 126)
+    r252 = ret(c, 252)
+
+    if bench_df is not None and len(bench_df) >= 200:
+        bc   = bench_df['Close']
+        b63  = ret(bc, 63)
+        b126 = ret(bc, 126)
+        b252 = ret(bc, 252)
+        rel63  = r63 - b63
+        rel126 = r126 - b126
+        rel252 = r252 - b252
+    else:
+        rel63, rel126, rel252 = r63, r126, r252
+
+    composite = round(rel63 * 0.4 + rel126 * 0.3 + rel252 * 0.3, 2)
     return composite, r63, r126, r252
 
-def compute_rs_scores(results):
-    composites = [r['_rs_composite'] for r in results]
-    if not composites: return results
-    mn, mx = min(composites), max(composites)
-    rng    = mx - mn if mx != mn else 1
+def compute_rs_scores(results, all_composites=None):
+    """
+    Ranks relative-performance composite against the scanned universe as a true percentile (0.0 - 99.9).
+    Explicitly labelled as rs_proxy_percentile.
+    """
+    if not results: return results
+    composites = all_composites if (all_composites and len(all_composites) > 10) else [r['_rs_composite'] for r in results]
+    sorted_comps = sorted(composites)
+    n = len(sorted_comps)
+
     for r in results:
-        r['rs_score'] = round((r['_rs_composite'] - mn) / rng * 100, 1)
+        val = r['_rs_composite']
+        import bisect
+        rank = bisect.bisect_right(sorted_comps, val)
+        pctile = round((rank / n) * 99.0, 1)
+        pctile = min(99.0, max(1.0, pctile))
+        r['rs_proxy_percentile'] = pctile
+        r['rs_score'] = pctile  # alias for backward-compatibility
     return results
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -381,28 +566,32 @@ def pocket_pivot(df):
     max_down_vol = down_days['Volume'].max()
     return bool(today_cls > today_e10 and today_vol > max_down_vol)
 
-def potential_bo(df, r60, r90, dist52):
-    if len(df) < 200: return False
+def potential_bo(df, r60, r90, dist52, base_info):
+    if len(df) < 150: return False, 0.0, 0.0
     c = df['Close']
     v = df['Volume']
     c0 = c.iloc[-1]
     
     s50 = sma(c, 50).iloc[-1]
     s200 = sma(c, 200).iloc[-1]
-    h30 = df['High'].iloc[-30:].max()
+    
+    pivot = base_info.get('base_high', df['High'].iloc[-20:].max())
+    dist_to_pivot = round((c0 - pivot) / pivot * 100, 1) if pivot > 0 else -99.0
 
-    if not (c0 > s50 and s50 > s200): return False
-    if not (r60 >= 30 or r90 >= 30): return False
-    if dist52 < -25: return False
+    if not (c0 > s50 and s50 > s200): return False, pivot, dist_to_pivot
+    if not (r60 >= 25 or r90 >= 25): return False, pivot, dist_to_pivot
+    if dist52 < -25: return False, pivot, dist_to_pivot
 
-    dist_to_h30 = (c0 - h30) / h30 * 100
-    if not (-12 <= dist_to_h30 <= -2): return False
+    # Within -1.5% to -10.0% of pivot candidate in upper half of base
+    if not (-10.0 <= dist_to_pivot <= -1.5): return False, pivot, dist_to_pivot
+    if not base_info.get('upper_half', True): return False, pivot, dist_to_pivot
 
+    # Quiet volume approaching breakout
     v3 = v.iloc[-3:].mean()
     v20 = v.iloc[-20:].mean()
-    if v3 >= v20: return False
+    quiet_vol = bool(v3 < v20) if v20 > 0 else True
 
-    return True
+    return quiet_vol, pivot, dist_to_pivot
 
 def pull_back_setup(df):
     if len(df) < 252: return False
@@ -416,8 +605,10 @@ def pull_back_setup(df):
     hit_ath_recently = (h_recent >= h252 * 0.98)
     drawdown = (c0 - h_recent) / h_recent * 100
     e50 = ema(c, 50).iloc[-1]
+    e20 = ema(c, 20).iloc[-1]
 
-    if hit_ath_recently and (-12 <= drawdown <= -3) and (c0 > e50):
+    # Holding above 50 EMA or 20 EMA
+    if hit_ath_recently and (-12 <= drawdown <= -3) and (c0 > e50 or c0 > e20):
         return True
     return False
 
@@ -437,6 +628,11 @@ def composite_score(vcp, leadership):
     return round(vcp * CFG['vcp_weight'] + leadership * CFG['leadership_weight'], 1)
 
 def grade(score):
+    if   score >= 90: return 'A+'
+    elif score >= 80: return 'A'
+    elif score >= 70: return 'B'
+    elif score >= 60: return 'C'
+    else:             return 'REJECT'
     if   score >= 90: return 'A+'
     elif score >= 80: return 'A'
     elif score >= 70: return 'B'
@@ -818,76 +1014,130 @@ def get_industry_group(symbol, company, industry):
 # ═══════════════════════════════════════════════════════════════════════
 def analyse(symbol, df, info, nse_comp, nse_ind):
     c = df['Close']
+    
+    # 1. Mandatory Liquidity Filter Gate
     liq_ok, avg_vol, avg_turn, mktcap = check_liquidity(df, info)
-    trend_pts, trend_passed, trend_total = trend_template(df)
+    if not liq_ok:
+        return None, 'insufficient liquidity'
+
+    # 2. Mandatory Minervini Trend Template Gate
+    trend_pts, trend_passed, trend_total, trend_ok, trend_details, dist_52w_low = trend_template(df)
+    if not trend_ok:
+        return None, 'fails mandatory trend template'
+
+    # 3. Prior Advance Gate
     r30, r60, r90, adv_pts, adv_ok = prior_advance(df)
-    if not adv_ok: return None, '< min advance'
+    if not adv_ok:
+        return None, '< min advance'
+
+    # 4. 52-Week High Proximity Gate
     dist52, prox_pts, h52, l52, prox_ok = high_proximity(df)
-    if not prox_ok: return None, 'too far from 52W high'
-    drawdown, dd_pts, dd_ok, btype = consolidation(df)
-    if not dd_ok: return None, 'drawdown too deep'
+    if not prox_ok:
+        return None, 'too far from 52W high'
 
-    vol_contr, vol_pts, dryup = volume_dryup(df)
+    # 5. Base Identification & Consolidation Gate
+    drawdown, dd_pts, dd_ok, btype, base_info = consolidation(df)
+    if not dd_ok:
+        return None, 'drawdown too deep'
+    if base_info['base_depth'] < CFG.get('max_base_depth', -35.0):
+        return None, 'base too deep (>35%)'
+
+    # 6. Volume Dry-Up & Breakout Activity
+    vol_contr, vol_pts, dryup, rel_vol_pct, breakout_vol = volume_dryup(df)
+
+    # 7. ATR Volatility Contraction
     atr_ratio, atr_pts, atr_ok = atr_contraction(df)
-    tight_pct, tight_pts = tightness(df)
-    vcp_bonus, pullbacks = vcp_pullbacks(df)
-    
-    pp     = pocket_pivot(df)
-    pot_bo = potential_bo(df, r60, r90, dist52)
-    pb     = pull_back_setup(df)
-    
-    rs_comp, rs63, rs126, rs252 = rs_proxy_raw(df)
 
-    vcp_s  = vcp_score(adv_pts, dd_pts, vol_pts, atr_pts, tight_pts) + vcp_bonus
-    vcp_s  = min(100, vcp_s)
+    # 8. Price Tightness (High-Low & Closing Spreads)
+    tight_pct, tight_pts, tight_5d_c, tight_10d_c = tightness(df)
 
-    stype = '👀 Watch'
-    if pb: 
-        stype = '🧲 Pull Back'
-    elif pot_bo: 
+    # 9. Successive VCP Contractions within Active Base
+    vcp_bonus, pullbacks, vcp_quality = vcp_pullbacks(df, base_info)
+    
+    # 10. Setup Conditions
+    pp = pocket_pivot(df)
+    pot_bo, pivot_cand, dist_pivot = potential_bo(df, r60, r90, dist52, base_info)
+    pb = pull_back_setup(df)
+    
+    # 11. Relative Strength vs Benchmark
+    rs_comp, rs63, rs126, rs252 = rs_proxy_raw(df, BENCHMARK_HISTORY)
+
+    # 12. VCP Score (Capped 0 - 100)
+    vcp_s = vcp_score(adv_pts, dd_pts, vol_pts, atr_pts, tight_pts) + vcp_bonus
+    vcp_s = min(100, max(0, vcp_s))
+
+    # 13. Primary Setup Classification Hierarchy:
+    # 1. Breakout-ready (Potential BO)
+    # 2. Mature VCP
+    # 3. Developing VCP
+    # 4. Early VCP
+    # 5. Pull Back
+    # 6. Pocket Pivot
+    # 7. Contraction
+    # 8. Watch
+    if pot_bo:
         stype = '🔮 Potential BO'
-    elif drawdown >= -10 and tight_pct <= 8 and dryup:
+    elif (len(pullbacks) >= 3 and 'Textbook' in vcp_quality) or (base_info['base_drawdown'] >= -12 and tight_5d_c <= 4.0 and dryup and base_info['upper_half']):
         stype = '🎯 Mature VCP'
-    elif drawdown >= -5:
-        stype = '🌱 Early VCP'
+    elif len(pullbacks) >= 2 or (base_info['base_drawdown'] >= -16 and (dryup or atr_ok)):
+        stype = '🌱 Developing VCP'
+    elif base_info['base_drawdown'] >= -6.0:
+        stype = '🌾 Early VCP'
+    elif pb:
+        stype = '🧲 Pull Back'
+    elif pp:
+        stype = '⚡ Pocket Pivot'
     elif atr_ratio < 0.80:
         stype = '📐 Contraction'
+    else:
+        stype = '👀 Watch'
 
     return {
-        'symbol':       symbol,
-        'company':      nse_comp,
-        'sector':       nse_ind,
-        'market_cap':   mktcap,
-        'current':      round(c.iloc[-1], 2),
-        'h52':          h52,
-        'l52':          l52,
-        'avg_vol':      avg_vol,
-        'avg_turn':     avg_turn,
-        'r30':          r30,
-        'r60':          r60,
-        'r90':          r90,
-        'dist52':       dist52,
-        'drawdown':     drawdown,
-        'base_type':    btype,
-        'vol_contr':    vol_contr,
-        'atr_ratio':    atr_ratio,
-        'tight_pct':    tight_pct,
-        'trend_passed': f'{trend_passed}/{trend_total}',
-        'pullbacks':    ' → '.join(str(p)+'%' for p in pullbacks) or '—',
-        'pocket_pivot': '✅ YES' if pp else '—',
-        'pot_bo':       '✅ YES' if pot_bo else '—',
-        'pull_back':    '✅ YES' if pb else '—',
-        'vcp_score':    vcp_s,
-        'lead_score':   0,
-        'rs_score':     0,
-        'final_score':  0,
-        'grade':        '—',
-        'setup':        stype,
-        'adv_pts':      adv_pts,
-        'prox_pts':     prox_pts,
-        'trend_pts':    trend_pts,
-        'avg_turn_liq': avg_turn,
-        '_rs_composite': rs_comp,
+        'symbol':               symbol,
+        'company':              nse_comp,
+        'sector':               nse_ind,
+        'market_cap':           mktcap,
+        'current':              round(c.iloc[-1], 2),
+        'h52':                  h52,
+        'l52':                  l52,
+        'avg_vol':              avg_vol,
+        'avg_turn':             avg_turn,
+        'r30':                  r30,
+        'r60':                  r60,
+        'r90':                  r90,
+        'dist52':               dist52,
+        'dist_52w_low':         dist_52w_low,
+        'drawdown':             drawdown,
+        'base_type':            btype,
+        'base_depth':           base_info['base_depth'],
+        'base_pos':             base_info['base_position'],
+        'pivot':                pivot_cand,
+        'dist_pivot':           dist_pivot,
+        'vol_contr':            vol_contr,
+        'rel_vol':              rel_vol_pct,
+        'atr_ratio':            atr_ratio,
+        'tight_pct':            tight_pct,
+        'tight_5d_c':           tight_5d_c,
+        'tight_10d_c':          tight_10d_c,
+        'trend_passed':         f'{trend_passed}/{trend_total}',
+        'trend_details':        trend_details,
+        'pullbacks':            ' → '.join(str(p)+'%' for p in pullbacks) or '—',
+        'vcp_quality':          vcp_quality,
+        'pocket_pivot':         '✅ YES' if pp else '—',
+        'pot_bo':               '✅ YES' if pot_bo else '—',
+        'pull_back':            '✅ YES' if pb else '—',
+        'vcp_score':            vcp_s,
+        'lead_score':           0,
+        'rs_proxy_percentile':  0,
+        'rs_score':             0,
+        'final_score':          0,
+        'grade':                '—',
+        'setup':                stype,
+        'adv_pts':              adv_pts,
+        'prox_pts':             prox_pts,
+        'trend_pts':            trend_pts,
+        'avg_turn_liq':         avg_turn,
+        '_rs_composite':        rs_comp,
     }, None
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1047,6 +1297,8 @@ def build_table_rows(stocks, bg1='#0d1929', bg2='#0f1c30'):
         
         tv_link = f"{CFG['tv_chart_url']}?symbol=NSE:{r['symbol']}"
 
+        rsc  = '#4ade80' if r['rs_score'] >= 90 else '#2dd4bf' if r['rs_score'] >= 80 else '#fbbf24' if r['rs_score'] >= 60 else '#94a3b8'
+
         rows.append(f"""<tr style="background:{bg};border-bottom:1px solid #1e2d45">
   <td style="padding:9px 12px;font-weight:800;font-size:12px;white-space:nowrap">
     <div style="display:flex;align-items:center;gap:8px">
@@ -1073,8 +1325,8 @@ def build_table_rows(stocks, bg1='#0d1929', bg2='#0f1c30'):
   <td style="padding:9px 8px;font-family:monospace;font-size:11px;color:{vc}">{r['vol_contr']:+.1f}%</td>
   <td style="padding:9px 8px;font-family:monospace;font-size:11px;color:{ac}">{r['atr_ratio']:.3f}</td>
   <td style="padding:9px 8px;font-family:monospace;font-size:11px;color:{tc}">{r['tight_pct']:.1f}%</td>
-  <td style="padding:9px 8px;font-size:11px;color:#a78bfa;white-space:nowrap">{r['pullbacks']}</td>
-  <td style="padding:9px 8px;font-family:monospace;font-size:11px;color:#fb923c">{r['rs_score']:.0f}</td>
+  <td style="padding:9px 8px;font-size:11px;color:#a78bfa;white-space:nowrap" title="{r.get('vcp_quality', '')}">{r['pullbacks']}</td>
+  <td style="padding:9px 8px;font-family:monospace;font-size:11px;color:{rsc};font-weight:700" title="RS_Proxy_Percentile vs Nifty 500">{r['rs_score']:.0f}</td>
   <td style="padding:9px 8px;font-family:monospace;font-size:11px;color:#60a5fa">{r['vcp_score']:.0f}</td>
   <td style="padding:9px 8px;font-family:monospace;font-size:11px;color:#a78bfa">{r['lead_score']:.0f}</td>
   <td style="padding:9px 12px;text-align:center">
@@ -1101,7 +1353,7 @@ HEADERS = ''.join(TH(h, i) for i, h in enumerate([
     'SYMBOL','COMPANY','NSE THEME/IND.','MKTCAP(Cr)','PRICE',
     '30D%','60D%','90D%','DIST 52W','DRAWDOWN',
     'VOL CONTR','ATR RATIO','TIGHTNESS','VCP PULLS',
-    'RS SCORE','VCP SCORE','LEAD SCORE',
+    'RS PROXY %tile','VCP SCORE','LEAD SCORE',
     'FINAL','GRADE','SETUP','POTENTIAL BO','PULL BACK','PP'
 ]))
 
@@ -1314,7 +1566,8 @@ def generate_html(results, scan_time, total_scanned, errors, rejects, sector_sta
   <div id="tab-all"    class="tab">{s_all}</div>
   
   <div style="margin-top:24px;padding-top:16px;border-top:1px solid #1e2d45;font-size:10px;color:#475569;text-align:center;line-height:2">
-    VCP Score (60%) = Advance + Drawdown + Volume + ATR + Tightness &nbsp;|&nbsp; Leadership (40%) = 52W Proximity + Trend + RS Proxy + Liquidity<br>
+    VCP Score (60%) = Advance + Drawdown + Volume + ATR + Tightness + Wave Bonus &nbsp;|&nbsp; Leadership (40%) = 52W Proximity + Trend Template + RS_Proxy_Percentile + Liquidity<br>
+    Mandatory Gate: 10EMA > 20EMA > 150SMA > 200SMA &middot; Close > 10EMA &middot; Close > 150 & 200 SMA &middot; 200SMA Rising &middot; Liquidity &ge; 200k vol / &ge; ₹5 Cr turnover<br>
     Yahoo Finance (15-min delayed) &middot; Run weekly after market close for Monday watchlist<br>
     <b>Not a buy recommendation. Always verify on TradingView + MarketSmith before acting.</b>
   </div>
@@ -1377,8 +1630,9 @@ def main():
     end_dt = datetime.now()
     start_dt = end_dt - timedelta(days=400)
     
-    global BULK_STOCK_DATA
+    global BULK_STOCK_DATA, BENCHMARK_HISTORY
     BULK_STOCK_DATA = {}
+    BENCHMARK_HISTORY = None
     
     try:
         chunk_size = 150
@@ -1401,6 +1655,20 @@ def main():
     except Exception as b_err:
         print(f"⚠️ Bulk download warning: {b_err}. Falling back to individual fetching.\n")
 
+    print(f'⚡ Fetching benchmark data (Nifty 500 / Nifty 50) for relative strength calculation...')
+    try:
+        b_df = yf.download('^CRSLDX', start=start_dt, end=end_dt, progress=False)
+        if b_df is None or b_df.empty or len(b_df) < 150:
+            b_df = yf.download('^NSEI', start=start_dt, end=end_dt, progress=False)
+        if isinstance(b_df.columns, pd.MultiIndex):
+            b_df.columns = b_df.columns.get_level_values(0)
+        BENCHMARK_HISTORY = b_df[['Close']].dropna()
+        if BENCHMARK_HISTORY is not None and not BENCHMARK_HISTORY.empty:
+            print(f"✅ Benchmark data loaded: {len(BENCHMARK_HISTORY)} sessions.\n")
+    except Exception as b_err:
+        print(f"⚠️ Benchmark fetch warning: {b_err}. Falling back to unadjusted returns.\n")
+
+    all_universe_composites = []
     print(f'Scanning {total} NSE stocks via Yahoo Finance...\n')
 
     for i, sym in enumerate(symbols_to_scan, 1):
@@ -1422,6 +1690,13 @@ def main():
             if df is None:
                 print(f'  [{i:3d}/{total}] {sym:<15} — skip (no data)')
                 continue
+
+            # Record relative performance composite for universe percentile ranking
+            try:
+                u_comp, _, _, _ = rs_proxy_raw(df, BENCHMARK_HISTORY)
+                all_universe_composites.append(u_comp)
+            except Exception:
+                pass
 
             # Get the exact Industry Group and Parent Sector from CSV/Heuristics
             industry_group, parent_sector = get_industry_group(sym, nse_comp, nse_ind_raw)
@@ -1494,7 +1769,7 @@ def main():
 
     print(f'\n═══ Computing RS Scores & Final Rankings ═══')
 
-    results = compute_rs_scores(results)
+    results = compute_rs_scores(results, all_universe_composites)
 
     for r in results:
         r['rs_score']   = r.get('rs_score', 0)
