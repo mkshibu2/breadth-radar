@@ -1283,20 +1283,7 @@ function renderChart(data) {
   }); if (pts.length >= 2) { ctx.beginPath(); pts.forEach((p, i) => { const x = PAD.l + i * step, y = PAD.t + cH - p.score / 100 * cH; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.lineTo(PAD.l + (pts.length - 1) * step, PAD.t + cH); ctx.lineTo(PAD.l, PAD.t + cH); ctx.closePath(); const g = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + cH); g.addColorStop(0, 'rgba(56,189,248,0.15)'); g.addColorStop(1, 'rgba(56,189,248,0.0)'); ctx.fillStyle = g; ctx.fill(); for (let i = 1; i < pts.length; i++) { const x0 = PAD.l + (i - 1) * step, y0 = PAD.t + cH - pts[i - 1].score / 100 * cH; const x1 = PAD.l + i * step, y1 = PAD.t + cH - pts[i].score / 100 * cH; ctx.beginPath(); ctx.strokeStyle = colorMap[getZone((pts[i - 1].score + pts[i].score) / 2).color] || '#38bdf8'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); } }
   pts.forEach((p, i) => { const x = PAD.l + i * step, y = PAD.t + cH - p.score / 100 * cH; const c = colorMap[getZone(p.score).color] || '#38bdf8'; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fillStyle = c; ctx.fill(); if (i === pts.length - 1 || pts.length <= 8) { ctx.fillStyle = c; ctx.font = 'bold 10px JetBrains Mono,monospace'; ctx.textAlign = 'center'; ctx.fillText(p.score, x, y - 9); } });
 }
-function renderSnapshot(data) {
-  const tbody = document.getElementById('snap-body'); if (!tbody) return; if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--dim);padding:28px;text-align:center;letter-spacing:2px;font-size:12px;font-family:var(--mono);">SAVE YOUR FIRST ENTRY TO SEE SNAPSHOT</td></tr>'; return; }
-  const r = data[0], prev = data[1] || {}; const last10 = data.slice(0, 10).reverse(); const adv = +r.adv || 0, dec = +r.dec || 0, hi = +r.hi || 0, lo = +r.lo || 0, e20 = +r.e20 || 0, s50 = +r.s50 || 0, s200 = +r.s200 || 0; const tot = adv + dec || 1, advPct = adv / tot * 100, adr = dec > 0 ? adv / dec : null, hlPct = (hi + lo) > 0 ? hi / (hi + lo) * 100 : null; const rows = [{ name: 'Advances', src: 'nseindia.com', hint: '', val: adv, color: adv >= dec ? 'var(--green)' : 'var(--dim)', bar: advPct, bc: 'var(--green)', pv: prev.adv, sv: last10.map(x => +x.adv || 0), sc: 'var(--green)', sg: sigLabel('adv', advPct) }, { name: 'Declines', src: 'nseindia.com', hint: '', val: dec, color: dec > adv ? 'var(--red)' : 'var(--dim)', bar: 100 - advPct, bc: 'var(--red)', pv: prev.dec, sv: last10.map(x => +x.dec || 0), sc: 'var(--red)', sg: '' }, { name: 'A/D Ratio', src: 'computed', hint: '', val: adr ? adr.toFixed(2) : '—', color: adr ? adClr(adr) : 'var(--dim)', bar: adr ? Math.min(100, adr / 2 * 100) : 0, bc: adr ? adClr(adr) : 'var(--dim)', pv: (+prev.dec) > 0 ? ((+prev.adv) / (+prev.dec)).toFixed(2) : null, sv: last10.map(x => (+x.dec) > 0 ? (+x.adv) / (+x.dec) : null), sc: 'var(--yellow)', sg: '' }, { name: '52W New Highs', src: 'nseindia.com', hint: '', val: hi, color: hi >= lo ? 'var(--lime)' : 'var(--dim)', bar: Math.min(100, hi / 3), bc: 'var(--lime)', pv: prev.hi, sv: last10.map(x => +x.hi || 0), sc: 'var(--lime)', sg: '' }, { name: '52W New Lows', src: 'nseindia.com', hint: '', val: lo, color: lo > hi ? 'var(--red)' : 'var(--dim)', bar: Math.min(100, lo / 3), bc: 'var(--red)', pv: prev.lo, sv: last10.map(x => +x.lo || 0), sc: 'var(--red)', sg: '' }, { name: 'High/Low Ratio', src: 'computed', hint: '', val: hlPct ? hlPct.toFixed(0) + '%' : '—', color: hlPct ? (hlPct >= 50 ? 'var(--green)' : 'var(--orange)') : 'var(--dim)', bar: hlPct || 0, bc: hlPct ? (hlPct >= 50 ? 'var(--green)' : 'var(--orange)') : 'var(--dim)', pv: null, sv: last10.map(x => ((+x.hi) + (+x.lo)) > 0 ? (+x.hi) / ((+x.hi) + (+x.lo)) * 100 : null), sc: 'var(--teal)', sg: sigLabel('hl', hlPct) }, { name: '% Above EMA20', src: 'trendlyne.com', hint: 'Early momentum — rally signal', val: e20 + '%', color: pctClr(e20), bar: e20, bc: pctClr(e20), pv: prev.e20 ? prev.e20 + '%' : null, sv: last10.map(x => +x.e20 || 0), sc: pctClr(e20), sg: sigLabel('e20', e20) }, { name: '% Above SMA50', src: 'trendlyne.com', hint: 'Healthy trend indicator', val: s50 + '%', color: pctClr(s50), bar: s50, bc: pctClr(s50), pv: prev.s50 ? prev.s50 + '%' : null, sv: last10.map(x => +x.s50 || 0), sc: pctClr(s50), sg: sigLabel('s50', s50) }, { name: '% Above SMA200', src: 'trendlyne.com', hint: 'Bull market health', val: s200 + '%', color: pctClr(s200), bar: s200, bc: pctClr(s200), pv: prev.s200 ? prev.s200 + '%' : null, sv: last10.map(x => +x.s200 || 0), sc: pctClr(s200), sg: sigLabel('s200', s200) }, { name: 'BREADTH SCORE', src: 'weighted composite', hint: '', val: r.score + ' / 100', color: getZone(r.score).color, bar: r.score, bc: getZone(r.score).color, pv: prev.score, sv: last10.map(x => x.score || 0), sc: getZone(r.score).color, sg: `<span style="color:${getZone(r.score).color};font-size:11px;font-weight:700;font-family:var(--mono)">${r.zone}&nbsp; ${r.r}</span>` },]; tbody.innerHTML = rows.map(x => {
-    const dir = trendDir(x.sv); return `<tr>
-      <td><div class="m-name">${x.name}</div><div class="m-src">${x.src}</div>${x.hint ? `<div class="m-hint">${x.hint}</div>` : ''}</td>
-      <td><div class="m-val" style="color:${x.color}">${x.val}</div><div class="m-bar-wrap"><div class="m-bar" style="width:${Math.min(100, x.bar || 0)}%;background:${x.bc}"></div></div></td>
-      <td style="text-align:right;color:var(--sub);font-size:12px;font-family:var(--mono)">${x.pv != null ? x.pv : '—'}</td>
-      <td style="text-align:right;font-size:12px">${chgArrow(parseFloat(x.val), parseFloat(x.pv))}</td>
-      <td style="text-align:right">${spark(x.sv, 90, 26, x.sc)}</td>
-      <td>${dirLabel(dir)}</td>
-      <td style="text-align:right">${x.sg || ''}</td>
-    </tr>`;
-  }).join('');
-}
+function renderSnapshot() {}
 function renderHistory(data) {
   const tbody = document.getElementById('hist-body'); if (!tbody) return; if (!data.length) { tbody.innerHTML = '<tr><td colspan="17" style="color:var(--dim);padding:28px;text-align:center;letter-spacing:2px;font-size:11px;font-family:var(--mono);">NO HISTORY YET</td></tr>'; return; }
   tbody.innerHTML = data.map(r => {
@@ -1401,7 +1388,7 @@ function renderMarketCycle() {
   if (breadthMomentum !== null) { const sign = breadthMomentum > 0 ? '+' : ''; const mc = breadthMomentum >= 5 ? 'ok' : breadthMomentum >= 0 ? 'warn' : 'bad'; pills.push([`Momentum: ${sign}${breadthMomentum}`, mc]); } else { pills.push(['Momentum: —', 'dim']); }
   if (bsrPct !== null) { const bc2 = bsrPct >= 60 ? 'ok' : bsrPct >= 40 ? 'warn' : 'bad'; pills.push([`BSR: ${bsrPct}%${bsrDeclining ? ' ↓' : ''}`, bc2]); } else { pills.push(['BSR: —', 'dim']); }
   if (mpmScore !== null) { const sign = mpmScore > 0 ? '+' : ''; const mc2 = mpmScore >= 2 ? 'ok' : mpmScore >= 0 ? 'warn' : 'bad'; pills.push([`Pressure: ${sign}${mpmScore}`, mc2]); } else { pills.push(['Pressure: —', 'dim']); }
-  if (sigsEl) sigsEl.innerHTML = pills.map(([lbl, cls]) => `<span class="as-pill ${cls}">${lbl}</span>`).join(''); if (updEl && records.length) updEl.textContent = fmtLong(records[0].date); renderA1Sparkline(records); renderAnalysisFTD(); renderAnalysisDDC(); renderAnalysisDivergence(records); renderAnalysisTrendBias(records); renderAnalysisExpansionRate(records); renderAnalysisInstBias();
+  if (sigsEl) sigsEl.innerHTML = pills.map(([lbl, cls]) => `<span class="as-pill ${cls}">${lbl}</span>`).join(''); if (updEl && records.length) updEl.textContent = fmtLong(records[0].date); renderA1Sparkline(records); renderAnalysisFTD(); renderAnalysisDDC(); // Divergence, Trend Bias, Inst Bias, and Expansion Rate removed
 }
 function renderA1Sparkline(records) {
   const canvas = document.getElementById('as-spk-canvas'); if (!canvas) return; const cell = document.getElementById('ss-chart-cell') || document.getElementById('as-chart-cell'); const wrap = document.getElementById('ss-chart-wrap') || document.getElementById('as-chart-wrap'); if (!cell || !wrap) return; const dpr = window.devicePixelRatio || 1; const W = Math.max(120, wrap.offsetWidth); const H = Math.max(50, wrap.offsetHeight); canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); canvas.style.width = W + 'px'; canvas.style.height = H + 'px'; const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr); ctx.clearRect(0, 0, W, H); const pts = records.slice(0, 25).reverse(); const scores = pts.map(r => +(r.score) || 0); const dates = pts.map(r => r.date || ''); const lbl = document.getElementById('as-spk-label'); if (scores.length < 2) { ctx.fillStyle = 'rgba(91,163,245,.06)'; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(0, 0, W, H, 4); else ctx.rect(0, 0, W, H); ctx.fill(); ctx.fillStyle = 'rgba(136,153,176,.5)'; ctx.font = '10px DM Sans,sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Save EOD entries to see score trend', W / 2, H / 2 + 4); if (lbl) lbl.textContent = '—'; return; }
@@ -1729,85 +1716,10 @@ function renderAnalysisDDC() {
   else { status = 'Normal'; color = 'var(--sub)'; hint = `Acc: ${acc} · Dist: ${dist}`; }
   el('as-dist').textContent = dist; el('as-dist').style.color = color; el('as-dist-status').textContent = status; el('as-dist-status').style.color = color; el('as-dist-hint').textContent = hint;
 }
-function renderAnalysisDivergence(data) {
-  const el = id => document.getElementById(id) || { textContent: '', innerHTML: '', style: {}, className: '', classList: { add: () => { }, remove: () => { }, contains: () => false }, value: '', offsetWidth: 0, offsetHeight: 0, getBoundingClientRect: () => ({ width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 }) }; if (!el('as-div-status') || !data || data.length < 5) {
-    if (el('as-div-status')) { el('as-div-status').textContent = '—'; el('as-div-desc').textContent = 'Need 5+ records'; }
-    return;
-  }
-  const mpmMap = {}; mpmLoad().forEach(d => { if (d.date && d.close > 0) mpmMap[d.date] = d.close; }); const getNifty = r => { const v = parseFloat(r.nifty); if (!isNaN(v) && v > 0) return v; return mpmMap[r.date] || null; }; const recent = data.slice(0, 5); const oldest = recent[recent.length - 1]; const newest = recent[0]; const p0 = getNifty(newest), p5 = getNifty(oldest); let priceDir, pricePct, priceLabel; if (p0 !== null && p5 !== null && p5 > 0) { priceDir = p0 > p5 ? 1 : p0 < p5 ? -1 : 0; pricePct = +((p0 - p5) / p5 * 100).toFixed(1); priceLabel = (pricePct >= 0 ? '+' : '') + pricePct + '%'; } else { priceDir = null; pricePct = null; priceLabel = '—'; }
-  const s0 = newest.score, s5 = oldest.score; const breadthDir = (s0 != null && s5 != null) ? (s0 > s5 ? 1 : s0 < s5 ? -1 : 0) : null; const breadthDiff = (breadthDir !== null) ? (s0 - s5) : null; if (priceDir === null || breadthDir === null) { el('as-div-status').textContent = '—'; el('as-div-desc').textContent = '—'; return; }
-  let status, color, desc, pills = ''; if (priceDir > 0 && breadthDir > 0) { status = 'Confirmed ↑'; color = 'var(--lime)'; desc = `Price ${priceLabel} · Score +${breadthDiff}pts · Both rising`; pills = '<span class="as-pill ok">Uptrend Valid</span>'; } else if (priceDir < 0 && breadthDir < 0) { status = 'Confirmed ↓'; color = 'var(--red)'; desc = `Price ${priceLabel} · Score ${breadthDiff}pts · Both falling`; pills = '<span class="as-pill err">Downtrend Valid</span>'; } else if (priceDir > 0 && breadthDir < 0) { status = 'Bear Diverge ⚠'; color = 'var(--orange)'; desc = `Price ${priceLabel} but Score ${breadthDiff}pts · Hidden weakness`; pills = '<span class="as-pill warn">Reduce Exposure</span>'; } else if (priceDir < 0 && breadthDir > 0) { status = 'Bull Diverge ✦'; color = 'var(--teal)'; desc = `Price ${priceLabel} but Score +${breadthDiff}pts · Hidden strength`; pills = '<span class="as-pill" style="border-color:rgba(45,212,191,.3);color:var(--teal)">Watch for Turn</span>'; } else { status = 'Neutral →'; color = 'var(--sub)'; desc = 'No clear directional signal · 5d flat'; pills = ''; }
-  el('as-div-status').textContent = status; el('as-div-status').style.color = color; el('as-div-desc').textContent = desc; el('as-div-pills').innerHTML = pills; const wbdStatus = document.getElementById('wbd-status'); if (wbdStatus) {
-    wbdStatus.textContent = status; wbdStatus.style.color = color; const wbdSub = document.getElementById('wbd-status-sub'); if (wbdSub) { wbdSub.textContent = desc; wbdSub.style.color = color; }
-    const wbdPc = document.getElementById('wbd-price-chg'); if (wbdPc) { wbdPc.textContent = priceLabel; wbdPc.style.color = priceDir > 0 ? 'var(--lime)' : priceDir < 0 ? 'var(--red)' : 'var(--sub)'; }
-    const wbdBc = document.getElementById('wbd-breadth-chg'); if (wbdBc) { const bd = breadthDiff; wbdBc.textContent = bd !== null ? (bd >= 0 ? '+' : '') + bd + ' pts' : '—'; wbdBc.style.color = breadthDir > 0 ? 'var(--lime)' : breadthDir < 0 ? 'var(--red)' : 'var(--sub)'; }
-    const wbdDesc = document.getElementById('wbd-desc'); if (wbdDesc) wbdDesc.textContent = desc; const wbdPills = document.getElementById('wbd-pills'); if (wbdPills) { const pill = status.includes('Bear') ? '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:3px;background:rgba(251,146,60,.12);color:var(--orange);border:1px solid rgba(251,146,60,.25)">⚠ Reduce Exposure</span>' : status.includes('Bull') ? '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:3px;background:rgba(45,212,191,.10);color:var(--teal);border:1px solid rgba(45,212,191,.25)">✦ Watch for Reversal</span>' : status.includes('↑') ? '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:3px;background:rgba(74,222,128,.12);color:var(--lime);border:1px solid rgba(74,222,128,.25)">✓ Uptrend Confirmed</span>' : status.includes('↓') ? '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:3px;background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.25)">✗ Downtrend Confirmed</span>' : ''; wbdPills.innerHTML = pill; }
-    const wbdHist = document.getElementById('wbd-history'); if (wbdHist && data.length >= 5) {
-      let rows = ''; const maxPeriods = Math.min(6, Math.floor(data.length / 5)); for (let i = 0; i < maxPeriods; i++) {
-        const sliceNew = data[i * 5]; const sliceOld = data[Math.min(i * 5 + 4, data.length - 1)]; const pN = getNifty(sliceNew), pO = getNifty(sliceOld); const sN = sliceNew.score, sO = sliceOld.score; if (pN == null || pO == null || sN == null || sO == null) continue; const pDir = pN > pO ? 1 : pN < pO ? -1 : 0; const bDir = sN > sO ? 1 : sN < sO ? -1 : 0; const pPct = pO > 0 ? (((pN - pO) / pO) * 100).toFixed(1) : '—'; const bDiff = (sN - sO).toFixed(1); let rowStatus, rowColor; if (pDir > 0 && bDir > 0) { rowStatus = 'Confirmed ↑'; rowColor = 'var(--lime)'; }
-        else if (pDir < 0 && bDir < 0) { rowStatus = 'Confirmed ↓'; rowColor = 'var(--red)'; }
-        else if (pDir > 0 && bDir < 0) { rowStatus = 'Bear Diverge ⚠'; rowColor = 'var(--orange)'; }
-        else if (pDir < 0 && bDir > 0) { rowStatus = 'Bull Diverge ✦'; rowColor = 'var(--teal)'; }
-        else { rowStatus = 'Neutral'; rowColor = 'var(--sub)'; }
-        rows += `<tr style="border-bottom:1px solid rgba(39,52,71,.4)">
-          <td style="padding:5px 8px;font-size:10px;color:var(--sub)">${sliceNew.date || '—'}</td>
-          <td style="padding:5px 8px;font-size:10px;font-weight:600;color:${rowColor}">${rowStatus}</td>
-          <td style="padding:5px 8px;font-size:10px;color:${pDir > 0 ? 'var(--lime)' : pDir < 0 ? 'var(--red)' : 'var(--sub)'}">${pDir >= 0 ? '+' : ''}${pPct}%</td>
-          <td style="padding:5px 8px;font-size:10px;color:${bDir > 0 ? 'var(--lime)' : bDir < 0 ? 'var(--red)' : 'var(--sub)'}">${bDir >= 0 ? '+' : ''}${bDiff} pts</td>
-        </tr>`;
-      }
-      wbdHist.innerHTML = rows ? `<table style="width:100%;border-collapse:collapse">
-        <thead><tr>
-          <th style="text-align:left;padding:4px 8px;font-size:9px;color:var(--dim);font-weight:600;text-transform:uppercase;border-bottom:1px solid var(--border)">Period End</th>
-          <th style="text-align:left;padding:4px 8px;font-size:9px;color:var(--dim);font-weight:600;text-transform:uppercase;border-bottom:1px solid var(--border)">Signal</th>
-          <th style="text-align:left;padding:4px 8px;font-size:9px;color:var(--dim);font-weight:600;text-transform:uppercase;border-bottom:1px solid var(--border)">Price Δ</th>
-          <th style="text-align:left;padding:4px 8px;font-size:9px;color:var(--dim);font-weight:600;text-transform:uppercase;border-bottom:1px solid var(--border)">Breadth Δ</th>
-        </tr></thead><tbody>${rows}</tbody></table>` : '<div style="color:var(--dim);font-size:10px;text-align:center;padding:8px">Not enough data for history.</div>';
-    }
-  }
-}
-function renderAnalysisTrendBias(data) {
-  const el = id => document.getElementById(id) || { textContent: '', innerHTML: '', style: {}, className: '', classList: { add: () => { }, remove: () => { }, contains: () => false }, value: '', offsetWidth: 0, offsetHeight: 0, getBoundingClientRect: () => ({ width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 }) }; if (!el('as-bias-score') || !data || data.length < 3) {
-    if (el('as-bias-score')) { el('as-bias-score').textContent = '—'; el('as-bias-desc').textContent = 'Need 3+ records'; }
-    return;
-  }
-  const window10 = data.slice(0, 10); let upDays = 0, downDays = 0, flatDays = 0; const mpmMapB = {}; mpmLoad().forEach(d => { if (d.date && d.close > 0) mpmMapB[d.date] = d.close; }); const getNiftyB = r => { const v = parseFloat(r.nifty); if (!isNaN(v) && v > 0) return v; return mpmMapB[r.date] || null; }; for (let i = 0; i < window10.length - 1; i++) {
-    const curr = getNiftyB(window10[i]); const prev = getNiftyB(window10[i + 1]); if (curr === null || prev === null || prev === 0) {
-      const sc = window10[i].score, sp = window10[i + 1].score; if (sc != null && sp != null) { if (sc > sp) upDays++; else if (sc < sp) downDays++; else flatDays++; }
-      continue;
-    }
-    if (curr > prev) upDays++; else if (curr < prev) downDays++; else flatDays++;
-  }
-  const total = upDays + downDays + flatDays; if (total === 0) { el('as-bias-score').textContent = '—'; el('as-bias-desc').textContent = 'Add Nifty close to EOD entries'; return; }
-  const net = upDays - downDays; const upPct = Math.round(upDays / total * 100); let status, color, pills = ''; if (net >= 4) { status = 'Bullish'; color = 'var(--lime)'; pills = '<span class="as-pill ok">Market Rising</span>'; }
-  else if (net >= 2) { status = 'Mild Bull'; color = 'var(--green)'; pills = '<span class="as-pill ok">Slight Upbias</span>'; }
-  else if (net >= -1) { status = 'Neutral'; color = 'var(--sub)'; pills = ''; }
-  else if (net >= -3) { status = 'Mild Bear'; color = 'var(--orange)'; pills = '<span class="as-pill warn">Slight Downbias</span>'; }
-  else { status = 'Bearish'; color = 'var(--red)'; pills = '<span class="as-pill err">Market Falling</span>'; }
-  el('as-bias-score').textContent = status; el('as-bias-score').style.color = color; el('as-bias-label').textContent = ''; el('as-bias-desc').textContent = `${upDays}↑ ${downDays}↓ ${flatDays}→ of ${total} sessions`; el('as-bias-pills').innerHTML = pills || `<span class="as-pill" style="color:var(--sub)">${upPct}% up days</span>`;
-}
-function renderAnalysisExpansionRate(data) {
-  const el = id => document.getElementById(id) || { textContent: '', innerHTML: '', style: {}, className: '', classList: { add: () => { }, remove: () => { }, contains: () => false }, value: '', offsetWidth: 0, offsetHeight: 0, getBoundingClientRect: () => ({ width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 }) }; if (!el('as-exp-rate') || !data || data.length < 3) {
-    if (el('as-exp-rate')) { el('as-exp-rate').textContent = '—'; el('as-exp-rate-desc').textContent = 'Need 3+ records'; }
-    return;
-  }
-  const window5 = data.slice(0, Math.min(5, data.length)); const newest = window5[0].score || 0; const oldest = window5[window5.length - 1].score || 0; const days = window5.length - 1; const totalChg = newest - oldest; const ratePerDay = days > 0 ? +(totalChg / days).toFixed(1) : 0; let status, color, sig; if (ratePerDay >= 5) { status = '+' + ratePerDay; color = 'var(--lime)'; sig = '🚀 Rapid Expansion'; }
-  else if (ratePerDay >= 3) { status = '+' + ratePerDay; color = 'var(--green)'; sig = '↑ Expanding Fast'; }
-  else if (ratePerDay >= 1) { status = '+' + ratePerDay; color = 'var(--yellow)'; sig = '↗ Slow Expansion'; }
-  else if (ratePerDay >= -1) { status = ratePerDay > 0 ? '+' + ratePerDay : String(ratePerDay); color = 'var(--sub)'; sig = '→ Stalling'; }
-  else if (ratePerDay >= -3) { status = String(ratePerDay); color = 'var(--orange)'; sig = '↘ Contracting'; }
-  else { status = String(ratePerDay); color = 'var(--red)'; sig = '⚠ Deteriorating'; }
-  el('as-exp-rate').textContent = status; el('as-exp-rate').style.color = color; el('as-exp-rate-unit').textContent = 'pts/d'; el('as-exp-rate-unit').style.color = color; el('as-exp-rate-desc').textContent = `${totalChg >= 0 ? '+' : ''}${totalChg}pts over ${days + 1}d`; el('as-exp-rate-sig').textContent = sig; el('as-exp-rate-sig').style.color = color;
-}
-function renderAnalysisInstBias() {
-  const el = id => document.getElementById(id) || { textContent: '', innerHTML: '', style: {}, className: '', classList: { add: () => { }, remove: () => { }, contains: () => false }, value: '', offsetWidth: 0, offsetHeight: 0, getBoundingClientRect: () => ({ width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 }) }; if (!el('as-inst-score')) return; const days10 = mpmLoad().slice(0, 10); if (!days10.length) { el('as-inst-score').textContent = '—'; el('as-inst-desc').textContent = 'Enter MPM data to track'; el('as-inst-bar').innerHTML = ''; return; }
-  const acc = days10.filter(d => d.dtype === 'acc').length; const dist = days10.filter(d => d.dtype === 'dist').length; const neut = days10.filter(d => d.dtype === 'neutral').length; const net = acc - dist; const total = days10.length; let status, color, desc, pills = ''; if (net >= 4) { status = 'Accumulating'; color = 'var(--lime)'; pills = '<span class="as-pill ok">Inst. Buying</span>'; }
-  else if (net >= 2) { status = 'Mild Acc'; color = 'var(--green)'; pills = '<span class="as-pill ok">Net Buying</span>'; }
-  else if (net >= -1) { status = 'Neutral'; color = 'var(--sub)'; pills = ''; }
-  else if (net >= -3) { status = 'Mild Dist'; color = 'var(--orange)'; pills = '<span class="as-pill warn">Net Selling</span>'; }
-  else { status = 'Distributing'; color = 'var(--red)'; pills = '<span class="as-pill err">Inst. Selling</span>'; }
-  desc = `${acc} Acc · ${dist} Dist · ${neut} Neut of ${total}d  (net ${net >= 0 ? '+' : ''}${net})`; el('as-inst-score').textContent = status; el('as-inst-score').style.color = color; el('as-inst-label').textContent = `net ${net >= 0 ? '+' : ''}${net}`; el('as-inst-label').style.color = color; el('as-inst-desc').textContent = desc; el('as-inst-pills').innerHTML = pills; if (el('as-inst-bar')) { el('as-inst-bar').innerHTML = days10.map(d => `<div style="flex:1;background:${d.dtype === 'acc' ? 'var(--teal)' : d.dtype === 'dist' ? 'var(--red)' : 'var(--border)'};border-radius:1px"></div>`).join(''); }
-}
+function renderAnalysisDivergence() {}
+function renderAnalysisTrendBias() {}
+function renderAnalysisExpansionRate() {}
+function renderAnalysisInstBias() {}
 const LS_FTD = 'ftd_data'; function ftdLoad() { try { return JSON.parse(lsGet(LS_FTD) || '[]'); } catch (e) { return []; } }
 function ftdSaveData(d) { lsSet(LS_FTD, JSON.stringify(d)); }
 function ftdManualVoid() {
@@ -2203,7 +2115,7 @@ function renderMarketSummary() {
   if (mpmScore !== null) { if (mpmScore >= 4) summaryParts.push(`MPM +${mpmScore}: institutions accumulating — volume confirms buying interest. Institutional backdrop is supportive.`); else if (mpmScore >= 1) summaryParts.push(`MPM +${mpmScore}: mild accumulation. Institutions leaning bullish but not yet decisive.`); else if (mpmScore === 0) summaryParts.push('MPM 0: accumulation and distribution balanced. Institutions are sidelined — wait for tilt.'); else summaryParts.push(`MPM ${mpmScore}: distribution exceeds accumulation. Institutions are selling; do not fight the tape.`); }
   if (ema20 !== null && sma50 !== null) { summaryParts.push(`${ema20}% of stocks above EMA20, ${sma50}% above SMA50${hlVal !== null ? `,H/L ratio ${hlVal}%` : ''}.`); }
   if (hasFTD) { summaryParts.push('Follow-Through Day confirmed ✓ — O\'Neil uptrend signal active. Breakout entries are justified.'); } else if (hasAttempt) { summaryParts.push('Rally attempt underway — no FTD yet. Wait for Day 4+ move of ≥1.5% on rising volume before adding exposure.'); } else if (score < 35) { summaryParts.push('No rally attempt logged. Market showing no base-building signs yet.'); }
-  el('msem-summary').textContent = summaryParts.join(' '); const guidance = []; const wbdStatusEl = document.getElementById('wbd-status'); const wbdSignal = wbdStatusEl ? wbdStatusEl.textContent.trim() : ''; const bearDiv = wbdSignal.includes('Bear'); const bullDiv = wbdSignal.includes('Bull'); const tcEl = document.getElementById('pet-total-capital'); const ivEl = document.getElementById('pet-invested'); const tc = tcEl ? parseFloat(tcEl.value || 0) : 0; const iv = ivEl ? parseFloat(ivEl.value || 0) : 0; if (bearDiv) { guidance.push({ text: '⛔ Bearish divergence active — no new longs today regardless of score', cls: 'bad' }); }
+  el('msem-summary').textContent = summaryParts.join(' '); const guidance = []; const bearDiv = false; const bullDiv = false; const tcEl = document.getElementById('pet-total-capital'); const ivEl = document.getElementById('pet-invested'); const tc = tcEl ? parseFloat(tcEl.value || 0) : 0; const iv = ivEl ? parseFloat(ivEl.value || 0) : 0; if (bearDiv) { guidance.push({ text: '⛔ Bearish divergence active — no new longs today regardless of score', cls: 'bad' }); }
   if (score < 30) { guidance.push({ text: `Score ${score} — Stand aside. Capital preservation only`, cls: 'bad' }); guidance.push({ text: 'Close weakest positions; raise cash above 70%', cls: 'bad' }); guidance.push({ text: 'No new entries until score recovers above 35', cls: 'warn' }); } else if (score < 40) { guidance.push({ text: `Score ${score} — Pilot mode: max 0.25R per trade, 1–2 positions only`, cls: 'warn' }); guidance.push({ text: 'Only stocks with RS > 90 qualify for entry', cls: '' }); if (!hasFTD) guidance.push({ text: 'Wait for FTD confirmation before adding any exposure', cls: 'warn' }); if (hasFTD) guidance.push({ text: 'FTD logged ✓ — pilot entries permitted, keep size tight', cls: 'good' }); } else if (score < 50) { guidance.push({ text: `Score ${score} — Selective: 0.5–1R per trade, max 3 concurrent positions`, cls: '' }); guidance.push({ text: 'Target early-stage Stage 2 bases only; no extended stocks', cls: 'good' }); guidance.push({ text: 'Use tight stops 5–7% from pivot; do not give back gains', cls: 'warn' }); if (hasFTD) guidance.push({ text: 'FTD confirmed ✓ — scale up gradually as positions prove', cls: 'good' }); else guidance.push({ text: 'No FTD yet — size half until confirmation arrives', cls: 'warn' }); } else if (score < 60) { guidance.push({ text: `Score ${score} — Normal: 1–2R per trade, standard stop 7–8% from pivot`, cls: 'good' }); guidance.push({ text: 'Act on clean breakouts from flat/cup bases; confirm volume', cls: 'good' }); guidance.push({ text: 'Add to winners on follow-through days; trim laggards', cls: '' }); } else { guidance.push({ text: `Score ${score} — Aggressive: 2–3R per trade, let leaders run`, cls: 'good' }); guidance.push({ text: 'Trail stops; buy pullbacks to 21-EMA in leading stocks', cls: 'good' }); guidance.push({ text: 'New breakouts have high follow-through probability — act decisively', cls: 'good' }); }
   if (mpmScore !== null) { if (mpmScore <= -3) { guidance.push({ text: `MPM ${mpmScore} — distribution dominates, reduce all adds until MPM turns positive`, cls: 'bad' }); } else if (mpmScore >= 4) { guidance.push({ text: `MPM +${mpmScore} — strong accumulation, institutional backdrop supports entries`, cls: 'good' }); } }
   if (bsrPct !== null && bsrPct < 40) { guidance.push({ text: `BSR ${bsrPct}% — breakouts failing >60% of the time. Skip breakout chasing, wait for BSR > 50%`, cls: 'bad' }); } else if (bsrPct !== null && bsrPct >= 65) { guidance.push({ text: `BSR ${bsrPct}% — breakout environment healthy. Setups meeting your criteria should be actioned`, cls: 'good' }); }
@@ -4524,3 +4436,19 @@ function ensureOctoberDataSeeded() {
     console.warn('[ensureOctoberDataSeeded] error:', e);
   }
 }
+
+
+/* 60-Second EOD Checklist Modal handlers */
+function openEodChecklistModal() {
+  const el = document.getElementById('eod-checklist-modal-overlay');
+  if (el) el.classList.add('open');
+}
+function closeEodChecklistModal() {
+  const el = document.getElementById('eod-checklist-modal-overlay');
+  if (el) el.classList.remove('open');
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeEodChecklistModal();
+  }
+});

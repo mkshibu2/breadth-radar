@@ -22,7 +22,7 @@
 import yfinance as yf
 import pandas as pd
 import numpy as np
-import time, logging, webbrowser, warnings, sys, signal
+import time, logging, webbrowser, warnings, sys, signal, pickle
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -1012,6 +1012,104 @@ def get_industry_group(symbol, company, industry):
 # ═══════════════════════════════════════════════════════════════════════
 #  MAIN ANALYSIS FUNCTION
 # ═══════════════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════════
+#  SWING TRADING ACTIONABILITY & RS NEW HIGH HELPERS
+# ═══════════════════════════════════════════════════════════════════════
+def calc_adr(df, period=20):
+    """Average Daily Range % over the last `period` trading days."""
+    if len(df) < period:
+        return 0.0
+    daily_range_pct = (df['High'] - df['Low']) / df['Close'] * 100
+    return round(float(daily_range_pct.iloc[-period:].mean()), 2)
+
+def calc_ud_volume_ratio(df, period=50):
+    """O'Neil Up/Down Volume Ratio (50-day accumulation/distribution ratio)."""
+    if len(df) < period + 1:
+        return 1.0
+    sub = df.iloc[-(period+1):]
+    diff = sub['Close'].diff().iloc[1:]
+    vol = sub['Volume'].iloc[1:]
+    up_v = vol[diff > 0].sum()
+    down_v = vol[diff < 0].sum()
+    return round(float(up_v / down_v), 2) if down_v > 0 else (2.5 if up_v > 0 else 1.0)
+
+def check_rs_new_high(df, bench_df):
+    """
+    O'Neil Leading Stock Indicator: Checks if Relative Strength (Stock / Benchmark)
+    line is making a new 52-week high (or within 0.5% of 52W high).
+    """
+    if bench_df is None or len(bench_df) < 150 or len(df) < 150:
+        return False
+    try:
+        s_c = df['Close'].copy()
+        b_c = bench_df['Close'].copy()
+        if hasattr(s_c.index, 'tz') and s_c.index.tz is not None:
+            s_c.index = s_c.index.tz_localize(None)
+        if hasattr(b_c.index, 'tz') and b_c.index.tz is not None:
+            b_c.index = b_c.index.tz_localize(None)
+        s_c.index = s_c.index.normalize()
+        b_c.index = b_c.index.normalize()
+        merged = pd.merge(s_c.rename('stock'), b_c.rename('bench'), left_index=True, right_index=True, how='inner')
+        if len(merged) < 150:
+            return False
+        rs_line = merged['stock'] / merged['bench']
+        rs_252_max = rs_line.iloc[-252:].max() if len(rs_line) >= 252 else rs_line.max()
+        cur_rs = rs_line.iloc[-1]
+        return bool(cur_rs >= rs_252_max * 0.995)
+    except Exception:
+        return False
+
+def compute_market_regime(sector_stats, bench_df):
+    """Calculates Top-Down Market Regime from universe breadth and benchmark moving averages."""
+    total_stocks = sum(st['total'] for st in sector_stats.values())
+    total_a50 = sum(st['a50'] for st in sector_stats.values())
+    total_a200 = sum(st['a200'] for st in sector_stats.values())
+    pct_a50 = round(total_a50 / total_stocks * 100, 1) if total_stocks > 0 else 0.0
+    pct_a200 = round(total_a200 / total_stocks * 100, 1) if total_stocks > 0 else 0.0
+    
+    bench_close = bench_df['Close'].iloc[-1] if bench_df is not None and not bench_df.empty else 0
+    bench_50sma = sma(bench_df['Close'], 50).iloc[-1] if bench_df is not None and len(bench_df) >= 50 else 0
+    bench_200sma = sma(bench_df['Close'], 200).iloc[-1] if bench_df is not None and len(bench_df) >= 200 else 0
+    bench_above_50 = bench_close > bench_50sma if bench_50sma > 0 else False
+    
+    if pct_a50 < 35 or (bench_close > 0 and not bench_above_50 and pct_a50 < 45):
+        regime = "CORRECTION / HIGH RISK"
+        color = "#f87171"
+        bg = "rgba(248,113,113,0.12)"
+        border = "rgba(248,113,113,0.35)"
+        icon = "⚠️"
+        headline = "Market in Correction / Distribution — Extreme Caution Advised"
+        rules = "Breakout failure rate is high (~70-80%). Use setups for <b>WATCHLIST ONLY</b>. Do <u>NOT</u> initiate aggressive breakout purchases until Follow-Through Day (FTD) or Breadth recovers >45%."
+    elif pct_a50 >= 55 and bench_above_50:
+        regime = "CONFIRMED UPTREND / GREEN LIGHT"
+        color = "#4ade80"
+        bg = "rgba(74,222,128,0.12)"
+        border = "rgba(74,222,128,0.35)"
+        icon = "🟢"
+        headline = "Market in Confirmed Uptrend — Full Aggressive Trading Mode"
+        rules = "Healthy institutional breadth. Focus on Grade A+/A Potential Breakouts resting near pivot and VCP tight patterns with dry-up volume."
+    else:
+        regime = "UPTREND UNDER PRESSURE / CHOPPY"
+        color = "#fbbf24"
+        bg = "rgba(251,191,36,0.12)"
+        border = "rgba(251,191,36,0.35)"
+        icon = "🟡"
+        headline = "Uptrend Under Pressure / Rotation — Selective Participation"
+        rules = "Take only top-tier A+ setups; tighten initial stop-losses to 4-5%; take quick partial profits at +2R/+3R."
+
+    return {
+        'regime': regime,
+        'pct_a50': pct_a50,
+        'pct_a200': pct_a200,
+        'color': color,
+        'bg': bg,
+        'border': border,
+        'icon': icon,
+        'headline': headline,
+        'rules': rules
+    }
+
 def analyse(symbol, df, info, nse_comp, nse_ind):
     c = df['Close']
     
@@ -1054,10 +1152,46 @@ def analyse(symbol, df, info, nse_comp, nse_ind):
     # 9. Successive VCP Contractions within Active Base
     vcp_bonus, pullbacks, vcp_quality = vcp_pullbacks(df, base_info)
     
-    # 10. Setup Conditions
+    # 10. Setup Conditions & Actionable Trade Levels
     pp = pocket_pivot(df)
-    pot_bo, pivot_cand, dist_pivot = potential_bo(df, r60, r90, dist52, base_info)
+    pot_bo, pivot_cand, _orig_dist_pivot = potential_bo(df, r60, r90, dist52, base_info)
     pb = pull_back_setup(df)
+
+    cur_price = round(float(c.iloc[-1]), 2)
+
+    # Base High / Pivot Buy Point calculation
+    base_high = float(base_info.get('base_high', df['High'].iloc[-20:].max()))
+    pivot = round(base_high, 2)
+    # Check if a tighter handle / cheat pivot exists in upper third of base
+    if len(df) >= 15 and base_high > 0:
+        recent_10 = df['High'].iloc[-10:-1] if len(df) >= 12 else df['High'].iloc[-10:]
+        handle_high = float(recent_10.max())
+        if 0.88 * base_high <= handle_high < 0.995 * base_high:
+            pivot = round(handle_high, 2)
+
+    dist_pivot = round((cur_price - pivot) / pivot * 100, 1) if pivot > 0 else 0.0
+    max_buy = round(pivot * 1.05, 2) if pivot > 0 else 0.0
+
+    # Stop Loss calculation (Handle Low / 10d Low or 20EMA with 4% to 7.5% Minervini guardrails)
+    low_10 = float(df['Low'].iloc[-10:].min()) if len(df) >= 10 else cur_price * 0.95
+    e20_val = float(ema(c, 20).iloc[-1])
+    stop_cand = max(low_10, e20_val)
+    if stop_cand >= cur_price:
+        stop_loss = round(cur_price * 0.95, 2)
+    elif stop_cand < cur_price * 0.925:
+        stop_loss = round(cur_price * 0.93, 2)
+    elif stop_cand > cur_price * 0.96:
+        stop_loss = round(cur_price * 0.95, 2)
+    else:
+        stop_loss = round(stop_cand, 2)
+    stop_risk = round((cur_price - stop_loss) / cur_price * 100, 1) if cur_price > 0 else 0.0
+
+    # ADR% and Up/Down Volume Ratio
+    adr_pct = calc_adr(df, 20)
+    ud_vol = calc_ud_volume_ratio(df, 50)
+
+    # RS Line 52-Week New High Check
+    rs_new_high = check_rs_new_high(df, BENCHMARK_HISTORY)
     
     # 11. Relative Strength vs Benchmark
     rs_comp, rs63, rs126, rs252 = rs_proxy_raw(df, BENCHMARK_HISTORY)
@@ -1111,8 +1245,14 @@ def analyse(symbol, df, info, nse_comp, nse_ind):
         'base_type':            btype,
         'base_depth':           base_info['base_depth'],
         'base_pos':             base_info['base_position'],
-        'pivot':                pivot_cand,
+        'pivot':                pivot,
         'dist_pivot':           dist_pivot,
+        'max_buy':              max_buy,
+        'stop_loss':            stop_loss,
+        'stop_risk':            stop_risk,
+        'adr_pct':              adr_pct,
+        'ud_vol':               ud_vol,
+        'rs_new_high':          rs_new_high,
         'vol_contr':            vol_contr,
         'rel_vol':              rel_vol_pct,
         'atr_ratio':            atr_ratio,
@@ -1212,43 +1352,97 @@ function sortTable(th) {
   tbl.querySelectorAll('th .sort-arrow').forEach(function(a){ a.textContent = '\u21c5'; });
   th.querySelector('.sort-arrow').textContent = next === 'asc' ? '\u25b2' : '\u25bc';
   var rows = Array.from(tb.querySelectorAll('tr'));
-  var clean = function(v) { return v.replace(/[^0-9.+\-]/g,'').trim(); };
+  var clean = function(cell) {
+    var ds = cell.getAttribute('data-sort');
+    if (ds !== null && ds !== '') return parseFloat(ds);
+    var v = cell.textContent.replace(/[^0-9.+\-]/g,'').trim();
+    return parseFloat(v);
+  };
   rows.sort(function(a,b) {
     var ac = a.querySelectorAll('td')[col], bc = b.querySelectorAll('td')[col];
     if (!ac||!bc) return 0;
-    var av = ac.textContent.trim(), bv = bc.textContent.trim();
-    var an = parseFloat(clean(av)), bn = parseFloat(clean(bv));
-    var cmp = (!isNaN(an)&&!isNaN(bn)) ? an-bn : av.localeCompare(bv,'en',{numeric:true});
+    var an = clean(ac), bn = clean(bc);
+    var cmp = (!isNaN(an)&&!isNaN(bn)) ? an-bn : ac.textContent.trim().localeCompare(bc.textContent.trim(),'en',{numeric:true});
     return next==='asc' ? cmp : -cmp;
   });
   rows.forEach(function(r,i){ r.style.background=i%2===0?'#0d1929':'#0f1c30'; tb.appendChild(r); });
 }
 
+var _curSyms = [];
+var _curWlTitle = 'TradingView Watchlist';
+var _curWlFmt = 'lines_nse';
+
 document.addEventListener('click', function(e) {
   var btn = e.target.closest('.wl-btn');
   if (!btn) return;
-  var syms  = JSON.parse(btn.getAttribute('data-syms') || '[]');
-  var lines = [];
-  for (var i=0; i<syms.length; i+=10) {
-    lines.push(syms.slice(i,i+10).map(function(s){ return 'NSE:'+s; }).join(', '));
-  }
-  showWLModal(lines.join(',\n'), syms.length);
+  _curSyms = JSON.parse(btn.getAttribute('data-syms') || '[]');
+  _curWlTitle = btn.getAttribute('data-title') || 'TradingView Watchlist';
+  showWLModal();
 });
 
-function showWLModal(content, count) {
+function getFormattedWL(fmt) {
+  if (fmt === 'lines_nse') {
+    return _curSyms.map(function(s){ return 'NSE:' + s; }).join('\n');
+  } else if (fmt === 'comma_nse') {
+    return _curSyms.map(function(s){ return 'NSE:' + s; }).join(', ');
+  } else if (fmt === 'lines_plain') {
+    return _curSyms.join('\n');
+  } else if (fmt === 'comma_plain') {
+    return _curSyms.join(', ');
+  }
+  return _curSyms.map(function(s){ return 'NSE:' + s; }).join('\n');
+}
+
+function setWlFormat(fmt, btn) {
+  _curWlFmt = fmt;
+  document.querySelectorAll('.wl-fmt-btn').forEach(function(b){
+    b.style.background = '#1e2d45';
+    b.style.color = '#94a3b8';
+    b.style.borderColor = '#2d3f5a';
+  });
+  if (btn) {
+    btn.style.background = '#2dd4bf';
+    btn.style.color = '#060d18';
+    btn.style.borderColor = '#2dd4bf';
+  }
+  var ta = document.getElementById('wl-txt');
+  if (ta) ta.value = getFormattedWL(fmt);
+}
+
+function showWLModal() {
   var old = document.getElementById('wl-modal'); if (old) old.remove();
+  _curWlFmt = 'lines_nse';
+  var content = getFormattedWL(_curWlFmt);
   var m = document.createElement('div');
   m.id = 'wl-modal';
   m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
   m.innerHTML = (
-    '<div style="background:#0d1929;border:1px solid #2d3f5a;border-radius:10px;width:100%;max-width:700px;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.9)">'
+    '<div style="background:#0d1929;border:1px solid #2d3f5a;border-radius:10px;width:100%;max-width:720px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.9)">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #1e2d45">'
-    +'<div><div style="font-size:14px;font-weight:800;color:#2dd4bf">&#128203; TradingView Watchlist Export</div>'
-    +'<div style="font-size:11px;color:#64748b;margin-top:2px">'+count+' symbols &middot; NSE: prefix added &middot; 10 per line</div></div>'
-    +'<button onclick="document.getElementById(\'wl-modal\').remove()" style="background:none;border:none;color:#64748b;font-size:22px;cursor:pointer;padding:2px 8px">&times;</button></div>'
-    +'<div style="padding:14px 20px;flex:1;overflow-y:auto">'
-    +'<textarea id="wl-txt" readonly style="width:100%;height:250px;background:#060d18;border:1px solid #1e2d45;'
-    +'color:#a5d6e8;font-family:Consolas,monospace;font-size:12px;line-height:1.9;padding:12px;border-radius:6px;resize:vertical;outline:none">'+content+'</textarea></div>'
+    +'<div><div style="font-size:15px;font-weight:800;color:#2dd4bf">&#128203; ' + _curWlTitle + ' (' + _curSyms.length + ' stocks)</div>'
+    +'<div style="font-size:11px;color:#64748b;margin-top:2px">Export cleanly formatted for TradingView Watchlists</div></div>'
+    +'<button onclick="document.getElementById(\'wl-modal\').remove()" style="background:none;border:none;color:#64748b;font-size:24px;cursor:pointer;padding:2px 8px">&times;</button></div>'
+    
+    +'<div style="padding:16px 20px;flex:1;overflow-y:auto">'
+    // Instruction Callout
+    +'<div style="background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.25);border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:#cbd5e1;line-height:1.6">'
+    +'<div style="font-weight:800;color:#38bdf8;margin-bottom:4px">&#9889; TWO WAYS TO ADD TO TRADINGVIEW:</div>'
+    +'<div><b>1. Keyboard Paste (Fastest):</b> In TradingView, click on <i>any existing stock in your watchlist</i> &rarr; press <kbd style="background:#1e2d45;color:#e2e8f5;padding:1px 5px;border-radius:3px;font-weight:700">Ctrl + V</kbd>.</div>'
+    +'<div style="color:#f87171;font-size:10px;margin-top:2px">&#9888; <i>Do NOT paste into the "+" search box &mdash; that search box only accepts 1 stock at a time.</i></div>'
+    +'<div style="margin-top:4px"><b>2. Import File:</b> Click <b>"Download .txt"</b> below &rarr; in TradingView Watchlist, click the <b>...</b> menu &rarr; <b>Import list...</b> &rarr; select the downloaded file.</div>'
+    +'</div>'
+
+    // Format Selector Toolbar
+    +'<div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap">'
+    +'<span style="font-size:11px;color:#64748b;font-weight:700">Format:</span>'
+    +'<button class="wl-fmt-btn" onclick="setWlFormat(\'lines_nse\',this)" style="background:#2dd4bf;color:#060d18;border:1px solid #2dd4bf;border-radius:4px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">NSE: Line-by-Line (Best for Import)</button>'
+    +'<button class="wl-fmt-btn" onclick="setWlFormat(\'comma_nse\',this)" style="background:#1e2d45;color:#94a3b8;border:1px solid #2d3f5a;border-radius:4px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">NSE: Comma-Separated</button>'
+    +'<button class="wl-fmt-btn" onclick="setWlFormat(\'lines_plain\',this)" style="background:#1e2d45;color:#94a3b8;border:1px solid #2d3f5a;border-radius:4px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">Plain Symbols (No NSE:)</button>'
+    +'</div>'
+
+    +'<textarea id="wl-txt" readonly style="width:100%;height:180px;background:#060d18;border:1px solid #1e2d45;'
+    +'color:#a5d6e8;font-family:Consolas,monospace;font-size:12px;line-height:1.7;padding:12px;border-radius:6px;resize:vertical;outline:none">' + content + '</textarea></div>'
+    
     +'<div style="padding:14px 20px;border-top:1px solid #1e2d45;display:flex;gap:10px;align-items:center;flex-wrap:wrap">'
     +'<button onclick="cpWL()" style="background:#2dd4bf;color:#060d18;border:none;border-radius:5px;padding:9px 22px;font-size:12px;font-weight:800;cursor:pointer">&#8680; Copy to Clipboard</button>'
     +'<button onclick="dlWL()" style="background:rgba(45,212,191,.1);color:#2dd4bf;border:1px solid rgba(45,212,191,.3);border-radius:5px;padding:9px 16px;font-size:12px;font-weight:700;cursor:pointer">&#8595; Download .txt</button>'
@@ -1258,20 +1452,43 @@ function showWLModal(content, count) {
   document.body.appendChild(m);
   m.addEventListener('click', function(e){ if(e.target===m) m.remove(); });
 }
+
 function cpWL(){
   var ta=document.getElementById('wl-txt');
   ta.select(); ta.setSelectionRange(0,99999);
   try{ navigator.clipboard.writeText(ta.value); }catch(e){ document.execCommand('copy'); }
   var msg=document.getElementById('wl-msg');
-  msg.textContent='\u2705 Copied!'; msg.style.opacity='1';
+  msg.textContent='\u2705 Copied to Clipboard!'; msg.style.opacity='1';
   setTimeout(function(){ msg.style.opacity='0'; },2500);
 }
+
 function dlWL(){
   var c=document.getElementById('wl-txt').value;
   var a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([c],{type:'text/plain'}));
-  a.download='vcp_watchlist.txt'; a.click();
+  a.download='vcp_watchlist_' + _curWlFmt + '.txt'; a.click();
 }
+
+// Auto-sync with Breadth Radar localStorage
+(function syncWithBreadthRadar() {
+  try {
+    var rawEod = localStorage.getItem('nse_eod_v1');
+    var rawMpm = localStorage.getItem('nse_mpm_v1');
+    if (!rawEod) return;
+    var eod = JSON.parse(rawEod);
+    if (!eod || !eod.length) return;
+    var latest = eod[0];
+    var mpm = rawMpm ? JSON.parse(rawMpm) : [];
+    var dds = 0;
+    if (mpm && mpm.length) {
+      dds = mpm.slice(0, 25).filter(function(d){ return d.dtype === 'dist'; }).length;
+    }
+    var tag = document.getElementById('radar-sync-tag');
+    if (tag) {
+      tag.innerHTML = '⚡ Breadth Radar: Score <b style="color:var(--accent,#38bdf8)">' + latest.score + '</b> (' + (latest.zone || '') + ') &middot; <b>' + dds + '</b> Dist Days';
+    }
+  } catch(e) {}
+})();
 </script>
 """
 
@@ -1299,6 +1516,25 @@ def build_table_rows(stocks, bg1='#0d1929', bg2='#0f1c30'):
 
         rsc  = '#4ade80' if r['rs_score'] >= 90 else '#2dd4bf' if r['rs_score'] >= 80 else '#fbbf24' if r['rs_score'] >= 60 else '#94a3b8'
 
+        # Trade actionability calculations & styling
+        dp = r.get('dist_pivot', 0.0)
+        if -3.0 <= dp <= 0.0:
+            dpc = '#4ade80' # Green: resting right at pivot door
+        elif 0.0 < dp <= 5.0:
+            dpc = '#2dd4bf' # Teal: broke out in buy range
+        elif dp > 5.0:
+            dpc = '#f87171' # Red: extended past 5% max buy limit
+        else:
+            dpc = '#94a3b8' # Gray: consolidating below pivot
+
+        adr = r.get('adr_pct', 0.0)
+        adrc = '#4ade80' if (3.5 <= adr <= 7.0) else ('#fbbf24' if adr >= 2.5 else '#64748b')
+
+        ud = r.get('ud_vol', 1.0)
+        udc = '#4ade80' if ud >= 1.20 else ('#fbbf24' if ud >= 0.90 else '#f87171')
+
+        rs_badge = '<div style="margin-top:3px"><span style="background:rgba(56,189,248,.18);color:#38bdf8;border:1px solid rgba(56,189,248,.35);padding:1px 5px;border-radius:3px;font-size:9px;font-weight:800;letter-spacing:0.5px" title="RS Line at or near 52-Week New High vs Benchmark (Institutional Accumulation)">⭐ RS HIGH</span></div>' if r.get('rs_new_high') else ''
+
         rows.append(f"""<tr style="background:{bg};border-bottom:1px solid #1e2d45">
   <td style="padding:9px 12px;font-weight:800;font-size:12px;white-space:nowrap">
     <div style="display:flex;align-items:center;gap:8px">
@@ -1312,11 +1548,23 @@ def build_table_rows(stocks, bg1='#0d1929', bg2='#0f1c30'):
            onmouseout="this.style.background='#1e2d45';this.style.color='#94a3b8'"
            title="Open {r['symbol']} in TradingView">TV</a>
     </div>
+    {rs_badge}
   </td>
   <td style="padding:9px 8px;font-size:10px;color:#7cb4e0;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{r['company']}</td>
   <td style="padding:9px 8px;font-size:10px;color:#64748b;white-space:nowrap">{r['sector']}</td>
   <td style="padding:9px 8px;font-family:monospace;font-size:11px;color:#94a3b8">{r['market_cap']:,}</td>
   <td style="padding:9px 8px;font-family:monospace;font-size:12px;font-weight:700;color:#e2e8f5">₹{r['current']:,.2f}</td>
+  
+  <!-- Actionable Trade Levels -->
+  <td data-sort="{r.get('pivot', 0.0)}" style="padding:9px 8px;font-family:monospace;font-size:12px;font-weight:800;color:#f8fafc" title="Base / Handle Pivot Buy Point">₹{r.get('pivot', 0.0):,.2f}</td>
+  <td data-sort="{dp}" style="padding:9px 8px;font-family:monospace;font-size:11px;font-weight:700;color:{dpc}" title="Distance to Pivot Buy Point">{dp:+.1f}%</td>
+  <td data-sort="{r.get('max_buy', 0.0)}" style="padding:9px 8px;font-family:monospace;font-size:11px;color:#94a3b8" title="Max permissible buy price (Pivot + 5%)">₹{r.get('max_buy', 0.0):,.2f}</td>
+  <td data-sort="{r.get('stop_loss', 0.0)}" style="padding:9px 8px;font-family:monospace;font-size:11px;white-space:nowrap" title="Suggested Stop-Loss based on base/handle low or 20EMA">
+    <span style="color:#cbd5e1">₹{r.get('stop_loss', 0.0):,.2f}</span>
+    <span style="color:#f87171;font-size:10px;margin-left:4px">(-{r.get('stop_risk', 0.0):.1f}%)</span>
+  </td>
+  <td data-sort="{adr}" style="padding:9px 8px;font-family:monospace;font-size:11px;color:{adrc}" title="Average Daily Range (20-day %)">{adr:.2f}%</td>
+  <td data-sort="{ud}" style="padding:9px 8px;font-family:monospace;font-size:11px;color:{udc}" title="Up/Down Volume Ratio (50-day)">{ud:.2f}</td>
   <td style="padding:9px 8px;font-family:monospace;font-size:11px;color:{r30c}">{r['r30']:+.1f}%</td>
   <td style="padding:9px 8px;font-family:monospace;font-size:11px;color:{r60c}">{r['r60']:+.1f}%</td>
   <td style="padding:9px 8px;font-family:monospace;font-size:11px;color:{r90c}">{r['r90']:+.1f}%</td>
@@ -1349,15 +1597,17 @@ TH = lambda t, i: (f'<th data-col="{i}" onclick="sortTable(this)" '
                    f'cursor:pointer;user-select:none" '
                    f'title="Click to sort">{t} <span class=\'sort-arrow\'>⇅</span></th>')
 
-HEADERS = ''.join(TH(h, i) for i, h in enumerate([
+TABLE_COLS = [
     'SYMBOL','COMPANY','NSE THEME/IND.','MKTCAP(Cr)','PRICE',
+    'PIVOT','DIST PIVOT','MAX BUY','STOP (RISK)','ADR%','U/D VOL',
     '30D%','60D%','90D%','DIST 52W','DRAWDOWN',
     'VOL CONTR','ATR RATIO','TIGHTNESS','VCP PULLS',
-    'RS PROXY %tile','VCP SCORE','LEAD SCORE',
+    'RS %tile','VCP SCORE','LEAD SCORE',
     'FINAL','GRADE','SETUP','POTENTIAL BO','PULL BACK','PP'
-]))
+]
+HEADERS = ''.join(TH(h, i) for i, h in enumerate(TABLE_COLS))
 
-def generate_html(results, scan_time, total_scanned, errors, rejects, sector_stats, industry_stats):
+def generate_html(results, scan_time, total_scanned, errors, rejects, sector_stats, industry_stats, benchmark_df=None):
     import json as _json
     elite      = [r for r in results if r['grade'] in ('A+','A')][:20]
     potbo_list = [r for r in results if r.get('pot_bo') and 'YES' in r['pot_bo']][:20]
@@ -1365,6 +1615,8 @@ def generate_html(results, scan_time, total_scanned, errors, rejects, sector_sta
     pp_list    = [r for r in results if r['pocket_pivot'] and 'YES' in r['pocket_pivot']][:20]
     watch      = [r for r in results if r['grade'] == 'B'][:20]
     emerge     = [r for r in results if r['grade'] == 'C'][:20]
+    rshigh_list = [r for r in results if r.get('rs_new_high')]
+    regime     = compute_market_regime(sector_stats, benchmark_df)
 
     def card(lbl, val, clr, sub):
         return (f'<div style="background:#0d1929;border:1px solid #1e2d45;border-radius:6px;padding:14px 16px">'
@@ -1502,13 +1754,20 @@ def generate_html(results, scan_time, total_scanned, errors, rejects, sector_sta
                 f'<table id="tbl-{tid}" style="width:100%;border-collapse:collapse;font-family:system-ui;min-width:1450px">'
                 f'<thead><tr>{HEADERS}</tr></thead><tbody>{rows}</tbody></table></div></div>')
 
-    s_elite  = tab_section('Elite VCP Candidates (A+ / A)', '#2dd4bf', elite,      'elite')
-    s_potbo  = tab_section('Potential Breakouts',           '#a855f7', potbo_list, 'potbo')
-    s_pb     = tab_section('Pull Back Setups',              '#f43f5e', pb_list,    'pb')
-    s_pp     = tab_section('Pocket Pivot Candidates',       '#fbbf24', pp_list,    'pp')
-    s_watch  = tab_section('Watchlist (Grade B)',           '#a78bfa', watch,      'watch')
-    s_emerge = tab_section('Emerging (Grade C)',            '#fb923c', emerge,     'emerge')
-    s_all    = tab_section('All Qualified Stocks',          '#60a5fa', results,    'all')
+    s_elite  = tab_section('Elite VCP Candidates (A+ / A)', '#2dd4bf', elite,       'elite')
+    s_potbo  = tab_section('Potential Breakouts',           '#a855f7', potbo_list,  'potbo')
+    s_rshigh = tab_section('RS 52W High Leaders',           '#38bdf8', rshigh_list, 'rshigh')
+    s_pb     = tab_section('Pull Back Setups',              '#f43f5e', pb_list,     'pb')
+    s_pp     = tab_section('Pocket Pivot Candidates',       '#fbbf24', pp_list,     'pp')
+    s_watch  = tab_section('Watchlist (Grade B)',           '#a78bfa', watch,       'watch')
+    s_emerge = tab_section('Emerging (Grade C)',            '#fb923c', emerge,      'emerge')
+    s_all    = tab_section('All Qualified Stocks',          '#60a5fa', results,     'all')
+
+    syms_potbo = _json.dumps([r['symbol'] for r in potbo_list])
+    syms_elite = _json.dumps([r['symbol'] for r in elite])
+    syms_rshigh = _json.dumps([r['symbol'] for r in rshigh_list])
+    syms_pp = _json.dumps([r['symbol'] for r in pp_list])
+    syms_all = _json.dumps([r['symbol'] for r in results])
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -1542,10 +1801,57 @@ def generate_html(results, scan_time, total_scanned, errors, rejects, sector_sta
     </div>
   </div>
   
+  <!-- Top-Down Market Regime Risk Banner -->
+  <div id="market-regime-banner" style="background:{regime['bg']};border:1px solid {regime['border']};border-radius:8px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;box-shadow:0 4px 16px rgba(0,0,0,.3)">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:20px">{regime['icon']}</span>
+        <span style="font-size:13px;font-weight:900;color:{regime['color']};letter-spacing:0.5px;text-transform:uppercase">{regime['headline']}</span>
+        <span style="background:{regime['color']}22;color:{regime['color']};border:1px solid {regime['color']}44;font-size:10px;font-weight:800;padding:2px 8px;border-radius:12px">{regime['regime']}</span>
+      </div>
+      <div style="font-size:11px;color:#cbd5e1;margin-top:6px;line-height:1.5">{regime['rules']}</div>
+    </div>
+    <div style="display:flex;gap:16px;align-items:center;font-size:11px;color:#94a3b8;border-left:1px solid #1e2d45;padding-left:16px;flex-wrap:wrap">
+      <div>Universe &gt; 50SMA: <b style="color:{regime['color']}">{regime['pct_a50']}%</b></div>
+      <div>Universe &gt; 200SMA: <b style="color:#60a5fa">{regime['pct_a200']}%</b></div>
+      <div id="radar-sync-tag" style="font-size:11px;color:#2dd4bf;font-weight:700"></div>
+    </div>
+  </div>
+
+  <!-- 1-Click TradingView Multi-Watchlist Quick Exports -->
+  <div style="background:#0d1929;border:1px solid #1e2d45;border-radius:8px;padding:10px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+    <div style="font-size:11px;font-weight:800;color:#2dd4bf;display:flex;align-items:center;gap:6px">
+      <span>⚡ 1-CLICK TRADINGVIEW EXPORTS:</span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="wl-btn" data-syms='{syms_potbo}' data-title="Potential Breakouts"
+        style="background:rgba(168,85,247,.12);color:#c084fc;border:1px solid rgba(168,85,247,.3);border-radius:5px;padding:5px 12px;font-size:10px;font-weight:700;cursor:pointer">
+        🔮 Potential BO ({len(potbo_list)})
+      </button>
+      <button class="wl-btn" data-syms='{syms_elite}' data-title="Elite (A+/A) Setups"
+        style="background:rgba(45,212,191,.12);color:#2dd4bf;border:1px solid rgba(45,212,191,.3);border-radius:5px;padding:5px 12px;font-size:10px;font-weight:700;cursor:pointer">
+        🏆 Elite A+/A ({len(elite)})
+      </button>
+      <button class="wl-btn" data-syms='{syms_rshigh}' data-title="RS New High Leaders"
+        style="background:rgba(56,189,248,.12);color:#38bdf8;border:1px solid rgba(56,189,248,.3);border-radius:5px;padding:5px 12px;font-size:10px;font-weight:700;cursor:pointer">
+        ⭐ RS New High ({len(rshigh_list)})
+      </button>
+      <button class="wl-btn" data-syms='{syms_pp}' data-title="Pocket Pivots"
+        style="background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.3);border-radius:5px;padding:5px 12px;font-size:10px;font-weight:700;cursor:pointer">
+        ⚡ Pocket Pivots ({len(pp_list)})
+      </button>
+      <button class="wl-btn" data-syms='{syms_all}' data-title="All Qualified Stocks"
+        style="background:#1e2d45;color:#94a3b8;border:1px solid #2d3f5a;border-radius:5px;padding:5px 12px;font-size:10px;font-weight:700;cursor:pointer">
+        📋 All Qualified ({len(results)})
+      </button>
+    </div>
+  </div>
+  
   <div style="border-bottom:1px solid #1e2d45;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding-bottom:8px">
     <div style="display:flex;gap:0;flex-wrap:wrap">
         <button class="tab-btn active" onclick="switchTab('elite',this)">&#127942; Elite (A+/A)</button>
         <button class="tab-btn" onclick="switchTab('potbo',this)">&#128302; Potential BO</button>
+        <button class="tab-btn" onclick="switchTab('rshigh',this)">⭐ RS New High ({len(rshigh_list)})</button>
         <button class="tab-btn" onclick="switchTab('pb',this)">&#129682; Pull Backs</button>
         <button class="tab-btn" onclick="switchTab('pp',this)">&#9889; Pocket Pivots</button>
         <button class="tab-btn" onclick="switchTab('watch',this)">&#128064; Watchlist (B)</button>
@@ -1559,6 +1865,7 @@ def generate_html(results, scan_time, total_scanned, errors, rejects, sector_sta
 
   <div id="tab-elite"  class="tab active">{s_elite}</div>
   <div id="tab-potbo"  class="tab">{s_potbo}</div>
+  <div id="tab-rshigh" class="tab">{s_rshigh}</div>
   <div id="tab-pb"     class="tab">{s_pb}</div>
   <div id="tab-pp"     class="tab">{s_pp}</div>
   <div id="tab-watch"  class="tab">{s_watch}</div>
@@ -1624,49 +1931,81 @@ def main():
     sector_stats = {}
     industry_stats = {}
 
-    print(f'⚡ Bulk downloading price data for {total} NSE stocks in parallel via Yahoo Finance...')
-    clean_symbols = [s for s in symbols_to_scan if isinstance(s, str) and s.strip() and not s.startswith('DUMMY')]
-    yf_tickers = [s + '.NS' for s in clean_symbols]
-    end_dt = datetime.now()
-    start_dt = end_dt - timedelta(days=400)
+    # Local Caching Setup for 10x Scan Speed
+    cache_file = dir_path / 'vcp_stock_cache.pkl'
+    today_str = datetime.now().strftime('%Y-%m-%d')
+    force_refresh = ('--refresh' in sys.argv or '--force-refresh' in sys.argv)
     
     global BULK_STOCK_DATA, BENCHMARK_HISTORY
     BULK_STOCK_DATA = {}
     BENCHMARK_HISTORY = None
     
-    try:
-        chunk_size = 150
-        for c_idx in range(0, len(yf_tickers), chunk_size):
-            chunk_tickers = yf_tickers[c_idx:c_idx + chunk_size]
-            b_df = yf.download(chunk_tickers, start=start_dt, end=end_dt, group_by='ticker', threads=True, progress=False)
-            if b_df is not None and not b_df.empty:
-                if isinstance(b_df.columns, pd.MultiIndex):
-                    for t_str in chunk_tickers:
-                        if t_str in b_df.columns.levels[0]:
-                            s_df = b_df[t_str].dropna(subset=['Close'])
-                            if len(s_df) >= 252:
-                                sym_clean = t_str.replace('.NS', '')
-                                BULK_STOCK_DATA[sym_clean] = s_df[['Open','High','Low','Close','Volume']].dropna()
-                else:
-                    if len(b_df) >= 252:
-                        sym_clean = chunk_tickers[0].replace('.NS', '')
-                        BULK_STOCK_DATA[sym_clean] = b_df[['Open','High','Low','Close','Volume']].dropna()
-        print(f"✅ Bulk download complete! Cached {len(BULK_STOCK_DATA)} stocks in memory.\n")
-    except Exception as b_err:
-        print(f"⚠️ Bulk download warning: {b_err}. Falling back to individual fetching.\n")
+    cache_loaded = False
+    if not force_refresh and cache_file.exists():
+        try:
+            with open(cache_file, 'rb') as cf:
+                cache_obj = pickle.load(cf)
+            if isinstance(cache_obj, dict):
+                c_date = cache_obj.get('date', '')
+                c_stocks = cache_obj.get('stocks', {})
+                c_bench = cache_obj.get('benchmark', None)
+                if c_date == today_str and len(c_stocks) >= 100:
+                    BULK_STOCK_DATA = c_stocks
+                    BENCHMARK_HISTORY = c_bench
+                    cache_loaded = True
+                    print(f"⚡ [Fast Cache] Loaded {len(BULK_STOCK_DATA)} stocks from today's cache ({today_str}). Zero network download needed!\n")
+        except Exception as ce:
+            print(f"⚠️ Cache read note: {ce}. Will proceed with fresh download.")
 
-    print(f'⚡ Fetching benchmark data (Nifty 500 / Nifty 50) for relative strength calculation...')
-    try:
-        b_df = yf.download('^CRSLDX', start=start_dt, end=end_dt, progress=False)
-        if b_df is None or b_df.empty or len(b_df) < 150:
-            b_df = yf.download('^NSEI', start=start_dt, end=end_dt, progress=False)
-        if isinstance(b_df.columns, pd.MultiIndex):
-            b_df.columns = b_df.columns.get_level_values(0)
-        BENCHMARK_HISTORY = b_df[['Close']].dropna()
-        if BENCHMARK_HISTORY is not None and not BENCHMARK_HISTORY.empty:
-            print(f"✅ Benchmark data loaded: {len(BENCHMARK_HISTORY)} sessions.\n")
-    except Exception as b_err:
-        print(f"⚠️ Benchmark fetch warning: {b_err}. Falling back to unadjusted returns.\n")
+    if not cache_loaded:
+        print(f'⚡ Bulk downloading price data for {total} NSE stocks in parallel via Yahoo Finance...')
+        clean_symbols = [s for s in symbols_to_scan if isinstance(s, str) and s.strip() and not s.startswith('DUMMY')]
+        yf_tickers = [s + '.NS' for s in clean_symbols]
+        end_dt = datetime.now()
+        start_dt = end_dt - timedelta(days=400)
+        
+        try:
+            chunk_size = 150
+            for c_idx in range(0, len(yf_tickers), chunk_size):
+                chunk_tickers = yf_tickers[c_idx:c_idx + chunk_size]
+                b_df = yf.download(chunk_tickers, start=start_dt, end=end_dt, group_by='ticker', threads=True, progress=False)
+                if b_df is not None and not b_df.empty:
+                    if isinstance(b_df.columns, pd.MultiIndex):
+                        for t_str in chunk_tickers:
+                            if t_str in b_df.columns.levels[0]:
+                                s_df = b_df[t_str].dropna(subset=['Close'])
+                                if len(s_df) >= 252:
+                                    sym_clean = t_str.replace('.NS', '')
+                                    BULK_STOCK_DATA[sym_clean] = s_df[['Open','High','Low','Close','Volume']].dropna()
+                    else:
+                        if len(b_df) >= 252:
+                            sym_clean = chunk_tickers[0].replace('.NS', '')
+                            BULK_STOCK_DATA[sym_clean] = b_df[['Open','High','Low','Close','Volume']].dropna()
+            print(f"✅ Bulk download complete! Cached {len(BULK_STOCK_DATA)} stocks in memory.\n")
+        except Exception as b_err:
+            print(f"⚠️ Bulk download warning: {b_err}. Falling back to individual fetching.\n")
+
+        print(f'⚡ Fetching benchmark data (Nifty 500 / Nifty 50) for relative strength calculation...')
+        try:
+            b_df = yf.download('^CRSLDX', start=start_dt, end=end_dt, progress=False)
+            if b_df is None or b_df.empty or len(b_df) < 150:
+                b_df = yf.download('^NSEI', start=start_dt, end=end_dt, progress=False)
+            if isinstance(b_df.columns, pd.MultiIndex):
+                b_df.columns = b_df.columns.get_level_values(0)
+            BENCHMARK_HISTORY = b_df[['Close']].dropna()
+            if BENCHMARK_HISTORY is not None and not BENCHMARK_HISTORY.empty:
+                print(f"✅ Benchmark data loaded: {len(BENCHMARK_HISTORY)} sessions.\n")
+        except Exception as b_err:
+            print(f"⚠️ Benchmark fetch warning: {b_err}. Falling back to unadjusted returns.\n")
+            
+        # Save cache for today
+        if len(BULK_STOCK_DATA) >= 50:
+            try:
+                with open(cache_file, 'wb') as cf:
+                    pickle.dump({'date': today_str, 'stocks': BULK_STOCK_DATA, 'benchmark': BENCHMARK_HISTORY}, cf)
+                print(f"💾 Saved local price cache to {cache_file.name} for instant repeat scans.\n")
+            except Exception as se:
+                print(f"⚠️ Cache save warning: {se}")
 
     all_universe_composites = []
     print(f'Scanning {total} NSE stocks via Yahoo Finance...\n')
@@ -1804,7 +2143,7 @@ def main():
     html_out = out_dir / 'vcp_scanner_results.html'
 
     print(f'\nGenerating HTML report...')
-    html = generate_html(results, scan_time, total, errors, rejects, sector_stats, industry_stats)
+    html = generate_html(results, scan_time, total, errors, rejects, sector_stats, industry_stats, BENCHMARK_HISTORY)
     html_out.write_text(html, encoding='utf-8')
     print(f'✅ HTML saved: {html_out}')
 
@@ -1906,6 +2245,14 @@ def main():
             'company': r['company'],
             'price': r['current'],
             'mktcap': r['market_cap'],
+            'pivot': r.get('pivot', 0.0),
+            'dist_pivot': r.get('dist_pivot', 0.0),
+            'max_buy': r.get('max_buy', 0.0),
+            'stop_loss': r.get('stop_loss', 0.0),
+            'stop_risk': r.get('stop_risk', 0.0),
+            'adr_pct': r.get('adr_pct', 0.0),
+            'ud_vol': r.get('ud_vol', 1.0),
+            'rs_new_high': r.get('rs_new_high', False),
             'r30': r['r30'],
             'r60': r['r60'],
             'r90': r['r90'],

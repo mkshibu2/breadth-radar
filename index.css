@@ -512,7 +512,7 @@ body {
 
 .analysis-strip {
   display: grid;
-  grid-template-columns: minmax(230px, 1.85fr) repeat(7, minmax(0, 1fr));
+  grid-template-columns: minmax(260px, 1.4fr) minmax(180px, 1fr) minmax(180px, 1fr) minmax(200px, 1.2fr);
   background: var(--bg3);
   border: 1px solid var(--border);
   border-top: none;
@@ -2990,29 +2990,27 @@ canvas#bsr-chart {
 
 @media(max-width:1150px) {
   .analysis-strip {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .analysis-strip>.as-cell:first-child {
-    grid-column: 1 / -1;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+
+  .analysis-strip>.as-cell:nth-child(2) {
     border-bottom: 1px solid var(--border);
     border-right: none;
   }
 
-  .analysis-strip>.as-cell {
-    border-bottom: 1px solid var(--border);
-  }
-
-  .analysis-strip>.as-cell:nth-child(5n) {
-    border-right: none;
+  .analysis-strip>.as-cell:nth-child(3) {
+    border-bottom: none;
+    border-right: 1px solid var(--border);
   }
 
   .analysis-strip>.as-cell:last-child {
-    border-right: none;
-  }
-
-  .analysis-strip>.as-cell:nth-child(n+6) {
     border-bottom: none;
+    border-right: none;
   }
 }
 
@@ -5341,4 +5339,139 @@ thead th[onclick]:hover {
   display: flex;
   justify-content: flex-end;
   gap: 8px
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* 60-Second EOD Checklist Modal                                              */
+/* -------------------------------------------------------------------------- */
+#eod-checklist-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 3, 5, .85);
+  z-index: 5000;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+#eod-checklist-modal-overlay.open {
+  display: flex;
+}
+
+#eod-checklist-modal {
+  background: var(--bg2);
+  border: 1px solid var(--bdr2);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 760px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .7);
+  animation: tipIn .2s cubic-bezier(.2, 0, .2, 1);
+  overflow: hidden;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.eod-chk-head {
+  padding: 16px 20px 14px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.eod-chk-body {
+  padding: 18px 20px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.eod-chk-close {
+  background: none;
+  border: none;
+  color: var(--dim);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all .15s;
+}
+
+.eod-chk-close:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, .08);
+}
+
+.eod-priority-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+
+.eod-priority-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .5px;
+}
+
+.eod-priority-badge {
+  font-size: 9.5px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-weight: 700;
+}
+
+.eod-rules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.eod-rule-item {
+  background: rgba(255, 255, 255, .02);
+  border: 1px solid rgba(255, 255, 255, .05);
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+
+.eod-rule-name {
+  display: block;
+  font-size: 10px;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.eod-rule-val {
+  display: block;
+  font-size: 11px;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.eod-stop-banner {
+  background: rgba(248, 113, 113, .1);
+  border: 1px solid rgba(248, 113, 113, .25);
+  border-radius: 4px;
+  color: #fca5a5;
+  font-size: 11px;
+  padding: 8px 10px;
+  margin-top: 8px;
+  line-height: 1.4;
 }

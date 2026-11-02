@@ -66,9 +66,9 @@
   </div>
 
   <div class="src-bar">
-    <a class="src-btn" href="manual.html" target="_blank"
-      style="color:var(--lime);border-color:rgba(74,222,128,.25);background:rgba(74,222,128,.04)"><span class="dot"
-        style="background:var(--lime)"></span>📖 User Guide</a>
+    <button class="src-btn" onclick="openEodChecklistModal()"
+      style="color:var(--lime);border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.08);cursor:pointer;font-weight:700"><span class="dot"
+        style="background:var(--lime)"></span>⚡ 60s EOD Checklist</button>
     <a class="src-btn" href="playbook.html" target="_blank"
       style="color:var(--yellow);border-color:rgba(251,191,36,.25);background:rgba(251,191,36,.04)"><span class="dot"
         style="background:var(--yellow)"></span>📋 Playbook</a>
@@ -199,48 +199,6 @@
         <button class="info-btn" onclick="showInfoTip('dist-days',this)" title="About this indicator">i</button>
       </div>
 
-      <div class="as-cell" style="border-top:2px solid var(--orange)">
-        <div class="as-lbl">🔄 Breadth Divergence</div>
-        <div class="as-phase" id="as-div-status" style="color:var(--dim)">—</div>
-        <div class="as-desc" id="as-div-desc">Price vs Breadth · 5d</div>
-        <div class="as-pills" id="as-div-pills"></div>
-        <button class="info-btn" onclick="showInfoTip('breadth-div',this)" title="About this indicator">i</button>
-      </div>
-
-      <div class="as-cell" style="border-top:2px solid var(--accent)">
-        <div class="as-lbl">📅 Trend Bias</div>
-        <div style="display:flex;align-items:baseline;gap:6px">
-          <div class="as-phase" id="as-bias-score" style="color:var(--dim)">—</div>
-          <div style="font-size:11px;color:var(--sub)" id="as-bias-label"></div>
-        </div>
-        <div class="as-desc" id="as-bias-desc">Up vs Down days · 10d</div>
-        <div class="as-pills" id="as-bias-pills"></div>
-        <button class="info-btn" onclick="showInfoTip('trend-bias',this)" title="About this indicator">i</button>
-      </div>
-
-      <div class="as-cell" style="border-top:2px solid var(--purple)">
-        <div class="as-lbl">🏦 Inst. Bias 10d</div>
-        <div style="display:flex;align-items:baseline;gap:6px">
-          <div class="as-phase" id="as-inst-score" style="color:var(--dim)">—</div>
-          <div style="font-size:11px;color:var(--sub)" id="as-inst-label"></div>
-        </div>
-        <div class="as-desc" id="as-inst-desc">Acc vs Dist · last 10d</div>
-        <div style="display:flex;gap:3px;margin-top:5px;height:5px;border-radius:2px;overflow:hidden" id="as-inst-bar">
-        </div>
-        <button class="info-btn" onclick="showInfoTip('inst-bias',this)" title="About this indicator">i</button>
-      </div>
-
-      <div class="as-cell" style="border-top:2px solid var(--accent)">
-        <div class="as-lbl">📈 Expansion Rate</div>
-        <div style="display:flex;align-items:baseline;gap:4px">
-          <div class="as-phase" id="as-exp-rate" style="color:var(--dim)">—</div>
-          <div style="font-size:10px;color:var(--sub)" id="as-exp-rate-unit">pts/d</div>
-        </div>
-        <div class="as-desc" id="as-exp-rate-desc">Score velocity · 5d</div>
-        <div style="font-size:10px;font-weight:600;margin-top:3px" id="as-exp-rate-sig"></div>
-        <button class="info-btn" onclick="showInfoTip('breadth-expansion',this)" title="About this indicator">i</button>
-      </div>
-
       <div class="as-cell" style="border-top:2px solid var(--teal);border-right:none;">
         <div class="as-lbl" style="color:var(--teal)">📈 Mkt Exposure</div>
         <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:6px">
@@ -269,6 +227,10 @@
       <div class="card-head">
         <div class="card-title">🧭 Market Summary &amp; Trading Guidance</div>
         <div style="display:flex;align-items:center;gap:8px">
+          <button class="src-btn" onclick="openEodChecklistModal()"
+            style="font-size:11px;padding:3px 9px;color:var(--lime);border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.06);cursor:pointer;font-weight:600">
+            ⚡ 60s Checklist
+          </button>
           <div id="msem-updated" style="font-size:11px;color:var(--dim)"></div><button class="info-btn"
             onclick="showInfoTip('market-summary',this)" title="About this indicator">i</button>
         </div>
@@ -679,50 +641,10 @@
                     History accumulates automatically each day you load the dashboard.
                     <span id="brrg-hist-info" style="color:var(--teal);margin-left:6px"></span>
                   </div>
-                  <button onclick="brrgShowSeedPanel()"
-                    style="font-size:9px;padding:3px 9px;border-radius:3px;border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.08);color:var(--purple);cursor:pointer;font-weight:600">
-                    ⚡ Bootstrap History
-                  </button>
+                  
                 </div>
 
-                <div id="brrg-seed-panel"
-                  style="display:none;margin-top:10px;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:5px">
-                  <div style="font-size:10px;font-weight:700;color:var(--purple);margin-bottom:6px">⚡ Bootstrap RRG
-                    History</div>
-                  <div
-                    style="margin-bottom:10px;padding:8px;background:rgba(45,212,191,.05);border:1px solid rgba(45,212,191,.15);border-radius:4px">
-                    <div style="font-size:9px;font-weight:700;color:var(--teal);margin-bottom:3px">Option A — Seed from
-                      your 30-Day History</div>
-                    <div style="font-size:9px;color:var(--dim);margin-bottom:6px;line-height:1.5">Uses your existing EOD
-                      entries (A/D ratio, %>EMA20 etc.) to generate an approximate market proxy series immediately.
-                    </div>
-                    <button onclick="brrgSeedFromEod()"
-                      style="font-size:9px;padding:4px 12px;border-radius:3px;border:none;background:var(--teal);color:#0e1420;cursor:pointer;font-weight:700">Seed
-                      from History Now</button>
-                    <span id="brrg-seed-eod-msg" style="font-size:9px;margin-left:8px;color:var(--dim)"></span>
-                  </div>
-                  <div
-                    style="padding:8px;background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.15);border-radius:4px">
-                    <div style="font-size:9px;font-weight:700;color:var(--purple);margin-bottom:3px">Option B — Paste
-                      Sector Score CSV</div>
-                    <div style="font-size:9px;color:var(--dim);margin-bottom:6px;line-height:1.5">
-                      Format: <code style="color:var(--accent)">date,sector,a20_pct,a50_pct,a200_pct</code><br>
-                      Example: <code style="color:var(--dim)">2026-05-01,Capital Goods,68.5,74.2,71.0</code>
-                    </div>
-                    <textarea id="brrg-csv-input"
-                      placeholder="2026-04-20,Capital Goods,65,72,70&#10;2026-04-20,Pharma,58,65,62"
-                      style="width:100%;height:70px;background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:3px;padding:6px 8px;font-size:9px;font-family:var(--mono);resize:vertical;box-sizing:border-box"></textarea>
-                    <div style="display:flex;gap:8px;margin-top:6px;align-items:center">
-                      <button onclick="brrgImportCsv()"
-                        style="font-size:9px;padding:4px 12px;border-radius:3px;border:none;background:var(--purple);color:#fff;cursor:pointer;font-weight:700">Import
-                        CSV</button>
-                      <button onclick="brrgClearHistory()"
-                        style="font-size:9px;padding:4px 10px;border-radius:3px;border:1px solid rgba(248,113,113,.3);background:transparent;color:var(--red);cursor:pointer">Clear
-                        History</button>
-                      <span id="brrg-csv-msg" style="font-size:9px;color:var(--dim)"></span>
-                    </div>
-                  </div>
-                </div>
+                
               </div>
 
             </div>
@@ -929,40 +851,6 @@
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-head" style="cursor:pointer" onclick="toggleCollapse('snap-body-wrap','snap-toggle-icon')">
-            <div class="card-title">Detailed Metrics Snapshot</div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <button class="info-btn" onclick="event.stopPropagation();showInfoTip('snapshot',this)"
-                title="About Snapshot">i</button>
-              <span id="snap-toggle-icon"
-                style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block;transform:rotate(-90deg)">&#9660;</span>
-            </div>
-          </div>
-          <div id="snap-body-wrap" style="display:none">
-            <div class="snap-wrap">
-              <table class="snap-table">
-                <thead>
-                  <tr>
-                    <th>Metric</th>
-                    <th class="r">Latest</th>
-                    <th class="r">Prev Day</th>
-                    <th class="r">Change</th>
-                    <th class="r">10-Day Trend</th>
-                    <th class="r">Direction</th>
-                    <th class="r">Signal</th>
-                  </tr>
-                </thead>
-                <tbody id="snap-body">
-                  <tr>
-                    <td colspan="7" style="color:var(--dim);padding:20px;text-align:center;font-size:11px">SAVE YOUR
-                      FIRST ENTRY TO SEE SNAPSHOT</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
 
         <div class="card">
           <div class="card-head" style="cursor:pointer" onclick="toggleCollapse('hist-body-wrap','hist-toggle-icon')">
@@ -1231,82 +1119,7 @@
           </div>
         </div>
 
-        <div class="card" id="wbd-card" style="border-top:2px solid var(--orange)">
-          <div class="card-head">
-            <div class="card-title" style="color:var(--orange)">🔄 Weekly Breadth Divergence Alert</div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <button class="info-btn" onclick="showInfoTip('breadth-div',this)" title="About Divergence">i</button>
-              <button onclick="toggleCollapse('wbd-details','wbd-toggle-icon')"
-                style="font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid rgba(251,146,60,.3);background:rgba(251,146,60,.08);color:var(--orange);cursor:pointer;font-weight:600">Details</button>
-              <span id="wbd-toggle-icon"
-                style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block;transform:rotate(-90deg)">&#9660;</span>
-            </div>
-          </div>
-
-          <div style="display:grid;grid-template-columns:120px 1fr auto;gap:0;border-top:2px solid var(--orange)">
-            <div
-              style="padding:12px 12px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center">
-              <div
-                style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-bottom:4px">
-                Signal</div>
-              <div style="font-family:var(--disp);font-size:22px;font-weight:800;line-height:1.1;transition:color .4s"
-                id="wbd-status">—</div>
-              <div style="font-size:10px;margin-top:4px;font-weight:600;color:var(--sub)" id="wbd-status-sub">5+ records
-                needed</div>
-            </div>
-            <div style="padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:5px">
-              <div style="display:flex;gap:16px">
-                <div>
-                  <div
-                    style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin-bottom:1px">
-                    Price 5d</div>
-                  <div style="font-family:var(--disp);font-size:22px;font-weight:800;line-height:1" id="wbd-price-chg">—
-                  </div>
-                </div>
-                <div>
-                  <div
-                    style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin-bottom:1px">
-                    Breadth 5d</div>
-                  <div style="font-family:var(--disp);font-size:22px;font-weight:800;line-height:1"
-                    id="wbd-breadth-chg">—</div>
-                </div>
-              </div>
-              <div id="wbd-pills" style="display:flex;gap:4px;flex-wrap:wrap"></div>
-            </div>
-            <div
-              style="padding:10px 12px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;gap:4px">
-              <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px">Action</div>
-              <div style="font-size:11px;color:var(--sub);line-height:1.4;text-align:right;max-width:120px"
-                id="wbd-desc">Save 5+ EOD records.</div>
-            </div>
-          </div>
-
-          <div id="wbd-details" style="display:none">
-            <div style="padding:10px 14px;border-top:1px solid var(--border)">
-              <div
-                style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-bottom:8px">
-                Recent Divergence History</div>
-              <div id="wbd-history" style="font-size:11px;color:var(--dim);text-align:center;padding:10px 0">No records
-                yet.</div>
-            </div>
-            <div style="padding:8px 14px 10px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">
-              <span
-                style="font-size:9px;background:rgba(74,222,128,.12);color:var(--lime);padding:2px 6px;border-radius:3px;border:1px solid rgba(74,222,128,.2)">Confirmed
-                ↑</span>
-              <span
-                style="font-size:9px;background:rgba(248,113,113,.12);color:var(--red);padding:2px 6px;border-radius:3px;border:1px solid rgba(248,113,113,.2)">Confirmed
-                ↓</span>
-              <span
-                style="font-size:9px;background:rgba(251,146,60,.12);color:var(--orange);padding:2px 6px;border-radius:3px;border:1px solid rgba(251,146,60,.2)">⚠
-                Bear Diverge</span>
-              <span
-                style="font-size:9px;background:rgba(45,212,191,.10);color:var(--teal);padding:2px 6px;border-radius:3px;border:1px solid rgba(45,212,191,.2)">✦
-                Bull Diverge</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" id="pet-card" style="border-top:2px solid var(--accent)">
+<div class="card" id="pet-card" style="border-top:2px solid var(--accent)">
           <div class="card-head" style="cursor:pointer" onclick="toggleCollapse('pet-body','pet-toggle-icon')">
             <div class="card-title" style="color:var(--accent)">📈 Personal Exposure Tracker</div>
             <div style="display:flex;align-items:center;gap:6px">
@@ -1933,6 +1746,7 @@
               style="font-size:11px;padding:4px 10px;color:var(--blue);border-color:rgba(59,130,246,.3)"
               onclick="cpTriggerScan()" title="Trigger Daily VCP Scanner">🚀 Run Scan</button>
             <button class="btn btn-sec" style="font-size:11px;padding:4px 10px" onclick="clearInputs()">✕ Clear</button>
+            <button class="btn btn-sec" style="font-size:11px;padding:4px 10px;color:var(--lime);border-color:rgba(74,222,128,.3);margin-left:auto" onclick="openEodChecklistModal()">⚡ 60s EOD Checklist</button>
           </div>
 
           <div class="ueg-label">🔵 Nifty 500 Breadth — <a href="https://www.nseindia.com/market-data/advance"
@@ -2781,6 +2595,179 @@
         <div class="scc-wl-copy-actions">
           <button class="btn btn-sec" onclick="sccWlCloseCopyModal()">Close</button>
           <button class="btn btn-primary" onclick="sccWlCopyTextareaContent()">Copy to Clipboard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 60-SECOND EOD PURCHASE DECISION CHECKLIST MODAL -->
+  <div id="eod-checklist-modal-overlay" onclick="if(event.target===this)closeEodChecklistModal()">
+    <div id="eod-checklist-modal">
+      <div class="eod-chk-head">
+        <div>
+          <div style="font-size:15px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px">
+            <span style="color:var(--lime)">⚡</span> 60-Second EOD Purchase Decision Checklist
+          </div>
+          <div style="font-size:11px;color:var(--dim);margin-top:3px">
+            Top-down priority funnel for next-day swing trading decisions (O'Neil &amp; Minervini)
+          </div>
+        </div>
+        <button class="eod-chk-close" onclick="closeEodChecklistModal()" title="Close (Esc)">✕</button>
+      </div>
+
+      <div class="eod-chk-body">
+        <!-- Priority 1 -->
+        <div class="eod-priority-card" style="border-left:3px solid var(--accent)">
+          <div class="eod-priority-title" style="color:var(--accent)">
+            <span>1️⃣ PRIORITY 1: The "Permission" Gate (O'Neil / IBD Core)</span>
+            <span class="eod-priority-badge" style="background:rgba(91,163,245,.15);color:var(--accent)">Status &amp; Analysis Strip</span>
+          </div>
+          <p style="font-size:11.5px;color:var(--sub);margin:6px 0 8px">
+            Ask: <b>Does the market permit me to buy?</b> Stop immediately if conditions are hostile.
+          </p>
+          <div class="eod-rules-grid">
+            <div class="eod-rule-item">
+              <span class="eod-rule-name">Market Status</span>
+              <span class="eod-rule-val">
+                <b>Confirmed Uptrend</b> = Green light<br>
+                <b>Uptrend Under Pressure</b> = Selective / 0.5R<br>
+                <b>Rally Attempt</b> = Wait for FTD<br>
+                <b style="color:var(--red)">Correction = NO TRADES</b>
+              </span>
+            </div>
+            <div class="eod-rule-item">
+              <span class="eod-rule-name">Distribution Days (25d)</span>
+              <span class="eod-rule-val">
+                <b style="color:var(--lime)">0–3 Days</b>: Clean<br>
+                <b style="color:var(--yellow)">4–5 Days</b>: Halve position sizes<br>
+                <b style="color:var(--red)">6+ Days</b>: Freeze all new buys
+              </span>
+            </div>
+            <div class="eod-rule-item">
+              <span class="eod-rule-name">FTD Status</span>
+              <span class="eod-rule-val">
+                <b>Confirmed</b> = Valid rally<br>
+                <b style="color:var(--red)">Voided</b> = Low undercut, rally failed
+              </span>
+            </div>
+          </div>
+          <div class="eod-stop-banner">
+            ⛔ <b>RULE:</b> If Market Status is <b>Correction</b> or Distribution Days are <b>6+</b>, <b>STOP HERE.</b> Zero new buys tomorrow. Preserve cash.
+          </div>
+        </div>
+
+        <!-- Priority 2 -->
+        <div class="eod-priority-card" style="border-left:3px solid var(--yellow)">
+          <div class="eod-priority-title" style="color:var(--yellow)">
+            <span>2️⃣ PRIORITY 2: The "Risk &amp; Exposure" Dial</span>
+            <span class="eod-priority-badge" style="background:rgba(251,191,36,.15);color:var(--yellow)">Breadth Score &amp; BSR</span>
+          </div>
+          <p style="font-size:11.5px;color:var(--sub);margin:6px 0 8px">
+            Determine <b>how much total capital to deploy</b> and <b>what risk unit (R) to assign per trade</b>.
+          </p>
+          <div class="eod-rules-grid">
+            <div class="eod-rule-item">
+              <span class="eod-rule-name">Daily Breadth Score</span>
+              <span class="eod-rule-val">
+                <b style="color:var(--lime)">≥ 55 (Healthy)</b>: 1–2R (75–100% exp)<br>
+                <b style="color:var(--green)">45–54 (Expanding)</b>: 1R (50–75% exp)<br>
+                <b style="color:var(--yellow)">35–44 (Caution)</b>: 0.5R (25–50% exp)<br>
+                <b style="color:var(--orange)">20–34 (Defensive)</b>: 0.25R pilot only<br>
+                <b style="color:var(--red)">&lt; 20 (Correction)</b>: 0R cash
+              </span>
+            </div>
+            <div class="eod-rule-item">
+              <span class="eod-rule-name">Breadth Momentum &amp; Thrust</span>
+              <span class="eod-rule-val">
+                <b style="color:var(--lime)">Positive (+5 to +10)</b>: Expanding participation<br>
+                <b style="color:var(--red)">Negative</b>: Narrowing breadth, tighten trailing stops
+              </span>
+            </div>
+            <div class="eod-rule-item">
+              <span class="eod-rule-name">BSR (Breakout Success Rate)</span>
+              <span class="eod-rule-val">
+                <b style="color:var(--lime)">≥ 65%</b>: Breakouts rewarded<br>
+                <b style="color:var(--yellow)">40–65%</b>: Mixed, be selective<br>
+                <b style="color:var(--red)">&lt; 40%</b>: Breakouts failing in wild → halve position size
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Priority 3 -->
+        <div class="eod-priority-card" style="border-left:3px solid var(--teal)">
+          <div class="eod-priority-title" style="color:var(--teal)">
+            <span>3️⃣ PRIORITY 3: The "Sector Leadership" Compass</span>
+            <span class="eod-priority-badge" style="background:rgba(45,212,191,.15);color:var(--teal)">Sector Command Tab</span>
+          </div>
+          <p style="font-size:11.5px;color:var(--sub);margin:6px 0 8px">
+            Over 50% of a stock's gain is driven by its sector. <b>Buy leaders in leading sectors only.</b>
+          </p>
+          <div class="eod-rules-grid">
+            <div class="eod-rule-item">
+              <span class="eod-rule-name">RRG Quadrant</span>
+              <span class="eod-rule-val">
+                Focus strictly on sectors in or heading toward <b>Leading</b> (green) or <b>Improving</b> (blue). Avoid Lagging.
+              </span>
+            </div>
+            <div class="eod-rule-item">
+              <span class="eod-rule-name">Weekly Heatmap</span>
+              <span class="eod-rule-val">
+                Look for rows showing <b>consecutive dark green blocks</b> (outperformance vs Nifty 50).
+              </span>
+            </div>
+            <div class="eod-rule-item">
+              <span class="eod-rule-name">Sector % > 50 SMA</span>
+              <span class="eod-rule-val">
+                Ensure sector has <b>≥ 50–60%</b> stocks above 50 SMA. Avoid sectors where &lt; 30% are above 50 SMA.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Priority 4 -->
+        <div class="eod-priority-card" style="border-left:3px solid var(--purple)">
+          <div class="eod-priority-title" style="color:var(--purple)">
+            <span>4️⃣ PRIORITY 4: The "Stock Setup" Trigger</span>
+            <span class="eod-priority-badge" style="background:rgba(168,85,247,.15);color:var(--purple)">VCP Screener</span>
+          </div>
+          <p style="font-size:11.5px;color:var(--sub);margin:6px 0 8px">
+            Only execute if the individual stock meets the strict O'Neil / Minervini breakout criteria.
+          </p>
+          <div class="eod-rules-grid">
+            <div class="eod-rule-item">
+              <span class="eod-rule-name">VCP Grade &amp; Score</span>
+              <span class="eod-rule-val">
+                Prioritize <b>Elite A+ or A</b> candidates (Final Composite Score ≥ 80).
+              </span>
+            </div>
+            <div class="eod-rule-item">
+              <span class="eod-rule-name">RS Proxy Percentile</span>
+              <span class="eod-rule-val">
+                Must be <b>≥ 80</b> (ideally <b>≥ 90</b>) vs Nifty 500. Outperform 80-90% of all stocks.
+              </span>
+            </div>
+            <div class="eod-rule-item">
+              <span class="eod-rule-name">Pivot &amp; Volume Dry-Up</span>
+              <span class="eod-rule-val">
+                Stock resting within <b>2–3% of pivot</b> with contraction-day volume <b>below 50d average</b>.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 60-Second Execution Checklist Box -->
+        <div style="background:var(--bg3);border:1px solid rgba(74,222,128,.3);border-radius:8px;padding:14px 16px;margin-top:4px">
+          <div style="font-size:12px;font-weight:800;color:var(--lime);margin-bottom:8px;text-transform:uppercase;letter-spacing:.6px">
+            ⚡ Quick 4-Question Nightly Execution Run
+          </div>
+          <div style="font-size:11.5px;color:var(--text);line-height:1.6">
+            1. <b>Permission:</b> Is Market Status in Confirmed Uptrend with &lt; 5 Distribution Days? <i>(If No → No new buys tomorrow.)</i><br>
+            2. <b>Sizing:</b> What does Breadth Score permit? <i>(If &lt; 35 → Max 0.25R pilot. If ≥ 45 → Normal 1R.)</i><br>
+            3. <b>Reality Check:</b> Is BSR ≥ 40%? <i>(If No → Breakouts failing. Cut position size by half.)</i><br>
+            4. <b>Stock Setup:</b> Is candidate an A/A+ setup with RS ≥ 80 in a Leading sector? <i>(If Yes → Place buy limit at pivot with 7-8% stop.)</i>
+          </div>
         </div>
       </div>
     </div>
