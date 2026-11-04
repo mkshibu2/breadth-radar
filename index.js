@@ -1957,51 +1957,122 @@ function sccApplyWatchlistVisibility() {
   } else { panel.style.display = 'none'; if (btn) { btn.style.background = 'rgba(91, 163, 245, 0.06)'; btn.style.borderColor = 'rgba(91, 163, 245, 0.2)'; btn.style.color = 'var(--accent)'; } }
 }
 function sccToggleWatchlist() { _sccShowWatchlist = !_sccShowWatchlist; localStorage.setItem('_sccShowWatchlist', _sccShowWatchlist); sccApplyWatchlistVisibility(); }
-function sccWlRenderTabs() {
-  const tabsBar = document.getElementById('scc-wl-tabs-bar'); if (!tabsBar) return; const names = Object.keys(_sccWatchlists); let html = ''; names.forEach(name => {
-    const isActive = name === _sccActiveWatchlist; const tabColor = isActive ? 'var(--teal)' : 'var(--dim)'; const borderStyle = isActive ? 'border-bottom: 2px solid var(--teal); font-weight: 700;' : 'border-bottom: 2px solid transparent; font-weight: 600;'; const closeBtn = names.length > 1 ? `<span class="scc-wl-tab-close" onclick="event.stopPropagation(); sccWlDeleteTab('${name.replace(/'/g, "\\'")}')" style="font-size:11px; margin-left:6px; opacity:0.5; color:var(--dim); cursor:pointer; font-weight:bold; width:12px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%;" onmouseover="this.style.opacity='1'; this.style.color='var(--red)';" onmouseout="this.style.opacity='0.5'; this.style.color='var(--dim)';">×</span>` : ''; html += `
-      <div onclick="sccWlSwitchTab('${name.replace(/'/g, "\\'")}')" 
-           draggable="true"
-           ondragstart="sccTabDragStart(event, '${name.replace(/'/g, "\\'")}')"
-           ondragover="sccTabDragOver(event)"
-           ondrop="sccTabDrop(event, '${name.replace(/'/g, "\\'")}')"
-           ondragend="sccTabDragEnd(event)"
-           style="padding: 6px 8px; font-size:10px; color:${tabColor}; ${borderStyle} cursor:pointer; display:flex; align-items:center; gap:2px; height: 100%; box-sizing:border-box; user-select:none; transition: color 0.15s;"
-           onmouseover="this.style.color='var(--text)'"
-           onmouseout="this.style.color='${isActive ? 'var(--teal)' : 'var(--dim)'}'">
-        <span>${name}</span>
-        ${closeBtn}
-      </div>
-    `;
-  }); {
-    const isActive = _sccActiveWatchlist === 'VCP'; const tabColor = isActive ? 'var(--teal)' : 'var(--dim)'; const borderStyle = isActive ? 'border-bottom: 2px solid var(--teal); font-weight: 700;' : 'border-bottom: 2px solid transparent; font-weight: 600;'; html += `
-      <div onclick="sccWlSwitchTab('VCP')" 
-           style="padding: 6px 8px; font-size:10px; color:${tabColor}; ${borderStyle} cursor:pointer; display:flex; align-items:center; gap:2px; height: 100%; box-sizing:border-box; user-select:none; transition: color 0.15s;"
-           onmouseover="this.style.color='var(--text)'"
-           onmouseout="this.style.color='${isActive ? 'var(--teal)' : 'var(--dim)'}'">
-        <span>⚡ VCP</span>
-      </div>
-    `;
+function sccGetOrderedTabs() {
+  const colorsMap = { red: '#ef4444', blue: '#3b82f6', green: '#22c55e', yellow: '#eab308', purple: '#a855f7', cyan: '#06b6d4', pink: '#ec4899' };
+  if (typeof _sccWatchlists === 'object' && _sccWatchlists) {
+    Object.keys(_sccWatchlists).forEach(name => {
+      if (name.startsWith('__flag') || name.startsWith('__flage')) {
+        const match = name.match(/__flag[e]?_([a-zA-Z]+)/);
+        if (match) {
+          const c = match[1].toLowerCase();
+          const syms = _sccWatchlists[name] || [];
+          syms.forEach(s => { _sccSymbolFlags[s.toUpperCase()] = c; });
+        }
+        delete _sccWatchlists[name];
+      }
+    });
   }
-  const colorsMap = { red: '#ef4444', blue: '#3b82f6', green: '#22c55e', yellow: '#eab308', purple: '#a855f7', cyan: '#06b6d4', pink: '#ec4899' }; Object.keys(colorsMap).forEach(c => {
-    const hasSymbols = Object.keys(_sccSymbolFlags).some(sym => _sccSymbolFlags[sym] === c); if (hasSymbols) {
-      const tabName = `__flag_${c}`; const isActive = tabName === _sccActiveWatchlist; const borderStyle = isActive ? 'border-bottom: 2px solid var(--teal);' : 'border-bottom: 2px solid transparent;'; html += `
-        <div onclick="sccWlSwitchTab('${tabName}')" 
+
+  const rawTabs = Object.keys(_sccWatchlists || {}).concat(['VCP']);
+  Object.keys(colorsMap).forEach(c => {
+    const hasSymbols = Object.keys(_sccSymbolFlags || {}).some(sym => _sccSymbolFlags[sym] === c);
+    if (hasSymbols || _sccActiveWatchlist === `__flag_${c}` || _sccActiveWatchlist === `__flage_${c}`) {
+      rawTabs.push(`__flag_${c}`);
+    }
+  });
+
+  let savedOrder = [];
+  try {
+    savedOrder = JSON.parse(localStorage.getItem('_sccCustomTabOrder') || '[]');
+  } catch (e) { }
+
+  const ordered = [];
+  savedOrder.forEach(t => {
+    if (rawTabs.includes(t) && !ordered.includes(t)) ordered.push(t);
+  });
+  rawTabs.forEach(t => {
+    if (!ordered.includes(t)) ordered.push(t);
+  });
+  return ordered;
+}
+window.sccGetOrderedTabs = sccGetOrderedTabs;
+
+function sccWlRenderTabs() {
+  const tabsBar = document.getElementById('scc-wl-tabs-bar');
+  if (!tabsBar) return;
+  const colorsMap = { red: '#ef4444', blue: '#3b82f6', green: '#22c55e', yellow: '#eab308', purple: '#a855f7', cyan: '#06b6d4', pink: '#ec4899' };
+  const orderedTabs = sccGetOrderedTabs();
+  let html = '';
+
+  orderedTabs.forEach(name => {
+    const isActive = (name === _sccActiveWatchlist) || (name.startsWith('__flag_') && _sccActiveWatchlist === name.replace('__flag_', '__flage_'));
+    const isFlag = name.startsWith('__flag_') || name.startsWith('__flage_');
+    const isVcp = (name === 'VCP');
+    const tabColor = isActive ? 'var(--teal)' : 'var(--dim)';
+    const borderStyle = isActive ? 'border-bottom: 2px solid var(--teal); font-weight: 700;' : 'border-bottom: 2px solid transparent; font-weight: 600;';
+
+    if (isFlag) {
+      const c = name.replace(/^__flag[e]?_/, '');
+      const flagCol = colorsMap[c] || c;
+      html += `
+        <div onclick="sccWlSwitchTab('${name}')" 
+             draggable="true"
+             ondragstart="sccTabDragStart(event, '${name}')"
+             ondragover="sccTabDragOver(event)"
+             ondrop="sccTabDrop(event, '${name}')"
+             ondragend="sccTabDragEnd(event)"
              title="${c.toUpperCase()} Flag Watchlist"
              style="padding: 6px 10px; ${borderStyle} cursor:pointer; display:flex; align-items:center; height: 100%; box-sizing:border-box; transition: opacity 0.15s; opacity: ${isActive ? '1' : '0.5'}"
              onmouseover="this.style.opacity='1'"
              onmouseout="this.style.opacity='${isActive ? '1' : '0.5'}'">
-          <svg width="8" height="14" viewBox="0 0 10 18" fill="${colorsMap[c]}">
+          <svg width="8" height="14" viewBox="0 0 10 18" fill="${flagCol}">
             <path d="M0 0h10v18l-5-4-5 4V0z"/>
           </svg>
         </div>
       `;
+    } else if (isVcp) {
+      html += `
+        <div onclick="sccWlSwitchTab('VCP')" 
+             draggable="true"
+             ondragstart="sccTabDragStart(event, 'VCP')"
+             ondragover="sccTabDragOver(event)"
+             ondrop="sccTabDrop(event, 'VCP')"
+             ondragend="sccTabDragEnd(event)"
+             style="padding: 6px 8px; font-size:10px; color:${tabColor}; ${borderStyle} cursor:pointer; display:flex; align-items:center; gap:2px; height: 100%; box-sizing:border-box; user-select:none; transition: color 0.15s;"
+             onmouseover="this.style.color='var(--text)'"
+             onmouseout="this.style.color='${isActive ? 'var(--teal)' : 'var(--dim)'}'">
+          <span>⚡ VCP</span>
+        </div>
+      `;
+    } else {
+      const keys = Object.keys(_sccWatchlists || {});
+      const closeBtn = keys.length > 1 ? `<span class="scc-wl-tab-close" onclick="event.stopPropagation(); sccWlDeleteTab('${name.replace(/'/g, "\\'")}')" style="font-size:11px; margin-left:6px; opacity:0.5; color:var(--dim); cursor:pointer; font-weight:bold; width:12px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%;" onmouseover="this.style.opacity='1'; this.style.color='var(--red)';" onmouseout="this.style.opacity='0.5'; this.style.color='var(--dim)';">×</span>` : '';
+      html += `
+        <div onclick="sccWlSwitchTab('${name.replace(/'/g, "\\'")}')" 
+             draggable="true"
+             ondragstart="sccTabDragStart(event, '${name.replace(/'/g, "\\'")}')"
+             ondragover="sccTabDragOver(event)"
+             ondrop="sccTabDrop(event, '${name.replace(/'/g, "\\'")}')"
+             ondragend="sccTabDragEnd(event)"
+             style="padding: 6px 8px; font-size:10px; color:${tabColor}; ${borderStyle} cursor:pointer; display:flex; align-items:center; gap:2px; height: 100%; box-sizing:border-box; user-select:none; transition: color 0.15s;"
+             onmouseover="this.style.color='var(--text)'"
+             onmouseout="this.style.color='${isActive ? 'var(--teal)' : 'var(--dim)'}'">
+          <span>${name}</span>
+          ${closeBtn}
+        </div>
+      `;
     }
-  }); html += `
+  });
+
+  html += `
     <button onclick="sccWlCreateTabPrompt()" title="Create new watch list"
             style="background:none; border:none; color:var(--accent); font-size:14px; font-weight:bold; cursor:pointer; padding:4px 8px; outline:none; display:flex; align-items:center; justify-content:center; height: 100%;"
             onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--accent)'">+</button>
-  `; tabsBar.innerHTML = html;
+  `;
+  tabsBar.innerHTML = html;
+  if (typeof updateMaxChartSidebarWatchlist === 'function') {
+    updateMaxChartSidebarWatchlist();
+  }
 }
 function sccWlSwitchTab(name) {
   _sccActiveWatchlist = name; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null; _sccWlIsBreadthSorted = false; if (name === 'VCP') { _sccWatchlistSymbols = []; } else if (name.startsWith('__flag_')) { const color = name.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else { _sccWatchlistSymbols = _sccWatchlists[name] || []; }
@@ -2138,7 +2209,20 @@ function sccWlCloseCopyModal() { const overlay = document.getElementById('scc-wl
 function sccWlCopyTextareaContent() { const textarea = document.getElementById('scc-wl-copy-textarea'); if (textarea) { textarea.select(); navigator.clipboard.writeText(textarea.value).then(() => { alert('Copied to clipboard!'); sccWlCloseCopyModal(); }).catch(err => { console.error('Failed to copy text: ', err); alert('Failed to copy to clipboard. Please copy manually from the text window.'); }); } }
 function sccTabDragStart(event, name) { _sccDraggedTabName = name; event.dataTransfer.effectAllowed = 'move'; event.target.style.opacity = '0.4'; }
 function sccTabDragOver(event) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; }
-function sccTabDrop(event, targetName) { event.preventDefault(); if (!_sccDraggedTabName || _sccDraggedTabName === targetName) return; const keys = Object.keys(_sccWatchlists); const fromIndex = keys.indexOf(_sccDraggedTabName); const toIndex = keys.indexOf(targetName); if (fromIndex !== -1 && toIndex !== -1) { const newWatchlists = {}; keys.splice(fromIndex, 1); keys.splice(toIndex, 0, _sccDraggedTabName); keys.forEach(k => { newWatchlists[k] = _sccWatchlists[k]; }); _sccWatchlists = newWatchlists; sccSaveWatchlistsLocalAndSync(); sccWlRenderTabs(); } }
+function sccTabDrop(event, targetName) {
+  event.preventDefault();
+  if (!_sccDraggedTabName || _sccDraggedTabName === targetName) return;
+  const tabs = sccGetOrderedTabs();
+  const fromIndex = tabs.indexOf(_sccDraggedTabName);
+  const toIndex = tabs.indexOf(targetName);
+  if (fromIndex !== -1 && toIndex !== -1) {
+    tabs.splice(fromIndex, 1);
+    tabs.splice(toIndex, 0, _sccDraggedTabName);
+    localStorage.setItem('_sccCustomTabOrder', JSON.stringify(tabs));
+    sccWlRenderTabs();
+    if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+  }
+}
 function sccTabDragEnd(event) { event.target.style.opacity = '1'; _sccDraggedTabName = null; }
 function sccRowDragStart(event, symbol) { _sccDraggedRowSymbol = symbol.toUpperCase(); event.dataTransfer.effectAllowed = 'move'; event.currentTarget.classList.add('wl-dragging'); }
 function sccRowDragOver(event) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; }
@@ -2161,11 +2245,9 @@ function sccFlagPressStart(event, element, symbol) { _sccFlagHoldActive = false;
 function sccFlagPressEnd(event, element, symbol) { clearTimeout(_sccFlagHoldTimeout); if (_sccFlagHoldActive) { event.preventDefault(); event.stopPropagation(); } }
 function sccFlagPressCancel() { clearTimeout(_sccFlagHoldTimeout); }
 function sccWatchlistFlagClick(event, element, symbol) {
-  event.stopPropagation(); event.preventDefault(); if (_sccFlagHoldActive) { _sccFlagHoldActive = false; return; }
-  const sym = symbol.toUpperCase(); const currentFlag = _sccSymbolFlags[sym] || 'none'; if (currentFlag !== 'none') {
-    delete _sccSymbolFlags[sym]; if (_sccActiveWatchlist === `__flag_${currentFlag}`) { _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === currentFlag); const hasSymbols = Object.keys(_sccSymbolFlags).some(s => _sccSymbolFlags[s] === currentFlag); if (!hasSymbols) { _sccActiveWatchlist = Object.keys(_sccWatchlists)[0] || "Main"; _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); } }
-    sccSaveWatchlistsLocalAndSync(); sccWlRenderTabs(); sccWatchlistRender();
-  } else { sccWatchlistOpenFlagPopup(element, sym); }
+  if (event) { event.stopPropagation(); event.preventDefault(); }
+  const sym = symbol.toUpperCase();
+  sccWatchlistOpenFlagPopup(element, sym);
 }
 function sccWlItemClick(event, symbol) {
   const sym = symbol.toUpperCase(); const list = _sccWatchlistSymbols.map(s => s.toUpperCase()); const index = list.indexOf(sym); if (index === -1) return; if (event.ctrlKey || event.metaKey) {
@@ -2271,34 +2353,99 @@ function sccWlDeleteSelected() {
   if (_sccChartLayout === 'watchlist') sccChartRebuildGrid();
 }
 function sccWatchlistOpenFlagPopup(element, symbol) {
-  sccWatchlistCloseFlagPopup(); const sym = symbol.toUpperCase(); const currentFlag = _sccSymbolFlags[sym] || 'none'; const popup = document.createElement('div'); popup.id = 'scc-wl-flag-popup'; popup.style.position = 'fixed'; popup.style.zIndex = '999999'; popup.style.background = 'var(--bg3)'; popup.style.border = '1px solid var(--bdr2)'; popup.style.borderRadius = '6px'; popup.style.boxShadow = '0 8px 24px rgba(0,0,0,0.6)'; popup.style.padding = '8px 10px'; popup.style.display = 'flex'; popup.style.gap = '8px'; popup.style.alignItems = 'center'; const rect = element.getBoundingClientRect(); popup.style.left = `${rect.left}px`; popup.style.top = `${rect.bottom + 4}px`; const colors = { red: '#ef4444', blue: '#3b82f6', green: '#22c55e', yellow: '#eab308', purple: '#a855f7', cyan: '#06b6d4', pink: '#ec4899' }; let html = ''; Object.keys(colors).forEach(c => {
-    const isSelected = currentFlag === c; const border = isSelected ? 'border: 2px solid var(--text);' : 'border: 1px solid rgba(255,255,255,0.2);'; html += `
+  sccWatchlistCloseFlagPopup();
+  const sym = symbol.toUpperCase();
+  const currentFlag = _sccSymbolFlags[sym] || 'none';
+  const popup = document.createElement('div');
+  popup.id = 'scc-wl-flag-popup';
+  popup.style.position = 'fixed';
+  popup.style.zIndex = '999999';
+  popup.style.background = 'var(--bg3)';
+  popup.style.border = '1px solid var(--bdr2)';
+  popup.style.borderRadius = '6px';
+  popup.style.boxShadow = '0 8px 24px rgba(0,0,0,0.6)';
+  popup.style.padding = '8px 10px';
+  popup.style.display = 'flex';
+  popup.style.gap = '8px';
+  popup.style.alignItems = 'center';
+  const rect = element.getBoundingClientRect();
+  let left = rect.left;
+  let top = rect.bottom + 4;
+  const popupWidth = 200;
+  const popupHeight = 36;
+  if (left + popupWidth > window.innerWidth) left = window.innerWidth - popupWidth - 10;
+  if (top + popupHeight > window.innerHeight) top = rect.top - popupHeight - 4;
+  popup.style.left = `${Math.max(10, left)}px`;
+  popup.style.top = `${Math.max(10, top)}px`;
+  const colors = { red: '#ef4444', blue: '#3b82f6', green: '#22c55e', yellow: '#eab308', purple: '#a855f7', cyan: '#06b6d4', pink: '#ec4899' };
+  let html = '';
+  Object.keys(colors).forEach(c => {
+    const isSelected = currentFlag === c;
+    const border = isSelected ? 'border: 2px solid var(--text);' : 'border: 1px solid rgba(255,255,255,0.2);';
+    html += `
       <div onclick="sccWatchlistSetFlag('${sym}', '${c}')" 
            title="${c.toUpperCase()} Flag"
            style="width: 14px; height: 14px; border-radius: 50%; background: ${colors[c]}; cursor: pointer; ${border} box-sizing: border-box; transition: transform 0.1s;"
-           onmouseover="this.style.transform='scale(1.2)'"
-           onmouseout="this.style.transform='scale(1.0)'"></div>
+           onmouseover="this.style.transform=\'scale(1.2)\'"
+           onmouseout="this.style.transform=\'scale(1.0)\'"></div>
     `;
-  }); const isNoneSelected = currentFlag === 'none'; const noneBorder = isNoneSelected ? 'border: 2px solid var(--text);' : 'border: 1px solid rgba(255,255,255,0.2);'; html += `
+  });
+  const isNoneSelected = currentFlag === 'none';
+  const noneBorder = isNoneSelected ? 'border: 2px solid var(--text);' : 'border: 1px solid rgba(255,255,255,0.2);';
+  html += `
     <div onclick="sccWatchlistSetFlag('${sym}', 'none')" 
          title="Clear Flag"
          style="width: 14px; height: 14px; border-radius: 50%; background: #475569; position: relative; cursor: pointer; ${noneBorder} box-sizing: border-box; display: flex; align-items: center; justify-content: center; transition: transform 0.1s;"
-         onmouseover="this.style.transform='scale(1.2)'"
-         onmouseout="this.style.transform='scale(1.0)'">
+         onmouseover="this.style.transform=\'scale(1.2)\'"
+         onmouseout="this.style.transform=\'scale(1.0)\'">
       <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.6); transform: rotate(45deg);"></div>
     </div>
-  `; popup.innerHTML = html; document.body.appendChild(popup); setTimeout(() => { document.addEventListener('click', sccWatchlistCloseFlagPopupOutside); }, 10);
+  `;
+  popup.innerHTML = html;
+  document.body.appendChild(popup);
+  setTimeout(() => {
+    document.addEventListener('pointerdown', sccWatchlistCloseFlagPopupOutside);
+  }, 10);
 }
 function sccWatchlistCloseFlagPopup() {
-  const popup = document.getElementById('scc-wl-flag-popup'); if (popup) { popup.remove(); }
-  document.removeEventListener('click', sccWatchlistCloseFlagPopupOutside);
+  const popup = document.getElementById('scc-wl-flag-popup');
+  if (popup) { popup.remove(); }
+  document.removeEventListener('pointerdown', sccWatchlistCloseFlagPopupOutside);
 }
-function sccWatchlistCloseFlagPopupOutside(e) { const popup = document.getElementById('scc-wl-flag-popup'); if (popup && !popup.contains(e.target)) { sccWatchlistCloseFlagPopup(); } }
+function sccWatchlistCloseFlagPopupOutside(e) {
+  const popup = document.getElementById('scc-wl-flag-popup');
+  if (popup && !popup.contains(e.target)) {
+    sccWatchlistCloseFlagPopup();
+  }
+}
 function sccWatchlistSetFlag(symbol, color) {
-  const sym = symbol.toUpperCase(); if (color === 'none') { delete _sccSymbolFlags[sym]; } else { _sccSymbolFlags[sym] = color; }
-  sccSaveWatchlistsLocalAndSync(); if (_sccActiveWatchlist.startsWith('__flag_')) { const activeColor = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === activeColor); const hasSymbols = Object.keys(_sccSymbolFlags).some(s => _sccSymbolFlags[s] === activeColor); if (!hasSymbols) { _sccActiveWatchlist = Object.keys(_sccWatchlists)[0] || "Main"; _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); } }
-  sccWatchlistCloseFlagPopup(); sccWlRenderTabs(); sccWatchlistRender();
+  const sym = symbol.toUpperCase();
+  if (color === 'none') {
+    delete _sccSymbolFlags[sym];
+  } else {
+    _sccSymbolFlags[sym] = color;
+  }
+  sccSaveWatchlistsLocalAndSync();
+  if (_sccActiveWatchlist.startsWith('__flag_')) {
+    const activeColor = _sccActiveWatchlist.replace('__flag_', '');
+    _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === activeColor);
+    const hasSymbols = Object.keys(_sccSymbolFlags).some(s => _sccSymbolFlags[s] === activeColor);
+    if (!hasSymbols) {
+      _sccActiveWatchlist = Object.keys(_sccWatchlists)[0] || "Main";
+      _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+      localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+    }
+  }
+  sccWatchlistCloseFlagPopup();
+  sccWlRenderTabs();
+  sccWatchlistRender();
+  if (typeof updateMaxChartSidebarWatchlist === 'function') {
+    updateMaxChartSidebarWatchlist();
+  }
 }
+window.sccWatchlistOpenFlagPopup = sccWatchlistOpenFlagPopup;
+window.sccWatchlistSetFlag = sccWatchlistSetFlag;
+window.sccWatchlistCloseFlagPopup = sccWatchlistCloseFlagPopup;
 function sccWatchlistSelect(symbol) {
   const sym = symbol.toUpperCase();
   if (_sccChartLayout === 'watchlist') {
@@ -4728,7 +4875,41 @@ window.addEventListener('focus', () => {
 });
 function openAboutModal() { document.getElementById('about-modal-overlay').classList.add('open'); }
 function closeAboutModal() { document.getElementById('about-modal-overlay').classList.remove('open'); }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeMaximizedChart(); closeAboutModal(); closeCfgModal(); sectorDrillClose(); } }); const LS_SECTOR_STOCKS = 'nse_sector_stocks_v1'; const LS_N500_CSV = 'nse_n500csv_v1'; const LS_FILTER_STOCKS_CSV = 'nse_filter_stocks_csv_v1'; let _sectorStocksCache = null; let _n500CsvCache = null; let _filterStocksCache = null; let _sdCurrentSector = ''; let _sdCurrentData = null; let _sdActiveTab = 'vcp'; let _sdSearchQuery = ''; let _sdChartsSource = 'vcp'; let _sdChartsPage = 0; let _sdChartsPerPage = 9; let _sdChartsInterval = 'D'; let _sdChartsLayout = 'auto'; let _sdAutoChartsLimit = 12; let _sdChartType = 'volume_candles'; let _sdSortBy = 'score'; let _sdMaximizedChartSymbol = null; let _sdMaximizedChartCompany = null; let _sdMaximizedChartStats = '';
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    // Dismiss Watchlist Add suggest dropdown
+    const suggestBox = document.getElementById('max-chart-sidebar-suggest');
+    if (suggestBox && suggestBox.style.display !== 'none') {
+      suggestBox.style.display = 'none';
+      _sidebarSuggestActiveIdx = -1;
+    }
+    // Close flag popup if open
+    if (typeof sccWatchlistCloseFlagPopup === 'function') sccWatchlistCloseFlagPopup();
+    // Close context menu if open
+    if (typeof sccWlCloseContextMenu === 'function') sccWlCloseContextMenu();
+    // Close coordinates dialog if open
+    if (typeof closeCoordsDialog === 'function') closeCoordsDialog();
+    // Blur any focused input
+    if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+      document.activeElement.blur();
+    }
+    // Deselect drawings if any
+    if (typeof _selectedDrawingIndex !== 'undefined' && _selectedDrawingIndex != null) {
+      _selectedDrawingIndex = null;
+      if (typeof hideFloatingToolbar === 'function') hideFloatingToolbar();
+      if (typeof redrawChartDrawings === 'function') redrawChartDrawings();
+    }
+    // Close info modal/tip
+    if (typeof closeInfoTip === 'function') closeInfoTip();
+    closeAboutModal();
+    closeCfgModal();
+    const secDrill = document.getElementById('sector-drilldown-modal');
+    if (secDrill && secDrill.classList.contains('open')) {
+      sectorDrillClose();
+    }
+    // Note: Never call closeMaximizedChart() on Escape!
+  }
+}); const LS_SECTOR_STOCKS = 'nse_sector_stocks_v1'; const LS_N500_CSV = 'nse_n500csv_v1'; const LS_FILTER_STOCKS_CSV = 'nse_filter_stocks_csv_v1'; let _sectorStocksCache = null; let _n500CsvCache = null; let _filterStocksCache = null; let _sdCurrentSector = ''; let _sdCurrentData = null; let _sdActiveTab = 'vcp'; let _sdSearchQuery = ''; let _sdChartsSource = 'vcp'; let _sdChartsPage = 0; let _sdChartsPerPage = 9; let _sdChartsInterval = 'D'; let _sdChartsLayout = 'auto'; let _sdAutoChartsLimit = 12; let _sdChartType = 'volume_candles'; let _sdSortBy = 'score'; let _sdMaximizedChartSymbol = null; let _sdMaximizedChartCompany = null; let _sdMaximizedChartStats = '';
 // ── Max chart TV-style interaction state ──
 let _maxCandles = null;          // full candle array for the maximized chart
 let _maxNiftyCandles = null;
@@ -4864,8 +5045,19 @@ function _maxFetchAndDraw(symbol) {
   const loader = document.getElementById('max-chart-loader');
   if (loader) { loader.style.display = 'flex'; loader.innerHTML = 'Loading chart…'; }
 
-  const range = _sdChartsInterval === '1H' ? '2y' : _sdChartsInterval === 'W' ? '2y' : _sdChartsInterval === 'M' ? '5y' : '1y';
-  const interval = _sdChartsInterval === '1H' ? '60m' : _sdChartsInterval === 'W' ? '1wk' : _sdChartsInterval === 'M' ? '1mo' : '1d';
+  const is15m = (_sdChartsInterval === '15m');
+  const is1H = (_sdChartsInterval === '1H');
+  const isW = (_sdChartsInterval === 'W');
+  const isM = (_sdChartsInterval === 'M');
+
+  const range = is15m ? '60d' :
+                is1H ? '730d' :
+                isW ? '10y' :
+                isM ? 'max' : '5y';
+  const interval = is15m ? '15m' :
+                   is1H ? '60m' :
+                   isW ? '1wk' :
+                   isM ? '1mo' : '1d';
 
   // Primary Candle Fetcher (Dhan HQ API or Yahoo Finance)
   let candlePromise;
@@ -4987,11 +5179,75 @@ function drawMaxChartLightweight() {
     scaleMargins: { top: 0.82, bottom: 0 },
     visible: false,
   });
-  volSeries.setData(cleanCandles.map(c => ({
-    time: c.time,
-    value: c.volume,
-    color: c.close >= c.open ? 'rgba(38, 166, 154, 0.4)' : 'rgba(239, 83, 80, 0.4)',
-  })));
+  // VCP & Pocket Pivot Volume Color Hierarchy
+  const volPeriod = 50;
+  const avgVols = [];
+  let volSum = 0;
+  for (let i = 0; i < cleanCandles.length; i++) {
+    volSum += cleanCandles[i].volume;
+    if (i >= volPeriod) {
+      volSum -= cleanCandles[i - volPeriod].volume;
+      avgVols.push(volSum / volPeriod);
+    } else {
+      avgVols.push(volSum / (i + 1));
+    }
+  }
+
+  const volData = cleanCandles.map((c, i) => {
+    const curVol = c.volume;
+    const avg = avgVols[i] || 1;
+    const isUp = c.close >= c.open;
+
+    // Lookback 20 bars for lowest and highest volume
+    const windowStart = Math.max(0, i - 19);
+    const windowBars = cleanCandles.slice(windowStart, i + 1);
+    let minVol = Infinity;
+    let maxVol = -Infinity;
+    for (const b of windowBars) {
+      if (b.volume > 0) {
+        if (b.volume < minVol) minVol = b.volume;
+        if (b.volume > maxVol) maxVol = b.volume;
+      }
+    }
+
+    // Down bars in previous 10 days for Pocket Pivot test
+    const downBars10 = cleanCandles.slice(Math.max(0, i - 10), i).filter(b => b.close < b.open);
+    const maxDownVol10 = downBars10.length ? Math.max(...downBars10.map(b => b.volume)) : 0;
+    const isPocketPivot = isUp && curVol > maxDownVol10 && curVol >= avg * 1.05;
+
+    let col;
+    // 1. Highest volume day in lookback OR Pocket Pivot -> Blue (#2196f3)
+    if ((curVol >= maxVol && curVol >= avg) || isPocketPivot) {
+      col = '#2196f3';
+    }
+    // 2. Lowest volume day (Dry Volume / VDU) in lookback -> Yellow (#ffeb3b)
+    else if (curVol <= minVol && curVol < avg) {
+      col = '#ffeb3b';
+    }
+    // 3. Low volume day (below average volume) -> Gray
+    else if (curVol < avg) {
+      col = 'rgba(148, 163, 184, 0.45)';
+    }
+    // 4. Power Volume (extreme surge >= 1.75x average) -> Power Volume Up / Down (#c8e6ca / #fbc4bd)
+    else if (curVol >= avg * 1.75) {
+      col = isUp ? '#c8e6ca' : '#fbc4bd';
+    }
+    // 5. Above average Up day -> High Up Green (#4caf50)
+    else if (isUp) {
+      col = '#4caf50';
+    }
+    // 6. Above average Down day -> High Down Red (#f23645)
+    else {
+      col = '#f23645';
+    }
+
+    return {
+      time: c.time,
+      value: c.volume,
+      color: col
+    };
+  });
+  volSeries.setData(volData);
 
   const isWeekly = (_sdChartsInterval === 'W');
   const isDaily = (_sdChartsInterval === 'D');
@@ -5182,13 +5438,6 @@ function drawMaxChartLightweight() {
     const sign = isUp ? '+' : '';
     let volStr = vol != null ? fVolFormat(vol) : '';
 
-    const e10 = ema10Map.get(time);
-    const e20 = ema20Map.get(time);
-    const s50 = sma50Map.get(time);
-    const s200 = sma200Map.get(time);
-    const s30w = sma30wMap.get(time);
-    const rsVal = rsMap.get(time);
-
     tipEl.style.display = 'block';
     tipEl.innerHTML = `
       <span style="color:var(--text);font-weight:700;margin-right:8px;">${dateStr}</span>
@@ -5196,13 +5445,7 @@ function drawMaxChartLightweight() {
       H: <b style="color:var(--sub)">${bar.high.toFixed(1)}</b>&nbsp;
       L: <b style="color:var(--sub)">${bar.low.toFixed(1)}</b>&nbsp;
       C: <b style="color:${col}">${bar.close.toFixed(1)} (${sign}${pct}%)</b>&nbsp;
-      ${volStr ? `Vol: <b style="color:var(--sub)">${volStr}</b>&nbsp;` : ''}
-      ${e10 != null ? `${inp.ema1Period}EMA: <b style="color:${(st.ema10 && st.ema10.color) || '#3b82f6'}">${e10.toFixed(1)}</b>&nbsp;` : ''}
-      ${e20 != null ? `${inp.ema2Period}EMA: <b style="color:${(st.ema20 && st.ema20.color) || '#ef4444'}">${e20.toFixed(1)}</b>&nbsp;` : ''}
-      ${s50 != null ? `${inp.sma1Period}SMA: <b style="color:${(st.sma50 && st.sma50.color) || '#06b6d4'}">${s50.toFixed(1)}</b>&nbsp;` : ''}
-      ${s200 != null ? `${inp.sma2Period}SMA: <b style="color:${(st.sma200 && st.sma200.color) || '#22c55e'}">${s200.toFixed(1)}</b>&nbsp;` : ''}
-      ${s30w != null ? `${inp.sma30wPeriod}W: <b style="color:${(st.sma30w && st.sma30w.color) || '#f97316'}">${s30w.toFixed(1)}</b>&nbsp;` : ''}
-      ${rsVal != null ? `RS: <b style="color:${(st.rs && st.rs.color) || '#38bdf8'}">${rsVal.toFixed(1)}</b>` : ''}
+      ${volStr ? `Vol: <b style="color:var(--sub)">${volStr}</b>` : ''}
     `;
   };
 
@@ -6441,11 +6684,37 @@ function hitTestChartDrawings(x, y) {
       if (x >= minX - 5 && x <= maxX + 5 && y >= minY - 5 && y <= maxY + 5) {
         return { index: i, drawing: d, handle: 'body' };
       }
+    } else if (d.type === 'fib') {
+      if (Math.hypot(x - pt1.x, y - pt1.y) <= 10) return { index: i, drawing: d, handle: 'p1', pt: pt1 };
+      if (Math.hypot(x - pt2.x, y - pt2.y) <= 10) return { index: i, drawing: d, handle: 'p2', pt: pt2 };
+      if (distToSegment(x, y, pt1.x, pt1.y, pt2.x, pt2.y) <= 8) return { index: i, drawing: d, handle: 'body' };
+      const minY = Math.min(pt1.y, pt2.y) - 6;
+      const maxY = Math.max(pt1.y, pt2.y) + 6;
+      const minX = Math.min(pt1.x, pt2.x) - 10;
+      const maxX = Math.max(pt1.x, pt2.x, 900);
+      if (y >= minY && y <= maxY && x >= minX && x <= maxX) {
+        return { index: i, drawing: d, handle: 'body' };
+      }
     } else if (d.type === 'pricenote') {
-      if (Math.hypot(x - pt1.x, y - pt1.y) <= 9) return { index: i, drawing: d, handle: 'p1' };
-      const bx = pt1.x + 16, by = pt1.y - 36, bw = 84, bh = 26;
-      if (x >= bx - 4 && x <= bx + bw + 4 && y >= by - 4 && y <= by + bh + 4) return { index: i, drawing: d, handle: 'body' };
-      if (distToSegment(x, y, pt1.x, pt1.y, bx + 4, by + bh) <= 6) return { index: i, drawing: d, handle: 'body' };
+      const pt2 = d.p2 ? pointToPixels(d.p2, timeScale, series) : { x: pt1.x + 40, y: pt1.y - 45 };
+      // 1. Check anchor handle p1 (candle pin)
+      if (Math.hypot(x - pt1.x, y - pt1.y) <= 10) return { index: i, drawing: d, handle: 'p1', pt: pt1 };
+      // 2. Check anchor handle p2 (callout badge)
+      if (Math.hypot(x - pt2.x, y - pt2.y) <= 10) return { index: i, drawing: d, handle: 'p2', pt: pt2 };
+
+      // 3. Check callout badge box around p2
+      const txt = d.text || ('₹ ' + (d.p1.price != null ? d.p1.price.toFixed(2) : ''));
+      const bw = Math.max(50, (txt.length * 7.5) + 20);
+      const bh = 24;
+      const bx = pt2.x - bw / 2;
+      const by = pt2.y - bh / 2;
+      if (x >= bx - 4 && x <= bx + bw + 4 && y >= by - 4 && y <= by + bh + 4) {
+        return { index: i, drawing: d, handle: 'p2', pt: pt2 };
+      }
+      // 4. Check leader line segment connecting p1 to p2 (moves whole drawing)
+      if (distToSegment(x, y, pt1.x, pt1.y, pt2.x, pt2.y) <= 8) {
+        return { index: i, drawing: d, handle: 'body' };
+      }
     } else if (d.type === 'text') {
       if (Math.hypot(x - pt1.x, y - pt1.y) <= 9) return { index: i, drawing: d, handle: 'p1' };
       const tw = (d.text ? d.text.length * 8 : 40) + 16;
@@ -6512,6 +6781,7 @@ function initChartDrawingCanvas() {
         if (hit.handle === 'body') canvas.style.cursor = 'move';
         else if (hit.handle === 'nw' || hit.handle === 'se') canvas.style.cursor = 'nwse-resize';
         else if (hit.handle === 'ne' || hit.handle === 'sw') canvas.style.cursor = 'nesw-resize';
+        else if (hit.handle === 'p2' && hit.drawing.type === 'pricenote') canvas.style.cursor = 'move';
         else canvas.style.cursor = 'pointer';
       } else {
         if (_selectedDrawingIndex != null) {
@@ -6572,7 +6842,7 @@ function initChartDrawingCanvas() {
         type: 'ray_h',
         p1: { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price },
         color: '#38bdf8',
-        width: 2,
+        width: 1,
         style: 'dashed'
       });
       showChartToast('✔ Placed Horizontal Ray at ₹ ' + (coords.price != null ? coords.price.toFixed(1) : ''), '#38bdf8');
@@ -6582,12 +6852,15 @@ function initChartDrawingCanvas() {
     // 2. Single-click tool: Price Note Callout
     if (_currentDrawTool === 'pricenote') {
       const pVal = coords.price != null ? coords.price.toFixed(2) : '0.00';
+      const offsetLogical = coords.logical != null ? coords.logical + 4 : null;
+      const offsetPrice = coords.price != null ? coords.price * 1.025 : null;
       commitNewDrawing({
         type: 'pricenote',
         p1: { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price },
+        p2: { x: coords.x + 40, y: coords.y - 45, logical: offsetLogical, price: offsetPrice },
         text: '₹ ' + pVal,
         color: '#2962ff',
-        width: 2,
+        width: 1,
         style: 'solid'
       });
       showChartToast('✔ Placed Price Note at ₹ ' + pVal, '#2962ff');
@@ -6628,9 +6901,9 @@ function initChartDrawingCanvas() {
         p1: _drawStart,
         p2: _drawStart,
         color: _currentDrawTool === 'scale' ? '#22c55e' : _currentDrawTool === 'ray' ? '#eab308' : '#38bdf8',
-        width: 2,
+        width: 1,
         style: 'solid',
-        fillOpacity: 0.14
+        fillOpacity: 0
       };
       redrawChartDrawings();
     } else if (_drawStep === 1) {
@@ -6648,9 +6921,9 @@ function initChartDrawingCanvas() {
           p1: _activeDrawing.p1,
           p2: p2,
           color: _activeDrawing.color,
-          width: _activeDrawing.width || 2,
+          width: _activeDrawing.width || 1,
           style: _activeDrawing.style || 'solid',
-          fillOpacity: _activeDrawing.fillOpacity || 0.14
+          fillOpacity: _activeDrawing.fillOpacity != null ? _activeDrawing.fillOpacity : 0
         });
         showChartToast('✔ Placed ' + _activeDrawing.type, _activeDrawing.color);
       } else {
@@ -6762,9 +7035,9 @@ function initChartDrawingCanvas() {
           p1: _activeDrawing.p1,
           p2: p2,
           color: _activeDrawing.color,
-          width: _activeDrawing.width || 2,
+          width: _activeDrawing.width || 1,
           style: _activeDrawing.style || 'solid',
-          fillOpacity: _activeDrawing.fillOpacity || 0.14
+          fillOpacity: _activeDrawing.fillOpacity != null ? _activeDrawing.fillOpacity : 0
         });
         showChartToast('✔ Placed ' + _activeDrawing.type, _activeDrawing.color);
       }
@@ -6793,6 +7066,17 @@ function initChartDrawingCanvas() {
         e.preventDefault();
         deleteSelectedDrawing();
       }
+    }
+  });
+
+  // Double-click to edit text annotations or Price Notes
+  canvas.addEventListener('dblclick', e => {
+    const coords = getEventCoords(e);
+    const hit = hitTestChartDrawings(coords.x, coords.y);
+    if (hit && (hit.drawing.type === 'text' || hit.drawing.type === 'pricenote')) {
+      _selectedDrawingIndex = hit.index;
+      updateFloatingToolbar();
+      editDrawingText(e);
     }
   });
 }
@@ -6845,7 +7129,7 @@ function redrawChartDrawings() {
 
     const isSelected = (idx === _selectedDrawingIndex);
     const color = d.color || '#38bdf8';
-    const width = d.width || 2;
+    const width = d.width || 1;
     const style = d.style || 'solid';
 
     ctx.save();
@@ -6898,47 +7182,57 @@ function redrawChartDrawings() {
 
     // 2. Price Note (pricenote)
     if (d.type === 'pricenote') {
-      const pt = toPx(d.p1);
-      const x = pt.x;
-      const y = pt.y;
-      if (x != null && y != null) {
+      const pt1 = toPx(d.p1);
+      const pt2 = d.p2 ? toPx(d.p2) : { x: pt1.x + 40, y: pt1.y - 45 };
+      if (pt1.x != null && pt1.y != null && pt2.x != null && pt2.y != null) {
+        // Leader line connecting candle pin to callout badge
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        if (style === 'dashed') ctx.setLineDash([5, 3]);
+        else if (style === 'dotted') ctx.setLineDash([2, 2]);
+        else ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(pt1.x, pt1.y);
+        ctx.lineTo(pt2.x, pt2.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Candle pin anchor dot
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+        ctx.arc(pt1.x, pt1.y, 4, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        const bx = x + 16;
-        const by = y - 36;
-        const txt = d.text || ('₹ ' + (d.p1.price != null ? d.p1.price.toFixed(1) : ''));
+        // Callout Badge Box centered at pt2
+        const txt = d.text || ('₹ ' + (d.p1.price != null ? d.p1.price.toFixed(2) : ''));
         ctx.font = 'bold 11px -apple-system,BlinkMacSystemFont,sans-serif';
         const tw = ctx.measureText(txt).width;
-        const bw = tw + 20;
+        const bw = tw + 18;
         const bh = 24;
-
-        ctx.strokeStyle = color;
-        ctx.lineWidth = width;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(bx + 4, by + bh);
-        ctx.stroke();
+        const bx = pt2.x - bw / 2;
+        const by = pt2.y - bh / 2;
 
         ctx.fillStyle = 'rgba(19, 23, 34, 0.95)';
         ctx.beginPath();
         if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 4);
         else ctx.rect(bx, by, bw, bh);
         ctx.fill();
+
         ctx.strokeStyle = isSelected ? '#ffffff' : color;
-        ctx.lineWidth = isSelected ? 2 : 1.5;
+        ctx.lineWidth = isSelected ? 1.8 : 1;
         ctx.stroke();
 
         ctx.fillStyle = '#f0f3fa';
-        ctx.fillText(txt, bx + 10, by + 16);
+        ctx.textAlign = 'center';
+        ctx.fillText(txt, bx + bw / 2, by + 16);
+        ctx.textAlign = 'left';
 
         if (isSelected) {
-          drawAnchorHandle(ctx, x, y);
+          drawAnchorHandle(ctx, pt1.x, pt1.y);
+          drawAnchorHandle(ctx, pt2.x, pt2.y);
         }
       }
       ctx.restore();
@@ -7030,10 +7324,12 @@ function redrawChartDrawings() {
       const ry = Math.min(y1, y2);
       const rw = Math.abs(x2 - x1);
       const rh = Math.abs(y2 - y1);
-      const fillOp = d.fillOpacity != null ? d.fillOpacity : 0.14;
+      const fillOp = d.fillOpacity != null ? d.fillOpacity : 0;
 
-      ctx.fillStyle = typeof hexToRgba === 'function' ? hexToRgba(color, fillOp) : 'rgba(56, 189, 248, 0.12)';
-      ctx.fillRect(rx, ry, rw, rh);
+      if (fillOp > 0) {
+        ctx.fillStyle = typeof hexToRgba === 'function' ? hexToRgba(color, fillOp) : 'rgba(56, 189, 248, 0.12)';
+        ctx.fillRect(rx, ry, rw, rh);
+      }
       ctx.strokeStyle = color;
       ctx.lineWidth = width;
       ctx.strokeRect(rx, ry, rw, rh);
@@ -7055,59 +7351,61 @@ function redrawChartDrawings() {
       const diffPrice = p2Price - p1Price;
       const pct = p1Price ? ((diffPrice / p1Price) * 100) : 0;
       const isUp = diffPrice >= 0;
-      const clr = color || (isUp ? '#22c55e' : '#ef4444');
-      const fillOp = d.fillOpacity != null ? d.fillOpacity : 0.14;
-      const bgClr = typeof hexToRgba === 'function' ? hexToRgba(clr, fillOp) : (isUp ? 'rgba(34, 197, 94, 0.14)' : 'rgba(239, 68, 68, 0.14)');
+      // Default colors: green (#22c55e) for +ve, red (#ef4444) for -ve
+      const clr = (color && color !== '#22c55e' && color !== '#ef4444') ? color : (isUp ? '#22c55e' : '#ef4444');
+      const fillOp = (d.fillOpacity != null && d.fillOpacity > 0) ? d.fillOpacity : 0.14;
 
+      // Fill measurement box - NO BORDER lines
+      const bgClr = typeof hexToRgba === 'function' ? hexToRgba(clr, fillOp) : (isUp ? 'rgba(34, 197, 94, 0.14)' : 'rgba(239, 68, 68, 0.14)');
       ctx.fillStyle = bgClr;
       ctx.fillRect(rx, ry, rw, rh);
-      ctx.strokeStyle = clr;
-      ctx.lineWidth = width;
-      ctx.setLineDash([3, 3]);
-      ctx.strokeRect(rx, ry, rw, rh);
-      ctx.setLineDash([]);
 
-      const midX = rx + rw / 2;
-      ctx.strokeStyle = clr;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(midX, y1); ctx.lineTo(midX, y2); ctx.stroke();
-      const midY = ry + rh / 2;
-      ctx.beginPath(); ctx.moveTo(x1, midY); ctx.lineTo(x2, midY); ctx.stroke();
+      // Values: % and (no. of bars) only
+      const bCount = (d.p1 && d.p1.logical != null && d.p2 && d.p2.logical != null) ? Math.abs(Math.round(d.p2.logical - d.p1.logical)) + 1 : Math.round(rw / 10);
+      const sign = isUp ? '+' : '';
+      const txt = sign + pct.toFixed(2) + '% (' + bCount + ' bars)';
 
-      const bCount = (d.p1.logical != null && d.p2 && d.p2.logical != null) ? Math.abs(Math.round(d.p2.logical - d.p1.logical)) + 1 : Math.round(rw / 10);
-      const line1 = (isUp ? '+' : '') + diffPrice.toFixed(2) + ' (' + (isUp ? '+' : '') + pct.toFixed(2) + '%)';
-      const line2 = bCount + ' bars, ' + bCount + 'd';
       ctx.font = 'bold 11px -apple-system,BlinkMacSystemFont,sans-serif';
-      const tw1 = ctx.measureText(line1).width;
-      ctx.font = '10px -apple-system,BlinkMacSystemFont,sans-serif';
-      const tw2 = ctx.measureText(line2).width;
-      const badgeW = Math.max(tw1, tw2) + 24;
-      const badgeH = 38;
+      const tw = ctx.measureText(txt).width;
+      const badgeW = tw + 18;
+      const badgeH = 22;
+      const midX = rx + rw / 2;
       const bx = Math.max(10, Math.min(W - badgeW - 10, midX - badgeW / 2));
-      const by = Math.max(10, Math.min(H - badgeH - 10, midY - badgeH / 2));
 
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+      // Stats badge position: above on +ve, below on -ve
+      let by;
+      const badgePos = d.badgePos || 'auto';
+      if (badgePos === 'inside' || badgePos === 'center') {
+        by = Math.max(10, Math.min(H - badgeH - 10, ry + rh / 2 - badgeH / 2));
+      } else if (isUp) {
+        by = ry - badgeH - 4;
+        if (by < 10) by = 10;
+      } else {
+        by = ry + rh + 4;
+        if (by + badgeH > H - 10) by = H - badgeH - 10;
+      }
+
+      // Label badge: solid dark pill - NO BORDER line
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
       ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(bx, by, badgeW, badgeH, 6);
+      if (ctx.roundRect) ctx.roundRect(bx, by, badgeW, badgeH, 4);
       else ctx.rect(bx, by, badgeW, badgeH);
       ctx.fill();
-      ctx.strokeStyle = clr;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
 
+      // Text in badge
       ctx.fillStyle = clr;
       ctx.font = 'bold 11px -apple-system,BlinkMacSystemFont,sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(line1, bx + badgeW / 2, by + 16);
-
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '10px -apple-system,BlinkMacSystemFont,sans-serif';
-      ctx.fillText(line2, bx + badgeW / 2, by + 30);
+      ctx.textBaseline = 'middle';
+      ctx.fillText(txt, bx + badgeW / 2, by + badgeH / 2);
+      ctx.textBaseline = 'alphabetic';
       ctx.textAlign = 'left';
 
       if (isSelected) {
-        drawAnchorHandle(ctx, x1, y1);
-        drawAnchorHandle(ctx, x2, y2);
+        drawAnchorHandle(ctx, rx, ry);
+        drawAnchorHandle(ctx, rx + rw, ry);
+        drawAnchorHandle(ctx, rx + rw, ry + rh);
+        drawAnchorHandle(ctx, rx, ry + rh);
       }
     }
     ctx.restore();
@@ -7150,11 +7448,11 @@ function updateFloatingToolbar() {
   bar.style.display = 'flex';
 
   const clr = d.color || '#38bdf8';
-  const width = d.width || 2;
+  const width = d.width || 1;
   const style = d.style || 'solid';
   const styleIcon = style === 'dotted' ? '···' : style === 'dashed' ? '- -' : '──';
   const hasFill = (d.type === 'rect' || d.type === 'scale' || d.type === 'measure');
-  const fillPct = Math.round((d.fillOpacity != null ? d.fillOpacity : 0.14) * 100);
+  const fillPct = Math.round((d.fillOpacity != null ? d.fillOpacity : 0) * 100);
 
   let swatchesHtml = '';
   for (const c of TV_DRAW_PALETTE) {
@@ -7181,17 +7479,26 @@ function updateFloatingToolbar() {
     '</button>' +
     (hasFill ? (
       '<div class="tv-float-sep"></div>' +
-      '<button class="tv-float-btn" onclick="cycleDrawingOpacity(event)" title="Fill Opacity">' +
+      '<button class="tv-float-btn" onclick="cycleDrawingOpacity(event)" title="Fill Opacity (0% = Transparent)">' +
         '<span>' + fillPct + '%</span>' +
       '</button>'
     ) : '') +
-    (d.type === 'text' ? (
+    (d.type === 'scale' || d.type === 'measure' ? (
       '<div class="tv-float-sep"></div>' +
-      '<button class="tv-float-btn" onclick="editDrawingText(event)" title="Edit Text">' +
-        '<span>✎</span>' +
+      '<button class="tv-float-btn" onclick="toggleScaleBadgePos(event)" title="Stats Badge Position (Above / Inside)">' +
+        '<span style="font-size:10px;">' + ((d.badgePos || 'above') === 'above' ? '▲ Above' : '■ Inside') + '</span>' +
+      '</button>'
+    ) : '') +
+    (d.type === 'text' || d.type === 'pricenote' ? (
+      '<div class="tv-float-sep"></div>' +
+      '<button class="tv-float-btn" onclick="editDrawingText(event)" title="Edit Text / Price Note">' +
+        '<span>✎ Edit</span>' +
       '</button>'
     ) : '') +
     '<div class="tv-float-sep"></div>' +
+    '<button class="tv-float-btn" onclick="openCoordsDialog(_chartDrawings[getActiveDrawingSymbol()][_selectedDrawingIndex])" title="Precise Coordinates">' +
+      '<span style="font-size:10px;">⌖ Coord</span>' +
+    '</button>' +
     '<button class="tv-float-btn" onclick="deleteSelectedDrawing(event)" title="Delete" style="color:#ef4444;">' +
       '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
     '</button>' +
@@ -7231,7 +7538,7 @@ function cycleDrawingWidth(e) {
   const sym = getActiveDrawingSymbol();
   const drawings = _chartDrawings[sym] || [];
   if (_selectedDrawingIndex != null && drawings[_selectedDrawingIndex]) {
-    const cur = drawings[_selectedDrawingIndex].width || 2;
+    const cur = drawings[_selectedDrawingIndex].width || 1;
     const widths = [1, 2, 3, 4];
     const nxt = widths[(widths.indexOf(cur) + 1) % widths.length];
     drawings[_selectedDrawingIndex].width = nxt;
@@ -7263,11 +7570,11 @@ function cycleDrawingOpacity(e) {
   const sym = getActiveDrawingSymbol();
   const drawings = _chartDrawings[sym] || [];
   if (_selectedDrawingIndex != null && drawings[_selectedDrawingIndex]) {
-    const cur = drawings[_selectedDrawingIndex].fillOpacity != null ? drawings[_selectedDrawingIndex].fillOpacity : 0.14;
-    const opacities = [0.05, 0.15, 0.30, 0.50];
+    const cur = drawings[_selectedDrawingIndex].fillOpacity != null ? drawings[_selectedDrawingIndex].fillOpacity : 0;
+    const opacities = [0, 0.15, 0.30, 0.50];
     let nextIdx = 0;
     for (let i = 0; i < opacities.length; i++) {
-      if (Math.abs(opacities[i] - cur) < 0.04) { nextIdx = (i + 1) % opacities.length; break; }
+      if (Math.abs(opacities[i] - cur) < 0.05) { nextIdx = (i + 1) % opacities.length; break; }
     }
     drawings[_selectedDrawingIndex].fillOpacity = opacities[nextIdx];
     saveChartDrawings();
@@ -7277,14 +7584,29 @@ function cycleDrawingOpacity(e) {
 }
 window.cycleDrawingOpacity = cycleDrawingOpacity;
 
+function toggleScaleBadgePos(e) {
+  if (e) e.stopPropagation();
+  const sym = getActiveDrawingSymbol();
+  const drawings = _chartDrawings[sym] || [];
+  if (_selectedDrawingIndex != null && drawings[_selectedDrawingIndex]) {
+    const d = drawings[_selectedDrawingIndex];
+    d.badgePos = (d.badgePos || 'above') === 'above' ? 'inside' : 'above';
+    saveChartDrawings();
+    redrawChartDrawings();
+    updateFloatingToolbar();
+  }
+}
+window.toggleScaleBadgePos = toggleScaleBadgePos;
+
 function editDrawingText(e) {
   if (e) e.stopPropagation();
   const sym = getActiveDrawingSymbol();
   const drawings = _chartDrawings[sym] || [];
   if (_selectedDrawingIndex != null && drawings[_selectedDrawingIndex]) {
     const d = drawings[_selectedDrawingIndex];
-    const val = prompt('Edit annotation text:', d.text || '');
-    if (val != null) {
+    const promptMsg = d.type === 'pricenote' ? 'Edit Price Note text / price:' : 'Edit annotation text:';
+    const val = prompt(promptMsg, d.text || '');
+    if (val != null && val.trim()) {
       d.text = val.trim();
       saveChartDrawings();
       redrawChartDrawings();
@@ -7829,7 +8151,7 @@ async function fetchDhanCandles(symbol, range, interval) {
 
   const toDate = new Date().toISOString().split('T')[0];
   const fromDateObj = new Date();
-  fromDateObj.setFullYear(fromDateObj.getFullYear() - 2);
+  fromDateObj.setFullYear(fromDateObj.getFullYear() - 5);
   const fromDate = fromDateObj.toISOString().split('T')[0];
 
   const payload = {
@@ -8013,47 +8335,266 @@ function maxChartSidebarAddSymbol(sym) {
 }
 window.maxChartSidebarAddSymbol = maxChartSidebarAddSymbol;
 
+// Comprehensive stock aggregator across all sources
+function getAllAvailableStocks() {
+  const stockMap = new Map();
+
+  // 1. n500 CSV cache
+  if (typeof n500CsvGetCached === 'function') {
+    const list = n500CsvGetCached();
+    if (Array.isArray(list)) {
+      for (const s of list) {
+        if (s && s.symbol) {
+          const sym = s.symbol.toUpperCase().replace('.NS', '').trim();
+          if (!stockMap.has(sym)) {
+            stockMap.set(sym, { symbol: sym, company: s.company || '', sector: s.sector || s.industry || '' });
+          }
+        }
+      }
+    }
+  }
+
+  // 2. Sector drill cache (sectors & industries)
+  if (typeof sectorDrillGetCached === 'function') {
+    const drill = sectorDrillGetCached();
+    if (drill) {
+      const maps = [drill.sectors, drill.industries];
+      for (const m of maps) {
+        if (m) {
+          for (const k in m) {
+            const sec = m[k];
+            if (sec && Array.isArray(sec.stocks)) {
+              for (const s of sec.stocks) {
+                if (s && s.symbol) {
+                  const sym = s.symbol.toUpperCase().replace('.NS', '').trim();
+                  if (!stockMap.has(sym)) {
+                    stockMap.set(sym, { symbol: sym, company: s.company || '', sector: k });
+                  } else if (!stockMap.get(sym).company && s.company) {
+                    stockMap.get(sym).company = s.company;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 3. Current sector scan data
+  if (typeof _sdCurrentData !== 'undefined' && _sdCurrentData?.stocks && Array.isArray(_sdCurrentData.stocks)) {
+    for (const s of _sdCurrentData.stocks) {
+      if (s && s.symbol) {
+        const sym = s.symbol.toUpperCase().replace('.NS', '').trim();
+        if (!stockMap.has(sym)) {
+          stockMap.set(sym, { symbol: sym, company: s.company || '', sector: s.sector || '' });
+        }
+      }
+    }
+  }
+
+  // 4. Fallback popular NSE stocks
+  const fallbacks = [
+    { symbol: 'RELIANCE', company: 'Reliance Industries Ltd', sector: 'Energy' },
+    { symbol: 'TCS', company: 'Tata Consultancy Services', sector: 'IT' },
+    { symbol: 'HDFCBANK', company: 'HDFC Bank Ltd', sector: 'Banking' },
+    { symbol: 'INFY', company: 'Infosys Ltd', sector: 'IT' },
+    { symbol: 'ICICIBANK', company: 'ICICI Bank Ltd', sector: 'Banking' },
+    { symbol: 'SBIN', company: 'State Bank of India', sector: 'Banking' },
+    { symbol: 'BHARTIARTL', company: 'Bharti Airtel Ltd', sector: 'Telecom' },
+    { symbol: 'ITC', company: 'ITC Ltd', sector: 'FMCG' },
+    { symbol: 'KOTAKBANK', company: 'Kotak Mahindra Bank', sector: 'Banking' },
+    { symbol: 'LT', company: 'Larsen & Toubro Ltd', sector: 'Capital Goods' },
+    { symbol: 'TATAMOTORS', company: 'Tata Motors Ltd', sector: 'Auto' },
+    { symbol: 'MARUTI', company: 'Maruti Suzuki India', sector: 'Auto' },
+    { symbol: 'SUNPHARMA', company: 'Sun Pharmaceutical', sector: 'Pharma' },
+    { symbol: 'TITAN', company: 'Titan Company Ltd', sector: 'Consumer' },
+    { symbol: 'BAJFINANCE', company: 'Bajaj Finance Ltd', sector: 'Finance' },
+    { symbol: 'TRENT', company: 'Trent Ltd', sector: 'Retail' },
+    { symbol: 'BEL', company: 'Bharat Electronics Ltd', sector: 'Defence' },
+    { symbol: 'HAL', company: 'Hindustan Aeronautics Ltd', sector: 'Defence' },
+    { symbol: 'SHYAMMETL', company: 'Shyam Metalics and Energy', sector: 'Metals' },
+    { symbol: 'SYRMA', company: 'Syrma SGS Technology', sector: 'Electronics' },
+    { symbol: 'INDHOTEL', company: 'Indian Hotels Co Ltd', sector: 'Hospitality' },
+    { symbol: 'TECHM', company: 'Tech Mahindra Ltd', sector: 'IT' },
+    { symbol: 'PVRINOX', company: 'PVR INOX Ltd', sector: 'Media' },
+    { symbol: 'CHENNPETRO', company: 'Chennai Petroleum Corp', sector: 'Energy' },
+    { symbol: 'LAURUSLABS', company: 'Laurus Labs Ltd', sector: 'Pharma' },
+    { symbol: 'PPLPHARMA', company: 'Piramal Pharma Ltd', sector: 'Pharma' },
+    { symbol: 'IGIL', company: 'Ingersoll-Rand India Ltd', sector: 'Capital Goods' },
+    { symbol: 'ACUTAAS', company: 'Acutaas Ltd', sector: 'Metals' },
+    { symbol: 'WELSPUNLIV', company: 'Welspun Living Ltd', sector: 'Textiles' },
+    { symbol: 'ATHERENERG', company: 'Ather Energy Ltd', sector: 'Auto' }
+  ];
+  for (const fb of fallbacks) {
+    if (!stockMap.has(fb.symbol)) {
+      stockMap.set(fb.symbol, fb);
+    }
+  }
+
+  return Array.from(stockMap.values());
+}
+window.getAllAvailableStocks = getAllAvailableStocks;
+
+let _sidebarSuggestActiveIdx = -1;
+
 function maxChartSidebarSearchInput(val) {
   const suggestBox = document.getElementById('max-chart-sidebar-suggest');
   if (!suggestBox) return;
-  const query = val.trim().toLowerCase();
+
+  _sidebarSuggestActiveIdx = -1;
+  const query = (val || '').trim().toLowerCase();
+  const allStocks = getAllAvailableStocks();
+
+  let matches = [];
   if (!query) {
-    suggestBox.style.display = 'none';
-    suggestBox.innerHTML = '';
-    return;
-  }
-  let allStocks = (typeof n500CsvGetCached === 'function' ? n500CsvGetCached() : []) || [];
-  if (allStocks.length === 0 && typeof _sdCurrentData !== 'undefined' && _sdCurrentData?.stocks) {
-    allStocks = _sdCurrentData.stocks;
-  }
-  const matches = [];
-  for (const s of allStocks) {
-    if ((s.symbol && s.symbol.toLowerCase().includes(query)) || (s.company && s.company.toLowerCase().includes(query))) {
-      matches.push(s);
-      if (matches.length >= 8) break;
+    // Show top trending stocks when clicking in empty input
+    matches = allStocks.slice(0, 8);
+  } else {
+    // Ranked matching: startsWith first, contains second
+    const exactStart = [];
+    const symContains = [];
+    const compContains = [];
+
+    for (const s of allStocks) {
+      const symLow = (s.symbol || '').toLowerCase();
+      const compLow = (s.company || '').toLowerCase();
+
+      if (symLow.startsWith(query)) {
+        exactStart.push(s);
+      } else if (symLow.includes(query)) {
+        symContains.push(s);
+      } else if (compLow.includes(query)) {
+        compContains.push(s);
+      }
+      if (exactStart.length + symContains.length + compContains.length >= 15) break;
     }
+    matches = exactStart.concat(symContains, compContains).slice(0, 10);
   }
+
   if (matches.length === 0) {
-    suggestBox.style.display = 'none';
-    suggestBox.innerHTML = '';
+    if (query) {
+      const qUpper = query.toUpperCase();
+      suggestBox.innerHTML =
+        '<div class="max-suggest-item" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #2a2e39;display:flex;align-items:center;justify-content:space-between;" ' +
+          'onmouseenter="maxChartSidebarHighlightItem(this)" ' +
+          'onmouseleave="this.style.background=\'transparent\'" ' +
+          'onmousedown="maxChartSidebarSelectStock(\'' + qUpper + '\')">' +
+          '<div style="display:flex;align-items:center;gap:6px;">' +
+            '<span style="font-weight:700;font-size:12px;color:var(--teal);font-family:var(--mono);">+ Add "' + qUpper + '"</span>' +
+          '</div>' +
+          '<span style="font-size:10px;font-weight:700;color:#22c55e;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);padding:2px 6px;border-radius:3px;">Custom Ticker</span>' +
+        '</div>';
+      suggestBox.style.display = 'block';
+    } else {
+      suggestBox.style.display = 'none';
+      suggestBox.innerHTML = '';
+    }
     return;
   }
-  suggestBox.innerHTML = matches.map(s => {
+
+  suggestBox.innerHTML = matches.map((s, idx) => {
     const symEsc = s.symbol.replace(/'/g, "\\'");
-    return '<div class="max-suggest-item" style="padding:6px 10px;cursor:pointer;border-bottom:1px solid #2a2e39;display:flex;align-items:center;justify-content:space-between;" onclick="maxChartSidebarSelectStock(\'' + symEsc + '\')">' +
-      '<span style="font-weight:700;color:var(--teal);">' + s.symbol + '</span>' +
-      '<span style="font-size:10px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;">' + (s.company || '') + '</span>' +
+    const details = typeof getStockDetails === 'function' ? getStockDetails(s.symbol) : null;
+    const compName = s.company || details?.company || '';
+    const secName = s.sector || details?.sector || '';
+
+    return '<div class="max-suggest-item" data-index="' + idx + '" data-symbol="' + symEsc + '" ' +
+      'style="padding:7px 10px;cursor:pointer;border-bottom:1px solid #2a2e39;display:flex;align-items:center;justify-content:space-between;transition:background .12s;" ' +
+      'onmouseenter="maxChartSidebarHighlightItem(this)" ' +
+      'onmouseleave="this.style.background=\'transparent\'" ' +
+      'onmousedown="maxChartSidebarSelectStock(\'' + symEsc + '\')">' +
+      '<div style="display:flex;flex-direction:column;min-width:0;gap:2px;">' +
+        '<div style="display:flex;align-items:center;gap:6px;">' +
+          '<span style="font-weight:700;font-size:12px;color:var(--teal);font-family:var(--mono);">' + s.symbol + '</span>' +
+          (secName ? '<span style="font-size:9px;color:#787b86;background:rgba(255,255,255,0.05);padding:1px 4px;border-radius:3px;border:1px solid #2a2e39;">' + secName + '</span>' : '') +
+        '</div>' +
+        '<span class="comp-name" style="font-size:10px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px;">' + compName + '</span>' +
+      '</div>' +
+      '<span style="font-size:10px;font-weight:700;color:#22c55e;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);padding:2px 6px;border-radius:3px;flex-shrink:0;">+ Add</span>' +
     '</div>';
   }).join('');
+
   suggestBox.style.display = 'block';
 }
 window.maxChartSidebarSearchInput = maxChartSidebarSearchInput;
 
+function maxChartSidebarHighlightItem(el) {
+  const suggestBox = document.getElementById('max-chart-sidebar-suggest');
+  if (!suggestBox) return;
+  suggestBox.querySelectorAll('.max-suggest-item').forEach(item => {
+    item.style.background = 'transparent';
+    item.style.borderLeft = 'none';
+  });
+  if (el) {
+    el.style.background = '#262b3d';
+    el.style.borderLeft = '3px solid #2962ff';
+    const idx = parseInt(el.getAttribute('data-index'));
+    if (!isNaN(idx)) _sidebarSuggestActiveIdx = idx;
+  }
+}
+window.maxChartSidebarHighlightItem = maxChartSidebarHighlightItem;
+
+function maxChartSidebarKeyDown(e) {
+  const suggestBox = document.getElementById('max-chart-sidebar-suggest');
+  const inp = document.getElementById('max-chart-sidebar-add-input');
+  if (!inp) return;
+
+  const items = suggestBox ? suggestBox.querySelectorAll('.max-suggest-item') : [];
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (!items.length) return;
+    _sidebarSuggestActiveIdx = (_sidebarSuggestActiveIdx + 1) % items.length;
+    const target = items[_sidebarSuggestActiveIdx];
+    maxChartSidebarHighlightItem(target);
+    target.scrollIntoView({ block: 'nearest' });
+    return;
+  }
+
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (!items.length) return;
+    _sidebarSuggestActiveIdx = (_sidebarSuggestActiveIdx - 1 + items.length) % items.length;
+    const target = items[_sidebarSuggestActiveIdx];
+    maxChartSidebarHighlightItem(target);
+    target.scrollIntoView({ block: 'nearest' });
+    return;
+  }
+
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (_sidebarSuggestActiveIdx >= 0 && items[_sidebarSuggestActiveIdx]) {
+      const sym = items[_sidebarSuggestActiveIdx].getAttribute('data-symbol');
+      if (sym) { maxChartSidebarSelectStock(sym); return; }
+    }
+    if (items.length > 0) {
+      const sym = items[0].getAttribute('data-symbol');
+      if (sym) { maxChartSidebarSelectStock(sym); return; }
+    }
+    const val = inp.value.trim().toUpperCase();
+    if (val) {
+      maxChartSidebarSelectStock(val);
+    }
+    return;
+  }
+
+  if (e.key === 'Escape') {
+    if (suggestBox) suggestBox.style.display = 'none';
+    _sidebarSuggestActiveIdx = -1;
+  }
+}
+window.maxChartSidebarKeyDown = maxChartSidebarKeyDown;
+
 function maxChartSidebarSelectStock(sym) {
   const inp = document.getElementById('max-chart-sidebar-add-input');
-  if (inp) inp.value = '';
+  if (inp) {
+    inp.value = '';
+    inp.blur();
+  }
   const suggestBox = document.getElementById('max-chart-sidebar-suggest');
   if (suggestBox) suggestBox.style.display = 'none';
+  _sidebarSuggestActiveIdx = -1;
 
   maxChartSidebarAddSymbol(sym);
   showChartToast('⭐ Added <b>' + sym + '</b> to Watchlist', '#22c55e');
@@ -8061,50 +8602,111 @@ function maxChartSidebarSelectStock(sym) {
 window.maxChartSidebarSelectStock = maxChartSidebarSelectStock;
 
 function maxChartSidebarEnterKey() {
-  const inp = document.getElementById('max-chart-sidebar-add-input');
-  if (!inp) return;
-  const suggestBox = document.getElementById('max-chart-sidebar-suggest');
-  const firstItem = suggestBox && suggestBox.querySelector('.max-suggest-item');
-  if (suggestBox && suggestBox.style.display !== 'none' && firstItem) {
-    firstItem.click();
-    return;
-  }
-  const val = inp.value.trim().toUpperCase();
-  if (val) {
-    maxChartSidebarSelectStock(val);
-  }
+  maxChartSidebarKeyDown({ key: 'Enter', preventDefault: () => {} });
 }
 window.maxChartSidebarEnterKey = maxChartSidebarEnterKey;
+
+// Global listener to dismiss suggestion box when clicking outside using capturing pointerdown
+document.addEventListener('pointerdown', e => {
+  const suggestBox = document.getElementById('max-chart-sidebar-suggest');
+  if (suggestBox && suggestBox.style.display !== 'none') {
+    if (!e.target.closest('#max-chart-sidebar-add-input') && !e.target.closest('#max-chart-sidebar-suggest')) {
+      suggestBox.style.display = 'none';
+      _sidebarSuggestActiveIdx = -1;
+    }
+  }
+}, true);
 
 function updateMaxChartSidebarWatchlist() {
   const rowsEl = document.getElementById('max-chart-sidebar-rows');
   const flagsEl = document.getElementById('max-chart-sidebar-flags');
+  const tabsEl = document.getElementById('max-chart-sidebar-tabs');
   if (!rowsEl) return;
 
-  // Render flags filter bar
-  if (flagsEl) {
-    const flags = [
-      { id: 'all', color: '#94a3b8', name: 'All' },
-      { id: 'red', color: '#ef4444', name: 'Red' },
-      { id: 'blue', color: '#3b82f6', name: 'Blue' },
-      { id: 'green', color: '#22c55e', name: 'Green' },
-      { id: 'yellow', color: '#eab308', name: 'Yellow' },
-      { id: 'pink', color: '#ec4899', name: 'Pink' }
-    ];
-    let flagsHtml = '';
-    flags.forEach(f => {
-      const active = (f.id === 'all' && !_sccActiveWatchlist.startsWith('__flag_')) || (_sccActiveWatchlist === '__flag_' + f.id);
-      flagsHtml += '<div onclick="sccWlSwitchTab(\'' + (f.id === 'all' ? 'Main' : '__flag_' + f.id) + '\'); updateMaxChartSidebarWatchlist();" class="tv-flag-pill ' + (active ? 'active' : '') + '" style="background:' + f.color + '" title="' + f.name + '"></div>';
+  // Render tabs in Max Chart Sidebar
+  if (tabsEl && typeof sccGetOrderedTabs === 'function') {
+    const ordered = sccGetOrderedTabs();
+    const colorsMap = { red: '#ef4444', blue: '#3b82f6', green: '#22c55e', yellow: '#eab308', purple: '#a855f7', cyan: '#06b6d4', pink: '#ec4899' };
+    let tabsHtml = '';
+    ordered.forEach(name => {
+      const isActive = (name === _sccActiveWatchlist) || (name.startsWith('__flag_') && _sccActiveWatchlist === name.replace('__flag_', '__flage_'));
+      const isFlag = name.startsWith('__flag_') || name.startsWith('__flage_');
+      const isVcp = (name === 'VCP');
+      if (isFlag) {
+        const c = name.replace(/^__flag[e]?_/, '');
+        const col = colorsMap[c] || c;
+        tabsHtml += `
+          <div onclick="sccWlSwitchTab('${name}'); updateMaxChartSidebarWatchlist();"
+               draggable="true"
+               ondragstart="sccTabDragStart(event, '${name}')"
+               ondragover="sccTabDragOver(event)"
+               ondrop="sccTabDrop(event, '${name}')"
+               ondragend="sccTabDragEnd(event)"
+               class="tv-wl-tab-pill ${isActive ? 'active' : ''}"
+               title="${c.toUpperCase()} Flag">
+            <svg width="8" height="13" viewBox="0 0 10 18" fill="${col}">
+              <path d="M0 0h10v18l-5-4-5 4V0z"/>
+            </svg>
+          </div>
+        `;
+      } else if (isVcp) {
+        tabsHtml += `
+          <div onclick="sccWlSwitchTab('VCP'); updateMaxChartSidebarWatchlist();"
+               draggable="true"
+               ondragstart="sccTabDragStart(event, 'VCP')"
+               ondragover="sccTabDragOver(event)"
+               ondrop="sccTabDrop(event, 'VCP')"
+               ondragend="sccTabDragEnd(event)"
+               class="tv-wl-tab-pill ${isActive ? 'active' : ''}">
+            <span>⚡ VCP</span>
+          </div>
+        `;
+      } else {
+        tabsHtml += `
+          <div onclick="sccWlSwitchTab('${name.replace(/'/g, "\\\'")}'); updateMaxChartSidebarWatchlist();"
+               draggable="true"
+               ondragstart="sccTabDragStart(event, '${name.replace(/'/g, "\\\'")}')"
+               ondragover="sccTabDragOver(event)"
+               ondrop="sccTabDrop(event, '${name.replace(/'/g, "\\\'")}')"
+               ondragend="sccTabDragEnd(event)"
+               class="tv-wl-tab-pill ${isActive ? 'active' : ''}">
+            <span>${name}</span>
+          </div>
+        `;
+      }
     });
-    flagsEl.innerHTML = flagsHtml;
+    tabsHtml += `
+      <button onclick="sccWlCreateTabPrompt()" title="Create new watch list"
+              style="background:none;border:none;color:#38bdf8;font-size:13px;font-weight:bold;cursor:pointer;padding:2px 6px;">+</button>
+    `;
+    tabsEl.innerHTML = tabsHtml;
   }
 
   // Active symbol for whichever layout tile is currently focused
   const curSym = (_layoutSymbols[_activeLayoutTile - 1] || _sdMaximizedChartSymbol || '').toUpperCase().replace('.NS', '');
 
   let syms = _sccWatchlistSymbols;
-  if (_sccActiveWatchlist.startsWith('__flag_')) {
-    const col = _sccActiveWatchlist.replace('__flag_', '');
+  if (_sccActiveWatchlist === 'VCP') {
+    const cachedDrill = (typeof sectorDrillGetCached === 'function') ? sectorDrillGetCached() : null;
+    const activeMap = cachedDrill ? (_vcpbViewMode === 'industry' ? cachedDrill.industries : cachedDrill.sectors) : null;
+    const flatSymbols = [];
+    if (cachedDrill && activeMap) {
+      if (typeof calculateRSRatings === 'function') calculateRSRatings(cachedDrill);
+      Object.keys(activeMap).forEach(secName => {
+        const sec = activeMap[secName];
+        if (sec && Array.isArray(sec.stocks)) {
+          sec.stocks.forEach(s => {
+            if (s.symbol && !flatSymbols.includes(s.symbol.toUpperCase())) {
+              flatSymbols.push(s.symbol.toUpperCase());
+            }
+          });
+        }
+      });
+    }
+    syms = flatSymbols;
+    _sccWatchlistSymbols = flatSymbols;
+  } else if (_sccActiveWatchlist.startsWith('__flag_') || _sccActiveWatchlist.startsWith('__flage_')) {
+    const col = _sccActiveWatchlist.replace(/^__flag[e]?_/, '');
     syms = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === col);
   } else if (!syms || !syms.length) {
     if (typeof _sccWatchlists !== 'undefined' && _sccWatchlists && _sccWatchlists['Main'] && _sccWatchlists['Main'].length) {
@@ -8124,7 +8726,7 @@ function updateMaxChartSidebarWatchlist() {
   }
 
   let rowsHtml = '';
-  const flagCols = { red: '#ef4444', blue: '#3b82f6', green: '#22c55e', yellow: '#eab308', pink: '#ec4899' };
+  const flagCols = { red: '#ef4444', blue: '#3b82f6', green: '#22c55e', yellow: '#eab308', pink: '#ec4899', purple: '#a855f7', cyan: '#06b6d4' };
 
   syms.forEach(s => {
     const sUpper = s.toUpperCase();
@@ -8137,7 +8739,7 @@ function updateMaxChartSidebarWatchlist() {
 
     rowsHtml += '<div class="tv-max-wl-row ' + (isCur ? 'active' : '') + '" onclick="maxChartOnStockSelected(\'' + sUpper + '\')">' +
       '<div style="display:flex;align-items:center;gap:6px;">' +
-        '<svg width="8" height="12" viewBox="0 0 10 18" fill="' + flagColor + '" onclick="sccWlCycleFlag(\'' + sUpper + '\', event)" style="cursor:pointer;flex-shrink:0;">' +
+        '<svg width="8" height="12" viewBox="0 0 10 18" fill="' + flagColor + '" onclick="sccWatchlistOpenFlagPopup(this, \'' + sUpper + '\'); event.stopPropagation();" style="cursor:pointer;flex-shrink:0;" title="Change flag color">' +
           '<path d="M0 0h10v18l-5-4-5 4V0z"/>' +
         '</svg>' +
         '<span style="font-weight:700;' + (isCur ? 'color:#2962ff;' : '') + '">' + sUpper + '</span>' +
@@ -8209,3 +8811,111 @@ if (document.readyState === 'loading') {
 } else {
   if (typeof initChartDrawingCanvas === 'function') initChartDrawingCanvas();
 }
+
+
+// ── TRADINGVIEW PRECISE COORDINATES EDITOR ──
+function openCoordsDialog(drawing) {
+  const dlg = document.getElementById('tv-coords-dialog');
+  const titleEl = document.getElementById('tv-coords-title');
+  const fieldsEl = document.getElementById('tv-coords-fields');
+  if (!dlg || !titleEl || !fieldsEl || !drawing) return;
+
+  const names = {
+    scale: 'Price & Date Range Coordinates',
+    measure: 'Price & Date Range Coordinates',
+    pricenote: 'Price Note Coordinates',
+    ray_h: 'Horizontal Ray Coordinate',
+    ray: 'Arrow Ray Coordinates',
+    trendline: 'Trend Line Coordinates',
+    rect: 'Rectangle Zone Coordinates',
+    fib: 'Fibonacci Retracement Coordinates',
+    text: 'Text Annotation'
+  };
+
+  titleEl.innerText = names[drawing.type] || 'Edit Coordinates';
+
+  let html = '';
+  const p1Val = drawing.p1 && drawing.p1.price != null ? drawing.p1.price.toFixed(2) : '';
+  html += `<div>
+    <label class="tv-coord-label">Point 1 Price (₹)</label>
+    <input type="number" step="0.05" id="tv-coord-p1-price" class="tv-coord-input" value="${p1Val}">
+  </div>`;
+
+  if (drawing.p2 || drawing.type === 'scale' || drawing.type === 'measure' || drawing.type === 'trendline' || drawing.type === 'ray' || drawing.type === 'rect' || drawing.type === 'fib') {
+    const p2Val = drawing.p2 && drawing.p2.price != null ? drawing.p2.price.toFixed(2) : (drawing.p1 && drawing.p1.price != null ? drawing.p1.price.toFixed(2) : '');
+    html += `<div>
+      <label class="tv-coord-label">Point 2 Price (₹)</label>
+      <input type="number" step="0.05" id="tv-coord-p2-price" class="tv-coord-input" value="${p2Val}">
+    </div>`;
+  }
+
+  if (drawing.type === 'pricenote' || drawing.type === 'text') {
+    html += `<div>
+      <label class="tv-coord-label">Label / Note Text</label>
+      <input type="text" id="tv-coord-text" class="tv-coord-input" value="${(drawing.text || '').replace(/"/g, '&quot;')}">
+    </div>`;
+  }
+
+  fieldsEl.innerHTML = html;
+  dlg.style.display = 'block';
+  const inp1 = document.getElementById('tv-coord-p1-price');
+  if (inp1) { inp1.focus(); inp1.select(); }
+}
+window.openCoordsDialog = openCoordsDialog;
+
+function closeCoordsDialog() {
+  const dlg = document.getElementById('tv-coords-dialog');
+  if (dlg) dlg.style.display = 'none';
+}
+window.closeCoordsDialog = closeCoordsDialog;
+
+function applyDrawingCoordinates() {
+  const sym = getActiveDrawingSymbol();
+  const drawings = _chartDrawings[sym] || [];
+  if (_selectedDrawingIndex == null || !drawings[_selectedDrawingIndex]) {
+    closeCoordsDialog();
+    return;
+  }
+  const d = drawings[_selectedDrawingIndex];
+  const { series } = getDrawingContext();
+
+  const p1Inp = document.getElementById('tv-coord-p1-price');
+  const p2Inp = document.getElementById('tv-coord-p2-price');
+  const txtInp = document.getElementById('tv-coord-text');
+
+  if (p1Inp && p1Inp.value) {
+    const newP1 = parseFloat(p1Inp.value);
+    if (!isNaN(newP1)) {
+      d.p1.price = newP1;
+      if (series && typeof series.priceToCoordinate === 'function') {
+        const cy = series.priceToCoordinate(newP1);
+        if (cy != null && isFinite(cy)) d.p1.y = cy;
+      }
+    }
+  }
+
+  if (p2Inp && p2Inp.value) {
+    const newP2 = parseFloat(p2Inp.value);
+    if (!isNaN(newP2)) {
+      if (!d.p2) d.p2 = { ...d.p1 };
+      d.p2.price = newP2;
+      if (series && typeof series.priceToCoordinate === 'function') {
+        const cy = series.priceToCoordinate(newP2);
+        if (cy != null && isFinite(cy)) d.p2.y = cy;
+      }
+    }
+  }
+
+  if (txtInp) {
+    d.text = txtInp.value.trim();
+  } else if (d.type === 'pricenote' && p1Inp && p1Inp.value) {
+    d.text = '₹ ' + parseFloat(p1Inp.value).toFixed(2);
+  }
+
+  closeCoordsDialog();
+  saveChartDrawings();
+  redrawChartDrawings();
+  updateFloatingToolbar();
+  showChartToast('✔ Coordinates updated precisely', '#22c55e');
+}
+window.applyDrawingCoordinates = applyDrawingCoordinates;

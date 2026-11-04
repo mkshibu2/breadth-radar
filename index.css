@@ -6161,3 +6161,62 @@ thead th[onclick]:hover {
   background: rgba(41, 98, 255, 0.2);
   color: #f0f3fa;
 }
+
+/* ── TRADINGVIEW WATCHLIST TABS & DRAG REORDERING ── */
+.tv-max-sidebar-tabs {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.tv-max-sidebar-tabs::-webkit-scrollbar {
+  display: none;
+}
+.tv-wl-tab-pill {
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #787b86;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+.tv-wl-tab-pill:hover {
+  color: #f0f3fa;
+}
+.tv-wl-tab-pill.active {
+  color: #2962ff;
+  border-bottom-color: #2962ff;
+  font-weight: 700;
+}
+.tv-wl-tab-pill.dragging {
+  opacity: 0.4;
+  border-bottom-color: #eab308;
+}
+.tv-coord-label {
+  color: #787b86;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 3px;
+  display: block;
+}
+.tv-coord-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #141722;
+  border: 1px solid #2a2e39;
+  border-radius: 4px;
+  color: #f0f3fa;
+  font-size: 11px;
+  font-family: var(--mono);
+  padding: 6px 8px;
+  outline: none;
+}
+.tv-coord-input:focus {
+  border-color: #2962ff;
+}

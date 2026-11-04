@@ -16,7 +16,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@600;700;800&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="index.css?v=3.0.3">
+  <link rel="stylesheet" href="index.css?v=3.0.7">
   <script src="lightweight-charts.standalone.production.js"></script>
 </head>
 
@@ -1531,7 +1531,7 @@
     </div>
   </div>
 
-  <script src="index.js?v=3.0.3"></script>
+  <script src="index.js?v=3.0.7"></script>
 
   <div id="sector-drill-overlay"
     style="display:none;position:fixed;inset:0;background:rgba(3,3,5,.85);z-index:5000;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)"
@@ -1656,6 +1656,7 @@
         <!-- TF select -->
         <select id="max-chart-timeframe" onchange="maxChartChangeTimeframe(this.value)"
           style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:28px;cursor:pointer;flex-shrink:0;">
+          <option value="15m">15m</option>
           <option value="1H">1H</option>
           <option value="D" selected>D</option>
           <option value="W">W</option>
@@ -1732,6 +1733,9 @@
             </button>
             <button id="draw-tool-ray" class="tv-draw-btn" onclick="setDrawingTool('ray')" title="Arrow Ray">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="12 5 19 5 19 12"/><circle cx="5" cy="19" r="2" fill="currentColor"/></svg>
+            </button>
+            <button id="draw-tool-fib" class="tv-draw-btn" onclick="setDrawingTool('fib')" title="Fibonacci Retracement">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="4" x2="21" y2="4"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="3" y1="20" x2="21" y2="20"/><line x1="6" y1="4" x2="18" y2="20" stroke-dasharray="2 2" stroke-width="1.2"/></svg>
             </button>
             <button id="draw-tool-rect" class="tv-draw-btn" onclick="setDrawingTool('rect')" title="Rectangle Zone">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
@@ -1810,19 +1814,34 @@
               <span style="font-weight:700;font-size:12px;color:#f0f3fa;">Watchlist</span>
               <div id="max-chart-sidebar-flags" class="tv-max-flags-bar"></div>
             </div>
-            <div style="padding:6px 10px;border-bottom:1px solid #2a2e39;background:#141722;">
+            <div id="max-chart-sidebar-tabs" class="tv-max-sidebar-tabs" style="display:flex;align-items:center;gap:4px;overflow-x:auto;padding:4px 8px;background:#0e111a;border-bottom:1px solid #2a2e39;scrollbar-width:none;"></div>
+            <div style="position:relative;padding:6px 10px;border-bottom:1px solid #2a2e39;background:#141722;">
               <input id="max-chart-sidebar-add-input" placeholder="+ Add symbol to watchlist…"
-                style="width:100%;box-sizing:border-box;background:#1e222d;border:1px solid #2a2e39;color:#f0f3fa;font-size:11px;padding:5px 8px;border-radius:4px;outline:none;"
+                style="width:100%;box-sizing:border-box;background:#1e222d;border:1px solid #2a2e39;color:#f0f3fa;font-size:11px;padding:6px 8px;border-radius:4px;outline:none;"
+                autocomplete="off"
                 oninput="maxChartSidebarSearchInput(this.value)"
-                onfocus="maxChartSidebarSearchInput(this.value)"
-                onkeydown="if(event.key==='Enter')maxChartSidebarEnterKey()">
-              <div id="max-chart-sidebar-suggest" class="max-suggest-box" style="display:none;position:absolute;top:100%;left:10px;right:10px;width:auto;z-index:40;max-height:220px;overflow-y:auto;background:#1e222d;border:1px solid #2a2e39;border-radius:4px;box-shadow:0 10px 24px rgba(0,0,0,0.7);"></div>
+                onfocus="if(this.value.trim().length > 0) maxChartSidebarSearchInput(this.value)"
+                onkeydown="maxChartSidebarKeyDown(event)">
+              <div id="max-chart-sidebar-suggest" class="max-suggest-box"
+                style="display:none;position:absolute;top:100%;left:10px;right:10px;width:auto;z-index:9000;max-height:260px;overflow-y:auto;background:#1e222d;border:1px solid #363c4e;border-radius:5px;box-shadow:0 12px 28px rgba(0,0,0,0.85);"></div>
             </div>
             <div id="max-chart-sidebar-rows" class="tv-max-sidebar-rows"></div>
           </div>
         </div>
         <div id="max-chart-table-container"
           style="flex-shrink:0;background:var(--bg3);border-top:1px solid var(--border);"></div>
+    <!-- TradingView Precise Coordinates Editor Modal -->
+    <div id="tv-coords-dialog" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99999;background:#1e222d;border:1px solid #363c4e;border-radius:8px;box-shadow:0 20px 48px rgba(0,0,0,0.85);width:320px;color:#f0f3fa;font-family:-apple-system,BlinkMacSystemFont,'Trebuchet MS',sans-serif;padding:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid #2a2e39;padding-bottom:8px;">
+        <span id="tv-coords-title" style="font-weight:700;font-size:12px;color:#f0f3fa;">Edit Coordinates</span>
+        <button onclick="closeCoordsDialog()" style="background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;padding:0 4px;">✕</button>
+      </div>
+      <div id="tv-coords-fields" style="display:flex;flex-direction:column;gap:10px;font-size:11px;"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;border-top:1px solid #2a2e39;padding-top:12px;">
+        <button onclick="closeCoordsDialog()" style="background:#2a2e39;border:none;color:#d1d4dc;padding:6px 12px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">Cancel</button>
+        <button onclick="applyDrawingCoordinates()" style="background:#2962ff;border:none;color:#ffffff;padding:6px 14px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">Apply</button>
+      </div>
+    </div>
       </div>
     </div>
   </div>
