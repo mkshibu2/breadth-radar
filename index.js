@@ -1,3 +1,30 @@
+// ── GLOBAL CHART STUDIO STATE VARIABLES ──
+var _chartDataSource = 'yf'; // 'yf' | 'dhan'
+var _maxLwChart = null;
+var _maxLwPriceSeries = null;
+var _maxLwResizeObserver = null;
+
+
+function showChartToast(msg, color = '#2962ff') {
+  let toast = document.getElementById('tv-chart-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'tv-chart-toast';
+    toast.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:rgba(19,23,34,0.92);border:1px solid #2a2e39;color:#f0f3fa;padding:6px 16px;border-radius:20px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:12px;font-weight:600;z-index:99999;box-shadow:0 6px 20px rgba(0,0,0,0.6);backdrop-filter:blur(6px);transition:opacity 0.2s,transform 0.2s;pointer-events:none;';
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = msg;
+  toast.style.borderColor = color;
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(6px)';
+  }, 2200);
+}
+window.showChartToast = showChartToast;
+
 function toggleCollapse(bodyId, iconId) { const body = document.getElementById(bodyId); const icon = document.getElementById(iconId); if (!body) return; const isHidden = body.style.display === 'none'; body.style.display = isHidden ? 'block' : 'none'; if (icon) { icon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)'; } }
 async function cfgMakePublic() {
   const cfg = getCfg(); if (!cfg.key || !cfg.bin) { cfgBanner('⚠ No credentials configured.', 'warn', 'cp-sync-msg'); return; }
@@ -269,10 +296,10 @@ function toggleMaximizeSectorCommand() {
   const isRrgActive = document.getElementById('scc-pane-rrg').style.display !== 'none'; const isHeatmapActive = document.getElementById('scc-pane-heatmap').style.display !== 'none'; const isChartActive = document.getElementById('scc-pane-chart') && document.getElementById('scc-pane-chart').style.display !== 'none'; if (isRrgActive) { setTimeout(() => { if (typeof brrgDraw === 'function') brrgDraw(); }, 80); } else if (isHeatmapActive) { setTimeout(() => { if (typeof slhRender === 'function') slhRender(); }, 80); } else if (isChartActive) { setTimeout(() => { const count = parseInt(_sccChartLayout); for (let i = 0; i < count; i++) { sccChartRenderPanel(i); } }, 80); } else { setTimeout(() => { if (typeof brrgDraw === 'function') brrgDraw(); }, 80); }
 }
 function sccChartZoom(index, direction) {
-  sccChartSetActivePanel(index); let zoomFactor = _sccChartZoomFactors[index] || 1.0; if (direction > 0) { zoomFactor *= 0.85; } else { zoomFactor *= 1.15; }
+  sccChartSetActivePanel(index); if (typeof _sccLwCharts !== 'undefined' && _sccLwCharts[index]) { try { const ts = _sccLwCharts[index].timeScale(); const range = ts.getVisibleLogicalRange(); if (range) { const span = range.to - range.from; const shift = span * (direction > 0 ? -0.2 : 0.25); ts.setVisibleLogicalRange({ from: range.from - shift / 2, to: range.to + shift / 2 }); return; } } catch (e) { } } let zoomFactor = _sccChartZoomFactors[index] || 1.0; if (direction > 0) { zoomFactor *= 0.85; } else { zoomFactor *= 1.15; }
   zoomFactor = Math.max(0.15, Math.min(5.0, zoomFactor)); _sccChartZoomFactors[index] = zoomFactor; localStorage.setItem('_sccChartZoomFactors', JSON.stringify(_sccChartZoomFactors)); sccChartRenderPanel(index);
 }
-function sccChartZoomReset(index) { sccChartSetActivePanel(index); _sccChartZoomFactors[index] = 1.0; localStorage.setItem('_sccChartZoomFactors', JSON.stringify(_sccChartZoomFactors)); sccChartRenderPanel(index); }
+function sccChartZoomReset(index) { sccChartSetActivePanel(index); if (typeof _sccLwCharts !== 'undefined' && _sccLwCharts[index]) { try { _sccLwCharts[index].timeScale().fitContent(); return; } catch (e) { } } _sccChartZoomFactors[index] = 1.0; localStorage.setItem('_sccChartZoomFactors', JSON.stringify(_sccChartZoomFactors)); sccChartRenderPanel(index); }
 function sccChartGetCount() {
   if (_sccChartLayout === 'watchlist') {
     return _sccWatchlistSymbols.length;
@@ -300,6 +327,7 @@ function sccChartSetSymbol(index, symbol) {
 
 let _sccActivePanelIndex = 0;
 function sccChartRebuildGrid() {
+  updateWinPillStyles();
   const grid = document.getElementById('scc-chart-grid'); if (!grid) return; sccApplyWatchlistVisibility(); sccWlRenderTabs(); sccWatchlistRender(); const layoutSelect = document.getElementById('scc-chart-layout-select'); if (layoutSelect && layoutSelect.value !== _sccChartLayout) { layoutSelect.value = _sccChartLayout; }
   const typeSelect = document.getElementById('scc-chart-type-select'); if (typeSelect && typeSelect.value !== _sccChartType) { typeSelect.value = _sccChartType; }
 
@@ -332,6 +360,7 @@ function sccChartRebuildGrid() {
       grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
     }
   } else if (count === 4) { grid.className = 'scc-chart-grid-4'; grid.style.gridTemplateColumns = 'repeat(2, 1fr)'; } else if (count === 2) { grid.className = 'scc-chart-grid-2'; grid.style.gridTemplateColumns = 'repeat(2, 1fr)'; } else { grid.className = 'scc-chart-grid-1'; grid.style.gridTemplateColumns = '1fr'; }
+  if (typeof _sccLwCharts !== 'undefined') { Object.keys(_sccLwCharts).forEach(k => { try { _sccLwCharts[k].remove(); } catch(e){} }); _sccLwCharts = {}; } if (typeof _sccLwObservers !== 'undefined') { Object.keys(_sccLwObservers).forEach(k => { try { _sccLwObservers[k].disconnect(); } catch(e){} }); _sccLwObservers = {}; }
   let html = ''; for (let i = 0; i < count; i++) {
     const symbol = sccChartGetSymbol(i); const timeframe = _sccChartTimeframes[i] || 'D'; const tvUrl = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(symbol)}`; const isActive = i === _sccActivePanelIndex; const borderStyle = isActive ? 'border: 1px solid var(--accent);' : 'border: 1px solid var(--border);'; const shadowStyle = isActive ? 'box-shadow: 0 0 10px rgba(91, 163, 245, 0.25);' : 'box-shadow: none;'; html += `
       <div class="sd-chart-card" id="scc-chart-card-${i}" onclick="sccChartSetActivePanel(${i})" style="cursor: pointer; ${borderStyle} ${shadowStyle}">
@@ -386,7 +415,8 @@ function sccChartRebuildGrid() {
         </div>
 
         <div class="sd-chart-container" style="flex:1; position:relative; overflow:hidden;">
-          <canvas id="scc-chart-canvas-${i}" style="width:100%; height:100%; display:block;"></canvas>
+          <div id="scc-chart-lw-${i}" style="width:100%; height:100%; position:relative;"></div>
+          <canvas id="scc-chart-canvas-${i}" style="display:none;"></canvas>
           <div id="scc-chart-loader-${i}" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#131722; color:var(--dim); font-size:11px; flex-direction:column; gap:6px;">
             Loading chart…
           </div>
@@ -415,6 +445,1408 @@ function sccChartSetActivePanel(index) {
     }
   }
 }
+
+// SHIBU'S WIN INDICATOR ENGINE & TOGGLE STATE (TRADINGVIEW CUSTOMIZATION)
+// ==========================================
+
+function hexToRgba(hex, opacity) {
+  if (!hex) return hex;
+  if (hex.startsWith('rgba') || hex.startsWith('rgb')) return hex;
+  const clean = hex.replace('#', '');
+  let r = 0, g = 0, b = 0;
+  if (clean.length === 3) {
+    r = parseInt(clean[0] + clean[0], 16);
+    g = parseInt(clean[1] + clean[1], 16);
+    b = parseInt(clean[2] + clean[2], 16);
+  } else if (clean.length >= 6) {
+    r = parseInt(clean.substring(0, 2), 16);
+    g = parseInt(clean.substring(2, 4), 16);
+    b = parseInt(clean.substring(4, 6), 16);
+  }
+  const a = Math.max(0, Math.min(1, opacity != null ? (opacity > 1 ? opacity / 100 : opacity) : 1));
+  return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + a + ')';
+}
+
+function openFullPageChart(sym) {
+  let target = sym;
+  if (!target) {
+    if (typeof _sdMaximizedChartSymbol !== 'undefined' && _sdMaximizedChartSymbol) {
+      target = _sdMaximizedChartSymbol;
+    } else if (typeof _sccChartSymbols !== 'undefined' && _sccChartSymbols[0]) {
+      target = _sccChartSymbols[0];
+    } else if (typeof _wlItems !== 'undefined' && _wlItems.length > 0 && _wlItems[0].s) {
+      target = _wlItems[0].s;
+    } else {
+      target = 'RELIANCE';
+    }
+  }
+  if (typeof openMaximizedChart === 'function') {
+    openMaximizedChart(target);
+  }
+}
+window.openFullPageChart = openFullPageChart;
+
+// ── STOCK FUNDAMENTALS & TRADINGVIEW STYLE EPS/SALES TABLE ───────
+const _fundamentalsCache = new Map();
+
+function parseFundamentalsData(symbol, result) {
+  const data = {
+    symbol: symbol,
+    quarters: [],
+    roe: null,
+    roeFormatted: '—',
+    marketCap: null,
+    capCategory: '—',
+    screenerUrl: 'https://www.screener.in/company/' + encodeURIComponent(symbol) + '/consolidated/'
+  };
+
+  if (!result) return data;
+
+  // 1. ROE from financialData
+  if (result.financialData && result.financialData.returnOnEquity && result.financialData.returnOnEquity.raw != null) {
+    data.roe = result.financialData.returnOnEquity.raw;
+    data.roeFormatted = (data.roe * 100).toFixed(1) + '%';
+  }
+
+  // 2. Market Cap & Cap Category
+  const shares = result.defaultKeyStatistics?.sharesOutstanding?.raw;
+  const curPrice = result.financialData?.currentPrice?.raw;
+  if (shares && curPrice) {
+    data.marketCap = shares * curPrice;
+  } else if (result.financialData?.marketCap?.raw) {
+    data.marketCap = result.financialData.marketCap.raw;
+  }
+  if (data.marketCap) {
+    const mcInCr = data.marketCap / 1e7;
+    if (mcInCr >= 20000) data.capCategory = 'LargeCap';
+    else if (mcInCr >= 5000) data.capCategory = 'MidCap';
+    else if (mcInCr >= 1000) data.capCategory = 'SmallCap';
+    else data.capCategory = 'MicroCap';
+  }
+
+  // 3. Quarterly EPS & Sales
+  const qList = result.earnings?.financialsChart?.quarterly || [];
+  const incList = result.incomeStatementHistoryQuarterly?.incomeStatementHistory || [];
+  const quarterlyItems = [];
+
+  if (Array.isArray(qList) && qList.length > 0) {
+    for (const item of qList) {
+      quarterlyItems.push({
+        date: item.date,
+        revenue: item.revenue != null ? item.revenue : null,
+        earnings: item.earnings != null ? item.earnings : null
+      });
+    }
+  } else if (Array.isArray(incList) && incList.length > 0) {
+    for (const item of incList) {
+      quarterlyItems.push({
+        date: item.endDate?.fmt || 'Qtr',
+        revenue: item.totalRevenue?.raw != null ? item.totalRevenue.raw : null,
+        earnings: item.netIncome?.raw != null ? item.netIncome.raw : null
+      });
+    }
+  }
+
+  // Reverse so newest quarter is at index 0 (descending order)
+  const sortedDesc = [...quarterlyItems].reverse();
+  const latestEarningsGrowth = result.financialData?.earningsGrowth?.raw;
+  const latestRevenueGrowth = result.financialData?.revenueGrowth?.raw;
+
+  const parsedQuarters = [];
+  for (let i = 0; i < sortedDesc.length; i++) {
+    const cur = sortedDesc[i];
+    let epsPct = null;
+    let salesPct = null;
+
+    if (i + 4 < sortedDesc.length) {
+      const prevYear = sortedDesc[i + 4];
+      if (prevYear.earnings && cur.earnings != null) {
+        epsPct = Math.round(((cur.earnings - prevYear.earnings) / Math.abs(prevYear.earnings)) * 100);
+      }
+      if (prevYear.revenue && cur.revenue != null) {
+        salesPct = Math.round(((cur.revenue - prevYear.revenue) / Math.abs(prevYear.revenue)) * 100);
+      }
+    } else if (i === 0) {
+      if (latestEarningsGrowth != null) epsPct = Math.round(latestEarningsGrowth * 100);
+      if (latestRevenueGrowth != null) salesPct = Math.round(latestRevenueGrowth * 100);
+    }
+
+    if (epsPct == null && i + 1 < sortedDesc.length) {
+      const prevQ = sortedDesc[i + 1];
+      if (prevQ.earnings && cur.earnings != null) {
+        epsPct = Math.round(((cur.earnings - prevQ.earnings) / Math.abs(prevQ.earnings)) * 100);
+      }
+      if (prevQ.revenue && cur.revenue != null) {
+        salesPct = Math.round(((cur.revenue - prevQ.revenue) / Math.abs(prevQ.revenue)) * 100);
+      }
+    }
+
+    let displayDate = cur.date || '—';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(displayDate)) {
+      const d = new Date(displayDate);
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      displayDate = months[d.getUTCMonth()] + '-' + String(d.getUTCFullYear()).slice(-2);
+    } else if (/^(\d)Q(\d{4})$/.test(displayDate)) {
+      const m = displayDate.match(/^(\d)Q(\d{4})$/);
+      displayDate = 'Q' + m[1] + ' ' + m[2].slice(-2);
+    }
+
+    parsedQuarters.push({
+      date: displayDate,
+      epsPct: epsPct,
+      salesPct: salesPct,
+      earnings: cur.earnings,
+      revenue: cur.revenue
+    });
+  }
+
+  data.quarters = parsedQuarters;
+  return data;
+}
+
+async function fetchStockFundamentals(symbol) {
+  if (!symbol) return null;
+  const sUpper = symbol.toUpperCase().replace('.NS', '');
+  if (_fundamentalsCache.has(sUpper)) {
+    const cached = _fundamentalsCache.get(sUpper);
+    if (cached && cached.quarters && cached.quarters.length > 0) return cached;
+  }
+  // 1. Try Screener.in first (most accurate for NSE)
+  try {
+    const screenerData = await fetchScreenerFundamentals(sUpper);
+    if (screenerData && screenerData.quarters && screenerData.quarters.length > 0) {
+      _fundamentalsCache.set(sUpper, screenerData);
+      return screenerData;
+    }
+  } catch (e) { }
+  const yfSymbol = sUpper + '.NS';
+  const targetUrl = 'https://query1.finance.yahoo.com/v10/finance/quoteSummary/' + yfSymbol + '?modules=earnings,financialData,defaultKeyStatistics,incomeStatementHistoryQuarterly';
+
+  const currentOrigin = window.location.origin;
+  const proxies = [
+    url => 'https://nse-chart-proxy.shibu-mk.workers.dev/?url=' + encodeURIComponent(url),
+    url => {
+      if (!currentOrigin || currentOrigin.startsWith('file') || currentOrigin === 'null' || currentOrigin.includes('github.io')) return '';
+      return currentOrigin + '/api/proxy?url=' + encodeURIComponent(url);
+    },
+    url => 'http://localhost:9090/?url=' + encodeURIComponent(url),
+    url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+    url => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url)
+  ];
+
+  for (const proxyFn of proxies) {
+    try {
+      const pUrl = proxyFn(targetUrl);
+      if (!pUrl) continue;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const resp = await fetch(pUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (resp.ok) {
+        let text = await resp.text();
+        if (text.trim().startsWith('{')) {
+          const parsed = JSON.parse(text);
+          if (parsed.contents) text = parsed.contents;
+        }
+        const data = typeof text === 'string' ? JSON.parse(text) : text;
+        const result = data?.quoteSummary?.result?.[0];
+        if (result) {
+          const parsedFundamentals = parseFundamentalsData(sUpper, result);
+          _fundamentalsCache.set(sUpper, parsedFundamentals);
+          return parsedFundamentals;
+        }
+      }
+    } catch (e) {
+      // try next proxy
+    }
+  }
+
+  const fallback = {
+    symbol: sUpper,
+    quarters: [],
+    roe: null,
+    roeFormatted: '—',
+    marketCap: null,
+    capCategory: '—',
+    screenerUrl: 'https://www.screener.in/company/' + encodeURIComponent(sUpper) + '/consolidated/'
+  };
+  _fundamentalsCache.set(sUpper, fallback);
+  return fallback;
+}
+
+async function renderMaxChartEpsTable(symbol) {
+  const container = document.getElementById('max-chart-eps-table');
+  if (!container) return;
+
+  const show = _winConfig.inputs.showEpsTable !== false && (!_winConfig.style.epsTable || _winConfig.style.epsTable.visible);
+  if (!show || !symbol || symbol === '-' || symbol.toUpperCase() === '^NSEI') {
+    container.style.display = 'none';
+    return;
+  }
+
+  container.style.display = 'block';
+  const op = (_winConfig.style.epsTable && _winConfig.style.epsTable.opacity) || 90;
+  container.style.opacity = (op / 100).toFixed(2);
+
+  const sUpper = symbol.toUpperCase().replace('.NS', '');
+
+  // Render initial frame with direct Screener link and available fundamentals immediately
+  const renderFallbackView = () => {
+    let extraInfo = '';
+    if (typeof getStockDetails === 'function') {
+      const d = getStockDetails(sUpper);
+      if (d && d.stats) {
+        const epsR = d.stats.eps_rating != null ? d.stats.eps_rating : '';
+        const rsR = d.stats.rs_rating != null ? d.stats.rs_rating : '';
+        if (epsR || rsR) {
+          extraInfo = '<div style="font-size:9px;color:#94a3b8;margin:2px 0 6px 0;">' +
+            (epsR ? 'EPS Rating: <b style="color:#22c55e;">' + epsR + '</b> ' : '') +
+            (rsR ? '· RS: <b style="color:#a855f7;">' + rsR + '</b>' : '') +
+          '</div>';
+        }
+      }
+    }
+    container.innerHTML = '<table class="tv-eps-tbl">' +
+      '<thead><tr><th style="text-align:left;">Qtr</th><th>EPS%</th><th>Sales%</th></tr></thead>' +
+      '<tbody>' +
+        '<tr><td colspan="3" style="text-align:center;padding:8px 4px;">' +
+          '<div style="font-size:10px;font-weight:700;color:#f0f3fa;">' + sUpper + ' Financials</div>' +
+          extraInfo +
+          '<a href="https://www.screener.in/company/' + encodeURIComponent(sUpper) + '/consolidated/" target="_blank" ' +
+             'style="display:inline-flex;align-items:center;gap:3px;color:#2962ff;font-size:9px;text-decoration:none;font-weight:700;padding:2px 6px;border-radius:3px;background:rgba(41,98,255,0.12);border:1px solid rgba(41,98,255,0.3);">' +
+            '<span>View Screener Quarters ↗</span>' +
+          '</a>' +
+        '</td></tr>' +
+      '</tbody>' +
+    '</table>';
+  };
+
+  if (!_fundamentalsCache.has(sUpper)) {
+    renderFallbackView();
+  }
+
+  try {
+    const fundPromise = fetchStockFundamentals(sUpper);
+    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3000));
+    const fund = await Promise.race([fundPromise, timeoutPromise]);
+
+    if (!fund || !fund.quarters || fund.quarters.length === 0) {
+      renderFallbackView();
+      return;
+    }
+
+    const rowsLimit = Math.max(1, Math.min(8, _winConfig.inputs.epsRowsToShow || 4));
+    const quartersToShow = fund.quarters.slice(0, rowsLimit);
+
+    let rowsHtml = '';
+    for (const q of quartersToShow) {
+      const epsTxt = q.epsPct != null ? (q.epsPct >= 0 ? '+' : '') + q.epsPct + '%' : '—';
+      const epsClass = q.epsPct == null ? 'tv-eps-neu' : q.epsPct >= 0 ? 'tv-eps-pos' : 'tv-eps-neg';
+      const salesTxt = q.salesPct != null ? (q.salesPct >= 0 ? '+' : '') + q.salesPct + '%' : '—';
+      const salesClass = q.salesPct == null ? 'tv-eps-neu' : q.salesPct >= 0 ? 'tv-eps-pos' : 'tv-eps-neg';
+
+      rowsHtml += '<tr>' +
+        '<td style="text-align:left;color:#d1d4dc;font-weight:600;">' + q.date + '</td>' +
+        '<td class="' + epsClass + '">' + epsTxt + '</td>' +
+        '<td class="' + salesClass + '">' + salesTxt + '</td>' +
+      '</tr>';
+    }
+
+    container.innerHTML = '<table class="tv-eps-tbl">' +
+      '<thead>' +
+        '<tr>' +
+          '<th style="text-align:left;">Qtr</th>' +
+          '<th>EPS%</th>' +
+          '<th>Sales%</th>' +
+        '</tr>' +
+      '</thead>' +
+      '<tbody>' +
+        rowsHtml +
+      '</tbody>' +
+    '</table>' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 8px;background:rgba(0,0,0,0.35);border-top:1px solid #2a2e39;font-size:8px;">' +
+      '<span style="color:#787b86;">YoY Growth</span>' +
+      '<a href="https://www.screener.in/company/' + encodeURIComponent(sUpper) + '/consolidated/" target="_blank" style="color:#2962ff;text-decoration:none;font-weight:600;">Screener ↗</a>' +
+    '</div>';
+  } catch (err) {
+    renderFallbackView();
+  }
+}
+
+window.fetchStockFundamentals = fetchStockFundamentals;
+window.renderMaxChartEpsTable = renderMaxChartEpsTable;
+
+window.hexToRgba = hexToRgba;
+
+const WIN_DEFAULT_CONFIG = {
+  inputs: {
+    ema1Period: 10,
+    ema2Period: 20,
+    sma1Period: 50,
+    sma2Period: 200,
+    sma30wPeriod: 30,
+    volLen: 50,
+    atrLen: 14,
+    adrLen: 20,
+    udLen: 50,
+    purpleRoc: 5.0,
+    purpleVol: 1000000,
+    vcpRangePct: 2.0,
+    powerPocketVolMult: 1.5,
+    vtLookback: 25,
+    vtRows: 30,
+    vtHvnPct: 60.0,
+    vtLvnPct: 40.0,
+    showEpsTable: true,
+    epsRowsToShow: 4,
+  },
+  style: {
+    ema10: { visible: true, color: '#3b82f6', opacity: 100, width: 1.5, lineStyle: 0 },
+    ema20: { visible: true, color: '#ef4444', opacity: 100, width: 1.5, lineStyle: 0 },
+    sma50: { visible: true, color: '#06b6d4', opacity: 100, width: 1.5, lineStyle: 0 },
+    sma200: { visible: true, color: '#22c55e', opacity: 100, width: 2.0, lineStyle: 0 },
+    sma30w: { visible: true, color: '#f97316', opacity: 100, width: 2.0, lineStyle: 0 },
+    rs: { visible: true, color: '#38bdf8', opacity: 100, width: 1.8, lineStyle: 0 },
+    vt: { visible: true, color: '#4863fc', opacity: 100, width: 1.5, lineStyle: 2 },
+    dots: { visible: true },
+    purpleDot: { visible: true, color: '#d203f7', opacity: 100 },
+    vcp: { visible: true, color: '#ffffff', opacity: 100 },
+    powerPocket: { visible: true, color: '#94a3b8', opacity: 100 },
+    hud: { visible: true },
+    epsTable: { visible: true, opacity: 90 }
+  }
+};
+
+let _winConfig = JSON.parse(JSON.stringify(WIN_DEFAULT_CONFIG));
+
+function loadWinSettings() {
+  try {
+    const s = localStorage.getItem('shibu_win_config_v2');
+    if (s) {
+      const parsed = JSON.parse(s);
+      if (parsed.inputs) _winConfig.inputs = Object.assign({}, WIN_DEFAULT_CONFIG.inputs, parsed.inputs);
+      if (parsed.style) {
+        for (const k in WIN_DEFAULT_CONFIG.style) {
+          _winConfig.style[k] = Object.assign({}, WIN_DEFAULT_CONFIG.style[k], (parsed.style && parsed.style[k]) || {});
+        }
+      }
+    } else {
+      const old = localStorage.getItem('shibu_win_settings');
+      if (old) {
+        const pOld = JSON.parse(old);
+        for (const k in pOld) {
+          if (_winConfig.style[k]) _winConfig.style[k].visible = !!pOld[k];
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("Could not load WIN config", e);
+  }
+  updateWinPillStyles();
+  updateWinLegendLabels();
+}
+
+function saveWinSettings() {
+  try {
+    localStorage.setItem('shibu_win_config_v2', JSON.stringify(_winConfig));
+    const legacy = {};
+    for (const k in _winConfig.style) {
+      legacy[k] = _winConfig.style[k].visible;
+    }
+    localStorage.setItem('shibu_win_settings', JSON.stringify(legacy));
+  } catch (e) { }
+}
+
+function updateWinLegendLabels() {
+  const el = document.getElementById('max-chart-tv-legend-params');
+  if (el && _winConfig && _winConfig.inputs) {
+    const inp = _winConfig.inputs;
+    el.textContent = `(${inp.ema1Period}, ${inp.ema2Period}, ${inp.sma1Period}, ${inp.sma2Period}, ${inp.sma30wPeriod})`;
+  }
+  const inp = _winConfig.inputs;
+  const setPillText = (id, text) => {
+    const btn = document.getElementById(id);
+    if (btn) btn.textContent = text;
+  };
+  setPillText('win-btn-ema10', `${inp.ema1Period} EMA`);
+  setPillText('win-btn-ema20', `${inp.ema2Period} EMA`);
+  setPillText('win-btn-sma50', `${inp.sma1Period} SMA`);
+  setPillText('win-btn-sma200', `${inp.sma2Period} SMA`);
+  setPillText('win-btn-sma30w', `${inp.sma30wPeriod}W SMA`);
+
+  setPillText('scc-win-btn-ema10', `${inp.ema1Period} EMA`);
+  setPillText('scc-win-btn-ema20', `${inp.ema2Period} EMA`);
+  setPillText('scc-win-btn-sma50', `${inp.sma1Period} SMA`);
+  setPillText('scc-win-btn-sma200', `${inp.sma2Period} SMA`);
+  setPillText('scc-win-btn-sma30w', `${inp.sma30wPeriod}W`);
+
+  const setLblText = (id, text) => {
+    const elLbl = document.getElementById(id);
+    if (elLbl) elLbl.textContent = text;
+  };
+  setLblText('tv-style-lbl-ema10', `${inp.ema1Period} EMA`);
+  setLblText('tv-style-lbl-ema20', `${inp.ema2Period} EMA`);
+  setLblText('tv-style-lbl-sma50', `${inp.sma1Period} SMA`);
+  setLblText('tv-style-lbl-sma200', `${inp.sma2Period} SMA`);
+  setLblText('tv-style-lbl-sma30w', `Weekly ${inp.sma30wPeriod} SMA`);
+}
+
+function updateWinPillStyles() {
+  const keys = ['ema10', 'ema20', 'sma50', 'sma200', 'sma30w', 'rs', 'dots', 'vt', 'hud'];
+  keys.forEach(k => {
+    const active = _winConfig.style[k] ? !!_winConfig.style[k].visible : true;
+    const btns = [document.getElementById('win-btn-' + k), document.getElementById('scc-win-btn-' + k)];
+    btns.forEach(btn => {
+      if (!btn) return;
+      if (active) {
+        btn.classList.add('active');
+        btn.classList.remove('inactive');
+      } else {
+        btn.classList.remove('active');
+        btn.classList.add('inactive');
+      }
+    });
+  });
+}
+
+function winToggleFeature(key) {
+  if (!_winConfig.style[key]) _winConfig.style[key] = { visible: true };
+  _winConfig.style[key].visible = !_winConfig.style[key].visible;
+  saveWinSettings();
+  updateWinPillStyles();
+
+  // If Maximized Chart Modal is currently open, redraw
+  const maxOverlay = document.getElementById('chart-max-overlay');
+  if (maxOverlay && maxOverlay.style.display !== 'none' && typeof drawMaxChartLightweight === 'function') {
+    drawMaxChartLightweight();
+    const tableContainer = document.getElementById('max-chart-table-container');
+    if (tableContainer) {
+      if (!_winConfig.style.hud || !_winConfig.style.hud.visible) {
+        tableContainer.style.display = 'none';
+      } else {
+        tableContainer.style.display = 'block';
+        if (typeof _sdMaximizedChartSymbol !== 'undefined' && _sdMaximizedChartSymbol && _maxCandles) {
+          const details = typeof getStockDetails === 'function' ? getStockDetails(_sdMaximizedChartSymbol) : { symbol: _sdMaximizedChartSymbol };
+          const vt = calcVolumeTrigger(_maxCandles, _winConfig.inputs.vtLookback, _winConfig.inputs.vtRows, _winConfig.inputs.vtHvnPct, _winConfig.inputs.vtLvnPct);
+          tableContainer.innerHTML = renderWinHudTableHtml(_maxCandles, details, vt);
+        }
+      }
+    }
+  }
+
+  // Also re-render Chart Workbench panels if visible
+  const chartPane = document.getElementById('scc-pane-chart');
+  if (chartPane && chartPane.style.display !== 'none') {
+    const count = typeof sccChartGetCount === 'function' ? sccChartGetCount() : 6;
+    for (let i = 0; i < count; i++) {
+      if (typeof sccChartRenderPanel === 'function') sccChartRenderPanel(i);
+    }
+  }
+}
+
+// ── TradingView Settings Modal Handlers ──
+
+// Expose TV Settings functions to window
+window._winConfig = _winConfig;
+window.openWinSettingsModal = openWinSettingsModal;
+window.closeWinSettingsModal = closeWinSettingsModal;
+window.switchWinTab = switchWinTab;
+window.resetWinSettingsToDefault = resetWinSettingsToDefault;
+window.applyWinSettingsFromModal = applyWinSettingsFromModal;
+window.winToggleFeature = winToggleFeature;
+
+function openWinSettingsModal() {
+  const overlay = document.getElementById('win-settings-overlay');
+  if (!overlay) return;
+
+  const inp = _winConfig.inputs;
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+  const setChk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+
+  // Inputs
+  setVal('tv-in-ema1Period', inp.ema1Period);
+  setVal('tv-in-ema2Period', inp.ema2Period);
+  setVal('tv-in-sma1Period', inp.sma1Period);
+  setVal('tv-in-sma2Period', inp.sma2Period);
+  setVal('tv-in-sma30wPeriod', inp.sma30wPeriod);
+  setVal('tv-in-volLen', inp.volLen);
+  setVal('tv-in-atrLen', inp.atrLen);
+  setVal('tv-in-adrLen', inp.adrLen);
+  setVal('tv-in-udLen', inp.udLen);
+  setVal('tv-in-purpleRoc', inp.purpleRoc);
+  setVal('tv-in-purpleVol', inp.purpleVol);
+  setVal('tv-in-vcpRangePct', inp.vcpRangePct);
+  setVal('tv-in-powerPocketVolMult', inp.powerPocketVolMult);
+  setVal('tv-in-vtLookback', inp.vtLookback);
+  setVal('tv-in-vtRows', inp.vtRows);
+  setVal('tv-in-vtHvnPct', inp.vtHvnPct);
+  setVal('tv-in-vtLvnPct', inp.vtLvnPct);
+  setChk('tv-in-showEpsTable', inp.showEpsTable !== false);
+  setVal('tv-in-epsRowsToShow', inp.epsRowsToShow || 4);
+
+  // Style
+  const st = _winConfig.style;
+  const loadPlotStyle = (key) => {
+    const cfg = st[key] || {};
+    setChk('tv-style-' + key + '-vis', cfg.visible);
+    if (cfg.color) setVal('tv-style-' + key + '-col', cfg.color);
+    if (cfg.width != null) setVal('tv-style-' + key + '-w', cfg.width);
+    if (cfg.lineStyle != null) setVal('tv-style-' + key + '-st', cfg.lineStyle);
+    if (cfg.opacity != null) setVal('tv-style-' + key + '-op', cfg.opacity);
+  };
+
+  ['ema10', 'ema20', 'sma50', 'sma200', 'sma30w', 'rs', 'vt'].forEach(loadPlotStyle);
+  setChk('tv-style-purpleDot-vis', st.purpleDot.visible);
+  setVal('tv-style-purpleDot-col', st.purpleDot.color);
+  if (st.purpleDot.opacity != null) setVal('tv-style-purpleDot-op', st.purpleDot.opacity);
+  if (st.vcp.opacity != null) setVal('tv-style-vcp-op', st.vcp.opacity);
+  if (st.powerPocket.opacity != null) setVal('tv-style-powerPocket-op', st.powerPocket.opacity);
+  setChk('tv-style-vcp-vis', st.vcp.visible);
+  setVal('tv-style-vcp-col', st.vcp.color);
+  setChk('tv-style-powerPocket-vis', st.powerPocket.visible);
+  setVal('tv-style-powerPocket-col', st.powerPocket.color);
+  setChk('tv-style-hud-vis', st.hud.visible);
+  setChk('tv-style-epsTable-vis', st.epsTable ? st.epsTable.visible : true);
+  if (st.epsTable && st.epsTable.opacity != null) setVal('tv-style-epsTable-op', st.epsTable.opacity);
+
+  switchWinTab('inputs');
+  overlay.style.display = 'flex';
+}
+
+function closeWinSettingsModal() {
+  const overlay = document.getElementById('win-settings-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function switchWinTab(tabName) {
+  const btnInp = document.getElementById('win-tab-btn-inputs');
+  const btnSt = document.getElementById('win-tab-btn-style');
+  const tabInp = document.getElementById('win-tab-content-inputs');
+  const tabSt = document.getElementById('win-tab-content-style');
+
+  if (tabName === 'inputs') {
+    if (btnInp) btnInp.classList.add('active');
+    if (btnSt) btnSt.classList.remove('active');
+    if (tabInp) tabInp.style.display = 'block';
+    if (tabSt) tabSt.style.display = 'none';
+  } else {
+    if (btnInp) btnInp.classList.remove('active');
+    if (btnSt) btnSt.classList.add('active');
+    if (tabInp) tabInp.style.display = 'none';
+    if (tabSt) tabSt.style.display = 'block';
+  }
+}
+
+function resetWinSettingsToDefault() {
+  _winConfig = JSON.parse(JSON.stringify(WIN_DEFAULT_CONFIG));
+  saveWinSettings();
+  openWinSettingsModal();
+  updateWinPillStyles();
+  updateWinLegendLabels();
+  if (typeof drawMaxChartLightweight === 'function') drawMaxChartLightweight();
+}
+
+function applyWinSettingsFromModal() {
+  const getNum = (id, def) => {
+    const el = document.getElementById(id);
+    const n = el ? parseFloat(el.value) : def;
+    return isNaN(n) ? def : n;
+  };
+  const getChk = (id, def) => {
+    const el = document.getElementById(id);
+    return el ? el.checked : def;
+  };
+  const getVal = (id, def) => {
+    const el = document.getElementById(id);
+    return el ? el.value : def;
+  };
+
+  _winConfig.inputs.ema1Period = Math.max(1, Math.round(getNum('tv-in-ema1Period', 10)));
+  _winConfig.inputs.ema2Period = Math.max(1, Math.round(getNum('tv-in-ema2Period', 20)));
+  _winConfig.inputs.sma1Period = Math.max(1, Math.round(getNum('tv-in-sma1Period', 50)));
+  _winConfig.inputs.sma2Period = Math.max(1, Math.round(getNum('tv-in-sma2Period', 200)));
+  _winConfig.inputs.sma30wPeriod = Math.max(1, Math.round(getNum('tv-in-sma30wPeriod', 30)));
+  _winConfig.inputs.volLen = Math.max(1, Math.round(getNum('tv-in-volLen', 50)));
+  _winConfig.inputs.atrLen = Math.max(1, Math.round(getNum('tv-in-atrLen', 14)));
+  _winConfig.inputs.adrLen = Math.max(1, Math.round(getNum('tv-in-adrLen', 20)));
+  _winConfig.inputs.udLen = Math.max(1, Math.round(getNum('tv-in-udLen', 50)));
+  _winConfig.inputs.purpleRoc = Math.max(0.1, getNum('tv-in-purpleRoc', 5.0));
+  _winConfig.inputs.purpleVol = Math.max(1000, Math.round(getNum('tv-in-purpleVol', 1000000)));
+  _winConfig.inputs.vcpRangePct = Math.max(0.1, getNum('tv-in-vcpRangePct', 2.0));
+  _winConfig.inputs.powerPocketVolMult = Math.max(0.5, getNum('tv-in-powerPocketVolMult', 1.5));
+  _winConfig.inputs.vtLookback = Math.max(5, Math.min(100, Math.round(getNum('tv-in-vtLookback', 25))));
+  _winConfig.inputs.vtRows = Math.max(10, Math.min(100, Math.round(getNum('tv-in-vtRows', 30))));
+  _winConfig.inputs.vtHvnPct = Math.max(10, Math.min(99, getNum('tv-in-vtHvnPct', 60.0)));
+  _winConfig.inputs.vtLvnPct = Math.max(5, Math.min(99, getNum('tv-in-vtLvnPct', 40.0)));
+  _winConfig.inputs.showEpsTable = getChk('tv-in-showEpsTable', true);
+  _winConfig.inputs.epsRowsToShow = Math.max(1, Math.min(8, Math.round(getNum('tv-in-epsRowsToShow', 4))));
+
+  const savePlotStyle = (key) => {
+    if (!_winConfig.style[key]) _winConfig.style[key] = {};
+    _winConfig.style[key].visible = getChk('tv-style-' + key + '-vis', true);
+    _winConfig.style[key].color = getVal('tv-style-' + key + '-col', _winConfig.style[key].color);
+    _winConfig.style[key].width = parseFloat(getVal('tv-style-' + key + '-w', _winConfig.style[key].width || 1.5));
+    _winConfig.style[key].lineStyle = parseInt(getVal('tv-style-' + key + '-st', _winConfig.style[key].lineStyle || 0));
+    _winConfig.style[key].opacity = parseInt(getVal('tv-style-' + key + '-op', _winConfig.style[key].opacity || 100));
+  };
+
+  ['ema10', 'ema20', 'sma50', 'sma200', 'sma30w', 'rs', 'vt'].forEach(savePlotStyle);
+
+  _winConfig.style.purpleDot = {
+    visible: getChk('tv-style-purpleDot-vis', true),
+    color: getVal('tv-style-purpleDot-col', '#d203f7'),
+    opacity: parseInt(getVal('tv-style-purpleDot-op', 100))
+  };
+  _winConfig.style.vcp = {
+    visible: getChk('tv-style-vcp-vis', true),
+    color: getVal('tv-style-vcp-col', '#ffffff'),
+    opacity: parseInt(getVal('tv-style-vcp-op', 100))
+  };
+  _winConfig.style.powerPocket = {
+    visible: getChk('tv-style-powerPocket-vis', true),
+    color: getVal('tv-style-powerPocket-col', '#94a3b8'),
+    opacity: parseInt(getVal('tv-style-powerPocket-op', 100))
+  };
+  _winConfig.style.dots.visible = _winConfig.style.purpleDot.visible || _winConfig.style.vcp.visible || _winConfig.style.powerPocket.visible;
+  _winConfig.style.hud = {
+    visible: getChk('tv-style-hud-vis', true)
+  };
+  _winConfig.style.epsTable = {
+    visible: getChk('tv-style-epsTable-vis', true),
+    opacity: parseInt(getVal('tv-style-epsTable-op', 90))
+  };
+
+  saveWinSettings();
+  updateWinPillStyles();
+  updateWinLegendLabels();
+  closeWinSettingsModal();
+
+  // Redraw charts
+  const maxOverlay = document.getElementById('chart-max-overlay');
+  if (maxOverlay && maxOverlay.style.display !== 'none' && typeof drawMaxChartLightweight === 'function') {
+    drawMaxChartLightweight();
+  }
+  const chartPane = document.getElementById('scc-pane-chart');
+  if (chartPane && chartPane.style.display !== 'none') {
+    const count = typeof sccChartGetCount === 'function' ? sccChartGetCount() : 6;
+    for (let i = 0; i < count; i++) {
+      if (typeof sccChartRenderPanel === 'function') sccChartRenderPanel(i);
+    }
+  }
+}
+
+// Indicator math functions
+function calculateSMA(candles, period) {
+  const sma = [];
+  let sum = 0;
+  for (let i = 0; i < candles.length; i++) {
+    sum += candles[i].close;
+    if (i >= period) {
+      sum -= candles[i - period].close;
+    }
+    if (i >= period - 1) {
+      sma.push(sum / period);
+    } else {
+      sma.push(null);
+    }
+  }
+  return sma;
+}
+
+function calculateADR(candles, period) {
+  const p = period || 20;
+  const adr = [];
+  let sum = 0;
+  for (let i = 0; i < candles.length; i++) {
+    const c = candles[i];
+    const rangePct = c.close > 0 ? ((c.high - c.low) / c.close) * 100 : 0;
+    sum += rangePct;
+    if (i >= p) {
+      const prevC = candles[i - p];
+      sum -= prevC.close > 0 ? ((prevC.high - prevC.low) / prevC.close) * 100 : 0;
+    }
+    if (i >= p - 1) {
+      adr.push(sum / p);
+    } else {
+      adr.push(null);
+    }
+  }
+  return adr;
+}
+
+function calculateATR(candles, period) {
+  const p = period || 14;
+  const atr = [];
+  if (!candles || candles.length === 0) return atr;
+  let trSum = 0;
+  let prevAtr = null;
+  for (let i = 0; i < candles.length; i++) {
+    const c = candles[i];
+    let tr = c.high - c.low;
+    if (i > 0) {
+      const prevClose = candles[i - 1].close;
+      tr = Math.max(tr, Math.abs(c.high - prevClose), Math.abs(c.low - prevClose));
+    }
+    if (i < p - 1) {
+      trSum += tr;
+      atr.push(null);
+    } else if (i === p - 1) {
+      trSum += tr;
+      prevAtr = trSum / p;
+      atr.push(prevAtr);
+    } else {
+      prevAtr = (prevAtr * (p - 1) + tr) / p;
+      atr.push(prevAtr);
+    }
+  }
+  return atr;
+}
+
+function calculateUDRatio(candles, period) {
+  const p = period || 50;
+  if (!candles || candles.length < 2) return 1.0;
+  const start = Math.max(1, candles.length - p);
+  let upVol = 0;
+  let downVol = 0;
+  for (let i = start; i < candles.length; i++) {
+    const c = candles[i];
+    const prevC = candles[i - 1];
+    if (c.close > prevC.close) {
+      upVol += (c.volume || 0);
+    } else if (c.close < prevC.close) {
+      downVol += (c.volume || 0);
+    }
+  }
+  return downVol > 0 ? Math.round((upVol / downVol) * 100) / 100 : (upVol > 0 ? 2.0 : 1.0);
+}
+
+function calculateAvgVol(candles, period) {
+  const p = period || 50;
+  const avgVol = [];
+  let sum = 0;
+  for (let i = 0; i < candles.length; i++) {
+    sum += (candles[i].volume || 0);
+    if (i >= p) {
+      sum -= (candles[i - p].volume || 0);
+    }
+    if (i >= p - 1) {
+      avgVol.push(sum / p);
+    } else {
+      avgVol.push(null);
+    }
+  }
+  return avgVol;
+}
+
+function calcVolumeTrigger(candles, vtLookback, vtRows, vtHvnPct, vtLvnPct) {
+  const lb = vtLookback || (_winConfig && _winConfig.inputs && _winConfig.inputs.vtLookback) || 25;
+  const rows = vtRows || (_winConfig && _winConfig.inputs && _winConfig.inputs.vtRows) || 30;
+  const hvnPct = vtHvnPct || (_winConfig && _winConfig.inputs && _winConfig.inputs.vtHvnPct) || 60;
+  const lvnPct = vtLvnPct || (_winConfig && _winConfig.inputs && _winConfig.inputs.vtLvnPct) || 40;
+
+  if (!candles || candles.length < lb) return null;
+  const slice = candles.slice(candles.length - lb);
+  let vtHigh = -Infinity;
+  let vtLow = Infinity;
+  for (const c of slice) {
+    if (c.high > vtHigh) vtHigh = c.high;
+    if (c.low < vtLow) vtLow = c.low;
+  }
+  const vtRange = vtHigh - vtLow;
+  if (vtRange <= 0) return null;
+  const rowSize = vtRange / rows;
+  const vtVol = new Array(rows).fill(0);
+
+  for (let i = 0; i < slice.length; i++) {
+    const c = slice[i];
+    const candleRange = c.high - c.low;
+    if (candleRange > 0 && c.volume > 0) {
+      let firstRow = Math.floor((c.low - vtLow) / rowSize);
+      let lastRow = Math.floor((c.high - vtLow) / rowSize);
+      firstRow = Math.max(0, Math.min(rows - 1, firstRow));
+      lastRow = Math.max(0, Math.min(rows - 1, lastRow));
+      for (let r = firstRow; r <= lastRow; r++) {
+        const rowLow = vtLow + r * rowSize;
+        const rowHigh = rowLow + rowSize;
+        const overlap = Math.max(0, Math.min(c.high, rowHigh) - Math.max(c.low, rowLow));
+        if (overlap > 0) {
+          const allocated = c.volume * (overlap / candleRange);
+          vtVol[r] += allocated;
+        }
+      }
+    }
+  }
+
+  let maxVol = 0;
+  let pocRow = 0;
+  for (let r = 0; r < rows; r++) {
+    if (vtVol[r] > maxVol) {
+      maxVol = vtVol[r];
+      pocRow = r;
+    }
+  }
+  if (maxVol <= 0) return null;
+
+  const hvnThreshold = maxVol * (hvnPct / 100);
+  let upperHvnRow = pocRow;
+  let lowerHvnRow = pocRow;
+
+  for (let r = pocRow + 1; r < rows; r++) {
+    if (vtVol[r] >= hvnThreshold) upperHvnRow = r;
+    else break;
+  }
+  for (let r = pocRow - 1; r >= 0; r--) {
+    if (vtVol[r] >= hvnThreshold) lowerHvnRow = r;
+    else break;
+  }
+
+  const lvnThreshold = maxVol * (lvnPct / 100);
+  let lvnRow = null;
+  for (let r = upperHvnRow + 1; r < rows; r++) {
+    if (vtVol[r] <= lvnThreshold) {
+      lvnRow = r;
+      break;
+    }
+  }
+
+  let volTriggerPrice;
+  if (lvnRow !== null) {
+    volTriggerPrice = vtLow + lvnRow * rowSize;
+  } else {
+    volTriggerPrice = vtLow + (upperHvnRow + 1) * rowSize;
+  }
+  const lastClose = candles[candles.length - 1].close;
+  return {
+    price: Math.round(volTriggerPrice * 100) / 100,
+    isAboveClose: volTriggerPrice > lastClose,
+    diffPct: lastClose > 0 ? (((volTriggerPrice - lastClose) / lastClose) * 100).toFixed(1) : '0'
+  };
+}
+
+function calculateWinMarkers(candles, ema10, avgVol50, isDaily) {
+  const markers = [];
+  if (!candles || candles.length < 3) return markers;
+
+  const inp = _winConfig.inputs;
+  const st = _winConfig.style;
+
+  const showPurple = st.purpleDot && st.purpleDot.visible;
+  const showVcp = st.vcp && st.vcp.visible;
+  const showPP = st.powerPocket && st.powerPocket.visible;
+
+  const purpleColor = (st.purpleDot && st.purpleDot.color) || '#d203f7';
+  const vcpColor = (st.vcp && st.vcp.color) || '#ffffff';
+  const ppColor = (st.powerPocket && st.powerPocket.color) || '#94a3b8';
+
+  const minRoc = inp.purpleRoc || 5.0;
+  const minVol = inp.purpleVol || 1000000;
+  const maxVcpRange = inp.vcpRangePct || 2.0;
+  const ppMult = inp.powerPocketVolMult || 1.5;
+
+  for (let i = 2; i < candles.length; i++) {
+    const c = candles[i];
+    const prevC = candles[i - 1];
+    const prevC2 = candles[i - 2];
+    const t = c.time;
+
+    // 1. Purple Momentum Dot
+    const roc = prevC.close > 0 ? ((c.close - prevC.close) / prevC.close) * 100 : 0;
+    const isPurple = showPurple && isDaily && Math.abs(roc) >= minRoc && (c.volume || 0) >= minVol;
+
+    // 2. VCP Tightness (3 consecutive bars)
+    const rPct0 = c.close > 0 ? ((c.high - c.low) / c.close) * 100 : 10;
+    const rPct1 = prevC.close > 0 ? ((prevC.high - prevC.low) / prevC.close) * 100 : 10;
+    const rPct2 = prevC2.close > 0 ? ((prevC2.high - prevC2.low) / prevC2.close) * 100 : 10;
+    const isVcp = showVcp && (rPct0 < maxVcpRange && rPct1 < maxVcpRange && rPct2 < maxVcpRange);
+
+    // 3. Power Pocket
+    const e10 = ema10 ? ema10[i] : null;
+    const aVol = avgVol50 ? avgVol50[i] : null;
+    const isPP = showPP && (e10 != null && aVol != null && aVol > 0 &&
+      c.close > e10 &&
+      (c.volume || 0) > aVol * ppMult &&
+      c.close > prevC.close &&
+      c.close > c.open);
+
+    if (isPurple) {
+      markers.push({
+        time: t,
+        position: 'aboveBar',
+        color: purpleColor,
+        shape: 'circle', size: 1,
+      });
+    }
+
+    if (isVcp && isPP) {
+      markers.push({
+        time: t,
+        position: 'belowBar',
+        color: '#38bdf8',
+        shape: 'arrowUp',
+        size: 1,
+      });
+    } else if (isVcp) {
+      markers.push({
+        time: t,
+        position: 'belowBar',
+        color: vcpColor,
+        shape: 'square',
+        size: 1,
+      });
+    } else if (isPP) {
+      markers.push({
+        time: t,
+        position: 'belowBar',
+        color: ppColor,
+        shape: 'arrowUp',
+        size: 1,
+      });
+    }
+  }
+
+  markers.sort((a, b) => a.time - b.time);
+  return markers;
+}
+
+function fVolFormat(v) {
+  if (v == null || isNaN(v)) return '—';
+  if (v >= 1e7) return (v / 1e7).toFixed(2) + ' Cr';
+  if (v >= 1e5) return (v / 1e5).toFixed(2) + ' L';
+  if (v >= 1e3) return (v / 1e3).toFixed(1) + ' k';
+  return Math.round(v).toLocaleString();
+}
+
+function renderWinHudTableHtml(candles, details, vt) {
+  if (!candles || candles.length === 0) {
+    return generateStatsTableHtml(details);
+  }
+  const lastC = candles[candles.length - 1];
+  const close = lastC.close;
+  const inp = _winConfig.inputs;
+
+  // EMA1 (default 10)
+  const ema10Vals = calculateEMA(candles, inp.ema1Period);
+  const ema10 = ema10Vals[candles.length - 1];
+  const dist10 = ema10 != null ? ((close - ema10) / ema10) * 100 : null;
+  const dist10Txt = dist10 != null ? (dist10 >= 0 ? '+' : '') + dist10.toFixed(1) + '%' : '—';
+  const c10 = dist10 == null ? 'var(--sub)' : dist10 <= 4 ? '#22c55e' : dist10 <= 8 ? '#fb923c' : '#ef4444';
+
+  // SMA1 (default 50)
+  const sma50Vals = calculateSMA(candles, inp.sma1Period);
+  const sma50 = sma50Vals[candles.length - 1];
+  const dist50 = sma50 != null ? ((close - sma50) / sma50) * 100 : null;
+  const dist50Txt = dist50 != null ? (dist50 >= 0 ? '+' : '') + dist50.toFixed(1) + '%' : '—';
+  const c50 = dist50 == null ? 'var(--sub)' : dist50 <= 15 ? '#22c55e' : dist50 <= 30 ? '#fb923c' : '#ef4444';
+
+  // SMA2 (default 200)
+  const sma200Vals = calculateSMA(candles, inp.sma2Period);
+  const sma200 = sma200Vals[candles.length - 1];
+  const dist200 = sma200 != null ? ((close - sma200) / sma200) * 100 : null;
+  const dist200Txt = dist200 != null ? (dist200 >= 0 ? '+' : '') + dist200.toFixed(1) + '%' : '—';
+  const c200 = dist200 == null ? 'var(--sub)' : dist200 <= 50 ? '#22c55e' : '#fb923c';
+
+  // 52W High (up to 252 bars)
+  const lookback52 = Math.min(252, candles.length);
+  const slice52 = candles.slice(candles.length - lookback52);
+  let hh52 = -Infinity;
+  for (const c of slice52) if (c.high > hh52) hh52 = c.high;
+  const dist52 = hh52 > 0 ? ((close - hh52) / hh52) * 100 : null;
+  const dist52Txt = dist52 != null ? dist52.toFixed(1) + '%' : '—';
+  const c52 = dist52 == null ? 'var(--sub)' : dist52 >= -10 ? '#22c55e' : dist52 >= -25 ? '#fb923c' : '#ef4444';
+
+  // ADR%
+  const adrVals = calculateADR(candles, inp.adrLen);
+  const adr = adrVals[candles.length - 1];
+  const adrTxt = adr != null ? adr.toFixed(1) + '%' : '—';
+  const cAdr = adr == null ? 'var(--sub)' : adr >= 5 ? '#22c55e' : adr >= 3 ? '#fb923c' : '#ef4444';
+
+  // ATR%
+  const atrVals = calculateATR(candles, inp.atrLen);
+  const atr = atrVals[candles.length - 1];
+  const atrPct = (atr != null && close > 0) ? (atr / close) * 100 : null;
+  const atrTxt = atrPct != null ? atrPct.toFixed(1) + '%' : '—';
+  const cAtr = atrPct == null ? 'var(--sub)' : (atrPct >= 1.5 && atrPct < 3.0) ? '#22c55e' : atrPct >= 3.0 ? '#fb923c' : '#ef4444';
+
+  // AvgVol & Volume & RVol
+  const avgVolVals = calculateAvgVol(candles, inp.volLen);
+  const avgVol = avgVolVals[candles.length - 1];
+  const avgVolTxt = avgVol != null ? fVolFormat(avgVol) : '—';
+  const volTxt = fVolFormat(lastC.volume || 0);
+  const rVol = (avgVol != null && avgVol > 0) ? Math.round(((lastC.volume || 0) / avgVol) * 100) : null;
+  const rVolTxt = rVol != null ? rVol + '%' : '—';
+  const cRvol = rVol == null ? 'var(--sub)' : rVol >= 110 ? '#22c55e' : rVol >= 80 ? '#fb923c' : '#ef4444';
+
+  // U/D Ratio
+  const udRatio = calculateUDRatio(candles, inp.udLen);
+  const udTxt = udRatio.toFixed(2);
+  const cUd = udRatio >= 1.5 ? '#22c55e' : udRatio >= 1.0 ? '#fb923c' : '#ef4444';
+
+  // VT Price
+  let vtTxt = '—';
+  let cVt = 'var(--sub)';
+  if (vt) {
+    if (vt.isAboveClose) {
+      vtTxt = `${vt.price.toFixed(1)} (+${vt.diffPct}%)`;
+      cVt = (_winConfig.style.vt && _winConfig.style.vt.color) || '#818cf8';
+    } else {
+      vtTxt = `${vt.price.toFixed(1)} (crossed)`;
+      cVt = 'var(--dim)';
+    }
+  }
+
+  // Scanner Stats
+  const stats = (details && details.stats) ? details.stats : {};
+  const r90 = stats.r90 != null ? (stats.r90 >= 0 ? '+' : '') + parseFloat(stats.r90).toFixed(1) + '%' : '—';
+  const r90Color = stats.r90 >= 50 ? '#4ade80' : stats.r90 >= 30 ? '#fbbf24' : stats.r90 < 0 ? '#f87171' : 'var(--text)';
+  const dd = stats.drawdown != null ? parseFloat(stats.drawdown).toFixed(1) + '%' : '—';
+  const ddColor = stats.drawdown >= -5 ? '#4ade80' : stats.drawdown >= -15 ? '#fbbf24' : '#f87171';
+  const setupVal = stats.setup || '—';
+  const rsRating = stats.rs_rating != null ? Math.round(stats.rs_rating) : '—';
+  const scoreVal = stats.final_score != null ? Math.round(stats.final_score) : (stats.vcp_score != null ? Math.round(stats.vcp_score) : '—');
+  const gradeVal = stats.grade || '—';
+  const gradeColors = { 'A+': '#2dd4bf', 'A': '#4ade80', 'B': '#fbbf24', 'C': '#fb923c', 'REJECT': '#f87171' };
+  const gradeColor = gradeColors[gradeVal] || 'var(--dim)';
+
+  const symHud = (details && details.symbol) ? details.symbol.toUpperCase().replace('.NS', '') : '';
+  const fundHud = symHud && typeof _fundamentalsCache !== 'undefined' ? _fundamentalsCache.get(symHud) : null;
+  const roeVal = (fundHud && fundHud.roeFormatted) ? fundHud.roeFormatted : '—';
+  const roeColor = (fundHud && fundHud.roe != null) ? (fundHud.roe >= 0.15 ? '#22c55e' : fundHud.roe >= 0.08 ? '#fbbf24' : '#ef4444') : 'var(--sub)';
+  const capVal = (fundHud && fundHud.capCategory) ? fundHud.capCategory : '—';
+
+  return `
+    <div style="width:100%;background:var(--bg3);border-collapse:collapse;font-size:10px;font-family:var(--mono);">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 10px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span><span style="color:var(--dim);font-weight:600">P/${inp.ema1Period}EMA:</span> <b style="color:${c10}">${dist10Txt}</b></span>
+          <span><span style="color:var(--dim);font-weight:600">P/${inp.sma1Period}SMA:</span> <b style="color:${c50}">${dist50Txt}</b></span>
+          <span><span style="color:var(--dim);font-weight:600">P/${inp.sma2Period}SMA:</span> <b style="color:${c200}">${dist200Txt}</b></span>
+          <span><span style="color:var(--dim);font-weight:600">P/52W Hi:</span> <b style="color:${c52}">${dist52Txt}</b></span>
+          <span><span style="color:var(--dim);font-weight:600">ADR(${inp.adrLen}):</span> <b style="color:${cAdr}">${adrTxt}</b></span>
+          <span><span style="color:var(--dim);font-weight:600">ATR%(${inp.atrLen}):</span> <b style="color:${cAtr}">${atrTxt}</b></span>
+          <span><span style="color:var(--dim);font-weight:600">AvgVol:</span> <b style="color:var(--text)">${avgVolTxt}</b></span>
+          <span><span style="color:var(--dim);font-weight:600">Vol:</span> <b style="color:var(--text)">${volTxt}</b></span>
+          <span><span style="color:var(--dim);font-weight:600">RVol:</span> <b style="color:${cRvol}">${rVolTxt}</b></span>
+          <span><span style="color:var(--dim);font-weight:600">U/D(${inp.udLen}):</span> <b style="color:${cUd}">${udTxt}</b></span>
+          <span><span style="color:var(--dim);font-weight:600">VT GTT:</span> <b style="color:${cVt}">${vtTxt}</b></span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 10px;flex-wrap:wrap;gap:8px;background:rgba(0,0,0,0.18);">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span><span style="color:var(--dim);font-weight:600">Sector:</span> <span style="color:var(--text)">${(details && details.sector) || '—'}</span></span>
+          <span><span style="color:var(--dim);font-weight:600">Industry:</span> <span style="color:var(--sub)">${(details && details.industry) || '—'}</span></span>
+          <span><span style="color:var(--dim);font-weight:600">Cap:</span> <span style="color:var(--teal)">${capVal}</span></span>
+          <span><span style="color:var(--dim);font-weight:600">ROE:</span> <b style="color:${roeColor}">${roeVal}</b></span>
+          <span><span style="color:var(--dim);font-weight:600">90D%:</span> <b style="color:${r90Color}">${r90}</b></span>
+          <span><span style="color:var(--dim);font-weight:600">DD%:</span> <b style="color:${ddColor}">${dd}</b></span>
+          <span><span style="color:var(--dim);font-weight:600">Setup:</span> <b style="color:var(--text)">${setupVal}</b></span>
+          <span><span style="color:var(--dim);font-weight:600">RS Rating:</span> <b style="color:#fb923c">${rsRating}</b></span>
+          <span><span style="color:var(--dim);font-weight:600">Score:</span> <b style="color:var(--teal)">${scoreVal}</b></span>
+          <span><span style="color:var(--dim);font-weight:600">Grade:</span> <span style="background:${gradeColor}18;border:1px solid ${gradeColor}40;color:${gradeColor};padding:1px 5px;border-radius:3px;font-weight:700">${gradeVal}</span></span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+let _sccLwCharts = {};
+let _sccLwObservers = {};
+
+function sccRenderLwChart(index, candles, niftyCandles) {
+  const container = document.getElementById(`scc-chart-lw-${index}`);
+  if (!container || !candles || candles.length === 0 || typeof LightweightCharts === 'undefined') return false;
+
+  if (_sccLwCharts[index]) {
+    try { _sccLwCharts[index].remove(); } catch (e) { }
+    delete _sccLwCharts[index];
+  }
+  container.innerHTML = '';
+
+  const rect = container.getBoundingClientRect();
+  const width = rect.width || container.clientWidth || 300;
+  const height = rect.height || container.clientHeight || 200;
+
+  const sorted = [...candles].sort((a, b) => a.time - b.time);
+  const seenTimes = new Set();
+  const cleanCandles = [];
+  for (const c of sorted) {
+    const tSec = Math.floor(c.time / 1000);
+    if (!seenTimes.has(tSec) && c.open != null && c.high != null && c.low != null && c.close != null) {
+      seenTimes.add(tSec);
+      cleanCandles.push({
+        time: tSec,
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close,
+        volume: c.volume || 0,
+      });
+    }
+  }
+  if (cleanCandles.length === 0) return false;
+
+  const chart = LightweightCharts.createChart(container, {
+    width: width,
+    height: height,
+    layout: {
+      background: { color: '#090b10' },
+      textColor: '#94a3b8',
+      fontFamily: "'Inter', sans-serif",
+      fontSize: 10,
+    },
+    grid: {
+      vertLines: { color: 'rgba(255, 255, 255, 0.025)' },
+      horzLines: { color: 'rgba(255, 255, 255, 0.025)' },
+    },
+    crosshair: {
+      mode: LightweightCharts.CrosshairMode.Normal,
+      vertLine: { color: 'rgba(91, 163, 245, 0.3)', width: 1, style: 2 },
+      horzLine: { color: 'rgba(91, 163, 245, 0.3)', width: 1, style: 2 },
+    },
+    rightPriceScale: {
+      borderColor: 'rgba(255, 255, 255, 0.06)',
+      scaleMargins: { top: 0.08, bottom: 0.22 },
+    },
+    timeScale: {
+      borderColor: 'rgba(255, 255, 255, 0.06)',
+      timeVisible: _sccChartTimeframes[index] === '1H',
+      secondsVisible: false,
+    },
+  });
+
+  _sccLwCharts[index] = chart;
+
+  let priceSeries;
+  if (_sccChartType === 'ohlc') {
+    priceSeries = chart.addBarSeries({
+      upColor: '#26a69a',
+      downColor: '#ef5350',
+      wickVisible: true,
+    });
+  } else {
+    priceSeries = chart.addCandlestickSeries({
+      upColor: '#26a69a',
+      downColor: '#ef5350',
+      borderVisible: false,
+      wickUpColor: '#26a69a',
+      wickDownColor: '#ef5350',
+    });
+  }
+  priceSeries.setData(cleanCandles);
+  _maxLwPriceSeries = priceSeries;
+
+  const volSeries = chart.addHistogramSeries({
+    priceFormat: { type: 'volume' },
+    priceScaleId: 'scc_vol_scale',
+  });
+  chart.priceScale('scc_vol_scale').applyOptions({
+    scaleMargins: { top: 0.82, bottom: 0 },
+    visible: false,
+  });
+  volSeries.setData(cleanCandles.map(c => ({
+    time: c.time,
+    value: c.volume,
+    color: c.close >= c.open ? 'rgba(38, 166, 154, 0.35)' : 'rgba(239, 83, 80, 0.35)',
+  })));
+
+  const tf = _sccChartTimeframes[index] || 'D';
+  const isWeekly = (tf === 'W');
+  const isDaily = (tf === 'D');
+
+  const inp = _winConfig.inputs;
+  const st = _winConfig.style;
+
+  const ema10Vals = calculateEMA(cleanCandles, inp.ema1Period);
+  const ema20Vals = calculateEMA(cleanCandles, inp.ema2Period);
+  const sma50Vals = calculateSMA(cleanCandles, inp.sma1Period);
+  const sma200Vals = calculateSMA(cleanCandles, inp.sma2Period);
+  const sma30wVals = calculateSMA(cleanCandles, inp.sma30wPeriod);
+  const avgVolVals = calculateAvgVol(cleanCandles, inp.volLen);
+
+  // EMA 1
+  if (st.ema10 && st.ema10.visible) {
+    const data = [];
+    for (let i = 0; i < cleanCandles.length; i++) {
+      if (ema10Vals[i] != null) data.push({ time: cleanCandles[i].time, value: ema10Vals[i] });
+    }
+    const s = chart.addLineSeries({
+      color: hexToRgba(st.ema10.color || '#3b82f6', (st.ema10.opacity != null ? st.ema10.opacity : 100) / 100),
+      lineWidth: st.ema10.width || 1.2,
+      lineStyle: st.ema10.lineStyle || 0,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      title: ''
+    });
+    s.setData(data);
+  }
+
+  // EMA 2
+  if (st.ema20 && st.ema20.visible) {
+    const data = [];
+    for (let i = 0; i < cleanCandles.length; i++) {
+      if (ema20Vals[i] != null) data.push({ time: cleanCandles[i].time, value: ema20Vals[i] });
+    }
+    const s = chart.addLineSeries({
+      color: hexToRgba(st.ema20.color || '#ef4444', (st.ema20.opacity != null ? st.ema20.opacity : 100) / 100),
+      lineWidth: st.ema20.width || 1.2,
+      lineStyle: st.ema20.lineStyle || 0,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      title: ''
+    });
+    s.setData(data);
+  }
+
+  // SMA 1 (Daily only)
+  if (st.sma50 && st.sma50.visible && !isWeekly) {
+    const data = [];
+    for (let i = 0; i < cleanCandles.length; i++) {
+      if (sma50Vals[i] != null) data.push({ time: cleanCandles[i].time, value: sma50Vals[i] });
+    }
+    const s = chart.addLineSeries({
+      color: hexToRgba(st.sma50.color || '#06b6d4', (st.sma50.opacity != null ? st.sma50.opacity : 100) / 100),
+      lineWidth: st.sma50.width || 1.2,
+      lineStyle: st.sma50.lineStyle || 0,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      title: ''
+    });
+    s.setData(data);
+  }
+
+  // SMA 2 (Daily only)
+  if (st.sma200 && st.sma200.visible && !isWeekly) {
+    const data = [];
+    for (let i = 0; i < cleanCandles.length; i++) {
+      if (sma200Vals[i] != null) data.push({ time: cleanCandles[i].time, value: sma200Vals[i] });
+    }
+    const s = chart.addLineSeries({
+      color: hexToRgba(st.sma200.color || '#22c55e', (st.sma200.opacity != null ? st.sma200.opacity : 100) / 100),
+      lineWidth: st.sma200.width || 1.8,
+      lineStyle: st.sma200.lineStyle || 0,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      title: ''
+    });
+    s.setData(data);
+  }
+
+  // SMA 30W (Weekly only)
+  if (st.sma30w && st.sma30w.visible && isWeekly) {
+    const data = [];
+    for (let i = 0; i < cleanCandles.length; i++) {
+      if (sma30wVals[i] != null) data.push({ time: cleanCandles[i].time, value: sma30wVals[i] });
+    }
+    const s = chart.addLineSeries({
+      color: hexToRgba(st.sma30w.color || '#f97316', (st.sma30w.opacity != null ? st.sma30w.opacity : 100) / 100),
+      lineWidth: st.sma30w.width || 1.8,
+      lineStyle: st.sma30w.lineStyle || 0,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      title: ''
+    });
+    s.setData(data);
+  }
+
+  // RS Nifty
+  if (st.rs && st.rs.visible && niftyCandles && niftyCandles.length > 0) {
+    const nMap = new Map();
+    for (const nc of niftyCandles) {
+      nMap.set(new Date(nc.time).toISOString().split('T')[0], nc.close);
+    }
+    const rsData = [];
+    for (const c of cleanCandles) {
+      const dStr = new Date(c.time * 1000).toISOString().split('T')[0];
+      const nClose = nMap.get(dStr);
+      if (nClose != null && nClose > 0) {
+        rsData.push({ time: c.time, value: (c.close / nClose) * 1000 });
+      }
+    }
+    if (rsData.length > 0) {
+      const rsSeries = chart.addLineSeries({
+        color: hexToRgba(st.rs.color || '#38bdf8', (st.rs.opacity != null ? st.rs.opacity : 100) / 100),
+        lineWidth: st.rs.width || 1.4,
+        lineStyle: st.rs.lineStyle || 0,
+        priceScaleId: 'scc_rs_scale',
+        priceLineVisible: false,
+        lastValueVisible: false,
+        title: '',
+      });
+      chart.priceScale('scc_rs_scale').applyOptions({
+        scaleMargins: { top: 0.05, bottom: 0.70 },
+        visible: false,
+      });
+      rsSeries.setData(rsData);
+    }
+  }
+
+  // WIN Markers
+  if (st.dots && st.dots.visible) {
+    const markers = calculateWinMarkers(cleanCandles, ema10Vals, avgVolVals, isDaily);
+    priceSeries.setMarkers(markers);
+  } else {
+    priceSeries.setMarkers([]);
+  }
+
+  // Volume Trigger V4
+  const vt = calcVolumeTrigger(cleanCandles, inp.vtLookback, inp.vtRows, inp.vtHvnPct, inp.vtLvnPct);
+  if (st.vt && st.vt.visible && isDaily && vt && vt.isAboveClose) {
+    priceSeries.createPriceLine({
+      price: vt.price,
+      color: typeof hexToRgba === 'function' ? hexToRgba(st.vt.color || '#4863fc', (st.vt.opacity != null ? st.vt.opacity : 100) / 100) : (st.vt.color || '#4863fc'),
+      lineWidth: st.vt.width || 1.2,
+      lineStyle: st.vt.lineStyle != null ? st.vt.lineStyle : LightweightCharts.LineStyle.Dashed,
+      axisLabelVisible: false,
+      title: '',
+    });
+  }
+
+  // Update workbench panel table
+  const tableEl = document.getElementById(`scc-chart-table-${index}`);
+  if (tableEl && _sccChartSymbols[index]) {
+    const details = typeof getStockDetails === 'function' ? getStockDetails(_sccChartSymbols[index]) : { symbol: _sccChartSymbols[index] };
+    tableEl.innerHTML = renderWinHudTableHtml(cleanCandles, details, vt);
+  }
+
+  const statsEl = document.getElementById(`scc-chart-stats-${index}`);
+  const updateStats = (bar) => {
+    if (!statsEl || !bar) return;
+    const isUp = bar.close >= bar.open;
+    const color = isUp ? 'var(--lime)' : 'var(--red)';
+    const pct = (((bar.close - bar.open) / bar.open) * 100).toFixed(1);
+    const sign = isUp ? '+' : '';
+    statsEl.innerHTML = `<span style="font-family:var(--mono);font-weight:600;margin-right:2px">${bar.close.toFixed(1)}</span>
+                         <span style="color:${color};font-family:var(--mono);font-weight:600;margin-right:2px">${sign}${pct}%</span>`;
+  };
+
+  chart.subscribeCrosshairMove(param => {
+    if (!param || !param.time || !param.seriesData.get(priceSeries)) {
+      updateStats(cleanCandles[cleanCandles.length - 1]);
+      return;
+    }
+    updateStats(param.seriesData.get(priceSeries));
+  });
+
+  const vBars = Math.min(cleanCandles.length, Math.max(30, Math.round(width / 8)));
+  chart.timeScale().applyOptions({ rightOffset: 6, barSpacing: 8, minBarSpacing: 3 });
+  chart.timeScale().setVisibleLogicalRange({
+    from: Math.max(0, cleanCandles.length - vBars),
+    to: cleanCandles.length + 6
+  });
+
+  if (_sccLwObservers[index]) {
+    try { _sccLwObservers[index].disconnect(); } catch (e) { }
+  }
+  _sccLwObservers[index] = new ResizeObserver(entries => {
+    if (!entries || !entries.length || !_sccLwCharts[index]) return;
+    const cr = entries[0].contentRect;
+    if (cr.width > 0 && cr.height > 0) {
+      _sccLwCharts[index].applyOptions({ width: cr.width, height: cr.height });
+    }
+  });
+  _sccLwObservers[index].observe(container);
+  return true;
+}
+
 async function sccChartRenderPanel(index) {
   const symbol = sccChartGetSymbol(index); const timeframe = _sccChartTimeframes[index]; const canvasId = `scc-chart-canvas-${index}`; const loaderId = `scc-chart-loader-${index}`; const titleId = `scc-chart-title-${index}`; const statsId = `scc-chart-stats-${index}`; const loader = document.getElementById(loaderId); const titleEl = document.getElementById(titleId); const statsEl = document.getElementById(statsId); if (!symbol) {
     if (loader) { loader.innerHTML = '<span style="color:var(--dim)">Enter symbol</span>'; loader.style.display = 'flex'; }
@@ -439,8 +1871,8 @@ async function sccChartRenderPanel(index) {
   }
   const tableEl = document.getElementById(`scc-chart-table-${index}`); if (tableEl) { tableEl.innerHTML = generateStatsTableHtml(details); }
   try {
-    const [candles, niftyCandles] = await Promise.all([fetchYfData(symbol.toUpperCase(), range, interval), symbol.toUpperCase() !== '^NSEI' ? fetchYfData('^NSEI', range, interval).catch(() => null) : Promise.resolve(null)]); if (loader) loader.style.display = 'none'; const canvas = document.getElementById(canvasId); let drawCountOverride = null; if (canvas && candles && candles.length > 0) { const rect = canvas.getBoundingClientRect(); const minCandlePx = (_sccChartType === 'ohlc') ? 3 : 4; const maxFitCount = Math.max(20, Math.floor(rect.width / minCandlePx)); const totalCount = candles.length; const defaultDrawCount = Math.min(totalCount, maxFitCount); const zoomFactor = _sccChartZoomFactors[index] || 1.0; drawCountOverride = Math.min(totalCount, Math.max(10, Math.round(defaultDrawCount * zoomFactor))); }
-    drawAnyChart(canvasId, candles, _sccChartType, drawCountOverride, niftyCandles); if (canvas && !canvas.dataset.hasWheelListener) {
+    const [candles, niftyCandles] = await Promise.all([fetchYfData(symbol.toUpperCase(), range, interval), symbol.toUpperCase() !== '^NSEI' ? fetchYfData('^NSEI', range, interval).catch(() => null) : Promise.resolve(null)]); if (loader) loader.style.display = 'none'; const lwDone = sccRenderLwChart(index, candles, niftyCandles); if (!lwDone) { const canvas = document.getElementById(canvasId); let drawCountOverride = null; if (canvas && candles && candles.length > 0) { const rect = canvas.getBoundingClientRect(); const minCandlePx = (_sccChartType === 'ohlc') ? 3 : 4; const maxFitCount = Math.max(20, Math.floor(rect.width / minCandlePx)); const totalCount = candles.length; const defaultDrawCount = Math.min(totalCount, maxFitCount); const zoomFactor = _sccChartZoomFactors[index] || 1.0; drawCountOverride = Math.min(totalCount, Math.max(10, Math.round(defaultDrawCount * zoomFactor))); } drawAnyChart(canvasId, candles, _sccChartType, drawCountOverride, niftyCandles); }
+    const canvas = document.getElementById(canvasId); if (!lwDone && canvas && !canvas.dataset.hasWheelListener) {
       canvas.dataset.hasWheelListener = "true"; canvas.addEventListener('wheel', (e) => {
         e.preventDefault(); sccChartSetActivePanel(index); let zoomFactor = _sccChartZoomFactors[index] || 1.0; if (e.deltaY < 0) { zoomFactor *= 0.85; } else { zoomFactor *= 1.15; }
         zoomFactor = Math.max(0.15, Math.min(5.0, zoomFactor)); _sccChartZoomFactors[index] = zoomFactor; localStorage.setItem('_sccChartZoomFactors', JSON.stringify(_sccChartZoomFactors)); sccChartRenderPanel(index);
@@ -455,7 +1887,7 @@ async function sccChartRenderPanel(index) {
       loader.innerHTML = `
         <div style="color:var(--sub);font-size:10px;text-align:center;padding:12px;line-height:1.5;">
           <span style="color:var(--red);font-weight:600;display:block;margin-bottom:4px;">Failed to load data</span>
-          Run proxy or check connection.
+          Check connection or proxy.
         </div>`;
     }
   }
@@ -1023,7 +2455,7 @@ async function vcpbFetch(force) {
   }
   if (!force) { const cached = vcpbGetCached(); if (cached) { vcpbRender(cached); } else { vcpbShowState('vcpb-loading'); } } else { vcpbShowState('vcpb-loading'); }
   let resp; let localSuccess = false; let jsonUrl = baseUrl + '/sector_breadth.json?_=' + Date.now(); if (window.location.protocol === 'file:') { try { const localUrl = 'http://localhost:9090/local/sector_breadth.json?_=' + Date.now(); resp = await fetch(localUrl, { cache: 'no-store' }); if (resp.ok) { localSuccess = true; jsonUrl = 'http://localhost:9090/local/sector_breadth.json'; } } catch (e) { } }
-  if (!localSuccess) { resp = await fetch(jsonUrl, { cache: 'no-store' }); }
+  if (!localSuccess) { try { resp = await fetch(jsonUrl, { cache: 'no-store' }); if (!resp.ok && jsonUrl.includes('localhost:9090')) throw new Error('Local proxy down'); } catch (e) { jsonUrl = 'https://mkshibu2.github.io/breadth-radar/sector_breadth.json?_=' + Date.now(); resp = await fetch(jsonUrl, { cache: 'no-store' }); } }
   const srcEl = document.getElementById('vcpb-source-url'); if (srcEl) srcEl.textContent = jsonUrl.split('?')[0]; try { if (!resp.ok) throw new Error('HTTP ' + resp.status + ' — file not found. Has the scanner run today?'); const data = await resp.json(); if (!data.sectors || !Array.isArray(data.sectors)) throw new Error('Unexpected JSON format.'); vcpbSetCached(data); vcpbAccumulateHistory(data); vcpbRender(data); sdFetchCsv(force); } catch (e) {
     const cached = vcpbGetCached(); if (cached && !force) { vcpbRender(cached); return; }
     vcpbShowState('vcpb-error'); const errEl = document.getElementById('vcpb-error-msg'); if (errEl) errEl.textContent = '⚠ ' + e.message;
@@ -1420,7 +2852,23 @@ function dhanGetMode() { return localStorage.getItem(DHAN_LS_MODE) || 'token'; }
 function dhanSaveCreds(clientId, token) { localStorage.setItem(DHAN_LS_CRED, JSON.stringify({ clientId, token })); }
 function dhanGetCreds() { try { return JSON.parse(localStorage.getItem(DHAN_LS_CRED) || 'null'); } catch { return null; } }
 function dhanSaveApiKeyCreds(clientId, key, secret, cachedToken, tokenTs) { localStorage.setItem(DHAN_LS_APIKEY, JSON.stringify({ clientId, key, secret, cachedToken: cachedToken || '', tokenTs: tokenTs || 0 })); }
-function dhanGetApiKeyCreds() { try { return JSON.parse(localStorage.getItem(DHAN_LS_APIKEY) || 'null'); } catch { return null; } }
+const DHAN_DEFAULT_KEY = '232aeb71';
+const DHAN_DEFAULT_SECRET = '608f20b6-fb42-4862-93fe-e016449c792a';
+function dhanGetApiKeyCreds() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(DHAN_LS_APIKEY) || 'null');
+    if (saved && saved.key && saved.secret) return saved;
+    return {
+      clientId: (saved && saved.clientId) || '',
+      key: DHAN_DEFAULT_KEY,
+      secret: DHAN_DEFAULT_SECRET,
+      cachedToken: (saved && saved.cachedToken) || '',
+      tokenTs: (saved && saved.tokenTs) || 0
+    };
+  } catch {
+    return { clientId: '', key: DHAN_DEFAULT_KEY, secret: DHAN_DEFAULT_SECRET, cachedToken: '', tokenTs: 0 };
+  }
+}
 function dhanUpdateTokenAge(saved) {
   const el = document.getElementById('dhan-token-age'); if (!el) return; if (!saved || !saved.tokenTs) { el.textContent = 'Not generated'; el.style.color = 'var(--dim)'; return; }
   const ageH = ((Date.now() - saved.tokenTs) / 3600000).toFixed(1); const isStale = ageH >= 23; el.textContent = isStale ? `Stale (${ageH}h old) — will refresh on Connect` : `Fresh (${ageH}h old)`; el.style.color = isStale ? 'var(--yellow)' : 'var(--lime)';
@@ -3315,7 +4763,7 @@ function filterStocksSetCached(data) { _filterStocksCache = data; try { localSto
 async function sdFetchSectorStocksBackground() {
   const baseUrl = vcpbGetUrl(); if (!baseUrl) return; try {
     let resp; let localSuccess = false; if (window.location.protocol === 'file:') { try { const localUrl = 'http://localhost:9090/local/sector_stocks.json?_=' + Date.now(); resp = await fetch(localUrl, { cache: 'no-store' }); if (resp.ok) localSuccess = true; } catch (e) { } }
-    if (!localSuccess) { resp = await fetch(baseUrl + '/sector_stocks.json?_=' + Date.now(), { cache: 'no-store' }); }
+    if (!localSuccess) { try { resp = await fetch(baseUrl + '/sector_stocks.json?_=' + Date.now(), { cache: 'no-store' }); if (!resp.ok && baseUrl.includes('localhost:9090')) throw new Error('Local down'); } catch (e) { resp = await fetch('https://mkshibu2.github.io/breadth-radar/sector_stocks.json?_=' + Date.now(), { cache: 'no-store' }); } }
     if (resp && resp.ok) { const fresh = await resp.json(); sectorDrillSetCached(fresh); calculateRSRatings(fresh); console.log('[Background] Fetched and cached sector stocks'); sccWatchlistRender(); sccWatchlistFetchAll(); }
   } catch (e) { console.warn('[Background] Failed to fetch sector stocks:', e); }
 }
@@ -3393,250 +4841,429 @@ function generateStatsTableHtml(details) {
   `;
 }
 function openMaximizedChart(symbol) {
+  setTimeout(() => {
+    if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+  }, 50);
+  updateWinPillStyles();
+  updateWinLegendLabels();
   const overlay = document.getElementById('chart-max-overlay'); const maxSymbol = document.getElementById('max-chart-symbol'); const maxCompany = document.getElementById('max-chart-company'); const maxStats = document.getElementById('max-chart-stats'); const loader = document.getElementById('max-chart-loader'); const tfSelect = document.getElementById('max-chart-timeframe'); const typeSelect = document.getElementById('max-chart-type'); if (!overlay) return; _sdMaximizedChartSymbol = symbol; _maxViewOffset = 0;// reset pan on new symbol
   if (tfSelect) tfSelect.value = _sdChartsInterval; if (typeSelect) typeSelect.value = _sdChartType; const details = getStockDetails(symbol); let statsHtml = ''; if (details.stats) { const s = details.stats; const rsVal = s.rs_rating != null ? s.rs_rating : '—'; const score = s.final_score > 0 ? s.final_score : s.vcp_score; statsHtml = score != null ? `RS: <b style="color:var(--purple)">${rsVal}</b> · Score: <b style="color:var(--teal)">${Math.round(score)}</b>` : `RS: <b style="color:var(--purple)">${rsVal}</b>`; }
   _sdMaximizedChartCompany = details.company; _sdMaximizedChartStats = statsHtml; if (maxSymbol) maxSymbol.textContent = details.symbol; if (maxCompany) { maxCompany.innerHTML = `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;">${details.company || '—'}</span><span style="font-size:10px;color:var(--dim);background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:1px 6px;border-radius:3px;font-weight:500;white-space:nowrap;flex-shrink:0;">${details.sector}</span><span style="font-size:10px;color:var(--sub);font-weight:500;white-space:nowrap;flex-shrink:0;">${details.industry}</span>`; }
   if (maxStats) maxStats.innerHTML = statsHtml || ''; const maxTableContainer = document.getElementById('max-chart-table-container'); if (maxTableContainer) { maxTableContainer.innerHTML = generateStatsTableHtml(details); }
   if (loader) { loader.style.display = 'flex'; loader.innerHTML = 'Loading chart…'; }
+  _selectedDrawingIndex = null;
+  if (typeof hideFloatingToolbar === 'function') hideFloatingToolbar();
+  if (typeof initChartDrawingCanvas === 'function') initChartDrawingCanvas();
+  if (typeof renderMaxChartEpsTable === 'function') renderMaxChartEpsTable(symbol);
   overlay.style.display = 'flex'; _maxFetchAndDraw(symbol);
 }
-function _maxFetchAndDraw(symbol) { const loader = document.getElementById('max-chart-loader'); const range = _sdChartsInterval === '1H' ? '2y' : _sdChartsInterval === 'W' ? '2y' : _sdChartsInterval === 'M' ? '5y' : '1y'; const interval = _sdChartsInterval === '1H' ? '60m' : _sdChartsInterval === 'W' ? '1wk' : _sdChartsInterval === 'M' ? '1mo' : '1d'; Promise.all([fetchYfData(symbol, range, interval), symbol.toUpperCase() !== '^NSEI' ? fetchYfData('^NSEI', range, interval).catch(() => null) : Promise.resolve(null)]).then(([candles, niftyCandles]) => { if (loader) loader.style.display = 'none'; _maxCandles = candles; _maxNiftyCandles = niftyCandles; drawMaxChart(); _maxSetupInteraction(); }).catch(err => { console.error("YF Max Chart Error", err); if (loader) { loader.innerHTML = `<div style="color:var(--sub);font-size:11px;text-align:center;padding:12px;line-height:1.5;max-width:280px;margin:0 auto;"><span style="color:var(--red);font-weight:600;display:block;margin-bottom:6px;">Failed to load chart data</span>Run <code style="background:var(--bg4);padding:2px 4px;border-radius:3px;color:var(--accent);font-family:var(--mono);font-size:10px;white-space:nowrap;">node chart_proxy.js</code><br>in terminal to enable EOD charts.</div>`; } }); }
-function maxChartRefresh() {
-  if (_sdMaximizedChartSymbol) {
-    const loader = document.getElementById('max-chart-loader'); if (loader) { loader.style.display = 'flex'; loader.innerHTML = 'Refreshing…'; }// Clear cache for this symbol
-    const range = _sdChartsInterval === '1H' ? '2y' : _sdChartsInterval === 'W' ? '2y' : _sdChartsInterval === 'M' ? '5y' : '1y'; const interval = _sdChartsInterval === '1H' ? '60m' : _sdChartsInterval === 'W' ? '1wk' : _sdChartsInterval === 'M' ? '1mo' : '1d'; const yfSym = _sdMaximizedChartSymbol + '.NS'; _yfDataCache.delete(`${yfSym}_${range}_${interval}`); _yfDataCache.delete(`^NSEI_${range}_${interval}`); _maxFetchAndDraw(_sdMaximizedChartSymbol);
+function _maxFetchAndDraw(symbol) {
+  if (typeof fetchStockFundamentals === 'function' && symbol && symbol.toUpperCase() !== '^NSEI') {
+    fetchStockFundamentals(symbol).catch(() => null);
   }
-}
-function closeMaximizedChart() { const overlay = document.getElementById('chart-max-overlay'); if (overlay) overlay.style.display = 'none'; _sdMaximizedChartSymbol = null; _sdMaximizedChartCompany = null; _sdMaximizedChartStats = ''; _maxCandles = null; _maxNiftyCandles = null; _maxRemoveInteraction(); }
-function maxChartChangeTimeframe(interval) { _sdChartsInterval = interval; const mainTfSelect = document.querySelector('.sd-charts-controls select[onchange="sdSetChartsInterval(this.value)"]'); if (mainTfSelect) mainTfSelect.value = interval; if (_sdMaximizedChartSymbol) { _maxViewOffset = 0; openMaximizedChart(_sdMaximizedChartSymbol); } }
-function maxChartChangeType(type) { _sdChartType = type; const mainTypeSelect = document.querySelector('.sd-charts-controls select[onchange="sdSetChartType(this.value)"]'); if (mainTypeSelect) mainTypeSelect.value = type; if (_maxCandles) { drawMaxChart(); } }
-// ── TV-style chart drawing for max canvas ──────────────────────────────
-// (single authoritative drawMaxChart defined below, after interaction handlers)
-function _maxSetupInteraction() {
-  const canvas = document.getElementById('max-chart-canvas');
-  if (!canvas || canvas._maxWired) return;
-  canvas._maxWired = true;
-  canvas.addEventListener('wheel', _maxOnWheel, { passive: false });
-  canvas.addEventListener('mousedown', _maxOnMouseDown);
-  window.addEventListener('mousemove', _maxOnMouseMove);
-  window.addEventListener('mouseup', _maxOnMouseUp);
-  canvas.addEventListener('mouseleave', _maxOnMouseLeave);
-  canvas.addEventListener('mousemove', _maxUpdateCursor);
-  canvas.addEventListener('dblclick', _maxOnDblClick);
-}
-function _maxRemoveInteraction() {
-  const canvas = document.getElementById('max-chart-canvas');
-  if (canvas) {
-    canvas.removeEventListener('wheel', _maxOnWheel);
-    canvas.removeEventListener('mousedown', _maxOnMouseDown);
-    window.removeEventListener('mousemove', _maxOnMouseMove);
-    window.removeEventListener('mouseup', _maxOnMouseUp);
-    canvas.removeEventListener('mouseleave', _maxOnMouseLeave);
-    canvas.removeEventListener('mousemove', _maxUpdateCursor);
-    canvas.removeEventListener('dblclick', _maxOnDblClick);
-    canvas._maxWired = false;
-  }
-}
-function maxChartResetView() {
-  _maxViewOffset = 0;
-  _maxBarWidth = 8;
-  _maxPricePad = 0.06;
-  drawMaxChart();
-}
-function _maxOnDblClick(e) {
-  const canvas = document.getElementById('max-chart-canvas');
-  if (!canvas) return;
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const st = canvas._maxState;
-  const onRS = st && mx >= st.chartW;
-  if (onRS) {
-    _maxPricePad = 0.06;
-  } else {
-    maxChartResetView();
-    return;
-  }
-  drawMaxChart();
-}
-function _maxUpdateCursor(e) {
-  const canvas = document.getElementById('max-chart-canvas');
-  if (!canvas) return;
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-  const st = canvas._maxState;
-  if (!st) { canvas.style.cursor = 'crosshair'; return; }
-  const onRS = mx >= st.chartW;
-  const onBA = my >= st.chartH;
-  if (onRS) canvas.style.cursor = 'ns-resize';
-  else if (onBA) canvas.style.cursor = 'ew-resize';
-  else canvas.style.cursor = _maxIsDragging ? 'grabbing' : 'crosshair';
-}
-function _maxOnWheel(e) {
-  e.preventDefault();
-  if (!_maxCandles || _maxCandles.length === 0) return;
-  const canvas = document.getElementById('max-chart-canvas');
-  if (!canvas) return;
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-  const st = canvas._maxState;
-  const onRS = st && mx >= st.chartW;
-  const onBA = st && my >= st.chartH;
-  if (onRS) {
-    const factor = e.deltaY > 0 ? 1.10 : 0.90;
-    _maxPricePad = Math.max(0.001, Math.min(2.0, _maxPricePad * factor));
-  } else if (onBA) {
-    const zoomFactor = e.deltaY < 0 ? 1.12 : 0.88;
-    _maxBarWidth = Math.max(2, Math.min(60, _maxBarWidth * zoomFactor));
-  } else {
-    const delta = Math.sign(e.deltaY);
-    const zoomFactor = delta < 0 ? 1.12 : 0.88;
-    const oldBw = _maxBarWidth;
-    const newBw = Math.max(2, Math.min(60, oldBw * zoomFactor));
-    if (oldBw !== newBw) {
-      _maxBarWidth = newBw;
-      if (st && st.chartW) {
-        const mouseRatio = Math.max(0, Math.min(1, mx / st.chartW));
-        const total = _maxCandles.length;
-        const oldVis = Math.max(10, Math.floor(st.chartW / oldBw));
-        const newVis = Math.max(10, Math.floor(st.chartW / newBw));
-        const visDiff = oldVis - newVis;
-        _maxViewOffset += visDiff * (1 - mouseRatio);
-        _maxViewOffset = Math.max(-15, Math.min(total - 5, _maxViewOffset));
+  const loader = document.getElementById('max-chart-loader');
+  if (loader) { loader.style.display = 'flex'; loader.innerHTML = 'Loading chart…'; }
+
+  const range = _sdChartsInterval === '1H' ? '2y' : _sdChartsInterval === 'W' ? '2y' : _sdChartsInterval === 'M' ? '5y' : '1y';
+  const interval = _sdChartsInterval === '1H' ? '60m' : _sdChartsInterval === 'W' ? '1wk' : _sdChartsInterval === 'M' ? '1mo' : '1d';
+
+  // Primary Candle Fetcher (Dhan HQ API or Yahoo Finance)
+  let candlePromise;
+  if (_chartDataSource === 'dhan') {
+    candlePromise = fetchDhanCandles(symbol, range, interval).catch(err => {
+      console.warn('[Dhan API] Could not load candles:', err.message);
+      showChartToast('⚡ Dhan: ' + err.message + ' (Using YF fallback)', '#f59e0b');
+      // If token missing, prompt user
+      if (err.message.includes('token') || err.message.includes('Client ID') || err.message.includes('401')) {
+        openDhanConnectModal();
       }
+      return fetchYfData(symbol, range, interval);
+    });
+  } else {
+    candlePromise = fetchYfData(symbol, range, interval);
+  }
+
+  const niftyPromise = (symbol.toUpperCase() !== '^NSEI') ? fetchYfData('^NSEI', range, interval).catch(() => null) : Promise.resolve(null);
+
+  Promise.all([candlePromise, niftyPromise]).then(([candles, niftyCandles]) => {
+    if (loader) loader.style.display = 'none';
+    _maxCandles = candles;
+    _maxNiftyCandles = niftyCandles;
+    drawMaxChart();
+    _maxSetupInteraction();
+  }).catch(err => {
+    console.error("Max Chart Error", err);
+    if (loader) {
+      loader.innerHTML = '<div style="color:var(--sub);font-size:11px;text-align:center;padding:12px;line-height:1.5;max-width:280px;margin:0 auto;"><span style="color:var(--red);font-weight:600;display:block;margin-bottom:6px;">Failed to load chart data</span>Check your internet connection or data source.</div>';
+    }
+  });
+}
+function drawMaxChartLightweight() {
+  const container = document.getElementById('max-chart-lw-container');
+  if (!container || !_maxCandles || _maxCandles.length === 0 || typeof LightweightCharts === 'undefined') return false;
+
+  if (_maxLwChart) {
+    try { _maxLwChart.remove(); } catch (e) { }
+    _maxLwChart = null;
+  }
+  container.innerHTML = '';
+
+  const rect = container.getBoundingClientRect();
+  const width = rect.width || container.clientWidth || 800;
+  const height = rect.height || container.clientHeight || 500;
+
+  const sorted = [..._maxCandles].sort((a, b) => a.time - b.time);
+  const seenTimes = new Set();
+  const cleanCandles = [];
+  for (const c of sorted) {
+    const tSec = Math.floor(c.time / 1000);
+    if (!seenTimes.has(tSec) && c.open != null && c.high != null && c.low != null && c.close != null) {
+      seenTimes.add(tSec);
+      cleanCandles.push({
+        time: tSec,
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close,
+        volume: c.volume || 0,
+      });
     }
   }
-  drawMaxChart();
-}
-function _maxOnMouseDown(e) {
-  const canvas = document.getElementById('max-chart-canvas');
-  if (!canvas) return;
-  e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-  const st = canvas._maxState;
-  const onRS = st && mx >= st.chartW;
-  const onBA = st && my >= st.chartH;
-  if (onRS) {
-    _maxRsDragActive = true;
-    _maxRsDragStartY = e.clientY;
-    _maxRsDragStartPad = _maxPricePad;
-    canvas.style.cursor = 'ns-resize';
-  } else if (onBA) {
-    _maxBaDragActive = true;
-    _maxBaDragStartX = e.clientX;
-    _maxBaDragStartBw = _maxBarWidth;
-    canvas.style.cursor = 'ew-resize';
+  if (cleanCandles.length === 0) return false;
+
+  _maxLwChart = LightweightCharts.createChart(container, {
+    width: width,
+    height: height,
+    layout: {
+      background: { color: '#050508' },
+      textColor: '#94a3b8',
+      fontFamily: "'Inter', sans-serif",
+      fontSize: 11,
+    },
+    grid: {
+      vertLines: { color: 'rgba(255, 255, 255, 0.03)' },
+      horzLines: { color: 'rgba(255, 255, 255, 0.03)' },
+    },
+    crosshair: {
+      mode: LightweightCharts.CrosshairMode.Normal,
+      vertLine: { color: 'rgba(91, 163, 245, 0.4)', width: 1, style: 2 },
+      horzLine: { color: 'rgba(91, 163, 245, 0.4)', width: 1, style: 2 },
+    },
+    rightPriceScale: {
+      borderColor: 'rgba(255, 255, 255, 0.08)',
+      scaleMargins: { top: 0.1, bottom: 0.22 },
+    },
+    timeScale: {
+      borderColor: 'rgba(255, 255, 255, 0.08)',
+      timeVisible: _sdChartsInterval === '1H',
+      secondsVisible: false,
+    },
+  });
+
+  let priceSeries;
+  if (_sdChartType === 'ohlc') {
+    priceSeries = _maxLwChart.addBarSeries({
+      upColor: '#26a69a',
+      downColor: '#ef5350',
+      wickVisible: true,
+    });
   } else {
-    _maxIsDragging = true;
-    _maxDragStartX = e.clientX;
-    _maxDragStartOffset = _maxViewOffset;
-    canvas.style.cursor = 'grabbing';
+    priceSeries = _maxLwChart.addCandlestickSeries({
+      upColor: '#26a69a',
+      downColor: '#ef5350',
+      borderVisible: false,
+      wickUpColor: '#26a69a',
+      wickDownColor: '#ef5350',
+    });
   }
+  priceSeries.setData(cleanCandles);
+  _maxLwPriceSeries = priceSeries;
+
+  const volSeries = _maxLwChart.addHistogramSeries({
+    priceFormat: { type: 'volume' },
+    priceScaleId: 'vol_scale',
+  });
+  _maxLwChart.priceScale('vol_scale').applyOptions({
+    scaleMargins: { top: 0.82, bottom: 0 },
+    visible: false,
+  });
+  volSeries.setData(cleanCandles.map(c => ({
+    time: c.time,
+    value: c.volume,
+    color: c.close >= c.open ? 'rgba(38, 166, 154, 0.4)' : 'rgba(239, 83, 80, 0.4)',
+  })));
+
+  const isWeekly = (_sdChartsInterval === 'W');
+  const isDaily = (_sdChartsInterval === 'D');
+
+  const inp = _winConfig.inputs;
+  const st = _winConfig.style;
+
+  const ema10Vals = calculateEMA(cleanCandles, inp.ema1Period);
+  const ema20Vals = calculateEMA(cleanCandles, inp.ema2Period);
+  const sma50Vals = calculateSMA(cleanCandles, inp.sma1Period);
+  const sma200Vals = calculateSMA(cleanCandles, inp.sma2Period);
+  const sma30wVals = calculateSMA(cleanCandles, inp.sma30wPeriod);
+  const avgVolVals = calculateAvgVol(cleanCandles, inp.volLen);
+
+  // EMA 1
+  const ema10Map = new Map();
+  if (st.ema10 && st.ema10.visible) {
+    const data = [];
+    for (let i = 0; i < cleanCandles.length; i++) {
+      if (ema10Vals[i] != null) {
+        data.push({ time: cleanCandles[i].time, value: ema10Vals[i] });
+        ema10Map.set(cleanCandles[i].time, ema10Vals[i]);
+      }
+    }
+    const s = _maxLwChart.addLineSeries({
+      color: typeof hexToRgba === 'function' ? hexToRgba(st.ema10.color || '#3b82f6', (st.ema10.opacity != null ? st.ema10.opacity : 100) / 100) : (st.ema10.color || '#3b82f6'),
+      lineWidth: st.ema10.width || 1.5,
+      lineStyle: st.ema10.lineStyle || 0,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      title: ''
+    });
+    s.setData(data);
+  }
+
+  // EMA 2
+  const ema20Map = new Map();
+  if (st.ema20 && st.ema20.visible) {
+    const data = [];
+    for (let i = 0; i < cleanCandles.length; i++) {
+      if (ema20Vals[i] != null) {
+        data.push({ time: cleanCandles[i].time, value: ema20Vals[i] });
+        ema20Map.set(cleanCandles[i].time, ema20Vals[i]);
+      }
+    }
+    const s = _maxLwChart.addLineSeries({
+      color: typeof hexToRgba === 'function' ? hexToRgba(st.ema20.color || '#ef4444', (st.ema20.opacity != null ? st.ema20.opacity : 100) / 100) : (st.ema20.color || '#ef4444'),
+      lineWidth: st.ema20.width || 1.5,
+      lineStyle: st.ema20.lineStyle || 0,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      title: ''
+    });
+    s.setData(data);
+  }
+
+  // SMA 1 (Daily only)
+  const sma50Map = new Map();
+  if (st.sma50 && st.sma50.visible && !isWeekly) {
+    const data = [];
+    for (let i = 0; i < cleanCandles.length; i++) {
+      if (sma50Vals[i] != null) {
+        data.push({ time: cleanCandles[i].time, value: sma50Vals[i] });
+        sma50Map.set(cleanCandles[i].time, sma50Vals[i]);
+      }
+    }
+    const s = _maxLwChart.addLineSeries({
+      color: typeof hexToRgba === 'function' ? hexToRgba(st.sma50.color || '#06b6d4', (st.sma50.opacity != null ? st.sma50.opacity : 100) / 100) : (st.sma50.color || '#06b6d4'),
+      lineWidth: st.sma50.width || 1.5,
+      lineStyle: st.sma50.lineStyle || 0,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      title: ''
+    });
+    s.setData(data);
+  }
+
+  // SMA 2 (Daily only)
+  const sma200Map = new Map();
+  if (st.sma200 && st.sma200.visible && !isWeekly) {
+    const data = [];
+    for (let i = 0; i < cleanCandles.length; i++) {
+      if (sma200Vals[i] != null) {
+        data.push({ time: cleanCandles[i].time, value: sma200Vals[i] });
+        sma200Map.set(cleanCandles[i].time, sma200Vals[i]);
+      }
+    }
+    const s = _maxLwChart.addLineSeries({
+      color: typeof hexToRgba === 'function' ? hexToRgba(st.sma200.color || '#22c55e', (st.sma200.opacity != null ? st.sma200.opacity : 100) / 100) : (st.sma200.color || '#22c55e'),
+      lineWidth: st.sma200.width || 2,
+      lineStyle: st.sma200.lineStyle || 0,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      title: ''
+    });
+    s.setData(data);
+  }
+
+  // SMA 30W (Weekly only)
+  const sma30wMap = new Map();
+  if (st.sma30w && st.sma30w.visible && isWeekly) {
+    const data = [];
+    for (let i = 0; i < cleanCandles.length; i++) {
+      if (sma30wVals[i] != null) {
+        data.push({ time: cleanCandles[i].time, value: sma30wVals[i] });
+        sma30wMap.set(cleanCandles[i].time, sma30wVals[i]);
+      }
+    }
+    const s = _maxLwChart.addLineSeries({
+      color: typeof hexToRgba === 'function' ? hexToRgba(st.sma30w.color || '#f97316', (st.sma30w.opacity != null ? st.sma30w.opacity : 100) / 100) : (st.sma30w.color || '#f97316'),
+      lineWidth: st.sma30w.width || 2,
+      lineStyle: st.sma30w.lineStyle || 0,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      title: ''
+    });
+    s.setData(data);
+  }
+
+  // RS Nifty
+  const rsMap = new Map();
+  if (st.rs && st.rs.visible && _maxNiftyCandles && _maxNiftyCandles.length > 0) {
+    const nMap = new Map();
+    for (const nc of _maxNiftyCandles) {
+      nMap.set(new Date(nc.time).toISOString().split('T')[0], nc.close);
+    }
+    const rsData = [];
+    for (const c of cleanCandles) {
+      const dStr = new Date(c.time * 1000).toISOString().split('T')[0];
+      const nClose = nMap.get(dStr);
+      if (nClose != null && nClose > 0) {
+        const ratio = (c.close / nClose) * 1000;
+        rsData.push({ time: c.time, value: ratio });
+        rsMap.set(c.time, ratio);
+      }
+    }
+    if (rsData.length > 0) {
+      const rsSeries = _maxLwChart.addLineSeries({
+        color: typeof hexToRgba === 'function' ? hexToRgba(st.rs.color || '#38bdf8', (st.rs.opacity != null ? st.rs.opacity : 100) / 100) : (st.rs.color || '#38bdf8'),
+        lineWidth: st.rs.width || 1.8,
+        lineStyle: st.rs.lineStyle || 0,
+        priceScaleId: 'rs_scale',
+        priceLineVisible: false,
+        lastValueVisible: false,
+        title: '',
+      });
+      _maxLwChart.priceScale('rs_scale').applyOptions({
+        scaleMargins: { top: 0.05, bottom: 0.70 },
+        visible: false,
+      });
+      rsSeries.setData(rsData);
+    }
+  }
+
+  // WIN Markers
+  if (st.dots && st.dots.visible) {
+    const markers = calculateWinMarkers(cleanCandles, ema10Vals, avgVolVals, isDaily);
+    priceSeries.setMarkers(markers);
+  } else {
+    priceSeries.setMarkers([]);
+  }
+
+  // Volume Trigger V4 / GTT Line
+  const vt = calcVolumeTrigger(cleanCandles, inp.vtLookback, inp.vtRows, inp.vtHvnPct, inp.vtLvnPct);
+  if (st.vt && st.vt.visible && isDaily && vt && vt.isAboveClose) {
+    priceSeries.createPriceLine({
+      price: vt.price,
+      color: typeof hexToRgba === 'function' ? hexToRgba(st.vt.color || '#4863fc', (st.vt.opacity != null ? st.vt.opacity : 100) / 100) : (st.vt.color || '#4863fc'),
+      lineWidth: st.vt.width || 1.2,
+      lineStyle: st.vt.lineStyle != null ? st.vt.lineStyle : LightweightCharts.LineStyle.Dashed,
+      axisLabelVisible: false,
+      title: '',
+    });
+  }
+
+  // Floating OHLC tooltip
+  const tipEl = document.getElementById('max-chart-ohlc-tip');
+  const resetBtn = document.getElementById('max-chart-reset-btn');
+  if (resetBtn) resetBtn.style.display = 'flex';
+
+  const formatTip = (time, bar, vol) => {
+    if (!tipEl || !bar) return;
+    const d = new Date(time * 1000);
+    const dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const isUp = bar.close >= bar.open;
+    const col = isUp ? 'var(--lime)' : 'var(--red)';
+    const pct = (((bar.close - bar.open) / bar.open) * 100).toFixed(2);
+    const sign = isUp ? '+' : '';
+    let volStr = vol != null ? fVolFormat(vol) : '';
+
+    const e10 = ema10Map.get(time);
+    const e20 = ema20Map.get(time);
+    const s50 = sma50Map.get(time);
+    const s200 = sma200Map.get(time);
+    const s30w = sma30wMap.get(time);
+    const rsVal = rsMap.get(time);
+
+    tipEl.style.display = 'block';
+    tipEl.innerHTML = `
+      <span style="color:var(--text);font-weight:700;margin-right:8px;">${dateStr}</span>
+      O: <b style="color:var(--sub)">${bar.open.toFixed(1)}</b>&nbsp;
+      H: <b style="color:var(--sub)">${bar.high.toFixed(1)}</b>&nbsp;
+      L: <b style="color:var(--sub)">${bar.low.toFixed(1)}</b>&nbsp;
+      C: <b style="color:${col}">${bar.close.toFixed(1)} (${sign}${pct}%)</b>&nbsp;
+      ${volStr ? `Vol: <b style="color:var(--sub)">${volStr}</b>&nbsp;` : ''}
+      ${e10 != null ? `${inp.ema1Period}EMA: <b style="color:${(st.ema10 && st.ema10.color) || '#3b82f6'}">${e10.toFixed(1)}</b>&nbsp;` : ''}
+      ${e20 != null ? `${inp.ema2Period}EMA: <b style="color:${(st.ema20 && st.ema20.color) || '#ef4444'}">${e20.toFixed(1)}</b>&nbsp;` : ''}
+      ${s50 != null ? `${inp.sma1Period}SMA: <b style="color:${(st.sma50 && st.sma50.color) || '#06b6d4'}">${s50.toFixed(1)}</b>&nbsp;` : ''}
+      ${s200 != null ? `${inp.sma2Period}SMA: <b style="color:${(st.sma200 && st.sma200.color) || '#22c55e'}">${s200.toFixed(1)}</b>&nbsp;` : ''}
+      ${s30w != null ? `${inp.sma30wPeriod}W: <b style="color:${(st.sma30w && st.sma30w.color) || '#f97316'}">${s30w.toFixed(1)}</b>&nbsp;` : ''}
+      ${rsVal != null ? `RS: <b style="color:${(st.rs && st.rs.color) || '#38bdf8'}">${rsVal.toFixed(1)}</b>` : ''}
+    `;
+  };
+
+  const lastC = cleanCandles[cleanCandles.length - 1];
+  formatTip(lastC.time, lastC, lastC.volume);
+
+  _maxLwChart.subscribeCrosshairMove(param => {
+    if (!param || !param.time || !param.seriesData.get(priceSeries)) {
+      formatTip(lastC.time, lastC, lastC.volume);
+      return;
+    }
+    const bar = param.seriesData.get(priceSeries);
+    const vol = volSeries ? param.seriesData.get(volSeries)?.value : null;
+    formatTip(param.time, bar, vol);
+  });
+
+  // Render WIN HUD Table in modal
+  const tableContainer = document.getElementById('max-chart-table-container');
+  if (tableContainer) {
+    if (!st.hud || !st.hud.visible) {
+      tableContainer.style.display = 'none';
+    } else {
+      tableContainer.style.display = 'block';
+      const details = typeof getStockDetails === 'function' && _sdMaximizedChartSymbol ? getStockDetails(_sdMaximizedChartSymbol) : { symbol: _sdMaximizedChartSymbol };
+      tableContainer.innerHTML = renderWinHudTableHtml(cleanCandles, details, vt);
+    }
+  }
+
+  _maxLwChart.timeScale().fitContent();
+
+  try {
+    _maxLwChart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+      redrawChartDrawings();
+      if (typeof updateFloatingToolbar === 'function') updateFloatingToolbar();
+    });
+  } catch (e) { }
+  if (typeof initChartDrawingCanvas === 'function') initChartDrawingCanvas();
+  if (typeof redrawChartDrawings === 'function') redrawChartDrawings();
+  if (typeof renderMaxChartEpsTable === 'function') renderMaxChartEpsTable(_sdMaximizedChartSymbol);
+
+  if (_maxLwResizeObserver) {
+    try { _maxLwResizeObserver.disconnect(); } catch (e) { }
+  }
+  _maxLwResizeObserver = new ResizeObserver(entries => {
+    if (!entries || !entries.length || !_maxLwChart) return;
+    const cr = entries[0].contentRect;
+    if (cr.width > 0 && cr.height > 0) {
+      _maxLwChart.applyOptions({ width: cr.width, height: cr.height });
+      if (typeof syncCanvasSize === 'function') syncCanvasSize();
+      if (typeof redrawChartDrawings === 'function') redrawChartDrawings();
+      if (typeof updateFloatingToolbar === 'function') updateFloatingToolbar();
+    }
+  });
+  _maxLwResizeObserver.observe(container);
+  return true;
 }
-function _maxOnMouseUp() {
-  _maxIsDragging = false;
-  _maxRsDragActive = false;
-  _maxBaDragActive = false;
-  const canvas = document.getElementById('max-chart-canvas');
-  if (canvas) canvas.style.cursor = 'crosshair';
-}
-function _maxOnMouseLeave() {
-  if (!_maxIsDragging && !_maxRsDragActive && !_maxBaDragActive) {
-    const canvas = document.getElementById('max-chart-canvas');
-    if (canvas) canvas.style.cursor = 'crosshair';
-    document.getElementById('max-chart-ohlc-tip').style.display = 'none';
-    if (canvas && canvas._maxState) drawMaxChart();
-  }
-}
-function _maxOnMouseMove(e) {
-  const canvas = document.getElementById('max-chart-canvas');
-  if (!canvas || !_maxCandles) return;
-  if (_maxRsDragActive) {
-    e.preventDefault();
-    const dy = e.clientY - _maxRsDragStartY;
-    _maxPricePad = Math.max(0.001, Math.min(2.0, _maxRsDragStartPad * Math.pow(1.005, dy)));
-    drawMaxChart(); return;
-  }
-  if (_maxBaDragActive) {
-    e.preventDefault();
-    const dx = e.clientX - _maxBaDragStartX;
-    _maxBarWidth = Math.max(2, Math.min(60, _maxBaDragStartBw * Math.pow(1.005, dx)));
-    drawMaxChart(); return;
-  }
-  if (_maxIsDragging) {
-    e.preventDefault();
-    const dx = e.clientX - _maxDragStartX;
-    const st = canvas._maxState;
-    const slot = (st && st.barSlot) ? st.barSlot : _maxBarWidth;
-    const barsShifted = dx / slot;
-    _maxViewOffset = Math.max(-15, Math.min(_maxCandles.length - 5, _maxDragStartOffset + barsShifted));
-    drawMaxChart(); return;
-  }
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-  if (mx < 0 || mx > rect.width || my < 0 || my > rect.height) {
-    document.getElementById('max-chart-ohlc-tip').style.display = 'none';
-    return;
-  }
-  drawMaxChart();
-  const st = canvas._maxState; if (!st) return;
-  if (mx >= st.chartW || my >= st.chartH) {
-    document.getElementById('max-chart-ohlc-tip').style.display = 'none';
-    return;
-  }
-  const slotIdx = Math.min(st.barsVisible - 1, Math.max(0, Math.floor(mx / st.barSlot)));
-  const item = st.slotItems[slotIdx];
-  if (!item || !item.candle) return;
-  const c = item.candle;
-  const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const cx = st.barX(slotIdx);
-  ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
-  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, st.chartH); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(0, my); ctx.lineTo(st.chartW, my); ctx.stroke();
-  ctx.setLineDash([]);
-  if (my <= st.priceH) {
-    const price = st.minP + ((st.priceH - my) / st.priceH) * (st.maxP - st.minP);
-    const priceLabel = price.toFixed(price > 1000 ? 1 : 2);
-    ctx.fillStyle = '#2a3550'; ctx.fillRect(st.chartW + 1, my - 10, st.RSW - 2, 20);
-    ctx.strokeStyle = 'rgba(91,163,245,0.4)'; ctx.lineWidth = 1; ctx.strokeRect(st.chartW + 1, my - 10, st.RSW - 2, 20);
-    ctx.fillStyle = '#e2e8f0'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    ctx.fillText(priceLabel, st.chartW + 6, my);
-  }
-  if (c.time) {
-    const d = new Date(c.time);
-    const dateTagStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' });
-    const tw = 68;
-    const tx = Math.max(0, Math.min(st.chartW - tw, cx - tw / 2));
-    ctx.fillStyle = '#2a3550'; ctx.fillRect(tx, st.chartH + 1, tw, st.BAH - 2);
-    ctx.strokeStyle = 'rgba(91,163,245,0.4)'; ctx.lineWidth = 1; ctx.strokeRect(tx, st.chartH + 1, tw, st.BAH - 2);
-    ctx.fillStyle = '#e2e8f0'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(dateTagStr, tx + tw / 2, st.chartH + st.BAH / 2);
-  }
-  ctx.restore();
-  const tip = document.getElementById('max-chart-ohlc-tip');
-  if (tip) {
-    const d = new Date(c.time);
-    const dateStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-    const isUp = c.close >= c.open;
-    const col = isUp ? '#26a69a' : '#ef5350';
-    const chg = ((c.close - c.open) / c.open * 100).toFixed(2);
-    const ema = item.ema;
-    tip.innerHTML = `<span style="color:#64748b;font-size:10px;">${dateStr}</span>  `
-      + `O <b style="color:${col}">${c.open.toFixed(1)}</b>  `
-      + `H <b style="color:${col}">${c.high.toFixed(1)}</b>  `
-      + `L <b style="color:${col}">${c.low.toFixed(1)}</b>  `
-      + `C <b style="color:${col}">${c.close.toFixed(1)}</b>  `
-      + `<span style="color:${col};font-weight:700;">${chg}%</span>`
-      + (ema ? `  <span style="color:rgba(239,68,68,0.85);"> EMA ${ema.toFixed(1)}</span>` : '');
-    tip.style.display = 'block';
-    const tx = mx + 20 > st.chartW - 190 ? mx - 220 : mx + 16;
-    tip.style.left = tx + 'px';
-    tip.style.top = (my < 55 ? my + 16 : my - 52) + 'px';
-  }
-}
+
 function drawMaxChart() {
+  if (typeof LightweightCharts !== 'undefined' && document.getElementById('max-chart-lw-container')) {
+    if (drawMaxChartLightweight()) return;
+  }
   const canvas = document.getElementById('max-chart-canvas');
   if (!canvas || !_maxCandles || _maxCandles.length === 0) return;
   const ctx = canvas.getContext('2d');
@@ -3842,13 +5469,23 @@ function maxChartSearchInput(val) {
       </div>`;
   }).join(''); suggestBox.style.display = 'block';
 }
-function maxChartSelectStock(symbol) { const searchInput = document.getElementById('max-chart-search'); if (searchInput) searchInput.value = ''; const suggestBox = document.getElementById('max-chart-suggest'); if (suggestBox) suggestBox.style.display = 'none'; openMaximizedChart(symbol); }
+function maxChartSelectStock(symbol) {
+  const searchInput = document.getElementById('max-chart-search');
+  if (searchInput) searchInput.value = '';
+  const suggestBox = document.getElementById('max-chart-suggest');
+  if (suggestBox) suggestBox.style.display = 'none';
+  if (typeof maxChartOnStockSelected === 'function') {
+    maxChartOnStockSelected(symbol);
+  } else {
+    openMaximizedChart(symbol);
+  }
+}
 async function sectorDrillOpen(sectorName, tabToOpen = 'vcp') {
   const overlay = document.getElementById('sector-drill-overlay'); const title = document.getElementById('sd-title'); const body = document.getElementById('sd-body'); if (!overlay || !title || !body) return; _sdCurrentSector = sectorName; _sdCurrentData = null; _sdFilter = 'all'; _sdChartsSource = 'vcp'; _sdChartsPage = 0; _sdAutoChartsLimit = 12; _sdSearchQuery = ''; const searchInput = document.getElementById('sd-search-input'); if (searchInput) searchInput.value = ''; const clearBtn = document.getElementById('sd-search-clear'); if (clearBtn) clearBtn.style.display = 'none'; title.textContent = sectorName; body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--dim);font-size:11px">Loading…</div>'; overlay.style.display = 'flex'; let data = sectorDrillGetCached(); const today = new Date().toISOString().slice(0, 10); if (!data || data.scan_date !== today) {
     const baseUrl = vcpbGetUrl(); if (baseUrl) {
       try {
         let resp; let localSuccess = false; if (window.location.protocol === 'file:') { try { const localUrl = 'http://localhost:9090/local/sector_stocks.json?_=' + Date.now(); resp = await fetch(localUrl, { cache: 'no-store' }); if (resp.ok) localSuccess = true; } catch (e) { } }
-        if (!localSuccess) { resp = await fetch(baseUrl + '/sector_stocks.json?_=' + Date.now(), { cache: 'no-store' }); }
+        if (!localSuccess) { try { resp = await fetch(baseUrl + '/sector_stocks.json?_=' + Date.now(), { cache: 'no-store' }); if (!resp.ok && baseUrl.includes('localhost:9090')) throw new Error('Local down'); } catch (e) { resp = await fetch('https://mkshibu2.github.io/breadth-radar/sector_stocks.json?_=' + Date.now(), { cache: 'no-store' }); } }
         if (resp && resp.ok) { const fresh = await resp.json(); sectorDrillSetCached(fresh); data = fresh; sccWatchlistRender(); sccWatchlistFetchAll(); }
       } catch (e) { }
     }
@@ -3880,7 +5517,7 @@ async function sdFetchCsv(force = false) {
   if (!filterStocksGetCached()) {
     try {
       let resp; let localSuccess = false; if (window.location.protocol === 'file:') { try { const localUrl = 'http://localhost:9090/local/Filter_India_Stocks.csv?_=' + Date.now(); resp = await fetch(localUrl, { cache: 'no-store' }); if (resp.ok) localSuccess = true; } catch (e) { } }
-      if (!localSuccess) { resp = await fetch(baseUrl + '/Filter_India_Stocks.csv?_=' + Date.now(), { cache: 'no-store' }); }
+      if (!localSuccess) { try { resp = await fetch(baseUrl + '/Filter_India_Stocks.csv?_=' + Date.now(), { cache: 'no-store' }); if (!resp.ok && baseUrl.includes('localhost:9090')) throw new Error('Local down'); } catch (e) { resp = await fetch('https://mkshibu2.github.io/breadth-radar/Filter_India_Stocks.csv?_=' + Date.now(), { cache: 'no-store' }); } }
       if (resp && resp.ok) { const text = await resp.text(); const parsed = parseFilterStocksCsv(text); if (Object.keys(parsed).length > 100) { filterStocksSetCached(parsed); console.log('Successfully fetched and cached Filter_India_Stocks.csv mappings:', Object.keys(parsed).length); } }
     } catch (e) { console.error('Error fetching Filter_India_Stocks.csv:', e); }
   }
@@ -4032,17 +5669,17 @@ function sdChartsPrevPage() { if (_sdChartsPage > 0) { _sdChartsPage--; sdRender
 function sdChartsNextPage(totalPages) { if (_sdChartsPage < totalPages - 1) { _sdChartsPage++; sdRenderCharts(_sdCurrentSector, _sdCurrentData); } }
 const _yfDataCache = new Map(); async function fetchYfData(symbol, range, interval) {
   const yfSymbol = symbol.startsWith('^') ? symbol : (symbol + '.NS'); const cacheKey = `${yfSymbol}_${range}_${interval}`; if (_yfDataCache.has(cacheKey)) { return _yfDataCache.get(cacheKey); }
-  const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`; const currentOrigin = window.location.origin; const proxies = [url => {
+  const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`; const currentOrigin = window.location.origin; const proxies = [url => `https://nse-chart-proxy.shibu-mk.workers.dev/?url=${encodeURIComponent(url)}`,url => {
     if (!currentOrigin || currentOrigin.startsWith('file') || currentOrigin === 'null' || currentOrigin.includes('github.io')) { return ''; }
     return `${currentOrigin}/api/proxy?url=${encodeURIComponent(url)}`;
   }, url => `http://localhost:9090/?url=${encodeURIComponent(url)}`, url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`]; for (const proxyFn of proxies) {
     try {
-      const pUrl = proxyFn(targetUrl); if (!pUrl) continue; const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 8000); const resp = await fetch(pUrl, { signal: controller.signal }); clearTimeout(timeoutId); if (resp.ok) {
+      const pUrl = proxyFn(targetUrl); if (!pUrl) continue; console.log('[fetchYfData] Requesting:', yfSymbol, 'via', pUrl); const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 7000); const resp = await fetch(pUrl, { signal: controller.signal }); clearTimeout(timeoutId); if (resp.ok) {
         let text = await resp.text(); if (text.trim().startsWith('{')) { const parsed = JSON.parse(text); if (parsed.contents) { text = parsed.contents; } }
         const trimmed = text.trim(); if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) { throw new Error("Response is not JSON"); }
         const data = JSON.parse(text); const candles = parseYfData(data); if (candles && candles.length > 0) { _yfDataCache.set(cacheKey, candles); return candles; }
       }
-    } catch (e) { /* ignore individual proxy failures and try next */ }
+    } catch (e) { console.warn('[fetchYfData] Proxy failed:', e.message); }
   }
   throw new Error("Unable to load Yahoo Finance chart data");
 }
@@ -4266,7 +5903,7 @@ style="background:var(--bg4);border:1px solid var(--border);color:${_sdChartsPag
             loader.innerHTML = `
                 <div style="color:var(--sub);font-size:10px;text-align:center;padding:12px;line-height:1.5;max-width:260px;margin:0 auto;">
                   <span style="color:var(--red);font-weight:600;display:block;margin-bottom:6px;">Failed to load chart data</span>
-                  Run <code style="background:var(--bg4);padding:2px 4px;border-radius:3px;color:var(--accent);font-family:var(--mono);font-size:9px;white-space:nowrap;">node chart_proxy.js</code><br>in terminal to enable EOD charts.
+                  Check your internet connection or proxy.
                 </div>`;
           }
         });
@@ -4452,3 +6089,2123 @@ document.addEventListener('keydown', e => {
     closeEodChecklistModal();
   }
 });
+
+loadWinSettings();
+
+
+function sccWlCycleFlag(sym, e) {
+  if (e) e.stopPropagation();
+  const sUpper = sym.toUpperCase();
+  const current = _sccSymbolFlags[sUpper] || 'none';
+  const order = ['none', 'red', 'blue', 'green', 'yellow', 'pink'];
+  const nextIdx = (order.indexOf(current) + 1) % order.length;
+  const nextColor = order[nextIdx];
+  if (nextColor === 'none') {
+    delete _sccSymbolFlags[sUpper];
+  } else {
+    _sccSymbolFlags[sUpper] = nextColor;
+  }
+  sccSaveWatchlistsLocalAndSync();
+  sccWlRenderTabs();
+  sccWatchlistRender();
+  if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+}
+window.sccWlCycleFlag = sccWlCycleFlag;
+
+
+// ── SCREENER.IN QUARTERLY EPS & SALES ENGINE ─────────────────────
+function parseScreenerHtml(symbol, html) {
+  if (!html) return null;
+  const quartersMatch = html.match(/<section id="quarters"[\s\S]*?<\/section>/);
+  if (!quartersMatch) return null;
+  const tableHtml = quartersMatch[0];
+
+  const theadMatch = tableHtml.match(/<thead>[\s\S]*?<\/thead>/);
+  if (!theadMatch) return null;
+  const thMatches = [...theadMatch[0].matchAll(/<th[^>]*>([\s\S]*?)<\/th>/g)].map(m => m[1].replace(/<[^>]+>/g, '').trim()).filter(Boolean);
+
+  const rowMatches = [...tableHtml.matchAll(/<tr>[\s\S]*?<\/tr>/g)];
+  let salesRow = null;
+  let epsRow = null;
+  let netProfitRow = null;
+
+  for (const r of rowMatches) {
+    const rowStr = r[0];
+    const textCell = rowStr.match(/<td[^>]*class="text"[^>]*>([\s\S]*?)<\/td>/);
+    if (!textCell) continue;
+    const label = textCell[1].replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim().toLowerCase();
+    const cells = [...rowStr.matchAll(/<td(?![^>]*class="text")[^>]*>([\s\S]*?)<\/td>/g)].map(m => {
+      const val = parseFloat(m[1].replace(/,/g, '').trim());
+      return isNaN(val) ? null : val;
+    });
+
+    if (label.startsWith('sales')) salesRow = cells;
+    else if (label.startsWith('eps')) epsRow = cells;
+    else if (label.startsWith('net profit')) netProfitRow = cells;
+  }
+
+  if (!thMatches.length || (!salesRow && !epsRow && !netProfitRow)) return null;
+
+  const items = [];
+  for (let i = 0; i < thMatches.length; i++) {
+    items.push({
+      dateStr: thMatches[i],
+      sales: salesRow ? salesRow[i] : null,
+      eps: epsRow ? epsRow[i] : (netProfitRow ? netProfitRow[i] : null),
+      netProfit: netProfitRow ? netProfitRow[i] : null
+    });
+  }
+
+  const quarters = [];
+  for (let i = items.length - 1; i >= 0; i--) {
+    const cur = items[i];
+    let epsPct = null;
+    let salesPct = null;
+
+    if (i >= 4) {
+      const prevYear = items[i - 4];
+      if (cur.eps != null && prevYear.eps != null && prevYear.eps !== 0) {
+        epsPct = Math.round(((cur.eps - prevYear.eps) / Math.abs(prevYear.eps)) * 100);
+      }
+      if (cur.sales != null && prevYear.sales != null && prevYear.sales !== 0) {
+        salesPct = Math.round(((cur.sales - prevYear.sales) / Math.abs(prevYear.sales)) * 100);
+      }
+    }
+
+    let dFormatted = cur.dateStr;
+    const dParts = cur.dateStr.split(' ');
+    if (dParts.length === 2) {
+      dFormatted = dParts[0].slice(0, 3) + '-' + dParts[1].slice(-2);
+    }
+
+    quarters.push({
+      date: dFormatted,
+      epsPct: epsPct,
+      salesPct: salesPct,
+      salesCr: cur.sales,
+      netProfitCr: cur.netProfit,
+      eps: cur.eps
+    });
+  }
+
+  // Extract Market Cap & ROE from Screener's top ratios if present
+  let roeFormatted = '—';
+  let roe = null;
+  const roeMatch = html.match(new RegExp("Return on equity[\\s\\S]*?<span class=\"number\">([0-9.]+)</span>%", "i"));
+  if (roeMatch) {
+    roe = parseFloat(roeMatch[1]) / 100;
+    roeFormatted = roeMatch[1] + '%';
+  }
+
+  let capCategory = '—';
+  let marketCap = null;
+  const mcMatch = html.match(new RegExp("Market Cap[\\s\\S]*?<span class=\"number\">([0-9,]+)</span>", "i"));
+  if (mcMatch) {
+    const mcInCr = parseFloat(mcMatch[1].replace(/,/g, ''));
+    if (!isNaN(mcInCr)) {
+      marketCap = mcInCr * 1e7;
+      if (mcInCr >= 20000) capCategory = 'LargeCap';
+      else if (mcInCr >= 5000) capCategory = 'MidCap';
+      else if (mcInCr >= 1000) capCategory = 'SmallCap';
+      else capCategory = 'MicroCap';
+    }
+  }
+
+  return {
+    symbol: symbol,
+    quarters: quarters,
+    roe: roe,
+    roeFormatted: roeFormatted,
+    marketCap: marketCap,
+    capCategory: capCategory,
+    screenerUrl: 'https://www.screener.in/company/' + encodeURIComponent(symbol) + '/consolidated/'
+  };
+}
+
+async function fetchScreenerFundamentals(symbol) {
+  if (!symbol) return null;
+  const sUpper = symbol.toUpperCase().replace('.NS', '');
+  const urls = [
+    'https://www.screener.in/company/' + encodeURIComponent(sUpper) + '/consolidated/',
+    'https://www.screener.in/company/' + encodeURIComponent(sUpper) + '/'
+  ];
+
+  const proxies = [
+    url => 'http://localhost:9090/?url=' + encodeURIComponent(url),
+    url => 'https://nse-chart-proxy.shibu-mk.workers.dev/?url=' + encodeURIComponent(url),
+    url => 'https://api.allorigins.win/get?url=' + encodeURIComponent(url),
+    url => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url),
+    url => 'https://corsproxy.io/?url=' + encodeURIComponent(url)
+  ];
+
+  for (const targetUrl of urls) {
+    for (const proxyFn of proxies) {
+      try {
+        const pUrl = proxyFn(targetUrl);
+        if (!pUrl) continue;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        const resp = await fetch(pUrl, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (resp.ok) {
+          let text = await resp.text();
+          if (text.trim().startsWith('{')) {
+            try {
+              const j = JSON.parse(text);
+              if (j.contents) text = j.contents;
+            } catch (e) { }
+          }
+          if (text.includes('id="quarters"') || text.includes('Quarters') || text.includes('quarters')) {
+            const data = parseScreenerHtml(sUpper, text);
+            if (data && data.quarters && data.quarters.length > 0) {
+              return data;
+            }
+          }
+        }
+      } catch (e) { }
+    }
+  }
+  return null;
+}
+
+
+// ── TRADINGVIEW DRAWING TOOLS & EDITING ENGINE ────────────────────────────
+let _currentDrawTool = 'select'; // 'select' | 'trendline' | 'ray_h' | 'ray' | 'rect' | 'scale' | 'pricenote' | 'text'
+let _drawStep = 0; // 0 = idle, 1 = first point placed, waiting for second point
+let _drawStart = null; // { x, y, logical, price, time }
+let _activeDrawing = null; // preview object while drawing
+let _selectedDrawingIndex = null; // index of selected drawing in active symbol's list
+let _dragMode = null; // null | 'handle' | 'move' | 'float_toolbar'
+let _dragHandle = null; // 'p1' | 'p2' | 'nw' | 'ne' | 'se' | 'sw'
+let _dragOrigin = null; // { x, y, logical, price }
+let _dragStartDrawing = null; // clone of drawing at drag start
+let _floatBarOffset = { x: 0, y: 0 };
+let _isDrawMouseDown = false;
+
+let _chartDrawings = {};
+try {
+  _chartDrawings = JSON.parse(localStorage.getItem('nse_chart_drawings_v2') || '{}');
+} catch (e) {
+  _chartDrawings = {};
+}
+
+function syncCanvasSize() {
+  const canvas = document.getElementById('max-chart-draw-canvas');
+  if (!canvas) return;
+  const stage = document.getElementById('max-chart-stage') || canvas.parentElement;
+  if (!stage) return;
+  const rect = stage.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const W = Math.round(rect.width || stage.clientWidth || 800);
+  const H = Math.round(rect.height || stage.clientHeight || 500);
+  const tw = Math.round(W * dpr);
+  const th = Math.round(H * dpr);
+  if (canvas.width !== tw || canvas.height !== th) {
+    canvas.width = tw;
+    canvas.height = th;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+  }
+}
+window.syncCanvasSize = syncCanvasSize;
+
+function saveChartDrawings() {
+  try {
+    localStorage.setItem('nse_chart_drawings_v2', JSON.stringify(_chartDrawings));
+  } catch (e) { }
+}
+
+function getActiveDrawingSymbol() {
+  return ((_maxChartLayout !== '1' && _layoutSymbols[_activeLayoutTile - 1]) || _sdMaximizedChartSymbol || 'DEFAULT').toUpperCase().replace('.NS', '');
+}
+
+function clearChartDrawings() {
+  const sym = getActiveDrawingSymbol();
+  if (!sym) return;
+  _chartDrawings[sym] = [];
+  _selectedDrawingIndex = null;
+  hideFloatingToolbar();
+  saveChartDrawings();
+  redrawChartDrawings();
+  showChartToast('🗑 Drawings cleared for ' + sym, '#ef4444');
+}
+window.clearChartDrawings = clearChartDrawings;
+
+function setDrawingTool(tool) {
+  _currentDrawTool = tool;
+  _drawStep = 0;
+  _drawStart = null;
+  _activeDrawing = null;
+  _isDrawMouseDown = false;
+  _dragMode = null;
+
+  if (tool !== 'select') {
+    _selectedDrawingIndex = null;
+    hideFloatingToolbar();
+  }
+
+  initChartDrawingCanvas();
+
+  document.querySelectorAll('.tv-draw-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('draw-tool-' + tool);
+  if (btn) btn.classList.add('active');
+
+  const canvas = document.getElementById('max-chart-draw-canvas');
+  if (canvas) {
+    if (tool === 'select') {
+      canvas.style.pointerEvents = _selectedDrawingIndex != null ? 'all' : 'none';
+      canvas.style.cursor = 'default';
+      canvas.style.zIndex = '12';
+    } else {
+      canvas.style.pointerEvents = 'all';
+      canvas.style.cursor = 'crosshair';
+      canvas.style.zIndex = '35'; // elevated above legend & headers
+      syncCanvasSize();
+    }
+  }
+  redrawChartDrawings();
+}
+window.setDrawingTool = setDrawingTool;
+
+// Helper: distance from point (x,y) to line segment (x1,y1)-(x2,y2)
+function distToSegment(x, y, x1, y1, x2, y2) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const l2 = dx * dx + dy * dy;
+  if (l2 === 0) return Math.hypot(x - x1, y - y1);
+  let t = ((x - x1) * dx + (y - y1) * dy) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(x - (x1 + t * dx), y - (y1 + t * dy));
+}
+
+// Coordinate mapping helper
+function getDrawingContext() {
+  const chart = (_activeLayoutTile > 1 && _subLwCharts[_activeLayoutTile]) ? _subLwCharts[_activeLayoutTile] : _maxLwChart;
+  const series = (_activeLayoutTile > 1 && _subLwSeries[_activeLayoutTile]) ? _subLwSeries[_activeLayoutTile] : _maxLwPriceSeries;
+  const timeScale = chart ? chart.timeScale() : null;
+  return { chart, series, timeScale };
+}
+
+function pointToPixels(p, timeScale, series) {
+  let px = p.x;
+  let py = p.y;
+  if (timeScale && typeof timeScale.logicalToCoordinate === 'function' && p.logical != null) {
+    try {
+      const cx = timeScale.logicalToCoordinate(p.logical);
+      if (cx != null && isFinite(cx)) px = cx;
+    } catch (e) { }
+  }
+  if (series && typeof series.priceToCoordinate === 'function' && p.price != null) {
+    try {
+      const cy = series.priceToCoordinate(p.price);
+      if (cy != null && isFinite(cy)) py = cy;
+    } catch (e) { }
+  }
+  return { x: px, y: py };
+}
+
+// Hit-testing drawings for selection & manipulation
+function hitTestChartDrawings(x, y) {
+  const sym = getActiveDrawingSymbol();
+  const drawings = _chartDrawings[sym] || [];
+  if (!drawings.length) return null;
+
+  const { timeScale, series } = getDrawingContext();
+
+  for (let i = drawings.length - 1; i >= 0; i--) {
+    const d = drawings[i];
+    if (!d || !d.p1) continue;
+
+    const pt1 = pointToPixels(d.p1, timeScale, series);
+    const pt2 = d.p2 ? pointToPixels(d.p2, timeScale, series) : pt1;
+
+    // 1. Check anchor handles first (tolerance 9px)
+    if (d.type === 'trendline' || d.type === 'ray') {
+      if (Math.hypot(x - pt1.x, y - pt1.y) <= 9) return { index: i, drawing: d, handle: 'p1', pt: pt1 };
+      if (Math.hypot(x - pt2.x, y - pt2.y) <= 9) return { index: i, drawing: d, handle: 'p2', pt: pt2 };
+      if (distToSegment(x, y, pt1.x, pt1.y, pt2.x, pt2.y) <= 7) return { index: i, drawing: d, handle: 'body' };
+    } else if (d.type === 'ray_h') {
+      if (Math.hypot(x - pt1.x, y - pt1.y) <= 9) return { index: i, drawing: d, handle: 'p1', pt: pt1 };
+      if (Math.abs(y - pt1.y) <= 7 && x >= pt1.x - 6) return { index: i, drawing: d, handle: 'body' };
+    } else if (d.type === 'rect' || d.type === 'scale' || d.type === 'measure') {
+      const minX = Math.min(pt1.x, pt2.x);
+      const maxX = Math.max(pt1.x, pt2.x);
+      const minY = Math.min(pt1.y, pt2.y);
+      const maxY = Math.max(pt1.y, pt2.y);
+
+      if (Math.hypot(x - minX, y - minY) <= 9) return { index: i, drawing: d, handle: 'nw' };
+      if (Math.hypot(x - maxX, y - minY) <= 9) return { index: i, drawing: d, handle: 'ne' };
+      if (Math.hypot(x - maxX, y - maxY) <= 9) return { index: i, drawing: d, handle: 'se' };
+      if (Math.hypot(x - minX, y - maxY) <= 9) return { index: i, drawing: d, handle: 'sw' };
+
+      if (x >= minX - 5 && x <= maxX + 5 && y >= minY - 5 && y <= maxY + 5) {
+        return { index: i, drawing: d, handle: 'body' };
+      }
+    } else if (d.type === 'pricenote') {
+      if (Math.hypot(x - pt1.x, y - pt1.y) <= 9) return { index: i, drawing: d, handle: 'p1' };
+      const bx = pt1.x + 16, by = pt1.y - 36, bw = 84, bh = 26;
+      if (x >= bx - 4 && x <= bx + bw + 4 && y >= by - 4 && y <= by + bh + 4) return { index: i, drawing: d, handle: 'body' };
+      if (distToSegment(x, y, pt1.x, pt1.y, bx + 4, by + bh) <= 6) return { index: i, drawing: d, handle: 'body' };
+    } else if (d.type === 'text') {
+      if (Math.hypot(x - pt1.x, y - pt1.y) <= 9) return { index: i, drawing: d, handle: 'p1' };
+      const tw = (d.text ? d.text.length * 8 : 40) + 16;
+      if (x >= pt1.x - 8 && x <= pt1.x + tw && y >= pt1.y - 22 && y <= pt1.y + 6) return { index: i, drawing: d, handle: 'body' };
+    }
+  }
+  return null;
+}
+
+function initChartDrawingCanvas() {
+  const canvas = document.getElementById('max-chart-draw-canvas');
+  if (!canvas || canvas._wired) return;
+  canvas._wired = true;
+  syncCanvasSize();
+
+  const getEventCoords = e => {
+    syncCanvasSize();
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+
+    const { chart, series, timeScale } = getDrawingContext();
+
+    let logical = null;
+    let price = null;
+    if (chart && timeScale && typeof timeScale.coordinateToLogical === 'function') {
+      try { logical = timeScale.coordinateToLogical(x); } catch (err) { }
+    }
+    if (series && typeof series.coordinateToPrice === 'function') {
+      try { price = series.coordinateToPrice(y); } catch (err) { }
+    }
+    return { x, y, logical, price };
+  };
+
+  const commitNewDrawing = (drawing) => {
+    const sym = getActiveDrawingSymbol();
+    if (!sym) return;
+    if (!_chartDrawings[sym]) _chartDrawings[sym] = [];
+    _chartDrawings[sym].push(drawing);
+    saveChartDrawings();
+    _activeDrawing = null;
+    _drawStep = 0;
+    _drawStart = null;
+    _isDrawMouseDown = false;
+    _selectedDrawingIndex = _chartDrawings[sym].length - 1;
+    setDrawingTool('select');
+    updateFloatingToolbar();
+    redrawChartDrawings();
+  };
+
+  // Stage Mousemove: Dynamically grant pointer-events when hovering existing drawings in select mode
+  const stage = document.getElementById('max-chart-stage') || canvas.parentElement;
+  if (stage && !stage._hoverWired) {
+    stage._hoverWired = true;
+    stage.addEventListener('mousemove', e => {
+      if (_currentDrawTool !== 'select' || _dragMode) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const hit = hitTestChartDrawings(x, y);
+      if (hit) {
+        canvas.style.pointerEvents = 'all';
+        if (hit.handle === 'body') canvas.style.cursor = 'move';
+        else if (hit.handle === 'nw' || hit.handle === 'se') canvas.style.cursor = 'nwse-resize';
+        else if (hit.handle === 'ne' || hit.handle === 'sw') canvas.style.cursor = 'nesw-resize';
+        else canvas.style.cursor = 'pointer';
+      } else {
+        if (_selectedDrawingIndex != null) {
+          canvas.style.pointerEvents = 'all';
+          canvas.style.cursor = 'default';
+        } else {
+          canvas.style.pointerEvents = 'none';
+          canvas.style.cursor = 'default';
+        }
+      }
+    });
+  }
+
+  // MOUSE DOWN on canvas
+  canvas.addEventListener('mousedown', e => {
+    const coords = getEventCoords(e);
+    const sym = getActiveDrawingSymbol();
+    if (!sym) return;
+
+    // ── SELECT / EDIT MODE ──
+    if (_currentDrawTool === 'select') {
+      const hit = hitTestChartDrawings(coords.x, coords.y);
+      if (hit) {
+        e.preventDefault();
+        e.stopPropagation();
+        _selectedDrawingIndex = hit.index;
+        const d = hit.drawing;
+        _dragStartDrawing = JSON.parse(JSON.stringify(d));
+        _dragOrigin = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price };
+
+        if (hit.handle === 'body') {
+          _dragMode = 'move';
+        } else {
+          _dragMode = 'handle';
+          _dragHandle = hit.handle;
+        }
+        updateFloatingToolbar();
+        redrawChartDrawings();
+      } else {
+        // Clicked in empty chart space -> deselect
+        if (_selectedDrawingIndex != null) {
+          _selectedDrawingIndex = null;
+          hideFloatingToolbar();
+          canvas.style.pointerEvents = 'none';
+          redrawChartDrawings();
+        }
+      }
+      return;
+    }
+
+    // ── DRAWING CREATION MODE ──
+    e.preventDefault();
+    e.stopPropagation();
+
+    // 1. Single-click tool: Horizontal Ray
+    if (_currentDrawTool === 'ray_h') {
+      commitNewDrawing({
+        type: 'ray_h',
+        p1: { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price },
+        color: '#38bdf8',
+        width: 2,
+        style: 'dashed'
+      });
+      showChartToast('✔ Placed Horizontal Ray at ₹ ' + (coords.price != null ? coords.price.toFixed(1) : ''), '#38bdf8');
+      return;
+    }
+
+    // 2. Single-click tool: Price Note Callout
+    if (_currentDrawTool === 'pricenote') {
+      const pVal = coords.price != null ? coords.price.toFixed(2) : '0.00';
+      commitNewDrawing({
+        type: 'pricenote',
+        p1: { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price },
+        text: '₹ ' + pVal,
+        color: '#2962ff',
+        width: 2,
+        style: 'solid'
+      });
+      showChartToast('✔ Placed Price Note at ₹ ' + pVal, '#2962ff');
+      return;
+    }
+
+    // 3. Single-click tool: Text Annotation
+    if (_currentDrawTool === 'text') {
+      const text = prompt('Enter annotation text:', 'Key Level / Breakout');
+      if (text && text.trim()) {
+        commitNewDrawing({
+          type: 'text',
+          p1: { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price },
+          text: text.trim(),
+          color: '#f0f3fa',
+          width: 1,
+          style: 'solid'
+        });
+      } else {
+        setDrawingTool('select');
+      }
+      return;
+    }
+
+    // 4. Two-point tools: trendline, ray, rect, scale
+    if (_drawStep === 0) {
+      _drawStep = 1;
+      _isDrawMouseDown = true;
+      _drawStart = {
+        x: coords.x,
+        y: coords.y,
+        logical: coords.logical,
+        price: coords.price,
+        time: Date.now()
+      };
+      _activeDrawing = {
+        type: _currentDrawTool,
+        p1: _drawStart,
+        p2: _drawStart,
+        color: _currentDrawTool === 'scale' ? '#22c55e' : _currentDrawTool === 'ray' ? '#eab308' : '#38bdf8',
+        width: 2,
+        style: 'solid',
+        fillOpacity: 0.14
+      };
+      redrawChartDrawings();
+    } else if (_drawStep === 1) {
+      const p2 = {
+        x: coords.x,
+        y: coords.y,
+        logical: coords.logical,
+        price: coords.price != null ? coords.price : _drawStart.price
+      };
+      const dx = Math.abs(p2.x - _drawStart.x);
+      const dy = Math.abs(p2.y - _drawStart.y);
+      if (dx >= 2 || dy >= 2) {
+        commitNewDrawing({
+          type: _activeDrawing.type,
+          p1: _activeDrawing.p1,
+          p2: p2,
+          color: _activeDrawing.color,
+          width: _activeDrawing.width || 2,
+          style: _activeDrawing.style || 'solid',
+          fillOpacity: _activeDrawing.fillOpacity || 0.14
+        });
+        showChartToast('✔ Placed ' + _activeDrawing.type, _activeDrawing.color);
+      } else {
+        _activeDrawing = null;
+        _drawStep = 0;
+        _drawStart = null;
+        setDrawingTool('select');
+        redrawChartDrawings();
+      }
+    }
+  });
+
+  // MOUSE MOVE on window (for smooth preview and modifying drag)
+  window.addEventListener('mousemove', e => {
+    // A. Preview while drawing
+    if (_drawStep === 1 && _activeDrawing) {
+      const coords = getEventCoords(e);
+      _activeDrawing.p2 = {
+        x: coords.x,
+        y: coords.y,
+        logical: coords.logical,
+        price: coords.price != null ? coords.price : _drawStart.price
+      };
+      redrawChartDrawings();
+      return;
+    }
+
+    // B. Live drag modifying existing selected drawing
+    if (_dragMode && _selectedDrawingIndex != null) {
+      const coords = getEventCoords(e);
+      const sym = getActiveDrawingSymbol();
+      const drawings = _chartDrawings[sym] || [];
+      const d = drawings[_selectedDrawingIndex];
+      if (!d) return;
+
+      if (_dragMode === 'handle') {
+        const h = _dragHandle;
+        if (h === 'p1') {
+          d.p1 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price };
+        } else if (h === 'p2') {
+          d.p2 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price };
+        } else if (h === 'nw') {
+          d.p1 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price };
+        } else if (h === 'se') {
+          d.p2 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price };
+        } else if (h === 'ne') {
+          if (!d.p2) d.p2 = { ...d.p1 };
+          d.p2.x = coords.x; d.p2.logical = coords.logical;
+          d.p1.y = coords.y; d.p1.price = coords.price;
+        } else if (h === 'sw') {
+          if (!d.p2) d.p2 = { ...d.p1 };
+          d.p1.x = coords.x; d.p1.logical = coords.logical;
+          d.p2.y = coords.y; d.p2.price = coords.price;
+        }
+      } else if (_dragMode === 'move' && _dragStartDrawing && _dragOrigin) {
+        const dx = coords.x - _dragOrigin.x;
+        const dy = coords.y - _dragOrigin.y;
+        const dLogical = (coords.logical != null && _dragOrigin.logical != null) ? (coords.logical - _dragOrigin.logical) : 0;
+        const dPrice = (coords.price != null && _dragOrigin.price != null) ? (coords.price - _dragOrigin.price) : 0;
+
+        d.p1.x = _dragStartDrawing.p1.x + dx;
+        d.p1.y = _dragStartDrawing.p1.y + dy;
+        if (_dragStartDrawing.p1.logical != null) d.p1.logical = _dragStartDrawing.p1.logical + dLogical;
+        if (_dragStartDrawing.p1.price != null) d.p1.price = _dragStartDrawing.p1.price + dPrice;
+
+        if (d.p2 && _dragStartDrawing.p2) {
+          d.p2.x = _dragStartDrawing.p2.x + dx;
+          d.p2.y = _dragStartDrawing.p2.y + dy;
+          if (_dragStartDrawing.p2.logical != null) d.p2.logical = _dragStartDrawing.p2.logical + dLogical;
+          if (_dragStartDrawing.p2.price != null) d.p2.price = _dragStartDrawing.p2.price + dPrice;
+        }
+      }
+
+      redrawChartDrawings();
+      updateFloatingToolbar();
+    }
+  });
+
+  // MOUSE UP on window (commit drag or finish drag-to-draw gesture)
+  window.addEventListener('mouseup', e => {
+    // 1. Commit drag modification of existing drawing
+    if (_dragMode) {
+      _dragMode = null;
+      _dragHandle = null;
+      _dragStartDrawing = null;
+      _dragOrigin = null;
+      saveChartDrawings();
+      redrawChartDrawings();
+      updateFloatingToolbar();
+      return;
+    }
+
+    // 2. Drag-to-draw gesture for new drawing
+    if (_drawStep === 1 && _isDrawMouseDown && _drawStart && _activeDrawing) {
+      _isDrawMouseDown = false;
+      const coords = getEventCoords(e);
+      const dx = Math.abs(coords.x - _drawStart.x);
+      const dy = Math.abs(coords.y - _drawStart.y);
+      const dt = Date.now() - _drawStart.time;
+      if (dt >= 150 && (dx >= 20 || dy >= 20)) {
+        const p2 = {
+          x: coords.x,
+          y: coords.y,
+          logical: coords.logical,
+          price: coords.price != null ? coords.price : _drawStart.price
+        };
+        commitNewDrawing({
+          type: _activeDrawing.type,
+          p1: _activeDrawing.p1,
+          p2: p2,
+          color: _activeDrawing.color,
+          width: _activeDrawing.width || 2,
+          style: _activeDrawing.style || 'solid',
+          fillOpacity: _activeDrawing.fillOpacity || 0.14
+        });
+        showChartToast('✔ Placed ' + _activeDrawing.type, _activeDrawing.color);
+      }
+    }
+  });
+
+  // KEYBOARD: ESC deselects, Delete/Backspace removes selected drawing
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (_drawStep === 1 || _currentDrawTool !== 'select') {
+        _activeDrawing = null;
+        _drawStep = 0;
+        _drawStart = null;
+        _isDrawMouseDown = false;
+        setDrawingTool('select');
+        redrawChartDrawings();
+      } else if (_selectedDrawingIndex != null) {
+        _selectedDrawingIndex = null;
+        hideFloatingToolbar();
+        redrawChartDrawings();
+      }
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      const tag = (e.target && e.target.tagName) || '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable) return;
+      if (_selectedDrawingIndex != null) {
+        e.preventDefault();
+        deleteSelectedDrawing();
+      }
+    }
+  });
+}
+window.initChartDrawingCanvas = initChartDrawingCanvas;
+
+// ── DRAWING ANCHOR CIRCLE RENDERING ──
+function drawAnchorHandle(ctx, x, y, isHovered = false) {
+  ctx.save();
+  ctx.setLineDash([]);
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+  ctx.shadowBlur = 4;
+  // White outer ring
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(x, y, isHovered ? 6 : 5, 0, Math.PI * 2);
+  ctx.fill();
+  // Inner blue core (TV style)
+  ctx.fillStyle = '#2962ff';
+  ctx.beginPath();
+  ctx.arc(x, y, isHovered ? 3.5 : 2.8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function redrawChartDrawings() {
+  const canvas = document.getElementById('max-chart-draw-canvas');
+  if (!canvas) return;
+  syncCanvasSize();
+
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const W = rect.width || canvas.clientWidth || 800;
+  const H = rect.height || canvas.clientHeight || 500;
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  const { timeScale, series } = getDrawingContext();
+  const sym = getActiveDrawingSymbol();
+  const saved = _chartDrawings[sym] || [];
+  const drawings = saved.concat(_activeDrawing ? [_activeDrawing] : []);
+  if (!drawings.length) return;
+
+  const toPx = p => pointToPixels(p, timeScale, series);
+
+  for (let idx = 0; idx < drawings.length; idx++) {
+    const d = drawings[idx];
+    if (!d || !d.p1) continue;
+
+    const isSelected = (idx === _selectedDrawingIndex);
+    const color = d.color || '#38bdf8';
+    const width = d.width || 2;
+    const style = d.style || 'solid';
+
+    ctx.save();
+
+    // 1. Horizontal Ray (ray_h)
+    if (d.type === 'ray_h') {
+      const pt = toPx(d.p1);
+      const x = pt.x;
+      const y = pt.y;
+      if (y >= 0 && y <= H) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        if (style === 'dashed') ctx.setLineDash([6, 4]);
+        else if (style === 'dotted') ctx.setLineDash([2, 3]);
+        else ctx.setLineDash([]);
+
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Origin anchor dot
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Right edge price tag
+        const pTxt = d.p1.price != null ? ('₹ ' + d.p1.price.toFixed(1)) : '';
+        if (pTxt) {
+          ctx.font = 'bold 10px -apple-system,BlinkMacSystemFont,sans-serif';
+          const tw = ctx.measureText(pTxt).width;
+          ctx.fillStyle = '#1e222d';
+          ctx.fillRect(W - tw - 16, y - 10, tw + 14, 20);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1;
+          ctx.strokeRect(W - tw - 16, y - 10, tw + 14, 20);
+          ctx.fillStyle = color;
+          ctx.fillText(pTxt, W - tw - 9, y + 3.5);
+        }
+
+        if (isSelected) {
+          drawAnchorHandle(ctx, x, y);
+        }
+      }
+      ctx.restore();
+      continue;
+    }
+
+    // 2. Price Note (pricenote)
+    if (d.type === 'pricenote') {
+      const pt = toPx(d.p1);
+      const x = pt.x;
+      const y = pt.y;
+      if (x != null && y != null) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        const bx = x + 16;
+        const by = y - 36;
+        const txt = d.text || ('₹ ' + (d.p1.price != null ? d.p1.price.toFixed(1) : ''));
+        ctx.font = 'bold 11px -apple-system,BlinkMacSystemFont,sans-serif';
+        const tw = ctx.measureText(txt).width;
+        const bw = tw + 20;
+        const bh = 24;
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(bx + 4, by + bh);
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(19, 23, 34, 0.95)';
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 4);
+        else ctx.rect(bx, by, bw, bh);
+        ctx.fill();
+        ctx.strokeStyle = isSelected ? '#ffffff' : color;
+        ctx.lineWidth = isSelected ? 2 : 1.5;
+        ctx.stroke();
+
+        ctx.fillStyle = '#f0f3fa';
+        ctx.fillText(txt, bx + 10, by + 16);
+
+        if (isSelected) {
+          drawAnchorHandle(ctx, x, y);
+        }
+      }
+      ctx.restore();
+      continue;
+    }
+
+    // 3. Text annotation
+    if (d.type === 'text') {
+      const pt = toPx(d.p1);
+      const x = pt.x;
+      const y = pt.y;
+      if (x != null && y != null && d.text) {
+        ctx.font = 'bold 11px -apple-system,BlinkMacSystemFont,sans-serif';
+        const tw = ctx.measureText(d.text).width;
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x - 4, y - 18, tw + 12, 22, 4);
+        else ctx.rect(x - 4, y - 18, tw + 12, 22);
+        ctx.fill();
+        ctx.strokeStyle = isSelected ? '#ffffff' : color;
+        ctx.lineWidth = isSelected ? 2 : 1;
+        ctx.stroke();
+        ctx.fillStyle = color;
+        ctx.fillText(d.text, x + 2, y - 3);
+
+        if (isSelected) {
+          drawAnchorHandle(ctx, x, y);
+        }
+      }
+      ctx.restore();
+      continue;
+    }
+
+    // 4. Two-point drawings: trendline, ray, rect, scale
+    const pt1 = toPx(d.p1);
+    const pt2 = d.p2 ? toPx(d.p2) : pt1;
+    const x1 = pt1.x, y1 = pt1.y, x2 = pt2.x, y2 = pt2.y;
+    if (x1 == null || y1 == null || x2 == null || y2 == null) {
+      ctx.restore();
+      continue;
+    }
+
+    if (style === 'dashed') ctx.setLineDash([6, 4]);
+    else if (style === 'dotted') ctx.setLineDash([2, 3]);
+    else ctx.setLineDash([]);
+
+    if (d.type === 'trendline') {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(x1, y1, 3.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x2, y2, 3.5, 0, Math.PI * 2); ctx.fill();
+
+      if (isSelected) {
+        drawAnchorHandle(ctx, x1, y1);
+        drawAnchorHandle(ctx, x2, y2);
+      }
+    } else if (d.type === 'ray') {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      const headLen = 11;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath(); ctx.arc(x1, y1, 3.5, 0, Math.PI * 2); ctx.fill();
+
+      if (isSelected) {
+        drawAnchorHandle(ctx, x1, y1);
+        drawAnchorHandle(ctx, x2, y2);
+      }
+    } else if (d.type === 'rect') {
+      const rx = Math.min(x1, x2);
+      const ry = Math.min(y1, y2);
+      const rw = Math.abs(x2 - x1);
+      const rh = Math.abs(y2 - y1);
+      const fillOp = d.fillOpacity != null ? d.fillOpacity : 0.14;
+
+      ctx.fillStyle = typeof hexToRgba === 'function' ? hexToRgba(color, fillOp) : 'rgba(56, 189, 248, 0.12)';
+      ctx.fillRect(rx, ry, rw, rh);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.strokeRect(rx, ry, rw, rh);
+
+      if (isSelected) {
+        drawAnchorHandle(ctx, rx, ry);
+        drawAnchorHandle(ctx, rx + rw, ry);
+        drawAnchorHandle(ctx, rx + rw, ry + rh);
+        drawAnchorHandle(ctx, rx, ry + rh);
+      }
+    } else if (d.type === 'scale' || d.type === 'measure') {
+      const rx = Math.min(x1, x2);
+      const ry = Math.min(y1, y2);
+      const rw = Math.max(1, Math.abs(x2 - x1));
+      const rh = Math.max(1, Math.abs(y2 - y1));
+
+      const p1Price = (d.p1 && d.p1.price != null) ? d.p1.price : 0;
+      const p2Price = (d.p2 && d.p2.price != null) ? d.p2.price : 0;
+      const diffPrice = p2Price - p1Price;
+      const pct = p1Price ? ((diffPrice / p1Price) * 100) : 0;
+      const isUp = diffPrice >= 0;
+      const clr = color || (isUp ? '#22c55e' : '#ef4444');
+      const fillOp = d.fillOpacity != null ? d.fillOpacity : 0.14;
+      const bgClr = typeof hexToRgba === 'function' ? hexToRgba(clr, fillOp) : (isUp ? 'rgba(34, 197, 94, 0.14)' : 'rgba(239, 68, 68, 0.14)');
+
+      ctx.fillStyle = bgClr;
+      ctx.fillRect(rx, ry, rw, rh);
+      ctx.strokeStyle = clr;
+      ctx.lineWidth = width;
+      ctx.setLineDash([3, 3]);
+      ctx.strokeRect(rx, ry, rw, rh);
+      ctx.setLineDash([]);
+
+      const midX = rx + rw / 2;
+      ctx.strokeStyle = clr;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(midX, y1); ctx.lineTo(midX, y2); ctx.stroke();
+      const midY = ry + rh / 2;
+      ctx.beginPath(); ctx.moveTo(x1, midY); ctx.lineTo(x2, midY); ctx.stroke();
+
+      const bCount = (d.p1.logical != null && d.p2 && d.p2.logical != null) ? Math.abs(Math.round(d.p2.logical - d.p1.logical)) + 1 : Math.round(rw / 10);
+      const line1 = (isUp ? '+' : '') + diffPrice.toFixed(2) + ' (' + (isUp ? '+' : '') + pct.toFixed(2) + '%)';
+      const line2 = bCount + ' bars, ' + bCount + 'd';
+      ctx.font = 'bold 11px -apple-system,BlinkMacSystemFont,sans-serif';
+      const tw1 = ctx.measureText(line1).width;
+      ctx.font = '10px -apple-system,BlinkMacSystemFont,sans-serif';
+      const tw2 = ctx.measureText(line2).width;
+      const badgeW = Math.max(tw1, tw2) + 24;
+      const badgeH = 38;
+      const bx = Math.max(10, Math.min(W - badgeW - 10, midX - badgeW / 2));
+      const by = Math.max(10, Math.min(H - badgeH - 10, midY - badgeH / 2));
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(bx, by, badgeW, badgeH, 6);
+      else ctx.rect(bx, by, badgeW, badgeH);
+      ctx.fill();
+      ctx.strokeStyle = clr;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.fillStyle = clr;
+      ctx.font = 'bold 11px -apple-system,BlinkMacSystemFont,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(line1, bx + badgeW / 2, by + 16);
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '10px -apple-system,BlinkMacSystemFont,sans-serif';
+      ctx.fillText(line2, bx + badgeW / 2, by + 30);
+      ctx.textAlign = 'left';
+
+      if (isSelected) {
+        drawAnchorHandle(ctx, x1, y1);
+        drawAnchorHandle(ctx, x2, y2);
+      }
+    }
+    ctx.restore();
+  }
+}
+window.redrawChartDrawings = redrawChartDrawings;
+
+// ── FLOATING CUSTOMIZATION TOOLBAR LOGIC ──
+const TV_DRAW_PALETTE = ['#38bdf8', '#2962ff', '#22c55e', '#eab308', '#f97316', '#ef4444', '#a855f7', '#f0f3fa'];
+
+function updateFloatingToolbar() {
+  const bar = document.getElementById('tv-drawing-floating-toolbar');
+  if (!bar) return;
+
+  const sym = getActiveDrawingSymbol();
+  const drawings = _chartDrawings[sym] || [];
+  if (_selectedDrawingIndex == null || !drawings[_selectedDrawingIndex]) {
+    bar.style.display = 'none';
+    return;
+  }
+
+  const d = drawings[_selectedDrawingIndex];
+  const { timeScale, series } = getDrawingContext();
+  const pt1 = pointToPixels(d.p1, timeScale, series);
+  const pt2 = d.p2 ? pointToPixels(d.p2, timeScale, series) : pt1;
+
+  const midX = (pt1.x + pt2.x) / 2;
+  const minY = Math.min(pt1.y, pt2.y);
+
+  const stage = document.getElementById('max-chart-stage');
+  const stageW = stage ? stage.clientWidth : 800;
+  const stageH = stage ? stage.clientHeight : 500;
+
+  const barW = 220;
+  const targetLeft = Math.max(15, Math.min(stageW - barW - 15, midX - barW / 2));
+  const targetTop = Math.max(50, Math.min(stageH - 60, minY - 44));
+
+  bar.style.left = targetLeft + 'px';
+  bar.style.top = targetTop + 'px';
+  bar.style.display = 'flex';
+
+  const clr = d.color || '#38bdf8';
+  const width = d.width || 2;
+  const style = d.style || 'solid';
+  const styleIcon = style === 'dotted' ? '···' : style === 'dashed' ? '- -' : '──';
+  const hasFill = (d.type === 'rect' || d.type === 'scale' || d.type === 'measure');
+  const fillPct = Math.round((d.fillOpacity != null ? d.fillOpacity : 0.14) * 100);
+
+  let swatchesHtml = '';
+  for (const c of TV_DRAW_PALETTE) {
+    swatchesHtml += '<div class="tv-color-swatch ' + (c.toLowerCase() === clr.toLowerCase() ? 'active' : '') + '" style="background:' + c + ';" onclick="setDrawingColor(\'' + c + '\')"></div>';
+  }
+
+  bar.innerHTML =
+    '<div class="tv-float-handle" title="Drag toolbar" onmousedown="startDragFloatingToolbar(event)">⠿</div>' +
+    '<div style="position:relative;">' +
+      '<button class="tv-float-btn" onclick="toggleDrawingColorPicker(event)" title="Color">' +
+        '<span class="tv-float-color-dot" style="background:' + clr + ';"></span>' +
+        '<svg width="7" height="5" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg>' +
+      '</button>' +
+      '<div id="tv-float-color-menu" class="tv-float-color-picker" style="display:none;" onclick="event.stopPropagation()">' +
+        swatchesHtml +
+      '</div>' +
+    '</div>' +
+    '<div class="tv-float-sep"></div>' +
+    '<button class="tv-float-btn" onclick="cycleDrawingWidth(event)" title="Line Width">' +
+      '<span>' + width + 'px</span>' +
+    '</button>' +
+    '<button class="tv-float-btn" onclick="cycleDrawingStyle(event)" title="Line Style">' +
+      '<span style="font-family:monospace;letter-spacing:1px;">' + styleIcon + '</span>' +
+    '</button>' +
+    (hasFill ? (
+      '<div class="tv-float-sep"></div>' +
+      '<button class="tv-float-btn" onclick="cycleDrawingOpacity(event)" title="Fill Opacity">' +
+        '<span>' + fillPct + '%</span>' +
+      '</button>'
+    ) : '') +
+    (d.type === 'text' ? (
+      '<div class="tv-float-sep"></div>' +
+      '<button class="tv-float-btn" onclick="editDrawingText(event)" title="Edit Text">' +
+        '<span>✎</span>' +
+      '</button>'
+    ) : '') +
+    '<div class="tv-float-sep"></div>' +
+    '<button class="tv-float-btn" onclick="deleteSelectedDrawing(event)" title="Delete" style="color:#ef4444;">' +
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
+    '</button>' +
+    '<button class="tv-float-btn" onclick="deselectDrawing(event)" title="Close" style="color:#94a3b8;font-size:12px;">✕</button>';
+}
+window.updateFloatingToolbar = updateFloatingToolbar;
+
+function hideFloatingToolbar() {
+  const bar = document.getElementById('tv-drawing-floating-toolbar');
+  if (bar) bar.style.display = 'none';
+}
+window.hideFloatingToolbar = hideFloatingToolbar;
+
+function toggleDrawingColorPicker(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('tv-float-color-menu');
+  if (menu) {
+    menu.style.display = (menu.style.display === 'none' || !menu.style.display) ? 'grid' : 'none';
+  }
+}
+window.toggleDrawingColorPicker = toggleDrawingColorPicker;
+
+function setDrawingColor(hex) {
+  const sym = getActiveDrawingSymbol();
+  const drawings = _chartDrawings[sym] || [];
+  if (_selectedDrawingIndex != null && drawings[_selectedDrawingIndex]) {
+    drawings[_selectedDrawingIndex].color = hex;
+    saveChartDrawings();
+    redrawChartDrawings();
+    updateFloatingToolbar();
+  }
+}
+window.setDrawingColor = setDrawingColor;
+
+function cycleDrawingWidth(e) {
+  if (e) e.stopPropagation();
+  const sym = getActiveDrawingSymbol();
+  const drawings = _chartDrawings[sym] || [];
+  if (_selectedDrawingIndex != null && drawings[_selectedDrawingIndex]) {
+    const cur = drawings[_selectedDrawingIndex].width || 2;
+    const widths = [1, 2, 3, 4];
+    const nxt = widths[(widths.indexOf(cur) + 1) % widths.length];
+    drawings[_selectedDrawingIndex].width = nxt;
+    saveChartDrawings();
+    redrawChartDrawings();
+    updateFloatingToolbar();
+  }
+}
+window.cycleDrawingWidth = cycleDrawingWidth;
+
+function cycleDrawingStyle(e) {
+  if (e) e.stopPropagation();
+  const sym = getActiveDrawingSymbol();
+  const drawings = _chartDrawings[sym] || [];
+  if (_selectedDrawingIndex != null && drawings[_selectedDrawingIndex]) {
+    const cur = drawings[_selectedDrawingIndex].style || 'solid';
+    const styles = ['solid', 'dashed', 'dotted'];
+    const nxt = styles[(styles.indexOf(cur) + 1) % styles.length];
+    drawings[_selectedDrawingIndex].style = nxt;
+    saveChartDrawings();
+    redrawChartDrawings();
+    updateFloatingToolbar();
+  }
+}
+window.cycleDrawingStyle = cycleDrawingStyle;
+
+function cycleDrawingOpacity(e) {
+  if (e) e.stopPropagation();
+  const sym = getActiveDrawingSymbol();
+  const drawings = _chartDrawings[sym] || [];
+  if (_selectedDrawingIndex != null && drawings[_selectedDrawingIndex]) {
+    const cur = drawings[_selectedDrawingIndex].fillOpacity != null ? drawings[_selectedDrawingIndex].fillOpacity : 0.14;
+    const opacities = [0.05, 0.15, 0.30, 0.50];
+    let nextIdx = 0;
+    for (let i = 0; i < opacities.length; i++) {
+      if (Math.abs(opacities[i] - cur) < 0.04) { nextIdx = (i + 1) % opacities.length; break; }
+    }
+    drawings[_selectedDrawingIndex].fillOpacity = opacities[nextIdx];
+    saveChartDrawings();
+    redrawChartDrawings();
+    updateFloatingToolbar();
+  }
+}
+window.cycleDrawingOpacity = cycleDrawingOpacity;
+
+function editDrawingText(e) {
+  if (e) e.stopPropagation();
+  const sym = getActiveDrawingSymbol();
+  const drawings = _chartDrawings[sym] || [];
+  if (_selectedDrawingIndex != null && drawings[_selectedDrawingIndex]) {
+    const d = drawings[_selectedDrawingIndex];
+    const val = prompt('Edit annotation text:', d.text || '');
+    if (val != null) {
+      d.text = val.trim();
+      saveChartDrawings();
+      redrawChartDrawings();
+      updateFloatingToolbar();
+    }
+  }
+}
+window.editDrawingText = editDrawingText;
+
+function deleteSelectedDrawing(e) {
+  if (e) e.stopPropagation();
+  const sym = getActiveDrawingSymbol();
+  const drawings = _chartDrawings[sym] || [];
+  if (_selectedDrawingIndex != null && drawings[_selectedDrawingIndex]) {
+    drawings.splice(_selectedDrawingIndex, 1);
+    _selectedDrawingIndex = null;
+    hideFloatingToolbar();
+    saveChartDrawings();
+    redrawChartDrawings();
+    showChartToast('🗑 Drawing deleted', '#ef4444');
+  }
+}
+window.deleteSelectedDrawing = deleteSelectedDrawing;
+
+function deselectDrawing(e) {
+  if (e) e.stopPropagation();
+  _selectedDrawingIndex = null;
+  hideFloatingToolbar();
+  const canvas = document.getElementById('max-chart-draw-canvas');
+  if (canvas && _currentDrawTool === 'select') canvas.style.pointerEvents = 'none';
+  redrawChartDrawings();
+}
+window.deselectDrawing = deselectDrawing;
+
+function startDragFloatingToolbar(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const bar = document.getElementById('tv-drawing-floating-toolbar');
+  if (!bar) return;
+  const startX = e.clientX;
+  const startY = e.clientY;
+  const initialLeft = bar.offsetLeft;
+  const initialTop = bar.offsetTop;
+
+  const onMove = ev => {
+    bar.style.left = Math.max(0, initialLeft + ev.clientX - startX) + 'px';
+    bar.style.top = Math.max(0, initialTop + ev.clientY - startY) + 'px';
+  };
+  const onUp = () => {
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+  };
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+}
+window.startDragFloatingToolbar = startDragFloatingToolbar;
+
+// Close color picker popup when clicking outside
+window.addEventListener('mousedown', e => {
+  const menu = document.getElementById('tv-float-color-menu');
+  if (menu && menu.style.display !== 'none') {
+    if (!e.target.closest('#tv-float-color-menu') && !e.target.closest('.tv-float-btn')) {
+      menu.style.display = 'none';
+    }
+  }
+});
+
+// ── MISSING STUDIO CONTROL HANDLERS ──
+function closeMaximizedChart() {
+  const overlay = document.getElementById('chart-max-overlay');
+  if (overlay) overlay.style.display = 'none';
+  _selectedDrawingIndex = null;
+  hideFloatingToolbar();
+  if (_maxLwChart) {
+    try { _maxLwChart.remove(); } catch (e) { }
+    _maxLwChart = null;
+    _maxLwPriceSeries = null;
+  }
+  for (let i = 2; i <= 4; i++) {
+    if (_subLwCharts[i]) {
+      try { _subLwCharts[i].remove(); } catch (e) { }
+      _subLwCharts[i] = null;
+      _subLwSeries[i] = null;
+    }
+  }
+  setDrawingTool('select');
+}
+window.closeMaximizedChart = closeMaximizedChart;
+
+function maxChartChangeTimeframe(interval) {
+  _sdChartsInterval = interval;
+  const sel = document.getElementById('max-chart-timeframe');
+  if (sel && sel.value !== interval) sel.value = interval;
+  if (_sdMaximizedChartSymbol) {
+    _maxFetchAndDraw(_sdMaximizedChartSymbol);
+  }
+}
+window.maxChartChangeTimeframe = maxChartChangeTimeframe;
+
+function maxChartChangeType(type) {
+  _sdChartType = type;
+  const sel = document.getElementById('max-chart-type');
+  if (sel && sel.value !== type) sel.value = type;
+  if (_sdMaximizedChartSymbol) {
+    drawMaxChart();
+  }
+}
+window.maxChartChangeType = maxChartChangeType;
+
+function maxChartResetView() {
+  if (_maxLwChart) {
+    try {
+      _maxLwChart.timeScale().resetTimeScale();
+      _maxLwChart.priceScale('right').applyOptions({ autoScale: true });
+      _maxLwChart.timeScale().fitContent();
+    } catch (e) { }
+  }
+  for (let i = 2; i <= 4; i++) {
+    if (_subLwCharts[i]) {
+      try {
+        _subLwCharts[i].timeScale().resetTimeScale();
+        _subLwCharts[i].priceScale('right').applyOptions({ autoScale: true });
+        _subLwCharts[i].timeScale().fitContent();
+      } catch (e) { }
+    }
+  }
+  syncCanvasSize();
+  redrawChartDrawings();
+  updateFloatingToolbar();
+  showChartToast('⟲ Chart view reset');
+}
+window.maxChartResetView = maxChartResetView;
+
+function maxChartRefresh() {
+  if (_sdMaximizedChartSymbol) {
+    _maxFetchAndDraw(_sdMaximizedChartSymbol);
+  }
+}
+window.maxChartRefresh = maxChartRefresh;
+
+function loadSeedIntoModal() { }
+window.loadSeedIntoModal = loadSeedIntoModal;
+
+
+// ── TRADINGVIEW MULTI-CHART LAYOUT & TILE STOCK SELECTION ──
+let _maxChartLayout = '1'; // '1', '2h', '2v', '4'
+let _activeLayoutTile = 1; // 1, 2, 3, or 4
+let _layoutSymbols = ['SHYAMMETL', 'RELIANCE', 'TCS', 'HDFCBANK'];
+let _subLwCharts = [null, null, null, null]; // Sub-chart instances for tiles 2, 3, 4
+let _subLwSeries = [null, null, null, null];
+
+// Set active layout tile (1, 2, 3, 4) with blue focus ring
+function maxChartSetActiveTile(tileNum) {
+  _activeLayoutTile = tileNum;
+  for (let i = 1; i <= 4; i++) {
+    const id = i === 1 ? 'max-chart-lw-container' : ('max-chart-lw-container-' + i);
+    const el = document.getElementById(id);
+    if (!el) continue;
+    if (_maxChartLayout !== '1' && i === tileNum) {
+      el.style.boxShadow = 'inset 0 0 0 2px #2962ff';
+      el.style.zIndex = '10';
+    } else {
+      el.style.boxShadow = _maxChartLayout !== '1' ? 'inset 0 0 0 1px #2a2e39' : 'none';
+      el.style.zIndex = '1';
+    }
+    const hdr = document.getElementById('tv-tile-hdr-' + i);
+    if (hdr) hdr.classList.toggle('active-tile', i === tileNum);
+  }
+
+  // Update top header info to reflect active tile
+  const sym = _layoutSymbols[tileNum - 1] || _sdMaximizedChartSymbol;
+  const maxSymbol = document.getElementById('max-chart-symbol');
+  if (maxSymbol && sym) maxSymbol.textContent = sym;
+  if (typeof getStockDetails === 'function') {
+    const details = getStockDetails(sym);
+    const maxCompany = document.getElementById('max-chart-company');
+    if (maxCompany && details) {
+      maxCompany.innerHTML = '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;">' + (details.company || '—') + '</span><span style="font-size:10px;color:var(--dim);background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:1px 6px;border-radius:3px;font-weight:500;white-space:nowrap;flex-shrink:0;">' + (details.sector || '') + '</span>';
+    }
+  }
+  updateMaxChartSidebarWatchlist();
+}
+window.maxChartSetActiveTile = maxChartSetActiveTile;
+
+// Set symbol for a specific tile
+function maxChartSetTileSymbol(tileNum, symbol) {
+  if (!symbol) return;
+  const sUpper = symbol.toUpperCase().replace('.NS', '').trim();
+  _layoutSymbols[tileNum - 1] = sUpper;
+
+  if (tileNum === 1) {
+    _sdMaximizedChartSymbol = sUpper;
+    _layoutSymbols[0] = sUpper;
+    const maxSymbol = document.getElementById('max-chart-symbol');
+    if (maxSymbol) maxSymbol.textContent = sUpper;
+    _maxFetchAndDraw(sUpper);
+    maxChartAttachTileHeader(1, sUpper);
+  } else {
+    maxChartRenderSubTile(tileNum, sUpper);
+  }
+  maxChartSetActiveTile(tileNum);
+  showChartToast('Tile ' + tileNum + ' → <b>' + sUpper + '</b>', '#2962ff');
+}
+window.maxChartSetTileSymbol = maxChartSetTileSymbol;
+
+// Unified handler when a stock is selected anywhere (Watchlist click, search, autocomplete)
+function maxChartOnStockSelected(symbol) {
+  if (!symbol) return;
+  const sUpper = symbol.toUpperCase().replace('.NS', '').trim();
+  if (_maxChartLayout === '1') {
+    _layoutSymbols[0] = sUpper;
+    openMaximizedChart(sUpper);
+  } else {
+    maxChartSetTileSymbol(_activeLayoutTile, sUpper);
+  }
+}
+window.maxChartOnStockSelected = maxChartOnStockSelected;
+
+// Switch Layout (1, 2h, 2v, 4)
+function maxChartSetLayout(layout) {
+  _maxChartLayout = layout;
+  const stage = document.getElementById('max-chart-stage');
+  const c1 = document.getElementById('max-chart-lw-container');
+  const c2 = document.getElementById('max-chart-lw-container-2');
+  const c3 = document.getElementById('max-chart-lw-container-3');
+  const c4 = document.getElementById('max-chart-lw-container-4');
+  if (!stage || !c1) return;
+
+  const select = document.getElementById('max-chart-layout-select');
+  if (select && select.value !== layout) select.value = layout;
+
+  // Make sure c1 is clickable to focus Tile 1
+  if (!c1._tileWired) {
+    c1._tileWired = true;
+    c1.addEventListener('mousedown', () => maxChartSetActiveTile(1), true);
+    if (c2) c2.addEventListener('mousedown', () => maxChartSetActiveTile(2), true);
+    if (c3) c3.addEventListener('mousedown', () => maxChartSetActiveTile(3), true);
+    if (c4) c4.addEventListener('mousedown', () => maxChartSetActiveTile(4), true);
+  }
+
+  if (layout === '1') {
+    c1.style.width = '100%'; c1.style.height = '100%'; c1.style.top = '0'; c1.style.left = '0';
+    if (c2) c2.style.display = 'none';
+    if (c3) c3.style.display = 'none';
+    if (c4) c4.style.display = 'none';
+    const h1 = document.getElementById('tv-tile-hdr-1');
+    if (h1) h1.style.display = 'none';
+    maxChartSetActiveTile(1);
+  } else if (layout === '2h') {
+    c1.style.width = '50%'; c1.style.height = '100%'; c1.style.top = '0'; c1.style.left = '0';
+    if (c2) { c2.style.display = 'block'; c2.style.width = '50%'; c2.style.height = '100%'; c2.style.top = '0'; c2.style.left = '50%'; c2.style.borderLeft = '1px solid #2a2e39'; }
+    if (c3) c3.style.display = 'none';
+    if (c4) c4.style.display = 'none';
+    maxChartAttachTileHeader(1, _layoutSymbols[0]);
+  } else if (layout === '2v') {
+    c1.style.width = '100%'; c1.style.height = '50%'; c1.style.top = '0'; c1.style.left = '0';
+    if (c2) { c2.style.display = 'block'; c2.style.width = '100%'; c2.style.height = '50%'; c2.style.top = '50%'; c2.style.left = '0'; c2.style.borderTop = '1px solid #2a2e39'; }
+    if (c3) c3.style.display = 'none';
+    if (c4) c4.style.display = 'none';
+    maxChartAttachTileHeader(1, _layoutSymbols[0]);
+  } else if (layout === '4') {
+    c1.style.width = '50%'; c1.style.height = '50%'; c1.style.top = '0'; c1.style.left = '0';
+    if (c2) { c2.style.display = 'block'; c2.style.width = '50%'; c2.style.height = '50%'; c2.style.top = '0'; c2.style.left = '50%'; c2.style.borderLeft = '1px solid #2a2e39'; }
+    if (c3) { c3.style.display = 'block'; c3.style.width = '50%'; c3.style.height = '50%'; c3.style.top = '50%'; c3.style.left = '0'; c3.style.borderTop = '1px solid #2a2e39'; }
+    if (c4) { c4.style.display = 'block'; c4.style.width = '50%'; c4.style.height = '50%'; c4.style.top = '50%'; c4.style.left = '50%'; c4.style.borderLeft = '1px solid #2a2e39'; c4.style.borderTop = '1px solid #2a2e39'; }
+    maxChartAttachTileHeader(1, _layoutSymbols[0]);
+  }
+
+  // Resize main chart
+  if (typeof _maxLwChart !== 'undefined' && _maxLwChart) {
+    const rect = c1.getBoundingClientRect();
+    _maxLwChart.applyOptions({ width: rect.width, height: rect.height });
+  }
+
+  // Populate sub-charts if multi-chart layout
+  if (layout !== '1') {
+    // Populate default list if empty
+    let wl = _sccWatchlistSymbols || [];
+    if (!wl.length) wl = ['AVALON', 'RELIANCE', 'TCS', 'HDFCBANK', 'CARBORUNIV', 'AEGISVOPAK'];
+    const curSym = (_layoutSymbols[0] || _sdMaximizedChartSymbol || '').toUpperCase().replace('.NS', '');
+    const pool = wl.filter(s => s.toUpperCase() !== curSym);
+
+    if (!_layoutSymbols[1]) _layoutSymbols[1] = pool[0] || 'RELIANCE';
+    if (!_layoutSymbols[2]) _layoutSymbols[2] = pool[1] || 'TCS';
+    if (!_layoutSymbols[3]) _layoutSymbols[3] = pool[2] || 'HDFCBANK';
+
+    if (layout === '2h' || layout === '2v') {
+      maxChartRenderSubTile(2, _layoutSymbols[1]);
+    } else if (layout === '4') {
+      maxChartRenderSubTile(2, _layoutSymbols[1]);
+      maxChartRenderSubTile(3, _layoutSymbols[2]);
+      maxChartRenderSubTile(4, _layoutSymbols[3]);
+    }
+    maxChartSetActiveTile(_activeLayoutTile || 1);
+  }
+  maxChartResetView();
+}
+window.maxChartSetLayout = maxChartSetLayout;
+
+// Attach header controls directly inside Tile container
+function maxChartAttachTileHeader(tileNum, symbol) {
+  const containerId = tileNum === 1 ? 'max-chart-lw-container' : ('max-chart-lw-container-' + tileNum);
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  // Remove existing header
+  const oldHdr = document.getElementById('tv-tile-hdr-' + tileNum);
+  if (oldHdr) oldHdr.remove();
+
+  if (_maxChartLayout === '1' && tileNum === 1) return;
+
+  const hdr = document.createElement('div');
+  hdr.id = 'tv-tile-hdr-' + tileNum;
+  hdr.className = 'tv-tile-header ' + (tileNum === _activeLayoutTile ? 'active-tile' : '');
+  hdr.onclick = e => { e.stopPropagation(); maxChartSetActiveTile(tileNum); };
+
+  hdr.innerHTML = '<button class="tv-tile-sym-btn" onclick="maxChartOpenTilePicker(' + tileNum + ', event)" title="Select stock for Tile ' + tileNum + '">' +
+    '<span>' + symbol + '</span>' +
+    '<svg width="7" height="5" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg>' +
+  '</button>' +
+  '<button class="tv-tile-nav-btn" onclick="maxChartTilePrevNext(' + tileNum + ', -1, event)" title="Previous Watchlist Stock">◀</button>' +
+  '<button class="tv-tile-nav-btn" onclick="maxChartTilePrevNext(' + tileNum + ', 1, event)" title="Next Watchlist Stock">▶</button>';
+
+  container.appendChild(hdr);
+}
+
+// Next/Previous Stock for a tile
+function maxChartTilePrevNext(tileNum, delta, event) {
+  if (event) event.stopPropagation();
+  let list = _sccWatchlistSymbols;
+  if (!list || !list.length) list = ['AVALON', 'RELIANCE', 'TCS', 'HDFCBANK', 'CARBORUNIV', 'AEGISVOPAK'];
+  const cur = (_layoutSymbols[tileNum - 1] || '').toUpperCase();
+  let idx = list.indexOf(cur);
+  if (idx === -1) idx = 0;
+  let nextIdx = (idx + delta + list.length) % list.length;
+  const nextSym = list[nextIdx];
+  maxChartSetTileSymbol(tileNum, nextSym);
+}
+window.maxChartTilePrevNext = maxChartTilePrevNext;
+
+// Open Tile Stock Picker Dropdown Popover
+function maxChartOpenTilePicker(tileNum, event) {
+  if (event) event.stopPropagation();
+  maxChartSetActiveTile(tileNum);
+
+  // Remove any existing menu
+  document.querySelectorAll('.tv-tile-picker-menu').forEach(m => m.remove());
+
+  const hdr = document.getElementById('tv-tile-hdr-' + tileNum);
+  if (!hdr) return;
+
+  const menu = document.createElement('div');
+  menu.className = 'tv-tile-picker-menu';
+  menu.onclick = e => e.stopPropagation();
+
+  menu.innerHTML = '<input type="text" class="tv-tile-picker-inp" placeholder="Type stock for Tile ' + tileNum + '…" ' +
+    'oninput="maxChartTileSearchInput(' + tileNum + ', this.value)" ' +
+    'onkeydown="if(event.key===\'Enter\'&&this.value.trim()){maxChartSetTileSymbol(' + tileNum + ', this.value.trim()); this.closest(\'div\').remove();}">' +
+    '<div id="tv-tile-picker-list-' + tileNum + '"></div>';
+
+  hdr.appendChild(menu);
+
+  // Render initial list with active watchlist symbols
+  maxChartTileSearchInput(tileNum, '');
+
+  const inp = menu.querySelector('input');
+  if (inp) { inp.focus(); }
+
+  // Auto-close on outside click
+  setTimeout(() => {
+    const closeListener = e => {
+      if (!menu.contains(e.target)) {
+        menu.remove();
+        window.removeEventListener('click', closeListener);
+      }
+    };
+    window.addEventListener('click', closeListener);
+  }, 10);
+}
+window.maxChartOpenTilePicker = maxChartOpenTilePicker;
+
+function maxChartTileSearchInput(tileNum, query) {
+  const listEl = document.getElementById('tv-tile-picker-list-' + tileNum);
+  if (!listEl) return;
+  const q = (query || '').trim().toLowerCase();
+
+  let pool = _sccWatchlistSymbols || [];
+  if (!pool.length) pool = ['AVALON', 'RELIANCE', 'TCS', 'HDFCBANK', 'CARBORUNIV', 'AEGISVOPAK', 'TATATECH', 'IDFCFIRSTB'];
+
+  if (q) {
+    let allStocks = (typeof n500CsvGetCached === 'function' ? n500CsvGetCached() : []) || [];
+    if (allStocks.length > 0) {
+      pool = allStocks.filter(s => (s.symbol && s.symbol.toLowerCase().includes(q)) || (s.company && s.company.toLowerCase().includes(q))).map(s => s.symbol).slice(0, 10);
+    } else {
+      pool = pool.filter(s => s.toLowerCase().includes(q));
+    }
+  }
+
+  if (!pool.length) {
+    listEl.innerHTML = '<div style="color:#787b86;font-size:10px;padding:6px;text-align:center;">No matching stock found</div>';
+    return;
+  }
+
+  listEl.innerHTML = pool.map(s => {
+    const sUpper = s.toUpperCase();
+    return '<div class="tv-tile-picker-item" onclick="maxChartSetTileSymbol(' + tileNum + ', \'' + sUpper + '\'); this.closest(\'.tv-tile-picker-menu\').remove();">' +
+      '<span style="font-weight:700;color:var(--teal);">' + sUpper + '</span>' +
+      '<span style="font-size:9px;color:#94a3b8;">Select</span>' +
+    '</div>';
+  }).join('');
+}
+window.maxChartTileSearchInput = maxChartTileSearchInput;
+
+// Render Sub-Chart Tile (2, 3, 4)
+async function maxChartRenderSubTile(tileNum, symbol) {
+  const container = document.getElementById('max-chart-lw-container-' + tileNum);
+  if (!container || typeof LightweightCharts === 'undefined') return;
+
+  const rect = container.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return;
+
+  // Clean old instance
+  if (_subLwCharts[tileNum]) {
+    try { _subLwCharts[tileNum].remove(); } catch (e) { }
+    _subLwCharts[tileNum] = null;
+  }
+  container.innerHTML = '';
+
+  // Make container clickable to focus
+  container.onclick = () => maxChartSetActiveTile(tileNum);
+
+  // Attach Tile Header
+  maxChartAttachTileHeader(tileNum, symbol);
+
+  const chart = LightweightCharts.createChart(container, {
+    width: rect.width,
+    height: rect.height,
+    layout: { background: { color: '#050508' }, textColor: '#787b86', fontSize: 10 },
+    grid: { vertLines: { color: 'rgba(255, 255, 255, 0.03)' }, horzLines: { color: 'rgba(255, 255, 255, 0.03)' } },
+    timeScale: { borderColor: '#2a2e39', timeVisible: false },
+    rightPriceScale: { borderColor: '#2a2e39' }
+  });
+  _subLwCharts[tileNum] = chart;
+
+  const series = chart.addCandlestickSeries({
+    upColor: '#26a69a', downColor: '#ef5350', borderVisible: false, wickUpColor: '#26a69a', wickDownColor: '#ef5350'
+  });
+  _subLwSeries[tileNum] = series;
+
+  try {
+    let candles;
+    if (_chartDataSource === 'dhan') {
+      candles = await fetchDhanCandles(symbol, '1y', '1d').catch(() => fetchYfData(symbol, '1y', '1d'));
+    } else {
+      candles = await fetchYfData(symbol, '1y', '1d');
+    }
+    if (candles && candles.length) {
+      const clean = [];
+      const seen = new Set();
+      for (const c of candles) {
+        const tSec = typeof c.time === 'number' ? Math.floor(c.time / 1000) : c.time;
+        if (!seen.has(tSec)) {
+          seen.add(tSec);
+          clean.push({ time: tSec, open: c.open, high: c.high, low: c.low, close: c.close });
+        }
+      }
+      clean.sort((a, b) => a.time - b.time);
+      series.setData(clean);
+      chart.timeScale().fitContent();
+      try {
+        chart.timeScale().subscribeVisibleLogicalRangeChange(() => redrawChartDrawings());
+      } catch (e) { }
+    }
+  } catch (e) { }
+}
+
+
+// ── DHAN HQ DATA API & AUTHENTICATION ENGINE ──────────────────────
+const DHAN_SECURITY_MAP = {
+  'RELIANCE': '2885', 'TCS': '11536', 'HDFCBANK': '1333', 'INFY': '1594', 'ICICIBANK': '4963',
+  'SBIN': '3045', 'BHARTIARTL': '10604', 'ITC': '1660', 'KOTAKBANK': '1922', 'LT': '11483',
+  'AXISBANK': '5900', 'TATAMOTORS': '3456', 'MARUTI': '10999', 'TITAN': '3506', 'SUNPHARMA': '3351',
+  'BAJFINANCE': '317', 'TRENT': '1964', 'BEL': '383', 'HAL': '2303', 'SYRMA': '7618',
+  'AVALON': '15386', 'SHYAMMETL': '4220', 'ATHERENERG': '20311', 'INDHOTEL': '1512', 'TECHM': '13538',
+  'PVRINOX': '13147', 'CHENNPETRO': '637', 'LAURUSLABS': '19234', 'PPLPHARMA': '11373', 'IGIL': '16155',
+  'WELSPUNLIV': '3718', 'DIXON': '21690', 'CDSL': '21174', 'BSE': '1904', 'ZOMATO': '5097',
+  'PAYTM': '4717', 'NYKAA': '6545', 'COALINDIA': '20374', 'NTPC': '11630', 'ONGC': '2475',
+  'POWERGRID': '14977', 'JSWSTEEL': '11723', 'TATASTEEL': '3499', 'HINDALCO': '1363', 'VEDL': '3063',
+  'ADANIENT': '25', 'ADANIPORTS': '15083', 'CIPLA': '694', 'DRREDDY': '881', 'EICHERMOT': '910',
+  'GRASIM': '1232', 'HCLTECH': '7229', 'HEROMOTOCO': '1348', 'HINDUNILVR': '1394', 'JIOFIN': '18143',
+  'M&M': '2031', 'NESTLEIND': '17963', 'ULTRACEMCO': '11532', 'WIPRO': '3787', 'APOLLOHOSP': '157'
+};
+
+let _dhanScripMaster = null;
+async function resolveDhanSecurityId(symbol) {
+  if (!symbol) return null;
+  const sUpper = symbol.toUpperCase().replace('.NS', '').trim();
+  if (DHAN_SECURITY_MAP[sUpper]) return DHAN_SECURITY_MAP[sUpper];
+
+  if (!_dhanScripMaster) {
+    try {
+      const resp = await fetch('https://images.dhan.co/api-data/api-scrip-master.csv');
+      if (resp.ok) {
+        const text = await resp.text();
+        _dhanScripMaster = {};
+        const lines = text.split('\n');
+        for (let i = 1; i < lines.length; i++) {
+          const parts = lines[i].split(',');
+          if (parts.length >= 4) {
+            const secId = parts[1]?.trim();
+            const sym = parts[3]?.trim().toUpperCase();
+            if (sym && secId) _dhanScripMaster[sym] = secId;
+          }
+        }
+      }
+    } catch (e) { }
+  }
+  if (_dhanScripMaster && _dhanScripMaster[sUpper]) {
+    return _dhanScripMaster[sUpper];
+  }
+  return null;
+}
+
+function getDhanSecurityId(symbol) {
+  if (!symbol) return null;
+  const sUpper = symbol.toUpperCase().replace('.NS', '').trim();
+  if (DHAN_SECURITY_MAP[sUpper]) return DHAN_SECURITY_MAP[sUpper];
+  return null;
+}
+
+// Fetch daily/historical candles from Dhan HQ API
+async function fetchDhanCandles(symbol, range, interval) {
+  const sUpper = symbol.toUpperCase().replace('.NS', '').trim();
+  const secId = await resolveDhanSecurityId(sUpper);
+  if (!secId) {
+    throw new Error('Dhan security ID not mapped for ' + sUpper);
+  }
+
+  const token = await dhanGetActiveToken();
+  const clientId = dhanGetActiveClientId();
+  if (!token) throw new Error('Dhan Access Token missing or expired');
+
+  const toDate = new Date().toISOString().split('T')[0];
+  const fromDateObj = new Date();
+  fromDateObj.setFullYear(fromDateObj.getFullYear() - 2);
+  const fromDate = fromDateObj.toISOString().split('T')[0];
+
+  const payload = {
+    securityId: String(secId),
+    exchangeSegment: 'NSE_EQ',
+    instrument: 'EQUITY',
+    expiryCode: 0,
+    oi: false,
+    fromDate: fromDate,
+    toDate: toDate
+  };
+
+  const urls = [
+    'https://api.dhan.co/v2/charts/historical',
+    'http://localhost:9090/dhan/charts/historical'
+  ];
+
+  let lastErr;
+  for (const url of urls) {
+    try {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'access-token': token,
+          'client-id': String(clientId || '')
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.errorMessage || err.error || ('HTTP ' + resp.status));
+      }
+      const data = await resp.json();
+      const times = data.start_Time || data.timestamp || [];
+      const opens = data.open || [];
+      const highs = data.high || [];
+      const lows = data.low || [];
+      const closes = data.close || [];
+      const volumes = data.volume || [];
+
+      if (!times.length) throw new Error('Dhan returned 0 candles for ' + sUpper);
+
+      const candles = [];
+      for (let i = 0; i < times.length; i++) {
+        candles.push({
+          time: times[i] * 1000,
+          open: opens[i],
+          high: highs[i],
+          low: lows[i],
+          close: closes[i],
+          volume: volumes[i] || 0
+        });
+      }
+      return candles;
+    } catch (e) {
+      lastErr = e;
+      if (url === urls[0] && (e.name === 'TypeError' || e.message.includes('CORS') || e.message.includes('Failed to fetch'))) {
+        continue; // Try proxy on localhost:9090
+      }
+      throw e;
+    }
+  }
+  throw lastErr;
+}
+
+function openDhanConnectModal() {
+  const modal = document.getElementById('dhan-chart-modal');
+  if (modal) modal.style.display = 'flex';
+}
+window.openDhanConnectModal = openDhanConnectModal;
+
+function closeDhanConnectModal() {
+  const modal = document.getElementById('dhan-chart-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeDhanConnectModal = closeDhanConnectModal;
+
+function dhanSaveQuickToken() {
+  const inp = document.getElementById('dhan-quick-token');
+  const token = inp ? inp.value.trim() : '';
+  if (!token) {
+    alert('Please paste your 24-hour Dhan Access Token.');
+    return;
+  }
+
+  // Save to both token credentials and API key credentials
+  dhanSaveCreds('DhanUser', token);
+  const cur = dhanGetApiKeyCreds();
+  dhanSaveApiKeyCreds(cur?.clientId || 'DhanUser', DHAN_DEFAULT_KEY, DHAN_DEFAULT_SECRET, token, Date.now());
+
+  closeDhanConnectModal();
+  showChartToast('⚡ Dhan Access Token Saved! Refreshing chart…', '#22c55e');
+
+  _chartDataSource = 'dhan';
+  const dsSelect = document.getElementById('max-chart-datasource');
+  if (dsSelect) dsSelect.value = 'dhan';
+
+  maxChartRefresh();
+}
+window.dhanSaveQuickToken = dhanSaveQuickToken;
+
+function dhanQuickOAuthLogin() {
+  const clientIdInp = document.getElementById('dhan-quick-clientid');
+  const cId = clientIdInp ? clientIdInp.value.trim() : '';
+  if (!cId) {
+    alert('Please enter your Dhan Client ID first.');
+    return;
+  }
+  dhanSaveApiKeyCreds(cId, DHAN_DEFAULT_KEY, DHAN_DEFAULT_SECRET, '', 0);
+  if (typeof dhanApiKeyOpenLogin === 'function') {
+    dhanApiKeyOpenLogin();
+  }
+}
+window.dhanQuickOAuthLogin = dhanQuickOAuthLogin;
+
+function maxChartSetDataSource(source) {
+  _chartDataSource = source;
+  const dsSelect = document.getElementById('max-chart-datasource');
+  if (dsSelect) dsSelect.value = source;
+
+  if (source === 'dhan') {
+    const creds = (typeof dhanGetApiKeyCreds === 'function') ? dhanGetApiKeyCreds() : null;
+    const tokenCreds = (typeof dhanGetCreds === 'function') ? dhanGetCreds() : null;
+    const hasToken = (creds && creds.cachedToken) || (tokenCreds && tokenCreds.token);
+
+    if (!hasToken) {
+      openDhanConnectModal();
+    } else {
+      showChartToast('⚡ Connected to Dhan HQ API', '#22c55e');
+    }
+  } else {
+    showChartToast('📈 Yahoo Finance Active', '#2962ff');
+  }
+  maxChartRefresh();
+}
+window.maxChartSetDataSource = maxChartSetDataSource;
+
+
+// ── TRADINGVIEW MAXIMIZED WATCHLIST SIDEBAR ──────────────────────
+function toggleMaxChartWatchlist() {
+  const sidebar = document.getElementById('max-chart-sidebar-wl');
+  const btn = document.getElementById('max-chart-wl-btn');
+  if (!sidebar) return;
+  const isHidden = sidebar.style.display === 'none' || getComputedStyle(sidebar).display === 'none';
+  sidebar.style.display = isHidden ? 'flex' : 'none';
+  if (btn) btn.classList.toggle('active', isHidden);
+
+  setTimeout(() => {
+    if (typeof _maxLwChart !== 'undefined' && _maxLwChart) {
+      const container = document.getElementById('max-chart-lw-container');
+      if (container) {
+        _maxLwChart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+        redrawChartDrawings();
+      }
+    }
+  }, 80);
+
+  if (isHidden) updateMaxChartSidebarWatchlist();
+}
+window.toggleMaxChartWatchlist = toggleMaxChartWatchlist;
+
+function maxChartSidebarAddSymbol(sym) {
+  if (!sym) return;
+  const sUpper = sym.trim().toUpperCase().replace('.NS', '');
+  if (!sUpper) return;
+
+  if (typeof sccWatchlistAddSymbol === 'function') {
+    sccWatchlistAddSymbol(sUpper);
+  } else {
+    if (!_sccWatchlists[_sccActiveWatchlist]) _sccWatchlists[_sccActiveWatchlist] = [];
+    if (!_sccWatchlists[_sccActiveWatchlist].includes(sUpper)) {
+      _sccWatchlists[_sccActiveWatchlist].push(sUpper);
+    }
+    _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist];
+    sccSaveWatchlistsLocalAndSync();
+    sccWatchlistRender();
+  }
+
+  updateMaxChartSidebarWatchlist();
+}
+window.maxChartSidebarAddSymbol = maxChartSidebarAddSymbol;
+
+function maxChartSidebarSearchInput(val) {
+  const suggestBox = document.getElementById('max-chart-sidebar-suggest');
+  if (!suggestBox) return;
+  const query = val.trim().toLowerCase();
+  if (!query) {
+    suggestBox.style.display = 'none';
+    suggestBox.innerHTML = '';
+    return;
+  }
+  let allStocks = (typeof n500CsvGetCached === 'function' ? n500CsvGetCached() : []) || [];
+  if (allStocks.length === 0 && typeof _sdCurrentData !== 'undefined' && _sdCurrentData?.stocks) {
+    allStocks = _sdCurrentData.stocks;
+  }
+  const matches = [];
+  for (const s of allStocks) {
+    if ((s.symbol && s.symbol.toLowerCase().includes(query)) || (s.company && s.company.toLowerCase().includes(query))) {
+      matches.push(s);
+      if (matches.length >= 8) break;
+    }
+  }
+  if (matches.length === 0) {
+    suggestBox.style.display = 'none';
+    suggestBox.innerHTML = '';
+    return;
+  }
+  suggestBox.innerHTML = matches.map(s => {
+    const symEsc = s.symbol.replace(/'/g, "\\'");
+    return '<div class="max-suggest-item" style="padding:6px 10px;cursor:pointer;border-bottom:1px solid #2a2e39;display:flex;align-items:center;justify-content:space-between;" onclick="maxChartSidebarSelectStock(\'' + symEsc + '\')">' +
+      '<span style="font-weight:700;color:var(--teal);">' + s.symbol + '</span>' +
+      '<span style="font-size:10px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;">' + (s.company || '') + '</span>' +
+    '</div>';
+  }).join('');
+  suggestBox.style.display = 'block';
+}
+window.maxChartSidebarSearchInput = maxChartSidebarSearchInput;
+
+function maxChartSidebarSelectStock(sym) {
+  const inp = document.getElementById('max-chart-sidebar-add-input');
+  if (inp) inp.value = '';
+  const suggestBox = document.getElementById('max-chart-sidebar-suggest');
+  if (suggestBox) suggestBox.style.display = 'none';
+
+  maxChartSidebarAddSymbol(sym);
+  showChartToast('⭐ Added <b>' + sym + '</b> to Watchlist', '#22c55e');
+}
+window.maxChartSidebarSelectStock = maxChartSidebarSelectStock;
+
+function maxChartSidebarEnterKey() {
+  const inp = document.getElementById('max-chart-sidebar-add-input');
+  if (!inp) return;
+  const suggestBox = document.getElementById('max-chart-sidebar-suggest');
+  const firstItem = suggestBox && suggestBox.querySelector('.max-suggest-item');
+  if (suggestBox && suggestBox.style.display !== 'none' && firstItem) {
+    firstItem.click();
+    return;
+  }
+  const val = inp.value.trim().toUpperCase();
+  if (val) {
+    maxChartSidebarSelectStock(val);
+  }
+}
+window.maxChartSidebarEnterKey = maxChartSidebarEnterKey;
+
+function updateMaxChartSidebarWatchlist() {
+  const rowsEl = document.getElementById('max-chart-sidebar-rows');
+  const flagsEl = document.getElementById('max-chart-sidebar-flags');
+  if (!rowsEl) return;
+
+  // Render flags filter bar
+  if (flagsEl) {
+    const flags = [
+      { id: 'all', color: '#94a3b8', name: 'All' },
+      { id: 'red', color: '#ef4444', name: 'Red' },
+      { id: 'blue', color: '#3b82f6', name: 'Blue' },
+      { id: 'green', color: '#22c55e', name: 'Green' },
+      { id: 'yellow', color: '#eab308', name: 'Yellow' },
+      { id: 'pink', color: '#ec4899', name: 'Pink' }
+    ];
+    let flagsHtml = '';
+    flags.forEach(f => {
+      const active = (f.id === 'all' && !_sccActiveWatchlist.startsWith('__flag_')) || (_sccActiveWatchlist === '__flag_' + f.id);
+      flagsHtml += '<div onclick="sccWlSwitchTab(\'' + (f.id === 'all' ? 'Main' : '__flag_' + f.id) + '\'); updateMaxChartSidebarWatchlist();" class="tv-flag-pill ' + (active ? 'active' : '') + '" style="background:' + f.color + '" title="' + f.name + '"></div>';
+    });
+    flagsEl.innerHTML = flagsHtml;
+  }
+
+  // Active symbol for whichever layout tile is currently focused
+  const curSym = (_layoutSymbols[_activeLayoutTile - 1] || _sdMaximizedChartSymbol || '').toUpperCase().replace('.NS', '');
+
+  let syms = _sccWatchlistSymbols;
+  if (_sccActiveWatchlist.startsWith('__flag_')) {
+    const col = _sccActiveWatchlist.replace('__flag_', '');
+    syms = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === col);
+  } else if (!syms || !syms.length) {
+    if (typeof _sccWatchlists !== 'undefined' && _sccWatchlists && _sccWatchlists['Main'] && _sccWatchlists['Main'].length) {
+      syms = _sccWatchlists['Main'];
+    } else if (typeof _sccWatchlists !== 'undefined' && _sccWatchlists && Object.keys(_sccWatchlists).length) {
+      syms = Object.values(_sccWatchlists)[0] || [];
+    } else if (typeof _wlItems !== 'undefined' && _wlItems.length) {
+      syms = _wlItems.map(i => i.s);
+    } else {
+      syms = ['AVALON', 'RELIANCE', 'TCS', 'HDFCBANK', 'CARBORUNIV', 'AEGISVOPAK', 'TATATECH', 'IDFCFIRSTB'];
+    }
+  }
+
+  if (!syms.length) {
+    rowsEl.innerHTML = '<div style="color:#787b86;padding:20px;text-align:center;font-size:11px;">List empty. Use input above to add symbols.</div>';
+    return;
+  }
+
+  let rowsHtml = '';
+  const flagCols = { red: '#ef4444', blue: '#3b82f6', green: '#22c55e', yellow: '#eab308', pink: '#ec4899' };
+
+  syms.forEach(s => {
+    const sUpper = s.toUpperCase();
+    const isCur = sUpper === curSym;
+    const flagColor = _sccSymbolFlags[sUpper] ? flagCols[_sccSymbolFlags[sUpper]] : 'rgba(255,255,255,0.2)';
+    const data = _sccWatchlistData[sUpper] || {};
+    const price = data.price != null ? data.price.toFixed(1) : '—';
+    const chg = data.change != null ? (data.change >= 0 ? '+' : '') + data.change.toFixed(1) + '%' : '—';
+    const chgColor = data.change != null ? (data.change >= 0 ? '#22c55e' : '#ef4444') : '#94a3b8';
+
+    rowsHtml += '<div class="tv-max-wl-row ' + (isCur ? 'active' : '') + '" onclick="maxChartOnStockSelected(\'' + sUpper + '\')">' +
+      '<div style="display:flex;align-items:center;gap:6px;">' +
+        '<svg width="8" height="12" viewBox="0 0 10 18" fill="' + flagColor + '" onclick="sccWlCycleFlag(\'' + sUpper + '\', event)" style="cursor:pointer;flex-shrink:0;">' +
+          '<path d="M0 0h10v18l-5-4-5 4V0z"/>' +
+        '</svg>' +
+        '<span style="font-weight:700;' + (isCur ? 'color:#2962ff;' : '') + '">' + sUpper + '</span>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+        '<span style="color:#94a3b8;">' + price + '</span>' +
+        '<span style="color:' + chgColor + ';font-weight:600;min-width:44px;text-align:right;">' + chg + '</span>' +
+      '</div>' +
+    '</div>';
+  });
+  rowsEl.innerHTML = rowsHtml;
+}
+window.updateMaxChartSidebarWatchlist = updateMaxChartSidebarWatchlist;
+
+
+// ── TRADINGVIEW GLOBAL KEYBOARD SHORTCUTS (Alt+W & Typing) ──
+window.addEventListener('keydown', e => {
+  const overlay = document.getElementById('chart-max-overlay');
+  const isMaxOpen = overlay && overlay.style.display !== 'none';
+
+  // 1. Shortcut: Alt + W (Add active stock to current Watchlist / Colored Flag)
+  if (e.altKey && (e.key === 'w' || e.key === 'W' || e.code === 'KeyW' || e.keyCode === 87)) {
+    e.preventDefault();
+    e.stopPropagation();
+    const sym = (_sdMaximizedChartSymbol || (_sccChartSymbols && _sccChartSymbols[0]) || (_stockData && _stockData.symbol) || '').toUpperCase().replace('.NS', '').trim();
+    if (!sym) return;
+    maxChartSidebarAddSymbol(sym);
+    const listName = _sccActiveWatchlist.startsWith('__flag_') ? _sccActiveWatchlist.replace('__flag_', '').toUpperCase() + ' Flag' : (_sccActiveWatchlist || 'Main');
+    showChartToast('⭐ Added <b>' + sym + '</b> to ' + listName, '#22c55e');
+    return;
+  }
+
+  // Only handle typing when chart studio is open and user is NOT typing in an input
+  if (!isMaxOpen) return;
+  const tag = (e.target && e.target.tagName) || '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+  // 2. Typing numbers (1-9) -> Change interval (TV style)
+  if (e.key === '1') {
+    e.preventDefault();
+    if (typeof maxChartChangeTimeframe === 'function') {
+      maxChartChangeTimeframe('1H');
+      showChartToast('⏱ Timeframe: <b>1H</b> (Hourly)');
+    }
+    return;
+  }
+
+  // 3. Typing letters (A-Z) -> Stock selection (TV style)
+  if (e.key.length === 1 && /^[a-zA-Z]$/.test(e.key)) {
+    e.preventDefault();
+    const searchInp = document.getElementById('max-chart-search');
+    if (searchInp) {
+      searchInp.value = e.key.toUpperCase();
+      searchInp.focus();
+      if (typeof maxChartSearchInput === 'function') {
+        maxChartSearchInput(e.key.toUpperCase());
+      }
+    }
+    return;
+  }
+}, true); // Capture phase guarantees immediate processing
+
+// Auto-initialize Drawing Canvas on load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof initChartDrawingCanvas === 'function') initChartDrawingCanvas();
+  });
+} else {
+  if (typeof initChartDrawingCanvas === 'function') initChartDrawingCanvas();
+}

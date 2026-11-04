@@ -1,0 +1,551 @@
+//@version=6
+indicator("Shibu's WIN", overlay=true, max_bars_back=500)
+//WIN = What all I Need
+
+//================= INPUTS =================
+rowsToShow      = input.int(4,     "Quarters",     minval=1)
+volLen          = input.int(50,    "AvgVol Length")
+atrLen          = input.int(14,    "ATR Length")
+fontOpt         = input.string("Normal", "Table Font Size", options=["Tiny","Small","Normal","Large"])
+showVWAP        = input.bool(true,  "Show VWAP (intraday)")
+showPurple      = input.bool(true,  "Show Purple Momentum Dot")
+showVCP         = input.bool(false, "Show VCP Tightness")
+showPowerPocket = input.bool(false, "Show Power Pocket")
+
+// OVERRIDE DROPDOWN
+indexOverride   = input.string("Auto-Detect", "Force Index Classification", options=[
+ "Auto-Detect", "NIFTY AUTO", "NIFTY BANK", "NIFTY CAPITAL MARKETS", "NIFTY CHEMICALS",
+ "NIFTY CONSR DURBL", "NIFTY ENERGY", "NIFTY FIN SERVICE", "NIFTY FMCG", "NIFTY HEALTHCARE",
+ "NIFTY INDIA CONSUMPTION", "NIFTY INDIA MFG", "NIFTY INFRA", "NIFTY IT", "NIFTY METAL",
+ "NIFTY PHARMA", "NIFTY REALTY"], tooltip="Manually correct the index if TradingView's auto-classification is inaccurate for a specific stock.")
+
+//================= FONT SIZE =================
+tblSize =
+     fontOpt=="Tiny"  ? size.tiny  :
+     fontOpt=="Small" ? size.small :
+     fontOpt=="Large" ? size.large :
+     size.normal
+
+//================= COLORS =================
+TXT     = color.white
+UP      = color.lime
+DOWN    = color.red
+NEUTRAL = color.orange
+FRAME   = color.new(color.gray, 80)
+VOL_BG  = color.new(color.blue, 85)
+LABEL   = color.new(color.gray, 0)
+
+//================= TIMEFRAME FLAGS =================
+isDaily  = timeframe.isdaily
+isWeekly = timeframe.isweekly
+
+//================= MOVING AVERAGES =================
+ema10  = ta.ema(close, 10)
+ema20  = ta.ema(close, 20)
+sma30  = ta.sma(close, 30)
+sma50  = ta.sma(close, 50)
+sma150 = ta.sma(close, 150)
+sma200 = ta.sma(close, 200)
+
+plot(ema10, "EMA10",         color=color.new(color.blue,   50), linewidth=1)
+plot(ema20, "EMA20",         color=color.new(color.red,    50), linewidth=1)
+plot(isDaily  ? sma50  : na, "SMA50",        color=color.new(color.aqua,   80), linewidth=1)
+plot(isDaily  ? sma200 : na, "SMA200",       color=color.new(color.green,  75), linewidth=2)
+plot(isWeekly ? sma30  : na, "SMA30 Weekly", color=color.new(color.orange, 80), linewidth=2)
+
+//================= CORE INDICATOR MATH =================
+// Must remain global — used by plotshape and real-time bar logic
+adr    = ta.sma((high - low) / close * 100, 20)
+atrVal = ta.atr(atrLen)
+avgVol = ta.sma(volume, volLen)
+
+//================= FINANCIAL DATA =================
+// 4 request.financial() calls are the primary load cost — unavoidable on TV
+// Guard with not na(sales) to prevent spurious newReport triggers on first bar
+eps         = request.financial(syminfo.tickerid, "EARNINGS_PER_SHARE_DILUTED", "FQ", ignore_invalid_symbol=true)
+sales       = request.financial(syminfo.tickerid, "TOTAL_REVENUE",              "FQ", ignore_invalid_symbol=true)
+roe         = request.financial(syminfo.tickerid, "RETURN_ON_EQUITY",           "FQ", ignore_invalid_symbol=true)
+outstanding = request.financial(syminfo.tickerid, "TOTAL_SHARES_OUTSTANDING",   "FQ", ignore_invalid_symbol=true)
+
+var float[] epsArr  = array.new_float()
+var float[] salArr  = array.new_float()
+var int[]   dateArr = array.new_int()
+
+// FIX 1: Added not na(sales) guard to prevent spurious trigger on first bar load
+newReport = not na(eps) and not na(sales) and (array.size(epsArr) == 0 or eps != array.get(epsArr, 0))
+if newReport
+    array.unshift(epsArr,  eps)
+    array.unshift(salArr,  sales)
+    array.unshift(dateArr, time)
+    if array.size(epsArr) > rowsToShow + 4
+        array.pop(epsArr)
+        array.pop(salArr)
+        array.pop(dateArr)
+
+//================= U/D VOLUME RATIO =================
+udLen      = 50
+upVolBar   = close > close[1] ? volume : 0
+downVolBar = close < close[1] ? volume : 0
+udUpVol    = math.sum(upVolBar, udLen)
+udDownVol  = math.sum(downVolBar, udLen)
+udRatio    = udDownVol > 0 ? math.round(udUpVol / udDownVol * 100) / 100 : 1.0
+
+//================= HELPER FUNCTIONS =================
+getNseIndex(sec, ind) =>
+    string idx = ""
+    if ind == "Electrical Products"
+        idx := "NIFTY ENERGY"
+    else if ind == "Aerospace & Defense" or ind == "Industrial Machinery" or ind == "Engineering & Construction"
+        idx := "NIFTY INFRA"
+    else if ind == "Electronic Components" or ind == "Electronic Equipment/Instruments"
+        idx := "NIFTY INDIA MFG"
+    else if sec == "Technology Services" or sec == "Electronic Technology"
+        idx := "NIFTY IT"
+    else if sec == "Finance" or sec == "Financial Conglomerates"
+        idx := "NIFTY FIN SERVICE"
+    else if sec == "Health Technology"
+        idx := "NIFTY PHARMA"
+    else if sec == "Health Services"
+        idx := "NIFTY HEALTHCARE"
+    else if sec == "Consumer Non-Durables"
+        idx := "NIFTY FMCG"
+    else if sec == "Consumer Durables"
+        idx := "NIFTY CONSR DURBL"
+    else if sec == "Consumer Services" or sec == "Retail Trade"
+        idx := "NIFTY INDIA CONSUMPTION"
+    else if sec == "Non-Energy Minerals"
+        idx := "NIFTY METAL"
+    else if sec == "Automobiles"
+        idx := "NIFTY AUTO"
+    else if sec == "Real Estate"
+        idx := "NIFTY REALTY"
+    else if sec == "Energy Minerals" or sec == "Utilities"
+        idx := "NIFTY ENERGY"
+    else if sec == "Producer Manufacturing" or sec == "Transportation" or sec == "Communications"
+        idx := "NIFTY INFRA"
+    else if sec == "Process Industries"
+        idx := "NIFTY CHEMICALS"
+    idx == "" ? (sec == "" ? "—" : sec) : idx
+
+fVolTxt(v) =>
+    string out = ""
+    if v >= 1e7
+        out := str.tostring(math.round(v / 1e7 * 100) / 100) + "Cr"
+    else if v >= 1e6
+        out := str.tostring(math.round(v / 1e6 * 100) / 100) + "M"
+    else if v >= 1e3
+        out := str.tostring(math.round(v / 1e3 * 100) / 100) + "k"
+    else
+        out := str.tostring(v)
+    out
+
+//================= VWAP =================
+isIntraday = timeframe.isminutes
+plot(showVWAP and isIntraday ? ta.vwap(close) : na, "VWAP", color=color.yellow)
+
+//================= PURPLE MOMENTUM DOT =================
+roc           = ta.roc(close, 1)
+condition_met = showPurple and isDaily and math.abs(roc) >= 5 and volume >= 1000000
+plotshape(condition_met, style=shape.circle, color=color.rgb(210,3,247), location=location.abovebar, size=size.tiny)
+
+//================= VCP TIGHTNESS =================
+isIndex  = str.contains(syminfo.ticker, "NIFTY500")
+rangePct = (high - low) / close * 100
+tight3   = rangePct < 2 and (high[1] - low[1]) / close[1] * 100 < 2 and (high[2] - low[2]) / close[2] * 100 < 2
+plotshape(showVCP and not isIndex and tight3, title="VCP Tight", style=shape.square, location=location.belowbar, color=color.new(color.white, 0), size=size.tiny)
+
+//================= POWER POCKET =================
+powerPocket = close > ema10 and volume > avgVol * 1.5 and close > close[1] and close > open
+plotshape(showPowerPocket and powerPocket, title="Power Pocket", style=shape.triangleup, location=location.belowbar, color=color.rgb(79,82,80), size=size.tiny)
+
+//================= TABLES =================
+var table hdr    = table.new(position.bottom_center, 10, 3, frame_color=FRAME, bgcolor=color.new(color.black, 80))
+var table epsTbl = table.new(position.bottom_right,  3,  rowsToShow + 1, frame_color=FRAME)
+
+//================= TABLE RENDER =================
+// All display logic and heavy calculations are gated to the last bar only
+if barstate.islast
+
+    // FIX 2: hh52 moved inside barstate.islast — saves a 252-bar scan on every single bar
+    hh52 = ta.highest(high, 252)
+
+    // 1. EXTENSION METRICS
+    dist10  = (close - ema10)  / ema10  * 100
+    dist50  = (close - sma50)  / sma50  * 100
+    dist200 = (close - sma200) / sma200 * 100
+    dist52  = (close - hh52)   / hh52   * 100
+
+    val10Txt  = str.tostring(math.round(dist10  * 10) / 10) + "%"
+    val50Txt  = str.tostring(math.round(dist50  * 10) / 10) + "%"
+    val200Txt = str.tostring(math.round(dist200 * 10) / 10) + "%"
+    val52Txt  = str.tostring(math.round(dist52  * 10) / 10) + "%"
+    valAdrTxt = str.tostring(math.round(adr     * 10) / 10) + "%"
+
+    color10  = dist10  <= 4  ? UP : dist10  <= 8  ? NEUTRAL : DOWN
+    color50  = dist50  <= 15 ? UP : dist50  <= 30 ? NEUTRAL : DOWN
+    color200 = dist200 <= 50 ? UP : NEUTRAL
+    color52  = dist52  >= -10 ? UP : dist52 >= -25 ? NEUTRAL : DOWN
+    adrColor = adr >= 5 ? UP : adr >= 3 ? NEUTRAL : DOWN
+
+    // 2. ATR
+    atrPct   = close > 0 ? atrVal / close * 100 : na
+    atrTxt   = not na(atrPct) ? str.tostring(math.round(atrPct * 10) / 10) + "%" : "—"
+    atrColor = not na(atrPct) ? (atrPct >= 3 ? NEUTRAL : atrPct >= 1.5 ? UP : DOWN) : LABEL
+
+    // 3. CAP CATEGORY
+    string capCat = "—"
+    if not na(outstanding)
+        mc     = outstanding * close / 1e7
+        capCat := mc >= 20000 ? "LargeCap" : mc >= 5000 ? "MidCap" : mc >= 1000 ? "SmallCap" : "MicroCap"
+
+    // 4. SECTOR MAPPING
+    sectorTxt    = syminfo.sector   == "" ? "—" : syminfo.sector
+    industryTxt  = syminfo.industry == "" ? "—" : syminfo.industry
+    nseSectorIdx = indexOverride != "Auto-Detect" ? indexOverride : getNseIndex(sectorTxt, industryTxt)
+
+    // 5. VOLUME & U/D COLORS
+    lastVolume = volume
+    lastAvgVol = avgVol
+    rVol       = (not na(lastAvgVol) and lastAvgVol > 0) ? math.round(lastVolume / lastAvgVol * 100) : na
+    rVolTxt    = na(rVol) ? "-" : str.tostring(rVol) + "%"
+    rVolColor  = na(rVol) ? LABEL : rVol >= 110 ? UP : rVol >= 80 ? NEUTRAL : DOWN
+    udColor    = udRatio >= 1.5 ? UP : udRatio >= 1.0 ? NEUTRAL : DOWN
+
+    // 6. ROE
+    roeVal   = not na(roe) ? str.tostring(math.round(roe * 100) / 100) + "%" : "—"
+    roeColor = not na(roe) ? (roe >= 15 ? UP : roe >= 8 ? NEUTRAL : DOWN) : LABEL
+
+    // Row 0: Sector | Cap | ROE | ATR% | ADR%
+    table.cell(hdr, 0, 0, "Sector",    text_color=LABEL,    text_size=tblSize)
+    table.cell(hdr, 1, 0, sectorTxt,   text_color=TXT,      text_size=tblSize)
+    table.cell(hdr, 2, 0, "Cap",       text_color=LABEL,    text_size=tblSize)
+    table.cell(hdr, 3, 0, capCat,      text_color=TXT,      text_size=tblSize)
+    table.cell(hdr, 4, 0, "ROE",       text_color=LABEL,    text_size=tblSize)
+    table.cell(hdr, 5, 0, roeVal,      text_color=roeColor, text_size=tblSize)
+    table.cell(hdr, 6, 0, "ATR%",      text_color=LABEL,    text_size=tblSize)
+    table.cell(hdr, 7, 0, atrTxt,      text_color=atrColor, text_size=tblSize)
+    table.cell(hdr, 8, 0, "ADR%",      text_color=LABEL,    text_size=tblSize)
+    table.cell(hdr, 9, 0, valAdrTxt,   text_color=adrColor, text_size=tblSize)
+
+    // Row 1: Industry | P/10EMA | P/50SMA | P/200SMA | P/52W Hi
+    table.cell(hdr, 0, 1, "Industry",  text_color=LABEL,    text_size=tblSize)
+    table.cell(hdr, 1, 1, industryTxt, text_color=TXT,      text_size=tblSize)
+    table.cell(hdr, 2, 1, "P/10EMA",   text_color=LABEL,    text_size=tblSize)
+    table.cell(hdr, 3, 1, val10Txt,    text_color=color10,  text_size=tblSize)
+    table.cell(hdr, 4, 1, "P/50SMA",   text_color=LABEL,    text_size=tblSize)
+    table.cell(hdr, 5, 1, val50Txt,    text_color=color50,  text_size=tblSize)
+    table.cell(hdr, 6, 1, "P/200SMA",  text_color=LABEL,    text_size=tblSize)
+    table.cell(hdr, 7, 1, val200Txt,   text_color=color200, text_size=tblSize)
+    table.cell(hdr, 8, 1, "P/52W Hi",  text_color=LABEL,    text_size=tblSize)
+    table.cell(hdr, 9, 1, val52Txt,    text_color=color52,  text_size=tblSize)
+
+    // Row 2: NSE Sector Index | AvgVol | Vol | RVol | U/D
+    table.cell(hdr, 0, 2, "Idx",               text_color=LABEL,     text_size=tblSize, bgcolor=VOL_BG)
+    table.cell(hdr, 1, 2, nseSectorIdx,        text_color=UP,        text_size=tblSize, bgcolor=VOL_BG)
+    table.cell(hdr, 2, 2, "AvgVol",            text_color=LABEL,     text_size=tblSize, bgcolor=VOL_BG)
+    table.cell(hdr, 3, 2, fVolTxt(lastAvgVol), text_color=TXT,       text_size=tblSize, bgcolor=VOL_BG)
+    table.cell(hdr, 4, 2, "Vol",               text_color=LABEL,     text_size=tblSize, bgcolor=VOL_BG)
+    table.cell(hdr, 5, 2, fVolTxt(lastVolume), text_color=TXT,       text_size=tblSize, bgcolor=VOL_BG)
+    table.cell(hdr, 6, 2, "RVol",              text_color=LABEL,     text_size=tblSize, bgcolor=VOL_BG)
+    table.cell(hdr, 7, 2, rVolTxt,             text_color=rVolColor, text_size=tblSize, bgcolor=VOL_BG)
+    table.cell(hdr, 8, 2, "U/D",               text_color=LABEL,     text_size=tblSize, bgcolor=VOL_BG)
+    table.cell(hdr, 9, 2, str.tostring(udRatio), text_color=udColor, text_size=tblSize, bgcolor=VOL_BG)
+
+    // EPS Table Header
+    table.cell(epsTbl, 0, 0, "Qtr",    text_color=TXT, text_size=tblSize)
+    table.cell(epsTbl, 1, 0, "EPS%",   text_color=TXT, text_size=tblSize)
+    table.cell(epsTbl, 2, 0, "Sales%", text_color=TXT, text_size=tblSize)
+
+    // EPS Table Rows
+    for i = 0 to rowsToShow - 1
+        if i + 4 < array.size(epsArr)
+            prevEPS   = array.get(epsArr, i + 4)
+            prevSales = array.get(salArr, i + 4)
+            ePct = prevEPS   != 0 ? math.round((array.get(epsArr, i) - prevEPS)   / math.abs(prevEPS)   * 100) : na
+            sPct = prevSales != 0 ? math.round((array.get(salArr, i) - prevSales) / math.abs(prevSales) * 100) : na
+            table.cell(epsTbl, 0, i+1, str.format("{0,date,MMM-yy}", array.get(dateArr, i)), text_color=TXT,          text_size=tblSize)
+            table.cell(epsTbl, 1, i+1, str.tostring(ePct) + "%",                             text_color=ePct>0?UP:DOWN, text_size=tblSize)
+            table.cell(epsTbl, 2, i+1, str.tostring(sPct) + "%",                             text_color=sPct>0?UP:DOWN, text_size=tblSize)
+
+//================= VOLUME TRIGGER V4 =================
+// Simple Volume Profile based trigger for GTT placement.
+//
+// User selects the consolidation lookback.
+// Volume is distributed across each candle's High-Low range.
+// The dominant High Volume Node (HVN) is identified.
+// The upper edge of the HVN is used as the Volume Trigger.
+//
+// Purpose:
+// Help place a pending GTT above an important volume-acceptance
+// area without requiring intraday RVol monitoring.
+//
+// This is NOT intended to replicate TradingView's full
+// Volume Profile. It is a lightweight GTT-oriented tool.
+
+//----------------- INPUTS -----------------
+
+showVolTrigger = input.bool(false, "Show Volume Trigger Line")
+
+vtLookback = input.int(
+     25,
+     "VT Lookback Bars",
+     minval=10,
+     maxval=100
+     )
+
+vtRows = input.int(
+     30,
+     "VT Price Rows",
+     minval=10,
+     maxval=60
+     )
+
+// Rows with volume >= this percentage of POC volume
+// are considered part of the dominant HVN.
+vtHvnPct = input.float(
+     60.0,
+     "VT HVN Threshold %",
+     minval=40.0,
+     maxval=90.0,
+     step=5.0
+     )
+
+// A meaningful volume drop above the HVN.
+// Used to confirm that price is moving from an
+// accepted-volume area into a relatively thin area.
+vtLvnPct = input.float(
+     40.0,
+     "VT LVN Threshold %",
+     minval=10.0,
+     maxval=60.0,
+     step=5.0
+     )
+
+//----------------- PERSISTENT LINE -----------------
+
+var line volTriggerLine = na
+
+//----------------- MAIN CALCULATION -----------------
+
+if barstate.islast
+
+    // Always remove the previous line before recalculating.
+    if not na(volTriggerLine)
+        line.delete(volTriggerLine)
+        volTriggerLine := na
+
+    if showVolTrigger and isDaily and bar_index >= vtLookback
+
+        //==================================================
+        // 1. PRICE RANGE OF SELECTED LOOKBACK
+        //==================================================
+
+        vtHigh = ta.highest(high, vtLookback)
+        vtLow  = ta.lowest(low, vtLookback)
+
+        vtRange = vtHigh - vtLow
+
+        if vtRange > 0
+
+            rowSize = vtRange / vtRows
+
+            // Volume accumulated at each price row.
+            float[] vtVol =
+                 array.new_float(vtRows, 0.0)
+
+            //==================================================
+            // 2. DISTRIBUTE EACH CANDLE'S VOLUME
+            //    ACROSS ITS HIGH-LOW RANGE
+            //==================================================
+
+            for i = 0 to vtLookback - 1
+
+                candleHigh = high[i]
+                candleLow  = low[i]
+                candleRange = candleHigh - candleLow
+
+                if candleRange > 0 and not na(volume[i])
+
+                    candleVol = volume[i]
+
+                    // Determine which profile rows the candle
+                    // overlaps.
+                    firstRow =
+                         int(
+                             math.floor(
+                                 (candleLow - vtLow) / rowSize
+                             )
+                         )
+
+                    lastRow =
+                         int(
+                             math.floor(
+                                 (candleHigh - vtLow) / rowSize
+                             )
+                         )
+
+                    firstRow :=
+                         math.max(
+                             0,
+                             math.min(vtRows - 1, firstRow)
+                         )
+
+                    lastRow :=
+                         math.max(
+                             0,
+                             math.min(vtRows - 1, lastRow)
+                         )
+
+                    // Distribute volume according to the amount
+                    // of the candle's price range occupying each row.
+                    for r = firstRow to lastRow
+
+                        rowLow =
+                             vtLow + r * rowSize
+
+                        rowHigh =
+                             rowLow + rowSize
+
+                        overlapLow =
+                             math.max(candleLow, rowLow)
+
+                        overlapHigh =
+                             math.min(candleHigh, rowHigh)
+
+                        overlap =
+                             math.max(
+                                 0.0,
+                                 overlapHigh - overlapLow
+                             )
+
+                        if overlap > 0
+
+                            allocatedVol =
+                                 candleVol *
+                                 overlap /
+                                 candleRange
+
+                            array.set(
+                                 vtVol,
+                                 r,
+                                 array.get(vtVol, r) +
+                                 allocatedVol
+                             )
+
+            //==================================================
+            // 3. FIND POC / DOMINANT VOLUME ROW
+            //==================================================
+
+            float maxVol = 0.0
+            int pocRow = 0
+
+            for r = 0 to vtRows - 1
+
+                rowVol =
+                     array.get(vtVol, r)
+
+                if rowVol > maxVol
+
+                    maxVol := rowVol
+                    pocRow := r
+
+            if maxVol > 0
+
+                //==================================================
+                // 4. FIND THE DOMINANT HVN CLUSTER
+                //==================================================
+
+                hvnThreshold =
+                     maxVol * vtHvnPct / 100.0
+
+                int upperHvnRow = pocRow
+                int lowerHvnRow = pocRow
+
+                // Expand upward from POC.
+                if pocRow < vtRows - 1
+
+                    for r = pocRow + 1 to vtRows - 1
+
+                        rowVol =
+                             array.get(vtVol, r)
+
+                        if rowVol >= hvnThreshold
+                            upperHvnRow := r
+                        else
+                            break
+
+                // Expand downward from POC.
+                if pocRow > 0
+
+                    for r = pocRow - 1 to 0
+
+                        rowVol =
+                             array.get(vtVol, r)
+
+                        if rowVol >= hvnThreshold
+                            lowerHvnRow := r
+                        else
+                            break
+
+                //==================================================
+                // 5. LOOK FOR THE LVN ABOVE THE HVN
+                //==================================================
+
+                lvnThreshold =
+                     maxVol * vtLvnPct / 100.0
+
+                int lvnRow = na
+
+                if upperHvnRow < vtRows - 1
+
+                    for r = upperHvnRow + 1 to vtRows - 1
+
+                        rowVol =
+                             array.get(vtVol, r)
+
+                        if rowVol <= lvnThreshold
+
+                            lvnRow := r
+                            break
+
+                //==================================================
+                // 6. DETERMINE VOLUME TRIGGER
+                //==================================================
+
+                float volTriggerPrice = na
+
+                if not na(lvnRow)
+
+                    // Boundary between the HVN and the first
+                    // clearly low-volume area.
+                    volTriggerPrice :=
+                         vtLow +
+                         lvnRow * rowSize
+
+                else
+
+                    // If no clear LVN exists above the HVN,
+                    // use the upper edge of the HVN.
+                    volTriggerPrice :=
+                         vtLow +
+                         (upperHvnRow + 1) * rowSize
+
+                //==================================================
+                // 7. ONLY SHOW A FUTURE TRIGGER
+                //==================================================
+
+                // We don't force the line upward artificially.
+                // If the calculated level has already been crossed,
+                // it is not useful as a pending GTT.
+                if volTriggerPrice > close
+
+                    volTriggerLine := line.new(
+                         x1 = bar_index - vtLookback + 1,
+                         y1 = volTriggerPrice,
+                         x2 = bar_index,
+                         y2 = volTriggerPrice,
+                         extend = extend.right,
+                         color = color.rgb(72, 99, 252),
+                         style = line.style_dashed,
+                         width = 1
+                         )
