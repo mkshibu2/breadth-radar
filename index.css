@@ -512,7 +512,7 @@ body {
 
 .analysis-strip {
   display: grid;
-  grid-template-columns: minmax(260px, 1.4fr) minmax(180px, 1fr) minmax(180px, 1fr) minmax(200px, 1.2fr);
+  grid-template-columns: minmax(320px, 2.5fr) minmax(180px, 1fr) minmax(90px, 0.5fr) minmax(100px, 0.6fr);
   background: var(--bg3);
   border: 1px solid var(--border);
   border-top: none;
