@@ -400,9 +400,9 @@
     }
 
     .main {
-      padding: 26px 30px 60px;
+      padding: 20px 22px 60px;
       width: 100%;
-      max-width: 1400px;
+      max-width: 1720px;
       margin: 0 auto;
       box-sizing: border-box;
       min-width: 0;
@@ -1289,6 +1289,48 @@
       color: var(--gold);
     }
 
+    /* Optimized Trades Panel & Table Layout (Zero scrolling, expanded width) */
+    .trades-panel {
+      padding: 14px 14px 18px !important;
+    }
+
+    .trade-table-container {
+      overflow-x: auto;
+      max-width: 100%;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+
+    .trade-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: auto;
+    }
+
+    .trade-table thead th {
+      padding: 7px 6px !important;
+      font-size: 10px !important;
+      letter-spacing: 0.03em !important;
+      white-space: nowrap !important;
+      font-weight: 600 !important;
+    }
+
+    .trade-table tbody td {
+      padding: 8px 6px !important;
+      font-size: 12px !important;
+      white-space: nowrap !important;
+    }
+
+    .trade-table thead th:first-child,
+    .trade-table tbody td:first-child {
+      padding-left: 8px !important;
+    }
+
+    .trade-table thead th:last-child,
+    .trade-table tbody td:last-child {
+      padding-right: 8px !important;
+    }
+
     /* ---------- Forms ---------- */
     .form-grid {
       display: grid;
@@ -1644,6 +1686,86 @@
       }
     }
 
+    /* Inline Expandable Pyramid Tray Styles */
+    .pyramid-tray-row {
+      background: #0d131d !important;
+      border-left: 3px solid var(--blue) !important;
+    }
+    .pyramid-tray-content {
+      padding: 14px 18px 16px;
+      background: linear-gradient(180deg, rgba(90, 169, 255, 0.05) 0%, rgba(13, 19, 29, 0.98) 100%);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.35);
+      font-family: var(--sans);
+    }
+    .pyr-tray-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .pyr-tray-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 1.15fr) minmax(320px, 1.35fr);
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 880px) {
+      .pyr-tray-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .pyr-card-section {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--line-soft);
+      border-radius: 6px;
+      padding: 12px;
+    }
+    .pyr-preset-btn {
+      padding: 2px 7px;
+      font-size: 10px;
+      height: 20px;
+      line-height: 1;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--line);
+      color: var(--sub);
+      cursor: pointer;
+      font-family: var(--mono);
+      transition: all 0.15s ease;
+    }
+    .pyr-preset-btn:hover {
+      background: rgba(90, 169, 255, 0.15);
+      color: var(--blue);
+      border-color: var(--blue);
+    }
+    .pyr-kpi-pill {
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      line-height: 1.4;
+    }
+    .pyr-kpi-ok {
+      background: rgba(0, 208, 156, 0.1);
+      border: 1px solid rgba(0, 208, 156, 0.3);
+      color: var(--green);
+    }
+    .pyr-kpi-mod {
+      background: rgba(90, 169, 255, 0.12);
+      border: 1px solid rgba(90, 169, 255, 0.35);
+      color: var(--blue);
+    }
+    .pyr-kpi-warn {
+      background: rgba(255, 92, 92, 0.12);
+      border: 1px solid rgba(255, 92, 92, 0.35);
+      color: var(--red);
+    }
+
     tr.clickable-row:hover {
       background: rgba(212, 162, 78, 0.08) !important;
       transition: background 0.15s ease;
@@ -1710,6 +1832,7 @@
       expenseSort: { col: 'date', dir: 'desc' },
       tradeSort: { col: 'openDate', dir: 'desc' },
       multiYearSort: { col: 'year', dir: 'asc' },
+      activePyramidTrayId: null,
       customWinRateStart: localStorage.getItem('tj_custom_win_rate_start') || '',
       customWinRateEnd: localStorage.getItem('tj_custom_win_rate_end') || '2026-03-31'
     };
@@ -2050,6 +2173,67 @@
       };
     }
 
+    // Dynamic Position Sizing & Pyramiding Logic – SMK Framework
+    function getTradeStandardQty(t) {
+      if (!t) return 0;
+
+      const e1Price = Number(t.entry1Price || t.avgBuyPrice || 0);
+      const slPrice = Number(t.slPrice || 0);
+      const slDist = (e1Price > 0 && slPrice > 0) ? Math.abs(e1Price - slPrice) : 0;
+      const e1Qty = Number(t.entry1Qty || (!t.entry2Qty ? t.totBuyQty : 0) || 0);
+
+      // 1. Calculate standard position quantity using SMK Formula:
+      // Maximum Trade Risk / (Initial Entry Price - Initial Stop-Loss)
+      if (slDist > 0) {
+        const cap = (typeof currentCapital === 'function') ? currentCapital() : ((typeof capitalSnapshot === 'function') ? capitalSnapshot().capital : Number(STATE.settings && STATE.settings.openingCapitalFY || 0));
+        const rp = Number(STATE.settings && STATE.settings.riskPctPerTrade || 0.01);
+        let riskBudget = cap * rp;
+
+        // If the trade has a recorded initial risk or totLossAtSL:
+        // In SMK framework, T1 is 50%, so full trade risk budget = 2 * T1 risk
+        if (t.initialRisk && Number(t.initialRisk) > 0) {
+          const initR = Number(t.initialRisk);
+          if (e1Qty > 0 && Math.abs(initR - (e1Qty * slDist)) < 50) {
+            riskBudget = initR * 2;
+          }
+        } else if (t.totLossAtSL && Number(t.totLossAtSL) > 0 && e1Qty > 0) {
+          const t1Loss = Number(t.totLossAtSL);
+          if (Math.abs(t1Loss - (e1Qty * slDist)) < 50) {
+            riskBudget = t1Loss * 2;
+          }
+        }
+
+        if (riskBudget > 0) {
+          const qStd = Math.floor(riskBudget / slDist);
+          if (qStd > 0) return qStd;
+        }
+      }
+
+      // 2. Derive from entryPct if specified
+      const entryPct = Number(t.entryPct || 0);
+      if (e1Qty > 0 && entryPct > 0) {
+        const normPct = entryPct > 1 ? entryPct / 100 : entryPct;
+        const est = Math.round(e1Qty / normPct);
+        if (est > 0) return est;
+      }
+
+      // 3. In the SMK framework, initial tranche T1 is standard 50%
+      if (e1Qty > 0) {
+        return Math.round(e1Qty / 0.50);
+      }
+
+      return Number(t.totBuyQty || 0);
+    }
+
+    function getTradeBoughtPct(t) {
+      if (!t) return null;
+      const totBuyQty = Number(t.totBuyQty || 0);
+      if (!totBuyQty) return 0;
+      const qStd = getTradeStandardQty(t);
+      if (!qStd || qStd <= 0) return 1.0;
+      return totBuyQty / qStd;
+    }
+
     function normalizeWatchlist(w) {
       const num = k => w[k] === '' || w[k] === undefined || w[k] === null ? null : Number(w[k]);
       return {
@@ -2287,7 +2471,32 @@
       const opening = Number(STATE.settings.openingCapitalFY || 0);
       const openTrades = (STATE.trades || []).filter(t => t.status === 'open');
       const closedTrades = (STATE.trades || []).filter(t => t.status === 'closed');
-      const contributions = capitalAdditionsExcludingOpening();
+
+      // Separate external additions/withdrawals from internal Bank MOD (Sweep FD) transfers
+      let externalIntroduced = 0;
+      let permanentWithdrawals = 0;
+      let modOut = 0;
+      let modIn = 0;
+
+      (STATE.capitalLog || []).forEach(c => {
+        if (/opening/i.test(c.note || '')) return;
+        const amt = Number(c.amount || 0);
+        const isModOut = c.type === 'mod_out' || (/mod.*out|to.*mod|sweep.*fd/i.test(c.note || '') && amt < 0);
+        const isModIn = c.type === 'mod_in' || (/mod.*in|from.*mod/i.test(c.note || '') && amt > 0);
+
+        if (isModOut) {
+          modOut += Math.abs(amt);
+        } else if (isModIn) {
+          modIn += Math.abs(amt);
+        } else if (amt > 0) {
+          externalIntroduced += amt;
+        } else if (amt < 0) {
+          permanentWithdrawals += Math.abs(amt);
+        }
+      });
+
+      const contributions = externalIntroduced - permanentWithdrawals;
+      const bankModBalance = Math.max(0, modOut - modIn);
 
       // 1. Capital Invested (Refer Capital Additions & Withdrawals table on Ledger Tab)
       const capitalInvested = opening + contributions;
@@ -2306,21 +2515,31 @@
       const openTradeCharges = openTrades.reduce((s, t) => s + Number(getDefaultTradeBrokerage(t) || 0), 0);
       const closedTradeCharges = closedTrades.reduce((s, t) => s + Number(getDefaultTradeBrokerage(t) || 0), 0);
 
-      // Current Capital Total Formula: Capital Invested + Cumulative P&L + Difference from Trading A/c - Open Trade Charges
+      // Total Portfolio Capital (includes Bank MOD reserve - used as base for position sizing & risk budgets)
       const capital = totalBeforeDiff + pre2026ProfitDiff - openTradeCharges;
       const invested = investedAmount(openTrades);
-      const cash = capital - invested;
+
+      // Broker Demat Net Capital & Available Demat Cash
+      const dematCapital = capital - bankModBalance;
+      const dematCash = dematCapital - invested;
+      const totalCash = dematCash + bankModBalance;
 
       return {
         opening,
         contributions,
+        externalIntroduced,
+        permanentWithdrawals,
+        bankModBalance,
         capitalInvested,
         cumulativePnl,
         totalBeforeDiff,
         pre2026ProfitDiff,
         capital,
+        dematCapital,
         invested,
-        cash,
+        cash: dematCash,
+        dematCash,
+        totalCash,
         rawBookCapital: capital,
         ledgerAdjustment: pre2026ProfitDiff,
         totalExpenses: (STATE.expenses || []).reduce((s, e) => s + Number(e.amount || 0), 0),
@@ -2337,7 +2556,14 @@
     }
 
     function capitalAdditionsExcludingOpening() {
-      return STATE.capitalLog.filter(c => !/opening/i.test(c.note || '')).reduce((s, c) => s + Number(c.amount || 0), 0);
+      return (STATE.capitalLog || [])
+        .filter(c => {
+          if (/opening/i.test(c.note || '')) return false;
+          if (c.type === 'mod_out' || c.type === 'mod_in') return false;
+          if (/mod.*out|to.*mod|sweep.*fd|mod.*in|from.*mod/i.test(c.note || '')) return false;
+          return true;
+        })
+        .reduce((s, c) => s + Number(c.amount || 0), 0);
     }
     function monthKey(dateStr) { if (!dateStr) return null; const d = new Date(dateStr); return isNaN(d) ? null : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
     function monthLabel(key) { const [y, m] = key.split('-'); return new Date(y, m - 1, 1).toLocaleString('en-US', { month: 'short', year: '2-digit' }); }
@@ -2521,9 +2747,51 @@
       const wonPre = closedPre.filter(t => netTradePnl(t) >= 0);
       const lostPre = closedPre.filter(t => netTradePnl(t) < 0);
 
+      const totalWinAmtPre = wonPre.reduce((sum, t) => sum + netTradePnl(t), 0);
+      const totalLossAmtPre = lostPre.reduce((sum, t) => sum + Math.abs(netTradePnl(t)), 0);
+      const avgWinPre = wonPre.length ? Math.round(totalWinAmtPre / wonPre.length) : 0;
+      const avgLossPre = lostPre.length ? Math.round(totalLossAmtPre / lostPre.length) : 0;
+      const winPctPre = closedPre.length ? wonPre.length / closedPre.length : 0;
+      const lossPctPre = closedPre.length ? lostPre.length / closedPre.length : 0;
+
+      let edgePre = null;
+      if (!closedPre.length) {
+        edgePre = null;
+      } else if (lostPre.length === 0 || totalLossAmtPre === 0) {
+        edgePre = wonPre.length > 0 ? Infinity : null;
+      } else if (wonPre.length === 0 || totalWinAmtPre === 0) {
+        edgePre = 0;
+      } else {
+        const avgGainPreExact = totalWinAmtPre / wonPre.length;
+        const avgLossPreExact = totalLossAmtPre / lostPre.length;
+        // Edge = (Win% / Loss%) x (Avg gain / Avg loss)
+        edgePre = +((winPctPre / lossPctPre) * (avgGainPreExact / avgLossPreExact)).toFixed(2);
+      }
+
       const closedPost = closed.filter(t => t.closedDate && t.closedDate >= '2026-04-01');
       const wonPost = closedPost.filter(t => netTradePnl(t) >= 0);
       const lostPost = closedPost.filter(t => netTradePnl(t) < 0);
+
+      const totalWinAmtPost = wonPost.reduce((sum, t) => sum + netTradePnl(t), 0);
+      const totalLossAmtPost = lostPost.reduce((sum, t) => sum + Math.abs(netTradePnl(t)), 0);
+      const avgWinPost = wonPost.length ? Math.round(totalWinAmtPost / wonPost.length) : 0;
+      const avgLossPost = lostPost.length ? Math.round(totalLossAmtPost / lostPost.length) : 0;
+      const winPctPost = closedPost.length ? wonPost.length / closedPost.length : 0;
+      const lossPctPost = closedPost.length ? lostPost.length / closedPost.length : 0;
+
+      let edgePost = null;
+      if (!closedPost.length) {
+        edgePost = null;
+      } else if (lostPost.length === 0 || totalLossAmtPost === 0) {
+        edgePost = wonPost.length > 0 ? Infinity : null;
+      } else if (wonPost.length === 0 || totalWinAmtPost === 0) {
+        edgePost = 0;
+      } else {
+        const avgGainPostExact = totalWinAmtPost / wonPost.length;
+        const avgLossPostExact = totalLossAmtPost / lostPost.length;
+        // Edge = (Win% / Loss%) x (Avg gain / Avg loss)
+        edgePost = +((winPctPost / lossPctPost) * (avgGainPostExact / avgLossPostExact)).toFixed(2);
+      }
 
       const totalWinAmt = wonFY.reduce((sum, t) => sum + netTradePnl(t), 0);
       const totalLossAmt = lostFY.reduce((sum, t) => sum + Math.abs(netTradePnl(t)), 0);
@@ -2572,6 +2840,9 @@
         capital: cap,
         invested,
         cash,
+        dematCash: snap.dematCash,
+        bankModBalance: snap.bankModBalance,
+        totalCash: snap.totalCash,
         opening,
         avgCapital,
         returnBase,
@@ -2592,12 +2863,20 @@
         openLivePLPct,
         openLiveCount,
         riskBudget: cap * Number(STATE.settings.riskPctPerTrade || 0.01),
-        winPctPre: closedPre.length ? wonPre.length / closedPre.length : 0,
+        winPctPre,
+        lossPctPre,
         wonCountPre: wonPre.length,
         lostCountPre: lostPre.length,
-        winPctPost: closedPost.length ? wonPost.length / closedPost.length : 0,
+        avgWinPre,
+        avgLossPre,
+        edgePre,
+        winPctPost,
+        lossPctPost,
         wonCountPost: wonPost.length,
         lostCountPost: lostPost.length,
+        avgWinPost,
+        avgLossPost,
+        edgePost,
         avgWin,
         avgLoss,
         winLossRatio,
@@ -2611,6 +2890,24 @@
       const cumRet = s.cumReturnPct;
       const winCls = s.winPct >= 0.5 ? 'up' : (s.winPct >= 0.4 ? 'warn' : 'down');
       const avgCapTip = (s.returnBase || s.avgCapital) ? ` title="Time-Weighted Avg Capital: ${fmtRs(s.returnBase || s.avgCapital)}"` : '';
+
+      let edgeDisplay = '—';
+      let edgeCls = 'flat';
+      let edgeTip = 'Trading Edge (≥1-Apr-2026): (Win% / Loss%) × (Avg Gain / Avg Loss) | Benchmark: > 2.0 (Good)';
+      if (s.edgePost !== null && s.edgePost !== undefined) {
+        if (s.edgePost === Infinity) {
+          edgeDisplay = '∞';
+          edgeCls = 'up';
+          edgeTip += ` · ${s.wonCountPost}W / 0L (100% Win Rate)`;
+        } else {
+          edgeDisplay = s.edgePost.toFixed(2);
+          edgeCls = s.edgePost > 2.0 ? 'up' : (s.edgePost >= 1.0 ? 'warn' : 'down');
+          edgeTip += ` · Score: ${edgeDisplay} (${s.edgePost > 2.0 ? 'Good' : (s.edgePost >= 1.0 ? 'Marginal' : 'Negative')})`;
+          edgeTip += ` · ${s.wonCountPost}W / ${s.lostCountPost}L (Win: ${(s.winPctPost * 100).toFixed(1)}% / Loss: ${(s.lossPctPost * 100).toFixed(1)}%)`;
+          edgeTip += ` · Avg Gain: ${fmtRs(s.avgWinPost)} / Avg Loss: ${fmtRs(s.avgLossPost)}`;
+        }
+      }
+
       $('#ticker').innerHTML = `
     <div class="tick"><span class="lbl">Capital</span><span class="val">${fmtRs(s.capital)}</span></div>
     <div class="tick"><span class="lbl">Holdings</span><span class="val flat" style="color:var(--gold);">${fmtRs(s.invested)}</span></div>
@@ -2620,6 +2917,7 @@
     <div class="tick"><span class="lbl">Cum. P/L</span><span class="val ${s.cumPnl >= 0 ? 'up' : 'down'}">${s.cumPnl >= 0 ? '+' : ''}${fmtRs(s.cumPnl)}</span></div>
     <div class="tick"${avgCapTip}><span class="lbl">Cum. Return</span><span class="val ${cumRet >= 0 ? 'up' : 'down'}">${cumRet >= 0 ? '+' : ''}${fmtPct(cumRet)}</span></div>
     <div class="tick"><span class="lbl">Win Rate</span><span class="val ${winCls}">${fmtPct(s.winPct)}</span></div>
+    <div class="tick" title="${edgeTip}"><span class="lbl">Edge</span><span class="val ${edgeCls}">${edgeDisplay}</span></div>
     <div class="tick"><span class="lbl">Open Positions</span><span class="val flat">${s.openCount}</span></div>
     <div class="tick"><span class="lbl">Open Risk</span><span class="val flat">${fmtRs(s.openRisk)}</span></div>
     <div class="tick"><span class="lbl">Risk Budget / Trade</span><span class="val flat">${fmtRs(s.riskBudget)}</span></div>
@@ -3137,12 +3435,13 @@
     <div class="page-head"><div><h1>Overview</h1><p>Portfolio snapshot for FY ${STATE.settings.currentFY || ''}</p></div></div>
     
     <div class="grid-cards">
-      <div class="card card-cap">
+      <div class="card card-cap" title="Total Trading Capital (includes Broker Demat Margin & Bank MOD Sweep FD)">
         <div class="lbl">Current Capital</div>
         <div class="num">${fmtRs(s.capital)}</div>
-        <div class="sub" style="font-size:11.5px; margin-top:4px;">
+        <div class="sub" style="font-size:11px; margin-top:5px; line-height:1.4;">
           Holdings: <span style="color:var(--gold);font-family:var(--mono);font-weight:600;">${fmtRs(s.invested)}</span> 
-          · Cash: <span class="cash-glow-inline" style="font-family:var(--mono);font-weight:600;">${fmtRs(s.cash)}</span>
+          · Demat: <span class="cash-glow-inline" style="font-family:var(--mono);font-weight:600;">${fmtRs(s.dematCash)}</span>
+          · MOD: <strong style="color:var(--blue);font-family:var(--mono);font-weight:600;">${fmtRs(s.bankModBalance || 0)}</strong>
         </div>
       </div>
       <div class="card card-pnl">
@@ -3169,8 +3468,8 @@
           <span style="color:var(--dim);">${s.wonCount + s.lostCount} Tr (${s.wonCount}W/${s.lostCount}L)</span>
         </div>
       </div>
-      <div class="card card-win1" style="cursor:pointer;" onclick="openCustomWinRateModal()"><div class="lbl">Win Rate (${formatDateDMY_MMM(STATE.customWinRateStart || getFirstTradeDate())} to ${formatDateDMY_MMM(STATE.customWinRateEnd || '2026-03-31')})</div><div class="num" style="color:${s.winPctPre >= 0.5 ? 'var(--green)' : (s.winPctPre >= 0.4 ? 'var(--orange)' : 'var(--red)')};">${fmtPct(s.winPctPre)}</div><div class="sub">${s.wonCountPre}W / ${s.lostCountPre}L</div></div>
-      <div class="card card-win2"><div class="lbl">Win Rate (≥1-Apr-26)</div><div class="num" style="color:${s.winPctPost >= 0.5 ? 'var(--green)' : (s.winPctPost >= 0.4 ? 'var(--orange)' : 'var(--red)')};">${fmtPct(s.winPctPost)}</div><div class="sub">${s.wonCountPost}W / ${s.lostCountPost}L</div></div>
+      <div class="card card-win1" style="cursor:pointer;" onclick="openCustomWinRateModal()"><div class="lbl">Win Rate (${formatDateDMY_MMM(STATE.customWinRateStart || getFirstTradeDate())} to ${formatDateDMY_MMM(STATE.customWinRateEnd || '2026-03-31')})</div><div class="num" style="color:${s.winPctPre >= 0.5 ? 'var(--green)' : (s.winPctPre >= 0.4 ? 'var(--orange)' : 'var(--red)')};">${fmtPct(s.winPctPre)}</div><div class="sub">${s.wonCountPre}W / ${s.lostCountPre}L${s.edgePre !== null && s.edgePre !== undefined ? ` · Edge: <span style="font-weight:600;color:${s.edgePre > 2.0 ? 'var(--green)' : (s.edgePre >= 1.0 ? 'var(--orange)' : 'var(--red)')};">${s.edgePre === Infinity ? '∞' : s.edgePre.toFixed(2)}</span>` : ''}</div></div>
+      <div class="card card-win2"><div class="lbl">Win Rate (≥1-Apr-26)</div><div class="num" style="color:${s.winPctPost >= 0.5 ? 'var(--green)' : (s.winPctPost >= 0.4 ? 'var(--orange)' : 'var(--red)')};">${fmtPct(s.winPctPost)}</div><div class="sub">${s.wonCountPost}W / ${s.lostCountPost}L${s.edgePost !== null && s.edgePost !== undefined ? ` · Edge: <span style="font-weight:600;color:${s.edgePost > 2.0 ? 'var(--green)' : (s.edgePost >= 1.0 ? 'var(--orange)' : 'var(--red)')};">${s.edgePost === Infinity ? '∞' : s.edgePost.toFixed(2)}</span>` : ''}</div></div>
       <div class="card card-open" style="cursor:pointer;" onclick="STATE.view='trades'; STATE.tradeFilter='open'; renderShell();">
         <div class="lbl">Open Positions</div>
         <div class="num" style="display:flex; align-items:baseline; justify-content:space-between; gap:6px;">
@@ -3789,6 +4088,36 @@
         const opened = new Date(t.openDate);
         const daysVal = t.status === 'closed' ? (t.days == null ? '—' : t.days) : (isNaN(opened) ? '—' : Math.round((new Date() - opened) / 86400000));
 
+        const bPct = getTradeBoughtPct(t);
+        const qStd = getTradeStandardQty(t);
+        let boughtPctHtml = '—';
+        if (bPct != null && !isNaN(bPct)) {
+          const pctVal = +(bPct * 100).toFixed(1);
+          let color = 'var(--text)';
+          let bg = 'rgba(255, 255, 255, 0.04)';
+          let border = 'var(--line-soft)';
+          if (pctVal > 105) {
+            color = '#c084fc';
+            bg = 'rgba(168, 85, 247, 0.15)';
+            border = 'rgba(168, 85, 247, 0.35)';
+          } else if (pctVal >= 99) {
+            color = 'var(--green)';
+            bg = 'rgba(0, 208, 156, 0.1)';
+            border = 'rgba(0, 208, 156, 0.25)';
+          } else if (pctVal >= 65) {
+            color = 'var(--blue)';
+            bg = 'rgba(90, 169, 255, 0.1)';
+            border = 'rgba(90, 169, 255, 0.25)';
+          } else {
+            color = 'var(--gold)';
+            bg = 'rgba(212, 162, 78, 0.1)';
+            border = 'rgba(212, 162, 78, 0.25)';
+          }
+          const remainingPct = Math.max(0, 100 - pctVal).toFixed(1);
+          const tip = `Bought ${fmt(t.totBuyQty)} of ${qStd} standard shares (${pctVal}%)\nRemaining Planned: ${remainingPct}%`;
+          boughtPctHtml = `<span class="badge" style="background:${bg}; color:${color}; border:1px solid ${border}; font-family:var(--mono); font-size:11px; padding:1.5px 5px; font-weight:600;" title="${tip}">${pctVal}%</span>`;
+        }
+
         return `<tr data-id="${t.id}">
         <td>${formatDateDMY(t.openDate)}</td>
         <td style="font-family:var(--sans);font-weight:600;padding-top:8px;padding-bottom:8px;">
@@ -3806,15 +4135,27 @@
         <td>${fmt(t.totBuyQty)}</td>
         <td>${fmtRs(amount)}</td>
         <td>${fmtRs(brok)}</td>
+        <td style="text-align:center;">${boughtPctHtml}</td>
         <td>${avgSellStr}</td>
         <td>${fmt(t.slPrice)}${t.tslPrice ? ` / <span style="color:var(--gold);font-weight:600;">${fmt(t.tslPrice)}</span>` : ''}</td>
         <td>${badge}</td>
         ${customColsHtml}
         <td>${daysVal}</td>
-        <td style="text-align:center; white-space:nowrap;">
-          <button class="btn ghost edit-trade-btn" data-id="${t.id}" style="padding:2px 8px; font-size:11px; height:auto; color:var(--text); border-color:var(--line);" title="Edit Trade Details">✏️ Edit</button>
+        <td style="text-align:center; white-space:nowrap; padding: 6px 4px;">
+          ${isOpenTab ? `
+            <button class="btn silver pyramid-toggle-btn" data-id="${t.id}" style="padding:2px 6px; font-size:10.5px; height:auto; color:var(--blue); border-color:rgba(90,169,255,0.4); background:${t.plannedTranche ? 'rgba(90,169,255,0.2)' : 'rgba(90,169,255,0.08)'}; margin-right:3px;" title="Open Inline Pyramid Sizing Tray">
+              ${t.plannedTranche ? '⏳ P-Plan' : '⚡ Pyramid'}
+            </button>
+          ` : ''}
+          <button class="btn ghost edit-trade-btn" data-id="${t.id}" style="padding:2px 6px; font-size:10.5px; height:auto; color:var(--text); border-color:var(--line);" title="Edit Trade Details">✏️ Edit</button>
         </td>
-      </tr>`;
+      </tr>
+      ${isOpenTab ? `
+      <tr id="pyramid-tray-row-${t.id}" class="pyramid-tray-row" style="display:${STATE.activePyramidTrayId === String(t.id) ? 'table-row' : 'none'};">
+        <td colspan="16" style="padding:0; border-bottom: 1.5px solid var(--line);">
+          <div id="pyramid-tray-${t.id}" class="pyramid-tray-content"></div>
+        </td>
+      </tr>` : ''}`;
       }).join('');
 
       let totalRowHtml = '';
@@ -3824,6 +4165,7 @@
             <td colspan="4" style="text-align:right; font-weight:bold; color:var(--dim); font-size: 11px; letter-spacing: 0.5px; padding-top: 10px; padding-bottom: 10px;">TOTAL:</td>
             <td style="font-weight:bold; color:var(--text);">${fmtRs(sumAmount)}</td>
             <td style="font-weight:bold; color:var(--dim);">${fmtRs(sumBrokerage)}</td>
+            <td></td>
             <td colspan="3"></td>
             <td style="font-weight:bold; color:${sumPLAtTSL >= 0 ? 'var(--green)' : 'var(--red)'};">${sumPLAtTSL >= 0 ? '+' : ''}${fmtRs(sumPLAtTSL)}</td>
             <td style="font-weight:bold; color:${sumPLAtTSL >= 0 ? 'var(--green)' : 'var(--red)'};">${sumAmount ? fmtPct(sumPLAtTSL / sumAmount) : '—'}</td>
@@ -3839,13 +4181,14 @@
       const tDir = (STATE.tradeSort && STATE.tradeSort.dir) || 'desc';
       const sArr = key => tCol === key ? (tDir === 'asc' ? '▲' : '▼') : '';
 
-      return `<div style="overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch;"><table style="width: 100%; min-width: 850px;"><thead><tr>
+      return `<div class="trade-table-container"><table class="trade-table"><thead><tr>
     <th data-sort-col="openDate" style="cursor:pointer; user-select:none;">Open ${sArr('openDate')}</th>
     <th data-sort-col="stock" style="cursor:pointer; user-select:none;">Stock ${sArr('stock')}</th>
     <th data-sort-col="avgBuyPrice" style="cursor:pointer; user-select:none;">Avg Buy ${sArr('avgBuyPrice')}</th>
     <th data-sort-col="totBuyQty" style="cursor:pointer; user-select:none;">Qty ${sArr('totBuyQty')}</th>
     <th data-sort-col="amount" style="cursor:pointer; user-select:none;">Amount ${sArr('amount')}</th>
     <th data-sort-col="brokerage" style="cursor:pointer; user-select:none;">Brokerage ${sArr('brokerage')}</th>
+    <th data-sort-col="boughtPct" style="cursor:pointer; user-select:none; text-align:center;" title="Bought % based on SMK Base Position Quantity">Bought % ${sArr('boughtPct')}</th>
     <th data-sort-col="avgSellPrice" style="cursor:pointer; user-select:none;">Avg Sell ${sArr('avgSellPrice')}</th>
     <th data-sort-col="slPrice" style="cursor:pointer; user-select:none;">SL/TSL ${sArr('slPrice')}</th>
     <th data-sort-col="status" style="cursor:pointer; user-select:none;">Status ${sArr('status')}</th>
@@ -3861,7 +4204,7 @@
       <th data-sort-col="rr" style="cursor:pointer; user-select:none;">R:R ${sArr('rr')}</th>
     `}
     <th data-sort-col="days" style="cursor:pointer; user-select:none;">Days ${sArr('days')}</th>
-    <th style="text-align:center; width:70px;">Action</th>
+    <th style="text-align:center; min-width:116px; width:120px;">Action</th>
   </tr></thead><tbody>
     ${rowsHtml}
     ${totalRowHtml}
@@ -3912,11 +4255,11 @@
             <span style="color:var(--dim);">Net P/L: <strong style="font-family:var(--mono); color:${netPnl >= 0 ? 'var(--green)' : 'var(--red)'};">${netPnl >= 0 ? '+' : '-'}${fmtRs(Math.abs(netPnl))}</strong></span>
           </div>
         </div>
-        <div style="overflow-x:auto;">
-          <table style="width:100%; min-width:850px;">
+        <div class="trade-table-container">
+          <table class="trade-table" style="width:100%;">
             <thead>
               <tr>
-                <th>Open</th><th>Stock</th><th>Avg Buy</th><th>Qty</th><th>Amount</th><th>Brokerage</th><th>Avg Sell</th><th>SL</th><th>Status</th><th>Exit</th><th>P/L</th><th>P/L %</th><th>R:R</th><th>Days</th><th style="text-align:center; width:70px;">Action</th>
+                <th>Open</th><th>Stock</th><th>Avg Buy</th><th>Qty</th><th>Amount</th><th>Brokerage</th><th style="text-align:center;" title="Bought % based on SMK Base Position Quantity">Bought %</th><th>Avg Sell</th><th>SL</th><th>Status</th><th>Exit</th><th>P/L</th><th>P/L %</th><th>R:R</th><th>Days</th><th style="text-align:center; min-width:116px; width:120px;">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -3928,6 +4271,27 @@
           const brok = getDefaultTradeBrokerage(t);
           const amount = Number(t.totBuyQty || 0) * Number(t.avgBuyPrice || 0);
           const avgSellStr = ex.avgSellPrice != null ? fmt(ex.avgSellPrice) : '—';
+          const bPct = getTradeBoughtPct(t);
+          const qStd = getTradeStandardQty(t);
+          let boughtPctHtml = '—';
+          if (bPct != null && !isNaN(bPct)) {
+            const pctVal = +(bPct * 100).toFixed(1);
+            let color = 'var(--text)';
+            let bg = 'rgba(255, 255, 255, 0.04)';
+            let border = 'var(--line-soft)';
+            if (pctVal > 105) {
+              color = '#c084fc'; bg = 'rgba(168, 85, 247, 0.15)'; border = 'rgba(168, 85, 247, 0.35)';
+            } else if (pctVal >= 99) {
+              color = 'var(--green)'; bg = 'rgba(0, 208, 156, 0.1)'; border = 'rgba(0, 208, 156, 0.25)';
+            } else if (pctVal >= 65) {
+              color = 'var(--blue)'; bg = 'rgba(90, 169, 255, 0.1)'; border = 'rgba(90, 169, 255, 0.25)';
+            } else {
+              color = 'var(--gold)'; bg = 'rgba(212, 162, 78, 0.1)'; border = 'rgba(212, 162, 78, 0.25)';
+            }
+            const remainingPct = Math.max(0, 100 - pctVal).toFixed(1);
+            const tip = `Bought ${fmt(t.totBuyQty)} of ${qStd} standard shares (${pctVal}%)\nRemaining Planned: ${remainingPct}%`;
+            boughtPctHtml = `<span class="badge" style="background:${bg}; color:${color}; border:1px solid ${border}; font-family:var(--mono); font-size:11px; padding:1.5px 5px; font-weight:600;" title="${tip}">${pctVal}%</span>`;
+          }
           return `
                   <tr data-id="${t.id}">
                     <td>${formatDateDMY(t.openDate)}</td>
@@ -3946,6 +4310,7 @@
                     <td>${fmt(t.totBuyQty)}</td>
                     <td>${fmtRs(amount)}</td>
                     <td>${fmtRs(brok)}</td>
+                    <td style="text-align:center;">${boughtPctHtml}</td>
                     <td>${avgSellStr}</td>
                     <td>${fmt(t.slPrice)}</td>
                     <td>${t.pnl >= 0 ? badge : lossBadge}</td>
@@ -4220,7 +4585,7 @@
         <button class="btn primary" onclick="STATE.view='add';renderShell();">+ New Trade</button>
       </div>
     </div>
-    <div class="panel">
+    <div class="panel trades-panel">
       <div class="toolbar">
         <div class="seg" id="filterSeg">
           <button data-f="all" class="${STATE.tradeFilter === 'all' ? 'on' : ''}">All</button>
@@ -4915,6 +5280,586 @@
     }
     window.quickUpdateTradeSetup = quickUpdateTradeSetup;
 
+    function togglePyramidTray(tradeId) {
+      if (!tradeId) return;
+      const targetRow = document.getElementById('pyramid-tray-row-' + tradeId);
+      if (!targetRow) return;
+
+      if (STATE.activePyramidTrayId === String(tradeId)) {
+        targetRow.style.display = 'none';
+        STATE.activePyramidTrayId = null;
+      } else {
+        if (STATE.activePyramidTrayId) {
+          const prevRow = document.getElementById('pyramid-tray-row-' + STATE.activePyramidTrayId);
+          if (prevRow) prevRow.style.display = 'none';
+        }
+        STATE.activePyramidTrayId = String(tradeId);
+        targetRow.style.display = 'table-row';
+        renderPyramidTray(tradeId);
+        targetRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        setTimeout(() => {
+          const firstInput = document.getElementById('pyr_pct_' + tradeId);
+          if (firstInput) {
+            firstInput.focus();
+            firstInput.select();
+          }
+        }, 80);
+      }
+    }
+    window.togglePyramidTray = togglePyramidTray;
+
+    function renderPyramidTray(tradeId) {
+      const container = document.getElementById('pyramid-tray-' + tradeId);
+      if (!container) return;
+
+      const t = STATE.trades.find(x => String(x.id) === String(tradeId));
+      if (!t) return;
+
+      // Extract existing fills
+      const normT = normalizeTrade(t);
+      const fills = [];
+      if (t.entry1Qty && t.entry1Price) fills.push({ num: 1, label: 'T1 (Initial)', price: Number(t.entry1Price), qty: Number(t.entry1Qty) });
+      if (t.entry2Qty && t.entry2Price) fills.push({ num: 2, label: 'T2 (Pyramid 1)', price: Number(t.entry2Price), qty: Number(t.entry2Qty) });
+      if (t.entry3Qty && t.entry3Price) fills.push({ num: 3, label: 'T3 (Pyramid 2)', price: Number(t.entry3Price), qty: Number(t.entry3Qty) });
+      if (t.entry4Qty && t.entry4Price) fills.push({ num: 4, label: 'T4 (Momentum)', price: Number(t.entry4Price), qty: Number(t.entry4Qty) });
+
+      if (!fills.length && t.totBuyQty) {
+        fills.push({ num: 1, label: 'T1 (Initial)', price: Number(t.avgBuyPrice || 0), qty: Number(t.totBuyQty || 0) });
+      }
+
+      const currentBoughtShares = Number(t.totBuyQty || 0);
+      const avgPrice = Number(t.avgBuyPrice || 0);
+      const activeSL = Number(t.tslPrice || t.slPrice || 0);
+      const t1Entry = Number(t.entry1Price || t.avgBuyPrice || 0);
+      const livePrice = (STATE.livePrices && STATE.livePrices[t.stock]) ? Number(STATE.livePrices[t.stock]) : avgPrice;
+
+      // Base Standard Position Q_std from SMK formula
+      const qStd = getTradeStandardQty(t);
+      const capSnap = capitalSnapshot();
+      let riskBudget = capSnap.capital * Number(STATE.settings.riskPctPerTrade || 0.01);
+      if (t.initialRisk && Number(t.initialRisk) > riskBudget * 0.7) {
+        riskBudget = Number(t.initialRisk);
+      }
+
+      // Determine next tranche details
+      let nextTrancheNum = fills.length + 1;
+      let nextTrancheLabel = nextTrancheNum === 2 ? 'T2 (Pyramid 1)' : (nextTrancheNum === 3 ? 'T3 (Pyramid 2)' : 'T4 (Momentum Runner)');
+      let defaultPct = nextTrancheNum === 2 ? 30 : (nextTrancheNum === 3 ? 20 : 10);
+      let refPrice = fills.length > 0 ? fills[fills.length - 1].price : avgPrice;
+
+      // Saved custom plan if any
+      const savedPlan = t.plannedTranche || {};
+      const currentPct = savedPlan.pct != null ? Number(savedPlan.pct) : defaultPct;
+      const initialProposedBuy = savedPlan.proposedBuy != null ? Number(savedPlan.proposedBuy) : +(refPrice * 1.035).toFixed(2);
+      const initialProposedSL = savedPlan.proposedSL != null ? Number(savedPlan.proposedSL) : (activeSL > 0 ? activeSL : +(t1Entry).toFixed(2));
+
+      // HTML Layout
+      container.innerHTML = `
+        <div class="pyr-tray-header">
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <span style="font-size:13.5px; font-weight:700; color:var(--text);">⚡ SMK Pyramiding Engine: <strong style="color:var(--gold);">${t.stock}</strong></span>
+            <span class="badge" style="background:rgba(90,169,255,0.15); color:var(--blue); border:1px solid rgba(90,169,255,0.3); font-size:10.5px;">Next Tranche: ${nextTrancheLabel}</span>
+            <span style="font-size:11px; color:var(--dim);">
+              Base Position (Q<sub>std</sub>): <strong style="color:var(--text); font-family:var(--mono);">${qStd} shs</strong> · 
+              Executed: <strong style="color:var(--gold); font-family:var(--mono);">${currentBoughtShares} shs (${(getTradeBoughtPct(t) * 100).toFixed(1)}%)</strong> @ ₹${fmt(avgPrice)} · 
+              Trade Risk Budget: <strong style="color:var(--green); font-family:var(--mono);">${fmtRs(riskBudget)}</strong>
+            </span>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button class="btn silver" id="pyr_save_btn_${t.id}" tabindex="104" style="padding:4px 11px; font-size:11px; height:auto; color:var(--blue); border-color:rgba(90,169,255,0.4);" title="Save Pyramid Plan">💾 Save Plan</button>
+            <button class="btn primary" id="pyr_exec_btn_${t.id}" tabindex="105" style="padding:4px 12px; font-size:11px; height:auto;" title="Record Actual Execution of this tranche">✓ Record Execution</button>
+            ${t.plannedTranche ? `<button class="btn ghost danger" id="pyr_clear_btn_${t.id}" tabindex="106" style="padding:4px 8px; font-size:11px; height:auto;" title="Clear Planned Tranche">✕ Clear Plan</button>` : ''}
+            <button class="btn ghost" id="pyr_close_btn_${t.id}" tabindex="107" onclick="togglePyramidTray('${t.id}')" style="padding:4px 8px; font-size:11px; height:auto;">✕ Close</button>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: minmax(320px, 1.25fr) minmax(350px, 1.35fr); gap: 14px; margin-bottom: 12px;">
+          
+          <!-- LEFT COLUMN: Tranche Configuration & Order Inputs -->
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            
+            <!-- 1. Tranche Ladder & Execution Status -->
+            <div class="pyr-card-section">
+              <div style="font-size:11.5px; font-weight:700; color:var(--sub); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                <span>1. TRANCHE LADDER &amp; ALLOTMENT %</span>
+                <span style="font-size:10px; color:var(--dim);">Relative to Base Q<sub>std</sub> (${qStd} shs)</span>
+              </div>
+
+              <!-- Tranche Status Chips -->
+              <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
+                <div style="padding:4px 8px; border-radius:4px; font-size:10.5px; font-family:var(--mono); background:${fills.length >= 1 ? 'rgba(0,208,156,0.1)' : 'rgba(255,255,255,0.03)'}; border:1px solid ${fills.length >= 1 ? 'rgba(0,208,156,0.3)' : 'var(--line)'}; color:${fills.length >= 1 ? 'var(--green)' : 'var(--sub)'};">
+                  <strong>T1 (50%)</strong>: ${fills[0] ? `✓ ${fills[0].qty} @ ₹${fmt(fills[0].price)}` : 'Planned'}
+                </div>
+                <div style="padding:4px 8px; border-radius:4px; font-size:10.5px; font-family:var(--mono); background:${fills.length >= 2 ? 'rgba(0,208,156,0.1)' : (nextTrancheNum === 2 ? 'rgba(90,169,255,0.15)' : 'rgba(255,255,255,0.03)')}; border:1px solid ${fills.length >= 2 ? 'rgba(0,208,156,0.3)' : (nextTrancheNum === 2 ? 'rgba(90,169,255,0.4)' : 'var(--line)')}; color:${fills.length >= 2 ? 'var(--green)' : (nextTrancheNum === 2 ? 'var(--blue)' : 'var(--sub)')};">
+                  <strong>T2 (30%)</strong>: ${fills[1] ? `✓ ${fills[1].qty} @ ₹${fmt(fills[1].price)}` : (nextTrancheNum === 2 ? '⚡ Target' : 'Planned')}
+                </div>
+                <div style="padding:4px 8px; border-radius:4px; font-size:10.5px; font-family:var(--mono); background:${fills.length >= 3 ? 'rgba(0,208,156,0.1)' : (nextTrancheNum === 3 ? 'rgba(90,169,255,0.15)' : 'rgba(255,255,255,0.03)')}; border:1px solid ${fills.length >= 3 ? 'rgba(0,208,156,0.3)' : (nextTrancheNum === 3 ? 'rgba(90,169,255,0.4)' : 'var(--line)')}; color:${fills.length >= 3 ? 'var(--green)' : (nextTrancheNum === 3 ? 'var(--blue)' : 'var(--sub)')};">
+                  <strong>T3 (20%)</strong>: ${fills[2] ? `✓ ${fills[2].qty} @ ₹${fmt(fills[2].price)}` : (nextTrancheNum === 3 ? '⚡ Target' : 'Planned')}
+                </div>
+                <div style="padding:4px 8px; border-radius:4px; font-size:10.5px; font-family:var(--mono); background:${fills.length >= 4 ? 'rgba(168,85,247,0.15)' : (nextTrancheNum >= 4 ? 'rgba(168,85,247,0.1)' : 'rgba(255,255,255,0.03)')}; border:1px solid ${fills.length >= 4 ? 'rgba(168,85,247,0.4)' : (nextTrancheNum >= 4 ? 'rgba(168,85,247,0.3)' : 'var(--line)')}; color:${fills.length >= 4 ? '#c084fc' : (nextTrancheNum >= 4 ? '#c084fc' : 'var(--sub)')};">
+                  <strong>T4 (+10%)</strong>: ${fills[3] ? `✓ ${fills[3].qty} @ ₹${fmt(fills[3].price)}` : 'Optional'}
+                </div>
+              </div>
+
+              <!-- Tranche Allocation Percentage Inputs -->
+              <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <label style="font-size:11px; color:var(--text); font-weight:600;">Proposed Allotment %:</label>
+                  <input type="number" id="pyr_pct_${t.id}" tabindex="101" value="${currentPct}" min="1" max="100" step="1"
+                    style="width:65px; background:var(--bg2); border:1px solid var(--line); color:var(--gold); font-family:var(--mono); font-size:13px; font-weight:700; padding:4px 6px; border-radius:5px; text-align:right;">
+                  <span style="font-size:12px; color:var(--gold); font-weight:700;">%</span>
+                </div>
+                <div style="display:flex; gap:4px;">
+                  <button type="button" class="pyr-preset-btn" tabindex="-1" onclick="document.getElementById('pyr_pct_${t.id}').value=20; window.updatePyrCalc_${t.id}();">20%</button>
+                  <button type="button" class="pyr-preset-btn" tabindex="-1" onclick="document.getElementById('pyr_pct_${t.id}').value=30; window.updatePyrCalc_${t.id}();">30%</button>
+                  <button type="button" class="pyr-preset-btn" tabindex="-1" onclick="document.getElementById('pyr_pct_${t.id}').value=40; window.updatePyrCalc_${t.id}();">40%</button>
+                  <button type="button" class="pyr-preset-btn" tabindex="-1" onclick="document.getElementById('pyr_pct_${t.id}').value=50; window.updatePyrCalc_${t.id}();">50%</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Proposed Order Inputs -->
+            <div class="pyr-card-section">
+              <div style="font-size:11.5px; font-weight:700; color:var(--sub); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                <span>2. PROPOSED ORDER ENTRY &amp; SL</span>
+                <span style="font-size:10px; color:var(--dim);">Ref Entry: ₹${fmt(refPrice)}</span>
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div>
+                  <label style="font-size:10.5px; color:var(--sub); display:block; margin-bottom:3px; font-weight:600;">Proposed Buy Price (₹):</label>
+                  <input type="number" id="pyr_buy_${t.id}" tabindex="102" value="${initialProposedBuy}" step="0.05"
+                    style="width:100%; background:var(--bg2); border:1px solid var(--line); color:var(--text); font-family:var(--mono); font-size:12.5px; font-weight:600; padding:4px 6px; border-radius:4px;">
+                  <div style="display:flex; gap:3px; margin-top:4px; flex-wrap:wrap;">
+                    <button type="button" class="pyr-preset-btn" tabindex="-1" onclick="document.getElementById('pyr_buy_${t.id}').value = +((${refPrice}) * 1.03).toFixed(2); window.updatePyrCalc_${t.id}();">+3%</button>
+                    <button type="button" class="pyr-preset-btn" tabindex="-1" onclick="document.getElementById('pyr_buy_${t.id}').value = +((${refPrice}) * 1.035).toFixed(2); window.updatePyrCalc_${t.id}();">+3.5%</button>
+                    <button type="button" class="pyr-preset-btn" tabindex="-1" onclick="document.getElementById('pyr_buy_${t.id}').value = +((${refPrice}) * 1.04).toFixed(2); window.updatePyrCalc_${t.id}();">+4%</button>
+                    ${livePrice > 0 ? `<button type="button" class="pyr-preset-btn" tabindex="-1" style="color:var(--gold);" onclick="document.getElementById('pyr_buy_${t.id}').value = ${livePrice}; window.updatePyrCalc_${t.id}();">LTP (₹${fmt(livePrice)})</button>` : ''}
+                  </div>
+                </div>
+
+                <div>
+                  <label style="font-size:10.5px; color:var(--sub); display:block; margin-bottom:3px; font-weight:600;">Proposed Protective SL (₹): <span id="pyr_sl_pct_${t.id}" style="font-family:var(--mono); font-weight:700; font-size:11px; margin-left:3px;">—</span></label>
+                  <input type="number" id="pyr_sl_${t.id}" tabindex="103" value="${initialProposedSL}" step="0.05"
+                    style="width:100%; background:var(--bg2); border:1px solid var(--line); color:var(--red); font-family:var(--mono); font-size:12.5px; font-weight:600; padding:4px 6px; border-radius:4px;">
+                  <div style="display:flex; gap:3px; margin-top:4px; flex-wrap:wrap;">
+                    ${t1Entry > 0 ? `<button type="button" class="pyr-preset-btn" tabindex="-1" style="color:var(--green);" onclick="document.getElementById('pyr_sl_${t.id}').value = ${t1Entry}; window.updatePyrCalc_${t.id}();">T1 Entry (BE)</button>` : ''}
+                    ${activeSL > 0 ? `<button type="button" class="pyr-preset-btn" tabindex="-1" style="color:var(--gold);" onclick="document.getElementById('pyr_sl_${t.id}').value = ${activeSL}; window.updatePyrCalc_${t.id}();">Active SL</button>` : ''}
+                    <button type="button" class="pyr-preset-btn" tabindex="-1" onclick="document.getElementById('pyr_sl_${t.id}').value = +(document.getElementById('pyr_buy_${t.id}').value * 0.96).toFixed(2); window.updatePyrCalc_${t.id}();">-4%</button>
+                    <button type="button" class="pyr-preset-btn" tabindex="-1" onclick="document.getElementById('pyr_sl_${t.id}').value = +(document.getElementById('pyr_buy_${t.id}').value * 0.94).toFixed(2); window.updatePyrCalc_${t.id}();">-6%</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT COLUMN: SMK Gatekeepers & Real-Time Risk Recalculator -->
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            
+            <!-- 3. SMK Risk Gatekeepers -->
+            <div class="pyr-card-section" style="background:rgba(255,255,255,0.015);">
+              <div style="font-size:11.5px; font-weight:700; color:var(--sub); margin-bottom:8px;">
+                3. RISK VALIDATION &amp; GATEKEEPERS (SMK RULES)
+              </div>
+              <div style="display:flex; flex-direction:column; gap:6px;" id="pyr_gatekeepers_${t.id}">
+                <!-- Populated dynamically by updatePyrCalc -->
+              </div>
+            </div>
+
+            <!-- 4. Real-Time Risk Recalculator -->
+            <div class="pyr-card-section" style="background:rgba(90,169,255,0.03); border-color:rgba(90,169,255,0.25);">
+              <div style="font-size:11.5px; font-weight:700; color:var(--blue); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                <span>4. REAL-TIME RISK RECALCULATOR</span>
+                <span style="font-size:10px; color:var(--dim);">Budget: ${fmtRs(riskBudget)} (1%)</span>
+              </div>
+
+              <!-- Order Sizing & Value Cards -->
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                <div style="padding:8px 10px; background:rgba(0,0,0,0.35); border-radius:5px; border-left:3px solid var(--gold);">
+                  <div style="font-size:9.5px; color:var(--dim); text-transform:uppercase;">Tranche Quantity to Enter</div>
+                  <div id="pyr_qty_res_${t.id}" style="font-size:20px; font-weight:800; font-family:var(--mono); color:var(--gold); margin-top:2px;">—</div>
+                  <div id="pyr_qty_sub_${t.id}" style="font-size:10px; color:var(--sub); margin-top:2px;">—</div>
+                </div>
+
+                <div style="padding:8px 10px; background:rgba(0,0,0,0.35); border-radius:5px; border-left:3px solid var(--blue);">
+                  <div style="font-size:9.5px; color:var(--dim); text-transform:uppercase;">Tranche Buy Value</div>
+                  <div id="pyr_cost_res_${t.id}" style="font-size:18px; font-weight:800; font-family:var(--mono); color:var(--text); margin-top:3px;">—</div>
+                  <div id="pyr_cost_sub_${t.id}" style="font-size:10px; color:var(--sub); margin-top:2px;">—</div>
+                </div>
+              </div>
+
+              <!-- Downside Risk vs Locked Gains -->
+              <div style="background:rgba(0,0,0,0.25); border-radius:5px; padding:8px 10px; margin-bottom:8px; font-size:11px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                  <span style="color:var(--dim);">Combined Open Downside Risk:</span>
+                  <span id="pyr_comb_risk_${t.id}" style="font-family:var(--mono); font-weight:700;">—</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                  <span style="color:var(--dim);">Risk Budget Utilisation:</span>
+                  <span id="pyr_risk_util_${t.id}" style="font-family:var(--mono); font-weight:700;">—</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                  <span style="color:var(--dim);">Protected Locked-in Profits:</span>
+                  <span id="pyr_locked_gain_${t.id}" style="font-family:var(--mono); font-weight:700; color:var(--green);">—</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span style="color:var(--dim);">Projected Weighted Avg Buy:</span>
+                  <span id="pyr_proj_avg_${t.id}" style="font-family:var(--mono); font-weight:700; color:var(--gold);">—</span>
+                </div>
+              </div>
+
+              <!-- Dual Liquidity Margin Check -->
+              <div id="pyr_liq_status_${t.id}"></div>
+            </div>
+
+          </div>
+        </div>
+      `;
+
+      // Live Dynamic Recalculation Engine
+      window['updatePyrCalc_' + t.id] = function () {
+        const p = Math.max(1, Math.min(100, Number(document.getElementById('pyr_pct_' + t.id).value || defaultPct)));
+        const bPrice = Math.max(0.05, Number(document.getElementById('pyr_buy_' + t.id).value || refPrice));
+        const sPrice = Math.max(0, Number(document.getElementById('pyr_sl_' + t.id).value || activeSL));
+
+        // 1. Base allocation cap (qCap) fixed to user provided / auto calculated % for this tranche
+        const qCap = Math.max(1, Math.round(qStd * (p / 100)));
+
+        // 2. Tranche stop-loss distance
+        const slDist = Math.max(0, bPrice - sPrice);
+        const slDistPct = bPrice > 0 ? ((slDist / bPrice) * 100) : 0;
+
+        // 3. Downside risk and locked gains across all existing tranches under the new protective SL
+        let existingDownsideRisk = 0;
+        let existingLockedGain = 0;
+
+        fills.forEach(f => {
+          if (sPrice < f.price) {
+            existingDownsideRisk += (f.price - sPrice) * f.qty;
+          } else {
+            existingLockedGain += (sPrice - f.price) * f.qty;
+          }
+        });
+
+        // 4. Dynamic Risk Sizing with Maximum Tranche Cap:
+        // Sizing is governed by the tranche's % risk budget and available open trade risk
+        const availableTradeRisk = Math.max(0, riskBudget - existingDownsideRisk);
+        const trancheRiskBudget = riskBudget * (p / 100);
+        const effectiveRiskBudget = Math.min(trancheRiskBudget, availableTradeRisk);
+
+        let trancheShares = qCap;
+        let isCapped = true;
+        if (slDist > 0) {
+          if (effectiveRiskBudget <= 0) {
+            trancheShares = 0;
+            isCapped = false;
+          } else {
+            const qByRisk = Math.floor(effectiveRiskBudget / slDist);
+            if (qByRisk < qCap) {
+              trancheShares = Math.max(0, qByRisk);
+              isCapped = false;
+            } else {
+              trancheShares = qCap;
+              isCapped = true;
+            }
+          }
+        } else {
+          // If SL >= proposed buy price (no downside risk), cap at qCap
+          trancheShares = qCap;
+          isCapped = true;
+        }
+
+        // Expose current shares for save and exec actions
+        window['currentTrancheShares_' + t.id] = trancheShares;
+
+        const trancheCost = trancheShares * bPrice;
+        const proposedTrancheRisk = trancheShares * slDist;
+
+        // 5. Combined Open Downside Risk
+        const combinedRisk = Math.round(existingDownsideRisk + proposedTrancheRisk);
+        const riskUtilPct = riskBudget > 0 ? (combinedRisk / riskBudget) * 100 : 0;
+
+        // 6. Projected post-execution stats
+        const newTotalQty = currentBoughtShares + trancheShares;
+        const newTotalCost = (currentBoughtShares * avgPrice) + trancheCost;
+        const newWeightedAvg = newTotalQty > 0 ? (newTotalCost / newTotalQty) : bPrice;
+        const projectedBoughtPct = qStd > 0 ? (newTotalQty / qStd) * 100 : 100;
+
+        // 7. Update Gatekeepers UI
+        const gatekeeperEl = document.getElementById('pyr_gatekeepers_' + t.id);
+        if (gatekeeperEl) {
+          // Rule 1: Never add to a losing position
+          const isLosing = livePrice < avgPrice;
+          const r1Html = isLosing
+            ? `<div class="pyr-kpi-pill pyr-kpi-warn">🔴 Position in Loss: LTP ₹${fmt(livePrice)} is below Avg Buy ₹${fmt(avgPrice)} (${fmtPct((livePrice - avgPrice) / avgPrice)}). Never add to a loser!</div>`
+            : `<div class="pyr-kpi-pill pyr-kpi-ok">🟢 Position in Profit: LTP ₹${fmt(livePrice)} (+${fmtPct((livePrice - avgPrice) / avgPrice)}) · Rule 1 Passed</div>`;
+
+          // Rule 2: T1 downside risk neutralized
+          const isT1Neutralized = (sPrice >= t1Entry || activeSL >= t1Entry) && (sPrice > 0 || activeSL > 0);
+          const r2Html = isT1Neutralized
+            ? `<div class="pyr-kpi-pill pyr-kpi-ok">🟢 T1 Risk Neutralized: Protective SL (₹${fmt(Math.max(sPrice, activeSL))}) ≥ T1 Entry (₹${fmt(t1Entry)}) · Rule 2 Passed</div>`
+            : `<div class="pyr-kpi-pill pyr-kpi-warn">🔴 T1 Risk Active: Stop is below T1 Entry (₹${fmt(t1Entry)}). Move SL to breakeven or better before adding T2!</div>`;
+
+          // Rule 3: Tranche SL distance < 7%
+          const isSlValid = slDistPct > 0 && slDistPct < 7.0;
+          const r3Html = isSlValid
+            ? `<div class="pyr-kpi-pill pyr-kpi-ok">🟢 Tranche SL Distance: ${slDistPct.toFixed(2)}% (< 7% threshold) · Rule 3 Passed</div>`
+            : `<div class="pyr-kpi-pill pyr-kpi-warn">🔴 Excessive SL Distance: ${slDistPct.toFixed(2)}% (Exceeds 7% threshold). Await tighter structural stop!</div>`;
+
+          // Rule 4: Pivot extension <= 5%
+          const pivotExtPct = refPrice > 0 ? ((bPrice - refPrice) / refPrice) * 100 : 0;
+          const isPivotValid = pivotExtPct <= 5.05;
+          const r4Html = isPivotValid
+            ? `<div class="pyr-kpi-pill pyr-kpi-ok">🟢 Pivot Extension: +${pivotExtPct.toFixed(2)}% (≤ 5% max extension rule) · Rule 4 Passed</div>`
+            : `<div class="pyr-kpi-pill pyr-kpi-warn">🔴 Extended: +${pivotExtPct.toFixed(2)}% from pivot (> 5% max extension). Requires fresh continuation setup!</div>`;
+
+          gatekeeperEl.innerHTML = r1Html + r2Html + r3Html + r4Html;
+        }
+
+        // 8. Update KPIs
+        const qtyEl = document.getElementById('pyr_qty_res_' + t.id);
+        const qtySub = document.getElementById('pyr_qty_sub_' + t.id);
+        const costEl = document.getElementById('pyr_cost_res_' + t.id);
+        const costSub = document.getElementById('pyr_cost_sub_' + t.id);
+        const combRiskEl = document.getElementById('pyr_comb_risk_' + t.id);
+        const riskUtilEl = document.getElementById('pyr_risk_util_' + t.id);
+        const lockedGainEl = document.getElementById('pyr_locked_gain_' + t.id);
+        const projAvgEl = document.getElementById('pyr_proj_avg_' + t.id);
+
+        if (qtyEl) qtyEl.textContent = `${trancheShares} shares`;
+        if (qtySub) {
+          if (trancheShares === 0) {
+            qtySub.innerHTML = `<span style="color:var(--red); font-weight:600;">🔴 0 shs allowed by SL (Budget exhausted)</span>`;
+          } else if (!isCapped) {
+            qtySub.innerHTML = `<span style="color:var(--gold); font-weight:600;">⚠️ Sized to ${trancheShares} shs by SL distance (Cap: ${qCap} shs / ${p}%) · Total: ${projectedBoughtPct.toFixed(1)}%</span>`;
+          } else {
+            qtySub.innerHTML = `<span style="color:var(--text); font-weight:600;">✓ At ${p}% Max Cap (${qCap} shs) · Total after: ${projectedBoughtPct.toFixed(1)}%</span>`;
+          }
+        }
+        if (costEl) costEl.textContent = fmtRs(trancheCost);
+        if (costSub) costSub.textContent = `@ ₹${fmt(bPrice)} per share`;
+
+        if (combRiskEl) {
+          combRiskEl.textContent = fmtRs(combinedRisk);
+          combRiskEl.style.color = combinedRisk <= riskBudget ? 'var(--text)' : 'var(--red)';
+        }
+        if (riskUtilEl) {
+          riskUtilEl.textContent = `${riskUtilPct.toFixed(1)}% of Budget (${fmtRs(riskBudget)})`;
+          riskUtilEl.style.color = riskUtilPct <= 100 ? 'var(--green)' : 'var(--red)';
+        }
+        if (lockedGainEl) {
+          lockedGainEl.textContent = existingLockedGain > 0 ? ('+' + fmtRs(Math.round(existingLockedGain))) : '₹0';
+        }
+        if (projAvgEl) {
+          projAvgEl.textContent = `₹${fmt(newWeightedAvg)} (${newTotalQty} shs)`;
+        }
+
+        // Update SL% indicator next to Proposed Protective SL (₹):
+        const slPctEl = document.getElementById('pyr_sl_pct_' + t.id);
+        if (slPctEl) {
+          if (bPrice <= 0 || sPrice <= 0) {
+            slPctEl.textContent = '—';
+            slPctEl.style.color = 'var(--dim)';
+          } else if (sPrice >= bPrice) {
+            const beDiff = sPrice - bPrice;
+            slPctEl.textContent = beDiff === 0 ? '(0.00% BE)' : `(+${((beDiff / bPrice) * 100).toFixed(2)}%)`;
+            slPctEl.style.color = 'var(--green)';
+          } else {
+            slPctEl.textContent = `(-${slDistPct.toFixed(2)}%)`;
+            slPctEl.style.color = slDistPct <= 7.0 ? 'var(--gold)' : 'var(--red)';
+          }
+        }
+
+        // 9. Dual Liquidity Check
+        const dematCash = capSnap.dematCash;
+        const bankModBalance = capSnap.bankModBalance;
+        const totalCash = capSnap.totalCash;
+        const liqEl = document.getElementById('pyr_liq_status_' + t.id);
+
+        if (liqEl) {
+          if (trancheCost <= dematCash) {
+            liqEl.innerHTML = `
+              <div class="pyr-kpi-pill pyr-kpi-ok" style="width:100%; box-sizing:border-box;">
+                <span>🟢 Sufficient Demat Margin: <strong>${fmtRs(dematCash)}</strong> available (Surplus: ${fmtRs(dematCash - trancheCost)})</span>
+              </div>
+            `;
+          } else if (trancheCost <= totalCash) {
+            const shortDemat = trancheCost - dematCash;
+            liqEl.innerHTML = `
+              <div class="pyr-kpi-pill pyr-kpi-mod" style="width:100%; box-sizing:border-box;">
+                <span>⇄ Demat margin short by <strong>${fmtRs(shortDemat)}</strong> · Covered by Bank MOD Reserve (${fmtRs(bankModBalance)} in Sweep FD)</span>
+              </div>
+            `;
+          } else {
+            const over = trancheCost - totalCash;
+            liqEl.innerHTML = `
+              <div class="pyr-kpi-pill pyr-kpi-warn" style="width:100%; box-sizing:border-box;">
+                <span>🔴 Exceeds total liquidity by <strong>${fmtRs(over)}</strong> (Total Cash + MOD: ${fmtRs(totalCash)})</span>
+              </div>
+            `;
+          }
+        }
+      };
+
+      // Bind input events
+      const pctInput = document.getElementById('pyr_pct_' + t.id);
+      const buyInput = document.getElementById('pyr_buy_' + t.id);
+      const slInput = document.getElementById('pyr_sl_' + t.id);
+
+      if (pctInput) pctInput.oninput = window['updatePyrCalc_' + t.id];
+      if (buyInput) buyInput.oninput = window['updatePyrCalc_' + t.id];
+      if (slInput) slInput.oninput = window['updatePyrCalc_' + t.id];
+
+      // Initial run
+      window['updatePyrCalc_' + t.id]();
+
+      // Bind Save Plan Button
+      const saveBtn = document.getElementById('pyr_save_btn_' + t.id);
+      if (saveBtn) {
+        saveBtn.onclick = () => {
+          const p = Number(pctInput ? pctInput.value : defaultPct);
+          const bPrice = Number(buyInput ? buyInput.value : refPrice);
+          const sPrice = Number(slInput ? slInput.value : activeSL);
+          const slDist = Math.max(0, bPrice - sPrice);
+          const trancheShares = window['currentTrancheShares_' + t.id] != null 
+            ? window['currentTrancheShares_' + t.id] 
+            : Math.max(1, Math.round(qStd * (p / 100)));
+
+          if (trancheShares <= 0) {
+            toast('Cannot save plan: 0 shares calculated. Tighten SL or adjust allocation.', 'warn');
+            return;
+          }
+
+          t.plannedTranche = {
+            stage: nextTrancheLabel,
+            pct: p,
+            proposedBuy: bPrice,
+            proposedSL: sPrice,
+            shares: trancheShares,
+            cost: Math.round(trancheShares * bPrice),
+            risk: Math.round(trancheShares * slDist),
+            updatedAt: todayISO()
+          };
+
+          // Also populate to Watchlist as a ready actionable trigger
+          if (!STATE.watchlist) STATE.watchlist = [];
+          const existingWl = STATE.watchlist.find(w => (w.stock || '').toUpperCase() === (t.stock || '').toUpperCase());
+          if (existingWl) {
+            existingWl.entryPrice = bPrice;
+            existingWl.slPrice = sPrice;
+            existingWl.targetQty = trancheShares;
+            existingWl.notes = `Pyramid ${nextTrancheLabel} (${p}%) planned from Trade Log`;
+          }
+
+          saveLocalState();
+          toast(`Saved ${nextTrancheLabel} plan for ${t.stock}: ${trancheShares} shs @ ₹${fmt(bPrice)}`, 'ok');
+          renderTradeTable();
+
+          Promise.all([
+            apiPost({ action: 'updateTrade', trade: t }),
+            apiPost({ action: 'updateWatchlist', rows: STATE.watchlist })
+          ]).catch(err => console.error('Sync error:', err));
+        };
+      }
+
+      // Bind Record Execution Button (SMK Dynamic Position Sizing Execution)
+      const execBtn = document.getElementById('pyr_exec_btn_' + t.id);
+      if (execBtn) {
+        execBtn.onclick = () => {
+          const p = Number(pctInput ? pctInput.value : defaultPct);
+          const bPrice = Number(buyInput ? buyInput.value : refPrice);
+          const sPrice = Number(slInput ? slInput.value : activeSL);
+          const trancheShares = window['currentTrancheShares_' + t.id] != null 
+            ? window['currentTrancheShares_' + t.id] 
+            : Math.max(1, Math.round(qStd * (p / 100)));
+
+          if (trancheShares <= 0) {
+            alert('Cannot record execution: 0 shares allowed under current SL and risk budget.');
+            return;
+          }
+
+          if (!confirm(`Record execution of ${nextTrancheLabel} for ${t.stock}?\n\nQuantity: ${trancheShares} shares\nPrice: ₹${fmt(bPrice)}\nTotal Cost: ₹${fmtRs(trancheShares * bPrice)}\nNew Protective SL: ₹${fmt(sPrice)}`)) {
+            return;
+          }
+
+          // Apply execution to trade entry tranches
+          if (fills.length === 1 && !t.entry1Qty) {
+            t.entry1Qty = Number(t.totBuyQty || 0);
+            t.entry1Price = Number(t.avgBuyPrice || 0);
+            t.entry1Amt = Math.round(t.entry1Qty * t.entry1Price);
+          }
+
+          if (nextTrancheNum === 2) {
+            t.entry2Price = bPrice;
+            t.entry2Qty = trancheShares;
+            t.entry2Amt = Math.round(trancheShares * bPrice);
+          } else if (nextTrancheNum === 3) {
+            t.entry3Price = bPrice;
+            t.entry3Qty = trancheShares;
+            t.entry3Amt = Math.round(trancheShares * bPrice);
+          } else if (nextTrancheNum === 4) {
+            t.entry4Price = bPrice;
+            t.entry4Qty = trancheShares;
+            t.entry4Amt = Math.round(trancheShares * bPrice);
+          } else {
+            t.entry5Price = bPrice;
+            t.entry5Qty = trancheShares;
+            t.entry5Amt = Math.round(trancheShares * bPrice);
+          }
+
+          // Update protective stop loss
+          if (sPrice > 0) {
+            if (sPrice > Number(t.slPrice || 0)) {
+              t.tslPrice = sPrice;
+            } else {
+              t.slPrice = sPrice;
+            }
+          }
+
+          // Recalculate totals
+          const normalized = normalizeTrade(t);
+          const aggregated = aggregateBuy(normalized);
+          t.totBuyQty = aggregated.totBuyQty;
+          t.totBuyAmt = aggregated.totBuyAmt;
+          t.avgBuyPrice = aggregated.avgBuyPrice;
+
+          const pnlData = computeOpenTradePnL(t);
+          t.pnl = pnlData.pnl;
+          t.pnlPct = pnlData.pnlPct;
+          if (t.slPrice != null && t.avgBuyPrice) {
+            const slPerShare = Number((t.avgBuyPrice - Number(t.tslPrice || t.slPrice || 0)).toFixed(4));
+            t.totLossAtSL = Math.max(0, Math.round(Number(t.totBuyQty || 0) * slPerShare));
+          }
+
+          // Clear planned tranche
+          delete t.plannedTranche;
+
+          saveLocalState();
+          toast(`Successfully logged execution of ${nextTrancheLabel} for ${t.stock}!`, 'ok');
+          renderTradeTable();
+
+          apiPost({ action: 'updateTrade', trade: t }).catch(err => console.error('Sync failed', err));
+        };
+      }
+
+      // Bind Clear Plan Button
+      const clearBtn = document.getElementById('pyr_clear_btn_' + t.id);
+      if (clearBtn) {
+        clearBtn.onclick = () => {
+          delete t.plannedTranche;
+          saveLocalState();
+          toast(`Cleared pyramid plan for ${t.stock}`, 'info');
+          renderTradeTable();
+          Promise.all([
+            apiPost({ action: 'updateTrade', trade: t }),
+            apiPost({ action: 'updateWatchlist', rows: STATE.watchlist })
+          ]).catch(err => console.error('Sync error:', err));
+        };
+      }
+    }
+    window.renderPyramidTray = renderPyramidTray;
+
     function sortTradesList(list, sortState) {
       const col = (sortState && sortState.col) || 'openDate';
       const dir = (sortState && sortState.dir) || 'desc';
@@ -4926,6 +5871,10 @@
         else if (col === 'totBuyQty') { vA = Number(a.totBuyQty || 0); vB = Number(b.totBuyQty || 0); }
         else if (col === 'amount') { vA = Number(a.totBuyQty || 0) * Number(a.avgBuyPrice || 0); vB = Number(b.totBuyQty || 0) * Number(b.avgBuyPrice || 0); }
         else if (col === 'brokerage') { vA = getDefaultTradeBrokerage(a); vB = getDefaultTradeBrokerage(b); }
+        else if (col === 'boughtPct') {
+          vA = getTradeBoughtPct(a) != null ? getTradeBoughtPct(a) : -Infinity;
+          vB = getTradeBoughtPct(b) != null ? getTradeBoughtPct(b) : -Infinity;
+        }
         else if (col === 'avgSellPrice') {
           const exA = aggregateExit(normalizeTrade(a)), exB = aggregateExit(normalizeTrade(b));
           vA = exA.avgSellPrice == null ? -Infinity : exA.avgSellPrice;
@@ -5012,6 +5961,18 @@
           }
         };
       });
+
+      $('#tradeTableWrap').querySelectorAll('.pyramid-toggle-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const tradeId = btn.dataset.id;
+          togglePyramidTray(tradeId);
+        };
+      });
+
+      if (STATE.activePyramidTrayId) {
+        renderPyramidTray(STATE.activePyramidTrayId);
+      }
 
       if (STATE.selectedTradeMonth) {
         const targetKey = STATE.selectedTradeMonth;
@@ -5649,12 +6610,19 @@
         toast('Trade details not found', 'err');
         return;
       }
+      const qStd = getTradeStandardQty(t);
       const buildTrancheRow = (num, label, price, qty) => {
+        const pctVal = (qty != null && qty !== '' && qStd > 0) ? +((Number(qty) / qStd) * 100).toFixed(1) : null;
+        const pctBadge = pctVal != null 
+          ? `<span class="badge" style="background:rgba(212,162,78,0.12); color:var(--gold); border:1px solid rgba(212,162,78,0.3); font-family:var(--mono); font-size:11px; font-weight:700; display:inline-block; width:100%; text-align:center; box-sizing:border-box; padding:2px 0;">${pctVal}%</span>`
+          : '<span style="color:var(--dim); font-size:11px; text-align:center; display:block;">—</span>';
+
         return `
-          <div style="display: grid; grid-template-columns: 85px 1fr 1fr; gap: 8px; align-items: center; background:rgba(255,255,255,.02); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--line);">
+          <div style="display: grid; grid-template-columns: 85px 1fr 1fr 62px; gap: 8px; align-items: center; background:rgba(255,255,255,.02); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--line);">
             <span style="color:var(--sub); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${label}">${label}:</span>
             <input type="number" step="0.01" class="edit-buy-price" data-tranche="${num}" value="${price != null ? price : ''}" style="width:100%; padding: 4px 6px; border-radius: 4px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); font-family: var(--mono);" placeholder="Price">
             <input type="number" class="edit-buy-qty" data-tranche="${num}" value="${qty != null ? qty : ''}" style="width:100%; padding: 4px 6px; border-radius: 4px; font-size: 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); font-family: var(--mono);" placeholder="Qty">
+            <div id="tranche_pct_badge_${num}">${pctBadge}</div>
           </div>
         `;
       };
@@ -5826,12 +6794,13 @@
 
     <div class="modal-two-col">
       <fieldset style="margin-top:0; padding:12px;">
-        <legend>Buys Breakdown</legend>
+        <legend>Buys Breakdown (Base Q<sub>std</sub>: ${qStd} shs)</legend>
         <div style="font-family:var(--sans); font-size:12px; display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto; padding-right: 4px;">
-          <div style="display: grid; grid-template-columns: 85px 1fr 1fr; gap: 8px; align-items: center; margin-bottom: 2px; padding: 0 8px;">
+          <div style="display: grid; grid-template-columns: 85px 1fr 1fr 62px; gap: 8px; align-items: center; margin-bottom: 2px; padding: 0 8px;">
             <span style="font-size: 10px; color: var(--dim); font-weight: bold; text-transform: uppercase;">Tranche</span>
             <span style="font-size: 10px; color: var(--dim); font-weight: bold; text-transform: uppercase;">Price (₹)</span>
             <span style="font-size: 10px; color: var(--dim); font-weight: bold; text-transform: uppercase;">Qty</span>
+            <span style="font-size: 10px; color: var(--dim); font-weight: bold; text-transform: uppercase; text-align:center;" title="Tranche % based on Base Position Q_std (${qStd} shs)">Tranch %</span>
           </div>
 
           <!-- Tranche 1 -->
@@ -5864,10 +6833,11 @@
 
           ${hasPlannedTranche ? `
           <!-- Planned Tranche (Awaiting Execution) in Buys Breakdown -->
-          <div style="display: grid; grid-template-columns: 85px 1fr 1fr; gap: 8px; align-items: center; background:rgba(90,169,255,.05); padding: 4px 8px; border-radius: 4px; border: 1px dashed var(--blue); margin-top:2px;" title="Planned Tranche awaiting execution">
+          <div style="display: grid; grid-template-columns: 85px 1fr 1fr 62px; gap: 8px; align-items: center; background:rgba(90,169,255,.05); padding: 4px 8px; border-radius: 4px; border: 1px dashed var(--blue); margin-top:2px;" title="Planned Tranche awaiting execution">
             <span style="color:var(--blue); font-size: 11px; font-weight:600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">⏳ T${plannedTrancheData.trancheNum || nextTrancheNum} (Plan):</span>
             <span style="font-family:var(--mono); font-size: 12px; color:var(--text); padding-left: 2px;">₹${fmt(plannedTrancheData.price)}</span>
             <span style="font-family:var(--mono); font-size: 12px; color:var(--text); padding-left: 2px;">${plannedTrancheData.qty}</span>
+            <div style="text-align:center;"><span class="badge" style="background:rgba(90,169,255,0.15); color:var(--blue); border:1px solid rgba(90,169,255,0.3); font-family:var(--mono); font-size:11px; font-weight:700; display:inline-block; width:100%; box-sizing:border-box; padding:2px 0;">${qStd > 0 ? +((Number(plannedTrancheData.qty) / qStd) * 100).toFixed(1) + '%' : '—'}</span></div>
           </div>
           ` : ''}
         </div>
@@ -6869,6 +7839,21 @@
         };
       }
 
+      // Real-time recalculation of tranche percentages when user edits Qty
+      document.querySelectorAll('#modalBody .edit-buy-qty').forEach(input => {
+        input.addEventListener('input', () => {
+          const num = input.dataset.tranche;
+          const val = parseFloat(input.value);
+          const badgeEl = document.getElementById('tranche_pct_badge_' + num);
+          if (badgeEl) {
+            const p = (val && qStd > 0) ? +((val / qStd) * 100).toFixed(1) : null;
+            badgeEl.innerHTML = p != null
+              ? `<span class="badge" style="background:rgba(212,162,78,0.12); color:var(--gold); border:1px solid rgba(212,162,78,0.3); font-family:var(--mono); font-size:11px; font-weight:700; display:inline-block; width:100%; text-align:center; box-sizing:border-box; padding:2px 0;">${p}%</span>`
+              : '<span style="color:var(--dim); font-size:11px; text-align:center; display:block;">—</span>';
+          }
+        });
+      });
+
       // Initial calculation run & sync
       updateModalPnLAndRisk();
       doRecalcModalAdjustment();
@@ -7479,13 +8464,21 @@
       // Calculations for the selected period [fromDate, toDate]
       const openingCap = Number(STATE.settings.openingCapitalFY || 0);
 
-      // Capital Introduced & Withdrawals
+      // Capital Introduced & Withdrawals (separating Bank MOD transfers)
       const capAdditions = (STATE.capitalLog || []).filter(c => {
         if (/opening/i.test(c.note || '')) return false;
         return c.date && c.date >= fromDate && c.date <= toDate;
       });
-      const capitalIntroduced = capAdditions.filter(c => Number(c.amount || 0) > 0).reduce((s, c) => s + Number(c.amount || 0), 0);
-      const withdrawals = capAdditions.filter(c => Number(c.amount || 0) < 0).reduce((s, c) => s + Math.abs(Number(c.amount || 0)), 0);
+      const capitalIntroduced = capAdditions
+        .filter(c => Number(c.amount || 0) > 0 && c.type !== 'mod_in' && !/mod.*in|from.*mod/i.test(c.note || ''))
+        .reduce((s, c) => s + Number(c.amount || 0), 0);
+      const withdrawals = capAdditions
+        .filter(c => Number(c.amount || 0) < 0 && c.type !== 'mod_out' && !/mod.*out|to.*mod|sweep.*fd/i.test(c.note || ''))
+        .reduce((s, c) => s + Math.abs(Number(c.amount || 0)), 0);
+
+      const modTransfers = capAdditions.filter(c => c.type === 'mod_out' || c.type === 'mod_in' || /mod.*out|to.*mod|sweep.*fd|mod.*in|from.*mod/i.test(c.note || ''));
+      const periodModOut = modTransfers.filter(c => Number(c.amount || 0) < 0 || c.type === 'mod_out').reduce((s, c) => s + Math.abs(Number(c.amount || 0)), 0);
+      const periodModIn = modTransfers.filter(c => Number(c.amount || 0) > 0 || c.type === 'mod_in').reduce((s, c) => s + Math.abs(Number(c.amount || 0)), 0);
 
       // Closed Trades in Period
       const periodClosed = (STATE.trades || []).filter(t => t.status === 'closed' && t.closedDate && t.closedDate >= fromDate && t.closedDate <= toDate);
@@ -7513,7 +8506,11 @@
       const totalBeforeDiff = snapshot.totalBeforeDiff;
       const pre2026ProfitDiff = snapshot.pre2026ProfitDiff;
       const netCapital = isLiveSnapshot ? snapshot.capital : (openingCap + capitalIntroduced - withdrawals + netProfit - openCharges + periodExpenses + pre2026ProfitDiff);
-      const cashBalance = isLiveSnapshot ? snapshot.cash : (netCapital - invested);
+      const bankModBalance = snapshot.bankModBalance || 0;
+      const dematCapital = isLiveSnapshot ? snapshot.dematCapital : (netCapital - bankModBalance);
+      const dematCash = isLiveSnapshot ? snapshot.dematCash : (dematCapital - invested);
+      const cashBalance = isLiveSnapshot ? snapshot.cash : dematCash;
+      const totalCash = isLiveSnapshot ? snapshot.totalCash : (dematCash + bankModBalance);
 
       const activeFYLabel = formatFY(STATE.settings && STATE.settings.currentFY);
       const priorYearsPnl = (STATE.multiYear || [])
@@ -7593,14 +8590,17 @@
         <div class="num" style="color: var(--text);">${fmtRs(netCapital)}</div>
         <div class="sub" style="font-size: 11.5px; margin-top: auto; padding-top: 6px;">
           Holdings: <span style="color:var(--gold);font-family:var(--mono);font-weight:600;">${fmtRs(invested)}</span> 
-          · Cash: <span style="color:var(--green);font-family:var(--mono);font-weight:600;">${fmtRs(cashBalance)}</span>
+          · Demat Cash: <span style="color:var(--green);font-family:var(--mono);font-weight:600;">${fmtRs(dematCash)}</span>
+          ${bankModBalance > 0 ? ` · <span style="color:var(--blue);font-family:var(--mono);font-weight:600;" title="Bank MOD Sweep FD reserve">MOD: ${fmtRs(bankModBalance)}</span>` : ''}
         </div>
       </div>
       <!-- Available Cash Margin -->
       <div class="card card-open" style="flex: none;">
         <div class="lbl">Available Cash Margin</div>
-        <div class="num" style="color: var(--green);">${fmtRs(cashBalance)}</div>
-        <div class="sub" style="font-size: 11.5px; margin-top: auto; padding-top: 6px;">Liquid margin in Dhan account</div>
+        <div class="num" style="color: var(--green);">${fmtRs(dematCash)}</div>
+        <div class="sub" style="font-size: 11.5px; margin-top: auto; padding-top: 6px;">
+          Demat Margin${bankModBalance > 0 ? ` · Total Liquidity (+MOD): <span style="color:var(--blue);font-family:var(--mono);font-weight:600;">${fmtRs(totalCash)}</span>` : ''}
+        </div>
       </div>
       <!-- Open Holdings -->
       <div class="card card-avg" style="flex: none;">
@@ -7743,19 +8743,41 @@
               <!-- SECTION 4: CLOSING PORTFOLIO BALANCES -->
               <tr style="background: rgba(212, 162, 78, 0.05); border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft);">
                 <td colspan="4" style="padding: 7px 12px; font-size: 11px; font-weight: 700; color: var(--gold); letter-spacing: 0.06em; text-transform: uppercase; font-family: var(--sans);">
-                  4. Closing Portfolio Balances (Dhan Broker Account)
+                  4. Closing Portfolio Balances (Dhan Broker Account &amp; Bank MOD)
                 </td>
               </tr>
               <!-- Total Capital -->
               <tr style="border-top: 1.5px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, 0.03);">
                 <td style="padding: 11px 12px; font-weight: 700; font-size: 13px; color: var(--text); font-family: var(--sans); white-space: normal; word-break: break-word;">
-                  Total Portfolio Capital (Closing Net Equity)
-                  <div style="font-size: 10.5px; font-weight: 400; color: var(--dim); margin-top: 1px;">Capital Invested + Cum. P&amp;L + Pre-2026 Diff</div>
+                  Total Portfolio Capital (Trading Sizing Base)
+                  <div style="font-size: 10.5px; font-weight: 400; color: var(--dim); margin-top: 1px;">Capital Invested + Cum. P&amp;L + Pre-2026 Diff${openCharges > 0 ? ' − Open Charges' : ''}</div>
                 </td>
                 <td style="padding: 11px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">—</td>
                 <td style="padding: 11px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">—</td>
                 <td style="padding: 11px 12px; text-align: right; font-weight: 700; font-size: 14.5px; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text);">${fmtRs(netCapital)}</td>
               </tr>
+              ${bankModBalance > 0 ? `
+              <!-- Bank MOD Sweep FD Balance -->
+              <tr style="border-bottom: 1px solid var(--line-soft); background: rgba(90, 169, 255, 0.04);">
+                <td style="padding: 9px 12px 9px 24px; color: var(--blue); font-size: 12px; font-family: var(--sans); white-space: normal; word-break: break-word;">
+                  − Bank MOD Balance (Sweep FD Earmarked for Trading)
+                  <div style="font-size: 10px; color: var(--dim);">Temporarily parked in bank for higher interest</div>
+                </td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--blue); font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 600;">−${fmtRs(bankModBalance)}</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">—</td>
+                <td style="padding: 9px 12px; text-align: right; font-weight: 600; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--blue);">${fmtRs(bankModBalance)}</td>
+              </tr>
+              <!-- Broker Demat Net Capital -->
+              <tr style="border-bottom: 1px solid var(--line-soft); background: rgba(255, 255, 255, 0.02);">
+                <td style="padding: 9px 12px 9px 24px; color: var(--text); font-size: 12px; font-weight: 600; font-family: var(--sans); white-space: normal; word-break: break-word;">
+                  = Net Demat Capital in Dhan Account
+                  <div style="font-size: 10px; color: var(--dim);">Total Capital − Bank MOD Reserve</div>
+                </td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">—</td>
+                <td style="padding: 9px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">—</td>
+                <td style="padding: 9px 12px; text-align: right; font-weight: 700; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text);">${fmtRs(dematCapital)}</td>
+              </tr>
+              ` : ''}
               <!-- Open Holdings -->
               <tr style="border-bottom: 1px solid var(--line-soft);">
                 <td style="padding: 9px 12px 9px 24px; color: var(--dim); font-size: 12px; font-family: var(--sans); white-space: normal; word-break: break-word;">− Open Stock Holdings (Cost Basis${openPositions.length > 0 ? `: ${openPositions.map(t => t.stock).join(' + ')}` : ''})</td>
@@ -7766,12 +8788,14 @@
               <!-- Cash Balance -->
               <tr style="border-top: 2px solid var(--green); background: rgba(0, 208, 156, 0.08);">
                 <td style="padding: 12px 12px; font-weight: 700; font-size: 13.5px; color: var(--green); font-family: var(--sans); white-space: normal; word-break: break-word;">
-                  Cash Balance (Dhan Available Margin)
-                  <div style="font-size: 10.5px; font-weight: 400; color: var(--dim); margin-top: 1px;">Capital − Holdings</div>
+                  Demat Cash Balance (Available Margin in Dhan)
+                  <div style="font-size: 10.5px; font-weight: 400; color: var(--dim); margin-top: 1px;">
+                    Demat Capital − Holdings${bankModBalance > 0 ? ` · Total Liquidity (Demat Cash + Bank MOD): <strong>${fmtRs(totalCash)}</strong>` : ''}
+                  </div>
                 </td>
                 <td style="padding: 12px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">—</td>
                 <td style="padding: 12px 12px; text-align: right; color: var(--dim); font-family: var(--mono); font-variant-numeric: tabular-nums;">—</td>
-                <td style="padding: 12px 12px; text-align: right; font-weight: 700; font-size: 16px; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--green);">${fmtRs(cashBalance)}</td>
+                <td style="padding: 12px 12px; text-align: right; font-weight: 700; font-size: 16px; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--green);">${fmtRs(dematCash)}</td>
               </tr>
             </tbody>
           </table>
@@ -7881,16 +8905,34 @@
 
           <!-- Section 4: Closing Portfolio Balances -->
           <div style="background: rgba(212, 162, 78, 0.08); border-left: 3px solid var(--gold); padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px;">
-            4. Closing Portfolio Balances (Dhan Account)
+            4. Closing Portfolio Balances (Dhan Broker Account &amp; Bank MOD)
           </div>
 
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 9px 10px; border-bottom: 1px solid var(--line-soft); background: rgba(255, 255, 255, 0.02);">
             <div>
               <div style="font-size: 12.5px; font-weight: 700; color: var(--text);">Total Portfolio Capital</div>
-              <div style="font-size: 10.5px; color: var(--dim);">Invested + Cum. P&amp;L + Pre-2026 Diff${openCharges > 0 ? ' − Open Charges' : ''}</div>
+              <div style="font-size: 10.5px; color: var(--dim);">Trading Sizing Base${openCharges > 0 ? ' − Open Charges' : ''}</div>
             </div>
             <div style="font-family: var(--mono); font-size: 14.5px; font-weight: 700; color: var(--text);">${fmtRs(netCapital)}</div>
           </div>
+
+          ${bankModBalance > 0 ? `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line-soft); background: rgba(90, 169, 255, 0.04);">
+            <div>
+              <div style="font-size: 12px; color: var(--blue); font-weight: 600;">− Bank MOD Balance (Sweep FD)</div>
+              <div style="font-size: 10px; color: var(--dim);">Earmarked reserve in bank</div>
+            </div>
+            <div style="font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--blue);">−${fmtRs(bankModBalance)}</div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line-soft);">
+            <div>
+              <div style="font-size: 12px; color: var(--text); font-weight: 600;">= Net Demat Capital</div>
+              <div style="font-size: 10px; color: var(--dim);">Dhan Broker Net Equity</div>
+            </div>
+            <div style="font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--text);">${fmtRs(dematCapital)}</div>
+          </div>
+          ` : ''}
 
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line-soft);">
             <div>
@@ -7903,10 +8945,10 @@
           <!-- Cash Margin Banner -->
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; background: rgba(0, 208, 156, 0.08); border: 1.5px solid var(--green); border-radius: 8px; margin-top: 6px;">
             <div>
-              <div style="font-size: 13px; font-weight: 700; color: var(--green);">Cash Balance</div>
-              <div style="font-size: 10.5px; color: var(--dim);">Dhan Margin (Capital − Holdings)</div>
+              <div style="font-size: 13px; font-weight: 700; color: var(--green);">Demat Cash Balance</div>
+              <div style="font-size: 10.5px; color: var(--dim);">Available Liquid Margin${bankModBalance > 0 ? ` · Total (+MOD): <strong>${fmtRs(totalCash)}</strong>` : ''}</div>
             </div>
-            <div style="font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--green);">${fmtRs(cashBalance)}</div>
+            <div style="font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--green);">${fmtRs(dematCash)}</div>
           </div>
         </div>
       </div>
@@ -7944,11 +8986,18 @@
                 </tr>
               </thead>
               <tbody>
-                ${capList && capList.length ? capList.map(c => `
+                ${capList && capList.length ? capList.map(c => {
+                  let typeBadge = '';
+                  if (c.type === 'mod_out' || (/mod.*out|to.*mod|sweep.*fd/i.test(c.note || '') && Number(c.amount) < 0)) {
+                    typeBadge = '<span class="badge" style="background:rgba(90,169,255,0.15); color:var(--blue); border:1px solid rgba(90,169,255,0.3); font-size:9px; padding:1px 4px; margin-right:4px;">⇄ TO MOD</span>';
+                  } else if (c.type === 'mod_in' || (/mod.*in|from.*mod/i.test(c.note || '') && Number(c.amount) > 0)) {
+                    typeBadge = '<span class="badge" style="background:rgba(0,208,156,0.15); color:var(--green); border:1px solid rgba(0,208,156,0.3); font-size:9px; padding:1px 4px; margin-right:4px;">⇄ FROM MOD</span>';
+                  }
+                  return `
                   <tr style="border-bottom: 1px solid var(--line-soft); ${STATE.editingCapitalIndex === c._origIdx ? 'background: rgba(212, 162, 78, 0.08); border-left: 3px solid var(--gold);' : ''}">
                     <td style="padding: 7px 10px; white-space: nowrap; font-family: var(--mono); font-size: 11.5px;">${formatDateDMY(c.date)}</td>
                     <td style="padding: 7px 10px; text-align: right; color:${Number(c.amount) >= 0 ? 'var(--green)' : 'var(--red)'}; font-weight:600; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap;">${Number(c.amount) >= 0 ? '+' : ''}${fmtRs(c.amount)}</td>
-                    <td style="padding: 7px 10px; font-family:var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text);">${c.note || ''}</td>
+                    <td style="padding: 7px 10px; font-family:var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text);">${typeBadge}${c.note || ''}</td>
                     <td style="padding: 7px 10px; text-align: right; white-space: nowrap;">
                       <div style="display: flex; gap: 4px; justify-content: flex-end;">
                         <button class="btn ghost" style="padding: 2px 6px; font-size: 10px; min-height: auto; line-height: 1.2;" onclick="editCapitalChange(${c._origIdx})">Edit</button>
@@ -7956,7 +9005,8 @@
                       </div>
                     </td>
                   </tr>
-                `).join('') : `
+                `;
+                }).join('') : `
                   <tr>
                     <td colspan="4" style="font-family:var(--sans); color:var(--dim); text-align:center; padding:14px;">No capital changes logged yet</td>
                   </tr>
@@ -7971,8 +9021,10 @@
               <div class="ledger-form-row">
                 <span>Type:</span>
                 <select id="c_type">
-                  <option value="add" ${(!editingCap || editingCap.amount >= 0) ? 'selected' : ''}>Capital Addition (+)</option>
-                  <option value="withdraw" ${(editingCap && editingCap.amount < 0) ? 'selected' : ''}>Capital Withdrawal (−)</option>
+                  <option value="add" ${(!editingCap || (editingCap.amount >= 0 && editingCap.type !== 'mod_in')) ? 'selected' : ''}>+ Capital Introduced (Deposit to Demat)</option>
+                  <option value="withdraw" ${(editingCap && editingCap.amount < 0 && editingCap.type !== 'mod_out') ? 'selected' : ''}>− Capital Withdrawal (Permanent)</option>
+                  <option value="mod_out" ${(editingCap && (editingCap.type === 'mod_out' || /mod.*out|to.*mod/i.test(editingCap.note || ''))) ? 'selected' : ''}>⇄ Transfer to Bank MOD (Sweep FD)</option>
+                  <option value="mod_in" ${(editingCap && (editingCap.type === 'mod_in' || /mod.*in|from.*mod/i.test(editingCap.note || ''))) ? 'selected' : ''}>⇄ Transfer from Bank MOD to Demat</option>
                 </select>
               </div>
               <div class="ledger-form-row">
@@ -8141,13 +9193,21 @@
             toast('Enter a valid positive amount', 'err');
             return;
           }
-          if (type === 'withdraw') {
-            amount = -amount;
+          if (type === 'withdraw' || type === 'mod_out') {
+            amount = -Math.abs(amount);
+          } else {
+            amount = Math.abs(amount);
           }
-          const note = $('#c_note').value.trim() || (type === 'withdraw' ? 'Capital withdrawal' : 'Capital addition');
+          let note = $('#c_note').value.trim();
+          if (!note) {
+            if (type === 'mod_out') note = 'Transfer to Bank MOD (Sweep FD)';
+            else if (type === 'mod_in') note = 'Transfer from Bank MOD to Demat';
+            else if (type === 'withdraw') note = 'Capital withdrawal';
+            else note = 'Capital addition';
+          }
           const isEdit = STATE.editingCapitalIndex != null;
           const capIdx = STATE.editingCapitalIndex;
-          const entry = { date: $('#c_date').value, amount, note };
+          const entry = { date: $('#c_date').value, amount, note, type };
 
           if (isEdit) {
             STATE.capitalLog[capIdx] = entry;
@@ -8284,9 +9344,11 @@
 
       const transactions = [];
 
-      // Time-weighted flows: accurately captures original investment period, withdrawal period, and re-investments
+      // Time-weighted flows: accurately captures original investment period, withdrawal period, and re-investments (excluding internal Bank MOD sweeps)
       (STATE.capitalLog || []).filter(c => {
         if (/opening/i.test(c.note || '')) return false;
+        if (c.type === 'mod_out' || c.type === 'mod_in') return false;
+        if (/mod.*out|to.*mod|sweep.*fd|mod.*in|from.*mod/i.test(c.note || '')) return false;
         if (c.date && c.date < startDateStr) return false;
         return true;
       }).forEach(c => {
