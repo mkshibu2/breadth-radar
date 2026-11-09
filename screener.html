@@ -548,6 +548,94 @@ td {
   color: #c9d6e4;
 }
 
+/* TOAST & SHORTLIST STYLES */
+.star-btn {
+  font-size: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.star-btn:hover {
+  color: #f59e0b;
+  transform: scale(1.2);
+}
+.star-btn.active {
+  color: #f59e0b;
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+}
+
+.btn-shortlist {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #f59e0b;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-shortlist:hover {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: #f59e0b;
+  color: #fff;
+}
+.btn-shortlist.shortlisted {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  color: #070d18;
+}
+.btn-shortlist.shortlisted svg {
+  fill: #070d18;
+}
+
+.btn-shortlist-tray {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fcd34d;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-shortlist-tray:hover {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: #f59e0b;
+  color: #fff;
+}
+
+.toast-msg {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #0f1c32;
+  color: #fff;
+  border: 1px solid var(--border-focus);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 9999;
+  transform: translateY(20px);
+  opacity: 0;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+.toast-msg.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
 /* INTEGRATED CHART PANEL (SPLIT VIEW - POWERED BY LIGHTWEIGHT CHARTS) */
 .chart-panel {
   width: 48%;
@@ -942,6 +1030,10 @@ td {
       </button>
       <button class="btn" onclick="openSaveAsModal()" title="Save as a new custom screener">Save As...</button>
       <button class="btn" onclick="resetActivePreset()" title="Reset current preset to default values">⟲ Reset</button>
+      <button class="btn btn-shortlist-tray" id="shortlist-tray-btn" onclick="openShortlistDrawer()" title="View and Export Shortlisted Candidates">
+        <span style="color:#f59e0b;font-size:13px;">★</span>
+        <span>Shortlist (<b id="shortlist-count-badge">0</b>)</span>
+      </button>
       <button class="btn btn-primary" onclick="openWlExportModal()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
         Copy TV Watchlist
@@ -1038,15 +1130,20 @@ td {
       </div>
 
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <button class="btn btn-shortlist" id="btn-chart-shortlist" onclick="toggleActiveStockShortlist()" title="Add to Shortlist (Press 'W' to toggle)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          <span id="chart-shortlist-lbl">+ Shortlist</span>
+        </button>
+
         <div class="chart-timeframes">
           <button class="chart-tf-btn active" id="btn-tf-D" onclick="setChartTf('D', this)">Daily</button>
           <button class="chart-tf-btn" id="btn-tf-W" onclick="setChartTf('W', this)">Weekly</button>
           <button class="chart-tf-btn" id="btn-tf-fit" onclick="resetChartFitAll()" title="Toggle: Fit All Bars / Comfortable View">⤢ Fit</button>
         </div>
 
-        <button class="btn btn-primary" onclick="openActiveStockPersonalTv()" title="Open full chart in your Personal TradingView Studio layout (fZ5fwxUh)">
+        <button class="btn btn-primary" onclick="openActiveStockPersonalTv()" title="Send to your dedicated TradingView Studio layout tab (Press 'T')">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
-          TV Studio ↗
+          Send to TV ↗
         </button>
 
         <button class="btn" onclick="toggleSplitView()" title="Close chart panel" style="padding:4px 8px;font-size:11px;">✕</button>
@@ -1104,10 +1201,12 @@ td {
     <span>•</span>
     <span>Matching Active Preset: <b style="color:var(--teal)" id="footer-matches">0</b></span>
     <span>•</span>
-    <span style="color:var(--text-dim)">Keyboard shortcuts: <kbd style="background:#131e33;padding:1px 5px;border-radius:3px;">↑</kbd> <kbd style="background:#131e33;padding:1px 5px;border-radius:3px;">↓</kbd> flips charts in split view</span>
+    <span style="cursor:pointer;color:#fcd34d;" onclick="openShortlistDrawer()" title="View Shortlisted Candidates">★ Shortlisted: <b id="footer-shortlist-count">0 stocks</b></span>
+    <span>•</span>
+    <span style="color:var(--text-dim)">Shortcuts: <kbd style="background:#131e33;padding:1px 5px;border-radius:3px;">↑</kbd> <kbd style="background:#131e33;padding:1px 5px;border-radius:3px;">↓</kbd> flip charts &bull; <kbd style="background:#131e33;padding:1px 5px;border-radius:3px;">W</kbd> shortlist &bull; <kbd style="background:#131e33;padding:1px 5px;border-radius:3px;">T</kbd> send to TV</span>
   </div>
   <div>
-    <span>TradingView Live Data Engine Synchronized &bull; 1-Click Launch to Personal Chart Layout</span>
+    <span>TradingView Live Data Engine Synchronized &bull; Dedicated TV Studio Sync</span>
   </div>
 </footer>
 
@@ -1144,6 +1243,58 @@ td {
       <input type="text" class="popover-input" id="modal-filter-search" placeholder="Type to search available filters..." oninput="searchFilterPalette(this.value)">
     </div>
     <div class="modal-body" id="filter-palette-body">
+      <!-- Injected by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- SHORTLIST / STAGING TRAY MODAL -->
+<div class="modal-overlay" id="shortlist-modal">
+  <div class="modal-box" style="max-width: 660px;">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" style="display:flex;align-items:center;gap:8px;">
+          <span style="color:#f59e0b;font-size:18px;">★</span>
+          <span>Shortlisted Watchlist Candidates</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;" id="shortlist-modal-count-lbl">
+          0 stocks shortlisted for TradingView
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeShortlistDrawer()">&times;</button>
+    </div>
+
+    <!-- Quick action buttons -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+      <button class="btn btn-primary" onclick="copyShortlistForTv()" style="font-weight:700;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        Copy for TradingView (Ctrl+V)
+      </button>
+
+      <button class="btn" onclick="downloadShortlistTxt()" title="Download .txt ready for Watchlist -> Import List">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Download .txt
+      </button>
+
+      <button class="btn" onclick="openShortlistInPersonalTv()" style="color:var(--cyan);" title="Send first shortlisted stock to your TV layout tab">
+        Send to TV ↗
+      </button>
+
+      <button class="btn" onclick="clearShortlist()" style="color:var(--red);margin-left:auto;">
+        Clear All
+      </button>
+    </div>
+
+    <!-- Instructions Banner -->
+    <div style="background:#091222;border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--text-dim);line-height:1.5;margin-bottom:12px;">
+      <b style="color:var(--cyan)">⚡ How to Add to TradingView in 2 seconds:</b><br>
+      1. Click <b>"Copy for TradingView"</b> above.<br>
+      2. Switch to your TradingView tab &rarr; click any stock in your watchlist &rarr; press <kbd style="background:#172740;padding:1px 6px;border-radius:3px;font-weight:700;color:#fff;">Ctrl + V</kbd>.<br>
+      <i>TradingView instantly adds all shortlisted stocks directly into your active watchlist!</i>
+    </div>
+
+    <!-- Shortlisted Stocks Table / List -->
+    <div id="shortlist-items-container" style="max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;background:#060b14;">
       <!-- Injected by JS -->
     </div>
   </div>
@@ -1337,6 +1488,7 @@ var ACTIVE_FILTERS = [];
 // ==============================================================================
 document.addEventListener('DOMContentLoaded', function() {
   loadStoredPresets();
+  loadStoredShortlist();
   loadPreset('PrimaryScan-PowerPlay');
   
   // Close dropdowns on outside click
@@ -1372,6 +1524,22 @@ document.addEventListener('DOMContentLoaded', function() {
       if (sym) {
         selectStockForChart(sym, targetRow);
         targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }
+
+    // Hotkey: W or S toggles Shortlist on the active stock
+    if (e.key === 'w' || e.key === 'W' || e.key === 's' || e.key === 'S') {
+      if (ACTIVE_STOCK_SYMBOL) {
+        e.preventDefault();
+        toggleStockShortlist(ACTIVE_STOCK_SYMBOL);
+      }
+    }
+
+    // Hotkey: T sends active stock to TradingView Studio tab
+    if (e.key === 't' || e.key === 'T') {
+      if (ACTIVE_STOCK_SYMBOL) {
+        e.preventDefault();
+        openActiveStockPersonalTv();
       }
     }
   });
@@ -1882,6 +2050,7 @@ function passesFilter(stock, f) {
 
 function getFilteredStocks() {
   return STOCKS_DATA.filter(function(s) {
+    if (ACTIVE_UNIVERSE === 'shortlist' && !isStockShortlisted(s.symbol)) return false;
     if (ACTIVE_UNIVERSE === 'ipos' && !s.is_ipo) return false;
     if (ACTIVE_UNIVERSE === 'large' && s.mkt_cap_cr < 5000) return false;
     if (ACTIVE_UNIVERSE === 'small' && s.mkt_cap_cr >= 5000) return false;
@@ -2049,8 +2218,11 @@ function renderCell(s, col) {
 
   if (id === 'symbol') {
     var ipoBadge = s.is_ipo ? '<span class="badge badge-purple" style="font-size:9px;padding:1px 4px;margin-left:4px;">IPO</span>' : '';
+    var isSl = isStockShortlisted(s.symbol);
+    var starIcon = '<span class="star-btn ' + (isSl ? 'active' : '') + '" onclick="event.stopPropagation();toggleStockShortlist(\'' + s.symbol + '\')" title="' + (isSl ? 'Remove from Shortlist' : 'Add to Shortlist (Press W)') + '">' + (isSl ? '★' : '☆') + '</span>';
     return '<td>'
       + '<div class="sym-cell">'
+      + starIcon
       + '<div class="sym-avatar">' + s.symbol.charAt(0) + '</div>'
       + '<div>'
       + '<span class="sym-name">' + s.symbol + '</span>' + ipoBadge
@@ -2206,7 +2378,8 @@ function handleRowClick(sym, rowEl) {
 
 function openTvChartDirect(sym) {
   var url = 'https://in.tradingview.com/chart/fZ5fwxUh/?symbol=NSE:' + sym;
-  window.open(url, '_blank');
+  window.open(url, 'TV_CHART_STUDIO');
+  showToast('↗ Sent ' + sym + ' to your open TradingView Studio tab');
 }
 
 // ==============================================================================
@@ -2424,6 +2597,7 @@ function initLightweightChart() {
   _lwScreenerChart.subscribeCrosshairMove(function(param) {
     if (!param || !param.time || !param.seriesPrices) {
       updateLegendValues(null);
+    updateChartShortlistButton();
       return;
     }
     var candlePrice = param.seriesPrices.get(_lwPriceSeries);
@@ -2859,9 +3033,10 @@ function exportCsv() {
 }
 
 function toggleUniverseSelector() {
-  var universes = ['all', 'ipos', 'large', 'small'];
+  var universes = ['all', 'shortlist', 'ipos', 'large', 'small'];
   var labels = {
     'all': 'Watchlist: All (3,000)',
+    'shortlist': 'Watchlist: ★ My Shortlist (' + _userShortlist.size + ')',
     'ipos': 'Watchlist: Fresh IPOs & Listings',
     'large': 'Watchlist: Large & Midcaps (\u2265 5,000 Cr)',
     'small': 'Watchlist: Small & Microcaps (< 5,000 Cr)'
@@ -2872,6 +3047,277 @@ function toggleUniverseSelector() {
   document.getElementById('active-universe-lbl').textContent = labels[ACTIVE_UNIVERSE];
   applyFiltersAndRender();
 }
+
+// ==============================================================================
+// 7. SHORTLIST / STAGING TRAY ENGINE & TRADINGVIEW SYNC
+// ==============================================================================
+var _userShortlist = new Set();
+var _toastTimeout = null;
+
+function showToast(msg, type) {
+  var toast = document.getElementById('global-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'global-toast';
+    toast.className = 'toast-msg';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  if (type === 'warn') {
+    toast.style.borderColor = 'var(--yellow)';
+  } else if (type === 'success') {
+    toast.style.borderColor = 'var(--lime)';
+  } else {
+    toast.style.borderColor = 'var(--cyan)';
+  }
+  toast.classList.add('show');
+  clearTimeout(_toastTimeout);
+  _toastTimeout = setTimeout(function() {
+    toast.classList.remove('show');
+  }, 2600);
+}
+
+function loadStoredShortlist() {
+  try {
+    var raw = localStorage.getItem('nse_screener_shortlist');
+    if (raw) {
+      var arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        _userShortlist = new Set(arr);
+      }
+    }
+  } catch(e) {}
+  updateShortlistBadges();
+}
+
+function saveStoredShortlist() {
+  try {
+    localStorage.setItem('nse_screener_shortlist', JSON.stringify(Array.from(_userShortlist)));
+  } catch(e) {}
+  updateShortlistBadges();
+}
+
+function isStockShortlisted(sym) {
+  return _userShortlist.has(sym);
+}
+
+function toggleStockShortlist(sym) {
+  if (!sym) return;
+  if (_userShortlist.has(sym)) {
+    _userShortlist.delete(sym);
+    showToast('Removed ' + sym + ' from Shortlist', 'warn');
+  } else {
+    _userShortlist.add(sym);
+    showToast('★ Added ' + sym + ' to Shortlist (' + _userShortlist.size + ' stocks)', 'success');
+  }
+  saveStoredShortlist();
+  updateChartShortlistButton();
+  updateTableStars();
+  if (ACTIVE_UNIVERSE === 'shortlist') {
+    applyFiltersAndRender();
+  }
+  renderShortlistItems();
+}
+
+function toggleActiveStockShortlist() {
+  if (ACTIVE_STOCK_SYMBOL) {
+    toggleStockShortlist(ACTIVE_STOCK_SYMBOL);
+  }
+}
+
+function getShortlistSymbols() {
+  return Array.from(_userShortlist);
+}
+
+function updateShortlistBadges() {
+  var count = _userShortlist.size;
+  var countBadge = document.getElementById('shortlist-count-badge');
+  if (countBadge) countBadge.textContent = count;
+  var footerCount = document.getElementById('footer-shortlist-count');
+  if (footerCount) footerCount.textContent = count + ' stocks';
+  var modalCountLbl = document.getElementById('shortlist-modal-count-lbl');
+  if (modalCountLbl) modalCountLbl.textContent = count + ' stocks shortlisted for TradingView';
+
+  if (ACTIVE_UNIVERSE === 'shortlist') {
+    var univLbl = document.getElementById('active-universe-lbl');
+    if (univLbl) univLbl.textContent = 'Watchlist: ★ My Shortlist (' + count + ')';
+  }
+  updateChartShortlistButton();
+}
+
+function updateChartShortlistButton() {
+  var btn = document.getElementById('btn-chart-shortlist');
+  var lbl = document.getElementById('chart-shortlist-lbl');
+  if (!btn || !lbl) return;
+
+  var isSl = ACTIVE_STOCK_SYMBOL && isStockShortlisted(ACTIVE_STOCK_SYMBOL);
+  if (isSl) {
+    btn.classList.add('shortlisted');
+    lbl.textContent = '★ Shortlisted';
+    btn.title = "Shortlisted! Click to remove (Press 'W' to toggle)";
+  } else {
+    btn.classList.remove('shortlisted');
+    lbl.textContent = '+ Shortlist';
+    btn.title = "Add to Shortlist (Press 'W' to toggle)";
+  }
+}
+
+function updateTableStars() {
+  document.querySelectorAll('.star-btn').forEach(function(el) {
+    var row = el.closest('tr');
+    if (!row) return;
+    var sym = row.getAttribute('data-sym');
+    var isSl = isStockShortlisted(sym);
+    if (isSl) {
+      el.classList.add('active');
+      el.textContent = '★';
+      el.title = 'Remove from Shortlist (Press W)';
+    } else {
+      el.classList.remove('active');
+      el.textContent = '☆';
+      el.title = 'Add to Shortlist (Press W)';
+    }
+  });
+}
+
+function openShortlistDrawer() {
+  renderShortlistItems();
+  document.getElementById('shortlist-modal').classList.add('show');
+}
+
+function closeShortlistDrawer() {
+  document.getElementById('shortlist-modal').classList.remove('show');
+}
+
+function renderShortlistItems() {
+  var container = document.getElementById('shortlist-items-container');
+  if (!container) return;
+  var list = getShortlistSymbols();
+  if (list.length === 0) {
+    container.innerHTML = '<div style="padding:32px 16px;text-align:center;color:var(--text-muted);font-size:12px;">'
+      + '<div style="font-size:28px;margin-bottom:8px;color:#f59e0b;">☆</div>'
+      + '<div style="font-weight:600;color:var(--text);margin-bottom:4px;">No stocks shortlisted yet</div>'
+      + 'While reviewing charts, click <b>"+ Shortlist"</b> or press <kbd style="background:#131e33;padding:1px 6px;border-radius:3px;">W</kbd> to add setups.'
+      + '</div>';
+    return;
+  }
+
+  var html = '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    + '<thead>'
+    + '<tr style="background:#091222;border-bottom:1px solid var(--border);color:var(--text-dim);text-align:left;font-size:10px;text-transform:uppercase;">'
+    + '<th style="padding:8px 12px;">Symbol</th>'
+    + '<th style="padding:8px 12px;">Company</th>'
+    + '<th style="padding:8px 12px;text-align:right;">Price</th>'
+    + '<th style="padding:8px 12px;text-align:right;">Change %</th>'
+    + '<th style="padding:8px 12px;text-align:right;">52W High dist</th>'
+    + '<th style="padding:8px 12px;text-align:center;">Action</th>'
+    + '</tr>'
+    + '</thead>'
+    + '<tbody>';
+
+  list.forEach(function(sym) {
+    var s = STOCKS_DATA.find(function(x){ return x.symbol === sym; });
+    var comp = s ? (s.company || s.symbol) : sym;
+    var price = s ? '₹' + s.price.toLocaleString('en-IN', {minimumFractionDigits: 2}) : '—';
+    var chg = s ? (s.change_pct >= 0 ? '+' : '') + s.change_pct.toFixed(2) + '%' : '—';
+    var chgColor = s && s.change_pct >= 0 ? 'var(--lime)' : 'var(--red)';
+    var d52 = s && s.dist_52w_high != null ? s.dist_52w_high.toFixed(2) + '%' : '—';
+
+    html += '<tr style="border-bottom:1px solid rgba(255,255,255,0.03);cursor:pointer;" onclick="selectStockFromShortlist(\'' + sym + '\')">'
+      + '<td style="padding:8px 12px;font-family:var(--mono);font-weight:700;color:#fff;">' + sym + '</td>'
+      + '<td style="padding:8px 12px;color:var(--text-dim);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + comp + '</td>'
+      + '<td style="padding:8px 12px;font-family:var(--mono);text-align:right;">' + price + '</td>'
+      + '<td style="padding:8px 12px;font-family:var(--mono);font-weight:600;text-align:right;color:' + chgColor + ';">' + chg + '</td>'
+      + '<td style="padding:8px 12px;font-family:var(--mono);text-align:right;color:var(--text-dim);">' + d52 + '</td>'
+      + '<td style="padding:8px 12px;text-align:center;" onclick="event.stopPropagation()">'
+      + '<div style="display:inline-flex;gap:6px;">'
+      + '<button class="btn" style="padding:3px 8px;font-size:10px;color:var(--cyan);" onclick="openTvChartDirect(\'' + sym + '\')" title="Send to TradingView Studio tab">TV ↗</button>'
+      + '<button class="btn" style="padding:3px 8px;font-size:10px;color:var(--red);" onclick="toggleStockShortlist(\'' + sym + '\')" title="Remove">✕</button>'
+      + '</div>'
+      + '</td>'
+      + '</tr>';
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function selectStockFromShortlist(sym) {
+  closeShortlistDrawer();
+  if (!SPLIT_VIEW_ACTIVE) {
+    toggleSplitView();
+  }
+  var row = document.querySelector('tr[data-sym="' + sym + '"]');
+  selectStockForChart(sym, row);
+}
+
+function copyShortlistForTv() {
+  var list = getShortlistSymbols();
+  if (!list.length) {
+    showToast('Shortlist is empty! Add stocks using ★ or press "W"', 'warn');
+    return;
+  }
+  var text = list.map(function(s){ return 'NSE:' + s; }).join(', ');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      showToast('✓ Copied ' + list.length + ' stocks! In TradingView, press Ctrl+V on your watchlist.', 'success');
+    }).catch(function() {
+      fallbackCopyText(text, list.length);
+    });
+  } else {
+    fallbackCopyText(text, list.length);
+  }
+}
+
+function fallbackCopyText(text, count) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  showToast('✓ Copied ' + count + ' stocks! In TradingView, press Ctrl+V on your watchlist.', 'success');
+}
+
+function downloadShortlistTxt() {
+  var list = getShortlistSymbols();
+  if (!list.length) {
+    showToast('Shortlist is empty!', 'warn');
+    return;
+  }
+  var content = list.map(function(s){ return 'NSE:' + s; }).join('\n');
+  var blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'tv_shortlist_' + new Date().toISOString().slice(0, 10) + '.txt';
+  a.click();
+  showToast('✓ Downloaded ' + list.length + ' stocks for TradingView Import List', 'success');
+}
+
+function openShortlistInPersonalTv() {
+  var list = getShortlistSymbols();
+  if (!list.length) {
+    showToast('Shortlist is empty!', 'warn');
+    return;
+  }
+  openTvChartDirect(list[0]);
+}
+
+function clearShortlist() {
+  if (!_userShortlist.size) return;
+  if (confirm('Clear all ' + _userShortlist.size + ' shortlisted stocks?')) {
+    _userShortlist.clear();
+    saveStoredShortlist();
+    updateTableStars();
+    renderShortlistItems();
+    if (ACTIVE_UNIVERSE === 'shortlist') {
+      applyFiltersAndRender();
+    }
+    showToast('Shortlist cleared', 'warn');
+  }
+}
+
 </script>
 </body>
 </html>
