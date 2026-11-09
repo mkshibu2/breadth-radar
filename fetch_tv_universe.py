@@ -61,6 +61,8 @@ QUERY_PAYLOAD = {
         "price_earnings_ttm",
         "earnings_per_share_diluted_ttm",
         "earnings_per_share_diluted_yoy_growth_ttm",
+        "earnings_per_share_diluted_yoy_growth_fq",
+        "total_revenue_yoy_growth_fq",
         "dividends_yield_current",
         "sector",
         "industry",
@@ -85,6 +87,24 @@ def map_recommendation(val):
     if val >= -0.5:
         return "Sell"
     return "Strong sell"
+
+def get_recent_quarter_labels(ref_date=None):
+    if ref_date is None:
+        ref_date = datetime.now()
+    year = ref_date.year
+    month = ref_date.month
+    yy = str(year)[-2:]
+    prev_yy = str(year - 1)[-2:]
+
+    # Dynamic Indian quarter labels based on corporate reporting calendar
+    if month in (10, 11, 12):
+        return [f"Sep-{yy}", f"Jun-{yy}", f"Mar-{yy}", f"Dec-{prev_yy}"]
+    elif month in (1, 2, 3):
+        return [f"Dec-{prev_yy}", f"Sep-{prev_yy}", f"Jun-{prev_yy}", f"Mar-{prev_yy}"]
+    elif month in (4, 5, 6):
+        return [f"Mar-{yy}", f"Dec-{prev_yy}", f"Sep-{prev_yy}", f"Jun-{prev_yy}"]
+    else:
+        return [f"Jun-{yy}", f"Mar-{yy}", f"Dec-{prev_yy}", f"Sep-{prev_yy}"]
 
 def fetch_data():
     print(f"📡 Querying TradingView Scanner API ({TV_SCANNER_URL})...")
@@ -114,6 +134,16 @@ def fetch_data():
 def parse_and_save(rows):
     if not rows:
         return False
+
+    # Load verified exact TradingView quarterly financials cache
+    exact_store = {}
+    exact_file = Path(__file__).resolve().parent / 'exact_quarterly_financials.json'
+    if exact_file.exists():
+        try:
+            with open(exact_file, 'r', encoding='utf-8') as ef:
+                exact_store = json.load(ef)
+        except Exception:
+            pass
 
     records = []
     for item in rows:
@@ -151,11 +181,13 @@ def parse_and_save(rows):
         pe_ratio = round(float(d[23]), 2) if d[23] is not None else None
         eps_dil_ttm = round(float(d[24]), 2) if d[24] is not None else None
         eps_growth_yoy = round(float(d[25]), 2) if d[25] is not None else None
-        div_yield = round(float(d[26]), 2) if d[26] is not None else 0.0
+        eps_growth_fq = round(float(d[26]), 2) if d[26] is not None else None
+        sales_growth_fq = round(float(d[27]), 2) if d[27] is not None else None
+        div_yield = round(float(d[28]), 2) if d[28] is not None else 0.0
 
-        sector = str(d[27]).strip() if d[27] else "Diversified"
-        industry = str(d[28]).strip() if d[28] else "General"
-        rating_str = map_recommendation(d[29])
+        sector = str(d[29]).strip() if d[29] else "Diversified"
+        industry = str(d[30]).strip() if d[30] else "General"
+        rating_str = map_recommendation(d[31])
 
         # Distance from 1M High (PowerPlay metric: Price below High, 1M by 0% to 20%)
         if high_1m > 0:
@@ -190,6 +222,21 @@ def parse_and_save(rows):
         dist_ema20_pct = round(((price - ema_20) / ema_20) * 100.0, 2) if ema_20 else 0.0
         dist_sma50_pct = round(((price - sma_50) / sma_50) * 100.0, 2) if sma_50 else 0.0
         dist_sma200_pct = round(((price - sma_200) / sma_200) * 100.0, 2) if sma_200 else 0.0
+
+        # Exact verified TradingView quarterly fundamentals (STRICTLY NO APPROXIMATIONS)
+        q_labels = get_recent_quarter_labels()
+        if sym in exact_store:
+            quarterly = exact_store[sym]
+        else:
+            # Verified live Q0 from scanner quote, and None for unverified older quarters
+            q0_eps = round(eps_growth_fq) if eps_growth_fq is not None else None
+            q0_sales = round(sales_growth_fq) if sales_growth_fq is not None else None
+            quarterly = [
+                {'qtr': q_labels[0], 'eps_growth': q0_eps, 'sales_growth': q0_sales},
+                {'qtr': q_labels[1], 'eps_growth': None, 'sales_growth': None},
+                {'qtr': q_labels[2], 'eps_growth': None, 'sales_growth': None},
+                {'qtr': q_labels[3], 'eps_growth': None, 'sales_growth': None}
+            ]
 
         record = {
             'symbol': sym,
@@ -232,6 +279,9 @@ def parse_and_save(rows):
             'pe_ratio': pe_ratio,
             'eps_dil_ttm': eps_dil_ttm,
             'eps_growth_yoy': eps_growth_yoy,
+            'eps_growth_fq': eps_growth_fq,
+            'sales_growth_fq': sales_growth_fq,
+            'quarterly': quarterly,
             'div_yield': div_yield,
             'sector': sector,
             'industry': industry,
@@ -257,6 +307,9 @@ def parse_and_save(rows):
 
     with open(out_js, 'w', encoding='utf-8') as jsf:
         jsf.write("/* Auto-generated TradingView Full Universe Screener Data */\n")
+        jsf.write("window.EXACT_QUARTERLY_DATA = ")
+        json.dump(exact_store, jsf)
+        jsf.write(";\n")
         jsf.write("window.SCREENER_DATA = ")
         json.dump(payload, jsf)
         jsf.write(";\n")
