@@ -2296,6 +2296,11 @@ def main():
         with open(out_dir / 'sector_stocks.json', 'w', encoding='utf-8') as jf:
             json.dump(stocks_data, jf, indent=2)
         print(f'✅ JSON saved: {out_dir / "sector_stocks.json"}')
+        try:
+            import generate_screener_data
+            generate_screener_data.generate()
+        except Exception as ge:
+            print(f"⚠️ Note on screener data generation: {ge}")
     except Exception as je:
         print(f'❌ Error writing sector_stocks.json: {je}')
 
