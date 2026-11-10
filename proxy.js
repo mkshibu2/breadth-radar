@@ -94,6 +94,38 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // 2b. Route Fundamental Sync requests (/sync-financials)
+  if (parsedUrl.pathname === '/sync-financials') {
+    const { exec } = require('child_process');
+    console.log('[Proxy Financials] Running sync_exact_financials.py locally...');
+    exec('python sync_exact_financials.py', { cwd: __dirname }, (error, stdout, stderr) => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      if (error) {
+        console.error('[Proxy Financials Error]:', error.message);
+        res.end(JSON.stringify({ success: false, error: error.message }));
+      } else {
+        console.log('[Proxy Financials] Fundamentals sync completed successfully.');
+        res.end(JSON.stringify({ success: true, message: 'Fundamentals synced successfully' }));
+      }
+    });
+    return;
+  }
+
+  // 2c. Serve exact_quarterly_financials.json directly with CORS
+  if (parsedUrl.pathname === '/exact_quarterly_financials.json') {
+    const fs = require('fs');
+    const path = require('path');
+    const fPath = path.join(__dirname, 'exact_quarterly_financials.json');
+    if (fs.existsSync(fPath)) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(fs.readFileSync(fPath));
+    } else {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end('{}');
+    }
+    return;
+  }
+
   // 3. Route Yahoo Finance / Chart / TradingView Scanner requests (using ?url= parameter)
   const targetUrl = parsedUrl.query.url;
   if (!targetUrl) {

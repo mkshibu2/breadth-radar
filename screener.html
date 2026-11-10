@@ -215,6 +215,40 @@
       animation: tvSyncSpin 0.9s linear infinite;
     }
 
+    /* Fundamental Sync Button */
+    .btn-sync-funda {
+      background: rgba(168, 85, 247, 0.12);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      user-select: none;
+    }
+
+    .btn-sync-funda:hover {
+      background: rgba(168, 85, 247, 0.22);
+      border-color: #c084fc;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.25);
+    }
+
+    .btn-sync-funda:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      filter: grayscale(0.5);
+    }
+
+    .btn-sync-funda.spinning svg {
+      animation: tvSyncSpin 0.9s linear infinite;
+    }
+
     /* SCREENER CONTROL BAR (TRADINGVIEW REPLICA) */
     .screener-header {
       padding: 12px 20px 10px;
@@ -1450,14 +1484,25 @@
 
     <div class="topbar-right">
       <button class="btn btn-sync-tv" id="btn-sync-tv" onclick="syncLiveTradingViewData()"
-        title="Fetch live quotes &amp; quarterly metrics directly from TradingView Scanner API">
+        title="Sync live quotes, prices &amp; technicals directly from TradingView Scanner API">
         <svg id="sync-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2.5">
           <polyline points="23 4 23 10 17 10"></polyline>
           <polyline points="1 20 1 14 7 14"></polyline>
           <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
         </svg>
-        <span id="sync-btn-text">Sync Live TV</span>
+        <span id="sync-btn-text">SyncData</span>
+      </button>
+
+      <button class="btn btn-sync-funda" id="btn-sync-funda" onclick="syncLiveFundamentalsData()"
+        title="Sync 4-Quarter EPS &amp; Sales Growth for screened stocks">
+        <svg id="funda-sync-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.3">
+          <line x1="18" y1="20" x2="18" y2="4"></line>
+          <line x1="12" y1="20" x2="12" y2="10"></line>
+          <line x1="6" y1="20" x2="6" y2="16"></line>
+        </svg>
+        <span id="funda-btn-text">SyncFunda</span>
       </button>
       <div class="radar-badge" id="sync-time-badge" title="Timestamp of active screener dataset">
         <span class="radar-pulse"></span>
@@ -1573,6 +1618,7 @@
   <div class="toolbar-wrap">
     <div class="view-tabs">
       <button class="view-tab active" onclick="switchView('overview', this)">Overview</button>
+      <button class="view-tab" onclick="switchView('quarterly', this)">Quarterly Fundamentals</button>
       <button class="view-tab" onclick="switchView('performance', this)">Performance</button>
       <button class="view-tab" onclick="switchView('technicals', this)">Technicals</button>
       <button class="view-tab" onclick="switchView('liquidity', this)">Liquidity &amp; Extended</button>
@@ -2775,6 +2821,17 @@
 
     // Table Views Configuration
     var VIEW_COLUMNS = {
+      quarterly: [
+        { id: 'symbol', label: 'Symbol', width: '220px' },
+        { id: 'price', label: 'Price', num: true },
+        { id: 'eps_quarterly_trend', label: 'Quarterly EPS YoY (Q0 → Q-3)', center: true },
+        { id: 'sales_quarterly_trend', label: 'Quarterly Sales YoY (Q0 → Q-3)', center: true },
+        { id: 'eps_growth_yoy', label: 'EPS Dil Growth YoY', num: true },
+        { id: 'pe_ratio', label: 'P/E TTM', num: true },
+        { id: 'mkt_cap_formatted', label: 'Mkt Cap', num: true },
+        { id: 'rating', label: 'Analyst Rating', center: true },
+        { id: 'chart', label: 'Chart', center: true }
+      ],
       overview: [
         { id: 'symbol', label: 'Symbol', width: '220px' },
         { id: 'price', label: 'Price', num: true },
@@ -2956,11 +3013,49 @@
       if (id === 'eps_growth_yoy') {
         if (s.eps_growth_yoy === null || s.eps_growth_yoy === undefined) return '<td class="num" style="color:var(--text-muted)">\u2014</td>';
         var isUpEps = s.eps_growth_yoy >= 0;
-        return '<td class="num" style="font-family:var(--mono);font-weight:600;color:' + (isUpEps ? 'var(--lime)' : 'var(--red)') + '">' + (isUpEps ? '+' : '') + s.eps_growth_yoy.toFixed(2) + '%</td>';
+        var exactStore = window.EXACT_QUARTERLY_DATA || {};
+        var qArr = exactStore[s.symbol] || s.quarterly;
+        var qTip = '';
+        if (qArr && qArr.length) {
+          qTip = ' title="Recent Quarters EPS: ' + qArr.slice(0, 4).map(function(q) {
+            return (q.qtr || '') + ': ' + (q.eps_growth != null ? ((q.eps_growth >= 0 ? '+' : '') + q.eps_growth + '%') : '\u2014');
+          }).join(' | ') + '"';
+        }
+        return '<td class="num"' + qTip + ' style="font-family:var(--mono);font-weight:600;color:' + (isUpEps ? 'var(--lime)' : 'var(--red)') + '">' + (isUpEps ? '+' : '') + s.eps_growth_yoy.toFixed(2) + '%</td>';
       }
 
       if (id === 'div_yield') {
         return '<td class="num" style="font-family:var(--mono);color:var(--text-dim);">' + (s.div_yield ? s.div_yield.toFixed(2) + '%' : '0.00%') + '</td>';
+      }
+
+      if (id === 'eps_quarterly_trend') {
+        var exactStore = window.EXACT_QUARTERLY_DATA || {};
+        var qArr = exactStore[s.symbol] || s.quarterly;
+        if (!qArr || !qArr.length) return '<td class="center" style="color:var(--text-muted)">—</td>';
+        var pills = qArr.slice(0, 4).map(function(q) {
+          var val = q.eps_growth;
+          if (val === null || val === undefined) return '<span style="color:var(--text-muted);font-size:10px;padding:2px 5px;background:rgba(255,255,255,0.04);border-radius:3px;">—</span>';
+          var clr = val >= 0 ? '#4ade80' : '#f87171';
+          var bg = val >= 0 ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)';
+          var border = val >= 0 ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)';
+          return '<span style="color:' + clr + ';background:' + bg + ';border:1px solid ' + border + ';font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;display:inline-block;min-width:40px;text-align:center;" title="' + (q.qtr || '') + ': EPS ' + (val >= 0 ? '+' : '') + val + '%">' + (val >= 0 ? '+' : '') + val + '%</span>';
+        }).join(' ');
+        return '<td class="center" style="font-family:var(--mono);white-space:nowrap;">' + pills + '</td>';
+      }
+
+      if (id === 'sales_quarterly_trend') {
+        var exactStore = window.EXACT_QUARTERLY_DATA || {};
+        var qArr = exactStore[s.symbol] || s.quarterly;
+        if (!qArr || !qArr.length) return '<td class="center" style="color:var(--text-muted)">—</td>';
+        var pills = qArr.slice(0, 4).map(function(q) {
+          var val = q.sales_growth;
+          if (val === null || val === undefined) return '<span style="color:var(--text-muted);font-size:10px;padding:2px 5px;background:rgba(255,255,255,0.04);border-radius:3px;">—</span>';
+          var clr = val >= 0 ? '#4ade80' : '#f87171';
+          var bg = val >= 0 ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)';
+          var border = val >= 0 ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)';
+          return '<span style="color:' + clr + ';background:' + bg + ';border:1px solid ' + border + ';font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;display:inline-block;min-width:40px;text-align:center;" title="' + (q.qtr || '') + ': Sales ' + (val >= 0 ? '+' : '') + val + '%">' + (val >= 0 ? '+' : '') + val + '%</span>';
+        }).join(' ');
+        return '<td class="center" style="font-family:var(--mono);white-space:nowrap;">' + pills + '</td>';
       }
 
       if (id === 'rating') {
@@ -4152,6 +4247,7 @@
 
         var dist_high_1m_pct = high_1m > 0 ? +(((high_1m - price) / high_1m) * 100).toFixed(2) : 0;
         var dist_52w_high = high_52w > 0 ? +(((high_52w - price) / high_52w) * 100).toFixed(2) : 0;
+        var dist_52w_low = low_52w > 0 ? +(((price - low_52w) / low_52w) * 100).toFixed(2) : 0;
 
         var price_gte_ema20 = (ema_20 !== null && price >= ema_20);
         var ema20_gte_ema50 = (ema_20 !== null && ema_50 !== null && ema_20 >= ema_50);
@@ -4228,6 +4324,7 @@
           high_52w: high_52w,
           low_52w: low_52w,
           dist_52w_high: dist_52w_high,
+          dist_52w_low: dist_52w_low,
           dist_ema20_pct: dist_ema20_pct,
           dist_sma50_pct: dist_sma50_pct,
           dist_sma200_pct: dist_sma200_pct,
@@ -4378,7 +4475,77 @@
           btn.disabled = false;
           btn.classList.remove('spinning');
         }
-        if (btnText) btnText.textContent = 'Sync Live TV';
+        if (btnText) btnText.textContent = 'SyncData';
+      }
+    }
+
+    async function syncLiveFundamentalsData() {
+      var btn = document.getElementById('btn-sync-funda');
+      var btnText = document.getElementById('funda-btn-text');
+      if (btn && btn.disabled) return;
+
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add('spinning');
+      }
+      if (btnText) btnText.textContent = 'Syncing...';
+      showToast('⏳ Connecting to fundamentals sync engine...', 'info');
+
+      try {
+        // Method 1: Local CORS Proxy endpoint (/sync-financials)
+        var ctrl = new AbortController();
+        var timer = setTimeout(function () { ctrl.abort(); }, 90000);
+        var resp = await fetch('http://localhost:9090/sync-financials', { signal: ctrl.signal });
+        clearTimeout(timer);
+
+        if (!resp.ok) throw new Error('Local sync service returned HTTP ' + resp.status);
+        var res = await resp.json();
+
+        // Reload fresh exact_quarterly_financials.json
+        try {
+          var storeResp = await fetch('http://localhost:9090/exact_quarterly_financials.json?t=' + Date.now());
+          if (!storeResp.ok) storeResp = await fetch('exact_quarterly_financials.json?t=' + Date.now());
+          if (storeResp.ok) {
+            var updatedStore = await storeResp.json();
+            window.EXACT_QUARTERLY_DATA = updatedStore;
+            STOCKS_DATA.forEach(function (s) {
+              if (updatedStore[s.symbol]) s.quarterly = updatedStore[s.symbol];
+            });
+            applyFiltersAndRender();
+            if (ACTIVE_STOCK_SYMBOL) {
+              renderQuarterlyBox(STOCKS_DATA.find(function (x) { return x.symbol === ACTIVE_STOCK_SYMBOL; }));
+            }
+          }
+        } catch (eStore) { }
+
+        showToast('✓ Synced 4-Quarter Fundamentals from TradingView!', 'success');
+      } catch (err) {
+        console.warn('SyncFunda notice:', err);
+        // Fallback: Reload updated local exact_quarterly_financials.json if present
+        try {
+          var storeResp = await fetch('exact_quarterly_financials.json?t=' + Date.now());
+          if (storeResp.ok) {
+            var updatedStore = await storeResp.json();
+            window.EXACT_QUARTERLY_DATA = updatedStore;
+            STOCKS_DATA.forEach(function (s) {
+              if (updatedStore[s.symbol]) s.quarterly = updatedStore[s.symbol];
+            });
+            applyFiltersAndRender();
+            if (ACTIVE_STOCK_SYMBOL) {
+              renderQuarterlyBox(STOCKS_DATA.find(function (x) { return x.symbol === ACTIVE_STOCK_SYMBOL; }));
+            }
+            showToast('✓ Reloaded ' + Object.keys(updatedStore).length + ' verified fundamentals!', 'success');
+            return;
+          }
+        } catch (e2) { }
+
+        showToast('Tip: Run update_screener.bat or start proxy.js to fetch fresh fundamentals in background.', 'warn');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.classList.remove('spinning');
+        }
+        if (btnText) btnText.textContent = 'SyncFunda';
       }
     }
 

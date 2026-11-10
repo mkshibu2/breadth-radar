@@ -7,5 +7,10 @@ echo ============================================================
 echo.
 python fetch_tv_universe.py
 echo.
-echo Complete! screener_stocks.json & screener_stocks.js updated.
+echo ============================================================
+echo   Syncing 4-Quarter EPS & Sales Growth for Screened Stocks
+echo ============================================================
+python sync_exact_financials.py
+echo.
+echo Complete! screener_stocks.json, exact_quarterly_financials.json & screener_stocks.js updated.
 pause

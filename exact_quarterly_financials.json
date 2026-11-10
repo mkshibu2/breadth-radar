@@ -1252,5 +1252,4642 @@
       "eps_growth": 13,
       "sales_growth": 11
     }
+  ],
+  "ADANIENSOL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 148,
+      "sales_growth": 53
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 124,
+      "sales_growth": 42
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 6,
+      "sales_growth": 17
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -2,
+      "sales_growth": 15
+    }
+  ],
+  "ADANIGREEN": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 15,
+      "sales_growth": 42
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 17,
+      "sales_growth": 17
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 66,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -108,
+      "sales_growth": 12
+    }
+  ],
+  "ADANIPORTS": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 9,
+      "sales_growth": 24
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 2,
+      "sales_growth": 19
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 4,
+      "sales_growth": 26
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 20,
+      "sales_growth": 22
+    }
+  ],
+  "ADANIENT": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -60,
+      "sales_growth": 75
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -220,
+      "sales_growth": 50
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -105,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 9394,
+      "sales_growth": 9
+    }
+  ],
+  "ADANIPOWER": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 134,
+      "sales_growth": 30
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 42,
+      "sales_growth": 3
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 52,
+      "sales_growth": 3
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -19,
+      "sales_growth": -2
+    }
+  ],
+  "AEROPLANE": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 173,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": null,
+      "sales_growth": null
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": null,
+      "sales_growth": null
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": null,
+      "sales_growth": null
+    }
+  ],
+  "ABB": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 3,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 276,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -18,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": -7,
+      "sales_growth": 14
+    }
+  ],
+  "ALGOQUANT": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 271,
+      "sales_growth": -84
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 2629,
+      "sales_growth": 43
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 15,
+      "sales_growth": 5
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": -21,
+      "sales_growth": -21
+    }
+  ],
+  "APLLTD": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 81,
+      "sales_growth": 36
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 12,
+      "sales_growth": 26
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 29,
+      "sales_growth": 4
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -4,
+      "sales_growth": 11
+    }
+  ],
+  "APOLLOHOSP": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 32,
+      "sales_growth": 23
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 34,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 36,
+      "sales_growth": 18
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 35,
+      "sales_growth": 17
+    }
+  ],
+  "ASIANPAINT": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 7,
+      "sales_growth": 17
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 40,
+      "sales_growth": 18
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 69,
+      "sales_growth": 11
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -5,
+      "sales_growth": 4
+    }
+  ],
+  "AXISBANK": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 39,
+      "sales_growth": 15
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 22,
+      "sales_growth": 7
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 2,
+      "sales_growth": 3
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 4,
+      "sales_growth": 5
+    }
+  ],
+  "BAJAJFINSV": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 23,
+      "sales_growth": 18
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 13,
+      "sales_growth": 17
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 5,
+      "sales_growth": 15
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -1,
+      "sales_growth": 18
+    }
+  ],
+  "BAJAJHLDNG": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 28,
+      "sales_growth": -55
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -22,
+      "sales_growth": 24
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 49,
+      "sales_growth": -67
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 15,
+      "sales_growth": 90
+    }
+  ],
+  "BAJAJ_AUTO": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 64,
+      "sales_growth": 60
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 46,
+      "sales_growth": 65
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 103,
+      "sales_growth": 41
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 25,
+      "sales_growth": 23
+    }
+  ],
+  "BAJFINANCE": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 28,
+      "sales_growth": 23
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 27,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 21,
+      "sales_growth": 17
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -7,
+      "sales_growth": 17
+    }
+  ],
+  "BANKBARODA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 31,
+      "sales_growth": 19
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -49,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 7,
+      "sales_growth": 0
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 4,
+      "sales_growth": 6
+    }
+  ],
+  "BHEL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 119,
+      "sales_growth": 24
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 183,
+      "sales_growth": 40
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 156,
+      "sales_growth": 37
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 190,
+      "sales_growth": 16
+    }
+  ],
+  "BOSCHLTD": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 19,
+      "sales_growth": 28
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -37,
+      "sales_growth": 22
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 3,
+      "sales_growth": 13
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 16,
+      "sales_growth": 9
+    }
+  ],
+  "BPCL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -21,
+      "sales_growth": 42
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -127,
+      "sales_growth": 34
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 28,
+      "sales_growth": 7
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 89,
+      "sales_growth": 5
+    }
+  ],
+  "BRITANNIA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 10,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 14,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 21,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 17,
+      "sales_growth": 8
+    }
+  ],
+  "BSE": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 45,
+      "sales_growth": 36
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 61,
+      "sales_growth": 63
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 61,
+      "sales_growth": 76
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 173,
+      "sales_growth": 61
+    }
+  ],
+  "CGPOWER": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 43,
+      "sales_growth": 30
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 13,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 30,
+      "sales_growth": 25
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 15,
+      "sales_growth": 26
+    }
+  ],
+  "CHOLAFIN": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 39,
+      "sales_growth": 23
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 44,
+      "sales_growth": 22
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 29,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 18,
+      "sales_growth": 17
+    }
+  ],
+  "CIPLA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -35,
+      "sales_growth": -2
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -39,
+      "sales_growth": 2
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -55,
+      "sales_growth": -3
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -57,
+      "sales_growth": 0
+    }
+  ],
+  "COALINDIA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 53,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 1,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 11,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -16,
+      "sales_growth": -5
+    }
+  ],
+  "DCMSRIND": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -85,
+      "sales_growth": 0
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -19,
+      "sales_growth": 11
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -51,
+      "sales_growth": -48
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": -114,
+      "sales_growth": -1
+    }
+  ],
+  "DLF": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 10,
+      "sales_growth": -23
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 4,
+      "sales_growth": -53
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -1,
+      "sales_growth": -42
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 14,
+      "sales_growth": 32
+    }
+  ],
+  "DMART": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 9,
+      "sales_growth": 18
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 11,
+      "sales_growth": 15
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 19,
+      "sales_growth": 19
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 18,
+      "sales_growth": 13
+    }
+  ],
+  "DRREDDY": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -36,
+      "sales_growth": -2
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -69,
+      "sales_growth": -6
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -86,
+      "sales_growth": -12
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -14,
+      "sales_growth": 4
+    }
+  ],
+  "EICHERMOT": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 21,
+      "sales_growth": 32
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 12,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 21,
+      "sales_growth": 23
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 24,
+      "sales_growth": 45
+    }
+  ],
+  "ETERNAL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 82,
+      "sales_growth": 78
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 264,
+      "sales_growth": 182
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 340,
+      "sales_growth": 196
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 87,
+      "sales_growth": 202
+    }
+  ],
+  "GAIL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 139,
+      "sales_growth": 33
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 97,
+      "sales_growth": 17
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -40,
+      "sales_growth": -2
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -57,
+      "sales_growth": -5
+    }
+  ],
+  "GRASIM": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 51,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 31,
+      "sales_growth": 15
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 25,
+      "sales_growth": 25
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 73,
+      "sales_growth": 17
+    }
+  ],
+  "GROWW": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 59,
+      "sales_growth": 44
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 102,
+      "sales_growth": 63
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 130,
+      "sales_growth": 81
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -25,
+      "sales_growth": 26
+    }
+  ],
+  "GYFTR": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -3,
+      "sales_growth": 686
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 129,
+      "sales_growth": 2511
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 157,
+      "sales_growth": 2266
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": -60,
+      "sales_growth": -50
+    }
+  ],
+  "HCLTECH": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 21,
+      "sales_growth": 12
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 20,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 4,
+      "sales_growth": 12
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -11,
+      "sales_growth": 13
+    }
+  ],
+  "HDFCAMC": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 4,
+      "sales_growth": 10
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 12,
+      "sales_growth": 13
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -3,
+      "sales_growth": 4
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 20,
+      "sales_growth": 20
+    }
+  ],
+  "HDFCLIFE": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 15,
+      "sales_growth": 19
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 11,
+      "sales_growth": 15
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 4,
+      "sales_growth": -16
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -1,
+      "sales_growth": 72
+    }
+  ],
+  "HINDALCO": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 59,
+      "sales_growth": 39
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 75,
+      "sales_growth": 32
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -51,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -45,
+      "sales_growth": 14
+    }
+  ],
+  "HINDUNILVR": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 4,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -3,
+      "sales_growth": 10
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 21,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 121,
+      "sales_growth": 6
+    }
+  ],
+  "HINDZINC": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 142,
+      "sales_growth": 77
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 145,
+      "sales_growth": 77
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 68,
+      "sales_growth": 49
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 46,
+      "sales_growth": 27
+    }
+  ],
+  "HYUNDAI": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -24,
+      "sales_growth": 19
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -35,
+      "sales_growth": 0
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -22,
+      "sales_growth": 5
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 6,
+      "sales_growth": 8
+    }
+  ],
+  "ICICIAMC": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 6,
+      "sales_growth": 12
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 23,
+      "sales_growth": 18
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": null,
+      "sales_growth": null
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": null,
+      "sales_growth": null
+    }
+  ],
+  "IDEA": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 43,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 575,
+      "sales_growth": 3
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 49,
+      "sales_growth": 2
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 50,
+      "sales_growth": 2
+    }
+  ],
+  "INDHOTEL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 23,
+      "sales_growth": 22
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 21,
+      "sales_growth": 15
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 15,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 55,
+      "sales_growth": 12
+    }
+  ],
+  "INDIANB": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 14,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 47,
+      "sales_growth": 11
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 6,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 8,
+      "sales_growth": 10
+    }
+  ],
+  "INDIGO": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 27,
+      "sales_growth": 26
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -111,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -183,
+      "sales_growth": 1
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -78,
+      "sales_growth": 6
+    }
+  ],
+  "IOC": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 174,
+      "sales_growth": 42
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -124,
+      "sales_growth": 39
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 78,
+      "sales_growth": 7
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 515,
+      "sales_growth": 6
+    }
+  ],
+  "ITC": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -19,
+      "sales_growth": 4
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -16,
+      "sales_growth": -11
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -73,
+      "sales_growth": -5
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 0,
+      "sales_growth": 7
+    }
+  ],
+  "JINDALSTEL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 21,
+      "sales_growth": 43
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -44,
+      "sales_growth": 26
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 406,
+      "sales_growth": 23
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -80,
+      "sales_growth": 11
+    }
+  ],
+  "JIOFIN": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -53,
+      "sales_growth": 70
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 149,
+      "sales_growth": 224
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -14,
+      "sales_growth": 97
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -9,
+      "sales_growth": 101
+    }
+  ],
+  "JSWSTEEL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 225,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 113,
+      "sales_growth": 10
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 990,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 199,
+      "sales_growth": 11
+    }
+  ],
+  "KMCSHIL": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 120,
+      "sales_growth": 38
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 224,
+      "sales_growth": 35
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 83,
+      "sales_growth": 34
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 179,
+      "sales_growth": 33
+    }
+  ],
+  "KOTAKBANK": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 26,
+      "sales_growth": 18
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 23,
+      "sales_growth": 13
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 10,
+      "sales_growth": 3
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 5,
+      "sales_growth": 16
+    }
+  ],
+  "LENSKART": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 120,
+      "sales_growth": 36
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 268,
+      "sales_growth": 43
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 134,
+      "sales_growth": 45
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": null,
+      "sales_growth": null
+    }
+  ],
+  "LGEINDIA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 26,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 27,
+      "sales_growth": 15
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 17,
+      "sales_growth": 26
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": null,
+      "sales_growth": null
+    }
+  ],
+  "LICI": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 20,
+      "sales_growth": 10
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 24,
+      "sales_growth": 7
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 23,
+      "sales_growth": 15
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 17,
+      "sales_growth": 16
+    }
+  ],
+  "LODHA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 29,
+      "sales_growth": 18
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 103,
+      "sales_growth": 43
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 9,
+      "sales_growth": 12
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 1,
+      "sales_growth": 14
+    }
+  ],
+  "LT": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 32,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 14,
+      "sales_growth": 7
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -3,
+      "sales_growth": 11
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -4,
+      "sales_growth": 10
+    }
+  ],
+  "LTM": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 0,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 17,
+      "sales_growth": 18
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 23,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -11,
+      "sales_growth": 12
+    }
+  ],
+  "LUMAXTECH": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 58,
+      "sales_growth": 35
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 109,
+      "sales_growth": 33
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 51,
+      "sales_growth": 25
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 84,
+      "sales_growth": 40
+    }
+  ],
+  "M&M": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 26,
+      "sales_growth": 25
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 33,
+      "sales_growth": 28
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 43,
+      "sales_growth": 29
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 47,
+      "sales_growth": 24
+    }
+  ],
+  "MARICO": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 31,
+      "sales_growth": 13
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 25,
+      "sales_growth": 23
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 14,
+      "sales_growth": 22
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 12,
+      "sales_growth": 27
+    }
+  ],
+  "MARUTI": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -26,
+      "sales_growth": 26
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -9,
+      "sales_growth": 36
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -6,
+      "sales_growth": 28
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 4,
+      "sales_growth": 29
+    }
+  ],
+  "MOTHERSON": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 42,
+      "sales_growth": 27
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 102,
+      "sales_growth": 17
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 43,
+      "sales_growth": 17
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 17,
+      "sales_growth": 14
+    }
+  ],
+  "MOTILALOFS": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 196,
+      "sales_growth": 64
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 9,
+      "sales_growth": 25
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -240,
+      "sales_growth": 123
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -1,
+      "sales_growth": 6
+    }
+  ],
+  "MUTHOOTFIN": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 34,
+      "sales_growth": 37
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 39,
+      "sales_growth": 34
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 127,
+      "sales_growth": 64
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 102,
+      "sales_growth": 58
+    }
+  ],
+  "NESTLEIND": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 36,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 48,
+      "sales_growth": 25
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 27,
+      "sales_growth": 23
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 45,
+      "sales_growth": 19
+    }
+  ],
+  "NTPC": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 39,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 12,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 38,
+      "sales_growth": 0
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 8,
+      "sales_growth": 2
+    }
+  ],
+  "ONGC": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 55,
+      "sales_growth": 26
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 21,
+      "sales_growth": 26
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 46,
+      "sales_growth": 4
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 17,
+      "sales_growth": 0
+    }
+  ],
+  "PAYTM": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 984,
+      "sales_growth": 28
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 80,
+      "sales_growth": 28
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 133,
+      "sales_growth": 18
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 206,
+      "sales_growth": 20
+    }
+  ],
+  "PIDILITIND": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 6,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 30,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 37,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 12,
+      "sales_growth": 10
+    }
+  ],
+  "PNB": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 15,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 174,
+      "sales_growth": 0
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 12,
+      "sales_growth": -1
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 16,
+      "sales_growth": 7
+    }
+  ],
+  "POLYCAB": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 43,
+      "sales_growth": 53
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 32,
+      "sales_growth": 40
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 6,
+      "sales_growth": 27
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 36,
+      "sales_growth": 46
+    }
+  ],
+  "POWERGRID": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 6,
+      "sales_growth": 3
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -1,
+      "sales_growth": 3
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 11,
+      "sales_growth": -5
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 8,
+      "sales_growth": 10
+    }
+  ],
+  "POWERINDIA": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 124,
+      "sales_growth": 69
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 80,
+      "sales_growth": 46
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 81,
+      "sales_growth": 29
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 381,
+      "sales_growth": 18
+    }
+  ],
+  "SAILIFE": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 17,
+      "sales_growth": 23
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 21,
+      "sales_growth": 12
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 18,
+      "sales_growth": 4
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 82,
+      "sales_growth": 27
+    }
+  ],
+  "SANSERA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 50,
+      "sales_growth": 32
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 38,
+      "sales_growth": 33
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 104,
+      "sales_growth": 28
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 23,
+      "sales_growth": 25
+    }
+  ],
+  "SAREGAMA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 48,
+      "sales_growth": 37
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 41,
+      "sales_growth": 27
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 26,
+      "sales_growth": 19
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -17,
+      "sales_growth": -46
+    }
+  ],
+  "SBILIFE": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 11,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 22,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -1,
+      "sales_growth": -82
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 5,
+      "sales_growth": 149
+    }
+  ],
+  "SGMART": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 103,
+      "sales_growth": -8
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 34,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 15,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -64,
+      "sales_growth": 23
+    }
+  ],
+  "SHRIRAMFIN": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 27,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 29,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 41,
+      "sales_growth": 9
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -22,
+      "sales_growth": -1
+    }
+  ],
+  "SIEMENS": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 4,
+      "sales_growth": 17
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 205,
+      "sales_growth": 47
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -55,
+      "sales_growth": -29
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -52,
+      "sales_growth": 2
+    }
+  ],
+  "SKYGOLD": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 91,
+      "sales_growth": 61
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 124,
+      "sales_growth": 78
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 112,
+      "sales_growth": 81
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 108,
+      "sales_growth": 77
+    }
+  ],
+  "SOLARINDS": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 79,
+      "sales_growth": 69
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 93,
+      "sales_growth": 70
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 70,
+      "sales_growth": 41
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 42,
+      "sales_growth": 29
+    }
+  ],
+  "SOUTHBANK": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 21,
+      "sales_growth": 12
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 17,
+      "sales_growth": 1
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 19,
+      "sales_growth": 0
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 9,
+      "sales_growth": 7
+    }
+  ],
+  "SUNPHARMA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -36,
+      "sales_growth": 12
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 27,
+      "sales_growth": 10
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 26,
+      "sales_growth": 13
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 16,
+      "sales_growth": 13
+    }
+  ],
+  "TATACAP": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 45,
+      "sales_growth": 18
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 39,
+      "sales_growth": 15
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 27,
+      "sales_growth": 9
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 2,
+      "sales_growth": 12
+    }
+  ],
+  "TATASTEEL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 18,
+      "sales_growth": 11
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 12,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 125,
+      "sales_growth": 13
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 723,
+      "sales_growth": 6
+    }
+  ],
+  "TIMEX": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 83,
+      "sales_growth": 30
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 267,
+      "sales_growth": 74
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 65,
+      "sales_growth": 26
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 69,
+      "sales_growth": 40
+    }
+  ],
+  "TITAN": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 114,
+      "sales_growth": 10
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 63,
+      "sales_growth": 29
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 35,
+      "sales_growth": 80
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 61,
+      "sales_growth": 43
+    }
+  ],
+  "TMCV": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 245,
+      "sales_growth": 36
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 83,
+      "sales_growth": 19
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": null,
+      "sales_growth": null
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": null,
+      "sales_growth": null
+    }
+  ],
+  "TORNTPHARM": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -20,
+      "sales_growth": 51
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 3,
+      "sales_growth": 55
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -22,
+      "sales_growth": 42
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 26,
+      "sales_growth": 18
+    }
+  ],
+  "TVSMOTOR": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 50,
+      "sales_growth": 39
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 67,
+      "sales_growth": 33
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 19,
+      "sales_growth": 30
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 49,
+      "sales_growth": 34
+    }
+  ],
+  "ULTRACEMCO": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 21,
+      "sales_growth": 19
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 17,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 20,
+      "sales_growth": 12
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 27,
+      "sales_growth": 23
+    }
+  ],
+  "UNIONBANK": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 31,
+      "sales_growth": 5
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 27,
+      "sales_growth": 2
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 10,
+      "sales_growth": -3
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 10,
+      "sales_growth": 2
+    }
+  ],
+  "VBL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 14,
+      "sales_growth": 33
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 15,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 20,
+      "sales_growth": 18
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 36,
+      "sales_growth": 14
+    }
+  ],
+  "WIPRO": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 4,
+      "sales_growth": 9
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 1,
+      "sales_growth": 11
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -2,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -7,
+      "sales_growth": 6
+    }
+  ],
+  "ZYDUSLIFE": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -26,
+      "sales_growth": 29
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -36,
+      "sales_growth": 22
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 9,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 2,
+      "sales_growth": 30
+    }
+  ],
+  "63MOONS": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -1389,
+      "sales_growth": 350
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 105,
+      "sales_growth": 881
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -18,
+      "sales_growth": 128
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": -50,
+      "sales_growth": 110
+    }
+  ],
+  "ABDL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 11,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -13,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -48,
+      "sales_growth": 9
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 16,
+      "sales_growth": -57
+    }
+  ],
+  "ACE": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 22,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -7,
+      "sales_growth": 7
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 4,
+      "sales_growth": -2
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": -5,
+      "sales_growth": -2
+    }
+  ],
+  "AARTIPHARM": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 248,
+      "sales_growth": 46
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 65,
+      "sales_growth": 39
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -31,
+      "sales_growth": 3
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -35,
+      "sales_growth": -20
+    }
+  ],
+  "ACUTAAS": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 73,
+      "sales_growth": 43
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 67,
+      "sales_growth": 59
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 110,
+      "sales_growth": 40
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 139,
+      "sales_growth": 43
+    }
+  ],
+  "AIIL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -46,
+      "sales_growth": 13
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 18,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -97,
+      "sales_growth": -76
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -70,
+      "sales_growth": -23
+    }
+  ],
+  "AARTIDRUGS": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 83,
+      "sales_growth": 27
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -7,
+      "sales_growth": 19
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -12,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 9,
+      "sales_growth": 8
+    }
+  ],
+  "AKUMS": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 177,
+      "sales_growth": 32
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 58,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -43,
+      "sales_growth": 10
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 2,
+      "sales_growth": 15
+    }
+  ],
+  "ALEMBICLTD": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 5,
+      "sales_growth": -2
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -2,
+      "sales_growth": 0
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -8,
+      "sales_growth": 28
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 6,
+      "sales_growth": 6
+    }
+  ],
+  "ALIVUS": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 51,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 32,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 14,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 10,
+      "sales_growth": 5
+    }
+  ],
+  "ANANDRATHI": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -11,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 71,
+      "sales_growth": 52
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 39,
+      "sales_growth": 48
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 30,
+      "sales_growth": 25
+    }
+  ],
+  "ANGELONE": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 57,
+      "sales_growth": 19
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 100,
+      "sales_growth": 25
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 82,
+      "sales_growth": 39
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -6,
+      "sales_growth": 6
+    }
+  ],
+  "ANTHEM": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 22,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -13,
+      "sales_growth": -23
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 126,
+      "sales_growth": 26
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -26,
+      "sales_growth": -15
+    }
+  ],
+  "APLAPOLLO": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 25,
+      "sales_growth": 27
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 11,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 21,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 43,
+      "sales_growth": 7
+    }
+  ],
+  "APOLLO": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 48,
+      "sales_growth": 72
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 34,
+      "sales_growth": 88
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 130,
+      "sales_growth": 81
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 5,
+      "sales_growth": 70
+    }
+  ],
+  "ARIHANTCAP": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 59,
+      "sales_growth": 33
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 69,
+      "sales_growth": 54
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -94,
+      "sales_growth": 5
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -58,
+      "sales_growth": -5
+    }
+  ],
+  "ASKAUTOLTD": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 27,
+      "sales_growth": 48
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 29,
+      "sales_growth": 52
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 24,
+      "sales_growth": 35
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 21,
+      "sales_growth": 18
+    }
+  ],
+  "AUROPHARMA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 34,
+      "sales_growth": 24
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 26,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 2,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 8,
+      "sales_growth": 8
+    }
+  ],
+  "BHAGYANGR": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 167,
+      "sales_growth": 45
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 304,
+      "sales_growth": 62
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 222,
+      "sales_growth": 46
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 202,
+      "sales_growth": 42
+    }
+  ],
+  "BOROLTD": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -27,
+      "sales_growth": 9
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -6,
+      "sales_growth": 5
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -33,
+      "sales_growth": 0
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 24,
+      "sales_growth": 22
+    }
+  ],
+  "CDSL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 70,
+      "sales_growth": 41
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -20,
+      "sales_growth": 5
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 2,
+      "sales_growth": 12
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": -13,
+      "sales_growth": -5
+    }
+  ],
+  "CEIGALL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 57,
+      "sales_growth": 27
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 15,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 71,
+      "sales_growth": 37
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 1,
+      "sales_growth": 19
+    }
+  ],
+  "CEMPRO": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 21,
+      "sales_growth": 25
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 3,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 114,
+      "sales_growth": 17
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 27,
+      "sales_growth": 2
+    }
+  ],
+  "CHENNPETRO": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 212,
+      "sales_growth": 26
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 2672,
+      "sales_growth": 85
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 203,
+      "sales_growth": -3
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 4720,
+      "sales_growth": 21
+    }
+  ],
+  "CPPLUS": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 163,
+      "sales_growth": 90
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 303,
+      "sales_growth": 90
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": null,
+      "sales_growth": null
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": null,
+      "sales_growth": null
+    }
+  ],
+  "CUPID": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 191,
+      "sales_growth": 159
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 210,
+      "sales_growth": 112
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 196,
+      "sales_growth": 102
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 139,
+      "sales_growth": 103
+    }
+  ],
+  "DALMIASUG": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -80,
+      "sales_growth": -10
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -47,
+      "sales_growth": -2
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 17,
+      "sales_growth": -17
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": -56,
+      "sales_growth": 7
+    }
+  ],
+  "DBOL": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 268,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 3,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 346,
+      "sales_growth": 5
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 32,
+      "sales_growth": 20
+    }
+  ],
+  "DCBBANK": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 29,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 36,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 16,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 22,
+      "sales_growth": 12
+    }
+  ],
+  "DELTACORP": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -524,
+      "sales_growth": -13
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -821,
+      "sales_growth": -8
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -90,
+      "sales_growth": -12
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -60,
+      "sales_growth": -14
+    }
+  ],
+  "DIACABS": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 310,
+      "sales_growth": 135
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 256,
+      "sales_growth": 129
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 691,
+      "sales_growth": 108
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 692,
+      "sales_growth": 54
+    }
+  ],
+  "DPABHUSHAN": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -23,
+      "sales_growth": -21
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 75,
+      "sales_growth": 58
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 103,
+      "sales_growth": 86
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 94,
+      "sales_growth": 13
+    }
+  ],
+  "ENGINERSIN": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 136,
+      "sales_growth": -11
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 141,
+      "sales_growth": -6
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -30,
+      "sales_growth": -8
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 219,
+      "sales_growth": 58
+    }
+  ],
+  "ESAFSFB": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 238,
+      "sales_growth": 44
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 199,
+      "sales_growth": 32
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 113,
+      "sales_growth": 15
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 103,
+      "sales_growth": 10
+    }
+  ],
+  "FSL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 30,
+      "sales_growth": 22
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -2,
+      "sales_growth": 23
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 28,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -25,
+      "sales_growth": 16
+    }
+  ],
+  "GABRIEL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -8,
+      "sales_growth": 23
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -17,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 3,
+      "sales_growth": 13
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -9,
+      "sales_growth": 16
+    }
+  ],
+  "GHCLTEXTIL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 124,
+      "sales_growth": 32
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 191,
+      "sales_growth": 53
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 95,
+      "sales_growth": 28
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 41,
+      "sales_growth": 22
+    }
+  ],
+  "GLAND": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 58,
+      "sales_growth": 23
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 47,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 96,
+      "sales_growth": 22
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 28,
+      "sales_growth": 22
+    }
+  ],
+  "GLENMARK": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -57,
+      "sales_growth": -30
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 930,
+      "sales_growth": 23
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 6381,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 16,
+      "sales_growth": 15
+    }
+  ],
+  "GNA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 41,
+      "sales_growth": 50
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 66,
+      "sales_growth": 37
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 21,
+      "sales_growth": 9
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 26,
+      "sales_growth": 0
+    }
+  ],
+  "GOODLUCK": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 60,
+      "sales_growth": 31
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 28,
+      "sales_growth": -1
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 5,
+      "sales_growth": 10
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": -10,
+      "sales_growth": 2
+    }
+  ],
+  "GPPL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -5,
+      "sales_growth": 13
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 42,
+      "sales_growth": 33
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 27,
+      "sales_growth": 26
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 9,
+      "sales_growth": 11
+    }
+  ],
+  "GREAVESCOT": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -81,
+      "sales_growth": 44
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -23,
+      "sales_growth": 31
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -7,
+      "sales_growth": 22
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 22,
+      "sales_growth": 17
+    }
+  ],
+  "HEGAM": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 30,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 17,
+      "sales_growth": 11
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -54,
+      "sales_growth": 12
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 148,
+      "sales_growth": 37
+    }
+  ],
+  "HIKAL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 83,
+      "sales_growth": 36
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 67,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -71,
+      "sales_growth": -6
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -134,
+      "sales_growth": 10
+    }
+  ],
+  "HONASA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 86,
+      "sales_growth": 36
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 119,
+      "sales_growth": 27
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 176,
+      "sales_growth": 23
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 95,
+      "sales_growth": 16
+    }
+  ],
+  "ICIL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 238,
+      "sales_growth": 57
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 62,
+      "sales_growth": 26
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 15,
+      "sales_growth": 3
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -65,
+      "sales_growth": -8
+    }
+  ],
+  "IGIL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 43,
+      "sales_growth": 31
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 32,
+      "sales_growth": 23
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 53,
+      "sales_growth": 39
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -6,
+      "sales_growth": 15
+    }
+  ],
+  "IIFL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 103,
+      "sales_growth": 28
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 190,
+      "sales_growth": 32
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 183,
+      "sales_growth": 44
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 1042,
+      "sales_growth": 46
+    }
+  ],
+  "IKIO": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 410,
+      "sales_growth": 41
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 2542,
+      "sales_growth": 47
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 17,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": -23,
+      "sales_growth": 31
+    }
+  ],
+  "INDGN": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 10,
+      "sales_growth": 40
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -1,
+      "sales_growth": 40
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -32,
+      "sales_growth": 33
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -6,
+      "sales_growth": 31
+    }
+  ],
+  "INDIAGLYCO": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 22,
+      "sales_growth": 9
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 25,
+      "sales_growth": 13
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 18,
+      "sales_growth": 13
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 31,
+      "sales_growth": 14
+    }
+  ],
+  "IOLCP": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 90,
+      "sales_growth": 37
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 69,
+      "sales_growth": 17
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 0,
+      "sales_growth": 11
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 56,
+      "sales_growth": 8
+    }
+  ],
+  "IPCALAB": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 33,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 72,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 341,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 31,
+      "sales_growth": 7
+    }
+  ],
+  "JAMNAAUTO": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 6,
+      "sales_growth": 7
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 73,
+      "sales_growth": 32
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 33,
+      "sales_growth": 19
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 1,
+      "sales_growth": 4
+    }
+  ],
+  "JASH": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 195,
+      "sales_growth": 17
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 58,
+      "sales_growth": -3
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -62,
+      "sales_growth": -11
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": -32,
+      "sales_growth": 13
+    }
+  ],
+  "KARURVYSYA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 37,
+      "sales_growth": 11
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 45,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 41,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 39,
+      "sales_growth": 12
+    }
+  ],
+  "KMEW": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 192,
+      "sales_growth": 41
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 381,
+      "sales_growth": 138
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 113,
+      "sales_growth": 42
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 35,
+      "sales_growth": 56
+    }
+  ],
+  "KPRMILL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 58,
+      "sales_growth": 19
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 22,
+      "sales_growth": 10
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 11,
+      "sales_growth": 1
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 3,
+      "sales_growth": -4
+    }
+  ],
+  "KRBL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 50,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 73,
+      "sales_growth": -6
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 1,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 28,
+      "sales_growth": -12
+    }
+  ],
+  "KTKBANK": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 37,
+      "sales_growth": 11
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 43,
+      "sales_growth": 5
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 62,
+      "sales_growth": -1
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 3,
+      "sales_growth": -1
+    }
+  ],
+  "LALPATHLAB": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 27,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 28,
+      "sales_growth": 19
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -15,
+      "sales_growth": 17
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -7,
+      "sales_growth": 11
+    }
+  ],
+  "LOKESHMACH": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 112,
+      "sales_growth": 15
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 1565,
+      "sales_growth": 53
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 115,
+      "sales_growth": -2
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": -83,
+      "sales_growth": -33
+    }
+  ],
+  "LOTUSDEV": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 77,
+      "sales_growth": 53
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 58,
+      "sales_growth": 116
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": null,
+      "sales_growth": null
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": null,
+      "sales_growth": null
+    }
+  ],
+  "MAHABANK": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 28,
+      "sales_growth": 22
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 34,
+      "sales_growth": 15
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 36,
+      "sales_growth": 13
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 27,
+      "sales_growth": 16
+    }
+  ],
+  "LTTS": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 67,
+      "sales_growth": 12
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 13,
+      "sales_growth": 11
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 7,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -6,
+      "sales_growth": 10
+    }
+  ],
+  "MAHLOG": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 320,
+      "sales_growth": 24
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 287,
+      "sales_growth": 23
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 338,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 129,
+      "sales_growth": 19
+    }
+  ],
+  "MANKIND": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 39,
+      "sales_growth": 17
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 30,
+      "sales_growth": 13
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 32,
+      "sales_growth": 12
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 5,
+      "sales_growth": 12
+    }
+  ],
+  "MANOMAY": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 11,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 50,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -23,
+      "sales_growth": -5
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 16,
+      "sales_growth": -6
+    }
+  ],
+  "MEESHO": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 70,
+      "sales_growth": 34
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 57,
+      "sales_growth": 48
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -319,
+      "sales_growth": 32
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": null,
+      "sales_growth": null
+    }
+  ],
+  "MBAPL": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 17,
+      "sales_growth": 2
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 319,
+      "sales_growth": 33
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 77,
+      "sales_growth": 116
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 120,
+      "sales_growth": 62
+    }
+  ],
+  "MOBIKWIK": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 141,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 118,
+      "sales_growth": 3
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 108,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 105,
+      "sales_growth": 8
+    }
+  ],
+  "MOLDTKPAC": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 14,
+      "sales_growth": 25
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 27,
+      "sales_growth": 17
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 5,
+      "sales_growth": 4
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 10,
+      "sales_growth": 10
+    }
+  ],
+  "MRPL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 203,
+      "sales_growth": 44
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 449,
+      "sales_growth": 120
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -68,
+      "sales_growth": -3
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 369,
+      "sales_growth": 13
+    }
+  ],
+  "MUFIN": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 125,
+      "sales_growth": 76
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 248,
+      "sales_growth": 57
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 186,
+      "sales_growth": 30
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 19,
+      "sales_growth": 14
+    }
+  ],
+  "MUNJALAU": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 63,
+      "sales_growth": 42
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -103,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 709,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": -40,
+      "sales_growth": 12
+    }
+  ],
+  "NAZARA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 220,
+      "sales_growth": 53
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -212,
+      "sales_growth": -14
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 570,
+      "sales_growth": -24
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -72,
+      "sales_growth": -24
+    }
+  ],
+  "NUVAMA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 19,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 16,
+      "sales_growth": 23
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 4,
+      "sales_growth": 14
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -1,
+      "sales_growth": 7
+    }
+  ],
+  "NYKAA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 193,
+      "sales_growth": 28
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 243,
+      "sales_growth": 29
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 286,
+      "sales_growth": 28
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 142,
+      "sales_growth": 27
+    }
+  ],
+  "ONEPOINT": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 89,
+      "sales_growth": 147
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 73,
+      "sales_growth": 129
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -4,
+      "sales_growth": 43
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 10,
+      "sales_growth": 18
+    }
+  ],
+  "ONWARDTEC": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 46,
+      "sales_growth": 22
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -11,
+      "sales_growth": 12
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -7,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 70,
+      "sales_growth": 9
+    }
+  ],
+  "OPTIEMUS": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 46,
+      "sales_growth": 103
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -3,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -22,
+      "sales_growth": -9
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 18,
+      "sales_growth": -12
+    }
+  ],
+  "PDSL": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 47,
+      "sales_growth": 15
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 8,
+      "sales_growth": 0
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -29,
+      "sales_growth": 2
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": -57,
+      "sales_growth": 3
+    }
+  ],
+  "PERSISTENT": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -26,
+      "sales_growth": 30
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 12,
+      "sales_growth": 29
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 32,
+      "sales_growth": 25
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 17,
+      "sales_growth": 23
+    }
+  ],
+  "PETRONET": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 51,
+      "sales_growth": -35
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 35,
+      "sales_growth": -53
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 25,
+      "sales_growth": -23
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -4,
+      "sales_growth": -9
+    }
+  ],
+  "PHOENIXLTD": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 7,
+      "sales_growth": 3
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 23,
+      "sales_growth": 13
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 50,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 4,
+      "sales_growth": 15
+    }
+  ],
+  "PNGSREVA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": null,
+      "sales_growth": null
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": null,
+      "sales_growth": null
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": null,
+      "sales_growth": null
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": null,
+      "sales_growth": null
+    }
+  ],
+  "PPLPHARMA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 106,
+      "sales_growth": 28
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 15,
+      "sales_growth": 17
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -106,
+      "sales_growth": 0
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -3808,
+      "sales_growth": -3
+    }
+  ],
+  "PRINCEPIPE": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 600,
+      "sales_growth": 5
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 132,
+      "sales_growth": 18
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 98,
+      "sales_growth": -1
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": -1,
+      "sales_growth": -4
+    }
+  ],
+  "PROTEAN": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -31,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -76,
+      "sales_growth": 19
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 48,
+      "sales_growth": 38
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -2,
+      "sales_growth": 13
+    }
+  ],
+  "QUESS": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 60,
+      "sales_growth": 15
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 167,
+      "sales_growth": 6
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 32,
+      "sales_growth": -2
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 2,
+      "sales_growth": 3
+    }
+  ],
+  "RADICO": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 66,
+      "sales_growth": 17
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 76,
+      "sales_growth": 12
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 95,
+      "sales_growth": 15
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 62,
+      "sales_growth": 20
+    }
+  ],
+  "RAYMOND": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 83,
+      "sales_growth": 24
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -100,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -99,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -95,
+      "sales_growth": 20
+    }
+  ],
+  "RUBICON": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 65,
+      "sales_growth": 40
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 82,
+      "sales_growth": 54
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": null,
+      "sales_growth": null
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": null,
+      "sales_growth": null
+    }
+  ],
+  "SATIN": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 231,
+      "sales_growth": 18
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 172,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 640,
+      "sales_growth": 50
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 404,
+      "sales_growth": 9
+    }
+  ],
+  "SGFIN": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 105,
+      "sales_growth": 115
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 119,
+      "sales_growth": 102
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 106,
+      "sales_growth": 95
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 32,
+      "sales_growth": 103
+    }
+  ],
+  "SHADOWFAX": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": null,
+      "sales_growth": null
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": null,
+      "sales_growth": null
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": null,
+      "sales_growth": null
+    }
+  ],
+  "SIMPLEXINF": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 119,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -68,
+      "sales_growth": 0
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 151,
+      "sales_growth": 8
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 158,
+      "sales_growth": -7
+    }
+  ],
+  "SMCGLOBAL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 35,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 23,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 467,
+      "sales_growth": 23
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -30,
+      "sales_growth": 8
+    }
+  ],
+  "SONACOMS": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 29,
+      "sales_growth": 35
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 45,
+      "sales_growth": 52
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 17,
+      "sales_growth": 45
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 0,
+      "sales_growth": 38
+    }
+  ],
+  "SPARC": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 68,
+      "sales_growth": 282
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 60,
+      "sales_growth": 314
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 3047,
+      "sales_growth": 6716
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -1,
+      "sales_growth": -43
+    }
+  ],
+  "SUDEEPPHRM": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 12,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 32,
+      "sales_growth": 27
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -5,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 42,
+      "sales_growth": 49
+    }
+  ],
+  "TANLA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 18,
+      "sales_growth": 25
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 22,
+      "sales_growth": 18
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 16,
+      "sales_growth": 15
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 13,
+      "sales_growth": 12
+    }
+  ],
+  "TEXINFRA": [
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -55,
+      "sales_growth": -11
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -46,
+      "sales_growth": 31
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 109,
+      "sales_growth": -4
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": 126,
+      "sales_growth": 9
+    }
+  ],
+  "TIPSMUSIC": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 24,
+      "sales_growth": 35
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -5,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 93,
+      "sales_growth": 32
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 33,
+      "sales_growth": 21
+    }
+  ],
+  "UNIMECH": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 103,
+      "sales_growth": 98
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 45,
+      "sales_growth": 71
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -11,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -85,
+      "sales_growth": -37
+    }
+  ],
+  "VRLLOG": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 106,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 61,
+      "sales_growth": 18
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": -3,
+      "sales_growth": 5
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 9,
+      "sales_growth": 0
+    }
+  ],
+  "UNOMINDA": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 38,
+      "sales_growth": 38
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 1,
+      "sales_growth": 24
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 22,
+      "sales_growth": 18
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 19,
+      "sales_growth": 20
+    }
+  ],
+  "WABAG": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 22,
+      "sales_growth": 20
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 37,
+      "sales_growth": 21
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 29,
+      "sales_growth": 22
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 32,
+      "sales_growth": 19
+    }
+  ],
+  "WESTLIFE": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": -107,
+      "sales_growth": 16
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": -52,
+      "sales_growth": 12
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 56,
+      "sales_growth": 9
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": -85,
+      "sales_growth": 3
+    }
+  ],
+  "YATHARTH": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": 23,
+      "sales_growth": 52
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": 12,
+      "sales_growth": 51
+    },
+    {
+      "qtr": "Mar-26",
+      "eps_growth": 23,
+      "sales_growth": 47
+    },
+    {
+      "qtr": "Dec-25",
+      "eps_growth": 49,
+      "sales_growth": 46
+    }
   ]
 }

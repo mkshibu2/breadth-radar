@@ -316,7 +316,7 @@ def parse_and_save(rows):
         jsf.write("window.EXACT_QUARTERLY_DATA = ")
         json.dump(exact_store, jsf)
         jsf.write(";\n")
-        jsf.write("window.SCREENER_DATA = ")
+        jsf.write("window.SCREENER_DATA = window.SCREENER_UNIVERSE = ")
         json.dump(payload, jsf)
         jsf.write(";\n")
     print(f"✅ Saved JS sidecar to: {out_js}")
