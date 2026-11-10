@@ -2,7 +2,7 @@ const http = require('http');
 const https = require('https');
 const url = require('url');
 
-const PORT = 9090;
+const PORT = process.env.PORT || 9090;
 
 const server = http.createServer((req, res) => {
   // Set CORS headers
@@ -94,11 +94,25 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // 3. Route Yahoo Finance / Chart requests (using ?url= parameter)
+  // 3. Route Yahoo Finance / Chart / TradingView Scanner requests (using ?url= parameter)
   const targetUrl = parsedUrl.query.url;
   if (!targetUrl) {
     res.writeHead(400, { 'Content-Type': 'text/plain' });
     res.end('Missing URL path or "url" query parameter.');
+    return;
+  }
+
+  if (req.method === 'POST' || req.method === 'PUT') {
+    let bodyData = [];
+    req.on('data', chunk => {
+      bodyData.push(chunk);
+    }).on('end', () => {
+      const rawBody = Buffer.concat(bodyData).toString();
+      const extraHeaders = {};
+      if (req.headers['content-type']) extraHeaders['Content-Type'] = req.headers['content-type'];
+      console.log(`[Proxy] ${req.method} -> ${targetUrl}`);
+      sendProxyRequest(req, res, targetUrl, req.method, rawBody, extraHeaders);
+    });
     return;
   }
 

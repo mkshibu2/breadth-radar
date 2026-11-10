@@ -4133,17 +4133,54 @@
         range: [0, 3000]
       };
 
+      var payloadStr = JSON.stringify(payload);
+      var resp = null;
+      var lastErr = null;
+
+      // Method 1: Direct fetch with text/plain (CORS safelisted; avoids browser OPTIONS preflight rejected by TV)
       try {
-        var resp = await fetch('https://scanner.tradingview.com/india/scan', {
+        var directCtrl = new AbortController();
+        var directTimer = setTimeout(function () { directCtrl.abort(); }, 12000);
+        resp = await fetch('https://scanner.tradingview.com/india/scan', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'text/plain;charset=UTF-8'
           },
-          body: JSON.stringify(payload)
+          body: payloadStr,
+          signal: directCtrl.signal
         });
-
+        clearTimeout(directTimer);
         if (!resp.ok) {
           throw new Error('Scanner API returned HTTP ' + resp.status);
+        }
+      } catch (e1) {
+        lastErr = e1;
+        console.warn('Direct TradingView fetch failed, attempting local proxy fallback...', e1);
+
+        // Method 2: Local Unified CORS proxy (http://localhost:9090) if running
+        try {
+          var proxyCtrl = new AbortController();
+          var proxyTimer = setTimeout(function () { proxyCtrl.abort(); }, 15000);
+          resp = await fetch('http://localhost:9090/?url=' + encodeURIComponent('https://scanner.tradingview.com/india/scan'), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: payloadStr,
+            signal: proxyCtrl.signal
+          });
+          clearTimeout(proxyTimer);
+          if (!resp.ok) {
+            throw new Error('Local proxy returned HTTP ' + resp.status);
+          }
+        } catch (e2) {
+          lastErr = e2;
+        }
+      }
+
+      try {
+        if (!resp || !resp.ok) {
+          throw new Error((lastErr && lastErr.message) || 'Scanner API request failed');
         }
 
         var json = await resp.json();
