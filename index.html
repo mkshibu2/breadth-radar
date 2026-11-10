@@ -13,88 +13,190 @@
   <meta property="og:title" content="NSE Breadth Radar">
   <meta property="og:description" content="Clarity in every market cycle — built for the Indian swing trader">
   <title>NSE Breadth Radar v7</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@600;700;800&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@600;700;800&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="index.css?v=3.0.7">
+  <script>
+    (function() {
+      var m = localStorage.getItem('tj_color_mode') || 'carbon';
+      document.documentElement.setAttribute('data-theme', m);
+    })();
+  </script>
   <script src="lightweight-charts.standalone.production.js"></script>
 </head>
 
 <body>
 
-  <div class="hdr">
-    <div class="hdr-logo" style="display:flex;align-items:center;gap:8px;">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" style="flex-shrink:0">
-        <rect width="24" height="24" rx="4" fill="#1c2638" />
-        <rect x="2" y="17" width="3" height="5" rx=".5" fill="#f87171" opacity=".9" />
-        <rect x="6" y="14" width="3" height="8" rx=".5" fill="#fb923c" opacity=".9" />
-        <rect x="10" y="11" width="3" height="11" rx=".5" fill="#fbbf24" opacity=".9" />
-        <rect x="14" y="8" width="3" height="14" rx=".5" fill="#34d399" opacity=".9" />
-        <rect x="18" y="5" width="3" height="17" rx=".5" fill="#4ade80" opacity=".9" />
-        <path d="M 2 19 Q 12 3 22 19" fill="none" stroke="#5ba3f5" stroke-width="1.2" stroke-linecap="round"
-          opacity=".7" />
-        <circle cx="12" cy="4" r="1.2" fill="#5ba3f5" />
-      </svg>
-      NSE <em>BREADTH</em> RADAR
-    </div>
-    <div class="hdr-right">
-      <div class="hdr-tag">Universe: <b>N500+MSc400</b></div>
-      <div class="hdr-tag" id="hdr-date"></div>
-      <div class="guest-badge" id="guest-badge">👁 Guest View</div>
-      <button class="guest-pull-btn" id="guest-pull-btn" onclick="guestPullData()"
-        title="Pull latest data from the cloud">
-        🔄 Pull Data
+  <div class="shell">
+
+    <!-- MOBILE TOPBAR (<992px) -->
+    <div class="mobile-topbar" id="mobileTopbar">
+      <button class="mobile-menu-btn" id="menuToggleBtn" onclick="toggleMobileSidebar()" aria-label="Toggle navigation menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
       </button>
-      <button class="guest-exit-btn" id="guest-exit-btn" onclick="cfgExitGuest()"
-        title="Exit Guest Mode and clear local data">
-        Exit Guest Mode
-      </button>
-      <button class="hdr-fullchart-btn" onclick="openFullPageChart()" title="Open Full-Screen TradingView Chart Studio">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="flex-shrink:0">
-          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
-          <polyline points="16 7 22 7 22 13"></polyline>
-        </svg>
-        Full Chart
-      </button>
-      <button class="cp-btn" onclick="openControlPanel()" title="Open Control Panel — EOD Data Entry &amp; Settings">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-          style="flex-shrink:0">
-          <rect x="3" y="3" width="7" height="7" rx="1" />
-          <rect x="14" y="3" width="7" height="7" rx="1" />
-          <rect x="3" y="14" width="7" height="7" rx="1" />
-          <rect x="14" y="14" width="7" height="7" rx="1" />
-        </svg>
-        Control Panel
-      </button>
-      <div class="sync-status" onclick="showSetup()" title="Cloud sync settings">
-        <div class="sync-dot" id="sync-dot"></div>
-        <span id="sync-label">Not Configured</span>
+      <div class="mobile-brand">
+        <div class="brand-mark">BR</div>
+        <span class="brand-title">NSE <em>BREADTH</em> RADAR</span>
       </div>
+      <button class="mobile-refresh-btn" onclick="vcpbFetch(true)" title="Refresh breadth data">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+      </button>
     </div>
-  </div>
 
-  <div class="src-bar">
-    <button class="src-btn" onclick="openEodChecklistModal()"
-      style="color:var(--lime);border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.08);cursor:pointer;font-weight:700"><span class="dot"
-        style="background:var(--lime)"></span>⚡ 60s EOD Checklist</button>
-    <a class="src-btn" href="playbook.html" target="_blank"
-      style="color:var(--yellow);border-color:rgba(251,191,36,.25);background:rgba(251,191,36,.04)"><span class="dot"
-        style="background:var(--yellow)"></span>📋 Playbook</a>
-    <a class="src-btn" href="https://mkshibu2.github.io/trading-manual/" target="_blank"
-      style="color:var(--teal);border-color:rgba(45,212,191,.3);background:rgba(45,212,191,.04)"><span class="dot"
-        style="background:var(--teal)"></span>📊 Trading Model</a>
-    <a class="src-btn" href="aiprompt.html" target="_blank"
-      style="color:var(--purple);border-color:rgba(168,85,247,.3);background:rgba(168,85,247,.04)"><span class="dot"
-        style="background:var(--purple)"></span>🤖 AI Prompt</a>
-    <a class="src-btn" href="screener.html" target="_blank"
-      style="color:#38bdf8;border-color:rgba(56,189,248,.35);background:rgba(56,189,248,.08);font-weight:700"><span class="dot"
-        style="background:#38bdf8"></span>🎯 Stock Screener ↗</a>
-    <a class="src-btn" href="TJ.html" target="_blank"
-      style="color:var(--orange);border-color:rgba(251,146,60,.25);background:rgba(251,146,60,.04)"><span class="dot"
-        style="background:var(--orange)"></span>📓 Trade Journal ↗</a>
-  </div>
+    <!-- BACKDROP FOR MOBILE DRAWER -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar(false)"></div>
 
-  <div class="page">
+    <!-- LEFT NAVIGATION SIDEBAR (Matching Trade Journal TJ.html) -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="mark">BR</div>
+        <div class="brand-info">
+          <div class="name">Breadth Radar</div>
+          <div class="sub" id="sidebar-market-sub">NSE Market Diagnostics</div>
+        </div>
+      </div>
+
+      <div class="nav-section-title">WORKSPACES</div>
+      <div class="nav-list">
+        <a class="nav-item active" data-target="sec-overview" onclick="sidebarNav('sec-overview')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+          <span>Overview</span>
+        </a>
+        <a class="nav-item" data-target="srt-home-card" onclick="sidebarNav('srt-home-card')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          <span>Sector Command</span>
+        </a>
+        <a class="nav-item" data-target="ftd-module-card" onclick="sidebarNav('ftd-module-card')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span>FTD Tracker &amp; MPM</span>
+        </a>
+        <a class="nav-item" data-target="pet-card" onclick="sidebarNav('pet-card')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          <span>Exposure (PET)</span>
+        </a>
+        <a class="nav-item" data-target="bsr-module-card" onclick="sidebarNav('bsr-module-card')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>Breakout Rate (BSR)</span>
+        </a>
+        <a class="nav-item" data-target="sec-score-trend" onclick="sidebarNav('sec-score-trend')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span>30-Day Trend</span>
+        </a>
+        <a class="nav-item" data-target="sec-history" onclick="sidebarNav('sec-history')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+          <span>30-Day History</span>
+        </a>
+      </div>
+
+      <div class="nav-section-title">TRADING SUITE</div>
+      <div class="nav-list">
+        <a href="screener.html" target="_blank" class="nav-item nav-suite-link highlight-screener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          <span style="color:#38bdf8;font-weight:600">Stock Screener ↗</span>
+        </a>
+        <a href="TJ.html" target="_blank" class="nav-item nav-suite-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span style="color:var(--gold);font-weight:600">Trade Journal ↗</span>
+        </a>
+        <a href="playbook.html" target="_blank" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span>Playbook</span>
+        </a>
+        <a href="https://mkshibu2.github.io/trading-manual/" target="_blank" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          <span>Trading Model</span>
+        </a>
+        <a href="aiprompt.html" target="_blank" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="16" y1="16" x2="16.01" y2="16"/></svg>
+          <span>AI Prompt</span>
+        </a>
+      </div>
+
+      <div class="nav-section-title">QUICK ACTIONS</div>
+      <div class="nav-list">
+        <button class="nav-item nav-action-btn" onclick="openEodChecklistModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span style="color:var(--lime);font-weight:600">60s EOD Checklist</span>
+        </button>
+        <button class="nav-item nav-action-btn" onclick="openFullPageChart()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+          <span>Full Chart Studio</span>
+        </button>
+        <button class="nav-item nav-action-btn" onclick="openControlPanel()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Control Panel</span>
+        </button>
+      </div>
+
+      <!-- SIDEBAR FOOTER (MATCHING TJ) -->
+      <div class="side-foot">
+        <div class="theme-box">
+          <span class="theme-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            Theme
+          </span>
+          <select id="sidebarThemeSelect" class="theme-select" onchange="setColorMode(this.value)">
+            <option value="carbon">Carbon Black</option>
+            <option value="warmcharcoal">Warm Charcoal</option>
+            <option value="darkgray">Dark Gray</option>
+            <option value="light">Light</option>
+          </select>
+        </div>
+
+        <button id="sidebarRefreshBtn" class="side-refresh-btn" onclick="vcpbFetch(true)" title="Refresh Sector Breadth &amp; Market Data">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          <span>Refresh Breadth</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN WORKSPACE -->
+    <div class="main">
+
+      <div class="hdr">
+        <div class="hdr-left" style="display:flex;align-items:center;gap:8px;">
+          <div class="hdr-tag">Universe: <b>N500+MSc400</b></div>
+          <div class="hdr-tag" id="hdr-date"></div>
+        </div>
+        <div class="hdr-right">
+          <div class="guest-badge" id="guest-badge">👁 Guest View</div>
+          <button class="guest-pull-btn" id="guest-pull-btn" onclick="guestPullData()"
+            title="Pull latest data from the cloud">
+            🔄 Pull Data
+          </button>
+          <button class="guest-exit-btn" id="guest-exit-btn" onclick="cfgExitGuest()"
+            title="Exit Guest Mode and clear local data">
+            Exit Guest Mode
+          </button>
+          <button class="hdr-fullchart-btn" onclick="openFullPageChart()" title="Open Full-Screen TradingView Chart Studio">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="flex-shrink:0">
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+              <polyline points="16 7 22 7 22 13"></polyline>
+            </svg>
+            Full Chart
+          </button>
+          <button class="cp-btn" onclick="openControlPanel()" title="Open Control Panel — EOD Data Entry &amp; Settings">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              style="flex-shrink:0">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+            Control Panel
+          </button>
+          <div class="sync-status" onclick="showSetup()" title="Cloud sync settings">
+            <div class="sync-dot" id="sync-dot"></div>
+            <span id="sync-label">Not Configured</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="page">
+        <div id="sec-overview"></div>
 
     <div class="status-strip card">
 
@@ -849,7 +951,7 @@
 
         </div>
 
-        <div class="card">
+        <div class="card" id="sec-score-trend">
           <div class="card-head">
             <div class="card-title">30-Day Score Trend</div><button class="info-btn"
               onclick="showInfoTip('score-trend',this)" title="About this indicator">i</button>
@@ -868,7 +970,7 @@
         </div>
 
 
-        <div class="card">
+        <div class="card" id="sec-history">
           <div class="card-head" style="cursor:pointer" onclick="toggleCollapse('hist-body-wrap','hist-toggle-icon')">
             <div class="card-title">30-Day History</div>
             <div style="display:flex;align-items:center;gap:8px">
@@ -1530,6 +1632,9 @@
         advice</span>
     </div>
   </div>
+
+    </div> <!-- end .main -->
+  </div> <!-- end .shell -->
 
   <script src="index.js?v=3.0.7"></script>
 
@@ -3396,8 +3501,96 @@
     </div>
   </div>
 
-</body>
+  <script>
+    // Theme Management matching Trade Journal (TJ.html)
+    function getColorMode() {
+      return document.documentElement.getAttribute('data-theme') || localStorage.getItem('tj_color_mode') || 'carbon';
+    }
 
-</html>
+    function setColorMode(mode, fromUserClick = true) {
+      const validModes = ['carbon', 'warmcharcoal', 'darkgray', 'light'];
+      if (!validModes.includes(mode)) mode = 'carbon';
+      document.documentElement.setAttribute('data-theme', mode);
+      localStorage.setItem('tj_color_mode', mode);
+
+      const sideSelect = document.getElementById('sidebarThemeSelect');
+      if (sideSelect && sideSelect.value !== mode) {
+        sideSelect.value = mode;
+      }
+
+      // Re-trigger sparklines or chart redraw if supported
+      try {
+        if (typeof renderAllSparklines === 'function') renderAllSparklines();
+      } catch (e) {}
+    }
+
+    // Mobile sidebar drawer
+    function toggleMobileSidebar(forceState) {
+      const sidebar = document.getElementById('sidebar');
+      const backdrop = document.getElementById('sidebarBackdrop');
+      if (!sidebar) return;
+      const shouldOpen = (typeof forceState === 'boolean') ? forceState : !sidebar.classList.contains('open');
+      if (shouldOpen) {
+        sidebar.classList.add('open');
+        if (backdrop) backdrop.classList.add('show');
+      } else {
+        sidebar.classList.remove('open');
+        if (backdrop) backdrop.classList.remove('show');
+      }
+    }
+
+    // Sidebar smooth navigation
+    function sidebarNav(targetId) {
+      const el = document.getElementById(targetId);
+      if (el) {
+        // Expand history table if navigating to history
+        if (targetId === 'sec-history') {
+          const wrap = document.getElementById('hist-body-wrap');
+          if (wrap && wrap.style.display === 'none') {
+            if (typeof toggleCollapse === 'function') toggleCollapse('hist-body-wrap', 'hist-toggle-icon');
+          }
+        }
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.querySelectorAll('.sidebar .nav-item').forEach(item => item.classList.remove('active'));
+        const activeItem = document.querySelector(`.sidebar .nav-item[data-target="${targetId}"]`);
+        if (activeItem) activeItem.classList.add('active');
+      }
+      toggleMobileSidebar(false);
+    }
+
+    // Sync active sidebar state on scroll
+    window.addEventListener('scroll', () => {
+      const sections = ['sec-overview', 'srt-home-card', 'ftd-module-card', 'pet-card', 'bsr-module-card', 'sec-score-trend', 'sec-history'];
+      const scrollPos = window.scrollY + 120;
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const el = document.getElementById(sections[i]);
+        if (el && el.offsetTop <= scrollPos) {
+          document.querySelectorAll('.sidebar .nav-item').forEach(item => item.classList.remove('active'));
+          const activeItem = document.querySelector(`.sidebar .nav-item[data-target="${sections[i]}"]`);
+          if (activeItem) activeItem.classList.add('active');
+          break;
+        }
+      }
+    }, { passive: true });
+
+    // Initialize sidebar theme select on DOM ready
+    document.addEventListener('DOMContentLoaded', () => {
+      const current = getColorMode();
+      const sideSelect = document.getElementById('sidebarThemeSelect');
+      if (sideSelect) sideSelect.value = current;
+
+      // Update market status subtitle dynamically when data loads
+      setTimeout(() => {
+        const zoneEl = document.getElementById('h-zone');
+        const scoreEl = document.getElementById('h-score');
+        const subEl = document.getElementById('sidebar-market-sub');
+        if (zoneEl && scoreEl && subEl && zoneEl.textContent !== 'No Data' && zoneEl.textContent !== '—') {
+          subEl.textContent = `${zoneEl.textContent} (${scoreEl.textContent}/100)`;
+        }
+      }, 1500);
+    });
+  </script>
+
+</body>
 
 </html>
