@@ -1458,6 +1458,391 @@
       align-items: center;
       gap: 14px;
     }
+
+    /* ==============================================================================
+       MOBILE RESPONSIVE ENHANCEMENTS (< 768px)
+       ============================================================================== */
+    @media (max-width: 768px) {
+      /* 1. Global Page Flow: unlock 100vh lock to allow fluid natural scrolling */
+      html, body {
+        height: auto !important;
+        min-height: 100% !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* 2. Topbar Navigation: compact & touch-friendly */
+      .topbar {
+        height: auto;
+        min-height: 44px;
+        padding: 6px 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .brand-group {
+        width: 100%;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .brand {
+        font-size: 15px;
+        letter-spacing: 0.8px;
+      }
+
+      .nav-links {
+        gap: 4px;
+      }
+
+      .nav-link {
+        font-size: 10px;
+        padding: 3px 7px;
+      }
+
+      .topbar-right {
+        width: 100%;
+        justify-content: flex-start;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 6px;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+      }
+
+      .topbar-right::-webkit-scrollbar {
+        display: none;
+      }
+
+      .btn-sync-tv,
+      .btn-sync-funda {
+        padding: 4px 9px;
+        font-size: 10px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .radar-badge {
+        padding: 3px 8px;
+        font-size: 10px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      /* 3. Screener Header: compact title, swipable favorites & actions */
+      .screener-header {
+        padding: 8px 12px 6px;
+      }
+
+      .screener-title-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+
+      .screener-title-area {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+
+      .preset-selector-btn {
+        font-size: 18px;
+        padding: 2px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 88vw;
+      }
+
+      /* Swipable Favorite Preset Pills */
+      .fav-quick-nav {
+        margin-left: 0;
+        width: 100%;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        gap: 6px;
+        padding: 2px 0 4px;
+        scrollbar-width: none;
+      }
+
+      .fav-quick-nav::-webkit-scrollbar {
+        display: none;
+      }
+
+      .fav-nav-btn {
+        flex-shrink: 0;
+        font-size: 10px;
+        padding: 4px 9px;
+      }
+
+      /* Swipable Preset Action Buttons */
+      .preset-actions {
+        width: 100%;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        gap: 6px;
+        padding-bottom: 3px;
+        scrollbar-width: none;
+      }
+
+      .preset-actions::-webkit-scrollbar {
+        display: none;
+      }
+
+      .preset-actions .btn {
+        flex-shrink: 0;
+        padding: 4px 8px;
+        font-size: 10px;
+      }
+
+      /* 4. Filter Chips Bar: Horizontal Swipable Pill Carousel (Saves 150px vertical height!) */
+      .filter-bar {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        gap: 6px;
+        padding: 4px 0 6px;
+        scrollbar-width: none;
+      }
+
+      .filter-bar::-webkit-scrollbar {
+        display: none;
+      }
+
+      .chip {
+        flex-shrink: 0;
+        font-size: 10px;
+        padding: 3px 6px 3px 8px;
+        white-space: nowrap;
+      }
+
+      .chip-add {
+        flex-shrink: 0;
+      }
+
+      /* 5. Toolbar & View Tabs: Horizontal Scroll + Responsive Search */
+      .toolbar-wrap {
+        padding: 6px 12px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+      }
+
+      .view-tabs {
+        width: 100%;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        gap: 2px;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+      }
+
+      .view-tabs::-webkit-scrollbar {
+        display: none;
+      }
+
+      .view-tab {
+        flex-shrink: 0;
+        font-size: 10px;
+        padding: 4px 8px;
+        white-space: nowrap;
+      }
+
+      .table-tools {
+        width: 100%;
+        justify-content: space-between;
+        gap: 6px;
+      }
+
+      .search-input-wrap {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .search-input {
+        width: 100% !important;
+        padding: 4px 8px 4px 24px;
+        font-size: 11px;
+      }
+
+      .match-count {
+        flex-shrink: 0;
+        font-size: 10px;
+        padding: 3px 6px;
+        white-space: nowrap;
+      }
+
+      #split-view-btn,
+      .table-tools .btn {
+        padding: 4px 8px;
+        font-size: 10px;
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+
+      #split-view-btn-txt {
+        display: none !important;
+      }
+
+      #split-view-btn {
+        padding: 4px 7px;
+      }
+
+      /* 6. Main Workspace & High-Capacity Stock List Table */
+      .workspace-container {
+        flex: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: visible !important;
+        width: 100%;
+      }
+
+      /* Significantly increased table height to accommodate all filtered stocks comfortably */
+      .table-container {
+        flex: none !important;
+        width: 100%;
+        min-height: 65vh !important;
+        max-height: 78vh !important;
+        overflow-x: auto !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        border-bottom: 1px solid var(--border);
+      }
+
+      /* Sticky Table Header on Mobile */
+      thead tr {
+        position: sticky;
+        top: 0;
+        z-index: 25;
+      }
+
+      /* Sticky Symbol Column on Mobile Horizontal Scroll */
+      th:first-child,
+      td:first-child {
+        position: sticky;
+        left: 0;
+        background: #0a1424;
+        z-index: 15;
+        box-shadow: 2px 0 6px rgba(0, 0, 0, 0.45);
+      }
+
+      thead th:first-child {
+        z-index: 30;
+      }
+
+      tbody tr:hover td:first-child,
+      tbody tr.selected-row td:first-child {
+        background: #11233f;
+      }
+
+      td {
+        padding: 6px 8px;
+        font-size: 11px;
+      }
+
+      .sym-avatar {
+        width: 18px;
+        height: 18px;
+        font-size: 10px;
+      }
+
+      .sym-name {
+        font-size: 11px;
+      }
+
+      .comp-sub {
+        max-width: 120px;
+        font-size: 9px;
+      }
+
+      /* 7. Split Chart Panel on Mobile: Stacks Below Table With Proper Dimensions */
+      .chart-panel {
+        width: 100% !important;
+        min-width: 0 !important;
+        height: 420px !important;
+        min-height: 380px !important;
+        border-left: none !important;
+        border-top: 2px solid var(--border) !important;
+        margin-top: 8px;
+      }
+
+      .chart-panel-header {
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 6px 10px;
+      }
+
+      .chart-title-group {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .chart-comp {
+        max-width: 100px;
+      }
+
+      .chart-sub-bar {
+        padding: 4px 8px;
+        font-size: 10px;
+      }
+
+      .chart-quarterly-box {
+        right: 48px;
+        bottom: 78px;
+        padding: 3px 5px;
+      }
+
+      .qtr-table {
+        font-size: 10px;
+      }
+
+      /* 8. Status Footer on Mobile: Compact Clean Display */
+      .status-footer {
+        padding: 8px 12px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        font-size: 10px;
+      }
+
+      .status-left {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .footer-shortcuts,
+      .footer-dot-shortcut,
+      .footer-sync-info {
+        display: none !important;
+      }
+
+      /* 9. Modals on Mobile: Full Width Responsive Box */
+      .modal-overlay {
+        padding: 10px;
+      }
+
+      .modal-box {
+        max-height: 92vh;
+      }
+
+      .filter-pill-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .chip-popover {
+        width: calc(100vw - 24px) !important;
+        max-width: 320px;
+        left: 12px !important;
+      }
+    }
   </style>
 </head>
 
@@ -1796,14 +2181,14 @@
       <span>•</span>
       <span style="cursor:pointer;color:#fcd34d;" onclick="openShortlistDrawer()" title="View Shortlisted Candidates">★
         Shortlisted: <b id="footer-shortlist-count">0 stocks</b></span>
-      <span>•</span>
-      <span style="color:var(--text-dim)">Shortcuts: <kbd
+      <span class="footer-dot-shortcut">•</span>
+      <span class="footer-shortcuts" style="color:var(--text-dim)">Shortcuts: <kbd
           style="background:#131e33;padding:1px 5px;border-radius:3px;">↑</kbd> <kbd
           style="background:#131e33;padding:1px 5px;border-radius:3px;">↓</kbd> flip charts &bull; <kbd
           style="background:#131e33;padding:1px 5px;border-radius:3px;">W</kbd> shortlist &bull; <kbd
           style="background:#131e33;padding:1px 5px;border-radius:3px;">T</kbd> send to TV</span>
     </div>
-    <div>
+    <div class="footer-sync-info">
       <span>TradingView Live Data Engine Synchronized &bull; Dedicated TV Studio Sync</span>
     </div>
   </footer>
@@ -3179,6 +3564,43 @@
       if (_savedOffset && !isNaN(Number(_savedOffset))) _userZoomRightOffset = Math.max(0, Math.min(30, Number(_savedOffset)));
     } catch (e) { }
 
+    function resetChartPriceScale(chartInstance, scaleId) {
+      if (!chartInstance) return;
+      scaleId = scaleId || 'right';
+      try {
+        var psApi = chartInstance.priceScale(scaleId);
+        if (!psApi) return;
+
+        var internalPs = typeof psApi.Ei === 'function' ? psApi.Ei() : null;
+
+        if (psApi.Ub && typeof psApi.Ub.$t === 'function') {
+          var model = psApi.Ub.$t();
+          if (typeof model.Lc === 'function') {
+            var target = model.Lc(scaleId);
+            if (target && target.Ht && target.Dt) {
+              if (typeof model.A_ === 'function') {
+                model.A_(target.Ht, target.Dt);
+              } else if (typeof target.Ht.A_ === 'function') {
+                target.Ht.A_(target.Dt);
+              }
+            }
+          }
+        }
+
+        if (internalPs) {
+          if (typeof internalPs.Po === 'function') internalPs.Po(null);
+          if (typeof internalPs.So === 'function') internalPs.So({ Nn: true });
+          if (typeof internalPs.Sa === 'function') internalPs.Sa();
+        }
+
+        psApi.applyOptions({ autoScale: true });
+      } catch (e) {
+        try {
+          chartInstance.priceScale(scaleId).applyOptions({ autoScale: true });
+        } catch (err) { }
+      }
+    }
+
     function applyPreservedChartZoom(candleCount, isWeekly) {
       if (!_lwScreenerChart || !candleCount) return;
       var ts = _lwScreenerChart.timeScale();
@@ -3204,6 +3626,8 @@
       var isWk = (ACTIVE_CHART_TIMEFRAME === 'W');
       var range = _lwScreenerChart.timeScale().getVisibleLogicalRange();
       var span = range ? (range.to - range.from) : 0;
+
+      resetChartPriceScale(_lwScreenerChart, 'right');
 
       if (span && span < _currentCandles.length * 0.85) {
         // Currently zoomed in -> Fit all bars
@@ -3245,12 +3669,16 @@
             var container = document.getElementById('chart-lw-container');
             if (container && container.clientWidth > 0) {
               _lwScreenerChart.resize(container.clientWidth, container.clientHeight);
+              resetChartPriceScale(_lwScreenerChart, 'right');
               if (_currentCandles && _currentCandles.length > 0) {
                 applyPreservedChartZoom(_currentCandles.length, (ACTIVE_CHART_TIMEFRAME === 'W'));
               }
             }
           }
-        }, 100);
+          if (window.innerWidth <= 768 && panel) {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 120);
       } else {
         panel.classList.remove('show');
         btn.classList.remove('btn-active');
@@ -3404,6 +3832,13 @@
         }
       });
 
+      _lwScreenerChart.subscribeDblClick(function () {
+        resetChartPriceScale(_lwScreenerChart, 'right');
+        if (_currentCandles && _currentCandles.length > 0) {
+          applyPreservedChartZoom(_currentCandles.length, (ACTIVE_CHART_TIMEFRAME === 'W'));
+        }
+      });
+
       if (!_lwResizeObserver && window.ResizeObserver) {
         _lwResizeObserver = new ResizeObserver(function (entries) {
           if (!entries || !entries.length) return;
@@ -3411,6 +3846,7 @@
           var cr = entry.contentRect;
           if (cr.width > 0 && cr.height > 0 && _lwScreenerChart) {
             _lwScreenerChart.resize(cr.width, cr.height);
+            resetChartPriceScale(_lwScreenerChart, 'right');
             if (_currentCandles && _currentCandles.length > 0) {
               applyPreservedChartZoom(_currentCandles.length, (ACTIVE_CHART_TIMEFRAME === 'W'));
             }
@@ -3731,6 +4167,7 @@
         _lwEma50Series.setData(_showEma50 ? e50Data : []);
         _lwSma200Series.setData(_showSma200 ? s200Data : []);
 
+        resetChartPriceScale(_lwScreenerChart, 'right');
         applyPreservedChartZoom(candles.length, (tf === 'W'));
         updateLegendValues(null);
       } catch (err) {

@@ -115,11 +115,29 @@ def fetch_single_quarterly(symbol, max_retries=2):
             time.sleep(0.6)
     return symbol, None
 
+def load_screener_universe():
+    if STOCKS_JSON.exists():
+        try:
+            with open(STOCKS_JSON, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    if STOCKS_JS.exists():
+        try:
+            with open(STOCKS_JS, 'r', encoding='utf-8') as f:
+                content = f.read()
+            marker = "window.SCREENER_DATA = window.SCREENER_UNIVERSE = "
+            if marker in content:
+                json_part = content.split(marker, 1)[1].rstrip(";\n ")
+                return json.loads(json_part)
+        except Exception as e:
+            print(f"Error reading {STOCKS_JS.name}: {e}")
+    return None
+
 def update_screener_files(store):
-    if not STOCKS_JSON.exists():
+    data = load_screener_universe()
+    if not data:
         return
-    with open(STOCKS_JSON, 'r', encoding='utf-8') as f:
-        data = json.load(f)
 
     stocks = data.get('stocks', [])
     updated = 0
@@ -130,30 +148,30 @@ def update_screener_files(store):
             updated += 1
 
     data['stocks'] = stocks
-    with open(STOCKS_JSON, 'w', encoding='utf-8') as f:
-        json.dump(data, f, separators=(',', ':'))
+    if STOCKS_JSON.exists():
+        with open(STOCKS_JSON, 'w', encoding='utf-8') as f:
+            json.dump(data, f, separators=(',', ':'))
 
-    if STOCKS_JS.exists():
-        with open(STOCKS_JS, 'w', encoding='utf-8') as jsf:
-            jsf.write("/* Auto-generated TradingView Universe & Fundamentals */\n")
-            jsf.write("window.EXACT_QUARTERLY_DATA = ")
-            json.dump(store, jsf, separators=(',', ':'))
-            jsf.write(";\n")
-            jsf.write("window.SCREENER_DATA = window.SCREENER_UNIVERSE = ")
-            json.dump(data, jsf, separators=(',', ':'))
-            jsf.write(";\n")
-    print(f"✓ Synced {updated} stocks with verified fundamentals in screener_stocks.json & screener_stocks.js")
+    with open(STOCKS_JS, 'w', encoding='utf-8') as jsf:
+        jsf.write("/* Auto-generated TradingView Universe & Fundamentals */\n")
+        jsf.write("window.EXACT_QUARTERLY_DATA = ")
+        json.dump(store, jsf, separators=(',', ':'))
+        jsf.write(";\n")
+        jsf.write("window.SCREENER_DATA = window.SCREENER_UNIVERSE = ")
+        json.dump(data, jsf, separators=(',', ':'))
+        jsf.write(";\n")
+    print(f"✓ Synced {updated} stocks with verified fundamentals in screener_stocks.js")
 
 def main():
     store = load_exact_store()
     print(f"Loaded {len(store)} verified records from {STORE_FILE.name}")
 
-    if not STOCKS_JSON.exists():
-        print("screener_stocks.json not found")
+    data = load_screener_universe()
+    if not data:
+        print("Neither screener_stocks.json nor screener_stocks.js found")
         return
 
-    with open(STOCKS_JSON, 'r', encoding='utf-8') as f:
-        stocks = json.load(f).get('stocks', [])
+    stocks = data.get('stocks', [])
 
     symbols = [s['symbol'] for s in stocks]
     to_fetch = [s for s in symbols if s not in store or not store[s] or len(store[s]) < 3]
