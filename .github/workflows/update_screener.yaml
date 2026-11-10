@@ -55,8 +55,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Stage both the HTML report AND both JSON sidecars
-          git add vcp_scanner_results.html
+          # Stage the JSON sidecars required for Sector Command breadth tracking
           git add sector_breadth.json
           git add sector_stocks.json
 

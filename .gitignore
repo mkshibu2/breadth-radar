@@ -1,2 +1,9 @@
 __pycache__/
 *.pyc
+
+# Large local cache (browser loads screener_stocks.js directly)
+screener_stocks.json
+
+# Obsolete static report (now superseded by screener.html)
+vcp_scanner_results.html
+

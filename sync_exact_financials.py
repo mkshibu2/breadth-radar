@@ -131,16 +131,16 @@ def update_screener_files(store):
 
     data['stocks'] = stocks
     with open(STOCKS_JSON, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=2)
+        json.dump(data, f, separators=(',', ':'))
 
     if STOCKS_JS.exists():
         with open(STOCKS_JS, 'w', encoding='utf-8') as jsf:
             jsf.write("/* Auto-generated TradingView Universe & Fundamentals */\n")
             jsf.write("window.EXACT_QUARTERLY_DATA = ")
-            json.dump(store, jsf)
+            json.dump(store, jsf, separators=(',', ':'))
             jsf.write(";\n")
             jsf.write("window.SCREENER_DATA = window.SCREENER_UNIVERSE = ")
-            json.dump(data, jsf)
+            json.dump(data, jsf, separators=(',', ':'))
             jsf.write(";\n")
     print(f"✓ Synced {updated} stocks with verified fundamentals in screener_stocks.json & screener_stocks.js")
 

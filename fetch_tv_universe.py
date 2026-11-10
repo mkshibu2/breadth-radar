@@ -308,16 +308,16 @@ def parse_and_save(rows):
     }
 
     with open(out_json, 'w', encoding='utf-8') as jf:
-        json.dump(payload, jf, indent=2)
+        json.dump(payload, jf, separators=(',', ':'))
     print(f"✅ Saved full universe ({len(records)} stocks) to: {out_json}")
 
     with open(out_js, 'w', encoding='utf-8') as jsf:
         jsf.write("/* Auto-generated TradingView Full Universe Screener Data */\n")
         jsf.write("window.EXACT_QUARTERLY_DATA = ")
-        json.dump(exact_store, jsf)
+        json.dump(exact_store, jsf, separators=(',', ':'))
         jsf.write(";\n")
         jsf.write("window.SCREENER_DATA = window.SCREENER_UNIVERSE = ")
-        json.dump(payload, jsf)
+        json.dump(payload, jsf, separators=(',', ':'))
         jsf.write(";\n")
     print(f"✅ Saved JS sidecar to: {out_js}")
 
