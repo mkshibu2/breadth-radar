@@ -793,7 +793,40 @@
       color: #c9d6e4;
     }
 
-    /* TOAST & SHORTLIST STYLES */
+    /* FAVORITE SCREENS STYLES */
+.fav-quick-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 14px;
+  flex-wrap: wrap;
+}
+.fav-nav-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.fav-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.fav-nav-btn.active {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: #f59e0b;
+  color: #fcd34d;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
+  font-weight: 700;
+}
+
+/* TOAST & SHORTLIST STYLES */
     .star-btn {
       font-size: 14px;
       color: var(--text-muted);
@@ -1439,16 +1472,32 @@
       <div class="screener-title-area">
         <div>
           <div class="screener-cat">Stock Screener</div>
-          <button class="preset-selector-btn" id="preset-btn" onclick="togglePresetDropdown()">
-            <span id="current-preset-name">PrimaryScan-PowerPlay</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </button>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button class="preset-selector-btn" id="preset-btn" onclick="togglePresetDropdown()">
+              <span id="current-preset-name">Momentum Leaders</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- QUICK SWITCHER PILLS FOR 4 FAVORITE SCREENS -->
+        <div class="fav-quick-nav">
+          <button class="fav-nav-btn active" id="fav-nav-Momentum-Leaders" onclick="selectPreset('Momentum-Leaders')" title="Momentum Leaders">⭐ Momentum Leaders</button>
+          <button class="fav-nav-btn" id="fav-nav-Post-Advance-Base" onclick="selectPreset('Post-Advance-Base')" title="Post-Advance Base Formation">⭐ Post-Advance Base</button>
+          <button class="fav-nav-btn" id="fav-nav-IPO-Bases" onclick="selectPreset('IPO-Bases')" title="IPO Bases">⭐ IPO Bases</button>
+          <button class="fav-nav-btn" id="fav-nav-Stage2-Transition" onclick="selectPreset('Stage2-Transition')" title="Stage 2 Transition">⭐ Stage 2 Transition</button>
         </div>
 
         <!-- PRESETS DROPDOWN MENU -->
         <div class="dropdown-menu" id="preset-dropdown">
+          <div class="dropdown-header" style="color:#fcd34d;display:flex;align-items:center;justify-content:space-between;">
+            <span>⭐ FAVORITE SCREENS</span>
+            <span class="badge badge-yellow" style="font-size:9px;">4 Core Setups</span>
+          </div>
+          <div id="favorite-presets-list"></div>
+          <div class="dropdown-divider"></div>
           <div class="dropdown-header">Built-In Trading Setups</div>
           <div id="factory-presets-list"></div>
           <div class="dropdown-divider"></div>
@@ -1866,7 +1915,8 @@
     // ==============================================================================
     // 1. GLOBAL STATE & FACTORY PRESETS
     // ==============================================================================
-    var STOCKS_DATA = (window.SCREENER_DATA && window.SCREENER_DATA.stocks) ? window.SCREENER_DATA.stocks : [];
+    var _universe = window.SCREENER_DATA || window.SCREENER_UNIVERSE;
+    var STOCKS_DATA = (_universe && _universe.stocks) ? _universe.stocks : [];
     var CURRENT_VIEW = 'overview';
     var SORT_COL = 'mkt_cap_inr';
     var SORT_DIR = 'desc';
@@ -1878,6 +1928,84 @@
     var SPLIT_VIEW_ACTIVE = false;
     var ACTIVE_STOCK_SYMBOL = 'DIVISLAB';
     var ACTIVE_CHART_TIMEFRAME = 'D';
+
+    // ==============================================================================
+    // ⭐ FAVORITE SCREENS (4 CORE STRATEGIC TEMPLATES)
+    // ==============================================================================
+    var FAVORITE_PRESETS = {
+      'Momentum-Leaders': {
+        id: 'Momentum-Leaders',
+        name: 'Momentum Leaders',
+        desc: 'Find stocks already exhibiting strong momentum, suitable for breakout entries and continuation trades.',
+        filters: [
+          { id: 'price', label: 'Price', type: 'numeric', op: 'gte', val: 30, unit: 'INR', enabled: true },
+          { id: 'f_ma1', label: 'Price ≥ EMA, 20', type: 'compare', left: 'price', op: 'gte', right: 'ema_20', enabled: true },
+          { id: 'f_ma2', label: 'EMA, 20 ≥ EMA, 50', type: 'compare', left: 'ema_20', op: 'gte', right: 'ema_50', enabled: true },
+          { id: 'f_ma3', label: 'EMA, 50 ≥ SMA, 200', type: 'compare', left: 'ema_50', op: 'gte', right: 'sma_200', enabled: true },
+          { id: 'mkt_cap_inr', label: 'Mkt cap', type: 'numeric', op: 'gte', val: 1000000000, displayVal: '1 B INR', enabled: true },
+          { id: 'f_perf_1m', label: 'Perf, 1M', type: 'perf', period: '1m', op: 'gte', val: 5, unit: '%', enabled: true },
+          { id: 'f_perf_3m', label: 'Perf, 3M', type: 'perf', period: '3m', op: 'gte', val: 20, unit: '%', enabled: true },
+          { id: 'f_perf_6m', label: 'Perf, 6M', type: 'perf', period: '6m', op: 'gte', val: 30, unit: '%', enabled: true },
+          { id: 'dist_52w_high', label: 'Price below High, 52W', type: 'numeric', op: 'between', val: 0, val2: 15, unit: '%', enabled: true },
+          { id: 'turnover_inr', label: 'Price × vol', type: 'numeric', op: 'gte', val: 10000000, displayVal: '10 M INR', enabled: true },
+          { id: 'avg_vol_30d', label: 'Avg vol, 30D', type: 'numeric', op: 'gte', val: 200000, displayVal: '200 K', enabled: true }
+        ]
+      },
+      'Post-Advance-Base': {
+        id: 'Post-Advance-Base',
+        name: 'Post-Advance Base Formation',
+        desc: 'Identify stocks that have already made a substantial advance but are now consolidating.',
+        filters: [
+          { id: 'price', label: 'Price', type: 'numeric', op: 'gte', val: 30, unit: 'INR', enabled: true },
+          { id: 'f_ma_pr_sma50', label: 'Price ≥ SMA, 50', type: 'compare', left: 'price', op: 'gte', right: 'sma_50', enabled: true },
+          { id: 'f_ma_pr_sma200', label: 'Price ≥ SMA, 200', type: 'compare', left: 'price', op: 'gte', right: 'sma_200', enabled: true },
+          { id: 'f_ma_ema20_50', label: 'EMA, 20 ≥ EMA, 50', type: 'compare', left: 'ema_20', op: 'gte', right: 'ema_50', enabled: true },
+          { id: 'f_ma_ema50_sma200', label: 'EMA, 50 ≥ SMA, 200', type: 'compare', left: 'ema_50', op: 'gte', right: 'sma_200', enabled: true },
+          { id: 'mkt_cap_inr', label: 'Mkt cap', type: 'numeric', op: 'gte', val: 1000000000, displayVal: '1 B INR', enabled: true },
+          { id: 'f_perf_3m_base', label: 'Perf, 3M', type: 'perf', period: '3m', op: 'between', val: -10, val2: 15, unit: '%', enabled: true },
+          { id: 'f_perf_6m', label: 'Perf, 6M', type: 'perf', period: '6m', op: 'gte', val: 25, unit: '%', enabled: true },
+          { id: 'dist_52w_high', label: 'Price below High, 52W', type: 'numeric', op: 'between', val: 0, val2: 25, unit: '%', enabled: true },
+          { id: 'turnover_inr', label: 'Price × vol', type: 'numeric', op: 'gte', val: 10000000, displayVal: '10 M INR', enabled: true },
+          { id: 'avg_vol_30d', label: 'Avg vol, 30D', type: 'numeric', op: 'gte', val: 200000, displayVal: '200 K', enabled: true }
+        ]
+      },
+      'IPO-Bases': {
+        id: 'IPO-Bases',
+        name: 'IPO Bases',
+        desc: 'Identify newly listed stocks developing their first proper bases (with at least 40 sessions of history).',
+        filters: [
+          { id: 'price', label: 'Price', type: 'numeric', op: 'gte', val: 30, unit: 'INR', enabled: true },
+          { id: 'is_ipo', label: 'IPO / New Listing (≤ 2 Years)', type: 'bool', val: true, enabled: true },
+          { id: 'f_ma_pr_ema20', label: 'Price ≥ EMA, 20', type: 'compare', left: 'price', op: 'gte', right: 'ema_20', enabled: true },
+          { id: 'f_ma_pr_sma50', label: 'Price ≥ SMA, 50', type: 'compare', left: 'price', op: 'gte', right: 'sma_50', enabled: true },
+          { id: 'f_ma_ema20_sma50', label: 'EMA, 20 ≥ SMA, 50 (Rising 50)', type: 'compare', left: 'ema_20', op: 'gte', right: 'sma_50', enabled: true },
+          { id: 'mkt_cap_inr', label: 'Mkt cap', type: 'numeric', op: 'gte', val: 1000000000, displayVal: '1 B INR', enabled: true },
+          { id: 'f_perf_3m_ipo', label: 'Perf, 3M', type: 'perf', period: '3m', op: 'gte', val: 0, unit: '%', enabled: true },
+          { id: 'dist_high_1m_pct', label: 'Price below Listing/1M High', type: 'numeric', op: 'between', val: 0, val2: 25, unit: '%', enabled: true },
+          { id: 'turnover_inr', label: 'Price × vol', type: 'numeric', op: 'gte', val: 10000000, displayVal: '10 M INR', enabled: true },
+          { id: 'avg_vol_30d', label: 'Avg vol, 30D', type: 'numeric', op: 'gte', val: 200000, displayVal: '200 K', enabled: true }
+        ]
+      },
+      'Stage2-Transition': {
+        id: 'Stage2-Transition',
+        name: 'Stage 2 Transition',
+        desc: 'Stan Weinstein\'s Stage Analysis & Minervini Trend Template: Discover stocks moving from Stage 1 into Stage 2 advancement.',
+        filters: [
+          { id: 'price', label: 'Price', type: 'numeric', op: 'gte', val: 30, unit: 'INR', enabled: true },
+          { id: 'f_ma_pr_sma50', label: 'Price ≥ SMA, 50', type: 'compare', left: 'price', op: 'gte', right: 'sma_50', enabled: true },
+          { id: 'f_ma_pr_sma200', label: 'Price ≥ SMA, 200', type: 'compare', left: 'price', op: 'gte', right: 'sma_200', enabled: true },
+          { id: 'f_ma_sma50_200', label: 'SMA, 50 ≥ SMA, 200', type: 'compare', left: 'sma_50', op: 'gte', right: 'sma_200', enabled: true },
+          { id: 'f_ma_ema50_200', label: 'EMA, 50 ≥ SMA, 200 (Rising 200)', type: 'compare', left: 'ema_50', op: 'gte', right: 'sma_200', enabled: true },
+          { id: 'mkt_cap_inr', label: 'Mkt cap', type: 'numeric', op: 'gte', val: 1000000000, displayVal: '1 B INR', enabled: true },
+          { id: 'f_perf_3m_stg2', label: 'Perf, 3M', type: 'perf', period: '3m', op: 'gte', val: 0, unit: '%', enabled: true },
+          { id: 'f_perf_6m_stg2', label: 'Perf, 6M', type: 'perf', period: '6m', op: 'gte', val: 10, unit: '%', enabled: true },
+          { id: 'dist_52w_high', label: 'Price below High, 52W', type: 'numeric', op: 'between', val: 0, val2: 30, unit: '%', enabled: true },
+          { id: 'dist_52w_low', label: 'Price above Low, 52W', type: 'numeric', op: 'gte', val: 20, unit: '%', enabled: true },
+          { id: 'turnover_inr', label: 'Price × vol', type: 'numeric', op: 'gte', val: 10000000, displayVal: '10 M INR', enabled: true },
+          { id: 'avg_vol_30d', label: 'Avg vol, 30D', type: 'numeric', op: 'gte', val: 200000, displayVal: '200 K', enabled: true }
+        ]
+      }
+    };
 
     // Built-in Factory Presets with comparison & performance customization
     var FACTORY_PRESETS = {
@@ -1972,6 +2100,7 @@
         items: [
           { id: 'dist_high_1m_pct', label: 'Price below High, 1M', type: 'numeric', op: 'between', val: 0, val2: 20, unit: '%', enabled: true },
           { id: 'dist_52w_high', label: 'Price below High, 52W', type: 'numeric', op: 'lte', val: 25, unit: '%', enabled: true },
+          { id: 'dist_52w_low', label: 'Price above Low, 52W', type: 'numeric', op: 'gte', val: 20, unit: '%', enabled: true },
           { id: 'is_ipo', label: 'Recent IPO / Listing', type: 'bool', val: true, enabled: true }
         ]
       },
@@ -2002,7 +2131,7 @@
       }
     ];
 
-    var ACTIVE_PRESET_ID = 'PrimaryScan-PowerPlay';
+    var ACTIVE_PRESET_ID = 'Momentum-Leaders';
     var ACTIVE_FILTERS = [];
 
     // ==============================================================================
@@ -2012,7 +2141,7 @@
       loadStoredPresets();
       loadStoredShortlist();
       initSyncTimeBadge();
-      loadPreset('PrimaryScan-PowerPlay');
+      loadPreset('Momentum-Leaders');
 
       // Close dropdowns on outside click
       document.addEventListener('click', function (e) {
@@ -2086,16 +2215,28 @@
     }
 
     function renderPresetDropdownList() {
+      var favList = document.getElementById('favorite-presets-list');
       var fList = document.getElementById('factory-presets-list');
       var uList = document.getElementById('user-presets-list');
       var userPresets = getUserPresets();
+
+      if (favList) {
+        favList.innerHTML = Object.keys(FAVORITE_PRESETS).map(function (k) {
+          var p = FAVORITE_PRESETS[k];
+          var act = (k === ACTIVE_PRESET_ID) ? 'active' : '';
+          return '<div class="dropdown-item ' + act + '" onclick="selectPreset(\'' + k + '\')">'
+            + '<span style="font-weight:600;">' + p.name + '</span>'
+            + (act ? '<span style="color:var(--cyan);font-weight:800;">✓</span>' : '')
+            + '</div>';
+        }).join('');
+      }
 
       fList.innerHTML = Object.keys(FACTORY_PRESETS).map(function (k) {
         var p = FACTORY_PRESETS[k];
         var act = (k === ACTIVE_PRESET_ID) ? 'active' : '';
         return '<div class="dropdown-item ' + act + '" onclick="selectPreset(\'' + k + '\')">'
           + '<span>' + p.name + '</span>'
-          + (act ? '<span style="color:var(--cyan)">\u2713</span>' : '')
+          + (act ? '<span style="color:var(--cyan)">✓</span>' : '')
           + '</div>';
       }).join('');
 
@@ -2128,11 +2269,18 @@
     }
 
     function loadPreset(pid) {
-      var preset = FACTORY_PRESETS[pid] || getUserPresets()[pid];
-      if (!preset) preset = FACTORY_PRESETS['PrimaryScan-PowerPlay'];
+      var preset = (typeof FAVORITE_PRESETS !== 'undefined' && FAVORITE_PRESETS[pid]) || FACTORY_PRESETS[pid] || getUserPresets()[pid];
+      if (!preset) preset = (typeof FAVORITE_PRESETS !== 'undefined' && FAVORITE_PRESETS['Momentum-Leaders']) || FACTORY_PRESETS['PrimaryScan-PowerPlay'];
 
       ACTIVE_PRESET_ID = pid;
       document.getElementById('current-preset-name').textContent = preset.name.replace(/[\ud800-\udbff][\udc00-\udfff]/g, '').trim();
+
+      document.querySelectorAll('.fav-nav-btn').forEach(function(b) {
+        b.classList.remove('active');
+      });
+      var activeNavBtn = document.getElementById('fav-nav-' + pid);
+      if (activeNavBtn) activeNavBtn.classList.add('active');
+
       ACTIVE_FILTERS = JSON.parse(JSON.stringify(preset.filters));
 
       renderPresetDropdownList();
@@ -2174,8 +2322,9 @@
     }
 
     function resetActivePreset() {
-      if (FACTORY_PRESETS[ACTIVE_PRESET_ID]) {
-        ACTIVE_FILTERS = JSON.parse(JSON.stringify(FACTORY_PRESETS[ACTIVE_PRESET_ID].filters));
+      var orig = (typeof FAVORITE_PRESETS !== 'undefined' && FAVORITE_PRESETS[ACTIVE_PRESET_ID]) || FACTORY_PRESETS[ACTIVE_PRESET_ID];
+      if (orig) {
+        ACTIVE_FILTERS = JSON.parse(JSON.stringify(orig.filters));
         renderChips();
         applyFiltersAndRender();
       }

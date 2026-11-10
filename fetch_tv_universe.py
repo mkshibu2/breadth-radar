@@ -195,11 +195,16 @@ def parse_and_save(rows):
         else:
             dist_high_1m_pct = 0.0
 
-        # Proximity to 52W High
+        # Proximity to 52W High & 52W Low
         if high_52w > 0:
             dist_52w_high = round(((high_52w - price) / high_52w) * 100.0, 2)
         else:
             dist_52w_high = 0.0
+
+        if low_52w > 0:
+            dist_52w_low = round(((price - low_52w) / low_52w) * 100.0, 2)
+        else:
+            dist_52w_low = 0.0
 
         # Technical Boolean comparisons
         price_gte_ema20 = (ema_20 is not None and price >= ema_20)
@@ -273,6 +278,7 @@ def parse_and_save(rows):
             'high_52w': high_52w,
             'low_52w': low_52w,
             'dist_52w_high': dist_52w_high,
+            'dist_52w_low': dist_52w_low,
             'dist_ema20_pct': dist_ema20_pct,
             'dist_sma50_pct': dist_sma50_pct,
             'dist_sma200_pct': dist_sma200_pct,
