@@ -15,7 +15,7 @@
 ║                                                                      ║
 ║  Install: pip install yfinance pandas openpyxl                       ║
 ║  Run:     python vcp_scanner.py                                      ║
-║  Output:  scanner_results.html  - to NSE Breadth Radar               ║
+║  Output:  scanner_results.html  - to M.Radar (Market Radar)         ║
 ╚══════════════════════════════════════════════════════════════════════╝
 """
 
@@ -1485,7 +1485,7 @@ function dlWL(){
     }
     var tag = document.getElementById('radar-sync-tag');
     if (tag) {
-      tag.innerHTML = '⚡ Breadth Radar: Score <b style="color:var(--accent,#38bdf8)">' + latest.score + '</b> (' + (latest.zone || '') + ') &middot; <b>' + dds + '</b> Dist Days';
+      tag.innerHTML = '⚡ M.Radar: Score <b style="color:var(--accent,#38bdf8)">' + latest.score + '</b> (' + (latest.zone || '') + ') &middot; <b>' + dds + '</b> Dist Days';
     }
   } catch(e) {}
 })();
