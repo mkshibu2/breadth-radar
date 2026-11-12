@@ -61,7 +61,7 @@ function exportSnapshot() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>NSE Breadth Radar — Snapshot ${today.date}</title>
+<title>M.Radar — Snapshot ${today.date}</title>
 <style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0e1420;color:#dde6f0;font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;line-height:1.5}.hdr{background:#161e2e;padding:12px 20px;border-bottom:1px solid #273447;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}.logo{font-size:18px;font-weight:800;letter-spacing:3px;color:#5ba3f5;display:flex;align-items:center;gap:8px}.logo em{color:#4a5e76;font-style:normal}.badge{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);color:#f87171;font-size:10px;padding:3px 10px;border-radius:3px;font-weight:600;letter-spacing:.5px}.meta{font-size:11px;color:#8899b0;text-align:right}.page{padding:14px;display:flex;flex-direction:column;gap:10px;max-width:1400px;margin:0 auto}.card{background:#161e2e;border:1px solid #273447;border-radius:6px;overflow:hidden}.card-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#8899b0;padding:10px 14px;border-bottom:1px solid #273447;background:#1c2638}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{padding:14px;background:#1c2638;border:1px solid #273447;border-radius:6px}.metric-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#4a5e76;margin-bottom:6px}.metric-val{font-size:32px;font-weight:800;line-height:1;font-family:'Segoe UI',sans-serif}.metric-sub{font-size:11px;color:#8899b0;margin-top:5px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#1c2638;color:#8899b0;text-transform:uppercase;font-size:10px;letter-spacing:.3px;padding:7px 10px;text-align:left;border-bottom:1px solid #273447}td{padding:6px 10px;border-bottom:1px solid rgba(39,52,71,.4);color:#dde6f0}tr:last-child td{border-bottom:none}tr:hover td{background:rgba(91,163,245,.04)}.pill{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600}.warn{background:rgba(252,211,77,.1);color:#fbbf24;border:1px solid rgba(252,211,77,.2);padding:10px 14px;border-radius:5px;font-size:12px;margin:0 14px 14px}.sparkbar{display:inline-block;width:8px;border-radius:2px 2px 0 0;vertical-align:bottom;margin:0 1px}@media(max-width:600px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}</style>
 </head>
 <body>
@@ -76,7 +76,7 @@ function exportSnapshot() {
     <rect x="18" y="5" width="3" height="17" rx=".5" fill="#4ade80" opacity=".9"/>
     <path d="M 2 19 Q 12 3 22 19" fill="none" stroke="#5ba3f5" stroke-width="1.2" stroke-linecap="round" opacity=".7"/>
     <circle cx="12" cy="4" r="1.2" fill="#5ba3f5"/></svg>
-    NSE <em>BREADTH</em> RADAR
+    <span style="color:#f59e0b">M.</span><span style="color:#ffffff">RADAR</span> <span style="font-size:11px;color:#8899b0;margin-left:6px;letter-spacing:1px;font-weight:600">MARKET RADAR</span>
   </div>
   <div class="badge">📸 READ-ONLY SNAPSHOT</div>
   <div class="meta">Data as of ${dataDate}<br>Snapshot generated: ${exportDate}<br>© 2026 Shibu M K</div>
@@ -171,14 +171,14 @@ function exportSnapshot() {
   ${mpm.length ? `<div class="card"><div class="card-title">💹 Market Pressure Log — Last 15 Sessions</div><div style="overflow-x:auto"><table><thead><tr><th>Date</th><th>Type</th><th>Nifty Close</th><th>Prev Close</th></tr></thead><tbody>${mpmRows}</tbody></table></div></div>` : ''}
 
   <div style="font-size:11px;color:#4a5e76;text-align:center;padding:14px;border-top:1px solid #273447;line-height:1.8">
-    <strong style="color:#8899b0">NSE Breadth Radar</strong> — Snapshot by <strong style="color:#8899b0">Shibu M K</strong><br>
+    <strong style="color:#8899b0">M.Radar (Market Radar)</strong> — Snapshot by <strong style="color:#8899b0">Shibu M K</strong><br>
     For educational purposes only · Not investment advice · Data as of ${today.date}<br>
-    <em>Clarity in every market cycle — built for the Indian swing trader</em>
+    <em>See the Market. Find Your Edge. — Clarity in every market cycle</em>
   </div>
 
 </div>
 </body>
-</html>`; try { const blob = new Blob([html], { type: 'text/html' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `NSE_Breadth_Snapshot_${today.date}.html`; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 300); } catch (e) { try { const encoded = encodeURIComponent(html); const a = document.createElement('a'); a.href = 'data:text/html;charset=utf-8,' + encoded; a.download = `NSE_Breadth_Snapshot_${today.date}.html`; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => document.body.removeChild(a), 300); } catch (e2) { const w = window.open(); if (w) { w.document.write(html); w.document.close(); alert('File opened in new tab. Use Ctrl+S (or Share → Save) to save it.'); } else { alert('Could not download. Please allow popups for this site and try again.'); } } }
+</html>`; try { const blob = new Blob([html], { type: 'text/html' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `M_Radar_Snapshot_${today.date}.html`; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 300); } catch (e) { try { const encoded = encodeURIComponent(html); const a = document.createElement('a'); a.href = 'data:text/html;charset=utf-8,' + encoded; a.download = `M_Radar_Snapshot_${today.date}.html`; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => document.body.removeChild(a), 300); } catch (e2) { const w = window.open(); if (w) { w.document.write(html); w.document.close(); alert('File opened in new tab. Use Ctrl+S (or Share → Save) to save it.'); } else { alert('Could not download. Please allow popups for this site and try again.'); } } }
 }
 const _mem = {}; const _store = (() => {
   for (const s of [() => window.localStorage, () => window.sessionStorage]) { try { const store = s(); const k = '__nbr__'; store.setItem(k, k); if (store.getItem(k) === k) { store.removeItem(k); return store; } } catch (e) { } }

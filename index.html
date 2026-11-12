@@ -4,15 +4,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/svg+xml"
-    href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPCEtLSBCYWNrZ3JvdW5kIC0tPgogIDxyZWN0IHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgcng9IjYiIGZpbGw9IiMxNjFlMmUiLz4KICA8IS0tIEJhciBjaGFydCDigJQgNSBiYXJzIHJpc2luZywgem9uZSBjb2xvdXJlZCAtLT4KICA8cmVjdCB4PSIzIiAgeT0iMjIiIHdpZHRoPSI0IiBoZWlnaHQ9IjYiICByeD0iMSIgZmlsbD0iI2Y4NzE3MSIgb3BhY2l0eT0iLjkiLz4KICA8cmVjdCB4PSI4IiAgeT0iMTgiIHdpZHRoPSI0IiBoZWlnaHQ9IjEwIiByeD0iMSIgZmlsbD0iI2ZiOTIzYyIgb3BhY2l0eT0iLjkiLz4KICA8cmVjdCB4PSIxMyIgeT0iMTQiIHdpZHRoPSI0IiBoZWlnaHQ9IjE0IiByeD0iMSIgZmlsbD0iI2ZiYmYyNCIgb3BhY2l0eT0iLjkiLz4KICA8cmVjdCB4PSIxOCIgeT0iMTAiIHdpZHRoPSI0IiBoZWlnaHQ9IjE4IiByeD0iMSIgZmlsbD0iIzM0ZDM5OSIgb3BhY2l0eT0iLjkiLz4KICA8cmVjdCB4PSIyMyIgeT0iNiIgIHdpZHRoPSI0IiBoZWlnaHQ9IjIyIiByeD0iMSIgZmlsbD0iIzRhZGU4MCIgb3BhY2l0eT0iLjkiLz4KICA8IS0tIFJhZGFyIGFyYyDigJQgc2lnbmFsIHN3ZWVwIC0tPgogIDxwYXRoIGQ9Ik0gMyAyNCBRIDE2IDIgMjkgMjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzViYTNmNSIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgb3BhY2l0eT0iLjYiLz4KICA8IS0tIFNpZ25hbCBkb3Qgb24gYXJjIHBlYWsgLS0+CiAgPGNpcmNsZSBjeD0iMTYiIGN5PSI1IiByPSIxLjUiIGZpbGw9IiM1YmEzZjUiIG9wYWNpdHk9Ii45Ii8+Cjwvc3ZnPg==">
-  <link rel="apple-touch-icon"
-    href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj4KICA8IS0tIEJhY2tncm91bmQgLS0+CiAgPHJlY3Qgd2lkdGg9IjE4MCIgaGVpZ2h0PSIxODAiIHJ4PSIzNiIgZmlsbD0iIzE2MWUyZSIvPgogIDwhLS0gU3VidGxlIGdyaWQgbGluZXMgLS0+CiAgPGxpbmUgeDE9IjAiIHkxPSIxMzUiIHgyPSIxODAiIHkyPSIxMzUiIHN0cm9rZT0iIzI3MzQ0NyIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgPGxpbmUgeDE9IjAiIHkxPSI5MCIgIHgyPSIxODAiIHkyPSI5MCIgIHN0cm9rZT0iIzI3MzQ0NyIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgPGxpbmUgeDE9IjAiIHkxPSI0NSIgIHgyPSIxODAiIHkyPSI0NSIgIHN0cm9rZT0iIzI3MzQ0NyIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgPCEtLSBCYXIgY2hhcnQg4oCUIDUgYmFycyB6b25lIGNvbG91cmVkIC0tPgogIDxyZWN0IHg9IjE0IiAgeT0iMTEwIiB3aWR0aD0iMjYiIGhlaWdodD0iNTAiIHJ4PSI0IiBmaWxsPSIjZjg3MTcxIiBvcGFjaXR5PSIuODUiLz4KICA8cmVjdCB4PSI0NyIgIHk9IjkwIiAgd2lkdGg9IjI2IiBoZWlnaHQ9IjcwIiByeD0iNCIgZmlsbD0iI2ZiOTIzYyIgb3BhY2l0eT0iLjg1Ii8+CiAgPHJlY3QgeD0iODAiICB5PSI2NSIgIHdpZHRoPSIyNiIgaGVpZ2h0PSI5NSIgcng9IjQiIGZpbGw9IiNmYmJmMjQiIG9wYWNpdHk9Ii44NSIvPgogIDxyZWN0IHg9IjExMyIgeT0iNDIiICB3aWR0aD0iMjYiIGhlaWdodD0iMTE4IiByeD0iNCIgZmlsbD0iIzM0ZDM5OSIgb3BhY2l0eT0iLjg1Ii8+CiAgPHJlY3QgeD0iMTQ2IiB5PSIyMiIgIHdpZHRoPSIyMCIgaGVpZ2h0PSIxMzgiIHJ4PSI0IiBmaWxsPSIjNGFkZTgwIiBvcGFjaXR5PSIuODUiLz4KICA8IS0tIEdyYWRpZW50IG92ZXJsYXkgb24gYmFycyAoZGVwdGggZWZmZWN0KSAtLT4KICA8cmVjdCB4PSIxNCIgeT0iMjIiIHdpZHRoPSIxNTIiIGhlaWdodD0iMTM4IiByeD0iNCIKICAgIGZpbGw9InVybCgjYmFyR3JhZCkiIG9wYWNpdHk9Ii4xNSIvPgogIDwhLS0gUmFkYXIgYXJjIC0tPgogIDxwYXRoIGQ9Ik0gMTAgMTU1IFEgOTAgMTAgMTcwIDE1NSIKICAgIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzViYTNmNSIgc3Ryb2tlLXdpZHRoPSIzLjUiCiAgICBzdHJva2UtbGluZWNhcD0icm91bmQiIG9wYWNpdHk9Ii41NSIvPgogIDwhLS0gU2lnbmFsIGRvdCAtLT4KICA8Y2lyY2xlIGN4PSI5MCIgY3k9IjE4IiByPSI1IiBmaWxsPSIjNWJhM2Y1Ii8+CiAgPGNpcmNsZSBjeD0iOTAiIGN5PSIxOCIgcj0iOSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNWJhM2Y1IiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iLjQiLz4KICA8IS0tICJOQlIiIHRleHQgYm90dG9tIHJpZ2h0IC0tPgogIDx0ZXh0IHg9IjE2NiIgeT0iMTc0IiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjExIgogICAgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzRhNWU3NiIgdGV4dC1hbmNob3I9ImVuZCIgbGV0dGVyLXNwYWNpbmc9IjEiPk5CUjwvdGV4dD4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmFyR3JhZCIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IndoaXRlIiBzdG9wLW9wYWNpdHk9Ii4zIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0id2hpdGUiIHN0b3Atb3BhY2l0eT0iMCIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+Cjwvc3ZnPg==">
+  <link rel="icon" type="image/png" href="assets/m-radar-icon.png">
+  <link rel="apple-touch-icon" href="assets/m-radar-icon.png">
   <meta name="theme-color" content="#161e2e">
-  <meta name="application-name" content="NSE Breadth Radar">
-  <meta property="og:title" content="NSE Breadth Radar">
-  <meta property="og:description" content="Clarity in every market cycle — built for the Indian swing trader">
-  <title>NSE Breadth Radar v7</title>
+  <meta name="application-name" content="M.Radar">
+  <meta property="og:title" content="M.Radar — Market Radar">
+  <meta property="og:description" content="See the Market. Find Your Edge. — Clarity in every market cycle built for the Indian swing trader">
+  <title>M.Radar — Market Radar</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -38,8 +36,8 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
       </button>
       <div class="mobile-brand">
-        <div class="brand-mark">BR</div>
-        <span class="brand-title">NSE <em>BREADTH</em> RADAR</span>
+        <img src="assets/m-radar-icon.png" alt="M.Radar" style="width:24px;height:24px;border-radius:6px;object-fit:cover;flex-shrink:0;">
+        <span class="brand-title"><span style="color:#f59e0b">M.</span><em>RADAR</em></span>
       </div>
       <button class="mobile-refresh-btn" onclick="vcpbFetch(true)" title="Refresh breadth data">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
@@ -51,11 +49,11 @@
 
     <!-- LEFT NAVIGATION SIDEBAR (Matching Trade Journal TJ.html) -->
     <aside class="sidebar" id="sidebar">
-      <div class="brand">
-        <div class="mark">BR</div>
+      <div class="brand" onclick="openAboutModal()" style="cursor:pointer;" title="M.Radar (Market Radar) — Click for About">
+        <img class="mark-img" src="assets/m-radar-icon.png" alt="M.Radar" style="width:32px;height:32px;border-radius:8px;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);flex-shrink:0;">
         <div class="brand-info">
-          <div class="name">Breadth Radar</div>
-          <div class="sub" id="sidebar-market-sub">NSE Market Diagnostics</div>
+          <div class="name" style="letter-spacing:-0.02em;font-size:15px;font-weight:800;display:flex;align-items:center;"><span style="color:#f59e0b">M.</span><span>RADAR</span></div>
+          <div class="sub" id="sidebar-market-sub">Market Radar · Diagnostics</div>
         </div>
       </div>
 
@@ -162,6 +160,10 @@
 
       <div class="hdr">
         <div class="hdr-left" style="display:flex;align-items:center;gap:8px;">
+          <div class="hdr-tag" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;color:#f0f3fa;border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);">
+            <img src="assets/m-radar-icon.png" alt="M.Radar" style="width:14px;height:14px;border-radius:3px;vertical-align:middle;">
+            <span><span style="color:#f59e0b">M.</span>RADAR</span>
+          </div>
           <div class="hdr-tag">Universe: <b>N500+MSc400</b></div>
           <div class="hdr-tag" id="hdr-date"></div>
         </div>
@@ -1130,7 +1132,7 @@
       <button class="footer-about-btn" onclick="openAboutModal()">ℹ About</button>
     </div>
     <div class="footer-copy">
-      <span>© 2026 Shibu M K · NSE Breadth Radar · All rights reserved</span>
+      <span>© 2026 Shibu M K · M.Radar (Market Radar) · All rights reserved</span>
       <span>Data sources: NSE India · Trendlyne · ET Markets · For educational purposes only — not investment
         advice</span>
     </div>
@@ -2698,12 +2700,13 @@
   <div id="about-modal-overlay" onclick="if(event.target===this)closeAboutModal()">
     <div id="about-modal">
 
-      <div class="about-head">
+      <div class="about-head" style="flex-direction:column;align-items:center;padding:16px 20px 14px;position:relative;border-bottom:1px solid var(--border);text-align:center;">
+        <button class="about-close" onclick="closeAboutModal()" style="position:absolute;top:14px;right:16px;">✕</button>
+        <img src="assets/m-radar-logo.jpg" alt="M.Radar — Market Radar" style="max-width:320px;width:100%;height:auto;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.6);margin-bottom:10px;border:1px solid rgba(255,255,255,0.08);">
         <div>
-          <div class="about-logo">NSE <span>BREADTH</span> RADAR</div>
-          <div class="about-tagline">Clarity in every market cycle — built for the Indian swing trader</div>
+          <div class="about-logo" style="font-size:18px;letter-spacing:1px;"><span style="color:#f59e0b">M.</span>RADAR <span style="font-size:11px;color:var(--text-dim);font-weight:600;letter-spacing:2px;margin-left:4px;">MARKET RADAR</span></div>
+          <div class="about-tagline" style="margin-top:2px;">See the Market. Find Your Edge. · Built for the Indian swing trader</div>
         </div>
-        <button class="about-close" onclick="closeAboutModal()">✕</button>
       </div>
 
       <div class="about-body">
@@ -2729,7 +2732,7 @@
         <div class="about-section">
           <div class="about-section-title">About the Tool</div>
           <div class="about-tool-desc">
-            NSE Breadth Radar is a <b>personal market breadth dashboard</b> designed to align your swing trading
+            <b>M.Radar (Market Radar)</b> is a <b>personal market diagnostics dashboard &amp; screener</b> designed to align your swing trading
             exposure with the market environment.<br><br>
             For swing traders following price-and-volume breakout methodologies (such as Minervini, O'Neil, Darvas, and
             Weinstein), capital preservation and performance depend entirely on two core pillars:
@@ -2966,7 +2969,7 @@
 
       <div style="background:rgba(41,98,255,0.08);border:1px solid rgba(41,98,255,0.25);border-radius:6px;padding:10px;margin-bottom:14px;font-size:11px;line-height:1.5;">
         <div style="font-weight:700;color:#38bdf8;margin-bottom:4px;">App Credentials Configured:</div>
-        <div>App Name: <b style="color:#f0f3fa;">NSE Breadth Radar</b></div>
+        <div>App Name: <b style="color:#f0f3fa;">M.Radar</b> <span style="font-size:10px;color:var(--dim)">(Market Radar)</span></div>
         <div>API Key: <code style="color:#22c55e;">232aeb71</code> · Secret: <code style="color:#94a3b8;">608f20b6...</code></div>
       </div>
 
