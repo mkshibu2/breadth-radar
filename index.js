@@ -280,12 +280,14 @@ function slhRender() {
   html += `<span style="margin-left:auto">Numbers = cell values (left-to-right is chronological)</span>`; html += `</div>`; html += `</div>`; grid.innerHTML = html;
 }
 function sccTab(tab) {
-  const colors = { breadth: 'var(--teal)', rrg: 'var(--purple)', heatmap: 'var(--teal)', chart: 'var(--teal)' };['breadth', 'rrg', 'heatmap', 'chart'].forEach(t => {
+  const colors = { breadth: 'var(--teal)', rrg: 'var(--purple)', heatmap: 'var(--teal)', chart: 'var(--teal)', clusters: 'var(--teal)' };['breadth', 'rrg', 'heatmap', 'chart', 'clusters'].forEach(t => {
     const btn = document.getElementById('scc-tab-' + t); const pane = document.getElementById('scc-pane-' + t); const active = t === tab; if (btn) { btn.style.color = active ? colors[tab] : 'var(--dim)'; btn.style.borderBottom = active ? `2px solid ${colors[tab]}` : '2px solid transparent'; btn.style.fontWeight = active ? '700' : '600'; }
     if (pane) pane.style.display = active ? 'block' : 'none';
   }); const dGrid = document.querySelector('.dash-grid'); if (dGrid) { if (tab === 'chart') { dGrid.classList.add('wide-command'); } else { dGrid.classList.remove('wide-command'); } }
   if (tab === 'rrg') { setTimeout(() => { brrgRebuildChips(); brrgDraw(); }, 50); }
-  if (tab === 'heatmap') setTimeout(() => slhRender(), 50); if (tab === 'chart') {
+  if (tab === 'heatmap') setTimeout(() => slhRender(), 50);
+  if (tab === 'clusters') setTimeout(() => sccRenderClusters(), 50);
+  if (tab === 'chart') {
     if (window.innerWidth <= 600 && _sccChartLayout !== '1') { _sccChartLayout = '1'; const layoutSelect = document.getElementById('scc-chart-layout-select'); if (layoutSelect) layoutSelect.value = '1'; }
     setTimeout(() => sccChartRebuildGrid(), 50);
   }
@@ -293,7 +295,7 @@ function sccTab(tab) {
 function toggleMaximizeSectorCommand() {
   const card = document.getElementById('srt-home-card'); const btn = document.getElementById('srt-max-btn'); if (!card) return; const isMax = card.classList.toggle('maximized'); if (btn) { if (isMax) { btn.innerHTML = '<span style="font-size:12px;line-height:1;">🗗</span>'; btn.title = 'Restore Window'; } else { btn.innerHTML = '<span style="font-size:12px;line-height:1;">⛶</span>'; btn.title = 'Maximize Window'; } }
   if (isMax) { document.body.style.overflow = 'hidden'; } else { document.body.style.overflow = ''; }
-  const isRrgActive = document.getElementById('scc-pane-rrg').style.display !== 'none'; const isHeatmapActive = document.getElementById('scc-pane-heatmap').style.display !== 'none'; const isChartActive = document.getElementById('scc-pane-chart') && document.getElementById('scc-pane-chart').style.display !== 'none'; if (isRrgActive) { setTimeout(() => { if (typeof brrgDraw === 'function') brrgDraw(); }, 80); } else if (isHeatmapActive) { setTimeout(() => { if (typeof slhRender === 'function') slhRender(); }, 80); } else if (isChartActive) { setTimeout(() => { const count = parseInt(_sccChartLayout); for (let i = 0; i < count; i++) { sccChartRenderPanel(i); } }, 80); } else { setTimeout(() => { if (typeof brrgDraw === 'function') brrgDraw(); }, 80); }
+  const isRrgActive = document.getElementById('scc-pane-rrg').style.display !== 'none'; const isHeatmapActive = document.getElementById('scc-pane-heatmap').style.display !== 'none'; const isChartActive = document.getElementById('scc-pane-chart') && document.getElementById('scc-pane-chart').style.display !== 'none'; const isClustersActive = document.getElementById('scc-pane-clusters') && document.getElementById('scc-pane-clusters').style.display !== 'none'; if (isRrgActive) { setTimeout(() => { if (typeof brrgDraw === 'function') brrgDraw(); }, 80); } else if (isHeatmapActive) { setTimeout(() => { if (typeof slhRender === 'function') slhRender(); }, 80); } else if (isChartActive) { setTimeout(() => { const count = parseInt(_sccChartLayout); for (let i = 0; i < count; i++) { sccChartRenderPanel(i); } }, 80); } else if (isClustersActive) { setTimeout(() => { if (typeof sccRenderClusters === 'function') sccRenderClusters(); }, 80); } else { setTimeout(() => { if (typeof brrgDraw === 'function') brrgDraw(); }, 80); }
 }
 function sccChartZoom(index, direction) {
   sccChartSetActivePanel(index); if (typeof _sccLwCharts !== 'undefined' && _sccLwCharts[index]) { try { const ts = _sccLwCharts[index].timeScale(); const range = ts.getVisibleLogicalRange(); if (range) { const span = range.to - range.from; const shift = span * (direction > 0 ? -0.2 : 0.25); ts.setVisibleLogicalRange({ from: range.from - shift / 2, to: range.to + shift / 2 }); return; } } catch (e) { } } let zoomFactor = _sccChartZoomFactors[index] || 1.0; if (direction > 0) { zoomFactor *= 0.85; } else { zoomFactor *= 1.15; }
@@ -2694,6 +2696,7 @@ function vcpbRender(data) {
       onmouseenter="this.style.opacity='.75'" onmouseleave="this.style.opacity='1'"
       title="${s.name} · Score: ${s.score}${accelTip}${med90Tip} · Click for stocks">${label} <span style="font-weight:400;opacity:.75">${s.vcp_count}(${s.universe})</span></span>`;
   }; const leadEl = document.getElementById('vcpb-ls-lead'); const watchEl = document.getElementById('vcpb-ls-watch'); const avoidEl = document.getElementById('vcpb-ls-avoid'); if (leadEl) leadEl.innerHTML = leaders.map(s => pill(s, '#0e1420', 'var(--lime)')).join(''); if (watchEl) watchEl.innerHTML = watching.length ? watching.map(s => pill(s, '#0e1420', 'var(--yellow)')).join('') : '<span style="color:var(--dim);font-size:10px">—</span>'; if (avoidEl) avoidEl.innerHTML = avoid.map(s => pill(s, '#fff', 'rgba(248,113,113,.2)')).join(''); vcpbRenderTable(activeList); const rrgPane = document.getElementById('scc-pane-rrg'); if (rrgPane && rrgPane.style.display !== 'none') { brrgRebuildChips(); brrgDraw(); }
+  if (typeof sccRenderDashboardWidget === 'function') sccRenderDashboardWidget(data);
 }
 function vcpbInit() { vcpbPopulateSortDropdowns(); const saved = vcpbGetUrl(); const inp = document.getElementById('vcpb-url-input'); if (inp && saved) inp.value = saved; vcpbUpdateToggleBtn(); vcpbFetch(false); sdFetchSectorStocksBackground(); }
 let _brrgTailDays = 10; let _brrgTopN = 8; let _brrgHighlight = new Set(); let _brrgAnimTimer = null; const BRRG_SMOOTH = 5; function brrgSetTail(d) { _brrgTailDays = d; const disp = document.getElementById('brrg-tail-display'); if (disp) disp.textContent = d + 'd';[5, 10, 20, 40].forEach(n => { const b = document.getElementById('brrg-t-' + n); if (!b) return; const active = n === d; b.style.background = active ? 'var(--purple)' : 'transparent'; b.style.color = active ? '#fff' : 'var(--dim)'; b.style.fontWeight = active ? '600' : '400'; b.style.borderColor = active ? 'var(--purple)' : 'var(--border)'; }); brrgDraw(); }
@@ -4638,7 +4641,7 @@ async function savePastEntry() {
 }
 function showPastMsg(msg, color) { const el = document.getElementById('past-save-msg'); if (el) { el.textContent = msg; el.style.color = color; } }
 function cpUpdateHomeStatus() { }
-const INFO = { 'breadth-score': { title: 'Breadth Score', what: 'A 0–100 composite score measuring how broadly the NSE Nifty 500 market is participating in any move. High score = wide participation = healthy market.', how: '<b>Advance/Decline Ratio</b> (35%) + <b>% stocks above EMA20</b> (20%) + <b>% above SMA50</b> (15%) + <b>% above SMA200</b> (15%) + <b>52W H/L Ratio</b> (15%). Weighted average of all five, scaled 0–100.', use: 'Above <b>55</b> = Healthy Bull — full position sizing. <b>45–55</b> = Expansion. <b>35–45</b> = Recovery — pilot entries only. Below <b>35</b> = Danger — stand aside. This is your primary market posture signal.' }, 'market-zone': { title: 'Market Zone & Position Size', what: 'Translates the Breadth Score into a named market phase and recommended position size in R (risk units), making it instantly actionable.', how: 'Score &lt; 30 → <b>Correction</b> (0R). 30–45 → <b>Recovery</b> (0.25–0.5R). 45–55 → <b>Expansion</b> (1–2R). &gt;55 → <b>Healthy Bull</b> (2–3R). The R size is a guideline based on O\'Neil / Minervini methodology.', use: 'Check this first every session. It sets your trade sizing ceiling immediately — don\'t take a 2R trade when the zone says Recovery.' }, 'zone-meter': { title: 'Zone Meter (Score Bar)', what: 'A visual progress bar showing where the current Breadth Score sits across the full 0–100 spectrum, with colour-coded zone bands and correct position sizes.', how: '<b style="color:var(--red)">CORRECTION</b> 0–20 (0R) · <b style="color:var(--orange)">DEFENSIVE</b> 20–35 (0.25R pilot) · <b style="color:var(--yellow)">CAUTION</b> 35–45 (0.5–1R) · <b style="color:var(--green)">EXPANDING</b> 45–55 (1–2R) · <b style="color:var(--lime)">HEALTHY</b> 55–100 (2–3R). Fill width = Score/100.', use: 'The score number tells you <i>where</i>; the bar shows you <i>how far into that zone</i> you are — e.g. a score of 52 is near the top of Expansion, almost into Healthy territory. Use this to gauge whether a zone change is imminent.' }, 'bsr-rate': { title: 'BSR — Breakout Success Rate', what: 'The percentage of your logged breakout trades that succeeded — defined as gaining <b>5% or more</b> from the pivot buy point within the trade window.', how: 'From your BSR Trade Log: <b>BSR% = Successful trades ÷ Total trades × 100</b>. A trade is marked success when you log a gain ≥ 5%. The rate is recalculated live as you log trades.', use: 'Above <b>65%</b> — market is rewarding breakouts, act confidently. <b>40–65%</b> — mixed, be selective. Below <b>40%</b> — breakouts are failing, avoid new entries even if the score is decent. This is your real-world feedback loop.' }, 'market-pressure': { title: 'Market Pressure (MPM)', what: 'Net institutional buying pressure over the last 25 sessions. Positive = institutions accumulating. Negative = distribution dominating.', how: '<b>Pressure = Accumulation Days − Distribution Days</b> (rolling 25-day window). An Accumulation Day = Nifty closes higher on above-average volume. A Distribution Day = closes lower on above-average volume. You log each in the Pressure Day Log.', use: '<b>+4 or above</b> — strong institutional backing, high confidence. <b>+1 to +3</b> — mild positive. <b>0 to −2</b> — caution. <b>Below −3</b> — institutional selling dominating, reduce exposure sharply. Always read alongside Breadth Score.' }, 'breadth-momentum': { title: 'Breadth Momentum', what: 'The day-over-day <i>change</i> in Breadth Score. Tells you whether market participation is improving or deteriorating right now.', how: '<b>Momentum = Today\'s Score − Yesterday\'s Score</b>. A jump of +10 in a single day is a strong breadth expansion signal. Negative momentum means participation is narrowing even if the absolute score is still decent.', use: 'Positive and rising → confirm your entries. Flat → neutral, wait for direction. Negative two days in a row → tighten stops and reduce new exposure. Watch for momentum divergence — score still high but momentum turning negative is an early warning.' }, 'breadth-thrust': { title: 'Breadth Thrust', what: 'The 3-day cumulative change in Breadth Score. A momentum acceleration signal that detects rapid, broad market expansion.', how: '<b>Thrust = Today\'s Score − Score 3 days ago</b>. Above <b>+10</b> in 3 days = strong thrust, historically associated with the early stages of sustained rallies. Negative thrust = rapid deterioration.', use: 'A Thrust &gt; +10 alongside a rising score is one of the strongest "all-clear" signals in the dashboard. Combine with FTD confirmation for highest conviction. Thrust &lt; −10 = potential distribution phase beginning — reduce exposure.' }, 'rally-prob': { title: 'Rally Probability Gauge', what: 'A 0–100% composite probability score estimating how likely the current market environment is to sustain a rally. Combines 6 indicators into one reading.', how: '<b>Breadth Score</b> (20pts) + <b>Momentum</b> (15pts) + <b>Thrust</b> (15pts) + <b>BSR</b> (20pts) + <b>Distribution Days</b> (15pts) + <b>Pressure</b> (15pts) + <b>FTD bonus</b> (+10pts). If no BSR trades logged, 20pts redistributed across other 5 indicators and scaled to 100.', use: '<b>85–100%</b> Very High — full sizing. <b>70–84%</b> High — normal entries. <b>50–69%</b> Moderate — selective pilot only. <b>30–49%</b> Low — wait. Below <b>30%</b> — stand aside entirely. This is your single best "go / no-go" signal.' }, 'market-condition': { title: 'Market Condition (William J. O\'Neil System)', what: 'Classifies the Nifty index into one of four conditions based on William J. O\'Neil\'s market-timing system:<br><br>• <b>Confirmed Uptrend</b>: A Confirmed Uptrend market status indicates the Nifty is in an uptrend. The uptrend begins with a follow-through day or when the index reclaims its previous uptrend high. At this stage, the index is not showing signs of significant distribution or heavy selling by institutional investors. This is the perfect time to be looking out for fundamentally strong stocks at proper buy points.<br><br>• <b>Uptrend Under Pressure</b>: An Uptrend Under Pressure market status is normally associated with rising number of distribution days on the Nifty. The index has 3-4 distribution days in the last five weeks and is showing some signs of deterioration. The index may be close to its 50-day and/or 200-day moving average support level, but is typically above at least one of the levels. Investors need to exercise caution and keep their buying decisions reserved to fundamentally strong stocks showing technical strength.<br><br>• <b>Rally Attempt</b>: A Rally Attempt begins the third day the index closes higher off the most recent bottom after being in a Correction (also known as Downtrend). During a Rally Attempt, we are on the lookout for a Follow-Through Day to confirm the trend has reversed and we have entered a Confirmed Uptrend. A Rally Attempt fails and the index goes back into a Correction if it undercuts the most recent low.<br><br>• <b>Correction</b>: A major index generally goes into Correction when the number of distribution days in the last five weeks rises to 5-6. The index has typically declined 5-7% or more from its recent high. Also, the index most likely breaches its support levels of 50-day and 200-day moving averages. Investors should avoid new purchases, get off margin, and raise cash. This is a good time to build your watch list of fundamentally-strong stocks that you would like to own when market condition improves.', how: 'Evaluated automatically from Follow-Through Day confirmation (Day 4+ close >1.5% on higher volume), 5-week distribution count (3–4 days = Uptrend Under Pressure, 5–6 days = Correction), % pullback from peak, and 50-day / 200-day moving average support levels.', use: '<b>Confirmed Uptrend:</b> Perfect time to look for fundamentally strong stocks at proper buy points.<br><b>Uptrend Under Pressure:</b> Investors need to exercise caution and keep their buying decisions reserved to fundamentally strong stocks showing technical strength.<br><b>Rally Attempt:</b> On the lookout for a Follow-Through Day to confirm trend reversal; build watchlist.<br><b>Correction:</b> Avoid new purchases, get off margin, and raise cash.' }, 'ftd': { title: 'Follow-Through Day (FTD)', what: 'A follow-through day is identified when a major index (Sensex or Nifty 50) closes significantly higher, over 1.5% for the day, on higher volume than the previous session. It happens on fourth day or later of an attempted rally. The most powerful follow-through days often happen on fourth through seventh day of an attempted rally. They serve as a confirmation that the market has really changed direction and is in a new uptrend. The strength in a follow-through day can be gauged by the action in leading stocks. A follow-through day coupled with leading stocks breaking out from their base patterns provides signs of a sustainable rally. A follow-through day is a key concept in the market-timing system developed by William J. O\'Neil.', how: 'A Rally Attempt begins the third day the index closes higher off the most recent bottom after being in a Correction. On <b>Day 4 or later</b>, an index close <b>over 1.5%</b> on <b>higher volume than the previous session</b> confirms the FTD. If the index undercuts the most recent low, or accumulates 5–6 distribution days, or declines 5–7%+ from high, the rally attempt / FTD fails and the index reverts to Correction.', use: 'Before FTD: Stand aside or pilot mode (0.25R) only after Day 3 if leading stocks break out. After FTD: Confirmed Uptrend is established — full position sizing justified on fundamentally strong stocks breaking out from sound base patterns.' }, 'dist-days': { title: 'Distribution Days', what: 'A distribution day is indicated by a major market index such as the Sensex or Nifty closing down 0.2% or more on higher volume than the previous day. Distribution in the stock market refers to the increased selling of stock by large institutions. The number of distribution days on the Sensex helps us in tracking the general market condition. Our studies have shown that four to six days of distribution over a period of five weeks are often enough to turn a previously advancing market into decline. Once you notice increasing distribution, it is best to hold off on any further stock purchases, and perhaps even cut back on some of your positions, especially if you are on margin.', how: 'Auto-counted from your Pressure Day Log over a rolling 25-session (5-week) window. Distribution days older than 25 sessions or cancelled by a 5% index rise are dropped.', use: '<b>0–2 days:</b> Healthy market, institutions not distributing.<br><b>3–4 days:</b> Uptrend Under Pressure — rising distribution days on the Nifty (3-4 days in last 5 weeks); index showing signs of deterioration. Exercise caution; keep buying decisions reserved to fundamentally strong stocks showing technical strength.<br><b>5–6 days:</b> Major index generally goes into Correction — avoid new purchases, get off margin, and raise cash.' }, 'hl-ratio': { title: 'H/L Ratio Trend (52-Week)', what: 'The ratio of stocks making new 52-week highs vs new 52-week lows across the Nifty 500. Measures the underlying health and breadth of leadership.', how: '<b>H/L Ratio = New 52W Highs ÷ (New 52W Highs + New 52W Lows) × 100</b>. You enter the raw H and L counts in the EOD entry. The dashboard shows today\'s ratio, the 5-day average, and the 10-day average for trend context.', use: '<b>Above 50%</b> — more stocks making highs than lows = healthy leadership breadth. <b>25–50%</b> — mixed. <b>Below 25%</b> — deteriorating leadership, broad weakness. A falling H/L ratio even as the index holds up = internal distribution, a leading warning signal.' }, 'exposure': { title: 'Personal Exposure Tracker — Market-Adjusted Capital', what: 'Calculates the exact ₹ amount you should have deployed in active positions given current market conditions. Enter your total capital and current invested amount — the tracker shows your suggested ceiling in rupees, your actual deployment, and whether you are over- or under-exposed vs what the market supports.', how: '<b>Suggested Exposure%</b> is computed from: Breadth Score (base 0–87%), MPM Pressure (±4–8%), Distribution Days (−5 to −10%), FTD status (+5%). Suggested ₹ = Exposure% × Your Capital. Gap = Suggested ₹ − Currently Invested.', use: 'If gap is positive → you have headroom to deploy. If gap is negative → you are overexposed, reduce before adding new positions. The status banner in the card provides direct contextual advice. This value also feeds directly into the Risk Advisory section of Market Summary — any overexposure triggers an automatic alert there.' }, 'market-summary': { title: 'Market Summary & Trading Guidance', what: 'A rule-based plain-English synthesis of <b>all</b> dashboard signals into one unified morning briefing — covering market phase, trading rules for today, and risk warnings. Now integrates Breadth Divergence (WBD), Personal Exposure gap, Sector Heatmap trend, and FTD status for a complete picture.', how: 'The engine reads: Breadth Score, Momentum, MPM Pressure, Distribution Days, FTD status, H/L Ratio, Breadth Divergence (from WBD card), and your Personal Exposure gap (from Exposure Tracker). It applies a multi-signal decision tree to generate three sections: <b>Market Summary</b> (phase narrative + MPM + divergence context), <b>Trading Guidance</b> (size rules, divergence actions), <b>Risk Advisory</b> (all red flags in one place).', use: 'Read this card every session morning in under 60 seconds. It tells you exactly what posture to take today. Key integration points: if Breadth Divergence is Bear → guidance automatically adds a no-new-longs rule. If you are overexposed vs the exposure ceiling → Risk Advisory alerts you. If sector heatmap shows broad rotation out → guidance reflects that. Trust this over your instincts on high-conviction days — it applies O\'Neil / Minervini rules mechanically without emotion.' }, 'sector-rotation': { title: 'Sector Rotation Tracker', what: 'Ranks all 13 NSE sector indices by trend strength every week. Uses your manually entered weekly closing prices to auto-calculate 20-week and 50-week moving averages, then classifies each sector into a Stage (1-4) based on where price sits relative to those MAs.', how: '<b>Stage 2</b> = above both MAs - advancing trend, hunt breakouts here. <b>Stage 1</b> = above 20MA but below 50MA - basing, add to watchlist. <b>Stage 3</b> = below 20MA but above 50MA - topping, avoid new entries. <b>Stage 4</b> = below both MAs - declining, skip entirely. <b>RS</b> = sector weekly % minus Nifty 50 weekly % - positive means outperforming. Tap RRG button to see the Relative Rotation Graph.', use: 'Before scanning for stocks, check this card first. Only scan stocks in Stage 2 sectors with positive RS. Update every Friday evening. MAs become reliable after ~20 weeks of history.' }, 'rrg': { title: 'Relative Rotation Graph (RRG)', what: 'A 4-quadrant chart that plots every sector by two metrics: RS-Ratio (X-axis) = is the sector stronger or weaker than Nifty 50? RS-Momentum (Y-axis) = is that relative strength improving or deteriorating? The tail shows the last N weeks of movement so you can see direction, not just position.', how: '<b>Leading</b> (top-right, green) = strong AND improving - best breakout hunting ground. <b>Improving</b> (top-left, blue) = gaining momentum, rotating into leadership - early entry zone. <b>Weakening</b> (bottom-right, yellow) = still strong but momentum slowing - consider exits or tighter stops. <b>Lagging</b> (bottom-left, red) = weak AND deteriorating - avoid completely. Clockwise rotation is the natural cycle: Leading → Weakening → Lagging → Improving → Leading.', use: 'Use tail direction, not just dot position. A sector in Lagging but moving right and upward is recovering - worth watching. A sector in Leading but tail curving down is topping - reduce exposure. Combine with Stage: Stage 2 + Leading quadrant = highest conviction. Use 4w tail for recent momentum, 12w tail for the bigger trend picture.' }, 'score-trend': { what: 'A canvas line chart showing how the Breadth Score has moved over the last 30 trading sessions, giving historical context to the current reading.', how: 'Plots the <b>Breadth Score</b> (blue line) for each saved EOD record. Colour-coded horizontal zone bands: red (Crash), orange (Defensive), yellow (Caution), green (Expansion), lime (Healthy). Up to 30 data points plotted.', use: 'Look for the trend direction, not just today\'s value. A score of 48 rising from 30 is very different from 48 falling from 60. Sustained scores above 45 with rising momentum = confirmed expansion. A score crossing below 35 from above = regime change warning.' }, 'bsr-tracker': { title: 'BSR Tracker — Trade Log', what: 'Your personal breakout trade journal used to calculate the Breakout Success Rate (BSR). Every breakout entry you make should be logged here.', how: 'Log each breakout trade with: Stock, Date, Buy Price, Result (Win/Loss), Exit Price. The dashboard calculates <b>success = exit gain ≥ 5%</b>, counts wins and losses, and updates the BSR% in the status strip in real time. Data saved to localStorage and synced to JSONBin cloud.', use: 'A falling BSR (even if the score looks ok) is your earliest warning that breakouts are failing. Log every trade — the more complete the data, the more reliable the BSR signal. Aim for ≥ 65% in a healthy market.' }, 'mpm-tracker': { title: 'Market Pressure Monitor (MPM)', what: 'A daily log of Accumulation and Distribution Days used to calculate the net market pressure score shown in the status strip.', how: 'Each day you observe: if Nifty closes <b>up on above-avg volume</b> → log as Accumulation (+1). If <b>down on above-avg volume</b> → log as Distribution (−1). The rolling 25-day window is auto-managed. <b>MPM Score = Acc − Dist</b> days in window.', use: 'Maintain the log daily for accurate pressure readings. Missing entries reduce signal accuracy. A shift from positive to negative MPM before the price breaks down is your earliest institutional selling warning. Use this alongside Distribution Day count for confirmation.' }, 'breadth-div': { title: 'Breadth Divergence', what: 'Compares the 5-day direction of Nifty 50 price vs Breadth Score. When they agree — both rising or both falling — the trend is confirmed. When they disagree, that is an early warning signal.', how: 'Price direction = Nifty close today vs 5 sessions ago. Breadth direction = Score today vs 5 sessions ago. Four states: Confirmed ↑ (both up), Confirmed ↓ (both down), Bearish Divergence (price up, breadth down — hidden weakness), Bullish Divergence (price down, breadth up — hidden strength).', use: 'Bearish Divergence → reduce exposure, tighten stops. Bullish Divergence → watch for reversal entry. Confirmed ↑ → normal entry conditions apply per your zone.' }, 'trend-bias': { title: 'Market Trend Bias (10d)', what: 'Counts how many of the last 10 sessions had Nifty closing up vs down. A market spending more time going up is healthier than one spending more time going down.', how: 'Each day is classified as Up (close > prev close), Down, or Flat. Net = Up days − Down days over last 10 sessions. Score direction used as fallback when Nifty close is missing.', use: 'Net ≥+4 = Bullish bias — look for breakouts. Net −1 to +1 = Neutral — be selective. Net ≤−4 = Bearish bias — reduce exposure or stand aside.' }, 'thrust-quality': { title: 'Thrust Quality', what: 'Measures the quality of recent market bounces. Are up-days happening on broad SMA participation, or on narrow/weak breadth? High conviction = stocks broadly above their MAs on up-days.', how: 'Compares average SMA breadth (mean of %>EMA20, %>SMA50, %>SMA200) on positive-breadth days vs negative-breadth days over last 10 sessions. A positive spread = up-days have better participation.', use: 'Strong = breakouts more likely to follow through, act on setups. Weak or Narrow = bounces are traps — avoid new entries until conviction improves.' }, 'inst-bias': { title: 'Institutional Bias 10d', what: 'Shows what institutions have been doing in the last 10 sessions based on MPM data. Accumulation days (close↑ + volume↑) = buying. Distribution days (close↓ + volume↑) = selling.', how: 'From your MPM log: counts Accumulation, Distribution and Neutral days in the last 10 sessions. Net = Acc − Dist. The mini bar chart shows the day-by-day pattern (teal=acc, red=dist, grey=neutral).', use: 'Net ≥+2 = Institutions accumulating — safe to hold and add. Net 0 to −1 = Neutral — hold, no new adds. Net ≤−2 = Institutions distributing — tighten stops, reduce exposure.' }, 'snapshot': { title: 'Detailed Metrics Snapshot', what: 'A compact table showing every key breadth metric for the latest session and previous session side-by-side, with the 10-day trend sparkline, direction arrow, and a signal label. Covers all 7 indicators: EMA20%, SMA50%, SMA200%, Advance/Decline ratio, H/L Ratio, Score, and Momentum.', how: 'Data is pulled from your saved EOD entries. The Change column = Latest − Prev. The 10-Day Trend sparkline is a mini line chart of the last 10 values. Direction = ↑ if improving, ↓ if deteriorating. Signal labels follow the same thresholds used in the Analysis Strip.', use: 'Use this for a quick cross-check when a signal in the status strip surprises you. If Score says Expansion but SMA200% is still low, breadth is improving on short-term MAs only — be selective. If EMA20% and SMA50% are both rising but SMA200% is lagging, the market is recovering from a correction but longer-term structure is not yet repaired. Expand this card only when you want deeper context — the Analysis Strip covers daily use.' }, 'sector-heatmap': { title: 'Sector Leadership Heatmap', what: 'A weekly colour-coded grid showing which NSE sectors are outperforming or underperforming Nifty 50. Green = sector beat the index that week. Red = sector lagged. Reveals which sectors are leading and which are rotating out.', how: 'Each row is a sector. Each column is one week, newest on the right. Colour intensity reflects the degree of outperformance/underperformance. Enter weekly sector close prices in the Control Panel → Sectors tab.', use: 'Your single fastest sector rotation read. Consistently green rows = institutional money is flowing into that sector — prioritise stocks from those sectors for breakout entries. Consecutive red rows = distribution underway in that sector — avoid new longs regardless of individual stock setup quality. Use alongside the RRG for confirmation.' }, 'personal-exposure': { title: 'Personal Exposure Tracker', what: 'Translates the dashboard\'s market-environment exposure percentage into an actual ₹ amount against your real trading capital. Tells you exactly how much money should be deployed right now — and whether you are over- or under-invested vs what current conditions justify.', how: 'Enter your total trading capital and current invested amount. The tracker computes the market-suggested ₹ ceiling (Exposure% × Total Capital), compares it to your actual invested amount, and flags whether you are aligned, overexposed, or have headroom to deploy.', use: 'Check this every morning before placing orders. If you are overexposed, reduce before adding new positions. If you have headroom and the market score is rising, that gap = new setup budget. Never use this as a reason to force-deploy — headroom is an upper limit, not a target.' }, 'wbd-alert': { title: 'Weekly Breadth Divergence Alert', what: 'Detects the most dangerous (and most rewarding) early warning in market analysis: when price and breadth move in opposite directions. A Bear Divergence (price up, breadth down) often precedes corrections. A Bull Divergence (price down, breadth up) often precedes recoveries.', how: 'Compares Nifty 50 price direction and Breadth Score direction over the last 5 trading sessions. Four states: <b style="color:var(--lime)">Confirmed ↑</b> (both up), <b style="color:var(--red)">Confirmed ↓</b> (both down), <b style="color:var(--orange)">Bear Diverge ⚠</b> (price up but breadth falling), <b style="color:var(--teal)">Bull Diverge ✦</b> (price down but breadth improving).', use: '<b>Bear Diverge</b> → Reduce exposure, tighten stop losses, avoid new entries even if price looks bullish. Smart money is not participating. <b>Bull Diverge</b> → Watch for reversal — accumulate pilot positions in strongest RS stocks. <b>Confirmed ↑</b> → Green light, proceed per your zone guidance. This card directly feeds the Risk Advisory in Market Summary — any divergence triggers an automatic alert there too.' }, 'breadth-expansion': { title: 'Breadth Expansion Rate', what: 'Measures how fast breadth is improving or deteriorating — the velocity of change in the Breadth Score over the last 5 sessions. A market can have the same score two weeks apart but the rate of change tells a completely different story.', how: 'Takes the last 5 breadth score readings and calculates the average daily change (pts/day). Positive = expanding, Negative = contracting. Also shows total change over the 5-day window.', use: 'Rapid expansion (+3 to +5 pts/day) = high-quality rally, act on breakouts. Slow (+1 to +2) = improving but unconvincing. Stalling (0) = caution. Contracting = avoid new entries regardless of absolute score level.' }, 'sector-command': { title: 'Sector Command Centre', what: 'Three views in one card. SECTORS tab: auto-populated daily from your VCP scanner — composite MA breadth score per sector across the full Nifty 500 universe. RRG tab: Relative Rotation Graph showing sector momentum trajectories. Heatmap tab: weekly RS vs Nifty 50 history grid.', how: 'Breadth data loads automatically from sector_breadth.json on your GitHub Pages (configure URL once in the SECTORS tab). RRG and Heatmap use weekly data entered via Control Panel → Sectors tab.', use: 'SECTORS tab: Sort by Score to instantly rank sectors by participation breadth. Green ≥60%, Yellow 40–59%, Red <40%. RRG tab: Leading quadrant = strong + improving, hunt breakouts there. Clockwise rotation = bullish. Heatmap: consistent green rows = durable multi-week leaders.' }, 'vcpb': { title: 'Sector Breadth — SECTORS Tab', what: 'Daily breadth across the full Nifty 500 universe per sector. Composite Score = avg(%>20EMA + %>50SMA + %>200SMA). Shows how broadly each sector participates in the rally across all 3 timeframes. RS wk and Stage columns are optional overlays from your manually-entered weekly sector data.', how: 'Fetched automatically from sector_breadth.json generated by vcp_scanner.py at 6 PM IST daily via GitHub Actions. Enter your GitHub Pages base URL once to activate.', use: 'Sectors with Score ≥60 = broad momentum — prioritise for new entries. Trend Bar (3 mini-bars): all green = healthy across all timeframes. High %>200SMA but low %>20EMA = structurally strong but momentum cooling — wait. Cross-check RS wk column against breadth score as a sanity check: if both are green, the sector is genuinely leading.' }, 'scc-feature-breadth': { title: 'SECTORS Tab Features', what: 'Provides daily market breadth analysis across the Nifty 500 index grouped by sector. Features:<ul><li><b>Dynamic Leaderboard:</b> Displays sector ranking with interactive bidirectional headers. Click any column header to sort; click it again to toggle direction (indicated by ▲/▼).</li><li><b>Multi-Sort Controls:</b> Sort sectors by up to six nested criteria sequentially (Sort 1 > Sort 2 > Sort 3 > Sort 4 > Sort 5 > Sort 6). Click "⚡ Minervini", "📈 O\'Neil", or "🔥 Zanger" to instantly load their presets.</li><li><b>Metric Definitions:</b> Point cursor on column headers for explanations.</li><li><b>Participant Drill-down:</b> Click any sector name to open a pop-up listing all constituent stocks and their VCP/EMA setup status.</li><li><b>NSE Index Links:</b> Click "NSE↗" next to any sector to open the live exchange tracking page.</li><li><b>Consensus Strip:</b> Auto-aggregates sectors into Leaders (top 25%), Watch (mid-ranking, improving), and Avoid (bottom 25%) at the top.</li></ul>', how: '• <b>Composite Score:</b> Calculated daily as 50% × (percentage of stocks above 20EMA) + 30% × (percentage of stocks above 50SMA) + 20% × (percentage of stocks above 200SMA).<br>• <b>Med90%:</b> Median 90-day price return of all VCP scanner candidate stocks in that sector.<br>• <b>Accel:</b> Velocity change of breadth (rolling 5d net score gain minus prior 5d net score gain).<br>• <b>A/D:</b> Count of days where Breadth Score rose by ≥2.5 points (Accumulation) vs. fell by ≥2.5 points (Distribution) over the last 20 trading days.', use: '• <b>Mark Minervini Preset (⚡):</b> Stage > RS wk > Score > Accel > @Top > Med90%. Ranks sectors strictly by Stage 2 markup first, then relative strength, then participation.<br>• <b>William O\'Neil Preset (📈):</b> RS wk > A/D > Score > @Top > Accel > Med90%. Ranks sectors by CANSLIM leadership and institutional sponsorship first.<br>• <b>Dan Zanger Preset (🔥):</b> Med90% > Accel > RS wk > Stage > Score > @Top. Ranks sectors by price velocity, momentum expansion, and relative strength first to catch explosive breakouts.' }, 'scc-feature-rrg': { title: 'RRG Tab Features', what: 'Relative Rotation Graph (RRG) visually modeling the relative strength and momentum of sectors vs. the Nifty 50. Features:<ul><li><b>Four-Quadrant Rotation Map:</b> Categorizes sectors into:<ul><li><i>Leading (Green):</i> Outperforming Nifty 50 with rising momentum.</li><li><i>Weakening (Yellow):</i> Outperforming Nifty 50 but momentum is slowing down.</li><li><i>Lagging (Red):</i> Underperforming Nifty 50 with falling momentum.</li><li><i>Improving (Blue):</i> Underperforming Nifty 50 but momentum is gaining speed.</li></ul></li><li><b>Sector Highlighter:</b> Click a tail or a sector label to dim all other sectors.</li><li><b>Time Tail Length Control:</b> Modify weekly history length from 5w to 40w.</li><li><b>Animation Control:</b> Play/pause controls to visualize historical rotation paths.</li></ul>', how: '• <b>RS-Ratio (X-axis):</b> Calculated as the ratio of weekly sector prices vs. Nifty 50, normalized around a benchmark of 100.<br>• <b>RS-Momentum (Y-axis):</b> Calculated as the rate of change of the RS-Ratio over a smoothed period.<br>• A sector\'s position is updated using manual weekly closing prices entered in the Control Panel → Sectors tab.', use: '• Natural rotation moves clockwise. Scan for sectors in the <b>Improving</b> quadrant curving upward and rightward, or established leaders in the <b>Leading</b> quadrant.<br>• Dim sectors to inspect individual trails. A longer tail suggests high velocity; a short tail indicates a tight base or consolidation.' }, 'scc-feature-heatmap': { title: 'Heatmap Tab Features', what: 'A weekly color-coded leadership grid tracking relative performance history. Features:<ul><li><b>Chronological Performance Grid:</b> Matrix showing weekly returns vs Nifty 50 (latest week on the right).</li><li><b>Intensity Color Scales:</b> Green blocks show positive outperformance (darker = stronger). Red blocks show underperformance. Grey blocks are neutral.</li><li><b>Sector Name Links:</b> Click any sector name on the left of the grid to drill down to constituent stocks.</li></ul>', how: 'Calculates the performance spread weekly: <b>Sector Return % − Nifty 50 Return %</b> for each individual week. Colors are scaled dynamically based on the size of the spread.', use: '• Scan for rows with a solid sequence of dark green cells over the last 3-6 weeks, indicating sustained institutional accumulation.<br>• Avoid sectors with consecutive red cells, signaling active distribution and capital flight.<br>• Use alongside RRG to confirm if a sector\'s rotation is supported by actual weekly outperformance.' }, 'scc-feature-chart': { title: 'Chart Tab Features', what: 'A direct multi-chart workbench for manually tracking stocks. Features:<ul><li><b>Layout Options:</b> Toggle between 2-column (2 charts side-by-side) and 4-column (4 charts side-by-side) grid formats.</li><li><b>Independent Settings:</b> Set the symbol and timeframe (Daily/Weekly) for each chart pane individually.</li><li><b>Sync Option:</b> Synchronize all panels to a single symbol for multi-timeframe analysis (e.g. Daily next to Weekly).</li><li><b>TradingView Integration:</b> Quick external links to TradingView chart views.</li><li><b>Maximizer:</b> Instantly enlarge any chart panel into full screen view.</li></ul>', how: 'Fetches historical stock prices directly from Yahoo Finance using the local proxy server or public CORS fallbacks. Renders high-quality price bars or Volume Candles with a smoothed 20-period Exponential Moving Average (EMA 20 in orange).', use: '• <b>Volume Candles:</b> Look for wide, green candles on high volume to confirm massive institutional accumulation.<br>• <b>Multi-Timeframe Analysis:</b> Check the same symbol on both the Daily (6-month view) and Weekly (2-year view) side-by-side. The trend is healthy if the price stays consistently above the rising EMA 20 (orange line) on both timeframes.' } }; function showInfoTip(id, btnEl) {
+const INFO = { 'breadth-score': { title: 'Breadth Score', what: 'A 0–100 composite score measuring how broadly the NSE Nifty 500 market is participating in any move. High score = wide participation = healthy market.', how: '<b>Advance/Decline Ratio</b> (35%) + <b>% stocks above EMA20</b> (20%) + <b>% above SMA50</b> (15%) + <b>% above SMA200</b> (15%) + <b>52W H/L Ratio</b> (15%). Weighted average of all five, scaled 0–100.', use: 'Above <b>55</b> = Healthy Bull — full position sizing. <b>45–55</b> = Expansion. <b>35–45</b> = Recovery — pilot entries only. Below <b>35</b> = Danger — stand aside. This is your primary market posture signal.' }, 'market-zone': { title: 'Market Zone & Position Size', what: 'Translates the Breadth Score into a named market phase and recommended position size in R (risk units), making it instantly actionable.', how: 'Score &lt; 30 → <b>Correction</b> (0R). 30–45 → <b>Recovery</b> (0.25–0.5R). 45–55 → <b>Expansion</b> (1–2R). &gt;55 → <b>Healthy Bull</b> (2–3R). The R size is a guideline based on O\'Neil / Minervini methodology.', use: 'Check this first every session. It sets your trade sizing ceiling immediately — don\'t take a 2R trade when the zone says Recovery.' }, 'zone-meter': { title: 'Zone Meter (Score Bar)', what: 'A visual progress bar showing where the current Breadth Score sits across the full 0–100 spectrum, with colour-coded zone bands and correct position sizes.', how: '<b style="color:var(--red)">CORRECTION</b> 0–20 (0R) · <b style="color:var(--orange)">DEFENSIVE</b> 20–35 (0.25R pilot) · <b style="color:var(--yellow)">CAUTION</b> 35–45 (0.5–1R) · <b style="color:var(--green)">EXPANDING</b> 45–55 (1–2R) · <b style="color:var(--lime)">HEALTHY</b> 55–100 (2–3R). Fill width = Score/100.', use: 'The score number tells you <i>where</i>; the bar shows you <i>how far into that zone</i> you are — e.g. a score of 52 is near the top of Expansion, almost into Healthy territory. Use this to gauge whether a zone change is imminent.' }, 'bsr-rate': { title: 'BSR — Breakout Success Rate', what: 'The percentage of your logged breakout trades that succeeded — defined as gaining <b>5% or more</b> from the pivot buy point within the trade window.', how: 'From your BSR Trade Log: <b>BSR% = Successful trades ÷ Total trades × 100</b>. A trade is marked success when you log a gain ≥ 5%. The rate is recalculated live as you log trades.', use: 'Above <b>65%</b> — market is rewarding breakouts, act confidently. <b>40–65%</b> — mixed, be selective. Below <b>40%</b> — breakouts are failing, avoid new entries even if the score is decent. This is your real-world feedback loop.' }, 'market-pressure': { title: 'Market Pressure (MPM)', what: 'Net institutional buying pressure over the last 25 sessions. Positive = institutions accumulating. Negative = distribution dominating.', how: '<b>Pressure = Accumulation Days − Distribution Days</b> (rolling 25-day window). An Accumulation Day = Nifty closes higher on above-average volume. A Distribution Day = closes lower on above-average volume. You log each in the Pressure Day Log.', use: '<b>+4 or above</b> — strong institutional backing, high confidence. <b>+1 to +3</b> — mild positive. <b>0 to −2</b> — caution. <b>Below −3</b> — institutional selling dominating, reduce exposure sharply. Always read alongside Breadth Score.' }, 'breadth-momentum': { title: 'Breadth Momentum', what: 'The day-over-day <i>change</i> in Breadth Score. Tells you whether market participation is improving or deteriorating right now.', how: '<b>Momentum = Today\'s Score − Yesterday\'s Score</b>. A jump of +10 in a single day is a strong breadth expansion signal. Negative momentum means participation is narrowing even if the absolute score is still decent.', use: 'Positive and rising → confirm your entries. Flat → neutral, wait for direction. Negative two days in a row → tighten stops and reduce new exposure. Watch for momentum divergence — score still high but momentum turning negative is an early warning.' }, 'breadth-thrust': { title: 'Breadth Thrust', what: 'The 3-day cumulative change in Breadth Score. A momentum acceleration signal that detects rapid, broad market expansion.', how: '<b>Thrust = Today\'s Score − Score 3 days ago</b>. Above <b>+10</b> in 3 days = strong thrust, historically associated with the early stages of sustained rallies. Negative thrust = rapid deterioration.', use: 'A Thrust &gt; +10 alongside a rising score is one of the strongest "all-clear" signals in the dashboard. Combine with FTD confirmation for highest conviction. Thrust &lt; −10 = potential distribution phase beginning — reduce exposure.' }, 'rally-prob': { title: 'Rally Probability Gauge', what: 'A 0–100% composite probability score estimating how likely the current market environment is to sustain a rally. Combines 6 indicators into one reading.', how: '<b>Breadth Score</b> (20pts) + <b>Momentum</b> (15pts) + <b>Thrust</b> (15pts) + <b>BSR</b> (20pts) + <b>Distribution Days</b> (15pts) + <b>Pressure</b> (15pts) + <b>FTD bonus</b> (+10pts). If no BSR trades logged, 20pts redistributed across other 5 indicators and scaled to 100.', use: '<b>85–100%</b> Very High — full sizing. <b>70–84%</b> High — normal entries. <b>50–69%</b> Moderate — selective pilot only. <b>30–49%</b> Low — wait. Below <b>30%</b> — stand aside entirely. This is your single best "go / no-go" signal.' }, 'market-condition': { title: 'Market Condition (William J. O\'Neil System)', what: 'Classifies the Nifty index into one of four conditions based on William J. O\'Neil\'s market-timing system:<br><br>• <b>Confirmed Uptrend</b>: A Confirmed Uptrend market status indicates the Nifty is in an uptrend. The uptrend begins with a follow-through day or when the index reclaims its previous uptrend high. At this stage, the index is not showing signs of significant distribution or heavy selling by institutional investors. This is the perfect time to be looking out for fundamentally strong stocks at proper buy points.<br><br>• <b>Uptrend Under Pressure</b>: An Uptrend Under Pressure market status is normally associated with rising number of distribution days on the Nifty. The index has 3-4 distribution days in the last five weeks and is showing some signs of deterioration. The index may be close to its 50-day and/or 200-day moving average support level, but is typically above at least one of the levels. Investors need to exercise caution and keep their buying decisions reserved to fundamentally strong stocks showing technical strength.<br><br>• <b>Rally Attempt</b>: A Rally Attempt begins the third day the index closes higher off the most recent bottom after being in a Correction (also known as Downtrend). During a Rally Attempt, we are on the lookout for a Follow-Through Day to confirm the trend has reversed and we have entered a Confirmed Uptrend. A Rally Attempt fails and the index goes back into a Correction if it undercuts the most recent low.<br><br>• <b>Correction</b>: A major index generally goes into Correction when the number of distribution days in the last five weeks rises to 5-6. The index has typically declined 5-7% or more from its recent high. Also, the index most likely breaches its support levels of 50-day and 200-day moving averages. Investors should avoid new purchases, get off margin, and raise cash. This is a good time to build your watch list of fundamentally-strong stocks that you would like to own when market condition improves.', how: 'Evaluated automatically from Follow-Through Day confirmation (Day 4+ close >1.5% on higher volume), 5-week distribution count (3–4 days = Uptrend Under Pressure, 5–6 days = Correction), % pullback from peak, and 50-day / 200-day moving average support levels.', use: '<b>Confirmed Uptrend:</b> Perfect time to look for fundamentally strong stocks at proper buy points.<br><b>Uptrend Under Pressure:</b> Investors need to exercise caution and keep their buying decisions reserved to fundamentally strong stocks showing technical strength.<br><b>Rally Attempt:</b> On the lookout for a Follow-Through Day to confirm trend reversal; build watchlist.<br><b>Correction:</b> Avoid new purchases, get off margin, and raise cash.' }, 'ftd': { title: 'Follow-Through Day (FTD)', what: 'A follow-through day is identified when a major index (Sensex or Nifty 50) closes significantly higher, over 1.5% for the day, on higher volume than the previous session. It happens on fourth day or later of an attempted rally. The most powerful follow-through days often happen on fourth through seventh day of an attempted rally. They serve as a confirmation that the market has really changed direction and is in a new uptrend. The strength in a follow-through day can be gauged by the action in leading stocks. A follow-through day coupled with leading stocks breaking out from their base patterns provides signs of a sustainable rally. A follow-through day is a key concept in the market-timing system developed by William J. O\'Neil.', how: 'A Rally Attempt begins the third day the index closes higher off the most recent bottom after being in a Correction. On <b>Day 4 or later</b>, an index close <b>over 1.5%</b> on <b>higher volume than the previous session</b> confirms the FTD. If the index undercuts the most recent low, or accumulates 5–6 distribution days, or declines 5–7%+ from high, the rally attempt / FTD fails and the index reverts to Correction.', use: 'Before FTD: Stand aside or pilot mode (0.25R) only after Day 3 if leading stocks break out. After FTD: Confirmed Uptrend is established — full position sizing justified on fundamentally strong stocks breaking out from sound base patterns.' }, 'dist-days': { title: 'Distribution Days', what: 'A distribution day is indicated by a major market index such as the Sensex or Nifty closing down 0.2% or more on higher volume than the previous day. Distribution in the stock market refers to the increased selling of stock by large institutions. The number of distribution days on the Sensex helps us in tracking the general market condition. Our studies have shown that four to six days of distribution over a period of five weeks are often enough to turn a previously advancing market into decline. Once you notice increasing distribution, it is best to hold off on any further stock purchases, and perhaps even cut back on some of your positions, especially if you are on margin.', how: 'Auto-counted from your Pressure Day Log over a rolling 25-session (5-week) window. Distribution days older than 25 sessions or cancelled by a 5% index rise are dropped.', use: '<b>0–2 days:</b> Healthy market, institutions not distributing.<br><b>3–4 days:</b> Uptrend Under Pressure — rising distribution days on the Nifty (3-4 days in last 5 weeks); index showing signs of deterioration. Exercise caution; keep buying decisions reserved to fundamentally strong stocks showing technical strength.<br><b>5–6 days:</b> Major index generally goes into Correction — avoid new purchases, get off margin, and raise cash.' }, 'hl-ratio': { title: 'H/L Ratio Trend (52-Week)', what: 'The ratio of stocks making new 52-week highs vs new 52-week lows across the Nifty 500. Measures the underlying health and breadth of leadership.', how: '<b>H/L Ratio = New 52W Highs ÷ (New 52W Highs + New 52W Lows) × 100</b>. You enter the raw H and L counts in the EOD entry. The dashboard shows today\'s ratio, the 5-day average, and the 10-day average for trend context.', use: '<b>Above 50%</b> — more stocks making highs than lows = healthy leadership breadth. <b>25–50%</b> — mixed. <b>Below 25%</b> — deteriorating leadership, broad weakness. A falling H/L ratio even as the index holds up = internal distribution, a leading warning signal.' }, 'exposure': { title: 'Personal Exposure Tracker — Market-Adjusted Capital', what: 'Calculates the exact ₹ amount you should have deployed in active positions given current market conditions. Enter your total capital and current invested amount — the tracker shows your suggested ceiling in rupees, your actual deployment, and whether you are over- or under-exposed vs what the market supports.', how: '<b>Suggested Exposure%</b> is computed from: Breadth Score (base 0–87%), MPM Pressure (±4–8%), Distribution Days (−5 to −10%), FTD status (+5%). Suggested ₹ = Exposure% × Your Capital. Gap = Suggested ₹ − Currently Invested.', use: 'If gap is positive → you have headroom to deploy. If gap is negative → you are overexposed, reduce before adding new positions. The status banner in the card provides direct contextual advice. This value also feeds directly into the Risk Advisory section of Market Summary — any overexposure triggers an automatic alert there.' }, 'market-summary': { title: 'Market Summary & Trading Guidance', what: 'A rule-based plain-English synthesis of <b>all</b> dashboard signals into one unified morning briefing — covering market phase, trading rules for today, and risk warnings. Now integrates Breadth Divergence (WBD), Personal Exposure gap, Sector Heatmap trend, and FTD status for a complete picture.', how: 'The engine reads: Breadth Score, Momentum, MPM Pressure, Distribution Days, FTD status, H/L Ratio, Breadth Divergence (from WBD card), and your Personal Exposure gap (from Exposure Tracker). It applies a multi-signal decision tree to generate three sections: <b>Market Summary</b> (phase narrative + MPM + divergence context), <b>Trading Guidance</b> (size rules, divergence actions), <b>Risk Advisory</b> (all red flags in one place).', use: 'Read this card every session morning in under 60 seconds. It tells you exactly what posture to take today. Key integration points: if Breadth Divergence is Bear → guidance automatically adds a no-new-longs rule. If you are overexposed vs the exposure ceiling → Risk Advisory alerts you. If sector heatmap shows broad rotation out → guidance reflects that. Trust this over your instincts on high-conviction days — it applies O\'Neil / Minervini rules mechanically without emotion.' }, 'sector-rotation': { title: 'Sector Rotation Tracker', what: 'Ranks all 13 NSE sector indices by trend strength every week. Uses your manually entered weekly closing prices to auto-calculate 20-week and 50-week moving averages, then classifies each sector into a Stage (1-4) based on where price sits relative to those MAs.', how: '<b>Stage 2</b> = above both MAs - advancing trend, hunt breakouts here. <b>Stage 1</b> = above 20MA but below 50MA - basing, add to watchlist. <b>Stage 3</b> = below 20MA but above 50MA - topping, avoid new entries. <b>Stage 4</b> = below both MAs - declining, skip entirely. <b>RS</b> = sector weekly % minus Nifty 50 weekly % - positive means outperforming. Tap RRG button to see the Relative Rotation Graph.', use: 'Before scanning for stocks, check this card first. Only scan stocks in Stage 2 sectors with positive RS. Update every Friday evening. MAs become reliable after ~20 weeks of history.' }, 'rrg': { title: 'Relative Rotation Graph (RRG)', what: 'A 4-quadrant chart that plots every sector by two metrics: RS-Ratio (X-axis) = is the sector stronger or weaker than Nifty 50? RS-Momentum (Y-axis) = is that relative strength improving or deteriorating? The tail shows the last N weeks of movement so you can see direction, not just position.', how: '<b>Leading</b> (top-right, green) = strong AND improving - best breakout hunting ground. <b>Improving</b> (top-left, blue) = gaining momentum, rotating into leadership - early entry zone. <b>Weakening</b> (bottom-right, yellow) = still strong but momentum slowing - consider exits or tighter stops. <b>Lagging</b> (bottom-left, red) = weak AND deteriorating - avoid completely. Clockwise rotation is the natural cycle: Leading → Weakening → Lagging → Improving → Leading.', use: 'Use tail direction, not just dot position. A sector in Lagging but moving right and upward is recovering - worth watching. A sector in Leading but tail curving down is topping - reduce exposure. Combine with Stage: Stage 2 + Leading quadrant = highest conviction. Use 4w tail for recent momentum, 12w tail for the bigger trend picture.' }, 'score-trend': { what: 'A canvas line chart showing how the Breadth Score has moved over the last 30 trading sessions, giving historical context to the current reading.', how: 'Plots the <b>Breadth Score</b> (blue line) for each saved EOD record. Colour-coded horizontal zone bands: red (Crash), orange (Defensive), yellow (Caution), green (Expansion), lime (Healthy). Up to 30 data points plotted.', use: 'Look for the trend direction, not just today\'s value. A score of 48 rising from 30 is very different from 48 falling from 60. Sustained scores above 45 with rising momentum = confirmed expansion. A score crossing below 35 from above = regime change warning.' }, 'bsr-tracker': { title: 'BSR Tracker — Trade Log', what: 'Your personal breakout trade journal used to calculate the Breakout Success Rate (BSR). Every breakout entry you make should be logged here.', how: 'Log each breakout trade with: Stock, Date, Buy Price, Result (Win/Loss), Exit Price. The dashboard calculates <b>success = exit gain ≥ 5%</b>, counts wins and losses, and updates the BSR% in the status strip in real time. Data saved to localStorage and synced to JSONBin cloud.', use: 'A falling BSR (even if the score looks ok) is your earliest warning that breakouts are failing. Log every trade — the more complete the data, the more reliable the BSR signal. Aim for ≥ 65% in a healthy market.' }, 'mpm-tracker': { title: 'Market Pressure Monitor (MPM)', what: 'A daily log of Accumulation and Distribution Days used to calculate the net market pressure score shown in the status strip.', how: 'Each day you observe: if Nifty closes <b>up on above-avg volume</b> → log as Accumulation (+1). If <b>down on above-avg volume</b> → log as Distribution (−1). The rolling 25-day window is auto-managed. <b>MPM Score = Acc − Dist</b> days in window.', use: 'Maintain the log daily for accurate pressure readings. Missing entries reduce signal accuracy. A shift from positive to negative MPM before the price breaks down is your earliest institutional selling warning. Use this alongside Distribution Day count for confirmation.' }, 'breadth-div': { title: 'Breadth Divergence', what: 'Compares the 5-day direction of Nifty 50 price vs Breadth Score. When they agree — both rising or both falling — the trend is confirmed. When they disagree, that is an early warning signal.', how: 'Price direction = Nifty close today vs 5 sessions ago. Breadth direction = Score today vs 5 sessions ago. Four states: Confirmed ↑ (both up), Confirmed ↓ (both down), Bearish Divergence (price up, breadth down — hidden weakness), Bullish Divergence (price down, breadth up — hidden strength).', use: 'Bearish Divergence → reduce exposure, tighten stops. Bullish Divergence → watch for reversal entry. Confirmed ↑ → normal entry conditions apply per your zone.' }, 'trend-bias': { title: 'Market Trend Bias (10d)', what: 'Counts how many of the last 10 sessions had Nifty closing up vs down. A market spending more time going up is healthier than one spending more time going down.', how: 'Each day is classified as Up (close > prev close), Down, or Flat. Net = Up days − Down days over last 10 sessions. Score direction used as fallback when Nifty close is missing.', use: 'Net ≥+4 = Bullish bias — look for breakouts. Net −1 to +1 = Neutral — be selective. Net ≤−4 = Bearish bias — reduce exposure or stand aside.' }, 'thrust-quality': { title: 'Thrust Quality', what: 'Measures the quality of recent market bounces. Are up-days happening on broad SMA participation, or on narrow/weak breadth? High conviction = stocks broadly above their MAs on up-days.', how: 'Compares average SMA breadth (mean of %>EMA20, %>SMA50, %>SMA200) on positive-breadth days vs negative-breadth days over last 10 sessions. A positive spread = up-days have better participation.', use: 'Strong = breakouts more likely to follow through, act on setups. Weak or Narrow = bounces are traps — avoid new entries until conviction improves.' }, 'inst-bias': { title: 'Institutional Bias 10d', what: 'Shows what institutions have been doing in the last 10 sessions based on MPM data. Accumulation days (close↑ + volume↑) = buying. Distribution days (close↓ + volume↑) = selling.', how: 'From your MPM log: counts Accumulation, Distribution and Neutral days in the last 10 sessions. Net = Acc − Dist. The mini bar chart shows the day-by-day pattern (teal=acc, red=dist, grey=neutral).', use: 'Net ≥+2 = Institutions accumulating — safe to hold and add. Net 0 to −1 = Neutral — hold, no new adds. Net ≤−2 = Institutions distributing — tighten stops, reduce exposure.' }, 'snapshot': { title: 'Detailed Metrics Snapshot', what: 'A compact table showing every key breadth metric for the latest session and previous session side-by-side, with the 10-day trend sparkline, direction arrow, and a signal label. Covers all 7 indicators: EMA20%, SMA50%, SMA200%, Advance/Decline ratio, H/L Ratio, Score, and Momentum.', how: 'Data is pulled from your saved EOD entries. The Change column = Latest − Prev. The 10-Day Trend sparkline is a mini line chart of the last 10 values. Direction = ↑ if improving, ↓ if deteriorating. Signal labels follow the same thresholds used in the Analysis Strip.', use: 'Use this for a quick cross-check when a signal in the status strip surprises you. If Score says Expansion but SMA200% is still low, breadth is improving on short-term MAs only — be selective. If EMA20% and SMA50% are both rising but SMA200% is lagging, the market is recovering from a correction but longer-term structure is not yet repaired. Expand this card only when you want deeper context — the Analysis Strip covers daily use.' }, 'sector-heatmap': { title: 'Sector Leadership Heatmap', what: 'A weekly colour-coded grid showing which NSE sectors are outperforming or underperforming Nifty 50. Green = sector beat the index that week. Red = sector lagged. Reveals which sectors are leading and which are rotating out.', how: 'Each row is a sector. Each column is one week, newest on the right. Colour intensity reflects the degree of outperformance/underperformance. Enter weekly sector close prices in the Control Panel → Sectors tab.', use: 'Your single fastest sector rotation read. Consistently green rows = institutional money is flowing into that sector — prioritise stocks from those sectors for breakout entries. Consecutive red rows = distribution underway in that sector — avoid new longs regardless of individual stock setup quality. Use alongside the RRG for confirmation.' }, 'personal-exposure': { title: 'Personal Exposure Tracker', what: 'Translates the dashboard\'s market-environment exposure percentage into an actual ₹ amount against your real trading capital. Tells you exactly how much money should be deployed right now — and whether you are over- or under-invested vs what current conditions justify.', how: 'Enter your total trading capital and current invested amount. The tracker computes the market-suggested ₹ ceiling (Exposure% × Total Capital), compares it to your actual invested amount, and flags whether you are aligned, overexposed, or have headroom to deploy.', use: 'Check this every morning before placing orders. If you are overexposed, reduce before adding new positions. If you have headroom and the market score is rising, that gap = new setup budget. Never use this as a reason to force-deploy — headroom is an upper limit, not a target.' }, 'wbd-alert': { title: 'Weekly Breadth Divergence Alert', what: 'Detects the most dangerous (and most rewarding) early warning in market analysis: when price and breadth move in opposite directions. A Bear Divergence (price up, breadth down) often precedes corrections. A Bull Divergence (price down, breadth up) often precedes recoveries.', how: 'Compares Nifty 50 price direction and Breadth Score direction over the last 5 trading sessions. Four states: <b style="color:var(--lime)">Confirmed ↑</b> (both up), <b style="color:var(--red)">Confirmed ↓</b> (both down), <b style="color:var(--orange)">Bear Diverge ⚠</b> (price up but breadth falling), <b style="color:var(--teal)">Bull Diverge ✦</b> (price down but breadth improving).', use: '<b>Bear Diverge</b> → Reduce exposure, tighten stop losses, avoid new entries even if price looks bullish. Smart money is not participating. <b>Bull Diverge</b> → Watch for reversal — accumulate pilot positions in strongest RS stocks. <b>Confirmed ↑</b> → Green light, proceed per your zone guidance. This card directly feeds the Risk Advisory in Market Summary — any divergence triggers an automatic alert there too.' }, 'breadth-expansion': { title: 'Breadth Expansion Rate', what: 'Measures how fast breadth is improving or deteriorating — the velocity of change in the Breadth Score over the last 5 sessions. A market can have the same score two weeks apart but the rate of change tells a completely different story.', how: 'Takes the last 5 breadth score readings and calculates the average daily change (pts/day). Positive = expanding, Negative = contracting. Also shows total change over the 5-day window.', use: 'Rapid expansion (+3 to +5 pts/day) = high-quality rally, act on breakouts. Slow (+1 to +2) = improving but unconvincing. Stalling (0) = caution. Contracting = avoid new entries regardless of absolute score level.' }, 'sector-command': { title: 'Sector Command Centre', what: 'Three views in one card. SECTORS tab: auto-populated daily from your VCP scanner — composite MA breadth score per sector across the full Nifty 500 universe. RRG tab: Relative Rotation Graph showing sector momentum trajectories. Heatmap tab: weekly RS vs Nifty 50 history grid.', how: 'Breadth data loads automatically from sector_breadth.json on your GitHub Pages (configure URL once in the SECTORS tab). RRG and Heatmap use weekly data entered via Control Panel → Sectors tab.', use: 'SECTORS tab: Sort by Score to instantly rank sectors by participation breadth. Green ≥60%, Yellow 40–59%, Red <40%. RRG tab: Leading quadrant = strong + improving, hunt breakouts there. Clockwise rotation = bullish. Heatmap: consistent green rows = durable multi-week leaders.' }, 'vcpb': { title: 'Sector Breadth — SECTORS Tab', what: 'Daily breadth across the full Nifty 500 universe per sector. Composite Score = avg(%>20EMA + %>50SMA + %>200SMA). Shows how broadly each sector participates in the rally across all 3 timeframes. RS wk and Stage columns are optional overlays from your manually-entered weekly sector data.', how: 'Fetched automatically from sector_breadth.json generated by vcp_scanner.py at 6 PM IST daily via GitHub Actions. Enter your GitHub Pages base URL once to activate.', use: 'Sectors with Score ≥60 = broad momentum — prioritise for new entries. Trend Bar (3 mini-bars): all green = healthy across all timeframes. High %>200SMA but low %>20EMA = structurally strong but momentum cooling — wait. Cross-check RS wk column against breadth score as a sanity check: if both are green, the sector is genuinely leading.' }, 'scc-feature-breadth': { title: 'SECTORS Tab Features', what: 'Provides daily market breadth analysis across the Nifty 500 index grouped by sector. Features:<ul><li><b>Dynamic Leaderboard:</b> Displays sector ranking with interactive bidirectional headers. Click any column header to sort; click it again to toggle direction (indicated by ▲/▼).</li><li><b>Multi-Sort Controls:</b> Sort sectors by up to six nested criteria sequentially (Sort 1 > Sort 2 > Sort 3 > Sort 4 > Sort 5 > Sort 6). Click "⚡ Minervini", "📈 O\'Neil", or "🔥 Zanger" to instantly load their presets.</li><li><b>Metric Definitions:</b> Point cursor on column headers for explanations.</li><li><b>Participant Drill-down:</b> Click any sector name to open a pop-up listing all constituent stocks and their VCP/EMA setup status.</li><li><b>NSE Index Links:</b> Click "NSE↗" next to any sector to open the live exchange tracking page.</li><li><b>Consensus Strip:</b> Auto-aggregates sectors into Leaders (top 25%), Watch (mid-ranking, improving), and Avoid (bottom 25%) at the top.</li></ul>', how: '• <b>Composite Score:</b> Calculated daily as 50% × (percentage of stocks above 20EMA) + 30% × (percentage of stocks above 50SMA) + 20% × (percentage of stocks above 200SMA).<br>• <b>Med90%:</b> Median 90-day price return of all VCP scanner candidate stocks in that sector.<br>• <b>Accel:</b> Velocity change of breadth (rolling 5d net score gain minus prior 5d net score gain).<br>• <b>A/D:</b> Count of days where Breadth Score rose by ≥2.5 points (Accumulation) vs. fell by ≥2.5 points (Distribution) over the last 20 trading days.', use: '• <b>Mark Minervini Preset (⚡):</b> Stage > RS wk > Score > Accel > @Top > Med90%. Ranks sectors strictly by Stage 2 markup first, then relative strength, then participation.<br>• <b>William O\'Neil Preset (📈):</b> RS wk > A/D > Score > @Top > Accel > Med90%. Ranks sectors by CANSLIM leadership and institutional sponsorship first.<br>• <b>Dan Zanger Preset (🔥):</b> Med90% > Accel > RS wk > Stage > Score > @Top. Ranks sectors by price velocity, momentum expansion, and relative strength first to catch explosive breakouts.' }, 'scc-feature-rrg': { title: 'RRG Tab Features', what: 'Relative Rotation Graph (RRG) visually modeling the relative strength and momentum of sectors vs. the Nifty 50. Features:<ul><li><b>Four-Quadrant Rotation Map:</b> Categorizes sectors into:<ul><li><i>Leading (Green):</i> Outperforming Nifty 50 with rising momentum.</li><li><i>Weakening (Yellow):</i> Outperforming Nifty 50 but momentum is slowing down.</li><li><i>Lagging (Red):</i> Underperforming Nifty 50 with falling momentum.</li><li><i>Improving (Blue):</i> Underperforming Nifty 50 but momentum is gaining speed.</li></ul></li><li><b>Sector Highlighter:</b> Click a tail or a sector label to dim all other sectors.</li><li><b>Time Tail Length Control:</b> Modify weekly history length from 5w to 40w.</li><li><b>Animation Control:</b> Play/pause controls to visualize historical rotation paths.</li></ul>', how: '• <b>RS-Ratio (X-axis):</b> Calculated as the ratio of weekly sector prices vs. Nifty 50, normalized around a benchmark of 100.<br>• <b>RS-Momentum (Y-axis):</b> Calculated as the rate of change of the RS-Ratio over a smoothed period.<br>• A sector\'s position is updated using manual weekly closing prices entered in the Control Panel → Sectors tab.', use: '• Natural rotation moves clockwise. Scan for sectors in the <b>Improving</b> quadrant curving upward and rightward, or established leaders in the <b>Leading</b> quadrant.<br>• Dim sectors to inspect individual trails. A longer tail suggests high velocity; a short tail indicates a tight base or consolidation.' }, 'scc-feature-heatmap': { title: 'Heatmap Tab Features', what: 'A weekly color-coded leadership grid tracking relative performance history. Features:<ul><li><b>Chronological Performance Grid:</b> Matrix showing weekly returns vs Nifty 50 (latest week on the right).</li><li><b>Intensity Color Scales:</b> Green blocks show positive outperformance (darker = stronger). Red blocks show underperformance. Grey blocks are neutral.</li><li><b>Sector Name Links:</b> Click any sector name on the left of the grid to drill down to constituent stocks.</li></ul>', how: 'Calculates the performance spread weekly: <b>Sector Return % − Nifty 50 Return %</b> for each individual week. Colors are scaled dynamically based on the size of the spread.', use: '• Scan for rows with a solid sequence of dark green cells over the last 3-6 weeks, indicating sustained institutional accumulation.<br>• Avoid sectors with consecutive red cells, signaling active distribution and capital flight.<br>• Use alongside RRG to confirm if a sector\'s rotation is supported by actual weekly outperformance.' }, 'scc-feature-chart': { title: 'Chart Tab Features', what: 'A direct multi-chart workbench for manually tracking stocks. Features:<ul><li><b>Layout Options:</b> Toggle between 2-column (2 charts side-by-side) and 4-column (4 charts side-by-side) grid formats.</li><li><b>Independent Settings:</b> Set the symbol and timeframe (Daily/Weekly) for each chart pane individually.</li><li><b>Sync Option:</b> Synchronize all panels to a single symbol for multi-timeframe analysis (e.g. Daily next to Weekly).</li><li><b>TradingView Integration:</b> Quick external links to TradingView chart views.</li><li><b>Maximizer:</b> Instantly enlarge any chart panel into full screen view.</li></ul>', how: 'Fetches historical stock prices directly from Yahoo Finance using the local proxy server or public CORS fallbacks. Renders high-quality price bars or Volume Candles with a smoothed 20-period Exponential Moving Average (EMA 20 in orange).', use: '• <b>Volume Candles:</b> Look for wide, green candles on high volume to confirm massive institutional accumulation.<br>• <b>Multi-Timeframe Analysis:</b> Check the same symbol on both the Daily (6-month view) and Weekly (2-year view) side-by-side. The trend is healthy if the price stays consistently above the rising EMA 20 (orange line) on both timeframes.' }, 'scc-feature-clusters': { title: 'Fresh High Breakout Clusters', what: 'Tracks institutional breakout clustering across 120+ granular industries using the 3,000+ NSE stock universe (inspired by Manas Arora\'s Breadth Ledger methodology). When multiple stocks in the same industry hit or hover near new highs simultaneously, it signals high-conviction group sponsorship.', how: '• <b>Breakout Density Formula:</b> % of industry constituents trading within <b>2% of 1-Month High</b> (short-term momentum leader) and within <b>3% of 52-Week High</b> (structural leadership).<br>• Filtered for minimum group size (default N ≥ 3) to eliminate 1-stock distortions.<br>• Dual-colored visual bars display the exact percentage share of fresh highs across the entire industry.', use: '• <b>Cluster Hunting:</b> Focus on industries where ≥35% of stocks are within 2% of 1-Month Highs — this indicates real group momentum rather than isolated moves.<br>• <b>Watchlist Export:</b> Click the 📋 Copy TV button on any industry card or use the bulk export button to instantly paste tickers into TradingView.<br>• <b>Tier Breakdown:</b> Click on any industry card to expand all constituent stocks, highlighted by High 52W Leaders (Teal), 1-Month High Leaders (Mint), and Base consolidations.' } }; function showInfoTip(id, btnEl) {
   const d = INFO[id]; if (!d) return; const tip = document.getElementById('info-tooltip'); document.getElementById('tip-title').textContent = d.title; const sections = [{ lbl: 'What it is', txt: d.what }, { lbl: 'How it\'s calculated', txt: d.how }, { lbl: 'How to use it', txt: d.use }]; const tipBody = document.getElementById('tip-body'); tipBody.innerHTML = sections.map((s, i) => `<div class="tip-section">
       <div class="tip-sec-lbl">${s.lbl}</div>
       <div class="tip-sec-txt">${s.txt}</div>
@@ -8919,3 +8922,466 @@ function applyDrawingCoordinates() {
   showChartToast('✔ Coordinates updated precisely', '#22c55e');
 }
 window.applyDrawingCoordinates = applyDrawingCoordinates;
+
+// ==============================================================================
+// ⭐ SECTOR COMMAND: FRESH HIGHS & BREAKOUT CLUSTERS ENGINE (Manas Arora Model)
+// ==============================================================================
+
+let _sccClustersCache = [];
+let _sccFilteredClusters = [];
+let _sccUniverseStocks = [];
+let _sccClusterExpandedMap = {};
+
+function sccEscapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function sccComputeClusters() {
+  const data = window.SCREENER_DATA || window.SCREENER_UNIVERSE;
+  const stocks = data && Array.isArray(data.stocks) ? data.stocks : [];
+  _sccUniverseStocks = stocks;
+
+  const indMap = {};
+  stocks.forEach(s => {
+    const ind = (s.industry && s.industry.trim()) || 'Other / Diversified';
+    if (!indMap[ind]) {
+      indMap[ind] = {
+        name: ind,
+        sector: s.sector || '',
+        total: 0,
+        h1m: 0,
+        h52w: 0,
+        stocks: []
+      };
+    }
+    const cluster = indMap[ind];
+    cluster.total++;
+
+    const is1m = (s.dist_high_1m_pct != null && s.dist_high_1m_pct <= 2.0);
+    const is52w = (s.dist_52w_high != null && s.dist_52w_high <= 3.0);
+
+    if (is1m) cluster.h1m++;
+    if (is52w) cluster.h52w++;
+
+    cluster.stocks.push({
+      symbol: s.symbol,
+      company: s.company || s.symbol,
+      price: s.price != null ? s.price : 0,
+      change_pct: s.change_pct != null ? s.change_pct : 0,
+      dist_1m: s.dist_high_1m_pct != null ? s.dist_high_1m_pct : 999,
+      dist_52w: s.dist_52w_high != null ? s.dist_52w_high : 999,
+      is1m: is1m,
+      is52w: is52w,
+      mkt_cap_cr: s.mkt_cap_cr || 0,
+      pe_ratio: s.pe_ratio
+    });
+  });
+
+  const clusters = Object.values(indMap).map(c => {
+    c.stocks.sort((a, b) => {
+      if (a.is52w !== b.is52w) return a.is52w ? -1 : 1;
+      if (a.is1m !== b.is1m) return a.is1m ? -1 : 1;
+      return a.dist_1m - b.dist_1m;
+    });
+
+    const pct1m = c.total > 0 ? +((c.h1m / c.total) * 100).toFixed(1) : 0;
+    const pct52w = c.total > 0 ? +((c.h52w / c.total) * 100).toFixed(1) : 0;
+
+    return Object.assign({}, c, {
+      pct1m: pct1m,
+      pct52w: pct52w
+    });
+  });
+
+  _sccClustersCache = clusters;
+  if (typeof sccRenderDashboardWidget === 'function') {
+    sccRenderDashboardWidget();
+  }
+  return clusters;
+}
+
+function sccRenderClusters() {
+  const container = document.getElementById('cluster-cards-container');
+  const ribbon = document.getElementById('cluster-summary-ribbon');
+  if (!container) return;
+
+  if (!_sccClustersCache || !_sccClustersCache.length) {
+    sccComputeClusters();
+  }
+
+  if (!_sccClustersCache.length) {
+    container.innerHTML = `
+      <div style="padding:40px 14px; text-align:center; color:var(--dim); font-size:12px;">
+        <span style="opacity:0.7">Loading universe dataset (screener_stocks.js)…</span>
+      </div>`;
+    setTimeout(() => {
+      sccComputeClusters();
+      sccRenderClusters();
+    }, 300);
+    return;
+  }
+
+  const searchInput = document.getElementById('cluster-search-input');
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+  const minSizeSelect = document.getElementById('cluster-min-size');
+  const minSize = minSizeSelect ? parseInt(minSizeSelect.value) || 3 : 3;
+
+  const densitySelect = document.getElementById('cluster-density-filter');
+  const densityFilter = densitySelect ? densitySelect.value : 'all';
+
+  const sortBySelect = document.getElementById('cluster-sort-by');
+  const sortBy = sortBySelect ? sortBySelect.value : 'pct1m';
+
+  const allHighsCount = _sccUniverseStocks.filter(s => s.dist_high_1m_pct != null && s.dist_high_1m_pct <= 2.0).length;
+  const allHighsEl = document.getElementById('cluster-all-highs-count');
+  if (allHighsEl) allHighsEl.textContent = allHighsCount;
+
+  let filtered = _sccClustersCache.filter(c => {
+    if (c.total < minSize) return false;
+
+    if (densityFilter === 'dense' && c.pct1m < 35) return false;
+    if (densityFilter === 'super' && c.pct1m < 50) return false;
+    if (densityFilter === 'lead52' && c.pct52w < 15) return false;
+
+    if (query) {
+      const matchInd = c.name.toLowerCase().includes(query);
+      const matchSec = c.sector.toLowerCase().includes(query);
+      const matchStock = c.stocks.some(s => s.symbol.toLowerCase().includes(query) || s.company.toLowerCase().includes(query));
+      if (!matchInd && !matchSec && !matchStock) return false;
+    }
+
+    return true;
+  });
+
+  filtered.sort((a, b) => {
+    if (sortBy === 'pct1m') {
+      return (b.pct1m - a.pct1m) || (b.pct52w - a.pct52w) || (b.total - a.total);
+    } else if (sortBy === 'pct52w') {
+      return (b.pct52w - a.pct52w) || (b.pct1m - a.pct1m) || (b.total - a.total);
+    } else if (sortBy === 'count1m') {
+      return (b.h1m - a.h1m) || (b.pct1m - a.pct1m) || (b.total - a.total);
+    } else if (sortBy === 'total') {
+      return (b.total - a.total) || (b.pct1m - a.pct1m);
+    } else if (sortBy === 'alpha') {
+      return a.name.localeCompare(b.name);
+    }
+    return 0;
+  });
+
+  _sccFilteredClusters = filtered;
+
+  if (ribbon) {
+    const totalIndustries = _sccClustersCache.length;
+    const qualClusters = filtered.length;
+    const univ52wCount = _sccUniverseStocks.filter(s => s.dist_52w_high != null && s.dist_52w_high <= 3.0).length;
+    const univTotal = _sccUniverseStocks.length || 3000;
+    const univ1mPct = ((allHighsCount / univTotal) * 100).toFixed(1);
+    const univ52wPct = ((univ52wCount / univTotal) * 100).toFixed(1);
+
+    ribbon.innerHTML = `
+      <div class="cluster-sum-card">
+        <span class="cluster-sum-label">Active Clusters</span>
+        <span class="cluster-sum-val" style="color:var(--text)">${qualClusters} <span style="font-size:11px;color:var(--dim);font-weight:400">of ${totalIndustries}</span></span>
+        <span class="cluster-sum-sub">Granular industry groups</span>
+      </div>
+      <div class="cluster-sum-card">
+        <span class="cluster-sum-label">1-Month High Leaders</span>
+        <span class="cluster-sum-val" style="color:#34d399">${allHighsCount} <span style="font-size:11px;color:var(--dim);font-weight:400">(${univ1mPct}%)</span></span>
+        <span class="cluster-sum-sub">Stocks within 2% of 1M High</span>
+      </div>
+      <div class="cluster-sum-card">
+        <span class="cluster-sum-label">52-Week High Leaders</span>
+        <span class="cluster-sum-val" style="color:var(--teal)">${univ52wCount} <span style="font-size:11px;color:var(--dim);font-weight:400">(${univ52wPct}%)</span></span>
+        <span class="cluster-sum-sub">Stocks within 3% of 52W High</span>
+      </div>
+      <div class="cluster-sum-card">
+        <span class="cluster-sum-label">Top Cluster</span>
+        <span class="cluster-sum-val" style="font-size:13px;color:var(--yellow);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${filtered[0] ? sccEscapeHtml(filtered[0].name) : 'None'}</span>
+        <span class="cluster-sum-sub">${filtered[0] ? (filtered[0].pct1m + '% at 1M High (' + filtered[0].h1m + '/' + filtered[0].total + ')') : '—'}</span>
+      </div>
+    `;
+  }
+
+  if (!filtered.length) {
+    container.innerHTML = `
+      <div style="padding:40px 14px; text-align:center; color:var(--dim); font-size:12px;">
+        No industry clusters match the current filter criteria. Try lowering the constituent threshold or clearing search.
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  filtered.forEach((c, idx) => {
+    const rank = idx + 1;
+    const rankClass = rank === 1 ? 'top1' : (rank <= 3 ? 'top3' : '');
+    const isExpanded = _sccClusterExpandedMap[c.name] !== undefined ? _sccClusterExpandedMap[c.name] : (rank <= 4);
+    const safeId = 'cluster-chips-' + idx;
+
+    html += `
+      <div class="cluster-card" id="cluster-card-${idx}">
+        <div class="cluster-card-head" onclick="sccToggleClusterChips(${idx})">
+          <div class="cluster-card-rank-col">
+            <span class="cluster-rank-badge ${rankClass}">#${rank}</span>
+          </div>
+          <div class="cluster-card-title-col">
+            <div class="cluster-industry-name">
+              <span>${sccEscapeHtml(c.name)}</span>
+              ${c.sector ? `<span class="cluster-sector-pill">${sccEscapeHtml(c.sector)}</span>` : ''}
+            </div>
+            <div class="cluster-meta-sub">
+              <span class="cluster-total-badge">${c.total} Stocks in Industry</span>
+              <span class="cluster-sep">·</span>
+              <span class="cluster-stat-pill mint">🔥 ${c.h1m} (${c.pct1m}%) at 1M High</span>
+              <span class="cluster-sep">·</span>
+              <span class="cluster-stat-pill teal">⭐ ${c.h52w} (${c.pct52w}%) at 52W High</span>
+            </div>
+          </div>
+          
+          <div class="cluster-card-actions">
+            <button class="cluster-btn-copy" onclick="event.stopPropagation(); sccCopyClusterTv(${idx})" title="Copy TradingView Watchlist for this Industry">
+              📋 Copy TV (${c.total})
+            </button>
+            <button class="cluster-btn-expand" onclick="event.stopPropagation(); sccToggleClusterChips(${idx})" title="Toggle Constituent Stocks">
+              <span id="cluster-arrow-${idx}" style="display:inline-block; transition:transform 0.2s; transform:${isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'}">▼</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="cluster-bar-container" title="1-Month Highs: ${c.pct1m}% | 52-Week Highs: ${c.pct52w}%">
+          <div class="cluster-bar-track">
+            <div class="cluster-bar-fill-52w" style="width: ${Math.min(100, c.pct52w)}%;"></div>
+            <div class="cluster-bar-fill-1m" style="width: ${Math.max(0, Math.min(100, c.pct1m - c.pct52w))}%;"></div>
+          </div>
+        </div>
+
+        <div class="cluster-chips-panel" id="${safeId}" style="display: ${isExpanded ? 'flex' : 'none'};">
+          ${c.stocks.map(s => {
+            const chipClass = s.is52w ? 'leader-52w' : (s.is1m ? 'leader-1m' : 'base');
+            const distLabel = s.is52w ? `⭐ 52W (-${s.dist_52w.toFixed(1)}%)` : (s.is1m ? `🔥 1M (-${s.dist_1m.toFixed(1)}%)` : `-${s.dist_1m.toFixed(1)}% 1M`);
+            const chgSign = s.change_pct >= 0 ? '+' : '';
+            const chgClass = s.change_pct >= 0 ? 'pos' : 'neg';
+            const priceStr = s.price ? '₹' + s.price.toLocaleString('en-IN', { maximumFractionDigits: 1 }) : '';
+            return `
+              <div class="cluster-stock-chip ${chipClass}" 
+                   onclick="sccClusterChipClick('${s.symbol}')"
+                   title="${sccEscapeHtml(s.company)} · ${priceStr} (${chgSign}${s.change_pct.toFixed(2)}%) · Click to open TradingView chart">
+                <span class="cluster-chip-sym">${s.symbol}</span>
+                <span class="cluster-chip-dist">${distLabel}</span>
+                <span class="cluster-chip-chg ${chgClass}">${chgSign}${s.change_pct.toFixed(1)}%</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function sccToggleClusterChips(idx) {
+  const c = _sccFilteredClusters[idx];
+  if (!c) return;
+  const panel = document.getElementById('cluster-chips-' + idx);
+  const arrow = document.getElementById('cluster-arrow-' + idx);
+  if (!panel) return;
+  const isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? 'flex' : 'none';
+  _sccClusterExpandedMap[c.name] = isHidden;
+  if (arrow) {
+    arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+  }
+}
+
+function sccClusterChipClick(symbol) {
+  if (!symbol) return;
+  const url = 'https://in.tradingview.com/chart/fZ5fwxUh/?symbol=NSE:' + encodeURIComponent(symbol);
+  window.open(url, '_blank');
+}
+
+function sccCopyClusterTv(idx) {
+  const c = _sccFilteredClusters[idx];
+  if (!c || !c.stocks || !c.stocks.length) return;
+  const tvString = c.stocks.map(s => 'NSE:' + s.symbol).join(',');
+  navigator.clipboard.writeText(tvString).then(() => {
+    if (typeof showChartToast === 'function') {
+      showChartToast(`📋 Copied <b>${c.stocks.length}</b> symbols for TradingView (<b>${sccEscapeHtml(c.name)}</b>)`, '#2dd4bf');
+    }
+  }).catch(() => {
+    sccCopyFallback(tvString);
+    if (typeof showChartToast === 'function') {
+      showChartToast(`📋 Copied <b>${c.stocks.length}</b> symbols for TradingView`, '#2dd4bf');
+    }
+  });
+}
+
+function sccCopyTopClustersTv(topN = 5) {
+  if (!_sccFilteredClusters || !_sccFilteredClusters.length) return;
+  const list = _sccFilteredClusters.slice(0, topN);
+  const syms = [];
+  list.forEach(c => {
+    c.stocks.forEach(s => {
+      const sym = 'NSE:' + s.symbol;
+      if (!syms.includes(sym)) syms.push(sym);
+    });
+  });
+  if (!syms.length) return;
+  const text = syms.join(',');
+  navigator.clipboard.writeText(text).then(() => {
+    if (typeof showChartToast === 'function') {
+      showChartToast(`📋 Copied <b>${syms.length}</b> symbols from Top ${list.length} Clusters for TradingView!`, '#2dd4bf');
+    }
+  }).catch(() => {
+    sccCopyFallback(text);
+    if (typeof showChartToast === 'function') {
+      showChartToast(`📋 Copied <b>${syms.length}</b> symbols for TradingView`, '#2dd4bf');
+    }
+  });
+}
+
+function sccCopyAllFreshHighsTv() {
+  if (!_sccUniverseStocks || !_sccUniverseStocks.length) {
+    sccComputeClusters();
+  }
+  const highStocks = _sccUniverseStocks.filter(s => s.dist_high_1m_pct != null && s.dist_high_1m_pct <= 2.0);
+  if (!highStocks.length) return;
+  const text = highStocks.map(s => 'NSE:' + s.symbol).join(',');
+  navigator.clipboard.writeText(text).then(() => {
+    if (typeof showChartToast === 'function') {
+      showChartToast(`🚀 Copied <b>${highStocks.length}</b> Fresh High Breakout symbols for TradingView!`, '#34d399');
+    }
+  }).catch(() => {
+    sccCopyFallback(text);
+    if (typeof showChartToast === 'function') {
+      showChartToast(`🚀 Copied <b>${highStocks.length}</b> Fresh High Breakout symbols`, '#34d399');
+    }
+  });
+}
+
+function sccCopyFallback(text) {
+  try {
+    const tempInput = document.createElement('textarea');
+    tempInput.value = text;
+    tempInput.style.position = 'fixed';
+    tempInput.style.opacity = '0';
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    document.execCommand('copy');
+    document.body.removeChild(tempInput);
+  } catch (e) {
+    console.warn('Clipboard copy failed:', e);
+  }
+}
+
+function sccRenderDashboardWidget(data) {
+  const topSecEl = document.getElementById('scc-dash-top-sectors');
+  const topClustEl = document.getElementById('scc-dash-top-clusters');
+  if (!topSecEl && !topClustEl) return;
+
+  // 1. Top Leading Sectors
+  if (topSecEl) {
+    let sectors = (data && Array.isArray(data.sectors)) ? data.sectors : null;
+    if (!sectors) {
+      const card = document.getElementById('srt-home-card');
+      if (card && card._vcpbData && Array.isArray(card._vcpbData.sectors)) {
+        sectors = card._vcpbData.sectors;
+      } else if (typeof vcpbGetCached === 'function') {
+        const cached = vcpbGetCached();
+        if (cached && Array.isArray(cached.sectors)) sectors = cached.sectors;
+      }
+    }
+
+    if (sectors && sectors.length) {
+      const overlay = typeof vcpbGetSrtOverlay === 'function' ? vcpbGetSrtOverlay() : {};
+      const sorted = [...sectors].map(s => {
+        const score = typeof vcpbScore === 'function' ? vcpbScore(s) : 50;
+        const over = overlay[s.sector] || Object.entries(overlay).find(([k]) => k.toLowerCase().includes(s.sector.toLowerCase().split(' ')[0]) || s.sector.toLowerCase().includes(k.toLowerCase().split(' ')[0]))?.[1] || null;
+        const stage = over && over.stage ? over.stage : '';
+        return { ...s, score, stage };
+      }).sort((a, b) => b.score - a.score);
+
+      const top5 = sorted.slice(0, 5);
+      topSecEl.innerHTML = top5.map((s, idx) => {
+        const scoreCol = s.score >= 60 ? 'var(--lime)' : (s.score >= 40 ? 'var(--yellow)' : 'var(--red)');
+        const rankBadge = idx === 0 ? '<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--yellow);background:rgba(250,204,21,0.12);border:1px solid rgba(250,204,21,0.3);padding:1px 5px;border-radius:3px;">#1</span>' :
+                          idx === 1 ? '<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--teal);background:rgba(45,212,191,0.12);border:1px solid rgba(45,212,191,0.3);padding:1px 5px;border-radius:3px;">#2</span>' :
+                          idx === 2 ? '<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--teal);background:rgba(45,212,191,0.12);border:1px solid rgba(45,212,191,0.3);padding:1px 5px;border-radius:3px;">#3</span>' :
+                          `<span style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--dim);background:var(--bg);border:1px solid var(--border);padding:1px 5px;border-radius:3px;">#${idx + 1}</span>`;
+        const stagePill = s.stage ? `<span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.3);font-family:var(--mono)">${s.stage}</span>` : '';
+        const shortName = (typeof SRT_SHORT !== 'undefined' && SRT_SHORT[s.sector]) ? SRT_SHORT[s.sector] : s.sector;
+        return `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;font-size:11px;transition:border-color .15s"
+               onmouseenter="this.style.borderColor='rgba(45,212,191,0.4)'" onmouseleave="this.style.borderColor='var(--border)'">
+            <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1;">
+              ${rankBadge}
+              <a href="sectors.html?tab=breadth" target="_blank" style="font-weight:700;color:var(--text);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${s.sector} · Click to view in Sector Command">${shortName}</a>
+              ${stagePill}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-family:var(--mono);">
+              <span style="font-size:10px;color:var(--dim);" title="% stocks > 20EMA">&gt;20E: <span style="color:var(--text);font-weight:600">${s.a20_pct}%</span></span>
+              <span style="font-size:11px;font-weight:800;color:${scoreCol};min-width:24px;text-align:right" title="Composite Breadth Score">${s.score}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // 2. Top Breakout Clusters
+  if (topClustEl) {
+    if (!_sccClustersCache || !_sccClustersCache.length) {
+      if (typeof sccComputeClusters === 'function') sccComputeClusters();
+    }
+    const clusters = (_sccClustersCache || []).filter(c => c.total >= 3 && (c.h1m > 0 || c.h52w > 0)).sort((a, b) => {
+      if (b.pct1m !== a.pct1m) return b.pct1m - a.pct1m;
+      return b.h1m - a.h1m;
+    });
+
+    if (clusters && clusters.length) {
+      const top3 = clusters.slice(0, 3);
+      topClustEl.innerHTML = top3.map((c, idx) => {
+        const rankBadge = idx === 0 ? '<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--yellow);background:rgba(250,204,21,0.12);border:1px solid rgba(250,204,21,0.3);padding:1px 5px;border-radius:3px;">#1</span>' :
+                          idx === 1 ? '<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--teal);background:rgba(45,212,191,0.12);border:1px solid rgba(45,212,191,0.3);padding:1px 5px;border-radius:3px;">#2</span>' :
+                          '<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--teal);background:rgba(45,212,191,0.12);border:1px solid rgba(45,212,191,0.3);padding:1px 5px;border-radius:3px;">#3</span>';
+        
+        const topStocks = (c.stocks || []).slice(0, 4);
+        const chipsHtml = topStocks.map(s => {
+          const chipColor = s.is52w ? 'var(--teal)' : (s.is1m ? '#34d399' : 'var(--text)');
+          const chipBorder = s.is52w ? 'rgba(45,212,191,0.35)' : (s.is1m ? 'rgba(52,211,153,0.35)' : 'var(--border)');
+          return `<span onclick="sccClusterChipClick('${s.symbol}')"
+                        style="cursor:pointer;font-size:9px;font-family:var(--mono);font-weight:700;color:${chipColor};background:var(--bg);border:1px solid ${chipBorder};padding:1px 5px;border-radius:3px;"
+                        title="${s.symbol}: ₹${s.price} (${s.change_pct >= 0 ? '+' : ''}${s.change_pct}%) · Click for chart">${s.symbol}</span>`;
+        }).join('');
+
+        return `
+          <div style="padding:6px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;display:flex;flex-direction:column;gap:4px;transition:border-color .15s"
+               onmouseenter="this.style.borderColor='rgba(52,211,153,0.4)'" onmouseleave="this.style.borderColor='var(--border)'">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+              <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1;">
+                ${rankBadge}
+                <a href="sectors.html?tab=clusters" target="_blank" style="font-weight:700;color:var(--text);font-size:11px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${c.name} (${c.sector})">${c.name}</a>
+              </div>
+              <div style="display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;">
+                <span style="color:#34d399;font-weight:700;">${c.pct1m}%</span>
+                <span style="color:var(--dim);">(${c.h1m}/${c.total})</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding-left:22px;">
+              ${chipsHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      topClustEl.innerHTML = `<div style="font-size:11px;color:var(--dim);padding:8px 0;text-align:center">No active clusters found</div>`;
+    }
+  }
+}
+window.sccRenderDashboardWidget = sccRenderDashboardWidget;

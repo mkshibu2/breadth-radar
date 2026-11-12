@@ -97,6 +97,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
           <span style="color:#38bdf8;font-weight:600">Stock Screener ↗</span>
         </a>
+        <a href="sectors.html" target="_blank" class="nav-item nav-suite-link highlight-sectors">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          <span style="color:var(--teal);font-weight:600">Sector Command ↗</span>
+        </a>
         <a href="TJ.html" target="_blank" class="nav-item nav-suite-link">
           <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
           <span style="color:var(--gold);font-weight:600">Trade Journal ↗</span>
@@ -377,579 +381,78 @@
                 style="display:none;font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(45,212,191,.12);color:var(--teal);font-family:var(--mono);white-space:nowrap"></span>
             </div>
             <div style="display:flex;gap:6px;align-items:center">
+              <a href="sectors.html" target="_blank"
+                style="font-size:10px;padding:3px 8px;background:rgba(45,212,191,.12);color:var(--teal);border:1px solid rgba(45,212,191,.3);border-radius:4px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:4px;transition:all .15s ease;"
+                onmouseenter="this.style.background='rgba(45,212,191,.25)';this.style.color='#fff';"
+                onmouseleave="this.style.background='rgba(45,212,191,.12)';this.style.color='var(--teal)';"
+                title="Open Full Sector Command in a separate dedicated page">
+                <span>Full Studio ↗</span>
+              </a>
               <button onclick="vcpbFetch(true)" title="Refresh breadth data"
                 style="font-size:9px;padding:3px 8px;background:rgba(45,212,191,.1);color:var(--teal);border:1px solid rgba(45,212,191,.25);border-radius:4px;cursor:pointer;font-weight:600;letter-spacing:.4px">↻</button>
               <button class="info-btn" onclick="showInfoTip('sector-command',this)"
                 title="About Sector Command">i</button>
-              <button onclick="toggleMaximizeSectorCommand()" id="srt-max-btn" title="Maximize Window"
-                style="font-size:10px;padding:3px 8px;background:rgba(167,139,250,.1);color:var(--purple);border:1px solid rgba(167,139,250,.25);border-radius:4px;cursor:pointer;font-weight:600;display:flex;align-items:center;justify-content:center;height:22px;box-sizing:border-box;">
-                <span style="font-size:12px;line-height:1;">⛶</span>
-              </button>
             </div>
           </div>
 
-          <div class="scc-tab-bar">
-            <div id="scc-tab-breadth" class="scc-tab" onclick="sccTab('breadth')"
-              style="border-bottom-color: var(--teal); color: var(--teal); font-weight: 700;">
-              <span style="color:inherit;font-weight:inherit">📶 SECTORS</span>
-              <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-breadth',this)"
-                title="About SECTORS tab features">i</button>
-            </div>
-            <div id="scc-tab-rrg" class="scc-tab" onclick="sccTab('rrg')">
-              <span style="color:inherit;font-weight:inherit">📡 RRG</span>
-              <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-rrg',this)"
-                title="About RRG tab features">i</button>
-            </div>
-            <div id="scc-tab-heatmap" class="scc-tab" onclick="sccTab('heatmap')">
-              <span style="color:inherit;font-weight:inherit">🌡 Heatmap</span>
-              <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-heatmap',this)"
-                title="About Heatmap tab features">i</button>
-            </div>
-            <div id="scc-tab-chart" class="scc-tab" onclick="sccTab('chart')">
-              <span style="color:inherit;font-weight:inherit">📈 Chart</span>
-              <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-chart',this)"
-                title="About Chart tab features">i</button>
-            </div>
-          </div>
-
-          <div id="scc-pane-breadth">
-
-            <div id="vcpb-source-row"
-              style="padding:4px 14px 0;font-size:9px;color:var(--dim);font-family:var(--mono);display:none;align-items:center;gap:6px;flex-wrap:wrap">
-              <span id="vcpb-source-url" style="color:var(--accent)"></span>
-              <button onclick="vcpbToggleLocalGlobal()" id="vcpb-toggle-src-btn"
-                style="background:rgba(91,163,245,.1);border:1px solid rgba(91,163,245,.2);color:var(--accent);font-size:8px;padding:1px 5px;border-radius:3px;cursor:pointer;font-family:var(--body);font-weight:600">Switch
-                to Local</button>
-              &nbsp;·&nbsp; <span id="vcpb-scan-time"></span>
-              &nbsp;·&nbsp; Scan universe: <span id="vcpb-qualified" style="color:var(--teal)"></span>
-            </div>
-
-            <div id="vcpb-loading" style="padding:20px 14px;text-align:center;font-size:11px;color:var(--dim)">
-              <span style="opacity:.6">Fetching sector breadth from VCP Scanner…</span>
-            </div>
-
-            <div id="vcpb-needs-config" style="display:none;padding:16px 14px">
-              <div style="font-size:11px;color:var(--dim);line-height:1.7">
-                Enter your GitHub Pages base URL to auto-load daily sector breadth.<br>
-                <code style="color:var(--accent);font-size:10px">https://&lt;username&gt;.github.io/&lt;repo&gt;</code>
+          <!-- Quick Sector & Cluster Leadership Summary -->
+          <div class="scc-summary-body" style="padding:12px 14px 14px;">
+            <!-- Consensus Strip -->
+            <div id="vcpb-consensus-strip"
+              style="padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+              <div style="display:flex;align-items:center;gap:6px;font-size:11px">
+                <span style="font-weight:700;color:var(--green)">⚡ LEADERS:</span>
+                <span id="vcpb-ls-lead" style="color:var(--text);font-family:var(--mono);font-size:10px">—</span>
               </div>
-              <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
-                <input id="vcpb-url-input" type="text" placeholder="https://yourusername.github.io/breadth-radar"
-                  style="flex:1;min-width:220px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:6px 10px;font-size:11px;font-family:var(--mono)">
-                <button onclick="vcpbSaveUrl()"
-                  style="padding:6px 14px;background:var(--teal);color:#0e1420;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">Save
-                  &amp; Load</button>
+              <div style="display:flex;align-items:center;gap:6px;font-size:11px">
+                <span style="font-weight:700;color:var(--yellow)">👁 WATCH:</span>
+                <span id="vcpb-ls-watch" style="color:var(--text);font-family:var(--mono);font-size:10px">—</span>
               </div>
-              <div id="vcpb-url-msg" style="font-size:10px;margin-top:6px;min-height:14px"></div>
-            </div>
-
-            <div id="vcpb-error" style="display:none;padding:12px 14px">
-              <div style="font-size:11px;color:var(--red)" id="vcpb-error-msg"></div>
-              <div style="font-size:10px;color:var(--dim);margin-top:4px">
-                Make sure <code>sector_breadth.json</code> is in your GitHub repo root.
-                <button onclick="vcpbShowConfig()"
-                  style="background:none;border:none;color:var(--accent);font-size:10px;cursor:pointer;text-decoration:underline;padding:0 0 0 6px">Change
-                  URL</button>
+              <div style="display:flex;align-items:center;gap:6px;font-size:11px">
+                <span style="font-weight:700;color:var(--red)">✕ AVOID:</span>
+                <span id="vcpb-ls-avoid" style="color:var(--dim);font-family:var(--mono);font-size:10px">—</span>
               </div>
             </div>
 
-            <div id="vcpb-data" style="display:none">
-
-              <div id="vcpb-leader-strip" style="padding:8px 14px 6px;border-bottom:1px solid var(--border)">
-                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-                  <span
-                    style="font-size:9px;color:var(--lime);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;font-weight:700;min-width:44px">Leaders</span>
-                  <span style="font-size:8px;color:var(--dim);white-space:nowrap">(top 25%)</span>
-                  <span id="vcpb-ls-lead" style="font-size:10px;color:var(--dim)">—</span>
+            <!-- Two-Column Overview Grid -->
+            <div class="scc-overview-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px;margin-bottom:12px;">
+              <!-- Left: Top Leading Sectors -->
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                  <span style="font-size:11px;font-weight:700;color:var(--teal);letter-spacing:0.5px;text-transform:uppercase;">📶 Top Leading Sectors</span>
+                  <a href="sectors.html?tab=breadth" target="_blank" style="font-size:10px;color:var(--accent);text-decoration:none;font-weight:600">View All 13 ↗</a>
                 </div>
-                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px">
-                  <span
-                    style="font-size:9px;color:var(--yellow);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;font-weight:700;min-width:44px">Watch</span>
-                  <span style="font-size:8px;color:var(--dim);white-space:nowrap">(mid · rising)</span>
-                  <span id="vcpb-ls-watch" style="font-size:10px;color:var(--dim)">—</span>
-                </div>
-                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px">
-                  <span
-                    style="font-size:9px;color:var(--red);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;font-weight:700;min-width:44px">Avoid</span>
-                  <span style="font-size:8px;color:var(--dim);white-space:nowrap">(bottom 25%)</span>
-                  <span id="vcpb-ls-avoid" style="font-size:10px;color:var(--dim)">—</span>
+                <div id="scc-dash-top-sectors" style="display:flex;flex-direction:column;gap:6px;">
+                  <div style="font-size:11px;color:var(--dim);padding:8px 0;text-align:center">Loading sectors breadth…</div>
                 </div>
               </div>
 
-              <div
-                style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap;font-size:11px">
-
-                <div style="display:flex;align-items:center;gap:6px">
-                  <span
-                    style="color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:9px">View:</span>
-                  <div
-                    style="display:flex;background:var(--bg4);border:1px solid var(--border);border-radius:4px;overflow:hidden">
-                    <button id="vcpb-view-sector" onclick="vcpbSetViewMode('sector')"
-                      style="background:var(--accent);color:#050508;border:none;font-size:10px;font-weight:700;padding:4px 10px;cursor:pointer;transition:all .15s">Sector</button>
-                    <button id="vcpb-view-industry" onclick="vcpbSetViewMode('industry')"
-                      style="background:transparent;color:var(--sub);border:none;font-size:10px;font-weight:600;padding:4px 10px;cursor:pointer;transition:all .15s">Industry</button>
-                  </div>
+              <!-- Right: Top Breakout Clusters -->
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                  <span style="font-size:11px;font-weight:700;color:var(--lime);letter-spacing:0.5px;text-transform:uppercase;">⭐ Top Breakout Clusters</span>
+                  <a href="sectors.html?tab=clusters" target="_blank" style="font-size:10px;color:var(--accent);text-decoration:none;font-weight:600">View All 121 ↗</a>
                 </div>
-
-                <div
-                  style="display:flex;align-items:center;gap:6px;position:relative;flex:1;min-width:180px;max-width:300px">
-                  <input id="vcpb-search" type="text" oninput="vcpbApplySearch(this.value)"
-                    placeholder="🔍 Search Copper, Cables, Banks..."
-                    style="width:100%;background:var(--bg4);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 8px 4px 24px;font-size:11px;outline:none;transition:border-color .15s">
-                  <span id="vcpb-search-clear" onclick="vcpbClearSearch()"
-                    style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--dim);cursor:pointer;font-size:12px">×</span>
-                </div>
-
-                <div style="display:flex;align-items:center;gap:6px">
-                  <input id="vcpb-show-confidence" type="checkbox" onchange="vcpbToggleConfidenceCol(this.checked)"
-                    checked style="accent-color:var(--purple);cursor:pointer">
-                  <label for="vcpb-show-confidence"
-                    style="color:var(--sub);cursor:pointer;font-size:10px;user-select:none">Confidence Col</label>
-                </div>
-              </div>
-
-              <div
-                style="display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--bg3);border-bottom:1px solid var(--border);flex-wrap:wrap;font-size:10px">
-                <span
-                  style="color:var(--dim);text-transform:uppercase;font-weight:600;letter-spacing:.5px;font-size:9px">Filter:</span>
-                <button class="vcpb-filter-btn active" onclick="vcpbSetFilter('all')" data-filter="all"
-                  style="background:var(--border);border:1px solid var(--border);color:var(--text);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">All</button>
-                <button class="vcpb-filter-btn" onclick="vcpbSetFilter('strong')" data-filter="strong"
-                  style="background:transparent;border:1px solid var(--border);color:var(--dim);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s"
-                  title="Score >= 60%">Strong</button>
-                <button class="vcpb-filter-btn" onclick="vcpbSetFilter('neutral')" data-filter="neutral"
-                  style="background:transparent;border:1px solid var(--border);color:var(--dim);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s"
-                  title="Score 40-59%">Neutral</button>
-                <button class="vcpb-filter-btn" onclick="vcpbSetFilter('weak')" data-filter="weak"
-                  style="background:transparent;border:1px solid var(--border);color:var(--dim);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s"
-                  title="Score < 40%">Weak</button>
-                <button class="vcpb-filter-btn" onclick="vcpbSetFilter('stage2')" data-filter="stage2"
-                  style="background:transparent;border:1px solid var(--border);color:var(--dim);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s"
-                  title="Stage is S2">Stage 2</button>
-                <button class="vcpb-filter-btn" onclick="vcpbSetFilter('high_conf')" data-filter="high_conf"
-                  style="background:transparent;border:1px solid var(--border);color:var(--dim);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s"
-                  title="High Confidence">High Conf</button>
-                <button class="vcpb-filter-btn" onclick="vcpbSetFilter('emerging')" data-filter="emerging"
-                  style="background:transparent;border:1px solid var(--border);color:var(--dim);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s"
-                  title="Emerging parent sector themes">Emerging Themes</button>
-                <button class="vcpb-filter-btn" onclick="vcpbSetFilter('top10')" data-filter="top10"
-                  style="background:transparent;border:1px solid var(--border);color:var(--dim);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">Top
-                  10</button>
-                <button class="vcpb-filter-btn" onclick="vcpbSetFilter('top25')" data-filter="top25"
-                  style="background:transparent;border:1px solid var(--border);color:var(--dim);padding:2px 8px;border-radius:3px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s">Top
-                  25</button>
-              </div>
-
-              <div
-                style="display:flex;align-items:center;gap:4px;padding:6px 14px;background:var(--bg3);border-bottom:1px solid var(--border);flex-wrap:wrap;font-size:11px">
-                <span
-                  style="color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:9px">Multi-Sort:</span>
-                <select id="vcpb-sort-1" onchange="vcpbApplyMultiSort()"
-                  style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:10px;padding:2px 3px;font-family:var(--body);outline:none;cursor:pointer;width:64px"></select>
-                <span style="color:var(--dim);font-size:9px;margin:0 1px">&gt;</span>
-                <select id="vcpb-sort-2" onchange="vcpbApplyMultiSort()"
-                  style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:10px;padding:2px 3px;font-family:var(--body);outline:none;cursor:pointer;width:64px"></select>
-                <span style="color:var(--dim);font-size:9px;margin:0 1px">&gt;</span>
-                <select id="vcpb-sort-3" onchange="vcpbApplyMultiSort()"
-                  style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:10px;padding:2px 3px;font-family:var(--body);outline:none;cursor:pointer;width:64px"></select>
-                <span style="color:var(--dim);font-size:9px;margin:0 1px">&gt;</span>
-                <select id="vcpb-sort-4" onchange="vcpbApplyMultiSort()"
-                  style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:10px;padding:2px 3px;font-family:var(--body);outline:none;cursor:pointer;width:64px"></select>
-                <span style="color:var(--dim);font-size:9px;margin:0 1px">&gt;</span>
-                <select id="vcpb-sort-5" onchange="vcpbApplyMultiSort()"
-                  style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:10px;padding:2px 3px;font-family:var(--body);outline:none;cursor:pointer;width:64px"></select>
-                <span style="color:var(--dim);font-size:9px;margin:0 1px">&gt;</span>
-                <select id="vcpb-sort-6" onchange="vcpbApplyMultiSort()"
-                  style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:10px;padding:2px 3px;font-family:var(--body);outline:none;cursor:pointer;width:64px"></select>
-
-                <div style="margin-left:auto;display:flex;gap:5px">
-                  <button onclick="vcpbSetPreset('minervini')"
-                    style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.05);color:var(--purple);cursor:pointer;font-weight:600"
-                    title="Load Mark Minervini's preset: Stage > RS wk > Score > Accel > @Top > Med90%">⚡
-                    Minervini</button>
-                  <button onclick="vcpbSetPreset('oneil')"
-                    style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid rgba(45,212,191,.3);background:rgba(45,212,191,.05);color:var(--teal);cursor:pointer;font-weight:600"
-                    title="Load William O'Neil's preset: RS wk > A/D > Score > @Top > Accel > Med90%">📈 O'Neil</button>
-                  <button onclick="vcpbSetPreset('zanger')"
-                    style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid rgba(251,146,60,.3);background:rgba(251,146,60,.05);color:var(--orange);cursor:pointer;font-weight:600"
-                    title="Load Dan Zanger's preset: Med90% > Accel > RS wk > Stage > Score > @Top">🔥 Zanger</button>
-                  <button onclick="vcpbResetSort()"
-                    style="font-size:10px;padding:2px 6px;border-radius:3px;border:1px solid rgba(248,113,113,.3);background:rgba(248,113,113,.05);color:var(--red);cursor:pointer;font-weight:600"
-                    title="Reset sort to default">↺</button>
-                </div>
-              </div>
-
-              <div class="scc-table-container" style="padding:0 14px 4px">
-                <table style="width:100%;border-collapse:collapse">
-                  <thead>
-                    <tr style="border-bottom:1px solid var(--border)">
-                      <th
-                        style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px"
-                        title="Row number">#</th>
-                      <th id="vcpb-h-sector" onclick="vcpbSetSort('sector')"
-                        style="text-align:left;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px"
-                        title="Sector or Theme name.">Sector / Theme</th>
-                      <th id="vcpb-h-universe" onclick="vcpbSetSort('universe')"
-                        style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px"
-                        title="Number of VCP candidate stocks / total universe stocks in this sector/theme.">VCP(Univ)
-                      </th>
-                      <th id="vcpb-h-composite" onclick="vcpbSetSort('composite')"
-                        style="text-align:center;padding:5px 4px;color:var(--teal);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px"
-                        title="Score = 20EMA × 50% + 50SMA × 30% + 200SMA × 20%. Indicates overall sector breadth strength.">
-                        Score</th>
-                      <th id="vcpb-h-a20_pct" onclick="vcpbSetSort('a20_pct')"
-                        style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px"
-                        title="Percentage of sector stocks trading above their 20-day Exponential Moving Average (EMA).">
-                        >20EMA</th>
-                      <th id="vcpb-h-a50_pct" onclick="vcpbSetSort('a50_pct')"
-                        style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px"
-                        title="Percentage of sector stocks trading above their 50-day Simple Moving Average (SMA).">
-                        >50SMA</th>
-                      <th id="vcpb-h-a200_pct" onclick="vcpbSetSort('a200_pct')"
-                        style="text-align:right;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px"
-                        title="Percentage of sector stocks trading above their 200-day Simple Moving Average (SMA).">
-                        >200SMA</th>
-                      <th id="vcpb-h-_trend" onclick="vcpbSetSort('_trend')"
-                        style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px"
-                        title="5-day breadth score trend direction (↑ improving, ↓ deteriorating, → flat).">Trend</th>
-                      <th id="vcpb-h-_med90" onclick="vcpbSetSort('_med90')"
-                        style="text-align:right;padding:5px 4px;color:var(--orange,#fb923c);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px"
-                        title="Median 90-day price change of VCP stocks in sector — price momentum.">Med90%</th>
-                      <th id="vcpb-h-_accel" onclick="vcpbSetSort('_accel')"
-                        style="text-align:center;padding:5px 4px;color:var(--yellow);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px"
-                        title="Breadth acceleration: score gain last 5d vs prior 5d. Rising = breadth expanding faster.">
-                        Accel</th>
-                      <th id="vcpb-h-_adScore" onclick="vcpbSetSort('_adScore')"
-                        style="text-align:center;padding:5px 4px;color:var(--lime);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px"
-                        title="Breadth Accumulation vs. Distribution: Net daily score increases vs decreases (>=2.5 pts) over rolling 20 days.">
-                        A/D</th>
-                      <th id="vcpb-h-_rs" onclick="vcpbSetSort('_rs')"
-                        style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.5"
-                        title="Weekly relative strength rating compared to Nifty 50.">RS wk</th>
-                      <th id="vcpb-h-_stageScore" onclick="vcpbSetSort('_stageScore')"
-                        style="text-align:center;padding:5px 4px;color:var(--sub);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.5"
-                        title="Current stage of the sector.">Stage</th>
-                      <th id="vcpb-h-_daysAtTop" onclick="vcpbSetSort('_daysAtTop')"
-                        style="text-align:center;padding:5px 4px;color:var(--purple);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px"
-                        title="Consecutive trading days in top half of breadth scores.">@Top</th>
-                      <th id="vcpb-h-_confidence" onclick="vcpbSetSort('_confidence')"
-                        style="text-align:center;padding:5px 4px;color:var(--teal);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px"
-                        title="Confidence Level based on universe size, persistence, and RS stability.">Conf</th>
-                    </tr>
-                  </thead>
-                  <tbody id="vcpb-tbody"></tbody>
-                </table>
-              </div>
-
-              <div
-                style="display:flex;gap:10px;flex-wrap:wrap;padding:6px 14px 10px;border-top:1px solid var(--border);font-size:9px;color:var(--dim)">
-                <span><b style="color:var(--teal)">Score</b> = 20EMA×50%+50SMA×30%+200SMA×20% · auto-daily</span>
-                <span style="color:#fb923c;opacity:.9"><b>Med90%</b> = median 90d price return of VCP stocks · price
-                  momentum</span>
-                <span style="color:var(--yellow);opacity:.9"><b>Accel</b> = score gain last 5d vs prior 5d · ↑ =
-                  accelerating</span>
-                <span style="color:var(--lime);opacity:.9"><b>A/D</b> = Net daily score increases vs decreases (&ge;2.5
-                  pts) over rolling 20 days</span>
-                <span style="opacity:.6">RS wk &amp; Stage = manual overlay from Sectors tab</span>
-                <span style="margin-left:auto"><span style="color:var(--lime)">■</span> ≥60% &nbsp;<span
-                    style="color:var(--yellow)">■</span> 40–59% &nbsp;<span style="color:var(--red)">■</span>
-                  &lt;40%</span>
-              </div>
-            </div>
-          </div>
-
-          <div id="scc-pane-rrg" style="display:none">
-
-            <div id="rrg-sub-breadth">
-
-              <div style="padding:10px 14px 4px">
-                <div
-                  style="font-size:9px;color:var(--purple);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">
-                  Breadth Relative Rotation Graph</div>
-                <div style="font-size:9px;color:var(--dim)">X = Breadth Score relative to market avg · Y = Score
-                  momentum · Auto from scanner — no manual entry</div>
-              </div>
-
-              <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:4px 14px">
-                <span style="font-size:9px;color:var(--dim);min-width:44px">Sectors:</span>
-                <button onclick="brrgAdjustTop(-1)"
-                  style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">&#8722;</button>
-                <span id="brrg-top-display"
-                  style="font-size:10px;font-weight:600;color:var(--text);min-width:24px;text-align:center">8</span>
-                <button onclick="brrgAdjustTop(+1)"
-                  style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">+</button>
-                <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
-                <button onclick="brrgSetTopN(4)" id="brrg-n-4"
-                  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">4</button>
-                <button onclick="brrgSetTopN(8)" id="brrg-n-8"
-                  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--accent);color:#000;cursor:pointer;font-weight:600">8</button>
-                <button onclick="brrgSetTopN(12)" id="brrg-n-12"
-                  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12</button>
-                <button onclick="brrgSetTopN(0)" id="brrg-n-0"
-                  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">All</button>
-              </div>
-
-              <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:2px 14px 4px">
-                <span style="font-size:9px;color:var(--dim);min-width:44px">Days:</span>
-                <button onclick="brrgAdjustTail(-1)"
-                  style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">&#8722;</button>
-                <span id="brrg-tail-display"
-                  style="font-size:10px;font-weight:600;color:var(--purple);min-width:28px;text-align:center">10d</span>
-                <button onclick="brrgAdjustTail(+1)"
-                  style="font-size:13px;width:22px;height:22px;line-height:1;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;padding:0">+</button>
-                <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
-                <button onclick="brrgSetTail(5)" id="brrg-t-5"
-                  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">5d</button>
-                <button onclick="brrgSetTail(10)" id="brrg-t-10"
-                  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:var(--purple);color:#fff;cursor:pointer;font-weight:600">10d</button>
-                <button onclick="brrgSetTail(20)" id="brrg-t-20"
-                  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">20d</button>
-                <button onclick="brrgSetTail(40)" id="brrg-t-40"
-                  style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">40d</button>
-                <span style="font-size:9px;color:var(--border);margin:0 2px">|</span>
-                <button onclick="brrgAnimate()" id="brrg-anim-btn"
-                  style="font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.1);color:var(--yellow);cursor:pointer;font-weight:600">&#9654;
-                  Play</button>
-              </div>
-
-              <div id="brrg-chips"
-                style="display:flex;gap:4px;flex-wrap:wrap;padding:4px 14px 6px;background:var(--bg3);border-top:1px solid var(--border);border-bottom:1px solid var(--border);min-height:30px;align-items:center">
-                <span style="font-size:9px;color:var(--dim);margin-right:2px">Highlight:</span>
-              </div>
-
-              <div id="brrg-anim-bar-wrap" style="display:none;padding:6px 14px">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
-                  <span id="brrg-anim-day-label" style="font-size:9px;color:var(--yellow);font-weight:600">Day 1</span>
-                  <button onclick="brrgStopAnim()"
-                    style="font-size:9px;padding:1px 6px;border-radius:3px;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.1);color:var(--red);cursor:pointer">&#9632;
-                    Stop</button>
-                </div>
-                <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
-                  <div id="brrg-anim-bar"
-                    style="height:100%;width:0%;background:var(--yellow);border-radius:2px;transition:width .2s"></div>
-                </div>
-              </div>
-
-              <div style="padding:0 14px 4px;position:relative">
-                <canvas id="brrg-canvas" style="width:100%;border-radius:6px;display:block"></canvas>
-              </div>
-
-              <div id="brrg-notice" style="display:none;padding:12px 14px;font-size:10px;color:var(--yellow)"></div>
-
-              <div
-                style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 14px 8px;border-top:1px solid var(--border);font-size:9px;color:var(--dim)">
-                <span><b style="color:var(--lime)">Leading</b> = strong breadth + accelerating</span>
-                <span><b style="color:var(--accent)">Improving</b> = below avg + rising</span>
-                <span><b style="color:var(--yellow)">Weakening</b> = strong + decelerating</span>
-                <span><b style="color:var(--red)">Lagging</b> = weak + falling</span>
-                <span style="margin-left:auto;opacity:.7">Dot = today · tail = history · clockwise = bullish</span>
-              </div>
-
-              <div style="padding:8px 14px 12px;border-top:1px solid var(--border)">
-                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
-                  <div style="font-size:9px;color:var(--dim);font-style:italic">
-                    History accumulates automatically each day you load the dashboard.
-                    <span id="brrg-hist-info" style="color:var(--teal);margin-left:6px"></span>
-                  </div>
-                  
-                </div>
-
-                
-              </div>
-
-            </div>
-
-          </div>
-
-          <div id="scc-pane-heatmap" style="display:none">
-            <div
-              style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px 4px;flex-wrap:wrap;gap:6px">
-              <div id="slh-description" style="font-size:9px;color:var(--dim);line-height:1.5">
-                Each cell = breadth score (composite 20E/50S/200S). <b style="color:var(--lime)">Green ≥60%</b> · <b
-                  style="color:var(--yellow)">Yellow 40-59%</b> · <b style="color:var(--red)">Red &lt;40%</b>. Click row
-                to drill down.
-              </div>
-              <div style="display:flex;gap:3px;align-items:center">
-                <select id="slh-metric-select" onchange="slhRender()"
-                  style="font-size:9px;padding:2px 4px;border-radius:3px;border:1px solid var(--border);background:var(--bg4);color:var(--text);outline:none;cursor:pointer">
-                  <option value="score">Score</option>
-                  <option value="vcp">VCP Count</option>
-                  <option value="a50">% &gt; 50 SMA (Stage 2)</option>
-                  <option value="a20">% &gt; 20 EMA (Momentum)</option>
-                  <option value="a200">% &gt; 200 SMA (Structure)</option>
-                </select>
-                <button onclick="slhSetWeeks(8)" id="slh-w-8"
-                  style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:var(--teal);color:#0e1420;cursor:pointer;font-weight:600">8r</button>
-                <button onclick="slhSetWeeks(12)" id="slh-w-12"
-                  style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">12r</button>
-                <button onclick="slhSetWeeks(20)" id="slh-w-20"
-                  style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer">20r</button>
-                <button class="info-btn" onclick="showInfoTip('sector-heatmap',this)" title="About Sector Heatmap"
-                  style="margin-left:4px">i</button>
-              </div>
-            </div>
-            <div id="slh-body">
-              <div id="slh-wrap" style="overflow-x:auto;padding:0 12px 12px">
-                <div id="slh-grid" style="font-size:11px;min-width:320px">
-                  <div style="color:var(--dim);padding:20px;text-align:center;font-size:11px">No sector history yet —
-                    add weekly data via Control Panel → Sectors tab</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div id="scc-pane-chart" style="display:none; position:relative;">
-
-            <div id="scc-chart-controls"
-              style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--bg3);border-bottom:1px solid var(--border);flex-wrap:wrap;">
-
-              <div style="display:flex;align-items:center;gap:6px">
-                <span style="color:var(--dim);font-size:11px">Layout:</span>
-                <select id="scc-chart-layout-select" onchange="sccChartSetLayout(this.value)"
-                  style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
-                  <option value="1">1 Column</option>
-                  <option value="2">2 Columns</option>
-                  <option value="4">2 x 2 Grid</option>
-                  <option value="watchlist">Watchlist (All)</option>
-                </select>
-              </div>
-
-              <div style="display:flex;align-items:center;gap:6px">
-                <span style="color:var(--dim);font-size:11px">Type:</span>
-                <select id="scc-chart-type-select" onchange="sccChartSetType(this.value)"
-                  style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
-                  <option value="volume_candles">Volume Candles</option>
-                  <option value="candlestick" selected>Candles</option>
-                  <option value="ohlc">Bars</option>
-                </select>
-              </div>
-
-              <div style="display:flex;align-items:center;gap:6px;margin-left:4px">
-                <label
-                  style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:var(--sub);user-select:none">
-                  <input type="checkbox" id="scc-chart-sync-symbols" onchange="sccChartSetSync(this.checked)"
-                    style="accent-color:var(--teal)">
-                  Sync Symbols
-                </label>
-              </div>
-
-              <div id="scc-chart-global-sym-wrap" style="display:none;align-items:center;gap:6px;margin-left:4px">
-                <span style="color:var(--dim);font-size:11px">Global Symbol:</span>
-                <div style="position:relative">
-                  <input type="text" id="scc-chart-global-symbol" placeholder="e.g. RELIANCE"
-                    oninput="sccChartGlobalInput(this.value)" onfocus="this.style.borderColor='var(--teal)';"
-                    onblur="setTimeout(()=> { const el=document.getElementById('scc-chart-global-suggest'); if(el)el.style.display='none'; }, 200);"
-                    style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;padding:3px 6px;border-radius:3px;outline:none;height:24px;width:100px;text-transform:uppercase">
-                  <div id="scc-chart-global-suggest" class="max-suggest-box" style="width:180px; left:0; top:100%;">
-                  </div>
-                </div>
-              </div>
-
-              <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
-                <button class="win-settings-gear-btn" onclick="openWinSettingsModal()" title="Shibu's WIN Indicator Settings" style="height:24px;margin-left:8px;">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                  </svg>
-                  <span>WIN Settings</span>
-                </button>
-
-              <button id="scc-watchlist-toggle-btn" onclick="sccToggleWatchlist()"
-                  style="background:rgba(91,163,245,0.06); border:1px solid rgba(91,163,245,0.2); color:var(--accent); font-size:11px; font-weight:600; padding:4px 8px; border-radius:3px; outline:none; height:24px; cursor:pointer; display:flex; align-items:center; gap:4px; transition:all 0.15s;">
-                  <span>⭐ Watch List</span>
-                </button>
-              </div>
-            </div>
-
-            <div id="scc-chart-workspace">
-
-              <div id="scc-chart-grid" class="scc-chart-grid-2"
-                style="display:grid;gap:8px;padding:8px;background:var(--bg);flex:1;min-width:0;">
-
-              </div>
-
-              <div id="scc-watchlist-panel"
-                style="width:280px; border-left:1px solid var(--border); background:var(--bg2); display:flex; flex-direction:column; flex-shrink:0; transition: width 0.2s;">
-
-                <div
-                  style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--bg3); border-bottom:1px solid var(--border);">
-                  <div style="display:flex; align-items:center; gap:6px;">
-                    <span
-                      style="font-family:var(--disp); font-size:12px; font-weight:800; letter-spacing:1px; color:var(--text);">
-                      ⭐ WATCH LIST
-                    </span>
-                    <button id="scc-wl-sort-bs-btn" onclick="sccWlSortByBreadth()"
-                      title="Sort Watch List by Sector Breadth Score (VCP Screener SECTORS tab)"
-                      style="background:rgba(45,212,191,0.1); border:1px solid rgba(45,212,191,0.3); color:var(--teal); font-size:9px; font-weight:700; padding:1px 4px; border-radius:3px; cursor:pointer; outline:none; transition:all 0.15s;"
-                      onmouseover="this.style.background='rgba(45,212,191,0.2)'"
-                      onmouseout="this.style.background='rgba(45,212,191,0.1)'">
-                      Bs
-                    </button>
-                    <button id="scc-wl-reset-btn" onclick="sccWlResetOrder()" title="Reset Watch List to Original Order"
-                      style="background:none; border:1px solid var(--border); color:var(--dim); font-size:10px; font-weight:700; padding:1px 5px; border-radius:3px; cursor:pointer; outline:none; transition:all 0.15s; display:inline-flex; align-items:center; justify-content:center;"
-                      onmouseover="this.style.borderColor='var(--dim)'; this.style.color='var(--text)'"
-                      onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--dim)'">
-                      ⟲
-                    </button>
-                    <button id="scc-wl-copy-btn" onclick="sccWlCopySymbols()"
-                      title="Copy Watch List Symbols for TradingView"
-                      style="background:none; border:1px solid var(--border); color:var(--dim); font-size:10px; font-weight:700; padding:1px 5px; border-radius:3px; cursor:pointer; outline:none; transition:all 0.15s; display:inline-flex; align-items:center; justify-content:center;"
-                      onmouseover="this.style.borderColor='var(--dim)'; this.style.color='var(--text)'"
-                      onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--dim)'">
-                      📋
-                    </button>
-                  </div>
-                  <div style="display:flex; align-items:center; gap:8px;">
-                    <span id="scc-wl-count" style="font-size:10px; color:var(--dim); font-family:var(--mono);">0
-                      items</span>
-                    <button onclick="sccWatchlistFetchAll(true)" title="Refresh Watch List"
-                      style="background:none; border:none; color:var(--dim); cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; padding:2px; border-radius:3px; transition:color 0.15s; outline:none;"
-                      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--dim)'">
-                      ↺
-                    </button>
-                  </div>
-                </div>
-
-                <div id="scc-wl-tabs-bar"
-                  style="display:flex; align-items:center; border-bottom:1px solid var(--border); background:var(--bg3); padding:0 8px; overflow-x:auto; gap:4px; height:32px;">
-
-                </div>
-
-                <div style="padding:8px 12px; border-bottom:1px solid var(--border); position:relative;">
-                  <input type="text" id="scc-wl-add-input" placeholder="+ Add Symbol (e.g. RELIANCE)"
-                    oninput="sccWatchlistSuggest(this.value)"
-                    onkeyup="if(event.key==='Enter') { sccWatchlistAddFromInput(this.value); }"
-                    onfocus="this.style.borderColor='var(--teal)';"
-                    onblur="setTimeout(()=> { const el=document.getElementById('scc-wl-suggest'); if(el)el.style.display='none'; }, 200);"
-                    style="width: 100%; background: var(--bg4); border: 1px solid var(--border); color: var(--text); font-family: var(--body); font-size: 11px; padding: 5px 8px; outline: none; border-radius: 4px; box-sizing: border-box; text-transform: uppercase;">
-                  <div id="scc-wl-suggest" class="max-suggest-box"
-                    style="width: calc(100% - 24px); left: 12px; top: 100%;"></div>
-                </div>
-
-                <div
-                  style="display:flex; justify-content:space-between; padding:6px 12px; border-bottom:1px solid rgba(255,255,255,0.03); background:var(--bg3); font-size:9px; font-weight:700; color:var(--dim); text-transform:uppercase; letter-spacing:0.5px;">
-                  <span style="flex:1; text-align:left;">Symbol</span>
-                  <span style="width:70px; text-align:right; margin-right:12px;">Last</span>
-                  <span style="width:65px; text-align:right;">Chg%</span>
-                </div>
-
-                <div id="scc-wl-rows" style="flex:1; overflow-y:auto; overscroll-behavior:contain; padding:4px 0;">
-
+                <div id="scc-dash-top-clusters" style="display:flex;flex-direction:column;gap:6px;">
+                  <div style="font-size:11px;color:var(--dim);padding:8px 0;text-align:center">Calculating breakout clusters…</div>
                 </div>
               </div>
             </div>
 
-            <div id="scc-timeframe-popup"
-              style="display:none; position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); background:var(--bg3); border:1px solid var(--bdr2); border-radius:6px; padding:10px 14px; box-shadow:0 12px 32px rgba(0,0,0,0.6); z-index:100; align-items:center; gap:8px;">
-              <span style="font-size:11px; color:var(--dim); font-family:var(--mono);">INTERVAL:</span>
-              <input type="text" id="scc-timeframe-popup-input"
-                style="width:60px; background:var(--bg); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:12px; font-weight:700; padding:3px 6px; outline:none; border-radius:3px; text-transform:uppercase;"
-                onkeydown="sccTimeframePopupKey(event)">
-              <span style="font-size:9px; color:var(--dim);">(60/1H, 1D, W, 1M)</span>
+            <!-- Studio Quick Jump Tabs Ribbon -->
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:linear-gradient(90deg, rgba(45,212,191,0.08), rgba(167,139,250,0.08));border:1px solid rgba(45,212,191,0.25);border-radius:6px;flex-wrap:wrap;gap:8px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:11px;font-weight:800;color:var(--text);">Full Studio Modes:</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <a href="sectors.html?tab=breadth" target="_blank" style="font-size:10px;font-weight:700;color:var(--teal);padding:2px 7px;background:rgba(45,212,191,0.1);border:1px solid rgba(45,212,191,0.3);border-radius:3px;text-decoration:none;">📶 Sectors Table</a>
+                <a href="sectors.html?tab=rrg" target="_blank" style="font-size:10px;font-weight:700;color:var(--purple);padding:2px 7px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:3px;text-decoration:none;">📡 RRG Map</a>
+                <a href="sectors.html?tab=heatmap" target="_blank" style="font-size:10px;font-weight:700;color:var(--teal);padding:2px 7px;background:rgba(45,212,191,0.1);border:1px solid rgba(45,212,191,0.3);border-radius:3px;text-decoration:none;">🌡 Heatmap</a>
+                <a href="sectors.html?tab=chart" target="_blank" style="font-size:10px;font-weight:700;color:var(--accent);padding:2px 7px;background:rgba(91,163,245,0.1);border:1px solid rgba(91,163,245,0.3);border-radius:3px;text-decoration:none;">📈 Split Charts</a>
+                <a href="sectors.html?tab=clusters" target="_blank" style="font-size:10px;font-weight:700;color:#34d399;padding:2px 7px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);border-radius:3px;text-decoration:none;">⭐ Clusters</a>
+              </div>
             </div>
-          </div>
-
-        </div>
+          </div></div>
 
         <div class="card" id="sec-score-trend">
           <div class="card-head">
@@ -1636,6 +1139,7 @@
     </div> <!-- end .main -->
   </div> <!-- end .shell -->
 
+  <script src="screener_stocks.js"></script>
   <script src="index.js?v=3.0.7"></script>
 
   <div id="sector-drill-overlay"
@@ -3578,6 +3082,21 @@
       const current = getColorMode();
       const sideSelect = document.getElementById('sidebarThemeSelect');
       if (sideSelect) sideSelect.value = current;
+
+      // Check for ?tab= URL param
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab');
+        if (tab && ['breadth', 'rrg', 'heatmap', 'chart', 'clusters'].includes(tab)) {
+          if (typeof sccTab === 'function') sccTab(tab);
+        }
+      } catch (e) {}
+
+      // Compute and render Sector & Cluster summary on dashboard
+      try {
+        if (typeof sccComputeClusters === 'function') sccComputeClusters();
+        if (typeof sccRenderDashboardWidget === 'function') sccRenderDashboardWidget();
+      } catch (e) {}
 
       // Update market status subtitle dynamically when data loads
       setTimeout(() => {
