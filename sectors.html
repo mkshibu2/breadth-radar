@@ -239,6 +239,11 @@
               <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-breadth',this)"
                 title="About SECTORS tab features">i</button>
             </div>
+            <div id="scc-tab-clusters" class="scc-tab" onclick="sccTab('clusters')">
+              <span style="color:inherit;font-weight:inherit">⭐ CLUSTERS</span>
+              <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-clusters',this)"
+                title="About Fresh High Breakout Clusters">i</button>
+            </div>
             <div id="scc-tab-rrg" class="scc-tab" onclick="sccTab('rrg')">
               <span style="color:inherit;font-weight:inherit">📡 RRG</span>
               <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-rrg',this)"
@@ -253,11 +258,6 @@
               <span style="color:inherit;font-weight:inherit">📈 Chart</span>
               <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-chart',this)"
                 title="About Chart tab features">i</button>
-            </div>
-            <div id="scc-tab-clusters" class="scc-tab" onclick="sccTab('clusters')">
-              <span style="color:inherit;font-weight:inherit">⭐ CLUSTERS</span>
-              <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-clusters',this)"
-                title="About Fresh High Breakout Clusters">i</button>
             </div>
           </div>
 
@@ -967,6 +967,12 @@
           MS
         </a>
 
+        <!-- Shortlist toggle button -->
+        <button id="max-chart-shortlist-btn" onclick="maxChartToggleShortlist()" class="tv-shortlist-btn"
+          title="Toggle Shortlist (Press 'W' or 'S')">
+          ☆ Shortlist
+        </button>
+
         <!-- Divider -->
         <div style="width:1px;height:20px;background:var(--border);flex-shrink:0;"></div>
 
@@ -991,15 +997,17 @@
           <option value="M">M</option>
         </select>
 
-        <!-- Type select -->
         <!-- Layout select (Multi-Chart Layouts) -->
-        <select id="max-chart-layout-select" onchange="maxChartSetLayout(this.value)" title="Layout Switcher"
-          style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:28px;cursor:pointer;flex-shrink:0;">
-          <option value="1" selected>1 Chart</option>
-          <option value="2h">2 ◫ Horiz</option>
-          <option value="2v">2 ⊟ Vert</option>
-          <option value="4">4 ⊞ Grid</option>
-        </select>
+        <div style="display:inline-flex;align-items:center;gap:4px;flex-shrink:0;">
+          <span style="font-size:10px;color:var(--dim);font-weight:600;">Layout:</span>
+          <select id="max-chart-layout-select" onchange="maxChartSetLayout(this.value)" title="Layout Switcher (Number of Charts)"
+            style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:28px;cursor:pointer;">
+            <option value="1" selected>1 Chart</option>
+            <option value="2h">2 ◫ Horiz</option>
+            <option value="2v">2 ⊟ Vert</option>
+            <option value="4">4 ⊞ Grid</option>
+          </select>
+        </div>
 
         <!-- Data Source select (Yahoo Finance vs Dhan HQ API) -->
         <select id="max-chart-datasource" onchange="maxChartSetDataSource(this.value)" title="Chart Data Source"

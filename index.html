@@ -448,10 +448,10 @@
               </div>
               <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                 <a href="sectors.html?tab=breadth" target="_blank" style="font-size:10px;font-weight:700;color:var(--teal);padding:2px 7px;background:rgba(45,212,191,0.1);border:1px solid rgba(45,212,191,0.3);border-radius:3px;text-decoration:none;">📶 Sectors Table</a>
+                <a href="sectors.html?tab=clusters" target="_blank" style="font-size:10px;font-weight:700;color:#34d399;padding:2px 7px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);border-radius:3px;text-decoration:none;">⭐ Clusters</a>
                 <a href="sectors.html?tab=rrg" target="_blank" style="font-size:10px;font-weight:700;color:var(--purple);padding:2px 7px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:3px;text-decoration:none;">📡 RRG Map</a>
                 <a href="sectors.html?tab=heatmap" target="_blank" style="font-size:10px;font-weight:700;color:var(--teal);padding:2px 7px;background:rgba(45,212,191,0.1);border:1px solid rgba(45,212,191,0.3);border-radius:3px;text-decoration:none;">🌡 Heatmap</a>
                 <a href="sectors.html?tab=chart" target="_blank" style="font-size:10px;font-weight:700;color:var(--accent);padding:2px 7px;background:rgba(91,163,245,0.1);border:1px solid rgba(91,163,245,0.3);border-radius:3px;text-decoration:none;">📈 Split Charts</a>
-                <a href="sectors.html?tab=clusters" target="_blank" style="font-size:10px;font-weight:700;color:#34d399;padding:2px 7px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);border-radius:3px;text-decoration:none;">⭐ Clusters</a>
               </div>
             </div>
           </div></div>
@@ -1250,6 +1250,12 @@
           MS
         </a>
 
+        <!-- Shortlist toggle button -->
+        <button id="max-chart-shortlist-btn" onclick="maxChartToggleShortlist()" class="tv-shortlist-btn"
+          title="Toggle Shortlist (Press 'W' or 'S')">
+          ☆ Shortlist
+        </button>
+
         <!-- Divider -->
         <div style="width:1px;height:20px;background:var(--border);flex-shrink:0;"></div>
 
@@ -1274,15 +1280,17 @@
           <option value="M">M</option>
         </select>
 
-        <!-- Type select -->
         <!-- Layout select (Multi-Chart Layouts) -->
-        <select id="max-chart-layout-select" onchange="maxChartSetLayout(this.value)" title="Layout Switcher"
-          style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:28px;cursor:pointer;flex-shrink:0;">
-          <option value="1" selected>1 Chart</option>
-          <option value="2h">2 ◫ Horiz</option>
-          <option value="2v">2 ⊟ Vert</option>
-          <option value="4">4 ⊞ Grid</option>
-        </select>
+        <div style="display:inline-flex;align-items:center;gap:4px;flex-shrink:0;">
+          <span style="font-size:10px;color:var(--dim);font-weight:600;">Layout:</span>
+          <select id="max-chart-layout-select" onchange="maxChartSetLayout(this.value)" title="Layout Switcher (Number of Charts)"
+            style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:28px;cursor:pointer;">
+            <option value="1" selected>1 Chart</option>
+            <option value="2h">2 ◫ Horiz</option>
+            <option value="2v">2 ⊟ Vert</option>
+            <option value="4">4 ⊞ Grid</option>
+          </select>
+        </div>
 
         <!-- Data Source select (Yahoo Finance vs Dhan HQ API) -->
         <select id="max-chart-datasource" onchange="maxChartSetDataSource(this.value)" title="Chart Data Source"
