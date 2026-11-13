@@ -912,6 +912,62 @@
       fill: #070d18;
     }
 
+    /* Main Watchlist Button (Sync to Full Chart Studio) */
+    .btn-main-wl {
+      background: rgba(45, 212, 191, 0.08);
+      border: 1px solid rgba(45, 212, 191, 0.35);
+      color: #2dd4bf;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-main-wl:hover {
+      background: rgba(45, 212, 191, 0.2);
+      border-color: #2dd4bf;
+      color: #fff;
+    }
+
+    .btn-main-wl.in-main-wl {
+      background: #2dd4bf;
+      border-color: #2dd4bf;
+      color: #070d18;
+    }
+
+    .btn-main-wl.in-main-wl svg {
+      fill: #070d18;
+    }
+
+    /* Maximize Chart Button */
+    .btn-chart-max {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #38bdf8;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-chart-max:hover {
+      background: rgba(56, 189, 248, 0.22);
+      border-color: #38bdf8;
+      color: #fff;
+    }
+
     .btn-shortlist-tray {
       background: rgba(245, 158, 11, 0.12);
       border: 1px solid rgba(245, 158, 11, 0.4);
@@ -969,6 +1025,34 @@
 
     .chart-panel.show {
       display: flex;
+    }
+
+    .chart-panel.maximized {
+      position: fixed !important;
+      inset: 0 !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      min-width: 100vw !important;
+      max-width: 100vw !important;
+      z-index: 99999 !important;
+      border: none !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.95);
+    }
+
+    .chart-panel.maximized .btn-chart-max {
+      background: rgba(245, 158, 11, 0.18);
+      border-color: #f59e0b;
+      color: #fbbf24;
+    }
+
+    .chart-panel.maximized .chart-body-container {
+      height: calc(100vh - 84px);
     }
 
     .chart-panel-header {
@@ -2027,6 +2111,14 @@
         <span id="split-view-btn-txt">Split Chart</span>
       </button>
 
+      <button class="btn btn-main-wl" id="btn-table-main-wl" onclick="toggleActiveStockMainWl()"
+        title="Add / remove active stock to Main Watchlist (to re-study on Full Chart studio later)">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span id="table-main-wl-lbl">+ Main WL</span>
+      </button>
+
       <button class="btn" onclick="exportCsv()" title="Export filtered rows to CSV">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -2080,12 +2172,31 @@
             <span id="chart-shortlist-lbl">+ Shortlist</span>
           </button>
 
+          <button class="btn btn-main-wl" id="btn-chart-main-wl" onclick="toggleActiveStockMainWl()"
+            title="Add / remove active stock to Main Watchlist (to re-study in Full Chart studio later)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span id="chart-main-wl-lbl">+ Main WL</span>
+          </button>
+
           <div class="chart-timeframes">
             <button class="chart-tf-btn active" id="btn-tf-D" onclick="setChartTf('D', this)">Daily</button>
             <button class="chart-tf-btn" id="btn-tf-W" onclick="setChartTf('W', this)">Weekly</button>
             <button class="chart-tf-btn" id="btn-tf-fit" onclick="resetChartFitAll()"
               title="Toggle: Fit All Bars / Comfortable View">⤢ Fit</button>
           </div>
+
+          <button class="btn btn-chart-max" id="btn-chart-max" onclick="toggleMaximizeChartPanel()"
+            title="Maximize Chart to Full Screen (Press 'M' to toggle)">
+            <svg id="icon-chart-max" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <polyline points="9 21 3 21 3 15"></polyline>
+              <line x1="21" y1="3" x2="14" y2="10"></line>
+              <line x1="3" y1="21" x2="10" y2="14"></line>
+            </svg>
+            <span id="lbl-chart-max">Maximize</span>
+          </button>
 
           <button class="btn btn-primary" onclick="openActiveStockPersonalTv()"
             title="Send to your dedicated TradingView Studio layout tab (Press 'T')">
@@ -2094,6 +2205,12 @@
               <polyline points="16 7 22 7 22 13"></polyline>
             </svg>
             Send to TV ↗
+          </button>
+
+          <button class="btn" onclick="openInFullChartStudio(ACTIVE_STOCK_SYMBOL)"
+            title="Open in Full Chart Studio on Home Page (multi-timeframes & drawings)"
+            style="padding:4px 8px;font-size:11px;color:var(--cyan);border-color:rgba(6,182,212,0.3);">
+            Studio ↗
           </button>
 
           <button class="btn" onclick="toggleSplitView()" title="Close chart panel"
@@ -2256,6 +2373,14 @@
           Copy for TradingView (Ctrl+V)
         </button>
 
+        <button class="btn btn-main-wl" onclick="addShortlistToMainWl()" style="font-weight:700;color:#2dd4bf;border-color:rgba(45,212,191,0.4);"
+          title="Add all shortlisted stocks to Main Watchlist (to re-study in Full Chart Studio later)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+          </svg>
+          ⚡ Add All to Main WL
+        </button>
+
         <button class="btn" onclick="downloadShortlistTxt()" title="Download .txt ready for Watchlist -> Import List">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -2344,6 +2469,19 @@
     // ==============================================================================
     var _universe = window.SCREENER_DATA || window.SCREENER_UNIVERSE;
     var STOCKS_DATA = (_universe && _universe.stocks) ? _universe.stocks : [];
+    try {
+      var _syncedRaw = localStorage.getItem('tj_screener_synced_stocks');
+      if (_syncedRaw) {
+        var _syncedArr = JSON.parse(_syncedRaw);
+        if (Array.isArray(_syncedArr) && _syncedArr.length > 500) {
+          STOCKS_DATA = _syncedArr;
+          if (window.SCREENER_DATA) {
+            window.SCREENER_DATA.stocks = _syncedArr;
+            window.SCREENER_DATA.total_stocks = _syncedArr.length;
+          }
+        }
+      }
+    } catch (eCache) { }
     var CURRENT_VIEW = 'overview';
     var SORT_COL = 'mkt_cap_inr';
     var SORT_DIR = 'desc';
@@ -2567,6 +2705,7 @@
     document.addEventListener('DOMContentLoaded', function () {
       loadStoredPresets();
       loadStoredShortlist();
+      updateChartMainWlButton();
       initSyncTimeBadge();
       loadPreset('Momentum-Leaders');
 
@@ -2619,6 +2758,21 @@
           if (ACTIVE_STOCK_SYMBOL) {
             e.preventDefault();
             openActiveStockPersonalTv();
+          }
+        }
+
+        // Hotkey: M toggles Maximize / Restore on Split Chart
+        if (e.key === 'm' || e.key === 'M') {
+          e.preventDefault();
+          toggleMaximizeChartPanel();
+        }
+
+        // Hotkey: Escape restores maximized Split Chart
+        if (e.key === 'Escape') {
+          var pMax = document.getElementById('chart-panel');
+          if (pMax && pMax.classList.contains('maximized')) {
+            e.preventDefault();
+            toggleMaximizeChartPanel();
           }
         }
       });
@@ -3678,6 +3832,13 @@
         }, 120);
       } else {
         panel.classList.remove('show');
+        panel.classList.remove('maximized');
+        var maxLbl = document.getElementById('lbl-chart-max');
+        if (maxLbl) maxLbl.textContent = 'Maximize';
+        var maxIco = document.getElementById('icon-chart-max');
+        if (maxIco) {
+          maxIco.innerHTML = '<polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line>';
+        }
         btn.classList.remove('btn-active');
         btnTxt.textContent = 'Split Chart';
       }
@@ -3699,6 +3860,8 @@
       if (rowEl) rowEl.classList.add('selected-row');
 
       updateChartPanel(sym);
+      updateChartShortlistButton();
+      updateChartMainWlButton();
     }
 
     function initLightweightChart() {
@@ -4111,6 +4274,8 @@
       if (sectEl) sectEl.textContent = stock.sector || 'NSE Equities';
 
       renderQuarterlyBox(stock);
+      updateChartShortlistButton();
+      updateChartMainWlButton();
 
       if (!_lwScreenerChart) {
         initLightweightChart();
@@ -4458,6 +4623,206 @@
           el.title = 'Add to Shortlist (Press W)';
         }
       });
+    }
+
+    // ==============================================================================
+    // MAIN WATCHLIST INTEGRATION (Interoperable with Full Chart Studio & Sector Command)
+    // ==============================================================================
+    function getMainWlSymbols() {
+      try {
+        var raw = localStorage.getItem('_sccWatchlists');
+        if (raw) {
+          var wls = JSON.parse(raw);
+          if (wls && Array.isArray(wls["Main"])) return wls["Main"];
+        }
+      } catch (e) { }
+      return ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT'];
+    }
+
+    function isStockInMainWl(sym) {
+      if (!sym) return false;
+      var sUpper = String(sym).trim().toUpperCase();
+      var list = getMainWlSymbols();
+      return list.includes(sUpper);
+    }
+
+    function addStockToMainWl(sym) {
+      if (!sym) return false;
+      var sUpper = String(sym).trim().toUpperCase();
+      var wls = {};
+      try {
+        var raw = localStorage.getItem('_sccWatchlists');
+        if (raw) wls = JSON.parse(raw);
+      } catch (e) { }
+      if (!wls || typeof wls !== 'object') wls = {};
+      if (!Array.isArray(wls["Main"])) {
+        wls["Main"] = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT'];
+      }
+      if (!wls["Main"].includes(sUpper)) {
+        wls["Main"].push(sUpper);
+        localStorage.setItem('_sccWatchlists', JSON.stringify(wls));
+        localStorage.setItem('_sccWatchlistsUpdatedAt', Date.now().toString());
+        return true;
+      }
+      return false;
+    }
+
+    function removeStockFromMainWl(sym) {
+      if (!sym) return false;
+      var sUpper = String(sym).trim().toUpperCase();
+      var wls = {};
+      try {
+        var raw = localStorage.getItem('_sccWatchlists');
+        if (raw) wls = JSON.parse(raw);
+      } catch (e) { }
+      if (!wls || !Array.isArray(wls["Main"])) return false;
+      var idx = wls["Main"].indexOf(sUpper);
+      if (idx !== -1) {
+        wls["Main"].splice(idx, 1);
+        localStorage.setItem('_sccWatchlists', JSON.stringify(wls));
+        localStorage.setItem('_sccWatchlistsUpdatedAt', Date.now().toString());
+        return true;
+      }
+      return false;
+    }
+
+    function addStocksListToMainWl(symbols) {
+      if (!symbols || !symbols.length) return 0;
+      var wls = {};
+      try {
+        var raw = localStorage.getItem('_sccWatchlists');
+        if (raw) wls = JSON.parse(raw);
+      } catch (e) { }
+      if (!wls || typeof wls !== 'object') wls = {};
+      if (!Array.isArray(wls["Main"])) {
+        wls["Main"] = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT'];
+      }
+      var addedCount = 0;
+      symbols.forEach(function (sym) {
+        var sUpper = String(sym).trim().toUpperCase();
+        if (sUpper && !wls["Main"].includes(sUpper)) {
+          wls["Main"].push(sUpper);
+          addedCount++;
+        }
+      });
+      if (addedCount > 0) {
+        localStorage.setItem('_sccWatchlists', JSON.stringify(wls));
+        localStorage.setItem('_sccWatchlistsUpdatedAt', Date.now().toString());
+      }
+      return addedCount;
+    }
+
+    function toggleActiveStockMainWl() {
+      if (!ACTIVE_STOCK_SYMBOL) {
+        showToast('Please select a stock first', 'warn');
+        return;
+      }
+      var sym = ACTIVE_STOCK_SYMBOL;
+      var wasIn = isStockInMainWl(sym);
+      if (wasIn) {
+        removeStockFromMainWl(sym);
+        showToast('Removed ' + sym + ' from Main Watchlist', 'warn');
+      } else {
+        addStockToMainWl(sym);
+        showToast('✓ Added ' + sym + ' to Main Watchlist! Re-study in Full Chart anytime.', 'success');
+      }
+      updateChartMainWlButton();
+    }
+
+    function addShortlistToMainWl() {
+      var list = getShortlistSymbols();
+      if (!list.length) {
+        showToast('Shortlist is empty! Add setups using ★ or press "W" first.', 'warn');
+        return;
+      }
+      var addedCount = addStocksListToMainWl(list);
+      if (addedCount > 0) {
+        showToast('✓ Added ' + addedCount + ' stocks to Main Watchlist! (Total: ' + (getMainWlSymbols().length) + ' stocks)', 'success');
+      } else {
+        showToast('All ' + list.length + ' shortlisted stocks are already in Main Watchlist.', 'info');
+      }
+      updateChartMainWlButton();
+    }
+
+    function updateChartMainWlButton() {
+      var btn = document.getElementById('btn-chart-main-wl');
+      var lbl = document.getElementById('chart-main-wl-lbl');
+      var tblBtn = document.getElementById('btn-table-main-wl');
+      var tblLbl = document.getElementById('table-main-wl-lbl');
+
+      var inWl = ACTIVE_STOCK_SYMBOL && isStockInMainWl(ACTIVE_STOCK_SYMBOL);
+      if (btn && lbl) {
+        if (inWl) {
+          btn.classList.add('in-main-wl');
+          lbl.textContent = '✓ Main WL';
+          btn.title = "In Main Watchlist! Click to remove (re-study in Full Chart studio)";
+        } else {
+          btn.classList.remove('in-main-wl');
+          lbl.textContent = '+ Main WL';
+          btn.title = "Add to Main Watchlist (re-study in Full Chart studio later)";
+        }
+      }
+      if (tblBtn && tblLbl) {
+        if (inWl) {
+          tblBtn.classList.add('in-main-wl');
+          tblLbl.textContent = '✓ Main WL';
+          tblBtn.title = ACTIVE_STOCK_SYMBOL + " is in Main Watchlist. Click to remove.";
+        } else {
+          tblBtn.classList.remove('in-main-wl');
+          tblLbl.textContent = '+ Main WL';
+          tblBtn.title = "Add " + (ACTIVE_STOCK_SYMBOL || 'selected stock') + " to Main Watchlist for Full Chart review";
+        }
+      }
+    }
+
+    // ==============================================================================
+    // MAXIMIZE SPLIT CHART PANEL & FULL CHART STUDIO LAUNCHER
+    // ==============================================================================
+    function toggleMaximizeChartPanel() {
+      var panel = document.getElementById('chart-panel');
+      if (!panel) return;
+      if (!SPLIT_VIEW_ACTIVE) {
+        toggleSplitView();
+      }
+
+      var isMax = panel.classList.toggle('maximized');
+      var maxBtn = document.getElementById('btn-chart-max');
+      var lbl = document.getElementById('lbl-chart-max');
+      var icon = document.getElementById('icon-chart-max');
+
+      if (isMax) {
+        if (lbl) lbl.textContent = 'Restore';
+        if (maxBtn) maxBtn.title = 'Restore Split View (Esc or M)';
+        if (icon) {
+          icon.innerHTML = '<polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line>';
+        }
+        showToast('⛶ Full Screen Chart view active (Press M or Esc to restore)', 'info');
+      } else {
+        if (lbl) lbl.textContent = 'Maximize';
+        if (maxBtn) maxBtn.title = 'Maximize Chart to Full Screen (M)';
+        if (icon) {
+          icon.innerHTML = '<polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line>';
+        }
+      }
+
+      setTimeout(function () {
+        if (_lwScreenerChart) {
+          var container = document.getElementById('chart-lw-container');
+          if (container && container.clientWidth > 0 && container.clientHeight > 0) {
+            _lwScreenerChart.resize(container.clientWidth, container.clientHeight);
+            resetChartPriceScale(_lwScreenerChart, 'right');
+            if (_currentCandles && _currentCandles.length > 0) {
+              applyPreservedChartZoom(_currentCandles.length, (ACTIVE_CHART_TIMEFRAME === 'W'));
+            }
+          }
+        }
+      }, 60);
+    }
+
+    function openInFullChartStudio(sym) {
+      var s = sym || ACTIVE_STOCK_SYMBOL || 'RELIANCE';
+      window.open('index.html?chart=' + encodeURIComponent(s), '_blank');
+      showToast('↗ Opening ' + s + ' in Full Chart Studio...', 'info');
     }
 
     function openShortlistDrawer() {
@@ -4885,6 +5250,7 @@
         var now = new Date();
         var timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
         localStorage.setItem('tj_screener_sync_stamp', timeStr);
+        localStorage.setItem('tj_screener_synced_stocks', JSON.stringify(parsed));
 
         if (badgeText) {
           badgeText.textContent = 'Live TV • ' + timeStr;

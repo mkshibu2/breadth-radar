@@ -10400,3 +10400,211 @@ function sccRenderDashboardWidget(data) {
   }
 }
 window.sccRenderDashboardWidget = sccRenderDashboardWidget;
+
+// ── 1-CLICK HOME PAGE SYNC DATA & FUNDAMENTALS ENGINE ─────────────
+async function triggerHomePageSync(btn) {
+  const btnEl = btn || document.getElementById('hdr-sync-btn');
+  const textEl = document.getElementById('hdr-sync-text');
+  if (btnEl && btnEl.disabled) return;
+
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.classList.add('spinning');
+  }
+  if (textEl) textEl.textContent = 'Syncing...';
+  if (typeof showChartToast === 'function') {
+    showChartToast('🔄 Syncing quotes & quarterly fundamentals...', '#38bdf8');
+  }
+
+  const payload = {
+    filter: [
+      { left: "exchange", operation: "equal", right: "NSE" },
+      { left: "typespecs", operation: "has", right: ["common"] }
+    ],
+    options: { lang: "en" },
+    symbols: { query: { types: [] }, tickers: [] },
+    columns: [
+      "name", "description", "close", "change", "volume", "Value.Traded",
+      "relative_volume_10d_calc", "average_volume_30d_calc", "market_cap_basic",
+      "EMA20", "EMA50", "SMA50", "SMA200",
+      "Perf.W", "Perf.1M", "Perf.3M", "Perf.6M", "Perf.Y", "Perf.YTD",
+      "High.1M", "High.3M", "price_52_week_high", "price_52_week_low",
+      "price_earnings_ttm", "earnings_per_share_diluted_ttm",
+      "earnings_per_share_diluted_yoy_growth_ttm", "earnings_per_share_diluted_yoy_growth_fq",
+      "total_revenue_yoy_growth_fq", "dividends_yield_current", "sector", "industry", "Recommend.All"
+    ],
+    sort: { sortBy: "market_cap_basic", sortOrder: "desc" },
+    range: [0, 3000]
+  };
+
+  const payloadStr = JSON.stringify(payload);
+  let resp = null;
+  let lastErr = null;
+
+  // 1. Direct fetch (text/plain bypasses preflight CORS checks)
+  try {
+    const directCtrl = new AbortController();
+    const directTimer = setTimeout(() => directCtrl.abort(), 12000);
+    resp = await fetch('https://scanner.tradingview.com/india/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: payloadStr,
+      signal: directCtrl.signal
+    });
+    clearTimeout(directTimer);
+    if (!resp.ok) throw new Error('Scanner API returned HTTP ' + resp.status);
+  } catch (e1) {
+    lastErr = e1;
+    // 2. Fallback to local proxy if running
+    try {
+      const proxyCtrl = new AbortController();
+      const proxyTimer = setTimeout(() => proxyCtrl.abort(), 15000);
+      resp = await fetch('http://localhost:9090/?url=' + encodeURIComponent('https://scanner.tradingview.com/india/scan'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payloadStr,
+        signal: proxyCtrl.signal
+      });
+      clearTimeout(proxyTimer);
+      if (!resp.ok) throw new Error('Local proxy returned HTTP ' + resp.status);
+    } catch (e2) {
+      lastErr = e2;
+    }
+  }
+
+  let syncedStocksCount = 0;
+  try {
+    if (resp && resp.ok) {
+      const json = await resp.json();
+      const rows = json.data || [];
+      if (rows.length > 0) {
+        const parsed = [];
+        for (let i = 0; i < rows.length; i++) {
+          const d = rows[i].d || [];
+          if (d.length >= 20) {
+            const sym = String(d[0] || '').trim().toUpperCase();
+            if (sym) {
+              parsed.push({
+                symbol: sym,
+                company: String(d[1] || sym),
+                price: parseFloat(d[2]) || 0,
+                change_pct: parseFloat(d[3]) || 0,
+                volume: parseInt(d[4], 10) || 0,
+                value_traded: parseFloat(d[5]) || 0,
+                rvol_10d: parseFloat(d[6]) || 1,
+                avg_vol_30d: parseInt(d[7], 10) || 0,
+                mkt_cap_inr: parseFloat(d[8]) || 0,
+                ema_20: parseFloat(d[9]) || null,
+                ema_50: parseFloat(d[10]) || null,
+                sma_50: parseFloat(d[11]) || null,
+                sma_200: parseFloat(d[12]) || null,
+                perf_1w: parseFloat(d[13]) || 0,
+                perf_1m: parseFloat(d[14]) || 0,
+                perf_3m: parseFloat(d[15]) || 0,
+                perf_6m: parseFloat(d[16]) || 0,
+                perf_1y: parseFloat(d[17]) || 0,
+                perf_ytd: parseFloat(d[18]) || 0,
+                high_1m: parseFloat(d[19]) || null,
+                high_3m: parseFloat(d[20]) || null,
+                high_52w: parseFloat(d[21]) || null,
+                low_52w: parseFloat(d[22]) || null,
+                pe_ttm: parseFloat(d[23]) || null,
+                eps_diluted_ttm: parseFloat(d[24]) || null,
+                eps_growth_ttm: parseFloat(d[25]) || null,
+                eps_growth_fq: parseFloat(d[26]) || null,
+                rev_growth_fq: parseFloat(d[27]) || null,
+                div_yield: parseFloat(d[28]) || null,
+                sector: String(d[29] || 'NSE Equities'),
+                industry: String(d[30] || ''),
+                recommendation: parseFloat(d[31]) || null
+              });
+            }
+          }
+        }
+        syncedStocksCount = parsed.length;
+        if (parsed.length > 0) {
+          localStorage.setItem('tj_screener_synced_stocks', JSON.stringify(parsed));
+          const now = new Date();
+          const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+          localStorage.setItem('tj_screener_sync_stamp', timeStr);
+        }
+      }
+    }
+  } catch (parseErr) {
+    console.warn('[SyncData] Scanner parse warning:', parseErr);
+  }
+
+  // 3. Sync Fundamentals
+  let fundaCount = 0;
+  try {
+    const fCtrl = new AbortController();
+    const fTimer = setTimeout(() => fCtrl.abort(), 12000);
+    const fResp = await fetch('http://localhost:9090/sync-financials', { signal: fCtrl.signal });
+    clearTimeout(fTimer);
+    if (fResp && fResp.ok) {
+      const fData = await fResp.json();
+      if (fData && fData.success) fundaCount = fData.total || 0;
+    }
+  } catch (eFunda) {}
+
+  try {
+    const storeResp = await fetch('exact_quarterly_financials.json?t=' + Date.now());
+    if (storeResp && storeResp.ok) {
+      const updatedStore = await storeResp.json();
+      window.EXACT_QUARTERLY_DATA = updatedStore;
+      fundaCount = Object.keys(updatedStore).length;
+    }
+  } catch (eStore) {}
+
+  // 4. Trigger cloud sync if configured
+  if (typeof pushToCloud === 'function') {
+    try { pushToCloud(); } catch (eCloud) {}
+  }
+
+  // 5. Refresh open watchlists if visible
+  if (typeof sccWatchlistRender === 'function') {
+    try { sccWatchlistRender(); } catch (eWl) {}
+  }
+
+  if (textEl) textEl.textContent = '✓ Synced!';
+  if (typeof showChartToast === 'function') {
+    const msg = syncedStocksCount > 0
+      ? `✓ Synced <b>${syncedStocksCount.toLocaleString('en-IN')}</b> stocks &amp; <b>${fundaCount}</b> fundamentals!`
+      : `✓ Synced fundamentals (${fundaCount} verified)!`;
+    showChartToast(msg, '#22c55e');
+  }
+
+  setTimeout(() => {
+    if (btnEl) {
+      btnEl.disabled = false;
+      btnEl.classList.remove('spinning');
+    }
+    if (textEl) textEl.textContent = 'Sync Data';
+  }, 2200);
+}
+window.triggerHomePageSync = triggerHomePageSync;
+
+// ── AUTO OPEN FULL CHART ON ?chart=SYMBOL QUERY PARAM ──────────────
+function initHomePageUrlChartParam() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const chartParam = urlParams.get('chart') || urlParams.get('symbol');
+    if (chartParam) {
+      const sym = chartParam.trim().toUpperCase();
+      setTimeout(() => {
+        if (typeof openMaximizedChart === 'function') {
+          openMaximizedChart(sym);
+        } else if (typeof openFullPageChart === 'function') {
+          openFullPageChart(sym);
+        }
+      }, 700);
+    }
+  } catch (e) {
+    console.warn('[URL Chart Param] error:', e);
+  }
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initHomePageUrlChartParam);
+} else {
+  initHomePageUrlChartParam();
+}

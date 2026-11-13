@@ -4567,6 +4567,7 @@ body.guest-mode .guest-exit-btn {
 }
 
 body.guest-mode .cp-btn,
+body.guest-mode .hdr-sync-btn,
 body.guest-mode .sync-status {
   display: none !important
 }
@@ -5819,6 +5820,44 @@ thead th[onclick]:hover {
   border-color: #2962ff;
   color: #ffffff;
   box-shadow: 0 0 10px rgba(41, 98, 255, 0.4);
+}
+
+.hdr-sync-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  color: #34d399;
+  font-family: var(--body);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.hdr-sync-btn:hover {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: #10b981;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
+}
+
+.hdr-sync-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.hdr-sync-btn.spinning svg {
+  animation: hdrSyncSpin 0.85s linear infinite;
+}
+
+@keyframes hdrSyncSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 
