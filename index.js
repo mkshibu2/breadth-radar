@@ -1194,11 +1194,11 @@ const WIN_DEFAULT_CONFIG = {
     epsRowsToShow: 4,
   },
   style: {
-    ema10: { visible: true, color: '#3b82f6', opacity: 100, width: 1.5, lineStyle: 0 },
-    ema20: { visible: true, color: '#ef4444', opacity: 100, width: 1.5, lineStyle: 0 },
-    sma50: { visible: true, color: '#06b6d4', opacity: 100, width: 1.5, lineStyle: 0 },
-    sma200: { visible: true, color: '#22c55e', opacity: 100, width: 2.0, lineStyle: 0 },
-    sma30w: { visible: true, color: '#f97316', opacity: 100, width: 2.0, lineStyle: 0 },
+    ema10: { visible: true, color: '#3b82f6', opacity: 85, width: 1, lineStyle: 0 },
+    ema20: { visible: true, color: '#ef4444', opacity: 85, width: 1, lineStyle: 0 },
+    sma50: { visible: true, color: '#06b6d4', opacity: 85, width: 1, lineStyle: 0 },
+    sma200: { visible: true, color: '#22c55e', opacity: 85, width: 1.5, lineStyle: 0 },
+    sma30w: { visible: true, color: '#f97316', opacity: 85, width: 1, lineStyle: 0 },
     rs: { visible: false, color: '#38bdf8', opacity: 100, width: 1.8, lineStyle: 0 },
     vt: { visible: false, color: '#4863fc', opacity: 100, width: 1.5, lineStyle: 2 },
     dots: { visible: true },
@@ -1243,6 +1243,18 @@ function loadWinSettings() {
       _winConfig.style.vcp.visible = false;
       _winConfig.style.powerPocket.visible = false;
     }
+  }
+  const maMigration = localStorage.getItem('shibu_win_ma_default_v4');
+  if (!maMigration) {
+    if (_winConfig && _winConfig.style) {
+      if (_winConfig.style.ema10) { _winConfig.style.ema10.width = 1; _winConfig.style.ema10.opacity = 85; }
+      if (_winConfig.style.ema20) { _winConfig.style.ema20.width = 1; _winConfig.style.ema20.opacity = 85; }
+      if (_winConfig.style.sma50) { _winConfig.style.sma50.width = 1; _winConfig.style.sma50.opacity = 85; }
+      if (_winConfig.style.sma200) { _winConfig.style.sma200.width = 1.5; _winConfig.style.sma200.opacity = 85; }
+      if (_winConfig.style.sma30w) { _winConfig.style.sma30w.width = 1; _winConfig.style.sma30w.opacity = 85; }
+    }
+    localStorage.setItem('shibu_win_ma_default_v4', 'true');
+    saveWinSettings();
   }
   updateWinPillStyles();
   updateWinLegendLabels();
@@ -2094,8 +2106,8 @@ function sccRenderLwChart(index, candles, niftyCandles) {
       if (ema10Vals[i] != null) data.push({ time: cleanCandles[i].time, value: ema10Vals[i] });
     }
     const s = chart.addLineSeries({
-      color: hexToRgba(st.ema10.color || '#3b82f6', (st.ema10.opacity != null ? st.ema10.opacity : 100) / 100),
-      lineWidth: st.ema10.width || 1.2,
+      color: hexToRgba(st.ema10.color || '#3b82f6', (st.ema10.opacity != null ? st.ema10.opacity : 85) / 100),
+      lineWidth: st.ema10.width != null ? Number(st.ema10.width) : 1,
       lineStyle: st.ema10.lineStyle || 0,
       priceLineVisible: false,
       lastValueVisible: false,
@@ -2111,8 +2123,8 @@ function sccRenderLwChart(index, candles, niftyCandles) {
       if (ema20Vals[i] != null) data.push({ time: cleanCandles[i].time, value: ema20Vals[i] });
     }
     const s = chart.addLineSeries({
-      color: hexToRgba(st.ema20.color || '#ef4444', (st.ema20.opacity != null ? st.ema20.opacity : 100) / 100),
-      lineWidth: st.ema20.width || 1.2,
+      color: hexToRgba(st.ema20.color || '#ef4444', (st.ema20.opacity != null ? st.ema20.opacity : 85) / 100),
+      lineWidth: st.ema20.width != null ? Number(st.ema20.width) : 1,
       lineStyle: st.ema20.lineStyle || 0,
       priceLineVisible: false,
       lastValueVisible: false,
@@ -2128,8 +2140,8 @@ function sccRenderLwChart(index, candles, niftyCandles) {
       if (sma50Vals[i] != null) data.push({ time: cleanCandles[i].time, value: sma50Vals[i] });
     }
     const s = chart.addLineSeries({
-      color: hexToRgba(st.sma50.color || '#06b6d4', (st.sma50.opacity != null ? st.sma50.opacity : 100) / 100),
-      lineWidth: st.sma50.width || 1.2,
+      color: hexToRgba(st.sma50.color || '#06b6d4', (st.sma50.opacity != null ? st.sma50.opacity : 85) / 100),
+      lineWidth: st.sma50.width != null ? Number(st.sma50.width) : 1,
       lineStyle: st.sma50.lineStyle || 0,
       priceLineVisible: false,
       lastValueVisible: false,
@@ -2145,8 +2157,8 @@ function sccRenderLwChart(index, candles, niftyCandles) {
       if (sma200Vals[i] != null) data.push({ time: cleanCandles[i].time, value: sma200Vals[i] });
     }
     const s = chart.addLineSeries({
-      color: hexToRgba(st.sma200.color || '#22c55e', (st.sma200.opacity != null ? st.sma200.opacity : 100) / 100),
-      lineWidth: st.sma200.width || 1.8,
+      color: hexToRgba(st.sma200.color || '#22c55e', (st.sma200.opacity != null ? st.sma200.opacity : 85) / 100),
+      lineWidth: st.sma200.width != null ? Number(st.sma200.width) : 1.5,
       lineStyle: st.sma200.lineStyle || 0,
       priceLineVisible: false,
       lastValueVisible: false,
@@ -2162,8 +2174,8 @@ function sccRenderLwChart(index, candles, niftyCandles) {
       if (sma30wVals[i] != null) data.push({ time: cleanCandles[i].time, value: sma30wVals[i] });
     }
     const s = chart.addLineSeries({
-      color: hexToRgba(st.sma30w.color || '#f97316', (st.sma30w.opacity != null ? st.sma30w.opacity : 100) / 100),
-      lineWidth: st.sma30w.width || 1.8,
+      color: hexToRgba(st.sma30w.color || '#f97316', (st.sma30w.opacity != null ? st.sma30w.opacity : 85) / 100),
+      lineWidth: st.sma30w.width != null ? Number(st.sma30w.width) : 1,
       lineStyle: st.sma30w.lineStyle || 0,
       priceLineVisible: false,
       lastValueVisible: false,
@@ -2342,12 +2354,22 @@ async function sccChartRenderPanel(index) {
                       <span style="color:${color};font-family:var(--mono);font-weight:600;margin-right:2px">${sign}${pctChange.toFixed(1)}%</span>`; if (statsEl) statsEl.innerHTML = statsStr;
     }
   } catch (err) {
-    console.error("YF scc chart error for " + symbol, err); if (loader) {
-      loader.innerHTML = `
-        <div style="color:var(--sub);font-size:10px;text-align:center;padding:12px;line-height:1.5;">
-          <span style="color:var(--red);font-weight:600;display:block;margin-bottom:4px;">Failed to load data</span>
-          Check connection or proxy.
-        </div>`;
+    console.warn("YF scc chart error for " + symbol, err);
+    if (loader) loader.style.display = 'none';
+    const lwEl = document.getElementById(`scc-chart-lw-${index}`);
+    if (lwEl) {
+      const cleanSym = symbol.toUpperCase().replace(/\.(NS|BO)$/i, '').trim();
+      const tvSym = 'NSE:' + cleanSym;
+      lwEl.style.display = 'block';
+      lwEl.innerHTML = `
+        <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#090b10;color:#94a3b8;gap:8px;padding:12px;text-align:center;">
+          <div style="font-size:11px;font-weight:700;color:#f0f3fa;">${cleanSym} Data Unavailable</div>
+          <div style="display:flex;gap:6px;">
+            <button onclick="sccChartRenderPanel(${index})" style="background:#1e222d;border:1px solid #363c4e;color:#f0f3fa;padding:3px 8px;border-radius:3px;cursor:pointer;font-size:10px;">🔄 Retry</button>
+            <a href="https://in.tradingview.com/chart/fZ5fwxUh/?symbol=${encodeURIComponent(tvSym)}" target="_blank" style="background:#2962ff;color:#ffffff;padding:3px 8px;border-radius:3px;text-decoration:none;font-weight:600;font-size:10px;">TradingView ↗</a>
+          </div>
+        </div>
+      `;
     }
   }
 }
@@ -5736,12 +5758,39 @@ function _maxFetchAndDraw(symbol) {
     if (loader) loader.style.display = 'none';
     _maxCandles = candles;
     _maxNiftyCandles = niftyCandles;
-    drawMaxChart();
-    _maxSetupInteraction();
+    try {
+      drawMaxChart();
+      if (typeof _maxSetupInteraction === 'function') _maxSetupInteraction();
+    } catch (drawErr) {
+      console.error("Error drawing max chart:", drawErr);
+    }
   }).catch(err => {
-    console.error("Max Chart Error", err);
-    if (loader) {
-      loader.innerHTML = '<div style="color:var(--sub);font-size:11px;text-align:center;padding:12px;line-height:1.5;max-width:280px;margin:0 auto;"><span style="color:var(--red);font-weight:600;display:block;margin-bottom:6px;">Failed to load chart data</span>Check your internet connection or data source.</div>';
+    console.warn("Max Chart Error for " + symbol + ":", err);
+    if (loader) loader.style.display = 'none';
+    const container = document.getElementById('max-chart-lw-container');
+    if (container) {
+      const cleanSym = symbol.toUpperCase().replace(/\.(NS|BO)$/i, '').trim();
+      const tvSym = 'NSE:' + cleanSym;
+      container.innerHTML = `
+        <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#050508;color:#94a3b8;gap:16px;padding:24px;text-align:center;">
+          <div style="width:52px;height:52px;border-radius:50%;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.2);display:flex;align-items:center;justify-content:center;color:#38bdf8;font-size:24px;">📊</div>
+          <div>
+            <div style="font-size:16px;font-weight:700;color:#f0f3fa;margin-bottom:6px;">Chart Data Unavailable for ${cleanSym}</div>
+            <div style="font-size:12px;color:#787b86;max-width:440px;line-height:1.5;">
+              Yahoo Finance feeds were unable to return candle data for ${cleanSym}. This can occur with SME stocks, recent listings, or temporary proxy timeouts.
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap;justify-content:center;">
+            <button onclick="_yfDataCache.clear(); _maxFetchAndDraw('${cleanSym}')" style="background:#1e222d;border:1px solid #363c4e;color:#f0f3fa;padding:7px 18px;border-radius:4px;cursor:pointer;font-weight:600;font-size:12px;display:flex;align-items:center;gap:6px;transition:all 0.15s ease;">
+              🔄 Retry Fetching
+            </button>
+            <a href="https://in.tradingview.com/chart/fZ5fwxUh/?symbol=${encodeURIComponent(tvSym)}" target="_blank"
+               style="background:#2962ff;color:#ffffff;padding:7px 20px;border-radius:4px;text-decoration:none;font-weight:700;font-size:12px;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(41,98,255,0.4);">
+              🚀 Open ${cleanSym} in TradingView ↗
+            </a>
+          </div>
+        </div>
+      `;
     }
   });
 }
@@ -5928,8 +5977,8 @@ function drawMaxChartLightweight() {
       }
     }
     const s = _maxLwChart.addLineSeries({
-      color: typeof hexToRgba === 'function' ? hexToRgba(st.ema10.color || '#3b82f6', (st.ema10.opacity != null ? st.ema10.opacity : 100) / 100) : (st.ema10.color || '#3b82f6'),
-      lineWidth: st.ema10.width || 1.5,
+      color: typeof hexToRgba === 'function' ? hexToRgba(st.ema10.color || '#3b82f6', (st.ema10.opacity != null ? st.ema10.opacity : 85) / 100) : (st.ema10.color || '#3b82f6'),
+      lineWidth: st.ema10.width != null ? Number(st.ema10.width) : 1,
       lineStyle: st.ema10.lineStyle || 0,
       priceLineVisible: false,
       lastValueVisible: false,
@@ -5949,8 +5998,8 @@ function drawMaxChartLightweight() {
       }
     }
     const s = _maxLwChart.addLineSeries({
-      color: typeof hexToRgba === 'function' ? hexToRgba(st.ema20.color || '#ef4444', (st.ema20.opacity != null ? st.ema20.opacity : 100) / 100) : (st.ema20.color || '#ef4444'),
-      lineWidth: st.ema20.width || 1.5,
+      color: typeof hexToRgba === 'function' ? hexToRgba(st.ema20.color || '#ef4444', (st.ema20.opacity != null ? st.ema20.opacity : 85) / 100) : (st.ema20.color || '#ef4444'),
+      lineWidth: st.ema20.width != null ? Number(st.ema20.width) : 1,
       lineStyle: st.ema20.lineStyle || 0,
       priceLineVisible: false,
       lastValueVisible: false,
@@ -5970,8 +6019,8 @@ function drawMaxChartLightweight() {
       }
     }
     const s = _maxLwChart.addLineSeries({
-      color: typeof hexToRgba === 'function' ? hexToRgba(st.sma50.color || '#06b6d4', (st.sma50.opacity != null ? st.sma50.opacity : 100) / 100) : (st.sma50.color || '#06b6d4'),
-      lineWidth: st.sma50.width || 1.5,
+      color: typeof hexToRgba === 'function' ? hexToRgba(st.sma50.color || '#06b6d4', (st.sma50.opacity != null ? st.sma50.opacity : 85) / 100) : (st.sma50.color || '#06b6d4'),
+      lineWidth: st.sma50.width != null ? Number(st.sma50.width) : 1,
       lineStyle: st.sma50.lineStyle || 0,
       priceLineVisible: false,
       lastValueVisible: false,
@@ -5991,8 +6040,8 @@ function drawMaxChartLightweight() {
       }
     }
     const s = _maxLwChart.addLineSeries({
-      color: typeof hexToRgba === 'function' ? hexToRgba(st.sma200.color || '#22c55e', (st.sma200.opacity != null ? st.sma200.opacity : 100) / 100) : (st.sma200.color || '#22c55e'),
-      lineWidth: st.sma200.width || 2,
+      color: typeof hexToRgba === 'function' ? hexToRgba(st.sma200.color || '#22c55e', (st.sma200.opacity != null ? st.sma200.opacity : 85) / 100) : (st.sma200.color || '#22c55e'),
+      lineWidth: st.sma200.width != null ? Number(st.sma200.width) : 1.5,
       lineStyle: st.sma200.lineStyle || 0,
       priceLineVisible: false,
       lastValueVisible: false,
@@ -6012,8 +6061,8 @@ function drawMaxChartLightweight() {
       }
     }
     const s = _maxLwChart.addLineSeries({
-      color: typeof hexToRgba === 'function' ? hexToRgba(st.sma30w.color || '#f97316', (st.sma30w.opacity != null ? st.sma30w.opacity : 100) / 100) : (st.sma30w.color || '#f97316'),
-      lineWidth: st.sma30w.width || 2,
+      color: typeof hexToRgba === 'function' ? hexToRgba(st.sma30w.color || '#f97316', (st.sma30w.opacity != null ? st.sma30w.opacity : 85) / 100) : (st.sma30w.color || '#f97316'),
+      lineWidth: st.sma30w.width != null ? Number(st.sma30w.width) : 1,
       lineStyle: st.sma30w.lineStyle || 0,
       priceLineVisible: false,
       lastValueVisible: false,
@@ -6571,19 +6620,68 @@ function sdSetSortBy(val) { _sdSortBy = val; if (_sdActiveTab === 'charts') { sd
 function sdChartsLoadMore() { _sdAutoChartsLimit += 12; sdRenderCharts(_sdCurrentSector, _sdCurrentData); }
 function sdChartsPrevPage() { if (_sdChartsPage > 0) { _sdChartsPage--; sdRenderCharts(_sdCurrentSector, _sdCurrentData); } }
 function sdChartsNextPage(totalPages) { if (_sdChartsPage < totalPages - 1) { _sdChartsPage++; sdRenderCharts(_sdCurrentSector, _sdCurrentData); } }
-const _yfDataCache = new Map(); async function fetchYfData(symbol, range, interval) {
-  const yfSymbol = symbol.startsWith('^') ? symbol : (symbol + '.NS'); const cacheKey = `${yfSymbol}_${range}_${interval}`; if (_yfDataCache.has(cacheKey)) { return _yfDataCache.get(cacheKey); }
-  const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`; const currentOrigin = window.location.origin; const proxies = [url => `https://nse-chart-proxy.shibu-mk.workers.dev/?url=${encodeURIComponent(url)}`,url => {
-    if (!currentOrigin || currentOrigin.startsWith('file') || currentOrigin === 'null' || currentOrigin.includes('github.io')) { return ''; }
-    return `${currentOrigin}/api/proxy?url=${encodeURIComponent(url)}`;
-  }, url => `http://localhost:9090/?url=${encodeURIComponent(url)}`, url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`]; for (const proxyFn of proxies) {
+const _yfDataCache = new Map();
+async function _fetchYfDataWithSymbol(yfSymbol, range, interval) {
+  const cacheKey = `${yfSymbol}_${range}_${interval}`;
+  if (_yfDataCache.has(cacheKey)) { return _yfDataCache.get(cacheKey); }
+  const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`;
+  const currentOrigin = window.location.origin;
+  const proxies = [
+    { urlFn: url => `http://localhost:9090/?url=${encodeURIComponent(url)}`, timeout: 1500 },
+    { urlFn: url => `https://nse-chart-proxy.shibu-mk.workers.dev/?url=${encodeURIComponent(url)}`, timeout: 8000 },
+    {
+      urlFn: url => {
+        if (!currentOrigin || currentOrigin.startsWith('file') || currentOrigin === 'null' || currentOrigin.includes('github.io')) { return ''; }
+        return `${currentOrigin}/api/proxy?url=${encodeURIComponent(url)}`;
+      },
+      timeout: 5000
+    },
+    { urlFn: url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, timeout: 8000 },
+    { urlFn: url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, timeout: 8000 },
+    { urlFn: url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`, timeout: 8000 }
+  ];
+  for (const proxy of proxies) {
     try {
-      const pUrl = proxyFn(targetUrl); if (!pUrl) continue; console.log('[fetchYfData] Requesting:', yfSymbol, 'via', pUrl); const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 7000); const resp = await fetch(pUrl, { signal: controller.signal }); clearTimeout(timeoutId); if (resp.ok) {
-        let text = await resp.text(); if (text.trim().startsWith('{')) { const parsed = JSON.parse(text); if (parsed.contents) { text = parsed.contents; } }
-        const trimmed = text.trim(); if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) { throw new Error("Response is not JSON"); }
-        const data = JSON.parse(text); const candles = parseYfData(data); if (candles && candles.length > 0) { _yfDataCache.set(cacheKey, candles); return candles; }
+      const pUrl = proxy.urlFn(targetUrl);
+      if (!pUrl) continue;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), proxy.timeout || 7000);
+      const resp = await fetch(pUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (resp.ok) {
+        let text = await resp.text();
+        if (text.trim().startsWith('{')) {
+          const parsed = JSON.parse(text);
+          if (parsed.contents) {
+            text = (typeof parsed.contents === 'string') ? parsed.contents : JSON.stringify(parsed.contents);
+          }
+        }
+        const trimmed = text.trim();
+        if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) { throw new Error("Response is not JSON"); }
+        const data = JSON.parse(text);
+        const candles = parseYfData(data);
+        if (candles && candles.length > 0) {
+          _yfDataCache.set(cacheKey, candles);
+          return candles;
+        }
       }
-    } catch (e) { console.warn('[fetchYfData] Proxy failed:', e.message); }
+    } catch (e) {
+      // try next proxy
+    }
+  }
+  return null;
+}
+
+async function fetchYfData(symbol, range, interval) {
+  const clean = symbol.replace(/\.(NS|BO)$/i, '').trim();
+  const primarySym = symbol.startsWith('^') ? symbol : (clean + '.NS');
+  let candles = await _fetchYfDataWithSymbol(primarySym, range, interval);
+  if ((!candles || candles.length === 0) && !symbol.startsWith('^')) {
+    // BSE fallback (e.g. for SME or BSE-listed stocks)
+    candles = await _fetchYfDataWithSymbol(clean + '.BO', range, interval);
+  }
+  if (candles && candles.length > 0) {
+    return candles;
   }
   throw new Error("Unable to load Yahoo Finance chart data");
 }
@@ -7138,8 +7236,7 @@ async function fetchScreenerFundamentals(symbol) {
     url => 'http://localhost:9090/?url=' + encodeURIComponent(url),
     url => 'https://nse-chart-proxy.shibu-mk.workers.dev/?url=' + encodeURIComponent(url),
     url => 'https://api.allorigins.win/get?url=' + encodeURIComponent(url),
-    url => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url),
-    url => 'https://corsproxy.io/?url=' + encodeURIComponent(url)
+    url => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url)
   ];
 
   for (const targetUrl of urls) {
@@ -7341,6 +7438,12 @@ function hitTestChartDrawings(x, y) {
       if (Math.hypot(x - maxX, y - minY) <= 9) return { index: i, drawing: d, handle: 'ne' };
       if (Math.hypot(x - maxX, y - maxY) <= 9) return { index: i, drawing: d, handle: 'se' };
       if (Math.hypot(x - minX, y - maxY) <= 9) return { index: i, drawing: d, handle: 'sw' };
+
+      if (d.type === 'scale' || d.type === 'measure') {
+        const midX = (minX + maxX) / 2;
+        if (Math.hypot(x - midX, y - pt1.y) <= 9) return { index: i, drawing: d, handle: 'p1' };
+        if (Math.hypot(x - midX, y - pt2.y) <= 9) return { index: i, drawing: d, handle: 'p2' };
+      }
 
       if (x >= minX - 5 && x <= maxX + 5 && y >= minY - 5 && y <= maxY + 5) {
         return { index: i, drawing: d, handle: 'body' };
@@ -7564,7 +7667,7 @@ function initChartDrawingCanvas() {
         color: _currentDrawTool === 'scale' ? '#22c55e' : _currentDrawTool === 'ray' ? '#eab308' : '#38bdf8',
         width: 1,
         style: 'solid',
-        fillOpacity: 0
+        fillOpacity: _currentDrawTool === 'scale' ? 0.15 : 0
       };
       redrawChartDrawings();
     } else if (_drawStep === 1) {
@@ -7584,7 +7687,7 @@ function initChartDrawingCanvas() {
           color: _activeDrawing.color,
           width: _activeDrawing.width || 1,
           style: _activeDrawing.style || 'solid',
-          fillOpacity: _activeDrawing.fillOpacity != null ? _activeDrawing.fillOpacity : 0
+          fillOpacity: _activeDrawing.fillOpacity != null ? _activeDrawing.fillOpacity : (_activeDrawing.type === 'scale' ? 0.15 : 0)
         });
         showChartToast('✔ Placed ' + _activeDrawing.type, _activeDrawing.color);
       } else {
@@ -7730,14 +7833,18 @@ function initChartDrawingCanvas() {
     }
   });
 
-  // Double-click to edit text annotations or Price Notes
+  // Double-click to edit text, price notes, or open coordinates/properties
   canvas.addEventListener('dblclick', e => {
     const coords = getEventCoords(e);
     const hit = hitTestChartDrawings(coords.x, coords.y);
-    if (hit && (hit.drawing.type === 'text' || hit.drawing.type === 'pricenote')) {
+    if (hit) {
       _selectedDrawingIndex = hit.index;
       updateFloatingToolbar();
-      editDrawingText(e);
+      if (hit.drawing.type === 'text' || hit.drawing.type === 'pricenote') {
+        editDrawingText(e);
+      } else {
+        openCoordsDialog(hit.drawing);
+      }
     }
   });
 }
@@ -8004,69 +8111,154 @@ function redrawChartDrawings() {
     } else if (d.type === 'scale' || d.type === 'measure') {
       const rx = Math.min(x1, x2);
       const ry = Math.min(y1, y2);
-      const rw = Math.max(1, Math.abs(x2 - x1));
-      const rh = Math.max(1, Math.abs(y2 - y1));
+      const rw = Math.max(2, Math.abs(x2 - x1));
+      const rh = Math.max(2, Math.abs(y2 - y1));
 
       const p1Price = (d.p1 && d.p1.price != null) ? d.p1.price : 0;
       const p2Price = (d.p2 && d.p2.price != null) ? d.p2.price : 0;
       const diffPrice = p2Price - p1Price;
       const pct = p1Price ? ((diffPrice / p1Price) * 100) : 0;
       const isUp = diffPrice >= 0;
-      // Default colors: green (#22c55e) for +ve, red (#ef4444) for -ve
+
+      // Color: green (#22c55e) for positive, red (#ef4444) for negative, unless custom color set
       const clr = (color && color !== '#22c55e' && color !== '#ef4444') ? color : (isUp ? '#22c55e' : '#ef4444');
-      const fillOp = (d.fillOpacity != null && d.fillOpacity > 0) ? d.fillOpacity : 0.14;
+      const fillOp = (d.fillOpacity != null) ? d.fillOpacity : 0.15;
 
-      // Fill measurement box - NO BORDER lines
-      const bgClr = typeof hexToRgba === 'function' ? hexToRgba(clr, fillOp) : (isUp ? 'rgba(34, 197, 94, 0.14)' : 'rgba(239, 68, 68, 0.14)');
-      ctx.fillStyle = bgClr;
-      ctx.fillRect(rx, ry, rw, rh);
+      // 1. Shaded Translucent Background Box
+      if (fillOp > 0) {
+        const bgClr = typeof hexToRgba === 'function' ? hexToRgba(clr, fillOp) : (isUp ? 'rgba(34, 197, 94, 0.14)' : 'rgba(239, 68, 68, 0.14)');
+        ctx.fillStyle = bgClr;
+        ctx.fillRect(rx, ry, rw, rh);
+      }
 
-      // Values: % and (no. of bars) only
-      const bCount = (d.p1 && d.p1.logical != null && d.p2 && d.p2.logical != null) ? Math.abs(Math.round(d.p2.logical - d.p1.logical)) + 1 : Math.round(rw / 10);
-      const sign = isUp ? '+' : '';
-      const txt = sign + pct.toFixed(2) + '% (' + bCount + ' bars)';
+      // 2. TV-Style Boundary Lines
+      ctx.strokeStyle = clr;
+      ctx.lineWidth = width;
+      if (style === 'dashed') ctx.setLineDash([5, 4]);
+      else if (style === 'dotted') ctx.setLineDash([2, 3]);
+      else ctx.setLineDash([]);
 
-      ctx.font = 'bold 11px -apple-system,BlinkMacSystemFont,sans-serif';
-      const tw = ctx.measureText(txt).width;
-      const badgeW = tw + 18;
-      const badgeH = 22;
+      // Outer bounding box
+      ctx.strokeRect(rx, ry, rw, rh);
+
+      // Emphasize horizontal boundary levels at start price (y1) and end price (y2)
+      ctx.beginPath();
+      ctx.moveTo(rx, y1);
+      ctx.lineTo(rx + rw, y1);
+      ctx.moveTo(rx, y2);
+      ctx.lineTo(rx + rw, y2);
+      ctx.stroke();
+
+      // 3. Vertical Directional Center Arrow Line
       const midX = rx + rw / 2;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(midX, y1);
+      ctx.lineTo(midX, y2);
+      ctx.stroke();
+
+      // Start Anchor tic (small horizontal bar)
+      ctx.beginPath();
+      ctx.moveTo(midX - 4, y1);
+      ctx.lineTo(midX + 4, y1);
+      ctx.stroke();
+
+      // Directional Arrowhead at y2
+      const arrowDir = (y2 <= y1) ? -1 : 1; // -1 is upward in screen coords
+      const arrowHeadH = Math.min(rh * 0.45, 8 + width);
+      const arrowHeadW = 4.5 + width * 0.5;
+      ctx.fillStyle = clr;
+      ctx.beginPath();
+      ctx.moveTo(midX, y2);
+      ctx.lineTo(midX - arrowHeadW, y2 - (arrowDir * arrowHeadH));
+      ctx.lineTo(midX + arrowHeadW, y2 - (arrowDir * arrowHeadH));
+      ctx.closePath();
+      ctx.fill();
+
+      // 4. Bar Count & Days Calculation
+      const bCount = (d.p1 && d.p1.logical != null && d.p2 && d.p2.logical != null) ? Math.abs(Math.round(d.p2.logical - d.p1.logical)) + 1 : Math.max(1, Math.round(rw / 10));
+      let dayStr = '';
+      if (_maxCandles && _maxCandles.length > 0 && d.p1.logical != null && d.p2.logical != null) {
+        const idx1 = Math.max(0, Math.min(_maxCandles.length - 1, Math.round(d.p1.logical)));
+        const idx2 = Math.max(0, Math.min(_maxCandles.length - 1, Math.round(d.p2.logical)));
+        const c1 = _maxCandles[idx1];
+        const c2 = _maxCandles[idx2];
+        if (c1 && c2 && c1.time && c2.time) {
+          const days = Math.round(Math.abs(c2.time - c1.time) / (1000 * 60 * 60 * 24));
+          if (days > 0) dayStr = days + 'd';
+        }
+      }
+
+      // 5. Authentic TradingView 2-Line Stats Badge
+      const sign = isUp ? '+' : '';
+      const line1 = sign + diffPrice.toFixed(2) + ' (' + sign + pct.toFixed(2) + '%)';
+      const line2 = bCount + ' bars' + (dayStr ? ', ' + dayStr : '');
+
+      ctx.font = 'bold 11px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+      const tw1 = ctx.measureText(line1).width;
+      ctx.font = '10px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+      const tw2 = ctx.measureText(line2).width;
+
+      const badgeW = Math.max(tw1, tw2) + 18;
+      const badgeH = 34;
       const bx = Math.max(10, Math.min(W - badgeW - 10, midX - badgeW / 2));
 
-      // Stats badge position: above on +ve, below on -ve
+      // Stats badge position (Auto / Above / Inside / Below)
       let by;
       const badgePos = d.badgePos || 'auto';
       if (badgePos === 'inside' || badgePos === 'center') {
-        by = Math.max(10, Math.min(H - badgeH - 10, ry + rh / 2 - badgeH / 2));
-      } else if (isUp) {
-        by = ry - badgeH - 4;
-        if (by < 10) by = 10;
+        by = Math.max(10, Math.min(H - badgeH - 10, ry + (rh - badgeH) / 2));
+      } else if (badgePos === 'above') {
+        by = Math.max(10, ry - badgeH - 6);
+      } else if (badgePos === 'below') {
+        by = Math.min(H - badgeH - 10, ry + rh + 6);
       } else {
-        by = ry + rh + 4;
-        if (by + badgeH > H - 10) by = H - badgeH - 10;
+        // Auto position: at the arrowhead (p2)
+        if (isUp) {
+          by = y2 - badgeH - 6;
+          if (by < 10) by = y2 + 8;
+        } else {
+          by = y2 + 6;
+          if (by + badgeH > H - 10) by = y2 - badgeH - 8;
+        }
+        by = Math.max(10, Math.min(H - badgeH - 10, by));
       }
 
-      // Label badge: solid dark pill - NO BORDER line
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
+      // Draw Badge background pill
+      ctx.fillStyle = 'rgba(18, 22, 34, 0.94)';
       ctx.beginPath();
       if (ctx.roundRect) ctx.roundRect(bx, by, badgeW, badgeH, 4);
       else ctx.rect(bx, by, badgeW, badgeH);
       ctx.fill();
 
-      // Text in badge
+      // Badge border matching clr
+      ctx.strokeStyle = isSelected ? '#ffffff' : clr;
+      ctx.lineWidth = isSelected ? 1.5 : 1;
+      ctx.stroke();
+
+      // Line 1 Text (points & %)
+      ctx.font = 'bold 11px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
       ctx.fillStyle = clr;
-      ctx.font = 'bold 11px -apple-system,BlinkMacSystemFont,sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(txt, bx + badgeW / 2, by + badgeH / 2);
+      ctx.fillText(line1, bx + badgeW / 2, by + 11);
+
+      // Line 2 Text (bars & days)
+      ctx.font = '10px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText(line2, bx + badgeW / 2, by + 24);
+
       ctx.textBaseline = 'alphabetic';
       ctx.textAlign = 'left';
 
+      // 6. Anchor Handles when selected
       if (isSelected) {
         drawAnchorHandle(ctx, rx, ry);
         drawAnchorHandle(ctx, rx + rw, ry);
         drawAnchorHandle(ctx, rx + rw, ry + rh);
         drawAnchorHandle(ctx, rx, ry + rh);
+        drawAnchorHandle(ctx, midX, y1);
+        drawAnchorHandle(ctx, midX, y2);
       }
     }
     ctx.restore();
@@ -8075,7 +8267,7 @@ function redrawChartDrawings() {
 window.redrawChartDrawings = redrawChartDrawings;
 
 // ── FLOATING CUSTOMIZATION TOOLBAR LOGIC ──
-const TV_DRAW_PALETTE = ['#38bdf8', '#2962ff', '#22c55e', '#eab308', '#f97316', '#ef4444', '#a855f7', '#f0f3fa'];
+const TV_DRAW_PALETTE = ['#22c55e', '#ef4444', '#38bdf8', '#2962ff', '#eab308', '#f97316', '#a855f7', '#f0f3fa'];
 
 function updateFloatingToolbar() {
   const bar = document.getElementById('tv-drawing-floating-toolbar');
@@ -8146,8 +8338,12 @@ function updateFloatingToolbar() {
     ) : '') +
     (d.type === 'scale' || d.type === 'measure' ? (
       '<div class="tv-float-sep"></div>' +
-      '<button class="tv-float-btn" onclick="toggleScaleBadgePos(event)" title="Stats Badge Position (Above / Inside)">' +
-        '<span style="font-size:10px;">' + ((d.badgePos || 'above') === 'above' ? '▲ Above' : '■ Inside') + '</span>' +
+      '<button class="tv-float-btn" onclick="toggleScaleBadgePos(event)" title="Stats Badge Position (Auto / Above / Inside / Below)">' +
+        '<span style="font-size:10px;">' + (
+          d.badgePos === 'inside' ? '■ Inside' :
+          d.badgePos === 'above' ? '▲ Above' :
+          d.badgePos === 'below' ? '▼ Below' : '⚡ Auto'
+        ) + '</span>' +
       '</button>'
     ) : '') +
     (d.type === 'text' || d.type === 'pricenote' ? (
@@ -8251,7 +8447,9 @@ function toggleScaleBadgePos(e) {
   const drawings = _chartDrawings[sym] || [];
   if (_selectedDrawingIndex != null && drawings[_selectedDrawingIndex]) {
     const d = drawings[_selectedDrawingIndex];
-    d.badgePos = (d.badgePos || 'above') === 'above' ? 'inside' : 'above';
+    const positions = ['auto', 'above', 'inside', 'below'];
+    let idx = positions.indexOf(d.badgePos || 'auto');
+    d.badgePos = positions[(idx + 1) % positions.length];
     saveChartDrawings();
     redrawChartDrawings();
     updateFloatingToolbar();

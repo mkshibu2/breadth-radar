@@ -217,8 +217,8 @@
       overflow-x: auto;
       background: linear-gradient(180deg, var(--bg2), var(--bg));
       border-bottom: 1px solid var(--line);
-      padding: 0 20px;
-      height: 46px;
+      padding: 0 8px;
+      height: 40px;
       white-space: nowrap;
     }
 
@@ -232,8 +232,8 @@
 
     .tick {
       display: flex;
-      gap: 8px;
-      padding: 0 18px;
+      gap: 5px;
+      padding: 0 8px;
       border-right: 1px solid var(--line-soft);
       height: 100%;
       align-items: center;
@@ -244,16 +244,32 @@
     }
 
     .tick .lbl {
-      font-size: 10px;
-      letter-spacing: .08em;
+      font-size: 9px;
+      letter-spacing: .03em;
       color: var(--dim);
       text-transform: uppercase;
+      white-space: nowrap;
     }
 
     .tick .val {
       font-family: var(--mono);
       font-weight: 600;
-      font-size: 13px;
+      font-size: 11.5px;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 1440px) {
+      .ticker { padding: 0 6px; }
+      .tick { padding: 0 6px; gap: 4px; }
+      .tick .lbl { font-size: 8.5px; letter-spacing: .02em; }
+      .tick .val { font-size: 11px; }
+    }
+
+    @media (max-width: 1250px) {
+      .ticker { padding: 0 4px; }
+      .tick { padding: 0 5px; gap: 3px; }
+      .tick .lbl { font-size: 8px; letter-spacing: 0; }
+      .tick .val { font-size: 10px; }
     }
 
     .up {
@@ -2911,18 +2927,18 @@
       }
 
       $('#ticker').innerHTML = `
-    <div class="tick"><span class="lbl">Capital</span><span class="val">${fmtRs(s.capital)}</span></div>
-    <div class="tick"><span class="lbl">Holdings</span><span class="val flat" style="color:var(--gold);">${fmtRs(s.invested)}</span></div>
-    <div class="tick"><span class="lbl">Cash</span><span class="val cash-glow">${fmtRs(s.cash)}</span></div>
-    <div class="tick"><span class="lbl">FY P/L</span><span class="val ${s.netPnlFY >= 0 ? 'up' : 'down'}">${s.netPnlFY >= 0 ? '+' : ''}${fmtRs(s.netPnlFY)}</span></div>
-    <div class="tick"${avgCapTip}><span class="lbl">Return</span><span class="val ${ret >= 0 ? 'up' : 'down'}">${ret >= 0 ? '+' : ''}${fmtPct(ret)}</span></div>
-    <div class="tick"><span class="lbl">Cum. P/L</span><span class="val ${s.cumPnl >= 0 ? 'up' : 'down'}">${s.cumPnl >= 0 ? '+' : ''}${fmtRs(s.cumPnl)}</span></div>
-    <div class="tick"${avgCapTip}><span class="lbl">Cum. Return</span><span class="val ${cumRet >= 0 ? 'up' : 'down'}">${cumRet >= 0 ? '+' : ''}${fmtPct(cumRet)}</span></div>
-    <div class="tick"><span class="lbl">Win Rate</span><span class="val ${winCls}">${fmtPct(s.winPct)}</span></div>
+    <div class="tick" title="Total Capital"><span class="lbl">Cap</span><span class="val">${fmtRs(s.capital)}</span></div>
+    <div class="tick" title="Holdings / Invested Capital"><span class="lbl">Holdings</span><span class="val flat" style="color:var(--gold);">${fmtRs(s.invested)}</span></div>
+    <div class="tick" title="Available Cash (Demat Margin + Bank MOD Sweep)"><span class="lbl">Cash</span><span class="val cash-glow">${fmtRs(s.cash)}</span></div>
+    <div class="tick" title="Current Financial Year Net P/L"><span class="lbl">FY P/L</span><span class="val ${s.netPnlFY >= 0 ? 'up' : 'down'}">${s.netPnlFY >= 0 ? '+' : ''}${fmtRs(s.netPnlFY)}</span></div>
+    <div class="tick"${avgCapTip || ' title="FY Return %"'}><span class="lbl">FY Ret</span><span class="val ${ret >= 0 ? 'up' : 'down'}">${ret >= 0 ? '+' : ''}${fmtPct(ret)}</span></div>
+    <div class="tick" title="Cumulative Net P/L Across All Financial Years"><span class="lbl">Cum P/L</span><span class="val ${s.cumPnl >= 0 ? 'up' : 'down'}">${s.cumPnl >= 0 ? '+' : ''}${fmtRs(s.cumPnl)}</span></div>
+    <div class="tick"${avgCapTip || ' title="Cumulative Return %"'}><span class="lbl">Cum Ret</span><span class="val ${cumRet >= 0 ? 'up' : 'down'}">${cumRet >= 0 ? '+' : ''}${fmtPct(cumRet)}</span></div>
+    <div class="tick" title="Win Rate %"><span class="lbl">Win%</span><span class="val ${winCls}">${fmtPct(s.winPct)}</span></div>
     <div class="tick" title="${edgeTip}"><span class="lbl">Edge</span><span class="val ${edgeCls}">${edgeDisplay}</span></div>
-    <div class="tick"><span class="lbl">Open Positions</span><span class="val flat">${s.openCount}</span></div>
-    <div class="tick"><span class="lbl">Open Risk</span><span class="val flat">${fmtRs(s.openRisk)}</span></div>
-    <div class="tick"><span class="lbl">Risk Budget / Trade</span><span class="val flat">${fmtRs(s.riskBudget)}</span></div>
+    <div class="tick" title="Open Trading Positions"><span class="lbl">Open Pos</span><span class="val flat">${s.openCount}</span></div>
+    <div class="tick" title="Total Open Risk"><span class="lbl">Open Risk</span><span class="val flat">${fmtRs(s.openRisk)}</span></div>
+    <div class="tick" title="Risk Budget Per Trade"><span class="lbl">Risk/Trade</span><span class="val flat">${fmtRs(s.riskBudget)}</span></div>
   `;
     }
 
@@ -3230,6 +3246,10 @@
       <a href="index.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:8px;color:var(--sub);font-size:12px;">
         <img src="assets/m-radar-icon.png" style="width:16px;height:16px;border-radius:4px;flex-shrink:0;">
         <span style="font-weight:600;"><span style="color:#f59e0b">M.</span>Radar Dashboard ↗</span>
+      </a>
+      <a href="sectors.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:8px;color:var(--sub);font-size:12px;margin-top:2px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span style="color:#2dd4bf;font-weight:600">Sector Command ↗</span>
       </a>
       <a href="screener.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:8px;color:var(--sub);font-size:12px;margin-top:2px;">
         <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" style="width:16px;height:16px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>

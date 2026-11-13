@@ -1076,7 +1076,7 @@
             <button id="draw-tool-rect" class="tv-draw-btn" onclick="setDrawingTool('rect')" title="Rectangle Zone">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
             </button>
-            <button id="draw-tool-scale" class="tv-draw-btn" onclick="setDrawingTool('scale')" title="Date &amp; Price Range">
+            <button id="draw-tool-scale" class="tv-draw-btn" onclick="setDrawingTool('scale')" title="Price Range (TV Style Measurement Tool)">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="12" y1="7" x2="12" y2="17"/><polyline points="9 9 12 6 15 9"/><polyline points="9 15 12 18 15 15"/></svg>
             </button>
             <button id="draw-tool-pricenote" class="tv-draw-btn" onclick="setDrawingTool('pricenote')" title="Price Note">
@@ -1183,6 +1183,440 @@
   </div>
 
     <!-- ── TRADINGVIEW STYLE INDICATOR SETTINGS MODAL ── -->
+<div id="win-settings-overlay" onclick="if(event.target===this)closeWinSettingsModal()"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.68);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);">
+    <div id="win-settings-dialog" onclick="event.stopPropagation()"
+      style="width:520px;max-width:94vw;max-height:88vh;background:#1e222d;border:1px solid #2a2e39;border-radius:8px;box-shadow:0 20px 48px rgba(0,0,0,0.7);display:flex;flex-direction:column;overflow:hidden;color:#d1d4dc;font-family:-apple-system,BlinkMacSystemFont,'Trebuchet MS',Roboto,sans-serif;">
+
+      <!-- Modal Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid #2a2e39;background:#191d28;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2962ff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span style="font-size:14px;font-weight:700;color:#f0f3fa;">Shibu's WIN</span>
+          <span style="font-size:11px;color:#787b86;font-weight:500;">Indicator Settings</span>
+        </div>
+        <button onclick="closeWinSettingsModal()" title="Close"
+          style="background:none;border:none;color:#787b86;font-size:16px;cursor:pointer;padding:4px 8px;border-radius:4px;line-height:1;transition:color .15s;"
+          onmouseenter="this.style.color='#f0f3fa'" onmouseleave="this.style.color='#787b86'">✕</button>
+      </div>
+
+      <!-- TV Tabs: Inputs | Style -->
+      <div style="display:flex;align-items:center;border-bottom:1px solid #2a2e39;background:#191d28;padding:0 18px;gap:24px;">
+        <button id="win-tab-btn-inputs" class="win-settings-tab active" onclick="switchWinTab('inputs')">Inputs</button>
+        <button id="win-tab-btn-style" class="win-settings-tab" onclick="switchWinTab('style')">Style</button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div style="flex:1;overflow-y:auto;padding:16px 20px;max-height:440px;font-size:12px;">
+
+        <!-- ── TAB: INPUTS ── -->
+        <div id="win-tab-content-inputs">
+          <div class="tv-section-title">Moving Average Lengths</div>
+          <div class="tv-row">
+            <span class="tv-label">EMA 1 Length</span>
+            <input type="number" id="tv-in-ema1Period" class="tv-input" min="1" max="500">
+          </div>
+          <div class="tv-row">
+            <span class="tv-label">EMA 2 Length</span>
+            <input type="number" id="tv-in-ema2Period" class="tv-input" min="1" max="500">
+          </div>
+          <div class="tv-row">
+            <span class="tv-label">SMA 1 Length (Daily)</span>
+            <input type="number" id="tv-in-sma1Period" class="tv-input" min="1" max="500">
+          </div>
+          <div class="tv-row">
+            <span class="tv-label">SMA 2 Length (Daily)</span>
+            <input type="number" id="tv-in-sma2Period" class="tv-input" min="1" max="500">
+          </div>
+          <div class="tv-row">
+            <span class="tv-label">Weekly SMA Length</span>
+            <input type="number" id="tv-in-sma30wPeriod" class="tv-input" min="1" max="500">
+          </div>
+
+          <div class="tv-section-title">Core Indicator Lookbacks</div>
+          <div class="tv-row">
+            <span class="tv-label">Avg Volume Length</span>
+            <input type="number" id="tv-in-volLen" class="tv-input" min="5" max="200">
+          </div>
+          <div class="tv-row">
+            <span class="tv-label">ATR Length</span>
+            <input type="number" id="tv-in-atrLen" class="tv-input" min="1" max="100">
+          </div>
+          <div class="tv-row">
+            <span class="tv-label">ADR Length</span>
+            <input type="number" id="tv-in-adrLen" class="tv-input" min="1" max="100">
+          </div>
+          <div class="tv-row">
+            <span class="tv-label">U/D Volume Ratio Length</span>
+            <input type="number" id="tv-in-udLen" class="tv-input" min="5" max="200">
+          </div>
+
+          <div class="tv-section-title">Signals & Patterns</div>
+          <div class="tv-row">
+            <span class="tv-label">Purple Dot Min ROC %</span>
+            <input type="number" id="tv-in-purpleRoc" class="tv-input" step="0.5" min="1" max="50">
+          </div>
+          <div class="tv-row">
+            <span class="tv-label">Purple Dot Min Volume</span>
+            <input type="number" id="tv-in-purpleVol" class="tv-input" step="100000" min="10000">
+          </div>
+          <div class="tv-row">
+            <span class="tv-label">VCP Max Range % (3 Days)</span>
+            <input type="number" id="tv-in-vcpRangePct" class="tv-input" step="0.1" min="0.5" max="10">
+          </div>
+          <div class="tv-row">
+            <span class="tv-label">Power Pocket Vol Multiple</span>
+            <input type="number" id="tv-in-powerPocketVolMult" class="tv-input" step="0.1" min="1" max="10">
+          </div>
+
+          <div class="tv-section-title">Volume Trigger V4 (GTT Level)</div>
+          <div class="tv-row">
+            <span class="tv-label">VT Lookback Bars</span>
+            <input type="number" id="tv-in-vtLookback" class="tv-input" min="10" max="100">
+          </div>
+          <div class="tv-row">
+            <span class="tv-label">VT Price Rows</span>
+            <input type="number" id="tv-in-vtRows" class="tv-input" min="10" max="60">
+          </div>
+          <div class="tv-row">
+            <span class="tv-label">VT HVN Threshold %</span>
+            <input type="number" id="tv-in-vtHvnPct" class="tv-input" step="5" min="40" max="90">
+          </div>
+          <div class="tv-row">
+            <span class="tv-label">VT LVN Threshold %</span>
+            <input type="number" id="tv-in-vtLvnPct" class="tv-input" step="5" min="10" max="60">
+          </div>
+        
+          <!-- EPS & Sales Fundamentals -->
+          <div class="tv-section-title">EPS & Sales Fundamentals</div>
+          <div class="tv-row">
+            <span class="tv-label">Show EPS & Sales Table</span>
+            <input type="checkbox" id="tv-in-showEpsTable" style="accent-color:#2962ff;width:15px;height:15px;">
+          </div>
+          <div class="tv-row">
+            <span class="tv-label">EPS/Sales Rows to Show</span>
+            <input type="number" id="tv-in-epsRowsToShow" class="tv-input" min="1" max="8">
+          </div>
+        </div>
+
+        <!-- ── TAB: STYLE ── -->
+        <div id="win-tab-content-style" style="display:none;">
+          <div class="tv-section-title">Plots & Moving Averages</div>
+
+          <!-- EMA 1 -->
+          <div class="tv-row">
+            <div class="tv-label">
+              <input type="checkbox" id="tv-style-ema10-vis" class="tv-checkbox">
+              <span id="tv-style-lbl-ema10">10 EMA</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="color" id="tv-style-ema10-col" class="tv-color-picker">
+              <select id="tv-style-ema10-op" class="tv-select" title="Opacity">
+                <option value="100">100%</option>
+                <option value="85">85%</option>
+                <option value="70">70%</option>
+                <option value="50">50%</option>
+                <option value="30">30%</option>
+              </select>
+              <select id="tv-style-ema10-w" class="tv-select">
+                <option value="1">1 px</option>
+                <option value="1.5">1.5 px</option>
+                <option value="2">2 px</option>
+                <option value="3">3 px</option>
+              </select>
+              <select id="tv-style-ema10-st" class="tv-select">
+                <option value="0">Solid</option>
+                <option value="2">Dashed</option>
+                <option value="1">Dotted</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- EMA 2 -->
+          <div class="tv-row">
+            <div class="tv-label">
+              <input type="checkbox" id="tv-style-ema20-vis" class="tv-checkbox">
+              <span id="tv-style-lbl-ema20">20 EMA</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="color" id="tv-style-ema20-col" class="tv-color-picker">
+              <select id="tv-style-ema20-op" class="tv-select" title="Opacity">
+                <option value="100">100%</option>
+                <option value="85">85%</option>
+                <option value="70">70%</option>
+                <option value="50">50%</option>
+                <option value="30">30%</option>
+              </select>
+              <select id="tv-style-ema20-w" class="tv-select">
+                <option value="1">1 px</option>
+                <option value="1.5">1.5 px</option>
+                <option value="2">2 px</option>
+                <option value="3">3 px</option>
+              </select>
+              <select id="tv-style-ema20-st" class="tv-select">
+                <option value="0">Solid</option>
+                <option value="2">Dashed</option>
+                <option value="1">Dotted</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- SMA 1 -->
+          <div class="tv-row">
+            <div class="tv-label">
+              <input type="checkbox" id="tv-style-sma50-vis" class="tv-checkbox">
+              <span id="tv-style-lbl-sma50">50 SMA</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="color" id="tv-style-sma50-col" class="tv-color-picker">
+              <select id="tv-style-sma50-op" class="tv-select" title="Opacity">
+                <option value="100">100%</option>
+                <option value="85">85%</option>
+                <option value="70">70%</option>
+                <option value="50">50%</option>
+                <option value="30">30%</option>
+              </select>
+              <select id="tv-style-sma50-w" class="tv-select">
+                <option value="1">1 px</option>
+                <option value="1.5">1.5 px</option>
+                <option value="2">2 px</option>
+                <option value="3">3 px</option>
+              </select>
+              <select id="tv-style-sma50-st" class="tv-select">
+                <option value="0">Solid</option>
+                <option value="2">Dashed</option>
+                <option value="1">Dotted</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- SMA 2 -->
+          <div class="tv-row">
+            <div class="tv-label">
+              <input type="checkbox" id="tv-style-sma200-vis" class="tv-checkbox">
+              <span id="tv-style-lbl-sma200">200 SMA</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="color" id="tv-style-sma200-col" class="tv-color-picker">
+              <select id="tv-style-sma200-op" class="tv-select" title="Opacity">
+                <option value="100">100%</option>
+                <option value="85">85%</option>
+                <option value="70">70%</option>
+                <option value="50">50%</option>
+                <option value="30">30%</option>
+              </select>
+              <select id="tv-style-sma200-w" class="tv-select">
+                <option value="1">1 px</option>
+                <option value="1.5">1.5 px</option>
+                <option value="2">2 px</option>
+                <option value="3">3 px</option>
+              </select>
+              <select id="tv-style-sma200-st" class="tv-select">
+                <option value="0">Solid</option>
+                <option value="2">Dashed</option>
+                <option value="1">Dotted</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Weekly SMA -->
+          <div class="tv-row">
+            <div class="tv-label">
+              <input type="checkbox" id="tv-style-sma30w-vis" class="tv-checkbox">
+              <span id="tv-style-lbl-sma30w">Weekly 30 SMA</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="color" id="tv-style-sma30w-col" class="tv-color-picker">
+              <select id="tv-style-sma30w-op" class="tv-select" title="Opacity">
+                <option value="100">100%</option>
+                <option value="85">85%</option>
+                <option value="70">70%</option>
+                <option value="50">50%</option>
+                <option value="30">30%</option>
+              </select>
+              <select id="tv-style-sma30w-w" class="tv-select">
+                <option value="1">1 px</option>
+                <option value="1.5">1.5 px</option>
+                <option value="2">2 px</option>
+                <option value="3">3 px</option>
+              </select>
+              <select id="tv-style-sma30w-st" class="tv-select">
+                <option value="0">Solid</option>
+                <option value="2">Dashed</option>
+                <option value="1">Dotted</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- RS Nifty -->
+          <div class="tv-row">
+            <div class="tv-label">
+              <input type="checkbox" id="tv-style-rs-vis" class="tv-checkbox">
+              <span>RS vs Nifty</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="color" id="tv-style-rs-col" class="tv-color-picker">
+              <select id="tv-style-rs-op" class="tv-select" title="Opacity">
+                <option value="100">100%</option>
+                <option value="85">85%</option>
+                <option value="70">70%</option>
+                <option value="50">50%</option>
+                <option value="30">30%</option>
+              </select>
+              <select id="tv-style-rs-w" class="tv-select">
+                <option value="1">1 px</option>
+                <option value="1.5">1.5 px</option>
+                <option value="1.8">1.8 px</option>
+                <option value="2.5">2.5 px</option>
+              </select>
+              <select id="tv-style-rs-st" class="tv-select">
+                <option value="0">Solid</option>
+                <option value="2">Dashed</option>
+                <option value="1">Dotted</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- VT GTT Line -->
+          <div class="tv-row">
+            <div class="tv-label">
+              <input type="checkbox" id="tv-style-vt-vis" class="tv-checkbox">
+              <span>Volume Trigger Line</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="color" id="tv-style-vt-col" class="tv-color-picker">
+              <select id="tv-style-vt-op" class="tv-select" title="Opacity">
+                <option value="100">100%</option>
+                <option value="85">85%</option>
+                <option value="70">70%</option>
+                <option value="50">50%</option>
+                <option value="30">30%</option>
+              </select>
+              <select id="tv-style-vt-w" class="tv-select">
+                <option value="1">1 px</option>
+                <option value="1.5">1.5 px</option>
+                <option value="2">2 px</option>
+              </select>
+              <select id="tv-style-vt-st" class="tv-select">
+                <option value="2">Dashed</option>
+                <option value="0">Solid</option>
+                <option value="1">Dotted</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="tv-section-title">Markers & Signals</div>
+
+          <!-- Purple Momentum Dot -->
+          <div class="tv-row">
+            <div class="tv-label">
+              <input type="checkbox" id="tv-style-purpleDot-vis" class="tv-checkbox">
+              <span>Purple Momentum Dot</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+            <input type="color" id="tv-style-purpleDot-col" class="tv-color-picker">
+            <select id="tv-style-purpleDot-op" class="tv-select" title="Opacity">
+                <option value="100">100%</option>
+                <option value="85">85%</option>
+                <option value="70">70%</option>
+                <option value="50">50%</option>
+                <option value="30">30%</option>
+              </select>
+          </div>
+          </div>
+
+          <!-- VCP Tightness Square -->
+          <div class="tv-row">
+            <div class="tv-label">
+              <input type="checkbox" id="tv-style-vcp-vis" class="tv-checkbox">
+              <span>VCP Tightness Marker</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+            <input type="color" id="tv-style-vcp-col" class="tv-color-picker">
+            <select id="tv-style-vcp-op" class="tv-select" title="Opacity">
+                <option value="100">100%</option>
+                <option value="85">85%</option>
+                <option value="70">70%</option>
+                <option value="50">50%</option>
+                <option value="30">30%</option>
+              </select>
+          </div>
+          </div>
+
+          <!-- Power Pocket -->
+          <div class="tv-row">
+            <div class="tv-label">
+              <input type="checkbox" id="tv-style-powerPocket-vis" class="tv-checkbox">
+              <span>Power Pocket Marker</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+            <input type="color" id="tv-style-powerPocket-col" class="tv-color-picker">
+            <select id="tv-style-powerPocket-op" class="tv-select" title="Opacity">
+                <option value="100">100%</option>
+                <option value="85">85%</option>
+                <option value="70">70%</option>
+                <option value="50">50%</option>
+                <option value="30">30%</option>
+              </select>
+          </div>
+          </div>
+
+          <div class="tv-section-title">Display & Tables</div>
+
+          <!-- WIN HUD Table -->
+          <div class="tv-row">
+            <div class="tv-label">
+              <input type="checkbox" id="tv-style-hud-vis" class="tv-checkbox">
+              <span>WIN HUD Metrics Table (Bottom)</span>
+            </div>
+          </div>
+        
+          <!-- EPS & Sales Table -->
+          <div class="tv-row">
+            <div class="tv-label">
+              <input type="checkbox" id="tv-style-epsTable-vis" class="tv-checkbox">
+              <span>EPS & Sales Table (Bottom Right)</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <select id="tv-style-epsTable-op" class="tv-select" title="Opacity">
+                <option value="100">100%</option>
+                <option value="90">90%</option>
+                <option value="80">80%</option>
+                <option value="60">60%</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TV Modal Footer -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid #2a2e39;background:#191d28;">
+        <button onclick="resetWinSettingsToDefault()"
+          style="background:none;border:1px solid #363a45;color:#787b86;font-size:12px;font-weight:600;padding:5px 12px;border-radius:4px;cursor:pointer;transition:all .15s;"
+          onmouseenter="this.style.color='#f0f3fa';this.style.borderColor='#787b86'"
+          onmouseleave="this.style.color='#787b86';this.style.borderColor='#363a45'">
+          Defaults
+        </button>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button onclick="closeWinSettingsModal()"
+            style="background:none;border:1px solid #363a45;color:#d1d4dc;font-size:12px;font-weight:600;padding:5px 14px;border-radius:4px;cursor:pointer;transition:all .15s;"
+            onmouseenter="this.style.borderColor='#787b86'" onmouseleave="this.style.borderColor='#363a45'">
+            Cancel
+          </button>
+          <button onclick="applyWinSettingsFromModal()"
+            style="background:#2962ff;border:1px solid #2962ff;color:#ffffff;font-size:12px;font-weight:700;padding:5px 18px;border-radius:4px;cursor:pointer;transition:all .15s;"
+            onmouseenter="this.style.background='#1e53e5'" onmouseleave="this.style.background='#2962ff'">
+            Ok
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
 
 
 
