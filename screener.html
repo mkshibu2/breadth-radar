@@ -912,7 +912,7 @@
       fill: #070d18;
     }
 
-    /* Main Watchlist Button (Sync to Full Chart Studio) */
+    /* Main Watchlist Button (Sync to Chart Studio) */
     .btn-main-wl {
       background: rgba(45, 212, 191, 0.08);
       border: 1px solid rgba(45, 212, 191, 0.35);
@@ -2208,7 +2208,7 @@
           </button>
 
           <button class="btn" onclick="openInFullChartStudio(ACTIVE_STOCK_SYMBOL)"
-            title="Open in Full Chart Studio on Home Page (multi-timeframes & drawings)"
+            title="Open in Chart Studio (multi-timeframes & drawings)"
             style="padding:4px 8px;font-size:11px;color:var(--cyan);border-color:rgba(6,182,212,0.3);">
             Studio ↗
           </button>
@@ -2374,7 +2374,7 @@
         </button>
 
         <button class="btn btn-main-wl" onclick="addShortlistToMainWl()" style="font-weight:700;color:#2dd4bf;border-color:rgba(45,212,191,0.4);"
-          title="Add all shortlisted stocks to Main Watchlist (to re-study in Full Chart Studio later)">
+          title="Add all shortlisted stocks to Main Watchlist (to re-study in Chart Studio later)">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
           </svg>
@@ -2468,20 +2468,60 @@
     // 1. GLOBAL STATE & FACTORY PRESETS
     // ==============================================================================
     var _universe = window.SCREENER_DATA || window.SCREENER_UNIVERSE;
+    try {
+      localStorage.removeItem('nse_exact_quarterly_v2');
+    } catch (e) { }
     var STOCKS_DATA = (_universe && _universe.stocks) ? _universe.stocks : [];
     try {
       var _syncedRaw = localStorage.getItem('tj_screener_synced_stocks');
       if (_syncedRaw) {
         var _syncedArr = JSON.parse(_syncedRaw);
         if (Array.isArray(_syncedArr) && _syncedArr.length > 500) {
-          STOCKS_DATA = _syncedArr;
-          if (window.SCREENER_DATA) {
-            window.SCREENER_DATA.stocks = _syncedArr;
-            window.SCREENER_DATA.total_stocks = _syncedArr.length;
+          var _s0 = _syncedArr[0];
+          // Check if valid schema with technicals and distance metrics computed
+          if (_s0 && _s0.symbol && _s0.price !== undefined && (_s0.dist_52w_high !== undefined || _s0.high_52w !== undefined)) {
+            STOCKS_DATA = _syncedArr;
+            if (window.SCREENER_DATA) {
+              window.SCREENER_DATA.stocks = _syncedArr;
+              window.SCREENER_DATA.total_stocks = _syncedArr.length;
+            }
+          } else {
+            console.warn('Purging incompatible cached screener data to use fresh screener_stocks.js universe');
+            localStorage.removeItem('tj_screener_synced_stocks');
           }
         }
       }
     } catch (eCache) { }
+
+    // Sanitize and ensure numeric fallback safety & computed metrics on all stock objects
+    for (var _si = 0; _si < STOCKS_DATA.length; _si++) {
+      var _stk = STOCKS_DATA[_si];
+      if (!_stk) continue;
+      if (_stk.price === undefined || _stk.price === null || isNaN(_stk.price)) _stk.price = 0;
+      if (_stk.change_pct === undefined || _stk.change_pct === null || isNaN(_stk.change_pct)) _stk.change_pct = 0;
+      if (_stk.volume === undefined || _stk.volume === null || isNaN(_stk.volume)) _stk.volume = 0;
+      if (_stk.rel_vol === undefined || _stk.rel_vol === null || isNaN(_stk.rel_vol)) _stk.rel_vol = _stk.rvol_10d || 1.0;
+      if (_stk.turnover_inr === undefined || _stk.turnover_inr === null) _stk.turnover_inr = _stk.value_traded || (_stk.price * _stk.volume);
+      if (_stk.turnover_cr === undefined || _stk.turnover_cr === null) _stk.turnover_cr = _stk.turnover_inr ? +(_stk.turnover_inr / 1e7).toFixed(2) : 0;
+      if (_stk.mkt_cap_cr === undefined || _stk.mkt_cap_cr === null) _stk.mkt_cap_cr = _stk.mkt_cap_inr ? +(_stk.mkt_cap_inr / 1e7).toFixed(2) : 0;
+
+      // Distance and technical metrics
+      if (_stk.dist_52w_high === undefined || _stk.dist_52w_high === null) {
+        _stk.dist_52w_high = (_stk.high_52w && _stk.high_52w > 0) ? +(((_stk.high_52w - _stk.price) / _stk.high_52w) * 100).toFixed(2) : 0;
+      }
+      if (_stk.dist_52w_low === undefined || _stk.dist_52w_low === null) {
+        _stk.dist_52w_low = (_stk.low_52w && _stk.low_52w > 0) ? +(((_stk.price - _stk.low_52w) / _stk.low_52w) * 100).toFixed(2) : 0;
+      }
+      if (_stk.dist_high_1m_pct === undefined || _stk.dist_high_1m_pct === null) {
+        var _h1m = _stk.high_1m || _stk.price;
+        _stk.dist_high_1m_pct = _h1m > 0 ? +(((_h1m - _stk.price) / _h1m) * 100).toFixed(2) : 0;
+      }
+      if (_stk.pe_ratio === undefined && _stk.pe_ttm !== undefined) _stk.pe_ratio = _stk.pe_ttm;
+      if (_stk.eps_dil_ttm === undefined && _stk.eps_diluted_ttm !== undefined) _stk.eps_dil_ttm = _stk.eps_diluted_ttm;
+      if (_stk.eps_growth_yoy === undefined && _stk.eps_growth_ttm !== undefined) _stk.eps_growth_yoy = _stk.eps_growth_ttm;
+      if (_stk.is_ipo === undefined) _stk.is_ipo = (_stk.sma_200 === null || _stk.perf_1y === null || _stk.perf_6m === null);
+    }
+
     var CURRENT_VIEW = 'overview';
     var SORT_COL = 'mkt_cap_inr';
     var SORT_DIR = 'desc';
@@ -3009,6 +3049,25 @@
       applyFiltersAndRender();
     }
 
+    function setUniverseAll() {
+      ACTIVE_UNIVERSE = 'all';
+      var univLbl = document.getElementById('active-universe-lbl');
+      if (univLbl) univLbl.textContent = 'Watchlist: All (3,000)';
+      applyFiltersAndRender();
+    }
+
+    function resetFiltersAndShowAll() {
+      ACTIVE_UNIVERSE = 'all';
+      var univLbl = document.getElementById('active-universe-lbl');
+      if (univLbl) univLbl.textContent = 'Watchlist: All (3,000)';
+      SEARCH_QUERY = '';
+      var sInput = document.getElementById('search-input');
+      if (sInput) sInput.value = '';
+      ACTIVE_FILTERS = [];
+      renderChips();
+      applyFiltersAndRender();
+    }
+
     // Popover Logic (Customized for Comparison, Performance, and Numeric)
     function openChipPopover(idx, el, e) {
       if (e) e.stopPropagation();
@@ -3462,24 +3521,32 @@
 
     function renderTableBody(stocks) {
       var tbody = document.getElementById('table-body');
-      if (stocks.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:48px 20px;color:var(--text-muted);font-size:14px;">'
-          + '🔍 No stocks match the current active screener filters.<br>'
-          + '<span style="font-size:12px;color:var(--text-dim);margin-top:6px;display:inline-block;">Try clicking the checkmark on a filter chip to temporarily disable it and view results.</span>'
-          + '</td></tr>';
+      if (!stocks || stocks.length === 0) {
+        var isShortlist = (ACTIVE_UNIVERSE === 'shortlist');
+        var emptyMsg = isShortlist
+          ? '⭐ Your Shortlist is currently empty.<br><span style="font-size:12px;color:var(--text-dim);margin-top:6px;display:inline-block;">Click the star (☆) next to any stock in the screener table or press <kbd style="background:#172740;padding:2px 6px;border-radius:3px;">W</kbd> to add candidates.</span><br><button class="btn btn-primary" onclick="resetFiltersAndShowAll()" style="margin-top:12px;padding:6px 16px;cursor:pointer;">Show All Stocks (3,000)</button>'
+          : '🔍 No stocks match the current active screener filters.<br><span style="font-size:12px;color:var(--text-dim);margin-top:6px;display:inline-block;">Try clicking the checkmark on a filter chip to temporarily disable it, or clear filters.</span><br><button class="btn btn-primary" onclick="resetFiltersAndShowAll()" style="margin-top:12px;padding:6px 16px;cursor:pointer;">Show All Stocks (3,000)</button>';
+        tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:48px 20px;color:var(--text-muted);font-size:14px;">' + emptyMsg + '</td></tr>';
         return;
       }
 
       var cols = VIEW_COLUMNS[CURRENT_VIEW] || VIEW_COLUMNS.overview;
-      var rows = stocks.map(function (s) {
-        var isSel = (s.symbol === ACTIVE_STOCK_SYMBOL) ? 'selected-row' : '';
-        var html = '<tr class="' + isSel + '" data-sym="' + s.symbol + '" onclick="handleRowClick(\'' + s.symbol + '\', this)">';
-        cols.forEach(function (col) {
-          html += renderCell(s, col);
-        });
-        html += '</tr>';
-        return html;
-      });
+      var rows = [];
+      for (var i = 0; i < stocks.length; i++) {
+        var s = stocks[i];
+        if (!s) continue;
+        try {
+          var isSel = (s.symbol === ACTIVE_STOCK_SYMBOL) ? 'selected-row' : '';
+          var html = '<tr class="' + isSel + '" data-sym="' + s.symbol + '" onclick="handleRowClick(\'' + s.symbol + '\', this)">';
+          for (var j = 0; j < cols.length; j++) {
+            html += renderCell(s, cols[j]);
+          }
+          html += '</tr>';
+          rows.push(html);
+        } catch (eRow) {
+          console.warn('Row render error for ' + (s ? s.symbol : 'unknown'), eRow);
+        }
+      }
 
       tbody.innerHTML = rows.join('');
     }
@@ -3497,7 +3564,7 @@
         return '<td>'
           + '<div class="sym-cell">'
           + starIcon
-          + '<div class="sym-avatar">' + s.symbol.charAt(0) + '</div>'
+          + '<div class="sym-avatar">' + (s.symbol ? s.symbol.charAt(0) : '?') + '</div>'
           + '<div>'
           + '<span class="sym-name">' + s.symbol + '</span>' + ipoBadge
           + '<div class="comp-sub">' + (s.company || s.symbol) + '</div>'
@@ -3508,17 +3575,20 @@
 
       if (id === 'price' || id === 'ema_20' || id === 'ema_50' || id === 'sma_50' || id === 'sma_200' || id === 'high_1m' || id === 'high_52w' || id === 'low_52w') {
         var val = s[id];
-        if (val === null || val === undefined) return '<td class="num" style="color:var(--text-muted)">\u2014</td>';
+        if (val === null || val === undefined || isNaN(val)) return '<td class="num" style="color:var(--text-muted)">\u2014</td>';
         var isP = (id === 'price');
         return '<td class="num" style="font-family:var(--mono);' + (isP ? 'font-weight:700;color:#fff;' : 'color:var(--text-dim);') + '">'
-          + val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' <span style="font-size:10px;color:var(--text-muted)">INR</span></td>';
+          + Number(val).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' <span style="font-size:10px;color:var(--text-muted)">INR</span></td>';
       }
 
       if (id === 'change_pct') {
-        var isUp = s.change_pct >= 0;
+        var cp = s.change_pct;
+        if (cp === null || cp === undefined || isNaN(cp)) return '<td class="num" style="color:var(--text-muted)">\u2014</td>';
+        var cpNum = Number(cp);
+        var isUp = cpNum >= 0;
         var clr = isUp ? 'var(--lime)' : 'var(--red)';
         var sign = isUp ? '+' : '';
-        return '<td class="num" style="font-family:var(--mono);font-weight:700;color:' + clr + '">' + sign + s.change_pct.toFixed(2) + '%</td>';
+        return '<td class="num" style="font-family:var(--mono);font-weight:700;color:' + clr + '">' + sign + cpNum.toFixed(2) + '%</td>';
       }
 
       if (id === 'volume' || id === 'avg_vol_30d') {
@@ -3527,8 +3597,10 @@
 
       if (id === 'rel_vol') {
         var rv = s.rel_vol;
-        var rvClr = rv >= 1.5 ? 'var(--lime)' : (rv >= 1.0 ? 'var(--cyan)' : 'var(--text-dim)');
-        return '<td class="num" style="font-family:var(--mono);font-weight:600;color:' + rvClr + '">' + rv.toFixed(2) + '</td>';
+        if (rv === null || rv === undefined || isNaN(rv)) return '<td class="num" style="color:var(--text-muted)">\u2014</td>';
+        var rvNum = Number(rv);
+        var rvClr = rvNum >= 1.5 ? 'var(--lime)' : (rvNum >= 1.0 ? 'var(--cyan)' : 'var(--text-dim)');
+        return '<td class="num" style="font-family:var(--mono);font-weight:600;color:' + rvClr + '">' + rvNum.toFixed(2) + '</td>';
       }
 
       if (id === 'mkt_cap_formatted') {
@@ -3540,23 +3612,23 @@
       }
 
       if (id === 'mkt_cap_cr') {
-        return '<td class="num" style="font-family:var(--mono);">' + s.mkt_cap_cr.toLocaleString('en-IN') + ' Cr</td>';
+        return '<td class="num" style="font-family:var(--mono);">' + (s.mkt_cap_cr != null && !isNaN(s.mkt_cap_cr) ? Number(s.mkt_cap_cr).toLocaleString('en-IN') + ' Cr' : '\u2014') + '</td>';
       }
 
       if (id === 'turnover_cr') {
-        return '<td class="num" style="font-family:var(--mono);">' + s.turnover_cr.toLocaleString('en-IN') + ' Cr</td>';
+        return '<td class="num" style="font-family:var(--mono);">' + (s.turnover_cr != null && !isNaN(s.turnover_cr) ? Number(s.turnover_cr).toLocaleString('en-IN') + ' Cr' : '\u2014') + '</td>';
       }
 
       if (id === 'pe_ratio') {
-        return '<td class="num" style="font-family:var(--mono);">' + (s.pe_ratio ? s.pe_ratio.toFixed(2) : '\u2014') + '</td>';
+        return '<td class="num" style="font-family:var(--mono);">' + (s.pe_ratio != null && !isNaN(s.pe_ratio) ? Number(s.pe_ratio).toFixed(2) : '\u2014') + '</td>';
       }
 
       if (id === 'eps_dil_ttm') {
-        return '<td class="num" style="font-family:var(--mono);">' + (s.eps_dil_ttm !== null && s.eps_dil_ttm !== undefined ? s.eps_dil_ttm.toFixed(2) + ' <span style="font-size:10px;color:var(--text-muted)">INR</span>' : '\u2014') + '</td>';
+        return '<td class="num" style="font-family:var(--mono);">' + (s.eps_dil_ttm !== null && s.eps_dil_ttm !== undefined && !isNaN(s.eps_dil_ttm) ? Number(s.eps_dil_ttm).toFixed(2) + ' <span style="font-size:10px;color:var(--text-muted)">INR</span>' : '\u2014') + '</td>';
       }
 
       if (id === 'eps_growth_yoy') {
-        if (s.eps_growth_yoy === null || s.eps_growth_yoy === undefined) return '<td class="num" style="color:var(--text-muted)">\u2014</td>';
+        if (s.eps_growth_yoy === null || s.eps_growth_yoy === undefined || isNaN(s.eps_growth_yoy)) return '<td class="num" style="color:var(--text-muted)">\u2014</td>';
         var isUpEps = s.eps_growth_yoy >= 0;
         var exactStore = window.EXACT_QUARTERLY_DATA || {};
         var qArr = exactStore[s.symbol] || s.quarterly;
@@ -3566,11 +3638,11 @@
             return (q.qtr || '') + ': ' + (q.eps_growth != null ? ((q.eps_growth >= 0 ? '+' : '') + q.eps_growth + '%') : '\u2014');
           }).join(' | ') + '"';
         }
-        return '<td class="num"' + qTip + ' style="font-family:var(--mono);font-weight:600;color:' + (isUpEps ? 'var(--lime)' : 'var(--red)') + '">' + (isUpEps ? '+' : '') + s.eps_growth_yoy.toFixed(2) + '%</td>';
+        return '<td class="num"' + qTip + ' style="font-family:var(--mono);font-weight:600;color:' + (isUpEps ? 'var(--lime)' : 'var(--red)') + '">' + (isUpEps ? '+' : '') + Number(s.eps_growth_yoy).toFixed(2) + '%</td>';
       }
 
       if (id === 'div_yield') {
-        return '<td class="num" style="font-family:var(--mono);color:var(--text-dim);">' + (s.div_yield ? s.div_yield.toFixed(2) + '%' : '0.00%') + '</td>';
+        return '<td class="num" style="font-family:var(--mono);color:var(--text-dim);">' + (s.div_yield != null && !isNaN(s.div_yield) ? Number(s.div_yield).toFixed(2) + '%' : '0.00%') + '</td>';
       }
 
       if (id === 'eps_quarterly_trend') {
@@ -3578,12 +3650,13 @@
         var qArr = exactStore[s.symbol] || s.quarterly;
         if (!qArr || !qArr.length) return '<td class="center" style="color:var(--text-muted)">—</td>';
         var pills = qArr.slice(0, 4).map(function(q) {
-          var val = q.eps_growth;
-          if (val === null || val === undefined) return '<span style="color:var(--text-muted);font-size:10px;padding:2px 5px;background:rgba(255,255,255,0.04);border-radius:3px;">—</span>';
+          var val = q.eps_growth != null ? q.eps_growth : (q.epsPct != null ? q.epsPct : q.eps_pct);
+          var qL = q.qtr || q.date || '';
+          if (val === null || val === undefined || isNaN(val)) return '<span style="color:var(--text-muted);font-size:10px;padding:2px 5px;background:rgba(255,255,255,0.04);border-radius:3px;">—</span>';
           var clr = val >= 0 ? '#4ade80' : '#f87171';
           var bg = val >= 0 ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)';
           var border = val >= 0 ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)';
-          return '<span style="color:' + clr + ';background:' + bg + ';border:1px solid ' + border + ';font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;display:inline-block;min-width:40px;text-align:center;" title="' + (q.qtr || '') + ': EPS ' + (val >= 0 ? '+' : '') + val + '%">' + (val >= 0 ? '+' : '') + val + '%</span>';
+          return '<span style="color:' + clr + ';background:' + bg + ';border:1px solid ' + border + ';font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;display:inline-block;min-width:40px;text-align:center;" title="' + qL + ': EPS ' + (val >= 0 ? '+' : '') + val + '%">' + (val >= 0 ? '+' : '') + val + '%</span>';
         }).join(' ');
         return '<td class="center" style="font-family:var(--mono);white-space:nowrap;">' + pills + '</td>';
       }
@@ -3593,12 +3666,13 @@
         var qArr = exactStore[s.symbol] || s.quarterly;
         if (!qArr || !qArr.length) return '<td class="center" style="color:var(--text-muted)">—</td>';
         var pills = qArr.slice(0, 4).map(function(q) {
-          var val = q.sales_growth;
-          if (val === null || val === undefined) return '<span style="color:var(--text-muted);font-size:10px;padding:2px 5px;background:rgba(255,255,255,0.04);border-radius:3px;">—</span>';
+          var val = q.sales_growth != null ? q.sales_growth : (q.salesPct != null ? q.salesPct : q.sales_pct);
+          var qL = q.qtr || q.date || '';
+          if (val === null || val === undefined || isNaN(val)) return '<span style="color:var(--text-muted);font-size:10px;padding:2px 5px;background:rgba(255,255,255,0.04);border-radius:3px;">—</span>';
           var clr = val >= 0 ? '#4ade80' : '#f87171';
           var bg = val >= 0 ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)';
           var border = val >= 0 ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)';
-          return '<span style="color:' + clr + ';background:' + bg + ';border:1px solid ' + border + ';font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;display:inline-block;min-width:40px;text-align:center;" title="' + (q.qtr || '') + ': Sales ' + (val >= 0 ? '+' : '') + val + '%">' + (val >= 0 ? '+' : '') + val + '%</span>';
+          return '<span style="color:' + clr + ';background:' + bg + ';border:1px solid ' + border + ';font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;display:inline-block;min-width:40px;text-align:center;" title="' + qL + ': Sales ' + (val >= 0 ? '+' : '') + val + '%">' + (val >= 0 ? '+' : '') + val + '%</span>';
         }).join(' ');
         return '<td class="center" style="font-family:var(--mono);white-space:nowrap;">' + pills + '</td>';
       }
@@ -3611,14 +3685,15 @@
 
       if (id.startsWith('dist_')) {
         var d = s[id];
-        return '<td class="num" style="font-family:var(--mono);">' + (d !== null && d !== undefined ? d.toFixed(2) + '%' : '\u2014') + '</td>';
+        return '<td class="num" style="font-family:var(--mono);">' + (d !== null && d !== undefined && !isNaN(d) ? Number(d).toFixed(2) + '%' : '\u2014') + '</td>';
       }
 
       if (id.startsWith('perf_')) {
         var p = s[id];
-        if (p === null || p === undefined) return '<td class="num" style="color:var(--text-muted)">\u2014</td>';
-        var isPos = p >= 0;
-        return '<td class="num" style="font-family:var(--mono);font-weight:600;color:' + (isPos ? 'var(--lime)' : 'var(--red)') + '">' + (isPos ? '+' : '') + p.toFixed(2) + '%</td>';
+        if (p === null || p === undefined || isNaN(p)) return '<td class="num" style="color:var(--text-muted)">\u2014</td>';
+        var pNum = Number(p);
+        var isPos = pNum >= 0;
+        return '<td class="num" style="font-family:var(--mono);font-weight:600;color:' + (isPos ? 'var(--lime)' : 'var(--red)') + '">' + (isPos ? '+' : '') + pNum.toFixed(2) + '%</td>';
       }
 
       if (id === 'chart') {
@@ -4102,20 +4177,44 @@
       return sma;
     }
 
-    async function fetchStockCandles(sym, timeframe) {
-      var tf = timeframe || 'D';
-      var isWeekly = (tf === 'W');
-      var range = isWeekly ? '2y' : '1y';
-      var interval = isWeekly ? '1wk' : '1d';
-      var yfSym = sym.replace('&', '_') + '.NS';
-      var cacheKey = yfSym + '_' + range + '_' + interval;
+    function getScreenerYfCandidates(sym) {
+      if (!sym) return [];
+      var clean = sym.toUpperCase().replace(/\.(NS|BO)$/i, '').trim();
+      var candidates = [];
+      var base = clean.replace(/\.(RR|IV|BZ|SM|GB|E1|BE)$/i, '');
+      var hasSeries = (base !== clean);
 
-      if (_screenerCandleCache.has(cacheKey)) {
-        return _screenerCandleCache.get(cacheKey);
+      if (hasSeries) {
+        candidates.push(base.replace('&', '_') + '.BO');
+        candidates.push(clean.replace(/\./g, '-').replace('&', '_') + '.NS');
+        candidates.push(base.replace('&', '_') + '.NS');
       }
+      candidates.push(clean.replace('&', '_') + '.NS');
+      if (clean.includes('.')) {
+        candidates.push(clean.replace(/\./g, '-').replace('&', '_') + '.NS');
+      }
+      if (clean.endsWith('INVIT') || clean.endsWith('INVT')) {
+        candidates.push(clean.replace('&', '_') + '-IV.NS');
+        candidates.push(clean.replace(/(INVIT|INVT)$/i, '').replace('&', '_') + '-IV.NS');
+      }
+      candidates.push(clean.replace('&', '_') + '.BO');
+      if (hasSeries) {
+        candidates.push(base.replace('&', '_') + '.BO');
+      }
+      var unique = [];
+      for (var i = 0; i < candidates.length; i++) {
+        if (unique.indexOf(candidates[i]) === -1) unique.push(candidates[i]);
+      }
+      return unique;
+    }
 
-      var targetUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + yfSym + '?range=' + range + '&interval=' + interval;
+    async function _fetchYfCandlesForTicker(yfSym, range, interval) {
       var currentOrigin = window.location.origin;
+      var endpoints = [
+        'https://query1.finance.yahoo.com/v8/finance/chart/' + yfSym + '?range=' + range + '&interval=' + interval,
+        'https://query2.finance.yahoo.com/v8/finance/chart/' + yfSym + '?range=' + range + '&interval=' + interval
+      ];
+
       var proxies = [
         function (url) { return 'http://localhost:9090/?url=' + encodeURIComponent(url); },
         function (url) { return 'https://nse-chart-proxy.shibu-mk.workers.dev/?url=' + encodeURIComponent(url); },
@@ -4124,33 +4223,71 @@
           return currentOrigin + '/api/proxy?url=' + encodeURIComponent(url);
         },
         function (url) { return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url); },
+        function (url) { return 'https://api.allorigins.win/get?url=' + encodeURIComponent(url); },
         function (url) { return 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url); }
       ];
 
-      for (var i = 0; i < proxies.length; i++) {
-        var pUrl = proxies[i](targetUrl);
-        if (!pUrl) continue;
-        try {
-          var controller = new AbortController();
-          var timeoutId = setTimeout(function () { controller.abort(); }, 5000);
-          var resp = await fetch(pUrl, { signal: controller.signal });
-          clearTimeout(timeoutId);
-          if (resp.ok) {
-            var text = await resp.text();
-            if (text.trim().startsWith('{')) {
-              var parsed = JSON.parse(text);
-              if (parsed.contents) text = parsed.contents;
+      for (var epIdx = 0; epIdx < endpoints.length; epIdx++) {
+        var targetUrl = endpoints[epIdx];
+        for (var i = 0; i < proxies.length; i++) {
+          var pUrl = proxies[i](targetUrl);
+          if (!pUrl) continue;
+          try {
+            var controller = new AbortController();
+            var timeoutId = setTimeout(function () { controller.abort(); }, 4000);
+            var resp = await fetch(pUrl, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (resp.ok) {
+              var text = await resp.text();
+              if (text.trim().startsWith('{')) {
+                try {
+                  var parsed = JSON.parse(text);
+                  if (parsed.contents) text = (typeof parsed.contents === 'string') ? parsed.contents : JSON.stringify(parsed.contents);
+                } catch(e) {}
+              }
+              var trimmed = text.trim();
+              if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) continue;
+              var data = JSON.parse(text);
+              var candles = parseYfResult(data);
+              if (candles && candles.length > 0) {
+                return candles;
+              }
             }
-            var data = JSON.parse(text);
-            var candles = parseYfResult(data);
-            if (candles && candles.length > 0) {
-              _screenerCandleCache.set(cacheKey, candles);
-              return candles;
-            }
+          } catch (err) {
+            // try next proxy
           }
-        } catch (err) {
-          // try next proxy
         }
+      }
+      return null;
+    }
+
+    async function fetchStockCandles(sym, timeframe) {
+      var tf = timeframe || 'D';
+      var isWeekly = (tf === 'W');
+      var range = isWeekly ? '2y' : '1y';
+      var interval = isWeekly ? '1wk' : '1d';
+      var candidates = getScreenerYfCandidates(sym);
+      var bestCandles = null;
+
+      for (var cIdx = 0; cIdx < candidates.length; cIdx++) {
+        var yfSym = candidates[cIdx];
+        var cacheKey = yfSym + '_' + range + '_' + interval;
+        if (_screenerCandleCache.has(cacheKey)) {
+          return _screenerCandleCache.get(cacheKey);
+        }
+        try {
+          var candles = await _fetchYfCandlesForTicker(yfSym, range, interval);
+          if (candles && candles.length > 5) {
+            _screenerCandleCache.set(cacheKey, candles);
+            return candles;
+          } else if (candles && candles.length > 0 && !bestCandles) {
+            bestCandles = candles;
+          }
+        } catch (eTry) {}
+      }
+
+      if (bestCandles && bestCandles.length > 0) {
+        return bestCandles;
       }
       throw new Error('Unable to fetch candle data');
     }
@@ -4214,16 +4351,15 @@
       var qData = (exactStore && exactStore[sym]) || (stock && stock.quarterly);
 
       if (!qData || !qData.length) {
-        // If no verified quarterly series, show verified Q0 from live scanner quote, and leave past quarters as dashes
         var qLabels = getRecentQuarterLabels();
         var latestEps = (stock && stock.eps_growth_fq != null) ? Math.round(stock.eps_growth_fq) : null;
         var latestSales = (stock && stock.sales_growth_fq != null) ? Math.round(stock.sales_growth_fq) : null;
         if (latestEps != null || latestSales != null) {
           qData = [
-            { qtr: qLabels[0], eps_growth: latestEps, sales_growth: latestSales },
-            { qtr: qLabels[1], eps_growth: null, sales_growth: null },
-            { qtr: qLabels[2], eps_growth: null, sales_growth: null },
-            { qtr: qLabels[3], eps_growth: null, sales_growth: null }
+            { qtr: qLabels[0], date: qLabels[0], eps_growth: latestEps, epsPct: latestEps, sales_growth: latestSales, salesPct: latestSales },
+            { qtr: qLabels[1], date: qLabels[1], eps_growth: null, epsPct: null, sales_growth: null, salesPct: null },
+            { qtr: qLabels[2], date: qLabels[2], eps_growth: null, epsPct: null, sales_growth: null, salesPct: null },
+            { qtr: qLabels[3], date: qLabels[3], eps_growth: null, epsPct: null, sales_growth: null, salesPct: null }
           ];
         } else {
           box.style.display = 'none';
@@ -4234,8 +4370,9 @@
       var html = '';
       for (var i = 0; i < qData.length; i++) {
         var q = qData[i];
-        var epsVal = q.eps_growth != null ? q.eps_growth : q.eps_pct;
-        var salesVal = q.sales_growth != null ? q.sales_growth : q.sales_pct;
+        var epsVal = q.eps_growth != null ? q.eps_growth : (q.epsPct != null ? q.epsPct : q.eps_pct);
+        var salesVal = q.sales_growth != null ? q.sales_growth : (q.salesPct != null ? q.salesPct : q.sales_pct);
+        var qLabel = q.qtr || q.date || ('Q' + (4 - i));
 
         var epsStr = '—';
         var epsColor = 'var(--text-muted)';
@@ -4254,7 +4391,7 @@
         }
 
         html += '<tr>' +
-          '<td class="qtr-col-qtr">' + (q.qtr || ('Q' + (4 - i))) + '</td>' +
+          '<td class="qtr-col-qtr">' + qLabel + '</td>' +
           '<td class="qtr-col-eps" style="color:' + epsColor + ';">' + epsStr + '</td>' +
           '<td class="qtr-col-sales" style="color:' + salesColor + ';">' + salesStr + '</td>' +
           '</tr>';
@@ -4347,8 +4484,10 @@
         if (loadingEl) loadingEl.style.display = 'none';
         if (fallbackEl) {
           fallbackEl.style.display = 'flex';
-          var titleEl = document.getElementById('chart-fallback-title');
-          if (titleEl) titleEl.textContent = sym + ' — ' + (stock.company || 'NSE Stock');
+          var cleanSym = sym.toUpperCase().replace(/\.(NS|BO)$/i, '').trim();
+          var baseSym = cleanSym.replace(/\.(RR|IV|BZ|SM|GB|E1|BE)$/i, '');
+          var tvSym = (baseSym !== cleanSym) ? ('BSE%3A' + encodeURIComponent(baseSym)) : ('NSE%3A' + encodeURIComponent(cleanSym));
+          fallbackEl.innerHTML = '<iframe src="https://s.tradingview.com/widgetembed/?symbol=' + tvSym + '&interval=D&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=131722&theme=dark&style=1&timezone=Asia%2FKolkata&locale=in" style="width:100%;height:100%;border:none;display:block;" allowtransparency="true" scrolling="no" allowfullscreen></iframe>';
         }
       }
     }
@@ -4636,7 +4775,7 @@
     }
 
     // ==============================================================================
-    // MAIN WATCHLIST INTEGRATION (Interoperable with Full Chart Studio & Sector Command)
+    // MAIN WATCHLIST INTEGRATION (Interoperable with Chart Studio & Sector Command)
     // ==============================================================================
     function getMainWlSymbols() {
       try {
@@ -4785,7 +4924,7 @@
         showToast('Removed ' + sym + ' from Main Watchlist', 'warn');
       } else {
         addStockToMainWl(sym);
-        showToast('✓ Added ' + sym + ' to Main Watchlist! Re-study in Full Chart anytime.', 'success');
+        showToast('✓ Added ' + sym + ' to Main Watchlist! Re-study in Chart Studio anytime.', 'success');
       }
       updateChartMainWlButton();
     }
@@ -4837,7 +4976,7 @@
     }
 
     // ==============================================================================
-    // MAXIMIZE SPLIT CHART PANEL & FULL CHART STUDIO LAUNCHER
+    // MAXIMIZE SPLIT CHART PANEL & CHART STUDIO LAUNCHER
     // ==============================================================================
     function toggleMaximizeChartPanel() {
       var panel = document.getElementById('chart-panel');
@@ -4883,7 +5022,7 @@
     function openInFullChartStudio(sym) {
       var s = sym || ACTIVE_STOCK_SYMBOL || 'RELIANCE';
       window.open('index.html?chart=' + encodeURIComponent(s), '_blank');
-      showToast('↗ Opening ' + s + ' in Full Chart Studio...', 'info');
+      showToast('↗ Opening ' + s + ' in Chart Studio...', 'info');
     }
 
     function openShortlistDrawer() {

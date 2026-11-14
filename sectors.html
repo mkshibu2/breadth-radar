@@ -718,7 +718,7 @@
               </div>
 
               <div id="scc-watchlist-panel"
-                style="width:280px; border-left:1px solid var(--border); background:var(--bg2); display:flex; flex-direction:column; flex-shrink:0; transition: width 0.2s;">
+                style="width:280px; border-left:1px solid var(--border); background:var(--bg2); display:flex; flex-direction:column; flex-shrink:0; min-height:0; transition: width 0.2s;">
 
                 <div
                   style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--bg3); border-bottom:1px solid var(--border);">
@@ -759,8 +759,8 @@
                   </div>
                 </div>
 
-                <div id="scc-wl-tabs-bar"
-                  style="display:flex; align-items:center; border-bottom:1px solid var(--border); background:var(--bg3); padding:0 8px; overflow-x:auto; gap:4px; height:32px;">
+                <div id="scc-wl-tabs-bar" class="tv-max-sidebar-tabs"
+                  style="display:flex; align-items:center; border-bottom:1px solid #2a2e39; background:#0e111a; padding:4px 8px; overflow-x:auto; gap:4px; scrollbar-width:none; min-height:32px;">
 
                 </div>
 
@@ -782,7 +782,7 @@
                   <span style="width:65px; text-align:right;">Chg%</span>
                 </div>
 
-                <div id="scc-wl-rows" style="flex:1; overflow-y:auto; overscroll-behavior:contain; padding:4px 0;">
+                <div id="scc-wl-rows" style="flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:4px 0;">
 
                 </div>
               </div>
@@ -1660,6 +1660,10 @@
         sccComputeClusters();
         if (typeof sccRenderClusters === 'function') sccRenderClusters();
       }
+      if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
+      if (typeof sccWlRenderTabs === 'function') sccWlRenderTabs();
+      if (typeof sccWatchlistRender === 'function') sccWatchlistRender();
+      if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
     });
 
     function setColorMode(mode) {

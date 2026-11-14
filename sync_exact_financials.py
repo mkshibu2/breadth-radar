@@ -39,80 +39,106 @@ def save_exact_store(store):
     with open(STORE_FILE, 'w', encoding='utf-8') as f:
         json.dump(store, f, indent=2)
 
+def parse_tv_dataframe(df, is_half_yearly=False):
+    if df is None or len(df) < (2 if is_half_yearly else 3):
+        return None
+    eps_col = None
+    for cand in [
+        'Diluted earnings per share (diluted EPS)',
+        'Basic earnings per share (basic EPS)',
+        'Diluted net income available to common stockholders',
+        'Net income'
+    ]:
+        if cand in df.columns and df[cand].dropna().shape[0] >= (2 if is_half_yearly else 3):
+            eps_col = cand
+            break
+
+    rev_col = None
+    for cand in ['Total revenue', 'Operating revenue', 'Gross revenue', 'Net revenue']:
+        if cand in df.columns and df[cand].dropna().shape[0] >= (2 if is_half_yearly else 3):
+            rev_col = cand
+            break
+
+    tail_df = df.tail(8)
+    periods = list(tail_df.index)
+    dates = tail_df['period_end'].tolist() if 'period_end' in tail_df.columns else [None] * len(periods)
+    eps_vals = tail_df[eps_col].tolist() if eps_col else [None] * len(periods)
+    rev_vals = tail_df[rev_col].tolist() if rev_col else [None] * len(periods)
+
+    n = len(periods)
+    results = []
+    step = 2 if is_half_yearly else 4
+
+    for i in range(n - 1, max(-1, n - 5), -1):
+        p_end = dates[i]
+        p_str = str(periods[i])
+        if pd.notna(p_end):
+            q_label = p_end.strftime('%b-%y')
+        else:
+            yr = p_str[:4][-2:] if len(p_str) >= 4 else '26'
+            if is_half_yearly:
+                h_num = p_str[-2:] if len(p_str) >= 2 else 'H1'
+                q_label = f"{'Sep' if h_num == 'H1' else 'Mar'}-{yr}"
+            else:
+                q_num = p_str[-2:] if len(p_str) >= 2 else 'Q2'
+                m_map = {'Q1': 'Jun', 'Q2': 'Sep', 'Q3': 'Dec', 'Q4': 'Mar'}
+                q_label = f"{m_map.get(q_num, 'Sep')}-{yr}"
+
+        prior_idx = i - step
+        e_growth, s_growth = None, None
+        if prior_idx >= 0 and eps_vals[i] is not None and eps_vals[prior_idx] is not None:
+            try:
+                e_curr = float(eps_vals[i])
+                e_prev = float(eps_vals[prior_idx])
+                if e_prev != 0 and pd.notna(e_curr) and pd.notna(e_prev):
+                    e_growth = round(((e_curr - e_prev) / abs(e_prev)) * 100)
+            except (ValueError, TypeError, ZeroDivisionError):
+                pass
+
+        if prior_idx >= 0 and rev_vals[i] is not None and rev_vals[prior_idx] is not None:
+            try:
+                s_curr = float(rev_vals[i])
+                s_prev = float(rev_vals[prior_idx])
+                if s_prev != 0 and pd.notna(s_curr) and pd.notna(s_prev):
+                    s_growth = round(((s_curr - s_prev) / abs(s_prev)) * 100)
+            except (ValueError, TypeError, ZeroDivisionError):
+                pass
+
+        label_suffix = " (H)" if is_half_yearly else ""
+        results.append({
+            'qtr': f"{q_label}{label_suffix}",
+            'eps_growth': e_growth,
+            'sales_growth': s_growth
+        })
+    return results
+
 def fetch_single_quarterly(symbol, max_retries=2):
     for attempt in range(max_retries + 1):
         for prefix in ['NSE:', 'BSE:']:
             ticker = f"{prefix}{symbol}"
+            # 1. Try Quarterly (FQ) first (standard for mainboard stocks)
             try:
                 df = tvs.get_financials(ticker, "income", "FQ")
                 if df is not None and len(df) >= 3:
-                    eps_col = None
-                    for cand in [
-                        'Diluted earnings per share (diluted EPS)',
-                        'Basic earnings per share (basic EPS)',
-                        'Diluted net income available to common stockholders'
-                    ]:
-                        if cand in df.columns and df[cand].dropna().shape[0] >= 3:
-                            eps_col = cand
-                            break
-
-                    rev_col = None
-                    for cand in ['Total revenue', 'Operating revenue', 'Gross revenue']:
-                        if cand in df.columns and df[cand].dropna().shape[0] >= 3:
-                            rev_col = cand
-                            break
-
-                    tail_df = df.tail(8)
-                    periods = list(tail_df.index)
-                    dates = tail_df['period_end'].tolist() if 'period_end' in tail_df.columns else [None] * len(periods)
-                    eps_vals = tail_df[eps_col].tolist() if eps_col else [None] * len(periods)
-                    rev_vals = tail_df[rev_col].tolist() if rev_col else [None] * len(periods)
-
-                    n = len(periods)
-                    results = []
-                    for i in range(n - 1, max(-1, n - 5), -1):
-                        p_end = dates[i]
-                        if pd.notna(p_end):
-                            q_label = p_end.strftime('%b-%y')
-                        else:
-                            p_str = str(periods[i])
-                            yr = p_str[:4][-2:] if len(p_str) >= 4 else '26'
-                            q_num = p_str[-2:] if len(p_str) >= 2 else 'Q2'
-                            m_map = {'Q1': 'Jun', 'Q2': 'Sep', 'Q3': 'Dec', 'Q4': 'Mar'}
-                            q_label = f"{m_map.get(q_num, 'Sep')}-{yr}"
-
-                        prior_idx = i - 4
-                        e_growth, s_growth = None, None
-                        if prior_idx >= 0 and eps_vals[i] is not None and eps_vals[prior_idx] is not None:
-                            try:
-                                e_curr = float(eps_vals[i])
-                                e_prev = float(eps_vals[prior_idx])
-                                if e_prev != 0 and pd.notna(e_curr) and pd.notna(e_prev):
-                                    e_growth = round(((e_curr - e_prev) / abs(e_prev)) * 100)
-                            except (ValueError, TypeError, ZeroDivisionError):
-                                pass
-
-                        if prior_idx >= 0 and rev_vals[i] is not None and rev_vals[prior_idx] is not None:
-                            try:
-                                s_curr = float(rev_vals[i])
-                                s_prev = float(rev_vals[prior_idx])
-                                if s_prev != 0 and pd.notna(s_curr) and pd.notna(s_prev):
-                                    s_growth = round(((s_curr - s_prev) / abs(s_prev)) * 100)
-                            except (ValueError, TypeError, ZeroDivisionError):
-                                pass
-
-                        results.append({
-                            'qtr': q_label,
-                            'eps_growth': e_growth,
-                            'sales_growth': s_growth
-                        })
-                    if results:
-                        return symbol, results
+                    res = parse_tv_dataframe(df, is_half_yearly=False)
+                    if res:
+                        return symbol, res
             except Exception:
-                time.sleep(0.3)
-                continue
+                pass
+
+            # 2. Try Half-Yearly (FH) fallback (official reporting for Indian SME stocks)
+            try:
+                df = tvs.get_financials(ticker, "income", "FH")
+                if df is not None and len(df) >= 2:
+                    res = parse_tv_dataframe(df, is_half_yearly=True)
+                    if res:
+                        return symbol, res
+            except Exception:
+                pass
+
         if attempt < max_retries:
-            time.sleep(0.6)
+            time.sleep(0.5)
+    return symbol, None
     return symbol, None
 
 def load_screener_universe():
@@ -126,9 +152,11 @@ def load_screener_universe():
         try:
             with open(STOCKS_JS, 'r', encoding='utf-8') as f:
                 content = f.read()
-            marker = "window.SCREENER_DATA = window.SCREENER_UNIVERSE = "
-            if marker in content:
-                json_part = content.split(marker, 1)[1].rstrip(";\n ")
+            marker1 = "window.SCREENER_DATA = window.SCREENER_UNIVERSE = "
+            marker2 = "window.SCREENER_DATA=window.SCREENER_UNIVERSE="
+            marker = marker1 if marker1 in content else (marker2 if marker2 in content else None)
+            if marker:
+                json_part = content.split(marker, 1)[1].rstrip(";\r\n ")
                 return json.loads(json_part)
         except Exception as e:
             print(f"Error reading {STOCKS_JS.name}: {e}")
@@ -153,10 +181,8 @@ def update_screener_files(store):
             json.dump(data, f, separators=(',', ':'))
 
     with open(STOCKS_JS, 'w', encoding='utf-8') as jsf:
-        jsf.write("/* Auto-generated TradingView Universe & Fundamentals */\n")
-        jsf.write("window.EXACT_QUARTERLY_DATA = ")
-        json.dump(store, jsf, separators=(',', ':'))
-        jsf.write(";\n")
+        jsf.write("/* Auto-generated TradingView Universe */\n")
+        jsf.write("window.EXACT_QUARTERLY_DATA = window.EXACT_QUARTERLY_DATA || {};\n")
         jsf.write("window.SCREENER_DATA = window.SCREENER_UNIVERSE = ")
         json.dump(data, jsf, separators=(',', ':'))
         jsf.write(";\n")
@@ -174,7 +200,7 @@ def main():
     stocks = data.get('stocks', [])
 
     symbols = [s['symbol'] for s in stocks]
-    to_fetch = [s for s in symbols if s not in store or not store[s] or len(store[s]) < 3]
+    to_fetch = [s for s in symbols if s not in store or not store[s] or len(store[s]) == 0]
 
     print(f"Total universe symbols: {len(symbols)}, needing fundamental fetch: {len(to_fetch)}")
     if not to_fetch:

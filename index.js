@@ -298,7 +298,7 @@ function toggleMaximizeSectorCommand() {
   const isRrgActive = document.getElementById('scc-pane-rrg').style.display !== 'none'; const isHeatmapActive = document.getElementById('scc-pane-heatmap').style.display !== 'none'; const isChartActive = document.getElementById('scc-pane-chart') && document.getElementById('scc-pane-chart').style.display !== 'none'; const isClustersActive = document.getElementById('scc-pane-clusters') && document.getElementById('scc-pane-clusters').style.display !== 'none'; if (isRrgActive) { setTimeout(() => { if (typeof brrgDraw === 'function') brrgDraw(); }, 80); } else if (isHeatmapActive) { setTimeout(() => { if (typeof slhRender === 'function') slhRender(); }, 80); } else if (isChartActive) { setTimeout(() => { const count = parseInt(_sccChartLayout); for (let i = 0; i < count; i++) { sccChartRenderPanel(i); } }, 80); } else if (isClustersActive) { setTimeout(() => { if (typeof sccRenderClusters === 'function') sccRenderClusters(); }, 80); } else { setTimeout(() => { if (typeof brrgDraw === 'function') brrgDraw(); }, 80); }
 }
 // ==============================================================================
-// UNIFIED ROBUST CHARTING CONTROLS (SHARED ACROSS SCREENER, SECTORS & FULL CHART)
+// UNIFIED ROBUST CHARTING CONTROLS (SHARED ACROSS SCREENER, SECTORS & CHART STUDIO)
 // ==============================================================================
 let _chartUserZoomSpanDaily = 90;
 let _chartUserZoomSpanWeekly = 52;
@@ -691,191 +691,28 @@ function openFullPageChart(sym) {
 window.openFullPageChart = openFullPageChart;
 
 // ── STOCK FUNDAMENTALS & TRADINGVIEW STYLE EPS/SALES TABLE ───────
-const _fundamentalsCache = new Map();
+// Ensure any stale/overwriting browser cache is cleared so exact TradingView data remains untainted
+try {
+  localStorage.removeItem('nse_exact_quarterly_v2');
+} catch (e) { }
 
-function parseFundamentalsData(symbol, result) {
-  const data = {
-    symbol: symbol,
-    quarters: [],
-    roe: null,
-    roeFormatted: '—',
-    marketCap: null,
-    capCategory: '—',
-    screenerUrl: 'https://www.screener.in/company/' + encodeURIComponent(symbol) + '/consolidated/'
+function normalizeQuarterData(q) {
+  if (!q) return null;
+  const qtr = q.qtr || q.date || '';
+  const e = q.eps_growth != null ? q.eps_growth : (q.epsPct != null ? q.epsPct : (q.eps_pct != null ? q.eps_pct : null));
+  const s = q.sales_growth != null ? q.sales_growth : (q.salesPct != null ? q.salesPct : (q.sales_pct != null ? q.sales_pct : null));
+  const epsVal = (e != null && !isNaN(e)) ? Math.round(Number(e)) : null;
+  const salesVal = (s != null && !isNaN(s)) ? Math.round(Number(s)) : null;
+  return {
+    qtr: qtr,
+    date: qtr,
+    eps_growth: epsVal,
+    epsPct: epsVal,
+    eps_pct: epsVal,
+    sales_growth: salesVal,
+    salesPct: salesVal,
+    sales_pct: salesVal
   };
-
-  if (!result) return data;
-
-  // 1. ROE from financialData
-  if (result.financialData && result.financialData.returnOnEquity && result.financialData.returnOnEquity.raw != null) {
-    data.roe = result.financialData.returnOnEquity.raw;
-    data.roeFormatted = (data.roe * 100).toFixed(1) + '%';
-  }
-
-  // 2. Market Cap & Cap Category
-  const shares = result.defaultKeyStatistics?.sharesOutstanding?.raw;
-  const curPrice = result.financialData?.currentPrice?.raw;
-  if (shares && curPrice) {
-    data.marketCap = shares * curPrice;
-  } else if (result.financialData?.marketCap?.raw) {
-    data.marketCap = result.financialData.marketCap.raw;
-  }
-  if (data.marketCap) {
-    const mcInCr = data.marketCap / 1e7;
-    if (mcInCr >= 20000) data.capCategory = 'LargeCap';
-    else if (mcInCr >= 5000) data.capCategory = 'MidCap';
-    else if (mcInCr >= 1000) data.capCategory = 'SmallCap';
-    else data.capCategory = 'MicroCap';
-  }
-
-  // 3. Quarterly EPS & Sales
-  const qList = result.earnings?.financialsChart?.quarterly || [];
-  const incList = result.incomeStatementHistoryQuarterly?.incomeStatementHistory || [];
-  const quarterlyItems = [];
-
-  if (Array.isArray(qList) && qList.length > 0) {
-    for (const item of qList) {
-      quarterlyItems.push({
-        date: item.date,
-        revenue: item.revenue != null ? item.revenue : null,
-        earnings: item.earnings != null ? item.earnings : null
-      });
-    }
-  } else if (Array.isArray(incList) && incList.length > 0) {
-    for (const item of incList) {
-      quarterlyItems.push({
-        date: item.endDate?.fmt || 'Qtr',
-        revenue: item.totalRevenue?.raw != null ? item.totalRevenue.raw : null,
-        earnings: item.netIncome?.raw != null ? item.netIncome.raw : null
-      });
-    }
-  }
-
-  // Reverse so newest quarter is at index 0 (descending order)
-  const sortedDesc = [...quarterlyItems].reverse();
-  const latestEarningsGrowth = result.financialData?.earningsGrowth?.raw;
-  const latestRevenueGrowth = result.financialData?.revenueGrowth?.raw;
-
-  const parsedQuarters = [];
-  for (let i = 0; i < sortedDesc.length; i++) {
-    const cur = sortedDesc[i];
-    let epsPct = null;
-    let salesPct = null;
-
-    if (i + 4 < sortedDesc.length) {
-      const prevYear = sortedDesc[i + 4];
-      if (prevYear.earnings && cur.earnings != null) {
-        epsPct = Math.round(((cur.earnings - prevYear.earnings) / Math.abs(prevYear.earnings)) * 100);
-      }
-      if (prevYear.revenue && cur.revenue != null) {
-        salesPct = Math.round(((cur.revenue - prevYear.revenue) / Math.abs(prevYear.revenue)) * 100);
-      }
-    } else if (i === 0) {
-      if (latestEarningsGrowth != null) epsPct = Math.round(latestEarningsGrowth * 100);
-      if (latestRevenueGrowth != null) salesPct = Math.round(latestRevenueGrowth * 100);
-    }
-
-    if (epsPct == null && i + 1 < sortedDesc.length) {
-      const prevQ = sortedDesc[i + 1];
-      if (prevQ.earnings && cur.earnings != null) {
-        epsPct = Math.round(((cur.earnings - prevQ.earnings) / Math.abs(prevQ.earnings)) * 100);
-      }
-      if (prevQ.revenue && cur.revenue != null) {
-        salesPct = Math.round(((cur.revenue - prevQ.revenue) / Math.abs(prevQ.revenue)) * 100);
-      }
-    }
-
-    let displayDate = cur.date || '—';
-    if (/^\d{4}-\d{2}-\d{2}$/.test(displayDate)) {
-      const d = new Date(displayDate);
-      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      displayDate = months[d.getUTCMonth()] + '-' + String(d.getUTCFullYear()).slice(-2);
-    } else if (/^(\d)Q(\d{4})$/.test(displayDate)) {
-      const m = displayDate.match(/^(\d)Q(\d{4})$/);
-      displayDate = 'Q' + m[1] + ' ' + m[2].slice(-2);
-    }
-
-    parsedQuarters.push({
-      date: displayDate,
-      epsPct: epsPct,
-      salesPct: salesPct,
-      earnings: cur.earnings,
-      revenue: cur.revenue
-    });
-  }
-
-  data.quarters = parsedQuarters;
-  return data;
-}
-
-async function fetchStockFundamentals(symbol) {
-  if (!symbol) return null;
-  const sUpper = symbol.toUpperCase().replace('.NS', '');
-  if (_fundamentalsCache.has(sUpper)) {
-    const cached = _fundamentalsCache.get(sUpper);
-    if (cached && cached.quarters && cached.quarters.length > 0) return cached;
-  }
-  // 1. Try Screener.in first (most accurate for NSE)
-  try {
-    const screenerData = await fetchScreenerFundamentals(sUpper);
-    if (screenerData && screenerData.quarters && screenerData.quarters.length > 0) {
-      _fundamentalsCache.set(sUpper, screenerData);
-      return screenerData;
-    }
-  } catch (e) { }
-  const yfSymbol = sUpper + '.NS';
-  const targetUrl = 'https://query1.finance.yahoo.com/v10/finance/quoteSummary/' + yfSymbol + '?modules=earnings,financialData,defaultKeyStatistics,incomeStatementHistoryQuarterly';
-
-  const currentOrigin = window.location.origin;
-  const proxies = [
-    url => 'https://nse-chart-proxy.shibu-mk.workers.dev/?url=' + encodeURIComponent(url),
-    url => {
-      if (!currentOrigin || currentOrigin.startsWith('file') || currentOrigin === 'null' || currentOrigin.includes('github.io')) return '';
-      return currentOrigin + '/api/proxy?url=' + encodeURIComponent(url);
-    },
-    url => 'http://localhost:9090/?url=' + encodeURIComponent(url),
-    url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
-    url => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url)
-  ];
-
-  for (const proxyFn of proxies) {
-    try {
-      const pUrl = proxyFn(targetUrl);
-      if (!pUrl) continue;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
-      const resp = await fetch(pUrl, { signal: controller.signal });
-      clearTimeout(timeoutId);
-      if (resp.ok) {
-        let text = await resp.text();
-        if (text.trim().startsWith('{')) {
-          const parsed = JSON.parse(text);
-          if (parsed.contents) text = parsed.contents;
-        }
-        const data = typeof text === 'string' ? JSON.parse(text) : text;
-        const result = data?.quoteSummary?.result?.[0];
-        if (result) {
-          const parsedFundamentals = parseFundamentalsData(sUpper, result);
-          _fundamentalsCache.set(sUpper, parsedFundamentals);
-          return parsedFundamentals;
-        }
-      }
-    } catch (e) {
-      // try next proxy
-    }
-  }
-
-  const fallback = {
-    symbol: sUpper,
-    quarters: [],
-    roe: null,
-    roeFormatted: '—',
-    marketCap: null,
-    capCategory: '—',
-    screenerUrl: 'https://www.screener.in/company/' + encodeURIComponent(sUpper) + '/consolidated/'
-  };
-  _fundamentalsCache.set(sUpper, fallback);
-  return fallback;
 }
 
 function getRecentQuarterLabels(refDate) {
@@ -914,7 +751,7 @@ function getStockQuarterlyData(symbol) {
       stock = getStockDetails(sUpper);
     }
 
-    if (stock && Array.isArray(stock.quarterly) && stock.quarterly.some(q => q && (q.eps_growth != null || q.sales_growth != null))) {
+    if (stock && Array.isArray(stock.quarterly) && stock.quarterly.some(q => q && (q.eps_growth != null || q.epsPct != null || q.sales_growth != null || q.salesPct != null))) {
       qData = stock.quarterly;
     } else if (stock) {
       const qLabels = getRecentQuarterLabels();
@@ -923,15 +760,17 @@ function getStockQuarterlyData(symbol) {
       const latestSales = (stats.sales_growth_fq != null) ? Math.round(stats.sales_growth_fq) : (stats.sales_growth_yoy != null ? Math.round(stats.sales_growth_yoy) : null);
       if (latestEps != null || latestSales != null) {
         qData = [
-          { qtr: qLabels[0], eps_growth: latestEps, sales_growth: latestSales },
-          { qtr: qLabels[1], eps_growth: null, sales_growth: null },
-          { qtr: qLabels[2], eps_growth: null, sales_growth: null },
-          { qtr: qLabels[3], eps_growth: null, sales_growth: null }
+          { qtr: qLabels[0], date: qLabels[0], eps_growth: latestEps, epsPct: latestEps, sales_growth: latestSales, salesPct: latestSales },
+          { qtr: qLabels[1], date: qLabels[1], eps_growth: null, epsPct: null, sales_growth: null, salesPct: null },
+          { qtr: qLabels[2], date: qLabels[2], eps_growth: null, epsPct: null, sales_growth: null, salesPct: null },
+          { qtr: qLabels[3], date: qLabels[3], eps_growth: null, epsPct: null, sales_growth: null, salesPct: null }
         ];
       }
     }
   }
-  return { sUpper, qData };
+
+  const normalized = (Array.isArray(qData) && qData.length) ? qData.map(normalizeQuarterData) : null;
+  return { sUpper, qData: normalized };
 }
 
 function generateEpsTableHtml(sUpper, qData) {
@@ -954,8 +793,9 @@ function generateEpsTableHtml(sUpper, qData) {
   const rowsLimit = Math.min(qData.length, Math.max(1, (_winConfig.inputs && _winConfig.inputs.epsRowsToShow) || 4));
   for (let i = 0; i < rowsLimit; i++) {
     const q = qData[i];
-    const epsVal = q.eps_growth != null ? q.eps_growth : q.eps_pct;
-    const salesVal = q.sales_growth != null ? q.sales_growth : q.sales_pct;
+    const epsVal = q.eps_growth != null ? q.eps_growth : (q.epsPct != null ? q.epsPct : q.eps_pct);
+    const salesVal = q.sales_growth != null ? q.sales_growth : (q.salesPct != null ? q.salesPct : q.sales_pct);
+    const qLabel = q.qtr || q.date || ('Q' + (4 - i));
 
     const epsTxt = epsVal != null && !isNaN(epsVal) ? (Number(epsVal) >= 0 ? '+' : '') + Math.round(Number(epsVal)) + '%' : '—';
     const epsClass = epsVal == null || isNaN(epsVal) ? 'tv-eps-neu' : Number(epsVal) >= 0 ? 'tv-eps-pos' : 'tv-eps-neg';
@@ -964,7 +804,7 @@ function generateEpsTableHtml(sUpper, qData) {
     const salesClass = salesVal == null || isNaN(salesVal) ? 'tv-eps-neu' : Number(salesVal) >= 0 ? 'tv-eps-pos' : 'tv-eps-neg';
 
     rowsHtml += `<tr>
-      <td style="text-align:left;color:#d1d4dc;font-weight:600;">${q.qtr || ('Q' + (4 - i))}</td>
+      <td style="text-align:left;color:#d1d4dc;font-weight:600;">${qLabel}</td>
       <td class="${epsClass}">${epsTxt}</td>
       <td class="${salesClass}">${salesTxt}</td>
     </tr>`;
@@ -983,8 +823,7 @@ function generateEpsTableHtml(sUpper, qData) {
         ${rowsHtml}
       </tbody>
     </table>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:3px 8px;background:rgba(0,0,0,0.35);border-top:1px solid #2a2e39;font-size:8px;">
-      <span style="color:#787b86;">Quarterly YoY Growth</span>
+    <div style="display:flex;align-items:center;justify-content:flex-end;padding:3px 8px;background:rgba(0,0,0,0.35);border-top:1px solid #2a2e39;font-size:8px;">
       <a href="https://www.screener.in/company/${encodeURIComponent(sUpper)}/consolidated/" target="_blank" style="color:#2962ff;text-decoration:none;font-weight:600;">Screener ↗</a>
     </div>
   `;
@@ -1034,8 +873,6 @@ function renderSccChartEpsTable(index, symbol) {
   container.innerHTML = generateEpsTableHtml(res.sUpper, res.qData);
 }
 window.renderSccChartEpsTable = renderSccChartEpsTable;
-
-window.fetchStockFundamentals = fetchStockFundamentals;
 window.renderMaxChartEpsTable = renderMaxChartEpsTable;
 window.getStockQuarterlyData = getStockQuarterlyData;
 window.generateEpsTableHtml = generateEpsTableHtml;
@@ -1104,8 +941,20 @@ function updateMaxChartShortlistButton() {
 window.updateMaxChartShortlistButton = updateMaxChartShortlistButton;
 
 // ── MAIN WATCHLIST DIRECT INTEGRATION & TOGGLE ────────────────────
+function sccIsValidWatchlist(name) {
+  if (!name) return false;
+  if (name === 'Main' || name === 'Shortlist' || name === 'Clusters' || name === 'CLUSTERS' || name === 'VCP') return true;
+  if (name.startsWith('__flag_') || name.startsWith('__flage_')) return true;
+  return !!(_sccWatchlists && _sccWatchlists[name]);
+}
+window.sccIsValidWatchlist = sccIsValidWatchlist;
+
 function sccSyncWatchlistsFromStorage() {
   try {
+    const savedActive = localStorage.getItem('_sccActiveWatchlist');
+    if (savedActive && sccIsValidWatchlist(savedActive)) {
+      _sccActiveWatchlist = savedActive;
+    }
     const raw = localStorage.getItem('_sccWatchlists');
     if (raw) {
       const parsed = JSON.parse(raw);
@@ -2454,12 +2303,10 @@ async function sccChartRenderPanel(index) {
       const tvSym = 'NSE:' + cleanSym;
       lwEl.style.display = 'block';
       lwEl.innerHTML = `
-        <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#090b10;color:#94a3b8;gap:8px;padding:12px;text-align:center;">
-          <div style="font-size:11px;font-weight:700;color:#f0f3fa;">${cleanSym} Data Unavailable</div>
-          <div style="display:flex;gap:6px;">
-            <button onclick="sccChartRenderPanel(${index})" style="background:#1e222d;border:1px solid #363c4e;color:#f0f3fa;padding:3px 8px;border-radius:3px;cursor:pointer;font-size:10px;">🔄 Retry</button>
-            <a href="https://in.tradingview.com/chart/fZ5fwxUh/?symbol=${encodeURIComponent(tvSym)}" target="_blank" style="background:#2962ff;color:#ffffff;padding:3px 8px;border-radius:3px;text-decoration:none;font-weight:600;font-size:10px;">TradingView ↗</a>
-          </div>
+        <div style="width:100%;height:100%;position:relative;background:#131722;">
+          <iframe src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(tvSym)}&interval=D&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=131722&theme=dark&style=1&timezone=Asia%2FKolkata&locale=in"
+                  style="width:100%;height:100%;border:none;display:block;"
+                  allowtransparency="true" scrolling="no" allowfullscreen></iframe>
         </div>
       `;
     }
@@ -2584,86 +2431,77 @@ function sccWlRenderTabs() {
     const isFlag = name.startsWith('__flag_') || name.startsWith('__flage_');
     const isVcp = (name === 'VCP');
     const isClusters = (name === 'Clusters' || name === 'CLUSTERS');
-    const tabColor = isActive ? 'var(--teal)' : 'var(--dim)';
-    const borderStyle = isActive ? 'border-bottom: 2px solid var(--teal); font-weight: 700;' : 'border-bottom: 2px solid transparent; font-weight: 600;';
 
     if (isFlag) {
       const c = name.replace(/^__flag[e]?_/, '');
       const flagCol = colorsMap[c] || c;
       html += `
-        <div onclick="sccWlSwitchTab('${name}')" 
+        <div onclick="sccWlSwitchTab('${name}'); if(typeof updateMaxChartSidebarWatchlist==='function')updateMaxChartSidebarWatchlist();" 
              draggable="true"
              ondragstart="sccTabDragStart(event, '${name}')"
              ondragover="sccTabDragOver(event)"
              ondrop="sccTabDrop(event, '${name}')"
              ondragend="sccTabDragEnd(event)"
              title="${c.toUpperCase()} Flag Watchlist"
-             style="padding: 6px 10px; ${borderStyle} cursor:pointer; display:flex; align-items:center; height: 100%; box-sizing:border-box; transition: opacity 0.15s; opacity: ${isActive ? '1' : '0.5'}"
-             onmouseover="this.style.opacity='1'"
-             onmouseout="this.style.opacity='${isActive ? '1' : '0.5'}'">
-          <svg width="8" height="14" viewBox="0 0 10 18" fill="${flagCol}">
+             class="tv-wl-tab-pill ${isActive ? 'active' : ''}">
+          <svg width="8" height="13" viewBox="0 0 10 18" fill="${flagCol}">
             <path d="M0 0h10v18l-5-4-5 4V0z"/>
           </svg>
         </div>
       `;
     } else if (isVcp) {
       html += `
-        <div onclick="sccWlSwitchTab('VCP')" 
+        <div onclick="sccWlSwitchTab('VCP'); if(typeof updateMaxChartSidebarWatchlist==='function')updateMaxChartSidebarWatchlist();" 
              draggable="true"
              ondragstart="sccTabDragStart(event, 'VCP')"
              ondragover="sccTabDragOver(event)"
              ondrop="sccTabDrop(event, 'VCP')"
              ondragend="sccTabDragEnd(event)"
-             style="padding: 6px 8px; font-size:10px; color:${tabColor}; ${borderStyle} cursor:pointer; display:flex; align-items:center; gap:2px; height: 100%; box-sizing:border-box; user-select:none; transition: color 0.15s;"
-             onmouseover="this.style.color='var(--text)'"
-             onmouseout="this.style.color='${isActive ? 'var(--teal)' : 'var(--dim)'}'">
+             class="tv-wl-tab-pill ${isActive ? 'active' : ''}">
           <span>⚡ VCP</span>
         </div>
       `;
     } else if (isClusters) {
+      const clusterRes = (typeof sccGetClustersWatchlistItems === 'function') ? sccGetClustersWatchlistItems() : null;
+      const clusterCount = (clusterRes && clusterRes.flatSymbols) ? clusterRes.flatSymbols.length : 0;
       html += `
-        <div onclick="sccWlSwitchTab('Clusters')" 
+        <div onclick="sccWlSwitchTab('Clusters'); if(typeof updateMaxChartSidebarWatchlist==='function')updateMaxChartSidebarWatchlist();" 
              draggable="true"
              ondragstart="sccTabDragStart(event, 'Clusters')"
              ondragover="sccTabDragOver(event)"
              ondrop="sccTabDrop(event, 'Clusters')"
              ondragend="sccTabDragEnd(event)"
-             style="padding: 6px 8px; font-size:10px; color:${tabColor}; ${borderStyle} cursor:pointer; display:flex; align-items:center; gap:2px; height: 100%; box-sizing:border-box; user-select:none; transition: color 0.15s;"
-             onmouseover="this.style.color='var(--text)'"
-             onmouseout="this.style.color='${isActive ? 'var(--teal)' : 'var(--dim)'}'">
-          <span>⭐ Clusters</span>
+             class="tv-wl-tab-pill ${isActive ? 'active' : ''}">
+          <span>⭐ Clusters</span> <span style="font-size:9px;opacity:0.65;font-family:var(--mono);margin-left:3px;">(${clusterCount})</span>
         </div>
       `;
     } else if (name === 'Shortlist') {
-      const slColor = isActive ? '#f59e0b' : 'var(--dim)';
-      const slBorder = isActive ? 'border-bottom: 2px solid #f59e0b; font-weight: 700;' : 'border-bottom: 2px solid transparent; font-weight: 600;';
+      const slCount = (typeof getShortlistSet === 'function' ? getShortlistSet().size : 0);
       html += `
-        <div onclick="sccWlSwitchTab('Shortlist')" 
+        <div onclick="sccWlSwitchTab('Shortlist'); if(typeof updateMaxChartSidebarWatchlist==='function')updateMaxChartSidebarWatchlist();" 
              draggable="true"
              ondragstart="sccTabDragStart(event, 'Shortlist')"
              ondragover="sccTabDragOver(event)"
              ondrop="sccTabDrop(event, 'Shortlist')"
              ondragend="sccTabDragEnd(event)"
-             style="padding: 6px 8px; font-size:10px; color:${slColor}; ${slBorder} cursor:pointer; display:flex; align-items:center; gap:2px; height: 100%; box-sizing:border-box; user-select:none; transition: color 0.15s;"
-             onmouseover="this.style.color='#f59e0b'"
-             onmouseout="this.style.color='${isActive ? '#f59e0b' : 'var(--dim)'}'">
-          <span>★ Shortlist</span>
+             class="tv-wl-tab-pill ${isActive ? 'active' : ''}"
+             style="${isActive ? 'color:#f59e0b;border-bottom-color:#f59e0b;' : ''}">
+          <span>★ Shortlist</span> <span style="font-size:9px;opacity:0.65;font-family:var(--mono);margin-left:3px;">(${slCount})</span>
         </div>
       `;
     } else {
+      const count = (_sccWatchlists[name] && _sccWatchlists[name].length) || 0;
       const keys = Object.keys(_sccWatchlists || {});
-      const closeBtn = keys.length > 1 ? `<span class="scc-wl-tab-close" onclick="event.stopPropagation(); sccWlDeleteTab('${name.replace(/'/g, "\\'")}')" style="font-size:11px; margin-left:6px; opacity:0.5; color:var(--dim); cursor:pointer; font-weight:bold; width:12px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%;" onmouseover="this.style.opacity='1'; this.style.color='var(--red)';" onmouseout="this.style.opacity='0.5'; this.style.color='var(--dim)';">×</span>` : '';
+      const closeBtn = (keys.length > 1 && name !== 'Main') ? `<span class="scc-wl-tab-close" onclick="event.stopPropagation(); sccWlDeleteTab('${name.replace(/'/g, "\'")}')" style="font-size:12px;margin-left:4px;opacity:0.5;color:var(--dim);cursor:pointer;font-weight:bold;width:12px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;" onmouseover="this.style.opacity='1';this.style.color='#ef4444';" onmouseout="this.style.opacity='0.5';this.style.color='var(--dim)';">×</span>` : '';
       html += `
-        <div onclick="sccWlSwitchTab('${name.replace(/'/g, "\\'")}')" 
+        <div onclick="sccWlSwitchTab('${name.replace(/'/g, "\'")}'); if(typeof updateMaxChartSidebarWatchlist==='function')updateMaxChartSidebarWatchlist();" 
              draggable="true"
-             ondragstart="sccTabDragStart(event, '${name.replace(/'/g, "\\'")}')"
+             ondragstart="sccTabDragStart(event, '${name.replace(/'/g, "\'")}')"
              ondragover="sccTabDragOver(event)"
-             ondrop="sccTabDrop(event, '${name.replace(/'/g, "\\'")}')"
+             ondrop="sccTabDrop(event, '${name.replace(/'/g, "\'")}')"
              ondragend="sccTabDragEnd(event)"
-             style="padding: 6px 8px; font-size:10px; color:${tabColor}; ${borderStyle} cursor:pointer; display:flex; align-items:center; gap:2px; height: 100%; box-sizing:border-box; user-select:none; transition: color 0.15s;"
-             onmouseover="this.style.color='var(--text)'"
-             onmouseout="this.style.color='${isActive ? 'var(--teal)' : 'var(--dim)'}'">
-          <span>${name}</span>
+             class="tv-wl-tab-pill ${isActive ? 'active' : ''}">
+          <span>${name}</span> <span style="font-size:9px;opacity:0.65;font-family:var(--mono);margin-left:3px;">(${count})</span>
           ${closeBtn}
         </div>
       `;
@@ -2672,10 +2510,25 @@ function sccWlRenderTabs() {
 
   html += `
     <button onclick="sccWlCreateTabPrompt()" title="Create new watch list"
-            style="background:none; border:none; color:var(--accent); font-size:14px; font-weight:bold; cursor:pointer; padding:4px 8px; outline:none; display:flex; align-items:center; justify-content:center; height: 100%;"
-            onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--accent)'">+</button>
+            style="background:none; border:none; color:#38bdf8; font-size:13px; font-weight:bold; cursor:pointer; padding:2px 6px; outline:none; display:flex; align-items:center; justify-content:center; height: 100%;"
+            onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='#38bdf8'">+</button>
   `;
   tabsBar.innerHTML = html;
+
+  // Horizontal wheel scroll handler for Sector Command in-page tab bar
+  tabsBar.onwheel = function(e) {
+    if (e.deltaY !== 0) {
+      e.preventDefault();
+      tabsBar.scrollLeft += e.deltaY;
+    }
+  };
+
+  // Scroll active tab into view
+  try {
+    const activeTab = tabsBar.querySelector('.tv-wl-tab-pill.active');
+    if (activeTab) activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+  } catch (e) {}
+
   if (typeof updateMaxChartSidebarWatchlist === 'function') {
     updateMaxChartSidebarWatchlist();
   }
@@ -2757,6 +2610,10 @@ function sccGetClustersWatchlistItems() {
       for (let si = 0; si < c.stocks.length; si++) {
         if (flatSymbols.length >= maxStocks) break;
         const s = c.stocks[si];
+        const has200Ma = (s.sma_200 != null && !isNaN(s.sma_200) && s.sma_200 > 0 && !s.is_ipo);
+        if (has200Ma && s.price != null && s.price < s.sma_200) {
+          continue; // Skip downtrend stocks trading below their 200 MA
+        }
         const sUpper = s.symbol.toUpperCase();
         if (!_sccWatchlistData[sUpper] && s.price != null) {
           _sccWatchlistData[sUpper] = {
@@ -3625,8 +3482,8 @@ function mergeCloudWatchlists(cloudWls, cloudFlags) {
   localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
   localStorage.setItem('_sccWatchlistsUpdatedAt', Date.now().toString());
 
-  if (!_sccWatchlists[_sccActiveWatchlist] && !_sccActiveWatchlist.startsWith('__flag_')) {
-    const keys = Object.keys(_sccWatchlists);
+  if (!sccIsValidWatchlist(_sccActiveWatchlist)) {
+    const keys = Object.keys(_sccWatchlists || {});
     _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main";
     localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
   }
@@ -5800,7 +5657,7 @@ let _maxBaDragStartX = 0;
 let _maxBaDragStartBw = 8;
 let _sccChartSymbols = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK']; let _sccChartTimeframes = ['D', 'W', '1H', 'M']; let _sccChartLayout = '1'; let _sccChartType = 'volume_candles'; let _sccSyncSymbols = false; let _sccChartZoomFactors = [1.0, 1.0, 1.0, 1.0]; let _sccWatchlists = { "Main": ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT'] }; let _sccActiveWatchlist = "Main"; let _sccWatchlistSymbols = _sccWatchlists["Main"]; let _sccWatchlistData = {}; let _sccSymbolFlags = {}; let _sccShowWatchlist = true; let _sccWlSelectedSymbols = []; let _sccWlLastSelectedSymbol = null; let _sccWlCollapsedSectors = new Set(); let _sccWlOriginalOrders = {}; let _sccWlIsBreadthSorted = false; let _sccDraggedTabName = null; let _sccDraggedRowSymbol = null; let _sccTouchActive = false; let _sccTouchTimeout = null; let _sccTouchDraggedSym = null; let _sccTouchStartY = 0; let _sccTouchDraggedEl = null; let _sccFlagHoldTimeout = null; let _sccFlagHoldActive = false; try {
   const savedSyms = localStorage.getItem('_sccChartSymbols'); if (savedSyms) _sccChartSymbols = JSON.parse(savedSyms); const savedTfs = localStorage.getItem('_sccChartTimeframes'); if (savedTfs) _sccChartTimeframes = JSON.parse(savedTfs); const savedLayout = localStorage.getItem('_sccChartLayout'); if (savedLayout) _sccChartLayout = savedLayout; if (window.innerWidth <= 600 && _sccChartLayout !== 'watchlist') _sccChartLayout = '1'; const savedType = localStorage.getItem('_sccChartType'); if (savedType) _sccChartType = savedType; const savedSync = localStorage.getItem('_sccSyncSymbols'); if (savedSync) _sccSyncSymbols = JSON.parse(savedSync); const savedZooms = localStorage.getItem('_sccChartZoomFactors'); if (savedZooms) _sccChartZoomFactors = JSON.parse(savedZooms); const savedWls = localStorage.getItem('_sccWatchlists'); if (savedWls) _sccWatchlists = JSON.parse(savedWls); const savedActiveWl = localStorage.getItem('_sccActiveWatchlist'); if (savedActiveWl) _sccActiveWatchlist = savedActiveWl; const savedFlags = localStorage.getItem('_sccSymbolFlags'); if (savedFlags) _sccSymbolFlags = JSON.parse(savedFlags); if (_sccActiveWatchlist && _sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else {
-    if (!_sccWatchlists[_sccActiveWatchlist]) { const keys = Object.keys(_sccWatchlists); _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main"; if (keys.length === 0) { _sccWatchlists["Main"] = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT']; } }
+    if (!sccIsValidWatchlist(_sccActiveWatchlist)) { const keys = Object.keys(_sccWatchlists || {}); _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main"; if (keys.length === 0) { _sccWatchlists["Main"] = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT']; } }
     _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
   }
   const savedShowWl = localStorage.getItem('_sccShowWatchlist'); if (savedShowWl !== null) _sccShowWatchlist = savedShowWl === 'true';
@@ -5906,12 +5763,11 @@ function openMaximizedChart(symbol) {
   if (typeof hideFloatingToolbar === 'function') hideFloatingToolbar();
   if (typeof initChartDrawingCanvas === 'function') initChartDrawingCanvas();
   if (typeof renderMaxChartEpsTable === 'function') renderMaxChartEpsTable(symbol);
-  overlay.style.display = 'flex'; if (typeof updateMaxChartShortlistButton === 'function') updateMaxChartShortlistButton(); if (typeof updateMaxChartMainWlButton === 'function') updateMaxChartMainWlButton(); _maxFetchAndDraw(symbol);
+  overlay.style.display = 'flex'; if (typeof updateMaxChartShortlistButton === 'function') updateMaxChartShortlistButton(); if (typeof updateMaxChartMainWlButton === 'function') updateMaxChartMainWlButton();
+  _maxFetchAndDraw(symbol);
 }
 function _maxFetchAndDraw(symbol) {
-  if (typeof fetchStockFundamentals === 'function' && symbol && symbol.toUpperCase() !== '^NSEI') {
-    fetchStockFundamentals(symbol).catch(() => null);
-  }
+  
   const loader = document.getElementById('max-chart-loader');
   if (loader) { loader.style.display = 'flex'; loader.innerHTML = 'Loading chart…'; }
 
@@ -5963,24 +5819,22 @@ function _maxFetchAndDraw(symbol) {
     const container = document.getElementById('max-chart-lw-container');
     if (container) {
       const cleanSym = symbol.toUpperCase().replace(/\.(NS|BO)$/i, '').trim();
-      const tvSym = 'NSE:' + cleanSym;
+      const baseSym = cleanSym.replace(/\.(RR|IV|BZ|SM|GB|E1|BE)$/i, '');
+      const tvSym = symbol.startsWith('^') ? symbol : (baseSym !== cleanSym ? ('BSE:' + baseSym) : ('NSE:' + cleanSym));
+      container.style.display = 'block';
+      const canvas = document.getElementById('max-chart-canvas');
+      if (canvas) canvas.style.display = 'none';
+      const drawCanvas = document.getElementById('max-chart-draw-canvas');
+      if (drawCanvas) drawCanvas.style.display = 'none';
+
       container.innerHTML = `
-        <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#050508;color:#94a3b8;gap:16px;padding:24px;text-align:center;">
-          <div style="width:52px;height:52px;border-radius:50%;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.2);display:flex;align-items:center;justify-content:center;color:#38bdf8;font-size:24px;">📊</div>
-          <div>
-            <div style="font-size:16px;font-weight:700;color:#f0f3fa;margin-bottom:6px;">Chart Data Unavailable for ${cleanSym}</div>
-            <div style="font-size:12px;color:#787b86;max-width:440px;line-height:1.5;">
-              Yahoo Finance feeds were unable to return candle data for ${cleanSym}. This can occur with SME stocks, recent listings, or temporary proxy timeouts.
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap;justify-content:center;">
-            <button onclick="_yfDataCache.clear(); _maxFetchAndDraw('${cleanSym}')" style="background:#1e222d;border:1px solid #363c4e;color:#f0f3fa;padding:7px 18px;border-radius:4px;cursor:pointer;font-weight:600;font-size:12px;display:flex;align-items:center;gap:6px;transition:all 0.15s ease;">
-              🔄 Retry Fetching
-            </button>
-            <a href="https://in.tradingview.com/chart/fZ5fwxUh/?symbol=${encodeURIComponent(tvSym)}" target="_blank"
-               style="background:#2962ff;color:#ffffff;padding:7px 20px;border-radius:4px;text-decoration:none;font-weight:700;font-size:12px;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(41,98,255,0.4);">
-              🚀 Open ${cleanSym} in TradingView ↗
-            </a>
+        <div style="width:100%;height:100%;position:relative;background:#131722;">
+          <iframe src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(tvSym)}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=131722&theme=dark&style=1&timezone=Asia%2FKolkata&locale=in"
+                  style="width:100%;height:100%;border:none;display:block;"
+                  allowtransparency="true" scrolling="no" allowfullscreen></iframe>
+          <div style="position:absolute;top:8px;right:75px;background:rgba(20,24,35,0.9);border:1px solid #363c4e;border-radius:4px;padding:3px 10px;font-size:10px;color:#38bdf8;font-weight:600;z-index:5;pointer-events:none;display:flex;align-items:center;gap:4px;">
+            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#38bdf8;"></span>
+            TradingView Live Feed
           </div>
         </div>
       `;
@@ -6814,69 +6668,175 @@ function sdChartsLoadMore() { _sdAutoChartsLimit += 12; sdRenderCharts(_sdCurren
 function sdChartsPrevPage() { if (_sdChartsPage > 0) { _sdChartsPage--; sdRenderCharts(_sdCurrentSector, _sdCurrentData); } }
 function sdChartsNextPage(totalPages) { if (_sdChartsPage < totalPages - 1) { _sdChartsPage++; sdRenderCharts(_sdCurrentSector, _sdCurrentData); } }
 const _yfDataCache = new Map();
+
+// Helper to fetch candles from a single proxy with a strict timeout
+async function _fetchProxyCandles(pUrl, timeoutMs) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs || 5000);
+  try {
+    const resp = await fetch(pUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    let text = await resp.text();
+    if (text.trim().startsWith('{')) {
+      try {
+        const parsed = JSON.parse(text);
+        if (parsed.contents) {
+          text = (typeof parsed.contents === 'string') ? parsed.contents : JSON.stringify(parsed.contents);
+        }
+      } catch (e) {}
+    }
+    const trimmed = text.trim();
+    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) throw new Error('Not JSON');
+    const data = JSON.parse(text);
+    const candles = parseYfData(data);
+    if (candles && candles.length > 0) {
+      return candles;
+    }
+    throw new Error('No candles');
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
+
+// Polyfill Promise.any for universal browser compatibility
+const _promiseAny = (typeof Promise !== 'undefined' && Promise.any) ? Promise.any.bind(Promise) : function(promises) {
+  return new Promise((resolve, reject) => {
+    let errors = [];
+    let remaining = promises.length;
+    if (remaining === 0) return reject(new Error('No promises'));
+    promises.forEach(p => {
+      Promise.resolve(p).then(resolve).catch(err => {
+        errors.push(err);
+        if (--remaining === 0) reject(new Error('All proxies failed: ' + errors.map(e => e.message).join(', ')));
+      });
+    });
+  });
+};
+
 async function _fetchYfDataWithSymbol(yfSymbol, range, interval) {
   const cacheKey = `${yfSymbol}_${range}_${interval}`;
   if (_yfDataCache.has(cacheKey)) { return _yfDataCache.get(cacheKey); }
-  const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`;
+
   const currentOrigin = window.location.origin;
-  const proxies = [
-    { urlFn: url => `http://localhost:9090/?url=${encodeURIComponent(url)}`, timeout: 1500 },
-    { urlFn: url => `https://nse-chart-proxy.shibu-mk.workers.dev/?url=${encodeURIComponent(url)}`, timeout: 8000 },
-    {
-      urlFn: url => {
-        if (!currentOrigin || currentOrigin.startsWith('file') || currentOrigin === 'null' || currentOrigin.includes('github.io')) { return ''; }
-        return `${currentOrigin}/api/proxy?url=${encodeURIComponent(url)}`;
-      },
-      timeout: 5000
-    },
-    { urlFn: url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, timeout: 8000 },
-    { urlFn: url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, timeout: 8000 },
-    { urlFn: url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`, timeout: 8000 }
-  ];
-  for (const proxy of proxies) {
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+
+  // 1. If running locally, try local proxy server first (fastest failover, <20ms if up)
+  if (isLocal) {
     try {
-      const pUrl = proxy.urlFn(targetUrl);
-      if (!pUrl) continue;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), proxy.timeout || 7000);
-      const resp = await fetch(pUrl, { signal: controller.signal });
-      clearTimeout(timeoutId);
-      if (resp.ok) {
-        let text = await resp.text();
-        if (text.trim().startsWith('{')) {
-          const parsed = JSON.parse(text);
-          if (parsed.contents) {
-            text = (typeof parsed.contents === 'string') ? parsed.contents : JSON.stringify(parsed.contents);
-          }
-        }
-        const trimmed = text.trim();
-        if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) { throw new Error("Response is not JSON"); }
-        const data = JSON.parse(text);
-        const candles = parseYfData(data);
-        if (candles && candles.length > 0) {
-          _yfDataCache.set(cacheKey, candles);
-          return candles;
-        }
+      const localTarget = `https://query1.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`;
+      const candles = await _fetchProxyCandles(`http://localhost:9090/?url=${encodeURIComponent(localTarget)}`, 1200);
+      if (candles && candles.length > 0) {
+        _yfDataCache.set(cacheKey, candles);
+        return candles;
       }
     } catch (e) {
-      // try next proxy
+      // Local proxy not running, seamlessly proceed to cloud proxies
     }
   }
+
+  // 2. Query both Yahoo Finance mirrors (query1 and query2) with parallel proxy race
+  const endpoints = [
+    `https://query1.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`,
+    `https://query2.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`
+  ];
+
+  for (const targetUrl of endpoints) {
+    const proxyUrls = [
+      // Cloudflare Worker proxy (custom user proxy, highest reliability)
+      `https://nse-chart-proxy.shibu-mk.workers.dev/?url=${encodeURIComponent(targetUrl)}`,
+      // AllOrigins RAW
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+      // AllOrigins GET (wrapped JSON)
+      `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`,
+      // CodeTabs proxy
+      `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`
+    ];
+
+    if (currentOrigin && !currentOrigin.startsWith('file') && currentOrigin !== 'null' && !currentOrigin.includes('github.io')) {
+      proxyUrls.push(`${currentOrigin}/api/proxy?url=${encodeURIComponent(targetUrl)}`);
+    }
+
+    // Race the cloud proxies in parallel — whichever returns valid candles first wins immediately!
+    try {
+      const candles = await _promiseAny(
+        proxyUrls.map(pUrl => _fetchProxyCandles(pUrl, 5000))
+      );
+      if (candles && candles.length > 0) {
+        _yfDataCache.set(cacheKey, candles);
+        return candles;
+      }
+    } catch (err) {
+      // All proxies failed on this mirror, try next mirror
+    }
+  }
+
   return null;
 }
 
+function getYfSymbolCandidates(symbol) {
+  if (!symbol) return [];
+  if (symbol.startsWith('^')) return [symbol];
+  const clean = symbol.toUpperCase().replace(/\.(NS|BO)$/i, '').trim();
+  const candidates = [];
+
+  const base = clean.replace(/\.(RR|IV|BZ|SM|GB|E1|BE)$/i, '');
+  const hasSeries = (base !== clean);
+
+  if (hasSeries) {
+    // For REITs/InvITs on BSE, the full historical series is listed under base.BO (e.g. BAGMANE.BO, BIRET.BO)
+    candidates.push(base + '.BO');
+    candidates.push(clean.replace(/\./g, '-') + '.NS');
+    candidates.push(base + '.NS');
+  }
+
+  candidates.push(clean + '.NS');
+
+  if (clean.includes('.')) {
+    candidates.push(clean.replace(/\./g, '-') + '.NS');
+  }
+
+  if (hasSeries) {
+    candidates.push(clean.replace(/\./g, '-') + '.BO');
+  }
+
+  if (clean.endsWith('INVIT') || clean.endsWith('INVT')) {
+    candidates.push(clean + '-IV.NS');
+    candidates.push(clean.replace(/(INVIT|INVT)$/i, '') + '-IV.NS');
+  }
+
+  candidates.push(clean + '.BO');
+  if (base !== clean) {
+    candidates.push(base + '.BO');
+  }
+
+  return [...new Set(candidates)];
+}
+window.getYfSymbolCandidates = getYfSymbolCandidates;
+
 async function fetchYfData(symbol, range, interval) {
-  const clean = symbol.replace(/\.(NS|BO)$/i, '').trim();
-  const primarySym = symbol.startsWith('^') ? symbol : (clean + '.NS');
-  let candles = await _fetchYfDataWithSymbol(primarySym, range, interval);
-  if ((!candles || candles.length === 0) && !symbol.startsWith('^')) {
-    // BSE fallback (e.g. for SME or BSE-listed stocks)
-    candles = await _fetchYfDataWithSymbol(clean + '.BO', range, interval);
+  const candidates = getYfSymbolCandidates(symbol);
+  let bestCandles = null;
+
+  for (let i = 0; i < candidates.length; i++) {
+    const cand = candidates[i];
+    try {
+      const candles = await _fetchYfDataWithSymbol(cand, range, interval);
+      if (candles && candles.length > 5) {
+        return candles;
+      } else if (candles && candles.length > 0 && !bestCandles) {
+        bestCandles = candles;
+      }
+    } catch (eCand) {
+      // Try next candidate
+    }
   }
-  if (candles && candles.length > 0) {
-    return candles;
+
+  if (bestCandles && bestCandles.length > 0) {
+    return bestCandles;
   }
-  throw new Error("Unable to load Yahoo Finance chart data");
+  throw new Error("Unable to load Yahoo Finance chart data for " + symbol);
 }
 function parseYfData(data) {
   const result = data?.chart?.result?.[0]; if (!result) return null; const timestamps = result.timestamp || []; const quote = result.indicators?.quote?.[0] || {}; const opens = quote.open || []; const highs = quote.high || []; const lows = quote.low || []; const closes = quote.close || []; const volumes = quote.volume || []; const candles = []; for (let i = 0; i < timestamps.length; i++) { if (opens[i] != null && highs[i] != null && lows[i] != null && closes[i] != null) { candles.push({ time: timestamps[i] * 1000, open: opens[i], high: highs[i], low: lows[i], close: closes[i], volume: volumes[i] || 0 }); } }
@@ -7373,14 +7333,15 @@ function parseScreenerHtml(symbol, html) {
       dFormatted = dParts[0].slice(0, 3) + '-' + dParts[1].slice(-2);
     }
 
-    quarters.push({
+    quarters.push(normalizeQuarterData({
       date: dFormatted,
+      qtr: dFormatted,
       epsPct: epsPct,
       salesPct: salesPct,
       salesCr: cur.sales,
       netProfitCr: cur.netProfit,
       eps: cur.eps
-    });
+    }));
   }
 
   // Extract Market Cap & ROE from Screener's top ratios if present
@@ -7419,49 +7380,25 @@ function parseScreenerHtml(symbol, html) {
 
 async function fetchScreenerFundamentals(symbol) {
   if (!symbol) return null;
-  const sUpper = symbol.toUpperCase().replace('.NS', '');
+  const sUpper = symbol.toUpperCase().replace('.NS', '').trim();
   const urls = [
     'https://www.screener.in/company/' + encodeURIComponent(sUpper) + '/consolidated/',
     'https://www.screener.in/company/' + encodeURIComponent(sUpper) + '/'
   ];
 
-  const proxies = [
-    url => 'http://localhost:9090/?url=' + encodeURIComponent(url),
-    url => 'https://nse-chart-proxy.shibu-mk.workers.dev/?url=' + encodeURIComponent(url),
-    url => 'https://api.allorigins.win/get?url=' + encodeURIComponent(url),
-    url => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url)
-  ];
-
   for (const targetUrl of urls) {
-    for (const proxyFn of proxies) {
-      try {
-        const pUrl = proxyFn(targetUrl);
-        if (!pUrl) continue;
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000);
-        const resp = await fetch(pUrl, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        if (resp.ok) {
-          let text = await resp.text();
-          if (text.trim().startsWith('{')) {
-            try {
-              const j = JSON.parse(text);
-              if (j.contents) text = j.contents;
-            } catch (e) { }
-          }
-          if (text.includes('id="quarters"') || text.includes('Quarters') || text.includes('quarters')) {
-            const data = parseScreenerHtml(sUpper, text);
-            if (data && data.quarters && data.quarters.length > 0) {
-              return data;
-            }
-          }
+    try {
+      const text = await _fetchHtmlViaProxy(targetUrl, 5000);
+      if (text && (text.includes('id="quarters"') || text.includes('Quarters') || text.includes('quarters'))) {
+        const data = parseScreenerHtml(sUpper, text);
+        if (data && Array.isArray(data.quarters) && data.quarters.length > 0) {
+          return data;
         }
-      } catch (e) { }
-    }
+      }
+    } catch (e) { }
   }
   return null;
 }
-
 
 // ── TRADINGVIEW DRAWING TOOLS & EDITING ENGINE ────────────────────────────
 let _currentDrawTool = 'select'; // 'select' | 'trendline' | 'ray_h' | 'ray' | 'rect' | 'scale' | 'pricenote' | 'text'
@@ -8726,7 +8663,6 @@ window.addEventListener('mousedown', e => {
   }
 });
 
-// ── MISSING STUDIO CONTROL HANDLERS ──
 function closeMaximizedChart() {
   const overlay = document.getElementById('chart-max-overlay');
   if (overlay) overlay.style.display = 'none';
@@ -9785,6 +9721,10 @@ function updateMaxChartSidebarWatchlist() {
         tabsEl.scrollLeft += e.deltaY;
       }
     };
+    try {
+      const activePill = tabsEl.querySelector('.tv-wl-tab-pill.active');
+      if (activePill) activePill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    } catch(e) {}
   }
 
   // Active symbol for whichever layout tile is currently focused
@@ -10187,6 +10127,12 @@ function sccComputeClusters() {
 
   const indMap = {};
   stocks.forEach(s => {
+    // Uptrend filter: Remove stocks under 200 MA if minimum 200 days data is available (exempt IPO bases / <200 days data)
+    const has200Ma = (s.sma_200 != null && !isNaN(s.sma_200) && s.sma_200 > 0 && !s.is_ipo);
+    if (has200Ma && s.price != null && s.price < s.sma_200) {
+      return; // Skip downtrend stocks trading below their 200 MA
+    }
+
     const ind = (s.industry && s.industry.trim()) || 'Other / Diversified';
     if (!indMap[ind]) {
       indMap[ind] = {
@@ -10212,6 +10158,8 @@ function sccComputeClusters() {
       company: s.company || s.symbol,
       price: s.price != null ? s.price : 0,
       change_pct: s.change_pct != null ? s.change_pct : 0,
+      sma_200: s.sma_200,
+      is_ipo: s.is_ipo,
       dist_1m: s.dist_high_1m_pct != null ? s.dist_high_1m_pct : 999,
       dist_52w: s.dist_52w_high != null ? s.dist_52w_high : 999,
       is1m: is1m,
@@ -10707,39 +10655,89 @@ async function triggerHomePageSync(btn) {
           if (d.length >= 20) {
             const sym = String(d[0] || '').trim().toUpperCase();
             if (sym) {
+              const price = parseFloat(d[2]) || 0;
+              const chg_pct = parseFloat(d[3]) || 0;
+              const vol = parseInt(d[4], 10) || 0;
+              const turnover_inr = parseFloat(d[5]) || (price * vol);
+              const rel_vol = parseFloat(d[6]) || 1;
+              const avg_vol_30d = parseInt(d[7], 10) || vol;
+              const mkt_cap_inr = parseFloat(d[8]) || 0;
+              const ema_20 = parseFloat(d[9]) || null;
+              const ema_50 = parseFloat(d[10]) || null;
+              const sma_50 = parseFloat(d[11]) || null;
+              const sma_200 = parseFloat(d[12]) || null;
+              const perf_1w = parseFloat(d[13]) || 0;
+              const perf_1m = parseFloat(d[14]) || 0;
+              const perf_3m = parseFloat(d[15]) || 0;
+              const perf_6m = parseFloat(d[16]) || 0;
+              const perf_1y = parseFloat(d[17]) || 0;
+              const perf_ytd = parseFloat(d[18]) || 0;
+              const high_1m = parseFloat(d[19]) || price;
+              const high_3m = parseFloat(d[20]) || price;
+              const high_52w = parseFloat(d[21]) || high_3m;
+              const low_52w = parseFloat(d[22]) || +(price * 0.5).toFixed(2);
+              const pe_ratio = parseFloat(d[23]) || null;
+              const eps_dil_ttm = parseFloat(d[24]) || null;
+              const eps_growth_yoy = parseFloat(d[25]) || null;
+              const eps_growth_fq = parseFloat(d[26]) || null;
+              const sales_growth_fq = parseFloat(d[27]) || null;
+              const div_yield = parseFloat(d[28]) || 0;
+              const sector = String(d[29] || 'NSE Equities');
+              const industry = String(d[30] || '');
+              const recommendation = parseFloat(d[31]) || null;
+
+              const dist_high_1m_pct = high_1m > 0 ? +(((high_1m - price) / high_1m) * 100).toFixed(2) : 0;
+              const dist_52w_high = high_52w > 0 ? +(((high_52w - price) / high_52w) * 100).toFixed(2) : 0;
+              const dist_52w_low = low_52w > 0 ? +(((price - low_52w) / low_52w) * 100).toFixed(2) : 0;
+              const turnover_cr = +(turnover_inr / 1e7).toFixed(2);
+              const mkt_cap_cr = +(mkt_cap_inr / 1e7).toFixed(2);
+              const is_ipo = (sma_200 === null || perf_1y === null || perf_6m === null);
+
               parsed.push({
                 symbol: sym,
                 company: String(d[1] || sym),
-                price: parseFloat(d[2]) || 0,
-                change_pct: parseFloat(d[3]) || 0,
-                volume: parseInt(d[4], 10) || 0,
-                value_traded: parseFloat(d[5]) || 0,
-                rvol_10d: parseFloat(d[6]) || 1,
-                avg_vol_30d: parseInt(d[7], 10) || 0,
-                mkt_cap_inr: parseFloat(d[8]) || 0,
-                ema_20: parseFloat(d[9]) || null,
-                ema_50: parseFloat(d[10]) || null,
-                sma_50: parseFloat(d[11]) || null,
-                sma_200: parseFloat(d[12]) || null,
-                perf_1w: parseFloat(d[13]) || 0,
-                perf_1m: parseFloat(d[14]) || 0,
-                perf_3m: parseFloat(d[15]) || 0,
-                perf_6m: parseFloat(d[16]) || 0,
-                perf_1y: parseFloat(d[17]) || 0,
-                perf_ytd: parseFloat(d[18]) || 0,
-                high_1m: parseFloat(d[19]) || null,
-                high_3m: parseFloat(d[20]) || null,
-                high_52w: parseFloat(d[21]) || null,
-                low_52w: parseFloat(d[22]) || null,
-                pe_ttm: parseFloat(d[23]) || null,
-                eps_diluted_ttm: parseFloat(d[24]) || null,
-                eps_growth_ttm: parseFloat(d[25]) || null,
-                eps_growth_fq: parseFloat(d[26]) || null,
-                rev_growth_fq: parseFloat(d[27]) || null,
-                div_yield: parseFloat(d[28]) || null,
-                sector: String(d[29] || 'NSE Equities'),
-                industry: String(d[30] || ''),
-                recommendation: parseFloat(d[31]) || null
+                price: price,
+                change_pct: chg_pct,
+                volume: vol,
+                turnover_inr: turnover_inr,
+                value_traded: turnover_inr,
+                turnover_cr: turnover_cr,
+                rel_vol: rel_vol,
+                rvol_10d: rel_vol,
+                avg_vol_30d: avg_vol_30d,
+                mkt_cap_inr: mkt_cap_inr,
+                mkt_cap_cr: mkt_cap_cr,
+                ema_20: ema_20,
+                ema_50: ema_50,
+                sma_50: sma_50,
+                sma_200: sma_200,
+                perf_1w: perf_1w,
+                perf_1m: perf_1m,
+                perf_3m: perf_3m,
+                perf_6m: perf_6m,
+                perf_1y: perf_1y,
+                perf_ytd: perf_ytd,
+                high_1m: high_1m,
+                high_3m: high_3m,
+                high_52w: high_52w,
+                low_52w: low_52w,
+                dist_high_1m_pct: dist_high_1m_pct,
+                dist_52w_high: dist_52w_high,
+                dist_52w_low: dist_52w_low,
+                pe_ratio: pe_ratio,
+                pe_ttm: pe_ratio,
+                eps_dil_ttm: eps_dil_ttm,
+                eps_diluted_ttm: eps_dil_ttm,
+                eps_growth_yoy: eps_growth_yoy,
+                eps_growth_ttm: eps_growth_yoy,
+                eps_growth_fq: eps_growth_fq,
+                sales_growth_fq: sales_growth_fq,
+                rev_growth_fq: sales_growth_fq,
+                div_yield: div_yield,
+                sector: sector,
+                industry: industry,
+                recommendation: recommendation,
+                is_ipo: is_ipo
               });
             }
           }
@@ -10807,7 +10805,7 @@ async function triggerHomePageSync(btn) {
 }
 window.triggerHomePageSync = triggerHomePageSync;
 
-// ── AUTO OPEN FULL CHART ON ?chart=SYMBOL QUERY PARAM ──────────────
+// ── AUTO OPEN CHART STUDIO ON ?chart=SYMBOL QUERY PARAM ──────────────
 function initHomePageUrlChartParam() {
   try {
     const urlParams = new URLSearchParams(window.location.search);
