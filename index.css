@@ -6075,7 +6075,7 @@ thead th[onclick]:hover {
 
 /* ── TRADINGVIEW MAXIMIZED WATCHLIST SIDEBAR ── */
 .tv-max-sidebar-wl {
-  width: 250px;
+  width: 290px;
   background: #131722;
   border-left: 1px solid #2a2e39;
   display: flex;
@@ -6157,6 +6157,19 @@ thead th[onclick]:hover {
 
 .tv-max-wl-row:hover {
   background: rgba(255, 255, 255, 0.05);
+}
+
+.tv-max-wl-row .tv-max-wl-del-btn {
+  opacity: 0;
+}
+
+.tv-max-wl-row:hover .tv-max-wl-del-btn {
+  opacity: 0.55 !important;
+}
+
+.tv-max-wl-row .tv-max-wl-del-btn:hover {
+  opacity: 1 !important;
+  color: #ef4444 !important;
 }
 
 .tv-max-wl-row.active {

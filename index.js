@@ -1094,14 +1094,106 @@ function updateMaxChartShortlistButton() {
   if (isSl) {
     btn.classList.add('active');
     btn.innerHTML = '★ Shortlisted';
-    btn.title = "Shortlisted! Click to remove (Press 'W' or 'S' to toggle)";
+    btn.title = "Shortlisted! Click to remove (Press 'S' to toggle)";
   } else {
     btn.classList.remove('active');
     btn.innerHTML = '☆ Shortlist';
-    btn.title = "Add to Shortlist (Press 'W' or 'S' to toggle)";
+    btn.title = "Add to Shortlist (Press 'S' to toggle)";
   }
 }
 window.updateMaxChartShortlistButton = updateMaxChartShortlistButton;
+
+// ── MAIN WATCHLIST DIRECT INTEGRATION & TOGGLE ────────────────────
+function sccSyncWatchlistsFromStorage() {
+  try {
+    const raw = localStorage.getItem('_sccWatchlists');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        _sccWatchlists = parsed;
+        if (!_sccWatchlists["Main"] || !Array.isArray(_sccWatchlists["Main"])) {
+          _sccWatchlists["Main"] = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT'];
+        }
+        if (_sccActiveWatchlist && !_sccActiveWatchlist.startsWith('__flag_') && _sccActiveWatchlist !== 'VCP' && _sccActiveWatchlist !== 'Clusters' && _sccActiveWatchlist !== 'Shortlist') {
+          _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+        }
+      }
+    }
+    const rawFlags = localStorage.getItem('_sccSymbolFlags');
+    if (rawFlags) {
+      const parsedFlags = JSON.parse(rawFlags);
+      if (parsedFlags && typeof parsedFlags === 'object') {
+        _sccSymbolFlags = parsedFlags;
+      }
+    }
+  } catch (e) {
+    console.warn('[Watchlist Sync] error reading localStorage:', e);
+  }
+}
+window.sccSyncWatchlistsFromStorage = sccSyncWatchlistsFromStorage;
+
+function isStockInMainWl(sym) {
+  if (!sym) return false;
+  const sUpper = sym.toUpperCase().replace('.NS', '').trim();
+  sccSyncWatchlistsFromStorage();
+  return Array.isArray(_sccWatchlists["Main"]) && _sccWatchlists["Main"].includes(sUpper);
+}
+window.isStockInMainWl = isStockInMainWl;
+
+function maxChartToggleMainWl(targetSym) {
+  const sym = (targetSym || _sdMaximizedChartSymbol || (_layoutSymbols && _layoutSymbols[_activeLayoutTile - 1]) || '').toUpperCase().replace('.NS', '').trim();
+  if (!sym || sym === '—') return;
+
+  sccSyncWatchlistsFromStorage();
+
+  if (!_sccWatchlists["Main"] || !Array.isArray(_sccWatchlists["Main"])) {
+    _sccWatchlists["Main"] = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT'];
+  }
+
+  const idx = _sccWatchlists["Main"].indexOf(sym);
+  if (idx !== -1) {
+    _sccWatchlists["Main"].splice(idx, 1);
+    showChartToast('Removed <b>' + sym + '</b> from Main Watchlist', '#f87171');
+  } else {
+    _sccWatchlists["Main"].push(sym);
+    showChartToast('✓ Added <b>' + sym + '</b> to Main Watchlist (' + _sccWatchlists["Main"].length + ' stocks)', '#2dd4bf');
+  }
+
+  if (_sccActiveWatchlist === 'Main') {
+    _sccWatchlistSymbols = _sccWatchlists["Main"];
+  }
+
+  sccSaveWatchlistsLocalAndSync();
+  updateMaxChartMainWlButton();
+  if (typeof sccWlRenderTabs === 'function') sccWlRenderTabs();
+  if (typeof sccWatchlistRender === 'function') sccWatchlistRender();
+  if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+  if (typeof sccWatchlistFetchSymbolData === 'function') sccWatchlistFetchSymbolData(sym);
+}
+window.maxChartToggleMainWl = maxChartToggleMainWl;
+
+function updateMaxChartMainWlButton() {
+  const btn = document.getElementById('max-chart-main-wl-btn');
+  if (!btn) return;
+  const sym = (_sdMaximizedChartSymbol || (_layoutSymbols && _layoutSymbols[_activeLayoutTile - 1]) || '').toUpperCase().replace('.NS', '').trim();
+  const inWl = isStockInMainWl(sym);
+  if (inWl) {
+    btn.classList.add('active');
+    btn.innerHTML = '✓ Main WL';
+    btn.title = "In Main Watchlist! Click to remove (Press 'W' to toggle)";
+    btn.style.color = '#0e1420';
+    btn.style.background = '#2dd4bf';
+    btn.style.borderColor = '#2dd4bf';
+  } else {
+    btn.classList.remove('active');
+    btn.innerHTML = '+ Main WL';
+    btn.title = "Add active stock to Main Watchlist (Press 'W' to toggle)";
+    btn.style.color = '#2dd4bf';
+    btn.style.background = 'rgba(45, 212, 191, 0.08)';
+    btn.style.borderColor = 'rgba(45, 212, 191, 0.35)';
+  }
+}
+window.updateMaxChartMainWlButton = updateMaxChartMainWlButton;
 
 // Universal Keyboard Navigation Handlers
 function maxChartNavigateWatchlist(dir) {
@@ -2454,7 +2546,9 @@ function sccGetOrderedTabs() {
     });
   }
 
-  const rawTabs = Object.keys(_sccWatchlists || {}).concat(['VCP', 'Clusters', 'Shortlist']);
+  const coreTabs = ['Main', 'Shortlist', 'Clusters', 'VCP'];
+  const userCustomWls = Object.keys(_sccWatchlists || {}).filter(k => !coreTabs.includes(k));
+  const rawTabs = [...coreTabs, ...userCustomWls];
   Object.keys(colorsMap).forEach(c => {
     const hasSymbols = Object.keys(_sccSymbolFlags || {}).some(sym => _sccSymbolFlags[sym] === c);
     if (hasSymbols || _sccActiveWatchlist === `__flag_${c}` || _sccActiveWatchlist === `__flage_${c}`) {
@@ -2587,6 +2681,7 @@ function sccWlRenderTabs() {
   }
 }
 function sccWlSwitchTab(name) {
+  if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
   _sccActiveWatchlist = name; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null; _sccWlIsBreadthSorted = false; _sccWlMaxLoaded = 40; if (name === 'VCP') { _sccWatchlistSymbols = []; } else if (name === 'Clusters') { window._sccClustersStockLimit = 40; _sccWatchlistSymbols = []; } else if (name === 'Shortlist') { _sccWatchlistSymbols = Array.from(getShortlistSet()); } else if (name.startsWith('__flag_')) { const color = name.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else { _sccWatchlistSymbols = _sccWatchlists[name] || []; }
   sccWlRenderTabs(); sccWatchlistRender(); sccWatchlistFetchAll();
   if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
@@ -2711,6 +2806,7 @@ window.sccLoadMoreClustersWatchlist = function() {
 window.sccGetClustersWatchlistItems = sccGetClustersWatchlistItems;
 
 function sccWatchlistRender() {
+  if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
   let watchlistItems = []; let flatSymbols = []; const isRowDraggable = _sccActiveWatchlist !== 'VCP' && _sccActiveWatchlist !== 'Clusters' && !_sccWlIsBreadthSorted;
   if (_sccActiveWatchlist === 'VCP') {
     const cachedDrill = sectorDrillGetCached(); const activeMap = cachedDrill ? (_vcpbViewMode === 'industry' ? cachedDrill.industries : cachedDrill.sectors) : null; if (cachedDrill && activeMap) {
@@ -3138,12 +3234,51 @@ function sccWatchlistAddSymbol(symbol) {
   if (_sccChartLayout === 'watchlist') sccChartRebuildGrid();
 }
 function sccWatchlistRemoveSymbol(symbol) {
-  const sym = symbol.toUpperCase(); if (_sccActiveWatchlist.startsWith('__flag_')) {
-    delete _sccSymbolFlags[sym]; const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); const hasSymbols = Object.keys(_sccSymbolFlags).some(s => _sccSymbolFlags[s] === color); if (!hasSymbols) { _sccActiveWatchlist = Object.keys(_sccWatchlists)[0] || "Main"; _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); }
-    _sccWlSelectedSymbols = _sccWlSelectedSymbols.filter(s => s !== sym); sccSaveWatchlistsLocalAndSync(); sccWlRenderTabs(); sccWatchlistRender();
-  } else { const index = _sccWatchlistSymbols.indexOf(sym); if (index !== -1) { _sccWatchlistSymbols.splice(index, 1); sccSaveWatchlistsLocalAndSync(); _sccWlSelectedSymbols = _sccWlSelectedSymbols.filter(s => s !== sym); sccWatchlistRender(); } }
+  const sym = String(symbol || '').toUpperCase().replace('.NS', '').trim();
+  if (!sym) return;
+
+  if (_sccActiveWatchlist === 'Shortlist') {
+    const set = (typeof getShortlistSet === 'function') ? getShortlistSet() : new Set();
+    set.delete(sym);
+    if (typeof saveShortlistSet === 'function') saveShortlistSet(set);
+    _sccWatchlistSymbols = Array.from(set);
+    if (typeof showChartToast === 'function') showChartToast('Removed <b>' + sym + '</b> from Shortlist', '#f87171');
+  } else if (_sccActiveWatchlist.startsWith('__flag_')) {
+    delete _sccSymbolFlags[sym];
+    const color = _sccActiveWatchlist.replace('__flag_', '');
+    _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
+    const hasSymbols = Object.keys(_sccSymbolFlags).some(s => _sccSymbolFlags[s] === color);
+    if (!hasSymbols) {
+      _sccActiveWatchlist = Object.keys(_sccWatchlists)[0] || "Main";
+      _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+      localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+    }
+    sccSaveWatchlistsLocalAndSync();
+    if (typeof showChartToast === 'function') showChartToast('Removed flag from <b>' + sym + '</b>', '#f87171');
+  } else {
+    if (_sccWatchlists && _sccWatchlists[_sccActiveWatchlist]) {
+      const idx = _sccWatchlists[_sccActiveWatchlist].indexOf(sym);
+      if (idx !== -1) {
+        _sccWatchlists[_sccActiveWatchlist].splice(idx, 1);
+      }
+    }
+    const index = _sccWatchlistSymbols.indexOf(sym);
+    if (index !== -1) {
+      _sccWatchlistSymbols.splice(index, 1);
+    }
+    sccSaveWatchlistsLocalAndSync();
+    if (typeof showChartToast === 'function') showChartToast('Removed <b>' + sym + '</b> from ' + _sccActiveWatchlist, '#f87171');
+  }
+
+  _sccWlSelectedSymbols = _sccWlSelectedSymbols.filter(s => s !== sym);
+  if (typeof sccWlRenderTabs === 'function') sccWlRenderTabs();
+  if (typeof sccWatchlistRender === 'function') sccWatchlistRender();
+  if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+  if (typeof updateMaxChartMainWlButton === 'function') updateMaxChartMainWlButton();
+  if (typeof updateMaxChartShortlistButton === 'function') updateMaxChartShortlistButton();
   if (_sccChartLayout === 'watchlist') sccChartRebuildGrid();
 }
+window.sccWatchlistRemoveSymbol = sccWatchlistRemoveSymbol;
 function sccWatchlistSuggest(val) {
   const suggestBox = document.getElementById('scc-wl-suggest'); if (!suggestBox) return; const query = val.trim().toLowerCase(); if (!query) { suggestBox.style.display = 'none'; suggestBox.innerHTML = ''; return; }
   let allStocks = n500CsvGetCached() || []; if (allStocks.length === 0 && _sdCurrentData?.stocks) { allStocks = _sdCurrentData.stocks; }
@@ -3449,10 +3584,67 @@ const LS_MPM = 'nse_mpm_v1'; const LS_GUEST_BIN = 'nse_guest_bin'; function isGu
 const mpmLoad = () => { try { return JSON.parse(lsGet(LS_MPM)) || []; } catch (e) { return []; } }; const mpmSave = d => lsSet(LS_MPM, JSON.stringify(d.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 150))); const getCfg = () => ({ key: lsGet(LS_KEY) || '', bin: lsGet(LS_BIN) || '' }); const saveCfg = (k, b) => { lsSet(LS_KEY, k); lsSet(LS_BIN, b); }; const JB = 'https://api.jsonbin.io/v3'; async function jbCreate(key, data) { const payload = Array.isArray(data) ? { records: data, bsr: [] } : data; const r = await fetch(`${JB}/b`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Master-Key': key, 'X-Bin-Name': 'NSE-Breadth-Radar', 'X-Bin-Private': 'true' }, body: JSON.stringify(payload) }); if (!r.ok) throw new Error('Create failed: ' + r.status); const j = await r.json(); return j.metadata.id; }
 async function jbRead(key, bin) { const r = await fetch(`${JB}/b/${bin}/latest`, { headers: { 'X-Master-Key': key } }); if (!r.ok) throw new Error('Read failed: ' + r.status); const j = await r.json(); const rec = j.record; console.log('[jbRead] OK — records:', rec?.records?.length || 0, 'mpm:', rec?.mpm?.length || 0, 'bsr:', rec?.bsr?.length || 0); return rec; }
 async function jbUpdate(key, bin, payload) { const body = JSON.stringify(payload); const r = await fetch(`${JB}/b/${bin}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': key }, body: body }); const respText = await r.text(); if (!r.ok) throw new Error('Update failed: ' + r.status + ' ' + respText.slice(0, 100)); console.log('[jbUpdate] OK — pushed', JSON.parse(body)?.records?.length || 0, 'records'); }
-function setSyncStatus(state, label) { const dot = document.getElementById('sync-dot'); const lbl = document.getElementById('sync-label'); const btn = dot && dot.closest('.sync-status'); dot.className = 'sync-dot ' + (state || ''); lbl.textContent = label || 'Cloud Sync'; if (btn) { btn.title = state === 'warn' ? 'Click to configure cloud sync' : state === 'ok' ? 'Synced — click to manage' : state === 'err' ? 'Sync error — click to fix' : 'Cloud sync settings'; btn.style.borderColor = state === 'warn' ? 'rgba(224,123,58,.4)' : state === 'ok' ? 'rgba(61,214,140,.3)' : state === 'err' ? 'rgba(224,84,84,.3)' : ''; } }
+function setSyncStatus(state, label) { const dot = document.getElementById('sync-dot'); const lbl = document.getElementById('sync-label'); const btn = dot && dot.closest('.sync-status'); if (dot) dot.className = 'sync-dot ' + (state || ''); if (lbl) lbl.textContent = label || 'Cloud Sync'; if (btn) { btn.title = state === 'warn' ? 'Click to configure cloud sync' : state === 'ok' ? 'Synced — click to manage' : state === 'err' ? 'Sync error — click to fix' : 'Cloud sync settings'; btn.style.borderColor = state === 'warn' ? 'rgba(224,123,58,.4)' : state === 'ok' ? 'rgba(61,214,140,.3)' : state === 'err' ? 'rgba(224,84,84,.3)' : ''; } }
 function showSetup() { openControlPanel('sync'); }
 function setupFlash(msg, color) { cfgBanner(msg, color === 'var(--lime)' ? 'ok' : color === 'var(--red)' ? 'err' : color === 'var(--orange)' ? 'warn' : 'inf', 'cfg-banner'); }
 function buildPayload() { const now = Date.now(); return { _pushedAt: now, records: loadLocal(), bsr: bsrLoad(), bsrMode: bsrGetMode(), bsrModeUpdatedAt: parseInt(lsGet('_bsrModeUpdatedAt') || '0', 10), bsrQuick: bsrQuickLoad(), mpm: mpmLoad(), ftd: ftdLoad(), srt: srtLoad(), sccWatchlists: _sccWatchlists, sccSymbolFlags: _sccSymbolFlags, sccWatchlistsUpdatedAt: parseInt(localStorage.getItem('_sccWatchlistsUpdatedAt') || '0') }; }
+
+function mergeCloudWatchlists(cloudWls, cloudFlags) {
+  if (!cloudWls || typeof cloudWls !== 'object') return;
+  sccSyncWatchlistsFromStorage();
+  if (!_sccWatchlists || typeof _sccWatchlists !== 'object') _sccWatchlists = {};
+
+  let hasNewFromLocal = false;
+  Object.keys(cloudWls).forEach(key => {
+    const cloudList = Array.isArray(cloudWls[key]) ? cloudWls[key] : [];
+    if (!_sccWatchlists[key] || !Array.isArray(_sccWatchlists[key])) {
+      _sccWatchlists[key] = [...cloudList];
+    } else {
+      const localList = _sccWatchlists[key];
+      const diff = localList.filter(s => !cloudList.includes(s));
+      if (diff.length > 0) hasNewFromLocal = true;
+      cloudList.forEach(sym => {
+        const sUpper = String(sym).toUpperCase().trim();
+        if (sUpper && !localList.some(s => s.toUpperCase() === sUpper)) {
+          localList.push(sUpper);
+        }
+      });
+    }
+  });
+
+  Object.keys(_sccWatchlists).forEach(k => {
+    if (!cloudWls[k]) hasNewFromLocal = true;
+  });
+
+  if (cloudFlags && typeof cloudFlags === 'object') {
+    if (!_sccSymbolFlags || typeof _sccSymbolFlags !== 'object') _sccSymbolFlags = {};
+    _sccSymbolFlags = { ...cloudFlags, ..._sccSymbolFlags };
+  }
+
+  localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
+  localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+  localStorage.setItem('_sccWatchlistsUpdatedAt', Date.now().toString());
+
+  if (!_sccWatchlists[_sccActiveWatchlist] && !_sccActiveWatchlist.startsWith('__flag_')) {
+    const keys = Object.keys(_sccWatchlists);
+    _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main";
+    localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+  }
+  if (_sccActiveWatchlist.startsWith('__flag_')) {
+    const color = _sccActiveWatchlist.replace('__flag_', '');
+    _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
+  } else if (_sccActiveWatchlist !== 'VCP') {
+    _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+  }
+  _sccWlSelectedSymbols = [];
+  _sccWlLastSelectedSymbol = null;
+
+  if (hasNewFromLocal) {
+    setTimeout(() => { if (typeof pushToCloud === 'function') pushToCloud().catch(() => {}); }, 1500);
+  }
+}
+window.mergeCloudWatchlists = mergeCloudWatchlists;
+
 function mergeByKey(cloudArr, localArr, keyFn) {
   const map = {}; (cloudArr || []).forEach(d => { const k = keyFn(d); if (k) map[k] = d; }); (localArr || []).forEach(d => {
     const k = keyFn(d); if (!k) return; const existing = map[k]; if (!existing) { map[k] = d; return; }
@@ -3467,9 +3659,7 @@ async function pullFromCloud(key, bin) {
   const cfg = key ? { key, bin } : getCfg(); if (!cfg.key || !cfg.bin) { setupFlash('No credentials configured', 'var(--orange)'); return; }
   setSyncStatus('syncing', 'Pulling…'); try {
     const raw = await jbRead(cfg.key, cfg.bin); const cloudRecs = Array.isArray(raw) ? raw : (raw.records || []); const cloudBsr = Array.isArray(raw) ? [] : (raw.bsr || []); const cloudMpm = Array.isArray(raw) ? [] : (raw.mpm || []); const cloudFtd = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd || []) : []; const cloudSrt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.srt || []) : []; saveLocal(mergeByKey(cloudRecs, loadLocal(), r => r.date)); bsrSave(mergeByKey(cloudBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); mpmSave(mergeByKey(cloudMpm, mpmLoad(), d => d.date)); srtSave(mergeByKey(cloudSrt, srtLoad(), s => s.id)); const mergedFtd = mergeByKey(cloudFtd, ftdLoad(), d => d.date).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ensureOctoberDataSeeded(); ftdScanUndercutAll(); if (typeof raw === 'object' && !Array.isArray(raw)) { if (raw.bsrMode) mergeBsrMode(raw.bsrMode, raw.bsrModeUpdatedAt); if (raw.bsrQuick) mergeBsrQuick(raw.bsrQuick); } const cloudWatchlists = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccWatchlists : null; const cloudSymbolFlags = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccSymbolFlags : null; if (cloudWatchlists) {
-      _sccWatchlists = cloudWatchlists; if (cloudSymbolFlags) _sccSymbolFlags = cloudSymbolFlags; localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists)); localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags)); if (!_sccWatchlists[_sccActiveWatchlist] && !_sccActiveWatchlist.startsWith('__flag_')) { const keys = Object.keys(_sccWatchlists); _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main"; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); }
-      if (_sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else if (_sccActiveWatchlist !== 'VCP') { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; }
-      _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null;
+      mergeCloudWatchlists(cloudWatchlists, cloudSymbolFlags);
     }
     const merged = loadLocal(); setSyncStatus('ok', 'Synced'); setupFlash(`✓ Pulled — ${merged.length} breadth + ${bsrLoad().length} BSR + ${mpmLoad().length} MPM + ${srtLoad().length} sectors`, 'var(--lime)'); renderAll(); bsrRenderAll(); mpmRenderAll(); renderRPG(); renderMarketSummary(); renderMarketCycle(); ftdRender(); renderAnalysisFTD(); srtRender(); sccWlRenderTabs(); sccWatchlistRender(); sccWatchlistFetchAll();
   } catch (e) { setSyncStatus('err', 'Sync Error'); setupFlash('✗ Pull failed: ' + e.message, 'var(--red)'); }
@@ -4459,12 +4649,10 @@ async function seedHistoricalData() {
   if (loadLocal().length > 0) return; const seedData = [{ date: '2026-03-12', adv: 312, dec: 174, unc: 14, hi: 28, lo: 6, e20: 54, s50: 42, s200: 38, nifty: 0, notes: 'ET seed' }, { date: '2026-03-11', adv: 425, dec: 75, unc: 0, hi: 0, lo: 0, e20: 39, s50: 35, s200: 37, nifty: 22342.95, notes: 'ET seed' }, { date: '2026-03-10', adv: 425, dec: 75, unc: 0, hi: 0, lo: 0, e20: 28, s50: 31, s200: 37, nifty: 22342.95, notes: 'ET seed' }, { date: '2026-03-06', adv: 170, dec: 330, unc: 0, hi: 0, lo: 0, e20: 20, s50: 29, s200: 29, nifty: 22481.30, notes: 'ET seed' }, { date: '2026-03-05', adv: 383, dec: 117, unc: 0, hi: 0, lo: 0, e20: 23, s50: 29, s200: 31, nifty: 22697.80, notes: 'ET seed' }, { date: '2026-03-04', adv: 54, dec: 446, unc: 0, hi: 0, lo: 0, e20: 14, s50: 26, s200: 28, nifty: 22409.80, notes: 'ET seed' }, { date: '2026-03-02', adv: 56, dec: 444, unc: 0, hi: 0, lo: 0, e20: 26, s50: 33, s200: 31, nifty: 22835.95, notes: 'ET seed' }, { date: '2026-02-27', adv: 118, dec: 382, unc: 0, hi: 0, lo: 0, e20: 39, s50: 42, s200: 35, nifty: 23166.85, notes: 'ET seed' }, { date: '2026-02-26', adv: 260, dec: 240, unc: 0, hi: 0, lo: 0, e20: 52, s50: 49, s200: 38, nifty: 23448.50, notes: 'ET seed' }, { date: '2026-02-25', adv: 314, dec: 186, unc: 0, hi: 0, lo: 0, e20: 53, s50: 49, s200: 38, nifty: 23403.80, notes: 'ET seed' }, { date: '2026-02-24', adv: 182, dec: 318, unc: 0, hi: 0, lo: 0, e20: 47, s50: 44, s200: 36, nifty: 23304.60, notes: 'ET seed' }, { date: '2026-02-23', adv: 298, dec: 202, unc: 0, hi: 0, lo: 0, e20: 53, s50: 48, s200: 37, nifty: 23484.95, notes: 'ET seed' }, { date: '2026-02-20', adv: 255, dec: 245, unc: 0, hi: 0, lo: 0, e20: 51, s50: 46, s200: 36, nifty: 23395.00, notes: 'ET seed' }, { date: '2026-02-19', adv: 68, dec: 432, unc: 0, hi: 0, lo: 0, e20: 52, s50: 44, s200: 36, nifty: 23297.45, notes: 'ET seed' }, { date: '2026-02-18', adv: 292, dec: 208, unc: 0, hi: 0, lo: 0, e20: 65, s50: 53, s200: 40, nifty: 23645.80, notes: 'ET seed' }, { date: '2026-02-17', adv: 337, dec: 163, unc: 0, hi: 0, lo: 0, e20: 65, s50: 48, s200: 39, nifty: 23540.05, notes: 'ET seed' }, { date: '2026-02-16', adv: 293, dec: 207, unc: 0, hi: 0, lo: 0, e20: 58, s50: 44, s200: 37, nifty: 23472.45, notes: 'ET seed' }, { date: '2026-02-13', adv: 70, dec: 430, unc: 0, hi: 0, lo: 0, e20: 55, s50: 42, s200: 38, nifty: 23313.15, notes: 'ET seed' }, { date: '2026-02-12', adv: 136, dec: 364, unc: 0, hi: 0, lo: 0, e20: 71, s50: 50, s200: 41, nifty: 23651.55, notes: 'ET seed' }, { date: '2026-02-11', adv: 238, dec: 262, unc: 0, hi: 0, lo: 0, e20: 76, s50: 55, s200: 44, nifty: 23783.05, notes: 'ET seed' }, { date: '2026-02-10', adv: 292, dec: 208, unc: 0, hi: 0, lo: 0, e20: 78, s50: 54, s200: 42, nifty: 23753.75, notes: 'ET seed' }, { date: '2026-02-09', adv: 422, dec: 78, unc: 0, hi: 0, lo: 0, e20: 75, s50: 51, s200: 41, nifty: 23683.40, notes: 'ET seed' }, { date: '2026-02-06', adv: 214, dec: 286, unc: 0, hi: 0, lo: 0, e20: 55, s50: 41, s200: 37, nifty: 23434.00, notes: 'ET seed' }, { date: '2026-02-05', adv: 214, dec: 286, unc: 0, hi: 0, lo: 0, e20: 55, s50: 39, s200: 36, nifty: 23411.70, notes: 'ET seed' }, { date: '2026-02-04', adv: 160, dec: 340, unc: 0, hi: 0, lo: 0, e20: 59, s50: 41, s200: 37, nifty: 23534.95, notes: 'ET seed' }, { date: '2026-02-03', adv: 329, dec: 171, unc: 0, hi: 0, lo: 0, e20: 52, s50: 38, s200: 37, nifty: 23446.30, notes: 'ET seed' }, { date: '2026-02-02', adv: 448, dec: 52, unc: 0, hi: 0, lo: 0, e20: 24, s50: 23, s200: 30, nifty: 22837.00, notes: 'ET seed' }, { date: '2026-02-01', adv: 313, dec: 187, unc: 0, hi: 0, lo: 0, e20: 17, s50: 19, s200: 27, nifty: 22611.30, notes: 'ET seed' }, { date: '2026-01-30', adv: 120, dec: 380, unc: 0, hi: 0, lo: 0, e20: 30, s50: 29, s200: 32, nifty: 23079.50, notes: 'ET seed' }, { date: '2026-01-29', adv: 328, dec: 172, unc: 0, hi: 0, lo: 0, e20: 21, s50: 23, s200: 31, nifty: 23134.80, notes: 'ET seed' },]; const existing = loadLocal(); const existingDates = new Set(existing.map(r => r.date)); const toAdd = seedData.filter(r => !existingDates.has(r.date)).map(r => { r.score = calcScore(r); const z = getZone(r.score); r.zone = z.name; r.r = z.r; return r; }); if (toAdd.length > 0) { saveLocal([...existing, ...toAdd]); }
 }
 (async function init() {
-  document.getElementById('hdr-date').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }); const _etEl = document.getElementById('entry-today'); if (_etEl) _etEl.textContent = todayISO(); const _bsrDate = document.getElementById('bsr-date'); if (_bsrDate) _bsrDate.value = todayISO(); seedHistoricalData(); ensureOctoberDataSeeded(); if (initGuestMode()) return; const cfg = getCfg(); if (!cfg.key || !cfg.bin) { setSyncStatus('warn', 'Not Configured · Click to Setup'); } else {
+  const hdrDateEl = document.getElementById('hdr-date'); if (hdrDateEl) hdrDateEl.textContent = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }); const _etEl = document.getElementById('entry-today'); if (_etEl) _etEl.textContent = todayISO(); const _bsrDate = document.getElementById('bsr-date'); if (_bsrDate) _bsrDate.value = todayISO(); seedHistoricalData(); ensureOctoberDataSeeded(); if (initGuestMode()) return; const cfg = getCfg(); if (!cfg.key || !cfg.bin) { setSyncStatus('warn', 'Not Configured · Click to Setup'); } else {
     setSyncStatus('syncing', 'Syncing…'); try {
       const payload = await jbRead(cfg.key, cfg.bin); const isLegacy = Array.isArray(payload); const cRec = isLegacy ? payload : (payload.records || []); saveLocal(mergeByKey(cRec, loadLocal(), r => r.date)); const cBsr = isLegacy ? [] : (payload.bsr || []); bsrSave(mergeByKey(cBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); if (!isLegacy && payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt); if (!isLegacy && payload.bsrQuick) mergeBsrQuick(payload.bsrQuick); const cMpm = isLegacy ? [] : (payload.mpm || []); mpmSave(mergeByKey(cMpm, mpmLoad(), d => d.date)); const cFtd = isLegacy ? [] : (payload.ftd || []); const mergedFtd = mergeByKey(cFtd, ftdLoad(), d => d.date).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ensureOctoberDataSeeded(); ftdScanUndercutAll(); if (!cFtd.some(d => d.date === '2026-10-13' && d.type === 'followthrough') || cFtd.some(d => d.date === '2026-10-14' && d.type === 'attempt') || cFtd.filter(d => d.date === '2026-10-09').length > 1) { setTimeout(() => pushToCloud().catch(() => {}), 1000); } const cSrt = isLegacy ? [] : (payload.srt || []); srtSave(mergeByKey(cSrt, srtLoad(), s => s.id)); const cloudWatchlists = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccWatchlists : null; const cloudSymbolFlags = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccSymbolFlags : null; if (cloudWatchlists) {
-        _sccWatchlists = cloudWatchlists; if (cloudSymbolFlags) _sccSymbolFlags = cloudSymbolFlags; localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists)); localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags)); if (!_sccWatchlists[_sccActiveWatchlist] && !_sccActiveWatchlist.startsWith('__flag_')) { const keys = Object.keys(_sccWatchlists); _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main"; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); }
-        if (_sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else if (_sccActiveWatchlist !== 'VCP') { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; }
-        _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null;
+        mergeCloudWatchlists(cloudWatchlists, cloudSymbolFlags);
       }
       const recCount = loadLocal().length; const bsrCount = bsrLoad().length; const mpmCount = mpmLoad().length; const srtCount = srtLoad().filter(s => s.id !== 'NIFTY50').length; setSyncStatus('ok', 'Synced'); console.log('[Init] Synced — Records:', recCount, 'BSR:', bsrCount, 'MPM:', mpmCount);
     } catch (e) { setSyncStatus('warn', 'Offline · Local data shown'); console.warn('[Init] Cloud pull failed:', e.message); }
@@ -5480,6 +5668,11 @@ async function pullFromCloudSilently() {
       if (raw.bsrMode) mergeBsrMode(raw.bsrMode, raw.bsrModeUpdatedAt);
       if (raw.bsrQuick) mergeBsrQuick(raw.bsrQuick);
     }
+    const cloudWatchlists = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccWatchlists : null;
+    const cloudSymbolFlags = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccSymbolFlags : null;
+    if (cloudWatchlists) {
+      mergeCloudWatchlists(cloudWatchlists, cloudSymbolFlags);
+    }
     setSyncStatus('ok', 'Synced');
     renderAll();
     bsrRenderAll();
@@ -5713,7 +5906,7 @@ function openMaximizedChart(symbol) {
   if (typeof hideFloatingToolbar === 'function') hideFloatingToolbar();
   if (typeof initChartDrawingCanvas === 'function') initChartDrawingCanvas();
   if (typeof renderMaxChartEpsTable === 'function') renderMaxChartEpsTable(symbol);
-  overlay.style.display = 'flex'; if (typeof updateMaxChartShortlistButton === 'function') updateMaxChartShortlistButton(); _maxFetchAndDraw(symbol);
+  overlay.style.display = 'flex'; if (typeof updateMaxChartShortlistButton === 'function') updateMaxChartShortlistButton(); if (typeof updateMaxChartMainWlButton === 'function') updateMaxChartMainWlButton(); _maxFetchAndDraw(symbol);
 }
 function _maxFetchAndDraw(symbol) {
   if (typeof fetchStockFundamentals === 'function' && symbol && symbol.toUpperCase() !== '^NSEI') {
@@ -9494,6 +9687,7 @@ document.addEventListener('pointerdown', e => {
 }, true);
 
 function updateMaxChartSidebarWatchlist() {
+  if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
   const rowsEl = document.getElementById('max-chart-sidebar-rows');
   const flagsEl = document.getElementById('max-chart-sidebar-flags');
   const tabsEl = document.getElementById('max-chart-sidebar-tabs');
@@ -9539,6 +9733,8 @@ function updateMaxChartSidebarWatchlist() {
           </div>
         `;
       } else if (isClusters) {
+        const clusterRes = (typeof sccGetClustersWatchlistItems === 'function') ? sccGetClustersWatchlistItems() : null;
+        const clusterCount = (clusterRes && clusterRes.flatSymbols) ? clusterRes.flatSymbols.length : 0;
         tabsHtml += `
           <div onclick="sccWlSwitchTab('Clusters'); updateMaxChartSidebarWatchlist();"
                draggable="true"
@@ -9547,10 +9743,11 @@ function updateMaxChartSidebarWatchlist() {
                ondrop="sccTabDrop(event, 'Clusters')"
                ondragend="sccTabDragEnd(event)"
                class="tv-wl-tab-pill ${isActive ? 'active' : ''}">
-            <span>⭐ Clusters</span>
+            <span>⭐ Clusters</span> <span style="font-size:9px;opacity:0.65;font-family:var(--mono);margin-left:3px;">(${clusterCount})</span>
           </div>
         `;
       } else if (name === 'Shortlist') {
+        const slCount = (typeof getShortlistSet === 'function' ? getShortlistSet().size : 0);
         tabsHtml += `
           <div onclick="sccWlSwitchTab('Shortlist'); updateMaxChartSidebarWatchlist();"
                draggable="true"
@@ -9560,7 +9757,7 @@ function updateMaxChartSidebarWatchlist() {
                ondragend="sccTabDragEnd(event)"
                class="tv-wl-tab-pill ${isActive ? 'active' : ''}"
                style="${isActive ? 'color:#f59e0b;border-bottom-color:#f59e0b;' : ''}">
-            <span>★ Shortlist</span>
+            <span>★ Shortlist</span> <span style="font-size:9px;opacity:0.65;font-family:var(--mono);margin-left:3px;">(${slCount})</span>
           </div>
         `;
       } else {
@@ -9572,7 +9769,7 @@ function updateMaxChartSidebarWatchlist() {
                ondrop="sccTabDrop(event, '${name.replace(/'/g, "\\\'")}')"
                ondragend="sccTabDragEnd(event)"
                class="tv-wl-tab-pill ${isActive ? 'active' : ''}">
-            <span>${name}</span>
+            <span>${name}</span> <span style="font-size:9px;opacity:0.65;font-family:var(--mono);margin-left:3px;">(${(_sccWatchlists[name] && _sccWatchlists[name].length) || 0})</span>
           </div>
         `;
       }
@@ -9582,6 +9779,12 @@ function updateMaxChartSidebarWatchlist() {
               style="background:none;border:none;color:#38bdf8;font-size:13px;font-weight:bold;cursor:pointer;padding:2px 6px;">+</button>
     `;
     tabsEl.innerHTML = tabsHtml;
+    tabsEl.onwheel = function(e) {
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        tabsEl.scrollLeft += e.deltaY;
+      }
+    };
   }
 
   // Active symbol for whichever layout tile is currently focused
@@ -9715,6 +9918,9 @@ function updateMaxChartSidebarWatchlist() {
     const leaderBadge = item.is52w ? '<span style="font-size:8px;padding:1px 3px;border-radius:2px;background:rgba(45,212,191,0.15);color:#2dd4bf;margin-left:4px;" title="Within 3% of 52W High">52W</span>' :
                         (item.is1m ? '<span style="font-size:8px;padding:1px 3px;border-radius:2px;background:rgba(52,211,153,0.15);color:#34d399;margin-left:4px;" title="Within 2% of 1M High">1M</span>' : '');
 
+    const showRemoveBtn = _sccActiveWatchlist !== 'VCP' && _sccActiveWatchlist !== 'Clusters';
+    const removeBtnHtml = showRemoveBtn ? '<button class="tv-max-wl-del-btn" onclick="event.stopPropagation(); sccWatchlistRemoveSymbol(\'' + sUpper + '\');" title="Remove ' + sUpper + ' from ' + _sccActiveWatchlist + '" style="background:none;border:none;color:#787b86;cursor:pointer;font-size:15px;font-weight:bold;line-height:1;padding:0 0 0 5px;opacity:0.35;transition:opacity 0.15s,color 0.15s;outline:none;" onmouseover="this.style.opacity=\'1\';this.style.color=\'#ef4444\';" onmouseout="this.style.opacity=\'0.35\';this.style.color=\'#787b86\';">×</button>' : '';
+
     rowsHtml += '<div class="tv-max-wl-row ' + (isCur ? 'active' : '') + '" onclick="maxChartOnStockSelected(\'' + sUpper + '\')">' +
       '<div style="display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;">' +
         '<svg width="8" height="12" viewBox="0 0 10 18" fill="' + flagColor + '" onclick="sccWatchlistOpenFlagPopup(this, \'' + sUpper + '\'); event.stopPropagation();" style="cursor:pointer;flex-shrink:0;" title="Change flag color">' +
@@ -9723,9 +9929,10 @@ function updateMaxChartSidebarWatchlist() {
         '<span style="font-weight:700;' + (isCur ? 'color:#2962ff;' : '') + '">' + sUpper + '</span>' +
         leaderBadge +
       '</div>' +
-      '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
+      '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">' +
         '<span style="color:#94a3b8;">' + price + '</span>' +
         '<span style="color:' + chgColor + ';font-weight:600;min-width:44px;text-align:right;">' + chg + '</span>' +
+        removeBtnHtml +
       '</div>' +
     '</div>';
   });
@@ -9742,15 +9949,25 @@ window.addEventListener('keydown', e => {
   const sccChartPane = document.getElementById('scc-pane-chart');
   const isSccChartActive = sccChartPane && sccChartPane.style.display !== 'none';
 
-  // 1. Shortcut: Alt + W (Add active stock to current Watchlist / Colored Flag)
+  // 1. Shortcut: Alt + W -> Toggle Main Watchlist
   if (e.altKey && (e.key === 'w' || e.key === 'W' || e.code === 'KeyW' || e.keyCode === 87)) {
     e.preventDefault();
     e.stopPropagation();
     const sym = (_sdMaximizedChartSymbol || (_sccChartSymbols && _sccChartSymbols[0]) || (_stockData && _stockData.symbol) || '').toUpperCase().replace('.NS', '').trim();
-    if (!sym) return;
-    maxChartSidebarAddSymbol(sym);
-    const listName = _sccActiveWatchlist.startsWith('__flag_') ? _sccActiveWatchlist.replace('__flag_', '').toUpperCase() + ' Flag' : (_sccActiveWatchlist || 'Main');
-    showChartToast('⭐ Added <b>' + sym + '</b> to ' + listName, '#22c55e');
+    if (sym && typeof maxChartToggleMainWl === 'function') {
+      maxChartToggleMainWl(sym);
+    }
+    return;
+  }
+
+  // 1b. Shortcut: Alt + S -> Toggle Shortlist
+  if (e.altKey && (e.key === 's' || e.key === 'S' || e.code === 'KeyS' || e.keyCode === 83)) {
+    e.preventDefault();
+    e.stopPropagation();
+    const sym = (_sdMaximizedChartSymbol || (_sccChartSymbols && _sccChartSymbols[0]) || (_stockData && _stockData.symbol) || '').toUpperCase().replace('.NS', '').trim();
+    if (sym && typeof maxChartToggleShortlist === 'function') {
+      maxChartToggleShortlist(sym);
+    }
     return;
   }
 
@@ -9759,20 +9976,26 @@ window.addEventListener('keydown', e => {
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable)) return;
   if (e.ctrlKey || e.metaKey || e.altKey) return;
 
-  // 2. Hotkey: W or S -> Toggle Shortlist on active stock (Matching Screener!)
-  if (e.key === 'w' || e.key === 'W' || e.key === 's' || e.key === 'S') {
-    if (isMaxOpen) {
-      e.preventDefault();
-      e.stopPropagation();
-      maxChartToggleShortlist();
-      return;
-    } else if (isSccChartActive) {
-      e.preventDefault();
-      e.stopPropagation();
-      const sym = sccChartGetSymbol(0);
-      if (sym) maxChartToggleShortlist(sym);
-      return;
+  // 2. Hotkey: 'W' -> Toggle Main Watchlist (as requested: 'W' Toggle Watch List)
+  if (e.key === 'w' || e.key === 'W') {
+    e.preventDefault();
+    e.stopPropagation();
+    const sym = (_sdMaximizedChartSymbol || (_sccChartSymbols && _sccChartSymbols[0]) || (_stockData && _stockData.symbol) || '').toUpperCase().replace('.NS', '').trim();
+    if (sym && typeof maxChartToggleMainWl === 'function') {
+      maxChartToggleMainWl(sym);
     }
+    return;
+  }
+
+  // 2b. Hotkey: 'S' -> Toggle Shortlist (as requested: 'S' Toggle Shortlist)
+  if (e.key === 's' || e.key === 'S') {
+    e.preventDefault();
+    e.stopPropagation();
+    const sym = (_sdMaximizedChartSymbol || (_sccChartSymbols && _sccChartSymbols[0]) || (_stockData && _stockData.symbol) || '').toUpperCase().replace('.NS', '').trim();
+    if (sym && typeof maxChartToggleShortlist === 'function') {
+      maxChartToggleShortlist(sym);
+    }
+    return;
   }
 
   // 3. Universal Navigation: Space / Shift+Space / ArrowDown / ArrowUp / PageDown / PageUp
@@ -10608,3 +10831,23 @@ if (document.readyState === 'loading') {
 } else {
   initHomePageUrlChartParam();
 }
+
+
+// ── CROSS-TAB REAL-TIME WATCHLIST & SHORTLIST SYNCHRONIZATION ──
+window.addEventListener('storage', function(e) {
+  if (e.key === '_sccWatchlists' || e.key === '_sccSymbolFlags' || e.key === '_sccActiveWatchlist' || e.key === 'nse_shortlist_stocks' || e.key === '_sccWatchlistsUpdatedAt') {
+    if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
+    if (typeof sccWlRenderTabs === 'function') sccWlRenderTabs();
+    if (typeof sccWatchlistRender === 'function') sccWatchlistRender();
+    if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+    if (typeof updateMaxChartShortlistButton === 'function') updateMaxChartShortlistButton();
+    if (typeof updateMaxChartMainWlButton === 'function') updateMaxChartMainWlButton();
+  }
+});
+
+window.addEventListener('focus', function() {
+  if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
+  if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+  if (typeof updateMaxChartShortlistButton === 'function') updateMaxChartShortlistButton();
+  if (typeof updateMaxChartMainWlButton === 'function') updateMaxChartMainWlButton();
+});

@@ -2112,7 +2112,7 @@
       </button>
 
       <button class="btn btn-main-wl" id="btn-table-main-wl" onclick="toggleActiveStockMainWl()"
-        title="Add / remove active stock to Main Watchlist (to re-study on Full Chart studio later)">
+        title="Add / remove active stock to Main Watchlist (Press 'W' to toggle)">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
           <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
         </svg>
@@ -2163,7 +2163,7 @@
 
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
           <button class="btn btn-shortlist" id="btn-chart-shortlist" onclick="toggleActiveStockShortlist()"
-            title="Add to Shortlist (Press 'W' to toggle)">
+            title="Add to Shortlist (Press 'S' to toggle)">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <polygon
                 points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
@@ -2173,7 +2173,7 @@
           </button>
 
           <button class="btn btn-main-wl" id="btn-chart-main-wl" onclick="toggleActiveStockMainWl()"
-            title="Add / remove active stock to Main Watchlist (to re-study in Full Chart studio later)">
+            title="Add / remove active stock to Main Watchlist (Press 'W' to toggle)">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
               <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
             </svg>
@@ -2745,12 +2745,22 @@
           }
         }
 
-        // Hotkey: W or S toggles Shortlist on the active stock
-        if (e.key === 'w' || e.key === 'W' || e.key === 's' || e.key === 'S') {
+        // Shortcut: 'W' (or Alt+W) -> Toggle Main Watchlist
+        if ((e.altKey && (e.key === 'w' || e.key === 'W' || e.code === 'KeyW' || e.keyCode === 87)) ||
+            (!e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'w' || e.key === 'W'))) {
+          e.preventDefault();
+          toggleActiveStockMainWl();
+          return;
+        }
+
+        // Shortcut: 'S' (or Alt+S) -> Toggle Shortlist
+        if ((e.altKey && (e.key === 's' || e.key === 'S' || e.code === 'KeyS' || e.keyCode === 83)) ||
+            (!e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 's' || e.key === 'S'))) {
+          e.preventDefault();
           if (ACTIVE_STOCK_SYMBOL) {
-            e.preventDefault();
             toggleStockShortlist(ACTIVE_STOCK_SYMBOL);
           }
+          return;
         }
 
         // Hotkey: T sends active stock to TradingView Studio tab
@@ -4599,11 +4609,11 @@
       if (isSl) {
         btn.classList.add('shortlisted');
         lbl.textContent = '★ Shortlisted';
-        btn.title = "Shortlisted! Click to remove (Press 'W' to toggle)";
+        btn.title = "Shortlisted! Click to remove (Press 'S' to toggle)";
       } else {
         btn.classList.remove('shortlisted');
         lbl.textContent = '+ Shortlist';
-        btn.title = "Add to Shortlist (Press 'W' to toggle)";
+        btn.title = "Add to Shortlist (Press 'S' to toggle)";
       }
     }
 
@@ -4646,6 +4656,54 @@
       return list.includes(sUpper);
     }
 
+    
+    function syncWatchlistsToCloudSilently() {
+      try {
+        var key = localStorage.getItem('nse_jb_key');
+        var bin = localStorage.getItem('nse_jb_bin');
+        if (!key || !bin) return;
+        var rawWls = localStorage.getItem('_sccWatchlists');
+        if (!rawWls) return;
+        var wls = JSON.parse(rawWls);
+        var rawFlags = localStorage.getItem('_sccSymbolFlags');
+        var flags = rawFlags ? JSON.parse(rawFlags) : {};
+
+        fetch('https://api.jsonbin.io/v3/b/' + bin + '/latest', {
+          headers: { 'X-Master-Key': key }
+        })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) {
+          if (!j || !j.record) return;
+          var rec = j.record;
+          var cloudWls = rec.sccWatchlists || {};
+          Object.keys(wls).forEach(function (k) {
+            var list = wls[k] || [];
+            var cList = cloudWls[k] || [];
+            var merged = [].concat(list);
+            cList.forEach(function (s) {
+              if (!merged.includes(s)) merged.push(s);
+            });
+            cloudWls[k] = merged;
+          });
+          rec.sccWatchlists = cloudWls;
+          if (flags) rec.sccSymbolFlags = Object.assign({}, rec.sccSymbolFlags || {}, flags);
+          rec.sccWatchlistsUpdatedAt = Date.now();
+
+          return fetch('https://api.jsonbin.io/v3/b/' + bin, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'X-Master-Key': key },
+            body: JSON.stringify(rec)
+          });
+        })
+        .then(function () {
+          console.log('[Screener] Watchlists synced to cloud');
+        })
+        .catch(function (err) {
+          console.warn('[Screener] Cloud sync failed:', err);
+        });
+      } catch (e) { }
+    }
+
     function addStockToMainWl(sym) {
       if (!sym) return false;
       var sUpper = String(sym).trim().toUpperCase();
@@ -4662,6 +4720,7 @@
         wls["Main"].push(sUpper);
         localStorage.setItem('_sccWatchlists', JSON.stringify(wls));
         localStorage.setItem('_sccWatchlistsUpdatedAt', Date.now().toString());
+        syncWatchlistsToCloudSilently();
         return true;
       }
       return false;
@@ -4681,6 +4740,7 @@
         wls["Main"].splice(idx, 1);
         localStorage.setItem('_sccWatchlists', JSON.stringify(wls));
         localStorage.setItem('_sccWatchlistsUpdatedAt', Date.now().toString());
+        syncWatchlistsToCloudSilently();
         return true;
       }
       return false;
@@ -4708,6 +4768,7 @@
       if (addedCount > 0) {
         localStorage.setItem('_sccWatchlists', JSON.stringify(wls));
         localStorage.setItem('_sccWatchlistsUpdatedAt', Date.now().toString());
+        syncWatchlistsToCloudSilently();
       }
       return addedCount;
     }
@@ -4755,22 +4816,22 @@
         if (inWl) {
           btn.classList.add('in-main-wl');
           lbl.textContent = '✓ Main WL';
-          btn.title = "In Main Watchlist! Click to remove (re-study in Full Chart studio)";
+          btn.title = "In Main Watchlist! Click to remove (Press 'W' to toggle)";
         } else {
           btn.classList.remove('in-main-wl');
           lbl.textContent = '+ Main WL';
-          btn.title = "Add to Main Watchlist (re-study in Full Chart studio later)";
+          btn.title = "Add to Main Watchlist (Press 'W' to toggle)";
         }
       }
       if (tblBtn && tblLbl) {
         if (inWl) {
           tblBtn.classList.add('in-main-wl');
           tblLbl.textContent = '✓ Main WL';
-          tblBtn.title = ACTIVE_STOCK_SYMBOL + " is in Main Watchlist. Click to remove.";
+          tblBtn.title = (ACTIVE_STOCK_SYMBOL || 'Stock') + " is in Main Watchlist. Click to remove (Press 'W' to toggle)";
         } else {
           tblBtn.classList.remove('in-main-wl');
           tblLbl.textContent = '+ Main WL';
-          tblBtn.title = "Add " + (ACTIVE_STOCK_SYMBOL || 'selected stock') + " to Main Watchlist for Full Chart review";
+          tblBtn.title = "Add " + (ACTIVE_STOCK_SYMBOL || 'selected stock') + " to Main Watchlist (Press 'W' to toggle)";
         }
       }
     }
@@ -5347,6 +5408,18 @@
         if (btnText) btnText.textContent = 'SyncFunda';
       }
     }
+
+  
+    // Real-time cross-tab updates for Watchlist and Shortlist
+    window.addEventListener('storage', function (e) {
+      if (e.key === '_sccWatchlists' || e.key === '_sccWatchlistsUpdatedAt') {
+        if (typeof updateChartMainWlButton === 'function') updateChartMainWlButton();
+      }
+      if (e.key === 'nse_shortlist_stocks') {
+        if (typeof updateChartShortlistButton === 'function') updateChartShortlistButton();
+        if (typeof renderShortlistItems === 'function') renderShortlistItems();
+      }
+    });
 
   </script>
 </body>
