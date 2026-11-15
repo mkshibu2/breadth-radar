@@ -162,30 +162,119 @@
     }
 
     .scc-tab-bar {
+      display: flex;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
       border-bottom: 1px solid var(--border);
       background: var(--bg3);
+      flex-wrap: nowrap !important;
+    }
+    .scc-tab-bar::-webkit-scrollbar {
+      display: none;
+    }
+    .scc-tab {
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 900px) {
       .topbar {
         height: auto;
         padding: 8px 12px;
-        flex-wrap: wrap;
+        flex-direction: column;
+        align-items: stretch;
         gap: 8px;
       }
       .brand-group {
         width: 100%;
+        display: flex;
+        align-items: center;
         justify-content: space-between;
       }
       .topbar-right {
         width: 100%;
-        justify-content: flex-end;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
       }
       .nav-links {
+        display: flex !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        gap: 6px;
+        width: 100%;
+        padding: 2px 0 4px;
+      }
+      .nav-links::-webkit-scrollbar {
         display: none;
       }
+      .nav-link {
+        white-space: nowrap;
+        flex-shrink: 0;
+        font-size: 11px;
+        padding: 3px 8px;
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+      }
       .sectors-main-wrap {
-        padding: 8px;
+        padding: 6px;
+      }
+      .cluster-summary-ribbon {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+      .cluster-controls-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .cluster-ctrl-group input,
+      .cluster-ctrl-group select {
+        width: 100% !important;
+      }
+      .vcpb-filters-row,
+      .vcpb-sort-row {
+        flex-wrap: nowrap !important;
+      }
+      .vcpb-filter-btn {
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+      #scc-chart-controls {
+        overflow-x: auto !important;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      #scc-chart-controls::-webkit-scrollbar {
+        display: none;
+      }
+      #scc-chart-controls > div {
+        flex-shrink: 0;
+      }
+      #scc-chart-workspace {
+        flex-direction: column !important;
+        height: auto !important;
+      }
+      #scc-chart-grid {
+        min-height: 580px !important;
+        height: auto !important;
+      }
+      #scc-chart-grid .sd-chart-card {
+        min-height: 580px !important;
+        height: 580px !important;
+      }
+      #scc-chart-grid .sd-chart-container {
+        min-height: 350px !important;
+        flex: 1;
+      }
+      #scc-watchlist-panel {
+        width: 100% !important;
+        border-left: none !important;
+        border-top: 1px solid var(--border) !important;
+        height: 380px !important;
+        max-height: 50vh !important;
       }
     }
   </style>
@@ -215,7 +304,7 @@
     </div>
 
     <div class="topbar-right">
-      <button class="topbar-btn" onclick="vcpbFetch(true)" title="Refresh Sector Breadth &amp; Clusters">
+      <button class="topbar-btn" onclick="vcpbFetch(true)" title="Refresh Sector Breadth &amp; Themes">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
         <span>Refresh</span>
       </button>
@@ -240,9 +329,9 @@
                 title="About SECTORS tab features">i</button>
             </div>
             <div id="scc-tab-clusters" class="scc-tab" onclick="sccTab('clusters')">
-              <span style="color:inherit;font-weight:inherit">⭐ CLUSTERS</span>
+              <span style="color:inherit;font-weight:inherit">⭐ THEMES</span>
               <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-clusters',this)"
-                title="About Fresh High Breakout Clusters">i</button>
+                title="About Fresh High Sectoral Themes">i</button>
             </div>
             <div id="scc-tab-rrg" class="scc-tab" onclick="sccTab('rrg')">
               <span style="color:inherit;font-weight:inherit">📡 RRG</span>
@@ -357,8 +446,8 @@
                 </div>
               </div>
 
-              <div
-                style="display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--bg3);border-bottom:1px solid var(--border);flex-wrap:wrap;font-size:10px">
+              <div class="vcpb-filters-row"
+                style="display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--bg3);border-bottom:1px solid var(--border);flex-wrap:wrap;font-size:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
                 <span
                   style="color:var(--dim);text-transform:uppercase;font-weight:600;letter-spacing:.5px;font-size:9px">Filter:</span>
                 <button class="vcpb-filter-btn active" onclick="vcpbSetFilter('all')" data-filter="all"
@@ -389,8 +478,8 @@
                   25</button>
               </div>
 
-              <div
-                style="display:flex;align-items:center;gap:4px;padding:6px 14px;background:var(--bg3);border-bottom:1px solid var(--border);flex-wrap:wrap;font-size:11px">
+              <div class="vcpb-sort-row"
+                style="display:flex;align-items:center;gap:4px;padding:6px 14px;background:var(--bg3);border-bottom:1px solid var(--border);flex-wrap:wrap;font-size:11px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
                 <span
                   style="color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:9px">Multi-Sort:</span>
                 <select id="vcpb-sort-1" onchange="vcpbApplyMultiSort()"
@@ -802,7 +891,7 @@
             <!-- Controls Bar -->
             <div class="cluster-controls-bar">
               <div class="cluster-ctrl-group">
-                <input type="text" id="cluster-search-input" placeholder="🔍 Search Industry / Sector / Symbol..."
+                <input type="text" id="cluster-search-input" placeholder="🔍 Search Theme / Sector / Symbol..."
                   oninput="sccRenderClusters()"
                   style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;padding:5px 9px;border-radius:4px;outline:none;min-width:210px;">
               </div>
@@ -820,9 +909,9 @@
               <div class="cluster-ctrl-group">
                 <span class="cluster-ctrl-label">Density Filter:</span>
                 <select id="cluster-density-filter" onchange="sccRenderClusters()" class="cluster-select">
-                  <option value="all" selected>All Clusters</option>
+                  <option value="all" selected>All Themes</option>
                   <option value="dense">High Density (≥35% at 1M High)</option>
-                  <option value="super">Super Clusters (≥50% at 1M High)</option>
+                  <option value="super">Super Themes (≥50% at 1M High)</option>
                   <option value="lead52">52W High Leaders (≥15%)</option>
                 </select>
               </div>
@@ -833,14 +922,14 @@
                   <option value="pct1m" selected>% at 1-Month High</option>
                   <option value="pct52w">% at 52-Week High</option>
                   <option value="count1m">Count of 1M Highs</option>
-                  <option value="total">Industry Size (Constituents)</option>
-                  <option value="alpha">Industry Name (A–Z)</option>
+                  <option value="total">Theme Size (Constituents)</option>
+                  <option value="alpha">Theme Name (A–Z)</option>
                 </select>
               </div>
 
               <div class="cluster-ctrl-group" style="margin-left:auto; display:flex; gap:6px;">
-                <button onclick="sccCopyTopClustersTv(5)" class="cluster-btn-action" title="Copy TradingView Watchlist for Top 5 Cluster Industries">
-                  📋 Copy Top 5 TV
+                <button onclick="sccCopyTopClustersTv(5)" class="cluster-btn-action" title="Copy TradingView Watchlist for Top 5 Themes">
+                  📋 Copy Top 5 Themes
                 </button>
                 <button onclick="sccCopyAllFreshHighsTv()" class="cluster-btn-action highlight" title="Copy TradingView Watchlist for ALL stocks within 2% of 1M High">
                   🚀 Copy All Fresh Highs (<span id="cluster-all-highs-count">0</span>)
@@ -1639,6 +1728,8 @@
 
   <!-- Scripts -->
   <script src="screener_stocks.js"></script>
+  <script src="radar_fundamentals.js"></script>
+  <script src="radar_themes.js"></script>
   <script src="index.js?v=3.0.7"></script>
 
   <script>

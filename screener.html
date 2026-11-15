@@ -833,7 +833,14 @@
   align-items: center;
   gap: 6px;
   margin-left: 14px;
-  flex-wrap: wrap;
+  max-width: 100%;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.fav-quick-nav::-webkit-scrollbar {
+  display: none;
 }
 .fav-nav-btn {
   background: rgba(255, 255, 255, 0.03);
@@ -846,6 +853,7 @@
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .fav-nav-btn:hover {
   background: rgba(255, 255, 255, 0.08);
@@ -1544,9 +1552,9 @@
     }
 
     /* ==============================================================================
-       MOBILE RESPONSIVE ENHANCEMENTS (< 768px)
+       MOBILE & TABLET RESPONSIVE ENHANCEMENTS (≤ 900px)
        ============================================================================== */
-    @media (max-width: 768px) {
+    @media (max-width: 900px) {
       /* 1. Global Page Flow: unlock 100vh lock to allow fluid natural scrolling */
       html, body {
         height: auto !important;
@@ -1617,6 +1625,8 @@
       /* 3. Screener Header: compact title, swipable favorites & actions */
       .screener-header {
         padding: 8px 12px 6px;
+        max-width: 100vw;
+        box-sizing: border-box;
       }
 
       .screener-title-row {
@@ -1624,12 +1634,18 @@
         align-items: stretch;
         gap: 8px;
         margin-bottom: 6px;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
       }
 
       .screener-title-area {
         flex-direction: column;
         align-items: flex-start;
         gap: 6px;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
       }
 
       .preset-selector-btn {
@@ -1645,12 +1661,17 @@
       .fav-quick-nav {
         margin-left: 0;
         width: 100%;
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+        min-width: 0;
+        overflow-x: auto !important;
+        overflow-y: hidden;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-x !important;
         gap: 6px;
-        padding: 2px 0 4px;
+        padding: 3px 2px 5px;
         scrollbar-width: none;
+        box-sizing: border-box;
       }
 
       .fav-quick-nav::-webkit-scrollbar {
@@ -1658,9 +1679,11 @@
       }
 
       .fav-nav-btn {
-        flex-shrink: 0;
-        font-size: 10px;
-        padding: 4px 9px;
+        flex: 0 0 auto !important;
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+        font-size: 11px;
+        padding: 4px 10px;
       }
 
       /* Swipable Preset Action Buttons */
@@ -1925,6 +1948,29 @@
         width: calc(100vw - 24px) !important;
         max-width: 320px;
         left: 12px !important;
+      }
+    }
+
+    /* Tablet Landscape Optimizations (901px - 1200px) */
+    @media (min-width: 901px) and (max-width: 1200px) {
+      .filter-bar {
+        overflow-x: auto !important;
+        flex-wrap: nowrap !important;
+        scrollbar-width: none;
+      }
+      .filter-bar::-webkit-scrollbar {
+        display: none;
+      }
+      .chip {
+        flex-shrink: 0;
+      }
+      .topbar-right {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        scrollbar-width: none;
+      }
+      .topbar-right::-webkit-scrollbar {
+        display: none;
       }
     }
   </style>
@@ -2461,6 +2507,8 @@
   </div>
 
   <!-- SCRIPTS: FULL UNIVERSE DATA & REACTIVE LOGIC -->
+  <script src="radar_fundamentals.js"></script>
+  <script src="radar_themes.js"></script>
   <script src="screener_stocks.js"></script>
 
   <script>
@@ -2749,6 +2797,17 @@
       initSyncTimeBadge();
       loadPreset('Momentum-Leaders');
 
+      // Enable horizontal wheel scrolling for favorite presets bar
+      var favNav = document.querySelector('.fav-quick-nav');
+      if (favNav) {
+        favNav.addEventListener('wheel', function (e) {
+          if (e.deltaY !== 0) {
+            e.preventDefault();
+            favNav.scrollLeft += e.deltaY;
+          }
+        }, { passive: false });
+      }
+
       // Close dropdowns on outside click
       document.addEventListener('click', function (e) {
         if (!e.target.closest('.screener-title-area')) {
@@ -2910,7 +2969,10 @@
         b.classList.remove('active');
       });
       var activeNavBtn = document.getElementById('fav-nav-' + pid);
-      if (activeNavBtn) activeNavBtn.classList.add('active');
+      if (activeNavBtn) {
+        activeNavBtn.classList.add('active');
+        try { activeNavBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } catch(e) {}
+      }
 
       ACTIVE_FILTERS = JSON.parse(JSON.stringify(preset.filters));
 
@@ -4348,7 +4410,8 @@
 
       var sym = stock && stock.symbol;
       var exactStore = window.EXACT_QUARTERLY_DATA || {};
-      var qData = (exactStore && exactStore[sym]) || (stock && stock.quarterly);
+      var radarStore = window.RADAR_FUNDAMENTALS || {};
+      var qData = (exactStore && exactStore[sym]) || (radarStore && radarStore[sym] && radarStore[sym].quarterly) || (stock && stock.quarterly);
 
       if (!qData || !qData.length) {
         var qLabels = getRecentQuarterLabels();

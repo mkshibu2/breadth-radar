@@ -2650,18 +2650,28 @@ canvas#bsr-chart {
 }
 
 .scc-chart-grid-wl .sd-chart-card {
-  height: 380px !important;
-  min-height: 380px !important;
+  height: 580px !important;
+  min-height: 560px !important;
 }
 
-.scc-chart-grid-1 .sd-chart-card,
+.scc-chart-grid-1 .sd-chart-card {
+  height: 100% !important;
+  min-height: 560px !important;
+}
+
 .scc-chart-grid-2 .sd-chart-card,
 .scc-chart-grid-4 .sd-chart-card {
   height: 100% !important;
-  min-height: 0 !important
+  min-height: 0 !important;
 }
 
-@media(max-width:600px) {
+.scc-chart-grid-1 .sd-chart-container,
+.scc-chart-grid-wl .sd-chart-container {
+  min-height: 350px !important;
+  flex: 1;
+}
+
+@media(max-width:800px) {
 
   .scc-chart-grid-1,
   .scc-chart-grid-2,
@@ -2671,15 +2681,23 @@ canvas#bsr-chart {
     grid-template-rows: unset !important;
     height: auto !important;
     padding: 6px !important;
-    gap: 6px !important
+    gap: 8px !important;
   }
 
   .scc-chart-grid-1 .sd-chart-card,
   .scc-chart-grid-2 .sd-chart-card,
   .scc-chart-grid-4 .sd-chart-card,
   .scc-chart-grid-wl .sd-chart-card {
-    height: 360px !important;
-    min-height: 360px !important
+    height: 580px !important;
+    min-height: 560px !important;
+  }
+
+  .scc-chart-grid-1 .sd-chart-container,
+  .scc-chart-grid-2 .sd-chart-container,
+  .scc-chart-grid-4 .sd-chart-container,
+  .scc-chart-grid-wl .sd-chart-container {
+    min-height: 350px !important;
+    flex: 1;
   }
 }
 
@@ -7232,4 +7250,92 @@ thead th[onclick]:hover {
 .scc-wl-section-hdr:hover {
   background: var(--border);
 }
+
+/* ── UNIVERSAL MOBILE & TABLET RESPONSIVE ENHANCEMENTS ── */
+@media (max-width: 900px) {
+  /* Mobile Header Bar & Control Panel Button Fix */
+  .main .hdr {
+    height: 42px !important;
+    padding: 0 8px !important;
+    justify-content: flex-start !important;
+  }
+  .main .hdr .hdr-left {
+    display: none !important;
+  }
+  .main .hdr .hdr-right {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    flex-wrap: nowrap !important;
+  }
+  .main .hdr .hdr-right::-webkit-scrollbar {
+    display: none !important;
+  }
+  .cp-btn,
+  .hdr-sync-btn,
+  .hdr-fullchart-btn {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    font-size: 11px !important;
+    padding: 5px 9px !important;
+  }
+
+  #chart-max-header {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 6px 8px !important;
+    gap: 6px !important;
+    min-height: 40px !important;
+  }
+  #chart-max-header::-webkit-scrollbar {
+    display: none;
+  }
+  #chart-max-header > * {
+    flex-shrink: 0 !important;
+  }
+  .tv-max-sidebar-wl {
+    position: absolute !important;
+    right: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 82% !important;
+    max-width: 320px !important;
+    z-index: 100 !important;
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.75) !important;
+  }
+  .tv-draw-toolbar {
+    width: 34px !important;
+    padding: 4px 0 !important;
+  }
+  .tv-draw-btn {
+    width: 26px !important;
+    height: 26px !important;
+  }
+  .tv-floating-table {
+    bottom: 24px !important;
+    right: 8px !important;
+    font-size: 8.5px !important;
+    max-width: 220px !important;
+  }
+  .scc-dash-top-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 600px) {
+  #max-chart-symbol {
+    font-size: 16px !important;
+  }
+  #max-chart-company {
+    max-width: 140px !important;
+  }
+}
+
 

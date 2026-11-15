@@ -1,3 +1,4 @@
+v
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,7 +10,8 @@
   <meta name="theme-color" content="#161e2e">
   <meta name="application-name" content="M.Radar">
   <meta property="og:title" content="M.Radar — Market Radar">
-  <meta property="og:description" content="See the Market. Find Your Edge. — Clarity in every market cycle built for the Indian swing trader">
+  <meta property="og:description"
+    content="See the Market. Find Your Edge. — Clarity in every market cycle built for the Indian swing trader">
   <title>M.Radar — Market Radar</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +20,7 @@
     rel="stylesheet">
   <link rel="stylesheet" href="index.css?v=3.0.7">
   <script>
-    (function() {
+    (function () {
       var m = localStorage.getItem('tj_color_mode') || 'carbon';
       document.documentElement.setAttribute('data-theme', m);
     })();
@@ -32,15 +34,27 @@
 
     <!-- MOBILE TOPBAR (<992px) -->
     <div class="mobile-topbar" id="mobileTopbar">
-      <button class="mobile-menu-btn" id="menuToggleBtn" onclick="toggleMobileSidebar()" aria-label="Toggle navigation menu">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      <button class="mobile-menu-btn" id="menuToggleBtn" onclick="toggleMobileSidebar()"
+        aria-label="Toggle navigation menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
       </button>
       <div class="mobile-brand">
-        <img src="assets/m-radar-icon.png" alt="M.Radar" style="width:24px;height:24px;border-radius:6px;object-fit:cover;flex-shrink:0;">
+        <img src="assets/m-radar-icon.png" alt="M.Radar"
+          style="width:24px;height:24px;border-radius:6px;object-fit:cover;flex-shrink:0;">
         <span class="brand-title"><span style="color:#f59e0b">M.</span><em>RADAR</em></span>
       </div>
       <button class="mobile-refresh-btn" onclick="vcpbFetch(true)" title="Refresh breadth data">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
       </button>
     </div>
 
@@ -49,10 +63,14 @@
 
     <!-- LEFT NAVIGATION SIDEBAR (Matching Trade Journal TJ.html) -->
     <aside class="sidebar" id="sidebar">
-      <div class="brand" onclick="openAboutModal()" style="cursor:pointer;" title="M.Radar (Market Radar) — Click for About">
-        <img class="mark-img" src="assets/m-radar-icon.png" alt="M.Radar" style="width:32px;height:32px;border-radius:8px;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);flex-shrink:0;">
+      <div class="brand" onclick="openAboutModal()" style="cursor:pointer;"
+        title="M.Radar (Market Radar) — Click for About">
+        <img class="mark-img" src="assets/m-radar-icon.png" alt="M.Radar"
+          style="width:32px;height:32px;border-radius:8px;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);flex-shrink:0;">
         <div class="brand-info">
-          <div class="name" style="letter-spacing:-0.02em;font-size:15px;font-weight:800;display:flex;align-items:center;"><span style="color:#f59e0b">M.</span><span>RADAR</span></div>
+          <div class="name"
+            style="letter-spacing:-0.02em;font-size:15px;font-weight:800;display:flex;align-items:center;"><span
+              style="color:#f59e0b">M.</span><span>RADAR</span></div>
           <div class="sub" id="sidebar-market-sub">Market Radar · Diagnostics</div>
         </div>
       </div>
@@ -60,31 +78,51 @@
       <div class="nav-section-title">WORKSPACES</div>
       <div class="nav-list">
         <a class="nav-item active" data-target="sec-overview" onclick="sidebarNav('sec-overview')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="10" />
+            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+          </svg>
           <span>Overview</span>
         </a>
         <a class="nav-item" data-target="srt-home-card" onclick="sidebarNav('srt-home-card')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+          </svg>
           <span>Sector Command</span>
         </a>
         <a class="nav-item" data-target="ftd-module-card" onclick="sidebarNav('ftd-module-card')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </svg>
           <span>FTD Tracker &amp; MPM</span>
         </a>
         <a class="nav-item" data-target="pet-card" onclick="sidebarNav('pet-card')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M23 6l-9.5 9.5-5-5L1 18" />
+            <polyline points="17 6 23 6 23 12" />
+          </svg>
           <span>Exposure (PET)</span>
         </a>
         <a class="nav-item" data-target="bsr-module-card" onclick="sidebarNav('bsr-module-card')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
           <span>Breakout Rate (BSR)</span>
         </a>
         <a class="nav-item" data-target="sec-score-trend" onclick="sidebarNav('sec-score-trend')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
           <span>30-Day Trend</span>
         </a>
         <a class="nav-item" data-target="sec-history" onclick="sidebarNav('sec-history')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M12 8v4l3 3" />
+            <circle cx="12" cy="12" r="10" />
+          </svg>
           <span>30-Day History</span>
         </a>
       </div>
@@ -92,27 +130,53 @@
       <div class="nav-section-title">TRADING SUITE</div>
       <div class="nav-list">
         <a href="screener.html" target="_blank" class="nav-item nav-suite-link highlight-screener">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="10" />
+            <circle cx="12" cy="12" r="6" />
+            <circle cx="12" cy="12" r="2" />
+          </svg>
           <span style="color:#38bdf8;font-weight:600">Stock Screener ↗</span>
         </a>
         <a href="sectors.html" target="_blank" class="nav-item nav-suite-link highlight-sectors">
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+          </svg>
           <span style="color:var(--teal);font-weight:600">Sector Command ↗</span>
         </a>
         <a href="TJ.html" target="_blank" class="nav-item nav-suite-link">
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+          </svg>
           <span style="color:var(--gold);font-weight:600">Trade Journal ↗</span>
         </a>
         <a href="playbook.html" target="_blank" class="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+          </svg>
           <span>Playbook</span>
         </a>
         <a href="https://mkshibu2.github.io/trading-manual/" target="_blank" class="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+          </svg>
           <span>Trading Model</span>
         </a>
         <a href="aiprompt.html" target="_blank" class="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="16" y1="16" x2="16.01" y2="16"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <rect x="3" y="11" width="18" height="10" rx="2" />
+            <circle cx="12" cy="5" r="2" />
+            <path d="M12 7v4" />
+            <line x1="8" y1="16" x2="8.01" y2="16" />
+            <line x1="16" y1="16" x2="16.01" y2="16" />
+          </svg>
           <span>AI Prompt</span>
         </a>
       </div>
@@ -120,15 +184,24 @@
       <div class="nav-section-title">QUICK ACTIONS</div>
       <div class="nav-list">
         <button class="nav-item nav-action-btn" onclick="openEodChecklistModal()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="2" stroke-linecap="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
           <span style="color:var(--lime);font-weight:600">60s EOD Checklist</span>
         </button>
         <button class="nav-item nav-action-btn" onclick="openFullPageChart()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round">
+            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+            <polyline points="16 7 22 7 22 13" />
+          </svg>
           <span>Chart Studio</span>
         </button>
         <button class="nav-item nav-action-btn" onclick="openControlPanel()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
           <span>Control Panel</span>
         </button>
       </div>
@@ -137,7 +210,12 @@
       <div class="side-foot">
         <div class="theme-box">
           <span class="theme-label">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round">
+              <circle cx="12" cy="12" r="5" />
+              <path
+                d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+            </svg>
             Theme
           </span>
           <select id="sidebarThemeSelect" class="theme-select" onchange="setColorMode(this.value)">
@@ -148,8 +226,14 @@
           </select>
         </div>
 
-        <button id="sidebarRefreshBtn" class="side-refresh-btn" onclick="vcpbFetch(true)" title="Refresh Sector Breadth &amp; Market Data">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        <button id="sidebarRefreshBtn" class="side-refresh-btn" onclick="vcpbFetch(true)"
+          title="Refresh Sector Breadth &amp; Market Data">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
           <span>Refresh Breadth</span>
         </button>
       </div>
@@ -160,8 +244,10 @@
 
       <div class="hdr">
         <div class="hdr-left" style="display:flex;align-items:center;gap:8px;">
-          <div class="hdr-tag" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;color:#f0f3fa;border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);">
-            <img src="assets/m-radar-icon.png" alt="M.Radar" style="width:14px;height:14px;border-radius:3px;vertical-align:middle;">
+          <div class="hdr-tag"
+            style="display:inline-flex;align-items:center;gap:6px;font-weight:700;color:#f0f3fa;border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);">
+            <img src="assets/m-radar-icon.png" alt="M.Radar"
+              style="width:14px;height:14px;border-radius:3px;vertical-align:middle;">
             <span><span style="color:#f59e0b">M.</span>RADAR</span>
           </div>
           <div class="hdr-tag">Universe: <b>N500+MSc400</b></div>
@@ -178,21 +264,25 @@
             Exit Guest Mode
           </button>
           <button class="hdr-fullchart-btn" onclick="openFullPageChart()" title="Open TradingView Chart Studio">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="flex-shrink:0">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
+              style="flex-shrink:0">
               <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
               <polyline points="16 7 22 7 22 13"></polyline>
             </svg>
             Chart Studio
           </button>
-          <button class="hdr-sync-btn" id="hdr-sync-btn" onclick="triggerHomePageSync(this)" title="1-Click Sync: Fetch latest stock quotes &amp; quarterly fundamentals">
-            <svg class="sync-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="flex-shrink:0">
+          <button class="hdr-sync-btn" id="hdr-sync-btn" onclick="triggerHomePageSync(this)"
+            title="1-Click Sync: Fetch latest stock quotes &amp; quarterly fundamentals">
+            <svg class="sync-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.3" style="flex-shrink:0">
               <polyline points="23 4 23 10 17 10"></polyline>
               <polyline points="1 20 1 14 7 14"></polyline>
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
             </svg>
             <span id="hdr-sync-text">Sync Data</span>
           </button>
-          <button class="cp-btn" onclick="openControlPanel()" title="Open Control Panel — EOD Data Entry &amp; Settings">
+          <button class="cp-btn" onclick="openControlPanel()"
+            title="Open Control Panel — EOD Data Entry &amp; Settings">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
               style="flex-shrink:0">
               <rect x="3" y="3" width="7" height="7" rx="1" />
@@ -212,944 +302,1003 @@
       <div class="page">
         <div id="sec-overview"></div>
 
-    <div class="status-strip card">
+        <div class="status-strip card">
 
-      <div class="ss-cell">
-        <div class="ss-lbl">Breadth Score</div>
-        <div class="ss-big" id="h-score" style="color:var(--dim)">—</div>
-        <div class="ss-sub">out of 100</div>
-        <button class="info-btn" onclick="showInfoTip('breadth-score',this)" title="About this indicator">i</button>
-      </div>
+          <div class="ss-cell">
+            <div class="ss-lbl">Breadth Score</div>
+            <div class="ss-big" id="h-score" style="color:var(--dim)">—</div>
+            <div class="ss-sub">out of 100</div>
+            <button class="info-btn" onclick="showInfoTip('breadth-score',this)" title="About this indicator">i</button>
+          </div>
 
-      <div class="ss-cell">
-        <div class="ss-lbl">Market Zone</div>
-        <div class="ss-zone" id="h-zone" style="color:var(--dim)">No Data</div>
-        <div class="ss-r">Position: <b id="h-r" style="color:var(--dim)">—</b></div>
-        <button class="info-btn" onclick="showInfoTip('market-zone',this)" title="About this indicator">i</button>
-      </div>
+          <div class="ss-cell">
+            <div class="ss-lbl">Market Zone</div>
+            <div class="ss-zone" id="h-zone" style="color:var(--dim)">No Data</div>
+            <div class="ss-r">Position: <b id="h-r" style="color:var(--dim)">—</b></div>
+            <button class="info-btn" onclick="showInfoTip('market-zone',this)" title="About this indicator">i</button>
+          </div>
 
-      <div class="ss-meter" id="ss-chart-cell"
-        style="padding:10px 14px 8px;overflow:hidden;min-width:0;max-width:100%;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-shrink:0;">
-          <div class="ss-lbl" style="margin-bottom:0;font-size:10px;">📊 Breadth Score · 25d</div>
-          <div style="font-family:var(--mono);font-size:12px;font-weight:700" id="as-spk-label"></div>
+          <div class="ss-meter" id="ss-chart-cell"
+            style="padding:10px 14px 8px;overflow:hidden;min-width:0;max-width:100%;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-shrink:0;">
+              <div class="ss-lbl" style="margin-bottom:0;font-size:10px;">📊 Breadth Score · 25d</div>
+              <div style="font-family:var(--mono);font-size:12px;font-weight:700" id="as-spk-label"></div>
+            </div>
+
+            <div id="ss-chart-wrap" style="position:relative;flex:1;min-height:50px;overflow:hidden;">
+              <canvas id="as-spk-canvas" style="position:absolute;top:0;left:0;"></canvas>
+            </div>
+          </div>
+
+          <div id="score-bk" style="display:none;"></div>
+
+          <div class="ss-cell">
+            <div class="ss-lbl">Last Saved</div>
+            <div style="font-size:14px;color:var(--text);font-weight:600;margin-bottom:3px" id="h-lastdate">—</div>
+            <div style="font-size:12px;color:var(--sub)" id="h-trend">—</div>
+            <div style="font-size:11px;color:var(--dim);margin-top:4px" id="h-entries">0 entries</div>
+          </div>
+
+          <div class="ss-cell" style="background:rgba(167,139,250,.05);border-top:2px solid var(--purple)">
+            <div class="ss-lbl" style="color:var(--purple)">BSR Rate</div>
+            <div class="ss-score" id="hero-bsr-pct" style="color:var(--dim)">—</div>
+            <div class="ss-cond" id="hero-bsr-zone" style="color:var(--dim)">—</div>
+            <div class="ss-mini" id="hero-bsr-counts">0 trades</div>
+            <button class="info-btn" onclick="showInfoTip('bsr-rate',this)" title="About this indicator">i</button>
+          </div>
+
+          <div class="ss-cell" style="background:rgba(45,212,191,.05);border-top:2px solid var(--teal)">
+            <div class="ss-lbl" style="color:var(--teal)">Pressure</div>
+            <div class="ss-score" id="hero-mpm-score" style="color:var(--dim)">—</div>
+            <div class="ss-cond" id="hero-mpm-cond" style="color:var(--dim)">—</div>
+            <div class="ss-mini" id="hero-mpm-counts">A:0 D:0</div>
+            <button class="info-btn" onclick="showInfoTip('market-pressure',this)"
+              title="About this indicator">i</button>
+          </div>
+
+          <div class="ss-cell" id="momentum-cell" style="border-top:2px solid var(--yellow)">
+            <div class="ss-lbl" style="color:var(--yellow)">Breadth Momentum</div>
+            <div class="ss-momentum" id="h-momentum" style="color:var(--dim)">—</div>
+            <div class="ss-cond" id="h-momentum-label" style="color:var(--dim)">vs yesterday</div>
+            <button class="info-btn" onclick="showInfoTip('breadth-momentum',this)"
+              title="About this indicator">i</button>
+          </div>
+
+          <div class="ss-rpg" style="border-top:2px solid var(--purple);border-left:1px solid var(--border)">
+            <div class="ss-lbl" style="color:var(--purple);text-align:center">Rally Prob</div>
+            <div class="ss-rpg-arc">
+              <svg viewBox="0 0 80 46" width="80" height="46">
+                <path fill="none" stroke="var(--bg4)" stroke-width="9" stroke-linecap="round"
+                  d="M 10 40 A 30 30 0 0 1 70 40" stroke-dasharray="94.2" stroke-dashoffset="0" />
+                <path fill="none" stroke-width="9" stroke-linecap="round" id="ss-rpg-arc"
+                  d="M 10 40 A 30 30 0 0 1 70 40" stroke-dasharray="94.2" stroke-dashoffset="94.2"
+                  stroke="var(--purple)" style="transition:stroke-dashoffset .8s cubic-bezier(.4,0,.2,1),stroke .4s" />
+                <text id="ss-rpg-pct" x="40" y="37" fill="var(--purple)"
+                  style="font-family:var(--disp);font-size:16px;font-weight:900;text-anchor:middle;dominant-baseline:middle">—</text>
+              </svg>
+            </div>
+            <div class="ss-rpg-signal" id="ss-rpg-signal" style="color:var(--dim)">No Data</div>
+            <div class="ss-rpg-bk" id="ss-rpg-bk"></div>
+            <button class="info-btn" onclick="showInfoTip('rally-prob',this)" title="About this indicator">i</button>
+          </div>
+
         </div>
 
-        <div id="ss-chart-wrap" style="position:relative;flex:1;min-height:50px;overflow:hidden;">
-          <canvas id="as-spk-canvas" style="position:absolute;top:0;left:0;"></canvas>
-        </div>
-      </div>
+        <div class="analysis-strip card">
 
-      <div id="score-bk" style="display:none;"></div>
+          <div class="as-cell" style="border-top:2px solid var(--accent)">
+            <div class="as-lbl">📡 Market Condition</div>
+            <div class="as-phase" id="as-phase" style="color:var(--dim)">—</div>
+            <div id="as-driver"
+              style="font-size:11px;font-weight:600;letter-spacing:.3px;margin-bottom:3px;transition:color .3s">—</div>
+            <div class="as-desc" id="as-desc">Waiting for data</div>
+            <div class="as-pills" id="as-pills"></div>
+            <button class="info-btn" onclick="showInfoTip('market-condition',this)"
+              title="About this indicator">i</button>
+          </div>
 
-      <div class="ss-cell">
-        <div class="ss-lbl">Last Saved</div>
-        <div style="font-size:14px;color:var(--text);font-weight:600;margin-bottom:3px" id="h-lastdate">—</div>
-        <div style="font-size:12px;color:var(--sub)" id="h-trend">—</div>
-        <div style="font-size:11px;color:var(--dim);margin-top:4px" id="h-entries">0 entries</div>
-      </div>
+          <div class="as-cell" style="border-top:2px solid var(--lime)">
+            <div class="as-lbl">🚀 Follow-Through Day</div>
+            <div class="as-phase" id="as-ftd-status" style="color:var(--dim)">—</div>
+            <div class="as-desc" id="as-ftd-sub">Log a rally attempt to begin tracking</div>
+            <div class="as-pills" id="as-ftd-pills"></div>
+            <button class="info-btn" onclick="showInfoTip('ftd',this)" title="About this indicator">i</button>
+          </div>
 
-      <div class="ss-cell" style="background:rgba(167,139,250,.05);border-top:2px solid var(--purple)">
-        <div class="ss-lbl" style="color:var(--purple)">BSR Rate</div>
-        <div class="ss-score" id="hero-bsr-pct" style="color:var(--dim)">—</div>
-        <div class="ss-cond" id="hero-bsr-zone" style="color:var(--dim)">—</div>
-        <div class="ss-mini" id="hero-bsr-counts">0 trades</div>
-        <button class="info-btn" onclick="showInfoTip('bsr-rate',this)" title="About this indicator">i</button>
-      </div>
+          <div class="as-cell" style="border-top:2px solid var(--red)">
+            <div class="as-lbl">📉 Distribution Days</div>
+            <div style="display:flex;align-items:baseline;gap:8px">
+              <div class="as-big" id="as-dist" style="color:var(--dim)">—</div>
+              <div style="font-size:11px;color:var(--sub)">/ 25d</div>
+            </div>
+            <div class="as-sig" id="as-dist-status" style="color:var(--dim)">—</div>
+            <div class="as-desc" id="as-dist-hint">Auto from MPM data</div>
+            <button class="info-btn" onclick="showInfoTip('dist-days',this)" title="About this indicator">i</button>
+          </div>
 
-      <div class="ss-cell" style="background:rgba(45,212,191,.05);border-top:2px solid var(--teal)">
-        <div class="ss-lbl" style="color:var(--teal)">Pressure</div>
-        <div class="ss-score" id="hero-mpm-score" style="color:var(--dim)">—</div>
-        <div class="ss-cond" id="hero-mpm-cond" style="color:var(--dim)">—</div>
-        <div class="ss-mini" id="hero-mpm-counts">A:0 D:0</div>
-        <button class="info-btn" onclick="showInfoTip('market-pressure',this)" title="About this indicator">i</button>
-      </div>
+          <div class="as-cell" style="border-top:2px solid var(--teal);border-right:none;">
+            <div class="as-lbl" style="color:var(--teal)">📈 Mkt Exposure</div>
+            <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:6px">
+              <div style="font-family:var(--disp);font-size:28px;font-weight:900;line-height:1;transition:color .4s"
+                id="as-exp-pct">—</div>
+              <div style="font-size:11px;color:var(--sub)" id="as-exp-label"></div>
+            </div>
+            <div style="height:6px;border-radius:3px;background:var(--bg4);overflow:hidden;margin-bottom:4px">
+              <div id="as-exp-fill"
+                style="height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1);width:0%"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim)">
+              <span>0%</span><span>100%</span>
+            </div>
+            <div style="font-size:10px;color:var(--sub);margin-top:4px" id="as-exp-range"></div>
+            <div style="font-size:9px;color:var(--dim);margin-top:2px;line-height:1.4" id="as-exp-note"></div>
+            <button class="info-btn" onclick="showInfoTip('exposure',this)" title="About this indicator">i</button>
+          </div>
 
-      <div class="ss-cell" id="momentum-cell" style="border-top:2px solid var(--yellow)">
-        <div class="ss-lbl" style="color:var(--yellow)">Breadth Momentum</div>
-        <div class="ss-momentum" id="h-momentum" style="color:var(--dim)">—</div>
-        <div class="ss-cond" id="h-momentum-label" style="color:var(--dim)">vs yesterday</div>
-        <button class="info-btn" onclick="showInfoTip('breadth-momentum',this)" title="About this indicator">i</button>
-      </div>
-
-      <div class="ss-rpg" style="border-top:2px solid var(--purple);border-left:1px solid var(--border)">
-        <div class="ss-lbl" style="color:var(--purple);text-align:center">Rally Prob</div>
-        <div class="ss-rpg-arc">
-          <svg viewBox="0 0 80 46" width="80" height="46">
-            <path fill="none" stroke="var(--bg4)" stroke-width="9" stroke-linecap="round"
-              d="M 10 40 A 30 30 0 0 1 70 40" stroke-dasharray="94.2" stroke-dashoffset="0" />
-            <path fill="none" stroke-width="9" stroke-linecap="round" id="ss-rpg-arc" d="M 10 40 A 30 30 0 0 1 70 40"
-              stroke-dasharray="94.2" stroke-dashoffset="94.2" stroke="var(--purple)"
-              style="transition:stroke-dashoffset .8s cubic-bezier(.4,0,.2,1),stroke .4s" />
-            <text id="ss-rpg-pct" x="40" y="37" fill="var(--purple)"
-              style="font-family:var(--disp);font-size:16px;font-weight:900;text-anchor:middle;dominant-baseline:middle">—</text>
-          </svg>
-        </div>
-        <div class="ss-rpg-signal" id="ss-rpg-signal" style="color:var(--dim)">No Data</div>
-        <div class="ss-rpg-bk" id="ss-rpg-bk"></div>
-        <button class="info-btn" onclick="showInfoTip('rally-prob',this)" title="About this indicator">i</button>
-      </div>
-
-    </div>
-
-    <div class="analysis-strip card">
-
-      <div class="as-cell" style="border-top:2px solid var(--accent)">
-        <div class="as-lbl">📡 Market Condition</div>
-        <div class="as-phase" id="as-phase" style="color:var(--dim)">—</div>
-        <div id="as-driver"
-          style="font-size:11px;font-weight:600;letter-spacing:.3px;margin-bottom:3px;transition:color .3s">—</div>
-        <div class="as-desc" id="as-desc">Waiting for data</div>
-        <div class="as-pills" id="as-pills"></div>
-        <button class="info-btn" onclick="showInfoTip('market-condition',this)" title="About this indicator">i</button>
-      </div>
-
-      <div class="as-cell" style="border-top:2px solid var(--lime)">
-        <div class="as-lbl">🚀 Follow-Through Day</div>
-        <div class="as-phase" id="as-ftd-status" style="color:var(--dim)">—</div>
-        <div class="as-desc" id="as-ftd-sub">Log a rally attempt to begin tracking</div>
-        <div class="as-pills" id="as-ftd-pills"></div>
-        <button class="info-btn" onclick="showInfoTip('ftd',this)" title="About this indicator">i</button>
-      </div>
-
-      <div class="as-cell" style="border-top:2px solid var(--red)">
-        <div class="as-lbl">📉 Distribution Days</div>
-        <div style="display:flex;align-items:baseline;gap:8px">
-          <div class="as-big" id="as-dist" style="color:var(--dim)">—</div>
-          <div style="font-size:11px;color:var(--sub)">/ 25d</div>
-        </div>
-        <div class="as-sig" id="as-dist-status" style="color:var(--dim)">—</div>
-        <div class="as-desc" id="as-dist-hint">Auto from MPM data</div>
-        <button class="info-btn" onclick="showInfoTip('dist-days',this)" title="About this indicator">i</button>
-      </div>
-
-      <div class="as-cell" style="border-top:2px solid var(--teal);border-right:none;">
-        <div class="as-lbl" style="color:var(--teal)">📈 Mkt Exposure</div>
-        <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:6px">
-          <div style="font-family:var(--disp);font-size:28px;font-weight:900;line-height:1;transition:color .4s"
-            id="as-exp-pct">—</div>
-          <div style="font-size:11px;color:var(--sub)" id="as-exp-label"></div>
-        </div>
-        <div style="height:6px;border-radius:3px;background:var(--bg4);overflow:hidden;margin-bottom:4px">
-          <div id="as-exp-fill"
-            style="height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1);width:0%"></div>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim)">
-          <span>0%</span><span>100%</span>
-        </div>
-        <div style="font-size:10px;color:var(--sub);margin-top:4px" id="as-exp-range"></div>
-        <div style="font-size:9px;color:var(--dim);margin-top:2px;line-height:1.4" id="as-exp-note"></div>
-        <button class="info-btn" onclick="showInfoTip('exposure',this)" title="About this indicator">i</button>
-      </div>
-
-    </div>
-
-    <div id="as-ftd-banner" class="as-ftd-banner card"
-      style="display:none;border-radius:0;margin-top:-1px;border-top:none"></div>
-
-    <div class="card msem-card" id="msem-card">
-      <div class="card-head">
-        <div class="card-title">🧭 Market Summary &amp; Trading Guidance</div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <button class="src-btn" onclick="openEodChecklistModal()"
-            style="font-size:11px;padding:3px 9px;color:var(--lime);border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.06);cursor:pointer;font-weight:600">
-            ⚡ 60s Checklist
-          </button>
-          <div id="msem-updated" style="font-size:11px;color:var(--dim)"></div><button class="info-btn"
-            onclick="showInfoTip('market-summary',this)" title="About this indicator">i</button>
-        </div>
-      </div>
-      <div class="msem-grid">
-
-        <div class="msem-section">
-          <div class="msem-label">📊 Market Summary</div>
-          <div class="msem-phase" id="msem-phase">—</div>
-          <div id="msem-summary" class="msem-summary">—</div>
         </div>
 
-        <div class="msem-section">
-          <div class="msem-label">🎯 Trading Guidance</div>
-          <ul class="msem-guidance" id="msem-guidance"></ul>
-        </div>
+        <div id="as-ftd-banner" class="as-ftd-banner card"
+          style="display:none;border-radius:0;margin-top:-1px;border-top:none"></div>
 
-        <div class="msem-section">
-          <div class="msem-label">⚠ Risk Advisory</div>
-          <div id="msem-risk" class="msem-risk"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="dash-grid">
-
-      <div class="col">
-
-        <div class="card" id="srt-home-card" style="border-top:2px solid var(--purple)">
+        <div class="card msem-card" id="msem-card">
           <div class="card-head">
+            <div class="card-title">🧭 Market Summary &amp; Trading Guidance</div>
             <div style="display:flex;align-items:center;gap:8px">
-              <div class="card-title">🗺 Sector Command</div>
-              <span id="vcpb-scan-badge"
-                style="display:none;font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(45,212,191,.12);color:var(--teal);font-family:var(--mono);white-space:nowrap"></span>
-            </div>
-            <div style="display:flex;gap:6px;align-items:center">
-              <a href="sectors.html" target="_blank"
-                style="font-size:10px;padding:3px 8px;background:rgba(45,212,191,.12);color:var(--teal);border:1px solid rgba(45,212,191,.3);border-radius:4px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:4px;transition:all .15s ease;"
-                onmouseenter="this.style.background='rgba(45,212,191,.25)';this.style.color='#fff';"
-                onmouseleave="this.style.background='rgba(45,212,191,.12)';this.style.color='var(--teal)';"
-                title="Open Full Sector Command in a separate dedicated page">
-                <span>Full Studio ↗</span>
-              </a>
-              <button onclick="vcpbFetch(true)" title="Refresh breadth data"
-                style="font-size:9px;padding:3px 8px;background:rgba(45,212,191,.1);color:var(--teal);border:1px solid rgba(45,212,191,.25);border-radius:4px;cursor:pointer;font-weight:600;letter-spacing:.4px">↻</button>
-              <button class="info-btn" onclick="showInfoTip('sector-command',this)"
-                title="About Sector Command">i</button>
-            </div>
-          </div>
-
-          <!-- Quick Sector & Cluster Leadership Summary -->
-          <div class="scc-summary-body" style="padding:12px 14px 14px;">
-            <!-- Consensus Strip -->
-            <div id="vcpb-consensus-strip"
-              style="padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-              <div style="display:flex;align-items:center;gap:6px;font-size:11px">
-                <span style="font-weight:700;color:var(--green)">⚡ LEADERS:</span>
-                <span id="vcpb-ls-lead" style="color:var(--text);font-family:var(--mono);font-size:10px">—</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:6px;font-size:11px">
-                <span style="font-weight:700;color:var(--yellow)">👁 WATCH:</span>
-                <span id="vcpb-ls-watch" style="color:var(--text);font-family:var(--mono);font-size:10px">—</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:6px;font-size:11px">
-                <span style="font-weight:700;color:var(--red)">✕ AVOID:</span>
-                <span id="vcpb-ls-avoid" style="color:var(--dim);font-family:var(--mono);font-size:10px">—</span>
-              </div>
-            </div>
-
-            <!-- Two-Column Overview Grid -->
-            <div class="scc-overview-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px;margin-bottom:12px;">
-              <!-- Left: Top Leading Sectors -->
-              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                  <span style="font-size:11px;font-weight:700;color:var(--teal);letter-spacing:0.5px;text-transform:uppercase;">📶 Top Leading Sectors</span>
-                  <a href="sectors.html?tab=breadth" target="_blank" style="font-size:10px;color:var(--accent);text-decoration:none;font-weight:600">View All 13 ↗</a>
-                </div>
-                <div id="scc-dash-top-sectors" style="display:flex;flex-direction:column;gap:6px;">
-                  <div style="font-size:11px;color:var(--dim);padding:8px 0;text-align:center">Loading sectors breadth…</div>
-                </div>
-              </div>
-
-              <!-- Right: Top Breakout Clusters -->
-              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                  <span style="font-size:11px;font-weight:700;color:var(--lime);letter-spacing:0.5px;text-transform:uppercase;">⭐ Top Breakout Clusters</span>
-                  <a href="sectors.html?tab=clusters" target="_blank" style="font-size:10px;color:var(--accent);text-decoration:none;font-weight:600">View All 121 ↗</a>
-                </div>
-                <div id="scc-dash-top-clusters" style="display:flex;flex-direction:column;gap:6px;">
-                  <div style="font-size:11px;color:var(--dim);padding:8px 0;text-align:center">Calculating breakout clusters…</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Studio Quick Jump Tabs Ribbon -->
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:linear-gradient(90deg, rgba(45,212,191,0.08), rgba(167,139,250,0.08));border:1px solid rgba(45,212,191,0.25);border-radius:6px;flex-wrap:wrap;gap:8px;">
-              <div style="display:flex;align-items:center;gap:6px;">
-                <span style="font-size:11px;font-weight:800;color:var(--text);">Full Studio Modes:</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                <a href="sectors.html?tab=breadth" target="_blank" style="font-size:10px;font-weight:700;color:var(--teal);padding:2px 7px;background:rgba(45,212,191,0.1);border:1px solid rgba(45,212,191,0.3);border-radius:3px;text-decoration:none;">📶 Sectors Table</a>
-                <a href="sectors.html?tab=clusters" target="_blank" style="font-size:10px;font-weight:700;color:#34d399;padding:2px 7px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);border-radius:3px;text-decoration:none;">⭐ Clusters</a>
-                <a href="sectors.html?tab=rrg" target="_blank" style="font-size:10px;font-weight:700;color:var(--purple);padding:2px 7px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:3px;text-decoration:none;">📡 RRG Map</a>
-                <a href="sectors.html?tab=heatmap" target="_blank" style="font-size:10px;font-weight:700;color:var(--teal);padding:2px 7px;background:rgba(45,212,191,0.1);border:1px solid rgba(45,212,191,0.3);border-radius:3px;text-decoration:none;">🌡 Heatmap</a>
-                <a href="sectors.html?tab=chart" target="_blank" style="font-size:10px;font-weight:700;color:var(--accent);padding:2px 7px;background:rgba(91,163,245,0.1);border:1px solid rgba(91,163,245,0.3);border-radius:3px;text-decoration:none;">📈 Split Charts</a>
-              </div>
-            </div>
-          </div></div>
-
-        <div class="card" id="sec-score-trend">
-          <div class="card-head">
-            <div class="card-title">30-Day Score Trend</div><button class="info-btn"
-              onclick="showInfoTip('score-trend',this)" title="About this indicator">i</button>
-          </div>
-          <div class="card-body" style="padding-bottom:8px">
-            <div class="chart-canvas-wrap"><canvas id="score-chart"></canvas></div>
-            <div class="chart-legend">
-              <span><span class="ldot" style="background:var(--accent)"></span>Score</span>
-              <span><span class="ldot" style="background:var(--lime)"></span>Healthy (55)</span>
-              <span><span class="ldot" style="background:var(--yellow)"></span>Expanding (45)</span>
-              <span><span class="ldot" style="background:var(--orange)"></span>Caution (35)</span>
-              <span style="color:var(--dim);font-size:9px;margin-left:6px">&#9432; Rising 30→50+ often marks rally
-                start</span>
-            </div>
-          </div>
-        </div>
-
-
-        <div class="card" id="sec-history">
-          <div class="card-head" style="cursor:pointer" onclick="toggleCollapse('hist-body-wrap','hist-toggle-icon')">
-            <div class="card-title">30-Day History</div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <button class="card-action btn-export" onclick="event.stopPropagation();exportCSV()">&#8595; Export
-                CSV</button>
-              <span id="hist-toggle-icon"
-                style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block">&#9660;</span>
-            </div>
-          </div>
-          <div id="hist-body-wrap" style="display:none">
-            <div class="hist-wrap">
-              <table class="hist-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>ADV</th>
-                    <th>DEC</th>
-                    <th>UNC</th>
-                    <th>A/D</th>
-                    <th>52W-H</th>
-                    <th>52W-L</th>
-                    <th>H/L%</th>
-                    <th>&gt;E20%</th>
-                    <th>&gt;S50%</th>
-                    <th>&gt;S200%</th>
-                    <th>Nifty</th>
-                    <th>Score</th>
-                    <th>Zone</th>
-                    <th>R</th>
-                    <th>Notes</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody id="hist-body">
-                  <tr>
-                    <td colspan="17" style="color:var(--dim);padding:20px;text-align:center;font-size:11px">NO HISTORY
-                      YET</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="col">
-
-        <div class="card" id="ftd-module-card" style="border-top:2px solid var(--lime)">
-          <div class="card-head">
-            <div class="card-title" style="color:var(--lime)">🚀 Follow-Through Day Tracker</div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <button class="info-btn" onclick="showInfoTip('ftd',this)" title="About FTD">i</button>
-            </div>
-          </div>
-
-          <div id="ftd-banner"
-            style="display:none;padding:9px 14px;margin:10px 12px 0;border-radius:5px;font-size:12px;font-weight:600;text-align:center">
-          </div>
-
-          <div class="ftd-grid">
-            <div class="ftd-cell" id="ftd-status-cell">
-              <div class="ftd-lbl">Status</div>
-              <div class="ftd-val" id="ftd-status" style="color:var(--dim)">No Data</div>
-              <div class="ftd-sub" id="ftd-status-sub">Log Day 1 of a rally attempt to begin tracking</div>
-            </div>
-            <div class="ftd-cell">
-              <div class="ftd-lbl">Rally Day</div>
-              <div class="ftd-val" id="ftd-rally-day" style="color:var(--text)">—</div>
-              <div class="ftd-sub">Day 1 Attempt · Day 3+ FTD</div>
-            </div>
-            <div class="ftd-cell">
-              <div class="ftd-lbl">Last Move</div>
-              <div class="ftd-val" id="ftd-move" style="color:var(--text)">—</div>
-              <div class="ftd-sub">Need close &gt; 1.5% on vol↑</div>
-            </div>
-          </div>
-
-          <div id="ftd-log-wrap" style="display:none">
-            <div
-              style="padding:8px 14px 4px;display:flex;align-items:center;justify-content:space-between;cursor:pointer"
-              onclick="toggleCollapse('ftd-log','ftd-log-icon')">
-              <div style="font-size:10px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.5px">
-                Rally Log</div>
-              <span id="ftd-log-icon" style="font-size:11px;color:var(--dim)">&#9660;</span>
-            </div>
-            <div id="ftd-log" class="ftd-log" style="display:none">
-              <div class="ftd-row">
-                <span class="ftd-col-hdr">Date</span>
-                <span class="ftd-col-hdr">Type</span>
-                <span class="ftd-col-hdr">Close</span>
-                <span class="ftd-col-hdr">Move</span>
-                <span class="ftd-col-hdr">Vol ↑</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" id="mpm-module-card" style="border-top:2px solid var(--teal)">
-          <div class="card-head" style="cursor:pointer"
-            onclick="toggleCollapse('mpm-card-body','mpm-card-toggle-icon')">
-            <div style="display:flex;flex-direction:column;gap:2px">
-              <div class="card-title"><span style="color:var(--teal)">Market Pressure Meter (MPM)</span></div>
-              <div style="font-size:9px;color:var(--sub)">Acc = Close↑+Vol↑ · Dist = Close↓+Vol↑ · Last 25d</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <button class="info-btn" onclick="event.stopPropagation();showInfoTip('market-pressure',this)"
-                title="About MPM">i</button>
-              <span id="mpm-card-toggle-icon"
-                style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block;transform:rotate(-90deg)">&#9660;</span>
-            </div>
-          </div>
-
-          <div style="display:grid;grid-template-columns:90px 1fr;gap:0;border-top:1px solid var(--border)">
-            <div class="mpm-score-panel" style="border-right:1px solid var(--border)">
-              <div class="mpm-score-lbl">Pressure</div>
-              <div class="mpm-score-num" id="mpm-score">—</div>
-              <div class="mpm-score-sub">Acc − Dist</div>
-              <div class="mpm-counts" style="margin-top:6px">
-                <span><b id="mpm-acc-n" style="color:var(--lime);font-size:11px">0</b> <span
-                    style="color:var(--sub);font-size:9px">Acc</span></span>
-                <span><b id="mpm-dist-n" style="color:var(--red);font-size:11px">0</b> <span
-                    style="color:var(--sub);font-size:9px">Dist</span></span>
-              </div>
-            </div>
-            <div style="padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:5px">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
-                <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px">25-Day Pressure
-                  Chart</div>
-                <div class="mpm-cond-name" id="mpm-cond" style="font-size:11px">No Data</div>
-              </div>
-              <div class="mpm-bars" id="mpm-bars" style="height:36px"></div>
-              <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim);margin-top:1px">
-                <span style="color:var(--lime)">▲ Acc</span>
-                <span id="mpm-window" style="color:var(--sub)">last 25d</span>
-                <span style="color:var(--red)">▼ Dist</span>
-              </div>
-            </div>
-          </div>
-
-          <div id="mpm-card-body" style="display:none">
-
-            <div class="mpm-hero" style="border-top:1px solid var(--border)">
-              <div class="mpm-gauge-panel" style="grid-column:1/3">
-                <div
-                  style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px">
-                  Pressure Gauge</div>
-                <div class="mpm-gauge-wrap">
-                  <div class="mpm-gauge-fill"></div>
-                  <div class="mpm-needle" id="mpm-needle" style="left:50%"></div>
-                </div>
-                <div class="mpm-gauge-labels">
-                  <span style="color:var(--red)">Heavy Sell</span>
-                  <span style="color:var(--orange)">Weak</span>
-                  <span style="color:var(--yellow)">Neutral</span>
-                  <span style="color:var(--green)">Healthy</span>
-                  <span style="color:var(--lime)">Strong Buy</span>
-                </div>
-              </div>
-              <div class="mpm-cond-panel">
-                <div
-                  style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">
-                  Condition</div>
-                <div class="mpm-cond-hint" id="mpm-hint">Enter Nifty data to see pressure.</div>
-                <div class="mpm-counts" style="margin-top:6px">
-                  <span><b style="color:var(--dim);font-size:13px" id="mpm-neut-n">0</b> <span
-                      style="color:var(--sub)">Neu</span></span>
-                </div>
-              </div>
-            </div>
-
-            <div style="padding:9px 12px;border-top:1px solid var(--border)">
-              <div style="font-size:10px;color:var(--sub)">
-                &#9432;&nbsp;<b style="color:var(--lime)">Acc:</b> Close&gt;Prev AND Vol&gt;Prev &nbsp;|&nbsp;
-                <b style="color:var(--red)">Dist:</b> Close&lt;Prev AND Vol&gt;Prev &nbsp;|&nbsp; Score = Acc−Dist (last
-                25d)
-              </div>
-              <div id="mpm-sync-msg"
-                style="font-size:11px;margin-top:6px;display:none;padding:6px 10px;border-radius:4px;background:rgba(45,212,191,.06);border:1px solid rgba(45,212,191,.15)">
-              </div>
-            </div>
-
-            <div class="mpm-import-panel">
-              <div class="mpm-import-title">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                Import from NSE CSV — Two steps, ~30 seconds
-              </div>
-              <div
-                style="display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid rgba(45,212,191,.18);border-radius:3px;padding:8px 10px;margin-bottom:8px">
-                <div style="flex:1">
-                  <div style="font-size:11px;color:var(--text);font-weight:600;margin-bottom:2px">Step 1 — Open NSE
-                    download page</div>
-                  <div style="font-size:9px;color:var(--dim)">Select <b style="color:var(--text)">Nifty 50</b> · From =
-                    35 days ago · Get Data · Download CSV</div>
-                </div>
-                <button onclick="mpmOpenNSE()"
-                  style="background:var(--teal);color:#0e1420;font-size:11px;font-weight:600;padding:7px 12px;border:none;border-radius:3px;cursor:pointer;white-space:nowrap">&#10132;
-                  Open NSE</button>
-              </div>
-              <div style="font-size:10px;color:var(--text);font-weight:600;margin-bottom:5px">Step 2 — Drop CSV here
-              </div>
-              <div class="mpm-drop-zone" id="mpm-drop-zone"
-                ondragover="event.preventDefault();this.classList.add('drag-over')"
-                ondragleave="this.classList.remove('drag-over')" ondrop="mpmHandleDrop(event)">
-                <input type="file" accept=".csv" onchange="mpmHandleFile(this.files[0])">
-                <div class="mpm-drop-lbl">
-                  <b>Click to browse</b> or drag &amp; drop NSE CSV
-                  <small>Auto-detects date format · Acc/Dist calculated instantly</small>
-                </div>
-              </div>
-              <div class="mpm-preview" id="mpm-preview">
-                <div class="mpm-preview-title" id="mpm-preview-title">Preview</div>
-                <div class="mpm-preview-rows" id="mpm-preview-rows"></div>
-                <button class="btn-mpm-import" id="btn-mpm-import" onclick="mpmImportConfirm()" disabled>Import All
-                  Days</button>
-                <button class="btn btn-sec"
-                  style="font-size:11px;padding:4px 10px;margin-left:4px;color:var(--teal);border-color:rgba(45,212,191,.3)"
-                  onclick="forcePushMpm()" title="Push MPM data to cloud now">☁ Push to Cloud</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="card-head" style="border-top:1px solid var(--border);cursor:pointer"
-            onclick="toggleCollapse('mpm-table-wrap','mpm-toggle-icon')">
-            <div class="card-title">Pressure Day Log — Last 25d</div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <button class="info-btn" onclick="event.stopPropagation();showInfoTip('mpm-tracker',this)"
-                title="About this indicator">i</button>
-              <button class="card-action btn-export" onclick="event.stopPropagation();mpmExport()"
-                style="border-color:rgba(45,212,191,.28);color:var(--teal)">&#8595; Export CSV</button>
-              <span id="mpm-toggle-icon"
-                style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block">&#9660;</span>
-            </div>
-          </div>
-          <div id="mpm-table-wrap" style="display:none" class="mpm-table-wrap-collapsible">
-            <div class="mpm-table-wrap">
-              <table class="mpm-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Day Type</th>
-                    <th>Nifty Close</th>
-                    <th>Prev Close</th>
-                    <th>Close Chg%</th>
-                    <th>Volume (Cr)</th>
-                    <th>Prev Vol</th>
-                    <th>Vol Chg%</th>
-                    <th>Running Score</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody id="mpm-tbody">
-                  <tr>
-                    <td colspan="10" style="color:var(--dim);padding:16px;text-align:center;font-size:10px">NO DATA YET
-                      — ADD NIFTY DAILY DATA ABOVE</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-<div class="card" id="pet-card" style="border-top:2px solid var(--accent)">
-          <div class="card-head" style="cursor:pointer" onclick="toggleCollapse('pet-body','pet-toggle-icon')">
-            <div class="card-title" style="color:var(--accent)">📈 Personal Exposure Tracker</div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <button class="info-btn" onclick="event.stopPropagation();showInfoTip('exposure',this)"
-                title="About Exposure">i</button>
-              <span id="pet-toggle-icon"
-                style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block">&#9660;</span>
-            </div>
-          </div>
-          <div id="pet-body">
-
-            <div
-              style="padding:10px 14px;border-top:1px solid var(--border);background:var(--bg3);display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
-              <div>
-                <div
-                  style="font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;font-weight:600">
-                  Total Capital (₹)</div>
-                <input type="number" id="pet-total-capital" placeholder="500000" min="0" step="1000"
-                  oninput="petUpdate()"
-                  style="width:130px;background:var(--bg);border:1px solid var(--bdr2);color:var(--accent);font-family:var(--mono);font-size:12px;padding:5px 8px;border-radius:4px;outline:none">
-              </div>
-              <div>
-                <div
-                  style="font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;font-weight:600">
-                  Currently Invested (₹)</div>
-                <input type="number" id="pet-invested" placeholder="150000" min="0" step="1000" oninput="petUpdate()"
-                  style="width:130px;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:12px;padding:5px 8px;border-radius:4px;outline:none">
-              </div>
-              <button onclick="petSave()"
-                style="font-size:11px;font-weight:600;padding:5px 14px;background:rgba(91,163,245,.12);color:var(--accent);border:1px solid rgba(91,163,245,.3);border-radius:4px;cursor:pointer;height:30px">Save</button>
-              <div style="font-size:10px;color:var(--dim);align-self:center;margin-left:4px" id="pet-saved-note"></div>
-            </div>
-
-            <div style="display:grid;grid-template-columns:100px 1fr;gap:0;border-top:1px solid var(--border)">
-              <div
-                style="padding:14px 12px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center">
-                <div
-                  style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-bottom:4px">
-                  Suggested</div>
-                <div style="font-family:var(--disp);font-size:42px;font-weight:800;line-height:1;transition:color .4s"
-                  id="msem-exp-pct">—</div>
-                <div style="font-size:10px;color:var(--sub);margin-top:4px" id="msem-exp-range">—</div>
-              </div>
-              <div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px">
-
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
-                  <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;border:1px solid var(--border)">
-                    <div
-                      style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">
-                      Suggested ₹</div>
-                    <div style="font-family:var(--disp);font-size:16px;font-weight:800;color:var(--accent)"
-                      id="pet-suggested-inr">—</div>
-                  </div>
-                  <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;border:1px solid var(--border)">
-                    <div
-                      style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">
-                      Invested ₹</div>
-                    <div style="font-family:var(--disp);font-size:16px;font-weight:800;color:var(--text)"
-                      id="pet-invested-inr">—</div>
-                  </div>
-                  <div style="background:var(--bg3);border-radius:4px;padding:8px 10px;border:1px solid var(--border)">
-                    <div
-                      style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">
-                      Gap / Headroom</div>
-                    <div style="font-family:var(--disp);font-size:16px;font-weight:800" id="pet-gap-inr">—</div>
-                  </div>
-                </div>
-
-                <div id="pet-status-banner"
-                  style="font-size:11px;font-weight:600;padding:6px 10px;border-radius:4px;line-height:1.4;display:none">
-                </div>
-
-                <div>
-                  <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px;margin-bottom:4px">
-                    <div style="flex:1;background:rgba(248,113,113,.45);border-radius:2px"></div>
-                    <div style="flex:1;background:rgba(251,146,60,.45);border-radius:2px"></div>
-                    <div style="flex:2;background:rgba(250,204,21,.45);border-radius:2px"></div>
-                    <div style="flex:2;background:rgba(52,211,153,.45);border-radius:2px"></div>
-                    <div style="flex:2;background:rgba(74,222,128,.45);border-radius:2px"></div>
-                  </div>
-                  <div class="msem-exp-track">
-                    <div class="msem-exp-fill" id="msem-exp-fill" style="width:0%"></div>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim);margin-top:2px">
-                    <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
-                  </div>
-                </div>
-                <div style="font-size:11px;color:var(--sub);line-height:1.5" id="msem-exp-note">Save EOD data to
-                  calculate exposure.</div>
-              </div>
-            </div>
-
-            <div style="padding:8px 14px 10px;border-top:1px solid var(--border)">
-              <div
-                style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-bottom:6px">
-                Zone Reference</div>
-              <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">
-                <div
-                  style="background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.18);border-radius:4px;padding:5px 6px;text-align:center">
-                  <div
-                    style="font-size:8px;color:var(--red);font-weight:600;text-transform:uppercase;margin-bottom:2px">
-                    Danger</div>
-                  <div style="font-family:var(--disp);font-size:12px;font-weight:800;color:var(--red)">0–10%</div>
-                  <div style="font-size:8px;color:var(--dim);margin-top:2px">No trades</div>
-                </div>
-                <div
-                  style="background:rgba(251,146,60,.08);border:1px solid rgba(251,146,60,.18);border-radius:4px;padding:5px 6px;text-align:center">
-                  <div
-                    style="font-size:8px;color:var(--orange);font-weight:600;text-transform:uppercase;margin-bottom:2px">
-                    Caution</div>
-                  <div style="font-family:var(--disp);font-size:12px;font-weight:800;color:var(--orange)">10–25%</div>
-                  <div style="font-size:8px;color:var(--dim);margin-top:2px">0.25R pilot</div>
-                </div>
-                <div
-                  style="background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.18);border-radius:4px;padding:5px 6px;text-align:center">
-                  <div
-                    style="font-size:8px;color:var(--yellow);font-weight:600;text-transform:uppercase;margin-bottom:2px">
-                    Selective</div>
-                  <div style="font-family:var(--disp);font-size:12px;font-weight:800;color:var(--yellow)">25–50%</div>
-                  <div style="font-size:8px;color:var(--dim);margin-top:2px">0.5–1R</div>
-                </div>
-                <div
-                  style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.18);border-radius:4px;padding:5px 6px;text-align:center">
-                  <div
-                    style="font-size:8px;color:var(--green);font-weight:600;text-transform:uppercase;margin-bottom:2px">
-                    Normal</div>
-                  <div style="font-family:var(--disp);font-size:12px;font-weight:800;color:var(--green)">50–75%</div>
-                  <div style="font-size:8px;color:var(--dim);margin-top:2px">Full size</div>
-                </div>
-                <div
-                  style="background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.18);border-radius:4px;padding:5px 6px;text-align:center">
-                  <div
-                    style="font-size:8px;color:var(--lime);font-weight:600;text-transform:uppercase;margin-bottom:2px">
-                    Aggressive</div>
-                  <div style="font-family:var(--disp);font-size:12px;font-weight:800;color:var(--lime)">75–100%</div>
-                  <div style="font-size:8px;color:var(--dim);margin-top:2px">Let run</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" id="bsr-module-card" style="border-top:2px solid var(--purple)">
-          <div class="card-head">
-            <div class="card-title">
-              <span style="color:var(--purple)">Breakout Success Rate (BSR)</span>
-              <button class="info-btn" onclick="showInfoTip('bsr-tracker',this)" title="About this indicator">i</button>
-            </div>
-            <span style="font-size:9px;color:var(--sub)">✓ Win ≥5% above pivot · ✗ Loss: hit stop / close below pivot · ⏳ Stale: pending >60d</span>
-          </div>
-
-          <!-- BSR Mode Selector -->
-          <div class="bsr-mode-selector-wrap">
-            <div class="bsr-mode-selector">
-              <button type="button" class="bsr-mode-tab active" id="bsr-mode-btn-quick" onclick="bsrSetMode('quick')">
-                <span>⚡</span> Quick Ratio (/10)
+              <button class="src-btn" onclick="openEodChecklistModal()"
+                style="font-size:11px;padding:3px 9px;color:var(--lime);border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.06);cursor:pointer;font-weight:600">
+                ⚡ 60s Checklist
               </button>
-              <button type="button" class="bsr-mode-tab" id="bsr-mode-btn-log" onclick="bsrSetMode('log')">
-                <span>📋</span> Detailed Trade Log
-              </button>
-            </div>
-            <span class="bsr-active-source-badge" id="bsr-source-badge">⚡ Active: Quick Ratio (/10)</span>
-          </div>
-
-          <!-- Quick Ratio Panel -->
-          <div id="bsr-quick-panel" class="bsr-quick-panel">
-            <div class="bsr-quick-grid">
-              <div class="bsr-quick-box bsr-box-won">
-                <div class="bsr-quick-header">
-                  <span class="bsr-quick-tag tag-won">WIN</span>
-                  <label for="bsr-quick-won">Won Breakouts</label>
-                </div>
-                <div class="bsr-quick-input-wrap">
-                  <input type="number" id="bsr-quick-won" min="0" max="10" step="1" placeholder="7"
-                    oninput="bsrQuickOnInput('won')" onchange="bsrQuickSaveAndApply()">
-                  <span class="bsr-quick-denom">/ 10</span>
-                </div>
-                <div class="bsr-quick-hint">Breakouts gaining ≥ 5%</div>
-              </div>
-
-              <div class="bsr-quick-box bsr-box-lost">
-                <div class="bsr-quick-header">
-                  <span class="bsr-quick-tag tag-lost">LOSS</span>
-                  <label for="bsr-quick-lost">Lost Breakouts</label>
-                </div>
-                <div class="bsr-quick-input-wrap">
-                  <input type="number" id="bsr-quick-lost" min="0" max="10" step="1" placeholder="3"
-                    oninput="bsrQuickOnInput('lost')" onchange="bsrQuickSaveAndApply()">
-                  <span class="bsr-quick-denom">/ 10</span>
-                </div>
-                <div class="bsr-quick-hint">Stopped out or failed</div>
-              </div>
-
-              <div class="bsr-quick-calc-box">
-                <div class="bsr-qcalc-lbl">Derived BSR Score</div>
-                <div class="bsr-qcalc-val" id="bsr-qcalc-val">—</div>
-                <div class="bsr-qcalc-zone" id="bsr-qcalc-zone">Enter Won/Lost</div>
-                <div class="bsr-quick-btn-row">
-                  <button type="button" class="btn-bsr-apply" id="btn-bsr-apply" onclick="bsrQuickSaveAndApply()">✓ Apply Score</button>
-                  <button type="button" class="btn-bsr-reset" onclick="bsrQuickReset()" title="Reset inputs">↺ Clear</button>
-                  <span id="bsr-apply-badge" class="bsr-apply-badge"></span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Quick Presets -->
-            <div class="bsr-quick-presets">
-              <span class="bsr-qp-lbl">1-Click Presets:</span>
-              <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(8,2)">8 Won (80%)</button>
-              <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(7,3)">7 Won (70%)</button>
-              <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(6,4)">6 Won (60%)</button>
-              <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(5,5)">5 Won (50%)</button>
-              <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(4,6)">4 Won (40%)</button>
-              <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(3,7)">3 Won (30%)</button>
-            </div>
-            <div class="bsr-quick-note">
-              💡 <b>Direct Entry:</b> Derive your BSR Score instantly without filling individual trade logs. Automatically syncs to Top Status Strip, RPG Arc Gauge, and Market Summary.
-            </div>
-            <div id="bsr-save-flash" style="font-size:11px;margin-top:8px;font-weight:700;color:var(--lime);display:none;opacity:0;transition:opacity .35s;align-items:center;gap:6px">✓ BSR Score Saved</div>
-          </div>
-
-          <div class="bsr-hero">
-            <div class="bsr-score-panel">
-              <div class="bsr-score-lbl">BSR</div>
-              <div class="bsr-score-num" id="bsr-num" style="line-height:0.95">—</div>
-              <div class="bsr-score-sub">success rate</div>
-              <div style="margin-top:6px;border-top:1px solid var(--border);padding-top:4px">
-                <div style="font-size:8px;color:var(--dim);text-transform:uppercase;font-weight:600">Expectancy</div>
-                <div id="bsr-expectancy" style="font-size:13px;font-weight:800;color:var(--teal)">—</div>
-              </div>
-            </div>
-            <div class="bsr-zone-panel">
-              <div class="bsr-zone-lbl">Environment</div>
-              <div class="bsr-zone-name" id="bsr-zone">No Data</div>
-              <div class="bsr-stats">
-                <span><b id="bsr-sn" style="color:var(--lime)">0</b> OK</span>
-                <span><b id="bsr-fn" style="color:var(--red)">0</b> Fail</span>
-                <span><b id="bsr-pn" style="color:var(--yellow)">0</b> Pend</span>
-              </div>
-            </div>
-            <div class="bsr-meter-panel" style="border-right:1px solid var(--border)">
-              <div class="bsr-m-zones">
-                <div class="mz" style="background:rgba(248,113,113,.5)"></div>
-                <div class="mz" style="background:rgba(251,146,60,.5)"></div>
-                <div class="mz" style="background:rgba(250,204,21,.5)"></div>
-                <div class="mz" style="background:rgba(34,197,94,.5)"></div>
-                <div class="mz" style="background:rgba(167,139,250,.6)"></div>
-              </div>
-              <div class="bsr-m-track">
-                <div class="bsr-m-fill" id="bsr-fill" style="width:0%;background:var(--dim)"></div>
-              </div>
-              <div class="bsr-m-ticks">
-                <span>0%</span><span>30%</span><span>50%</span><span>65%</span><span>80%</span>
-              </div>
-              <div style="font-size:9px;color:var(--sub);margin-top:6px" id="bsr-breakdown"></div>
-            </div>
-            <div class="bsr-last-panel">
-              <div class="bsr-last-lbl">Latest Trade</div>
-              <div style="font-size:12px;color:var(--text);font-weight:600" id="bsr-last-sym">—</div>
-              <div style="font-size:10px;color:var(--sub);margin-top:3px" id="bsr-last-info">—</div>
-              <div style="font-size:9px;color:var(--dim);margin-top:6px" id="bsr-total">0 trades</div>
+              <div id="msem-updated" style="font-size:11px;color:var(--dim)"></div><button class="info-btn"
+                onclick="showInfoTip('market-summary',this)" title="About this indicator">i</button>
             </div>
           </div>
+          <div class="msem-grid">
 
-          <!-- Detailed Trade Log Section -->
-          <div id="bsr-log-section" style="display:none">
-            <div class="bsr-filter-row" id="bsr-filter-row">
-              <button class="bsr-filter-btn active" id="bsr-f-all" onclick="bsrSetFilter('all')">All</button>
-              <button class="bsr-filter-btn" id="bsr-f-pending" onclick="bsrSetFilter('pending')">⏳ Pending</button>
-              <button class="bsr-filter-btn" id="bsr-f-success" onclick="bsrSetFilter('success')">✓ Success</button>
-              <button class="bsr-filter-btn" id="bsr-f-failed" onclick="bsrSetFilter('failed')">✗ Failed</button>
-              <button class="bsr-filter-btn" id="bsr-f-stale" onclick="bsrSetFilter('stale')">⏳ Stale</button>
-              <span class="bsr-filter-label" id="bsr-filter-label"></span>
+            <div class="msem-section">
+              <div class="msem-label">📊 Market Summary</div>
+              <div class="msem-phase" id="msem-phase">—</div>
+              <div id="msem-summary" class="msem-summary">—</div>
             </div>
 
-            <div class="bsr-add-form">
-              <div class="bsr-form-grid">
-                <div class="bsr-field">
-                  <label>Symbol</label>
-                  <input type="text" id="bsr-sym" placeholder="RELIANCE" style="text-transform:uppercase">
-                </div>
-                <div class="bsr-field">
-                  <label>Pivot &#8377;</label>
-                  <input type="number" id="bsr-pivot" placeholder="2450.00" step="0.05" min="0">
-                </div>
-                <div class="bsr-field">
-                  <label>Stop Loss &#8377;</label>
-                  <input type="number" id="bsr-stop" placeholder="auto (-5%)" step="0.05" min="0">
-                </div>
-                <div class="bsr-field">
-                  <label>Current &#8377;</label>
-                  <input type="number" id="bsr-curr" placeholder="2510.00" step="0.05" min="0">
-                </div>
-                <div class="bsr-field">
-                  <label>Breakout Date</label>
-                  <input type="date" id="bsr-date">
-                </div>
-                <div style="display:flex;align-items:flex-end">
-                  <button class="btn-bsr-add" onclick="bsrAdd()">+ Add Trade</button>
-                </div>
-              </div>
-              <div style="font-size:8.5px;color:var(--sub);margin-top:4px">
-                &#9432; Click any price in table to update &nbsp;|&nbsp; <b style="color:var(--lime)">Success:</b>
-                ≥Pivot×1.05 &nbsp;|&nbsp; <b style="color:var(--red)">Fail:</b> ≤Stop Loss &nbsp;|&nbsp; <b
-                  style="color:var(--yellow)">Pending:</b> Active &nbsp;|&nbsp; <b
-                  style="color:var(--teal)">Expectancy:</b> Avg R of resolved trades
-              </div>
-              <div style="font-size:11px;opacity:0;transition:opacity .4s;margin-top:4px;min-height:16px" id="bsr-msg">
-              </div>
+            <div class="msem-section">
+              <div class="msem-label">🎯 Trading Guidance</div>
+              <ul class="msem-guidance" id="msem-guidance"></ul>
             </div>
 
-            <div class="card-head" style="border-top:1px solid var(--border);padding:8px 12px">
-              <div class="card-title" style="font-size:12px">BSR Trade Log</div>
-              <div style="display:flex;align-items:center;gap:6px">
-                <button class="info-btn" onclick="showInfoTip('bsr-tracker',this)"
-                  title="About this indicator">i</button>
-                <button class="card-action btn-export" onclick="bsrExport()"
-                  style="border-color:rgba(167,139,250,.28);color:var(--purple)">&#8595; Export CSV</button>
-              </div>
-            </div>
-
-            <div class="bsr-table-wrap">
-              <table class="bsr-table">
-                <thead>
-                  <tr>
-                    <th>Symbol</th>
-                    <th>Breakout Date</th>
-                    <th>Age</th>
-                    <th>Pivot &#8377;</th>
-                    <th>Stop Loss</th>
-                    <th>Current &#8377;</th>
-                    <th>Gain%</th>
-                    <th>R-Val</th>
-                    <th>Status</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody id="bsr-tbody">
-                  <tr>
-                    <td colspan="10" style="color:var(--dim);padding:16px;text-align:center;font-size:10px">NO TRADES
-                      LOGGED YET</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div style="padding:10px 12px;border-top:1px solid var(--border)">
-              <div class="sec">BSR Trend — Success Rate Over Time</div>
-              <div class="bsr-canvas-wrap"><canvas id="bsr-chart"></canvas></div>
-              <div class="chart-legend" style="margin-top:6px">
-                <span><span class="ldot" style="background:var(--purple)"></span>BSR %</span>
-                <span><span class="ldot" style="background:var(--green)"></span>Healthy 65%</span>
-                <span><span class="ldot" style="background:var(--yellow)"></span>Mixed 50%</span>
-              </div>
+            <div class="msem-section">
+              <div class="msem-label">⚠ Risk Advisory</div>
+              <div id="msem-risk" class="msem-risk"></div>
             </div>
           </div>
         </div>
 
-      </div>
-    </div>
+        <div class="dash-grid">
 
-  </div>
+          <div class="col">
 
-  <div class="site-footer">
-    <div class="footer-left">
-      <div class="footer-brand" style="display:flex;align-items:center;gap:8px;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" style="flex-shrink:0">
-          <rect width="24" height="24" rx="4" fill="#1c2638" />
-          <rect x="2" y="17" width="3" height="5" rx=".5" fill="#f87171" opacity=".9" />
-          <rect x="6" y="14" width="3" height="8" rx=".5" fill="#fb923c" opacity=".9" />
-          <rect x="10" y="11" width="3" height="11" rx=".5" fill="#fbbf24" opacity=".9" />
-          <rect x="14" y="8" width="3" height="14" rx=".5" fill="#34d399" opacity=".9" />
-          <rect x="18" y="5" width="3" height="17" rx=".5" fill="#4ade80" opacity=".9" />
-          <path d="M 2 19 Q 12 3 22 19" fill="none" stroke="#5ba3f5" stroke-width="1.2" stroke-linecap="round"
-            opacity=".7" />
-          <circle cx="12" cy="4" r="1.2" fill="#5ba3f5" />
-        </svg>
-        NSE <span>BREADTH</span> RADAR
+            <div class="card" id="srt-home-card" style="border-top:2px solid var(--purple)">
+              <div class="card-head">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div class="card-title">🗺 Sector Command</div>
+                  <span id="vcpb-scan-badge"
+                    style="display:none;font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(45,212,191,.12);color:var(--teal);font-family:var(--mono);white-space:nowrap"></span>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center">
+                  <a href="sectors.html" target="_blank"
+                    style="font-size:10px;padding:3px 8px;background:rgba(45,212,191,.12);color:var(--teal);border:1px solid rgba(45,212,191,.3);border-radius:4px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:4px;transition:all .15s ease;"
+                    onmouseenter="this.style.background='rgba(45,212,191,.25)';this.style.color='#fff';"
+                    onmouseleave="this.style.background='rgba(45,212,191,.12)';this.style.color='var(--teal)';"
+                    title="Open Full Sector Command in a separate dedicated page">
+                    <span>Full Studio ↗</span>
+                  </a>
+                  <button onclick="vcpbFetch(true)" title="Refresh breadth data"
+                    style="font-size:9px;padding:3px 8px;background:rgba(45,212,191,.1);color:var(--teal);border:1px solid rgba(45,212,191,.25);border-radius:4px;cursor:pointer;font-weight:600;letter-spacing:.4px">↻</button>
+                  <button class="info-btn" onclick="showInfoTip('sector-command',this)"
+                    title="About Sector Command">i</button>
+                </div>
+              </div>
+
+              <!-- Quick Sector & Cluster Leadership Summary -->
+              <div class="scc-summary-body" style="padding:12px 14px 14px;">
+                <!-- Consensus Strip -->
+                <div id="vcpb-consensus-strip"
+                  style="padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+                  <div style="display:flex;align-items:center;gap:6px;font-size:11px">
+                    <span style="font-weight:700;color:var(--green)">⚡ LEADERS:</span>
+                    <span id="vcpb-ls-lead" style="color:var(--text);font-family:var(--mono);font-size:10px">—</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;font-size:11px">
+                    <span style="font-weight:700;color:var(--yellow)">👁 WATCH:</span>
+                    <span id="vcpb-ls-watch" style="color:var(--text);font-family:var(--mono);font-size:10px">—</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;font-size:11px">
+                    <span style="font-weight:700;color:var(--red)">✕ AVOID:</span>
+                    <span id="vcpb-ls-avoid" style="color:var(--dim);font-family:var(--mono);font-size:10px">—</span>
+                  </div>
+                </div>
+
+                <!-- Two-Column Overview Grid -->
+                <div class="scc-overview-grid"
+                  style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px;margin-bottom:12px;">
+                  <!-- Left: Top Leading Sectors -->
+                  <div
+                    style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                      <span
+                        style="font-size:11px;font-weight:700;color:var(--teal);letter-spacing:0.5px;text-transform:uppercase;">📶
+                        Top Leading Sectors</span>
+                      <a href="sectors.html?tab=breadth" target="_blank"
+                        style="font-size:10px;color:var(--accent);text-decoration:none;font-weight:600">View All 13
+                        ↗</a>
+                    </div>
+                    <div id="scc-dash-top-sectors" style="display:flex;flex-direction:column;gap:6px;">
+                      <div style="font-size:11px;color:var(--dim);padding:8px 0;text-align:center">Loading sectors
+                        breadth…</div>
+                    </div>
+                  </div>
+
+                  <!-- Right: Top Breakout Themes -->
+                  <div
+                    style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                      <span
+                        style="font-size:11px;font-weight:700;color:var(--lime);letter-spacing:0.5px;text-transform:uppercase;">⭐
+                        Top Breakout Themes</span>
+                      <a href="sectors.html?tab=clusters" target="_blank"
+                        style="font-size:10px;color:var(--accent);text-decoration:none;font-weight:600">View All Themes
+                        ↗</a>
+                    </div>
+                    <div id="scc-dash-top-clusters" style="display:flex;flex-direction:column;gap:6px;">
+                      <div style="font-size:11px;color:var(--dim);padding:8px 0;text-align:center">Calculating breakout
+                        themes…</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Studio Quick Jump Tabs Ribbon -->
+                <div
+                  style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:linear-gradient(90deg, rgba(45,212,191,0.08), rgba(167,139,250,0.08));border:1px solid rgba(45,212,191,0.25);border-radius:6px;flex-wrap:wrap;gap:8px;">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="font-size:11px;font-weight:800;color:var(--text);">Full Studio Modes:</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                    <a href="sectors.html?tab=breadth" target="_blank"
+                      style="font-size:10px;font-weight:700;color:var(--teal);padding:2px 7px;background:rgba(45,212,191,0.1);border:1px solid rgba(45,212,191,0.3);border-radius:3px;text-decoration:none;">📶
+                      Sectors Table</a>
+                    <a href="sectors.html?tab=clusters" target="_blank"
+                      style="font-size:10px;font-weight:700;color:#34d399;padding:2px 7px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);border-radius:3px;text-decoration:none;">⭐
+                      Themes</a>
+                    <a href="sectors.html?tab=rrg" target="_blank"
+                      style="font-size:10px;font-weight:700;color:var(--purple);padding:2px 7px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:3px;text-decoration:none;">📡
+                      RRG Map</a>
+                    <a href="sectors.html?tab=heatmap" target="_blank"
+                      style="font-size:10px;font-weight:700;color:var(--teal);padding:2px 7px;background:rgba(45,212,191,0.1);border:1px solid rgba(45,212,191,0.3);border-radius:3px;text-decoration:none;">🌡
+                      Heatmap</a>
+                    <a href="sectors.html?tab=chart" target="_blank"
+                      style="font-size:10px;font-weight:700;color:var(--accent);padding:2px 7px;background:rgba(91,163,245,0.1);border:1px solid rgba(91,163,245,0.3);border-radius:3px;text-decoration:none;">📈
+                      Split Charts</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" id="sec-score-trend">
+              <div class="card-head">
+                <div class="card-title">30-Day Score Trend</div><button class="info-btn"
+                  onclick="showInfoTip('score-trend',this)" title="About this indicator">i</button>
+              </div>
+              <div class="card-body" style="padding-bottom:8px">
+                <div class="chart-canvas-wrap"><canvas id="score-chart"></canvas></div>
+                <div class="chart-legend">
+                  <span><span class="ldot" style="background:var(--accent)"></span>Score</span>
+                  <span><span class="ldot" style="background:var(--lime)"></span>Healthy (55)</span>
+                  <span><span class="ldot" style="background:var(--yellow)"></span>Expanding (45)</span>
+                  <span><span class="ldot" style="background:var(--orange)"></span>Caution (35)</span>
+                  <span style="color:var(--dim);font-size:9px;margin-left:6px">&#9432; Rising 30→50+ often marks rally
+                    start</span>
+                </div>
+              </div>
+            </div>
+
+
+            <div class="card" id="sec-history">
+              <div class="card-head" style="cursor:pointer"
+                onclick="toggleCollapse('hist-body-wrap','hist-toggle-icon')">
+                <div class="card-title">30-Day History</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <button class="card-action btn-export" onclick="event.stopPropagation();exportCSV()">&#8595; Export
+                    CSV</button>
+                  <span id="hist-toggle-icon"
+                    style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block">&#9660;</span>
+                </div>
+              </div>
+              <div id="hist-body-wrap" style="display:none">
+                <div class="hist-wrap">
+                  <table class="hist-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>ADV</th>
+                        <th>DEC</th>
+                        <th>UNC</th>
+                        <th>A/D</th>
+                        <th>52W-H</th>
+                        <th>52W-L</th>
+                        <th>H/L%</th>
+                        <th>&gt;E20%</th>
+                        <th>&gt;S50%</th>
+                        <th>&gt;S200%</th>
+                        <th>Nifty</th>
+                        <th>Score</th>
+                        <th>Zone</th>
+                        <th>R</th>
+                        <th>Notes</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="hist-body">
+                      <tr>
+                        <td colspan="17" style="color:var(--dim);padding:20px;text-align:center;font-size:11px">NO
+                          HISTORY
+                          YET</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="col">
+
+            <div class="card" id="ftd-module-card" style="border-top:2px solid var(--lime)">
+              <div class="card-head">
+                <div class="card-title" style="color:var(--lime)">🚀 Follow-Through Day Tracker</div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <button class="info-btn" onclick="showInfoTip('ftd',this)" title="About FTD">i</button>
+                </div>
+              </div>
+
+              <div id="ftd-banner"
+                style="display:none;padding:9px 14px;margin:10px 12px 0;border-radius:5px;font-size:12px;font-weight:600;text-align:center">
+              </div>
+
+              <div class="ftd-grid">
+                <div class="ftd-cell" id="ftd-status-cell">
+                  <div class="ftd-lbl">Status</div>
+                  <div class="ftd-val" id="ftd-status" style="color:var(--dim)">No Data</div>
+                  <div class="ftd-sub" id="ftd-status-sub">Log Day 1 of a rally attempt to begin tracking</div>
+                </div>
+                <div class="ftd-cell">
+                  <div class="ftd-lbl">Rally Day</div>
+                  <div class="ftd-val" id="ftd-rally-day" style="color:var(--text)">—</div>
+                  <div class="ftd-sub">Day 1 Attempt · Day 3+ FTD</div>
+                </div>
+                <div class="ftd-cell">
+                  <div class="ftd-lbl">Last Move</div>
+                  <div class="ftd-val" id="ftd-move" style="color:var(--text)">—</div>
+                  <div class="ftd-sub">Need close &gt; 1.5% on vol↑</div>
+                </div>
+              </div>
+
+              <div id="ftd-log-wrap" style="display:none">
+                <div
+                  style="padding:8px 14px 4px;display:flex;align-items:center;justify-content:space-between;cursor:pointer"
+                  onclick="toggleCollapse('ftd-log','ftd-log-icon')">
+                  <div
+                    style="font-size:10px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.5px">
+                    Rally Log</div>
+                  <span id="ftd-log-icon" style="font-size:11px;color:var(--dim)">&#9660;</span>
+                </div>
+                <div id="ftd-log" class="ftd-log" style="display:none">
+                  <div class="ftd-row">
+                    <span class="ftd-col-hdr">Date</span>
+                    <span class="ftd-col-hdr">Type</span>
+                    <span class="ftd-col-hdr">Close</span>
+                    <span class="ftd-col-hdr">Move</span>
+                    <span class="ftd-col-hdr">Vol ↑</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" id="mpm-module-card" style="border-top:2px solid var(--teal)">
+              <div class="card-head" style="cursor:pointer"
+                onclick="toggleCollapse('mpm-card-body','mpm-card-toggle-icon')">
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <div class="card-title"><span style="color:var(--teal)">Market Pressure Meter (MPM)</span></div>
+                  <div style="font-size:9px;color:var(--sub)">Acc = Close↑+Vol↑ · Dist = Close↓+Vol↑ · Last 25d</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <button class="info-btn" onclick="event.stopPropagation();showInfoTip('market-pressure',this)"
+                    title="About MPM">i</button>
+                  <span id="mpm-card-toggle-icon"
+                    style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block;transform:rotate(-90deg)">&#9660;</span>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:90px 1fr;gap:0;border-top:1px solid var(--border)">
+                <div class="mpm-score-panel" style="border-right:1px solid var(--border)">
+                  <div class="mpm-score-lbl">Pressure</div>
+                  <div class="mpm-score-num" id="mpm-score">—</div>
+                  <div class="mpm-score-sub">Acc − Dist</div>
+                  <div class="mpm-counts" style="margin-top:6px">
+                    <span><b id="mpm-acc-n" style="color:var(--lime);font-size:11px">0</b> <span
+                        style="color:var(--sub);font-size:9px">Acc</span></span>
+                    <span><b id="mpm-dist-n" style="color:var(--red);font-size:11px">0</b> <span
+                        style="color:var(--sub);font-size:9px">Dist</span></span>
+                  </div>
+                </div>
+                <div style="padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:5px">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+                    <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px">25-Day
+                      Pressure
+                      Chart</div>
+                    <div class="mpm-cond-name" id="mpm-cond" style="font-size:11px">No Data</div>
+                  </div>
+                  <div class="mpm-bars" id="mpm-bars" style="height:36px"></div>
+                  <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim);margin-top:1px">
+                    <span style="color:var(--lime)">▲ Acc</span>
+                    <span id="mpm-window" style="color:var(--sub)">last 25d</span>
+                    <span style="color:var(--red)">▼ Dist</span>
+                  </div>
+                </div>
+              </div>
+
+              <div id="mpm-card-body" style="display:none">
+
+                <div class="mpm-hero" style="border-top:1px solid var(--border)">
+                  <div class="mpm-gauge-panel" style="grid-column:1/3">
+                    <div
+                      style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px">
+                      Pressure Gauge</div>
+                    <div class="mpm-gauge-wrap">
+                      <div class="mpm-gauge-fill"></div>
+                      <div class="mpm-needle" id="mpm-needle" style="left:50%"></div>
+                    </div>
+                    <div class="mpm-gauge-labels">
+                      <span style="color:var(--red)">Heavy Sell</span>
+                      <span style="color:var(--orange)">Weak</span>
+                      <span style="color:var(--yellow)">Neutral</span>
+                      <span style="color:var(--green)">Healthy</span>
+                      <span style="color:var(--lime)">Strong Buy</span>
+                    </div>
+                  </div>
+                  <div class="mpm-cond-panel">
+                    <div
+                      style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">
+                      Condition</div>
+                    <div class="mpm-cond-hint" id="mpm-hint">Enter Nifty data to see pressure.</div>
+                    <div class="mpm-counts" style="margin-top:6px">
+                      <span><b style="color:var(--dim);font-size:13px" id="mpm-neut-n">0</b> <span
+                          style="color:var(--sub)">Neu</span></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="padding:9px 12px;border-top:1px solid var(--border)">
+                  <div style="font-size:10px;color:var(--sub)">
+                    &#9432;&nbsp;<b style="color:var(--lime)">Acc:</b> Close&gt;Prev AND Vol&gt;Prev &nbsp;|&nbsp;
+                    <b style="color:var(--red)">Dist:</b> Close&lt;Prev AND Vol&gt;Prev &nbsp;|&nbsp; Score = Acc−Dist
+                    (last
+                    25d)
+                  </div>
+                  <div id="mpm-sync-msg"
+                    style="font-size:11px;margin-top:6px;display:none;padding:6px 10px;border-radius:4px;background:rgba(45,212,191,.06);border:1px solid rgba(45,212,191,.15)">
+                  </div>
+                </div>
+
+                <div class="mpm-import-panel">
+                  <div class="mpm-import-title">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Import from NSE CSV — Two steps, ~30 seconds
+                  </div>
+                  <div
+                    style="display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid rgba(45,212,191,.18);border-radius:3px;padding:8px 10px;margin-bottom:8px">
+                    <div style="flex:1">
+                      <div style="font-size:11px;color:var(--text);font-weight:600;margin-bottom:2px">Step 1 — Open NSE
+                        download page</div>
+                      <div style="font-size:9px;color:var(--dim)">Select <b style="color:var(--text)">Nifty 50</b> ·
+                        From =
+                        35 days ago · Get Data · Download CSV</div>
+                    </div>
+                    <button onclick="mpmOpenNSE()"
+                      style="background:var(--teal);color:#0e1420;font-size:11px;font-weight:600;padding:7px 12px;border:none;border-radius:3px;cursor:pointer;white-space:nowrap">&#10132;
+                      Open NSE</button>
+                  </div>
+                  <div style="font-size:10px;color:var(--text);font-weight:600;margin-bottom:5px">Step 2 — Drop CSV here
+                  </div>
+                  <div class="mpm-drop-zone" id="mpm-drop-zone"
+                    ondragover="event.preventDefault();this.classList.add('drag-over')"
+                    ondragleave="this.classList.remove('drag-over')" ondrop="mpmHandleDrop(event)">
+                    <input type="file" accept=".csv" onchange="mpmHandleFile(this.files[0])">
+                    <div class="mpm-drop-lbl">
+                      <b>Click to browse</b> or drag &amp; drop NSE CSV
+                      <small>Auto-detects date format · Acc/Dist calculated instantly</small>
+                    </div>
+                  </div>
+                  <div class="mpm-preview" id="mpm-preview">
+                    <div class="mpm-preview-title" id="mpm-preview-title">Preview</div>
+                    <div class="mpm-preview-rows" id="mpm-preview-rows"></div>
+                    <button class="btn-mpm-import" id="btn-mpm-import" onclick="mpmImportConfirm()" disabled>Import All
+                      Days</button>
+                    <button class="btn btn-sec"
+                      style="font-size:11px;padding:4px 10px;margin-left:4px;color:var(--teal);border-color:rgba(45,212,191,.3)"
+                      onclick="forcePushMpm()" title="Push MPM data to cloud now">☁ Push to Cloud</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card-head" style="border-top:1px solid var(--border);cursor:pointer"
+                onclick="toggleCollapse('mpm-table-wrap','mpm-toggle-icon')">
+                <div class="card-title">Pressure Day Log — Last 25d</div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <button class="info-btn" onclick="event.stopPropagation();showInfoTip('mpm-tracker',this)"
+                    title="About this indicator">i</button>
+                  <button class="card-action btn-export" onclick="event.stopPropagation();mpmExport()"
+                    style="border-color:rgba(45,212,191,.28);color:var(--teal)">&#8595; Export CSV</button>
+                  <span id="mpm-toggle-icon"
+                    style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block">&#9660;</span>
+                </div>
+              </div>
+              <div id="mpm-table-wrap" style="display:none" class="mpm-table-wrap-collapsible">
+                <div class="mpm-table-wrap">
+                  <table class="mpm-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Day Type</th>
+                        <th>Nifty Close</th>
+                        <th>Prev Close</th>
+                        <th>Close Chg%</th>
+                        <th>Volume (Cr)</th>
+                        <th>Prev Vol</th>
+                        <th>Vol Chg%</th>
+                        <th>Running Score</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="mpm-tbody">
+                      <tr>
+                        <td colspan="10" style="color:var(--dim);padding:16px;text-align:center;font-size:10px">NO DATA
+                          YET
+                          — ADD NIFTY DAILY DATA ABOVE</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" id="pet-card" style="border-top:2px solid var(--accent)">
+              <div class="card-head" style="cursor:pointer" onclick="toggleCollapse('pet-body','pet-toggle-icon')">
+                <div class="card-title" style="color:var(--accent)">📈 Personal Exposure Tracker</div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <button class="info-btn" onclick="event.stopPropagation();showInfoTip('exposure',this)"
+                    title="About Exposure">i</button>
+                  <span id="pet-toggle-icon"
+                    style="font-size:12px;color:var(--dim);transition:transform .25s;display:inline-block">&#9660;</span>
+                </div>
+              </div>
+              <div id="pet-body">
+
+                <div
+                  style="padding:10px 14px;border-top:1px solid var(--border);background:var(--bg3);display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+                  <div>
+                    <div
+                      style="font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;font-weight:600">
+                      Total Capital (₹)</div>
+                    <input type="number" id="pet-total-capital" placeholder="500000" min="0" step="1000"
+                      oninput="petUpdate()"
+                      style="width:130px;background:var(--bg);border:1px solid var(--bdr2);color:var(--accent);font-family:var(--mono);font-size:12px;padding:5px 8px;border-radius:4px;outline:none">
+                  </div>
+                  <div>
+                    <div
+                      style="font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;font-weight:600">
+                      Currently Invested (₹)</div>
+                    <input type="number" id="pet-invested" placeholder="150000" min="0" step="1000"
+                      oninput="petUpdate()"
+                      style="width:130px;background:var(--bg);border:1px solid var(--bdr2);color:var(--text);font-family:var(--mono);font-size:12px;padding:5px 8px;border-radius:4px;outline:none">
+                  </div>
+                  <button onclick="petSave()"
+                    style="font-size:11px;font-weight:600;padding:5px 14px;background:rgba(91,163,245,.12);color:var(--accent);border:1px solid rgba(91,163,245,.3);border-radius:4px;cursor:pointer;height:30px">Save</button>
+                  <div style="font-size:10px;color:var(--dim);align-self:center;margin-left:4px" id="pet-saved-note">
+                  </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:100px 1fr;gap:0;border-top:1px solid var(--border)">
+                  <div
+                    style="padding:14px 12px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center">
+                    <div
+                      style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-bottom:4px">
+                      Suggested</div>
+                    <div
+                      style="font-family:var(--disp);font-size:42px;font-weight:800;line-height:1;transition:color .4s"
+                      id="msem-exp-pct">—</div>
+                    <div style="font-size:10px;color:var(--sub);margin-top:4px" id="msem-exp-range">—</div>
+                  </div>
+                  <div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+                      <div
+                        style="background:var(--bg3);border-radius:4px;padding:8px 10px;border:1px solid var(--border)">
+                        <div
+                          style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">
+                          Suggested ₹</div>
+                        <div style="font-family:var(--disp);font-size:16px;font-weight:800;color:var(--accent)"
+                          id="pet-suggested-inr">—</div>
+                      </div>
+                      <div
+                        style="background:var(--bg3);border-radius:4px;padding:8px 10px;border:1px solid var(--border)">
+                        <div
+                          style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">
+                          Invested ₹</div>
+                        <div style="font-family:var(--disp);font-size:16px;font-weight:800;color:var(--text)"
+                          id="pet-invested-inr">—</div>
+                      </div>
+                      <div
+                        style="background:var(--bg3);border-radius:4px;padding:8px 10px;border:1px solid var(--border)">
+                        <div
+                          style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">
+                          Gap / Headroom</div>
+                        <div style="font-family:var(--disp);font-size:16px;font-weight:800" id="pet-gap-inr">—</div>
+                      </div>
+                    </div>
+
+                    <div id="pet-status-banner"
+                      style="font-size:11px;font-weight:600;padding:6px 10px;border-radius:4px;line-height:1.4;display:none">
+                    </div>
+
+                    <div>
+                      <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px;margin-bottom:4px">
+                        <div style="flex:1;background:rgba(248,113,113,.45);border-radius:2px"></div>
+                        <div style="flex:1;background:rgba(251,146,60,.45);border-radius:2px"></div>
+                        <div style="flex:2;background:rgba(250,204,21,.45);border-radius:2px"></div>
+                        <div style="flex:2;background:rgba(52,211,153,.45);border-radius:2px"></div>
+                        <div style="flex:2;background:rgba(74,222,128,.45);border-radius:2px"></div>
+                      </div>
+                      <div class="msem-exp-track">
+                        <div class="msem-exp-fill" id="msem-exp-fill" style="width:0%"></div>
+                      </div>
+                      <div
+                        style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim);margin-top:2px">
+                        <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+                      </div>
+                    </div>
+                    <div style="font-size:11px;color:var(--sub);line-height:1.5" id="msem-exp-note">Save EOD data to
+                      calculate exposure.</div>
+                  </div>
+                </div>
+
+                <div style="padding:8px 14px 10px;border-top:1px solid var(--border)">
+                  <div
+                    style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-bottom:6px">
+                    Zone Reference</div>
+                  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">
+                    <div
+                      style="background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.18);border-radius:4px;padding:5px 6px;text-align:center">
+                      <div
+                        style="font-size:8px;color:var(--red);font-weight:600;text-transform:uppercase;margin-bottom:2px">
+                        Danger</div>
+                      <div style="font-family:var(--disp);font-size:12px;font-weight:800;color:var(--red)">0–10%</div>
+                      <div style="font-size:8px;color:var(--dim);margin-top:2px">No trades</div>
+                    </div>
+                    <div
+                      style="background:rgba(251,146,60,.08);border:1px solid rgba(251,146,60,.18);border-radius:4px;padding:5px 6px;text-align:center">
+                      <div
+                        style="font-size:8px;color:var(--orange);font-weight:600;text-transform:uppercase;margin-bottom:2px">
+                        Caution</div>
+                      <div style="font-family:var(--disp);font-size:12px;font-weight:800;color:var(--orange)">10–25%
+                      </div>
+                      <div style="font-size:8px;color:var(--dim);margin-top:2px">0.25R pilot</div>
+                    </div>
+                    <div
+                      style="background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.18);border-radius:4px;padding:5px 6px;text-align:center">
+                      <div
+                        style="font-size:8px;color:var(--yellow);font-weight:600;text-transform:uppercase;margin-bottom:2px">
+                        Selective</div>
+                      <div style="font-family:var(--disp);font-size:12px;font-weight:800;color:var(--yellow)">25–50%
+                      </div>
+                      <div style="font-size:8px;color:var(--dim);margin-top:2px">0.5–1R</div>
+                    </div>
+                    <div
+                      style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.18);border-radius:4px;padding:5px 6px;text-align:center">
+                      <div
+                        style="font-size:8px;color:var(--green);font-weight:600;text-transform:uppercase;margin-bottom:2px">
+                        Normal</div>
+                      <div style="font-family:var(--disp);font-size:12px;font-weight:800;color:var(--green)">50–75%
+                      </div>
+                      <div style="font-size:8px;color:var(--dim);margin-top:2px">Full size</div>
+                    </div>
+                    <div
+                      style="background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.18);border-radius:4px;padding:5px 6px;text-align:center">
+                      <div
+                        style="font-size:8px;color:var(--lime);font-weight:600;text-transform:uppercase;margin-bottom:2px">
+                        Aggressive</div>
+                      <div style="font-family:var(--disp);font-size:12px;font-weight:800;color:var(--lime)">75–100%
+                      </div>
+                      <div style="font-size:8px;color:var(--dim);margin-top:2px">Let run</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" id="bsr-module-card" style="border-top:2px solid var(--purple)">
+              <div class="card-head">
+                <div class="card-title">
+                  <span style="color:var(--purple)">Breakout Success Rate (BSR)</span>
+                  <button class="info-btn" onclick="showInfoTip('bsr-tracker',this)"
+                    title="About this indicator">i</button>
+                </div>
+                <span style="font-size:9px;color:var(--sub)">✓ Win ≥5% above pivot · ✗ Loss: hit stop / close below
+                  pivot · ⏳ Stale: pending >60d</span>
+              </div>
+
+              <!-- BSR Mode Selector -->
+              <div class="bsr-mode-selector-wrap">
+                <div class="bsr-mode-selector">
+                  <button type="button" class="bsr-mode-tab active" id="bsr-mode-btn-quick"
+                    onclick="bsrSetMode('quick')">
+                    <span>⚡</span> Quick Ratio (/10)
+                  </button>
+                  <button type="button" class="bsr-mode-tab" id="bsr-mode-btn-log" onclick="bsrSetMode('log')">
+                    <span>📋</span> Detailed Trade Log
+                  </button>
+                </div>
+                <span class="bsr-active-source-badge" id="bsr-source-badge">⚡ Active: Quick Ratio (/10)</span>
+              </div>
+
+              <!-- Quick Ratio Panel -->
+              <div id="bsr-quick-panel" class="bsr-quick-panel">
+                <div class="bsr-quick-grid">
+                  <div class="bsr-quick-box bsr-box-won">
+                    <div class="bsr-quick-header">
+                      <span class="bsr-quick-tag tag-won">WIN</span>
+                      <label for="bsr-quick-won">Won Breakouts</label>
+                    </div>
+                    <div class="bsr-quick-input-wrap">
+                      <input type="number" id="bsr-quick-won" min="0" max="10" step="1" placeholder="7"
+                        oninput="bsrQuickOnInput('won')" onchange="bsrQuickSaveAndApply()">
+                      <span class="bsr-quick-denom">/ 10</span>
+                    </div>
+                    <div class="bsr-quick-hint">Breakouts gaining ≥ 5%</div>
+                  </div>
+
+                  <div class="bsr-quick-box bsr-box-lost">
+                    <div class="bsr-quick-header">
+                      <span class="bsr-quick-tag tag-lost">LOSS</span>
+                      <label for="bsr-quick-lost">Lost Breakouts</label>
+                    </div>
+                    <div class="bsr-quick-input-wrap">
+                      <input type="number" id="bsr-quick-lost" min="0" max="10" step="1" placeholder="3"
+                        oninput="bsrQuickOnInput('lost')" onchange="bsrQuickSaveAndApply()">
+                      <span class="bsr-quick-denom">/ 10</span>
+                    </div>
+                    <div class="bsr-quick-hint">Stopped out or failed</div>
+                  </div>
+
+                  <div class="bsr-quick-calc-box">
+                    <div class="bsr-qcalc-lbl">Derived BSR Score</div>
+                    <div class="bsr-qcalc-val" id="bsr-qcalc-val">—</div>
+                    <div class="bsr-qcalc-zone" id="bsr-qcalc-zone">Enter Won/Lost</div>
+                    <div class="bsr-quick-btn-row">
+                      <button type="button" class="btn-bsr-apply" id="btn-bsr-apply" onclick="bsrQuickSaveAndApply()">✓
+                        Apply Score</button>
+                      <button type="button" class="btn-bsr-reset" onclick="bsrQuickReset()" title="Reset inputs">↺
+                        Clear</button>
+                      <span id="bsr-apply-badge" class="bsr-apply-badge"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Quick Presets -->
+                <div class="bsr-quick-presets">
+                  <span class="bsr-qp-lbl">1-Click Presets:</span>
+                  <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(8,2)">8 Won (80%)</button>
+                  <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(7,3)">7 Won (70%)</button>
+                  <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(6,4)">6 Won (60%)</button>
+                  <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(5,5)">5 Won (50%)</button>
+                  <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(4,6)">4 Won (40%)</button>
+                  <button type="button" class="bsr-qp-btn" onclick="bsrQuickSetPreset(3,7)">3 Won (30%)</button>
+                </div>
+                <div class="bsr-quick-note">
+                  💡 <b>Direct Entry:</b> Derive your BSR Score instantly without filling individual trade logs.
+                  Automatically syncs to Top Status Strip, RPG Arc Gauge, and Market Summary.
+                </div>
+                <div id="bsr-save-flash"
+                  style="font-size:11px;margin-top:8px;font-weight:700;color:var(--lime);display:none;opacity:0;transition:opacity .35s;align-items:center;gap:6px">
+                  ✓ BSR Score Saved</div>
+              </div>
+
+              <div class="bsr-hero">
+                <div class="bsr-score-panel">
+                  <div class="bsr-score-lbl">BSR</div>
+                  <div class="bsr-score-num" id="bsr-num" style="line-height:0.95">—</div>
+                  <div class="bsr-score-sub">success rate</div>
+                  <div style="margin-top:6px;border-top:1px solid var(--border);padding-top:4px">
+                    <div style="font-size:8px;color:var(--dim);text-transform:uppercase;font-weight:600">Expectancy
+                    </div>
+                    <div id="bsr-expectancy" style="font-size:13px;font-weight:800;color:var(--teal)">—</div>
+                  </div>
+                </div>
+                <div class="bsr-zone-panel">
+                  <div class="bsr-zone-lbl">Environment</div>
+                  <div class="bsr-zone-name" id="bsr-zone">No Data</div>
+                  <div class="bsr-stats">
+                    <span><b id="bsr-sn" style="color:var(--lime)">0</b> OK</span>
+                    <span><b id="bsr-fn" style="color:var(--red)">0</b> Fail</span>
+                    <span><b id="bsr-pn" style="color:var(--yellow)">0</b> Pend</span>
+                  </div>
+                </div>
+                <div class="bsr-meter-panel" style="border-right:1px solid var(--border)">
+                  <div class="bsr-m-zones">
+                    <div class="mz" style="background:rgba(248,113,113,.5)"></div>
+                    <div class="mz" style="background:rgba(251,146,60,.5)"></div>
+                    <div class="mz" style="background:rgba(250,204,21,.5)"></div>
+                    <div class="mz" style="background:rgba(34,197,94,.5)"></div>
+                    <div class="mz" style="background:rgba(167,139,250,.6)"></div>
+                  </div>
+                  <div class="bsr-m-track">
+                    <div class="bsr-m-fill" id="bsr-fill" style="width:0%;background:var(--dim)"></div>
+                  </div>
+                  <div class="bsr-m-ticks">
+                    <span>0%</span><span>30%</span><span>50%</span><span>65%</span><span>80%</span>
+                  </div>
+                  <div style="font-size:9px;color:var(--sub);margin-top:6px" id="bsr-breakdown"></div>
+                </div>
+                <div class="bsr-last-panel">
+                  <div class="bsr-last-lbl">Latest Trade</div>
+                  <div style="font-size:12px;color:var(--text);font-weight:600" id="bsr-last-sym">—</div>
+                  <div style="font-size:10px;color:var(--sub);margin-top:3px" id="bsr-last-info">—</div>
+                  <div style="font-size:9px;color:var(--dim);margin-top:6px" id="bsr-total">0 trades</div>
+                </div>
+              </div>
+
+              <!-- Detailed Trade Log Section -->
+              <div id="bsr-log-section" style="display:none">
+                <div class="bsr-filter-row" id="bsr-filter-row">
+                  <button class="bsr-filter-btn active" id="bsr-f-all" onclick="bsrSetFilter('all')">All</button>
+                  <button class="bsr-filter-btn" id="bsr-f-pending" onclick="bsrSetFilter('pending')">⏳ Pending</button>
+                  <button class="bsr-filter-btn" id="bsr-f-success" onclick="bsrSetFilter('success')">✓ Success</button>
+                  <button class="bsr-filter-btn" id="bsr-f-failed" onclick="bsrSetFilter('failed')">✗ Failed</button>
+                  <button class="bsr-filter-btn" id="bsr-f-stale" onclick="bsrSetFilter('stale')">⏳ Stale</button>
+                  <span class="bsr-filter-label" id="bsr-filter-label"></span>
+                </div>
+
+                <div class="bsr-add-form">
+                  <div class="bsr-form-grid">
+                    <div class="bsr-field">
+                      <label>Symbol</label>
+                      <input type="text" id="bsr-sym" placeholder="RELIANCE" style="text-transform:uppercase">
+                    </div>
+                    <div class="bsr-field">
+                      <label>Pivot &#8377;</label>
+                      <input type="number" id="bsr-pivot" placeholder="2450.00" step="0.05" min="0">
+                    </div>
+                    <div class="bsr-field">
+                      <label>Stop Loss &#8377;</label>
+                      <input type="number" id="bsr-stop" placeholder="auto (-5%)" step="0.05" min="0">
+                    </div>
+                    <div class="bsr-field">
+                      <label>Current &#8377;</label>
+                      <input type="number" id="bsr-curr" placeholder="2510.00" step="0.05" min="0">
+                    </div>
+                    <div class="bsr-field">
+                      <label>Breakout Date</label>
+                      <input type="date" id="bsr-date">
+                    </div>
+                    <div style="display:flex;align-items:flex-end">
+                      <button class="btn-bsr-add" onclick="bsrAdd()">+ Add Trade</button>
+                    </div>
+                  </div>
+                  <div style="font-size:8.5px;color:var(--sub);margin-top:4px">
+                    &#9432; Click any price in table to update &nbsp;|&nbsp; <b style="color:var(--lime)">Success:</b>
+                    ≥Pivot×1.05 &nbsp;|&nbsp; <b style="color:var(--red)">Fail:</b> ≤Stop Loss &nbsp;|&nbsp; <b
+                      style="color:var(--yellow)">Pending:</b> Active &nbsp;|&nbsp; <b
+                      style="color:var(--teal)">Expectancy:</b> Avg R of resolved trades
+                  </div>
+                  <div style="font-size:11px;opacity:0;transition:opacity .4s;margin-top:4px;min-height:16px"
+                    id="bsr-msg">
+                  </div>
+                </div>
+
+                <div class="card-head" style="border-top:1px solid var(--border);padding:8px 12px">
+                  <div class="card-title" style="font-size:12px">BSR Trade Log</div>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <button class="info-btn" onclick="showInfoTip('bsr-tracker',this)"
+                      title="About this indicator">i</button>
+                    <button class="card-action btn-export" onclick="bsrExport()"
+                      style="border-color:rgba(167,139,250,.28);color:var(--purple)">&#8595; Export CSV</button>
+                  </div>
+                </div>
+
+                <div class="bsr-table-wrap">
+                  <table class="bsr-table">
+                    <thead>
+                      <tr>
+                        <th>Symbol</th>
+                        <th>Breakout Date</th>
+                        <th>Age</th>
+                        <th>Pivot &#8377;</th>
+                        <th>Stop Loss</th>
+                        <th>Current &#8377;</th>
+                        <th>Gain%</th>
+                        <th>R-Val</th>
+                        <th>Status</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="bsr-tbody">
+                      <tr>
+                        <td colspan="10" style="color:var(--dim);padding:16px;text-align:center;font-size:10px">NO
+                          TRADES
+                          LOGGED YET</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style="padding:10px 12px;border-top:1px solid var(--border)">
+                  <div class="sec">BSR Trend — Success Rate Over Time</div>
+                  <div class="bsr-canvas-wrap"><canvas id="bsr-chart"></canvas></div>
+                  <div class="chart-legend" style="margin-top:6px">
+                    <span><span class="ldot" style="background:var(--purple)"></span>BSR %</span>
+                    <span><span class="ldot" style="background:var(--green)"></span>Healthy 65%</span>
+                    <span><span class="ldot" style="background:var(--yellow)"></span>Mixed 50%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
-      <div class="footer-tagline">Clarity in every market cycle — built for the Indian swing trader</div>
-    </div>
-    <div class="footer-right">
-      <div class="footer-credit">
-        Designed &amp; built by <b>Shibu M K</b><br>
-        <a href="mailto:shibuvyshnavam@gmail.com" style="color:var(--accent)">shibuvyshnavam@gmail.com</a>
+
+      <div class="site-footer">
+        <div class="footer-left">
+          <div class="footer-brand" style="display:flex;align-items:center;gap:8px;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" style="flex-shrink:0">
+              <rect width="24" height="24" rx="4" fill="#1c2638" />
+              <rect x="2" y="17" width="3" height="5" rx=".5" fill="#f87171" opacity=".9" />
+              <rect x="6" y="14" width="3" height="8" rx=".5" fill="#fb923c" opacity=".9" />
+              <rect x="10" y="11" width="3" height="11" rx=".5" fill="#fbbf24" opacity=".9" />
+              <rect x="14" y="8" width="3" height="14" rx=".5" fill="#34d399" opacity=".9" />
+              <rect x="18" y="5" width="3" height="17" rx=".5" fill="#4ade80" opacity=".9" />
+              <path d="M 2 19 Q 12 3 22 19" fill="none" stroke="#5ba3f5" stroke-width="1.2" stroke-linecap="round"
+                opacity=".7" />
+              <circle cx="12" cy="4" r="1.2" fill="#5ba3f5" />
+            </svg>
+            NSE <span>BREADTH</span> RADAR
+          </div>
+          <div class="footer-tagline">Clarity in every market cycle — built for the Indian swing trader</div>
+        </div>
+        <div class="footer-right">
+          <div class="footer-credit">
+            Designed &amp; built by <b>Shibu M K</b><br>
+            <a href="mailto:shibuvyshnavam@gmail.com" style="color:var(--accent)">shibuvyshnavam@gmail.com</a>
+          </div>
+          <button class="footer-about-btn" onclick="openAboutModal()">ℹ About</button>
+        </div>
+        <div class="footer-copy">
+          <span>© 2026 Shibu M K · M.Radar (Market Radar) · All rights reserved</span>
+          <span>Data sources: NSE India · Trendlyne · ET Markets · For educational purposes only — not investment
+            advice</span>
+        </div>
       </div>
-      <button class="footer-about-btn" onclick="openAboutModal()">ℹ About</button>
-    </div>
-    <div class="footer-copy">
-      <span>© 2026 Shibu M K · M.Radar (Market Radar) · All rights reserved</span>
-      <span>Data sources: NSE India · Trendlyne · ET Markets · For educational purposes only — not investment
-        advice</span>
-    </div>
-  </div>
 
     </div> <!-- end .main -->
   </div> <!-- end .shell -->
 
   <script src="screener_stocks.js"></script>
+  <script src="radar_fundamentals.js"></script>
+  <script src="radar_themes.js"></script>
   <script src="index.js?v=3.0.7"></script>
 
   <div id="sector-drill-overlay"
@@ -1271,6 +1420,13 @@
           ☆ Shortlist
         </button>
 
+        <!-- Watchlist Sidebar Toggle (Mobile & Desktop) -->
+        <button id="max-chart-wl-toggle-btn" onclick="toggleMaxChartSidebar()" class="tv-shortlist-btn"
+          title="Toggle Watchlist Sidebar"
+          style="color:var(--teal);border-color:rgba(45,212,191,0.35);font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;cursor:pointer;background:rgba(45,212,191,0.08);transition:all .15s ease;">
+          📋 WL
+        </button>
+
         <!-- Divider -->
         <div style="width:1px;height:20px;background:var(--border);flex-shrink:0;"></div>
 
@@ -1298,7 +1454,8 @@
         <!-- Layout select (Multi-Chart Layouts) -->
         <div style="display:inline-flex;align-items:center;gap:4px;flex-shrink:0;">
           <span style="font-size:10px;color:var(--dim);font-weight:600;">Layout:</span>
-          <select id="max-chart-layout-select" onchange="maxChartSetLayout(this.value)" title="Layout Switcher (Number of Charts)"
+          <select id="max-chart-layout-select" onchange="maxChartSetLayout(this.value)"
+            title="Layout Switcher (Number of Charts)"
             style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:28px;cursor:pointer;">
             <option value="1" selected>1 Chart</option>
             <option value="2h">2 ◫ Horiz</option>
@@ -1356,48 +1513,88 @@
         <div id="max-chart-wrapper" style="flex:1;position:relative;min-height:0;display:flex;">
           <!-- TV Left Drawing Toolbar -->
           <div id="max-chart-draw-toolbar" class="tv-draw-toolbar">
-            <button id="draw-tool-select" class="tv-draw-btn active" onclick="setDrawingTool('select')" title="Cursor / Select">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M3 3l7 18 3-7 7-3L3 3z"/></svg>
+            <button id="draw-tool-select" class="tv-draw-btn active" onclick="setDrawingTool('select')"
+              title="Cursor / Select">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                <path d="M3 3l7 18 3-7 7-3L3 3z" />
+              </svg>
             </button>
-            <button id="draw-tool-trendline" class="tv-draw-btn" onclick="setDrawingTool('trendline')" title="Trend Line">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><line x1="4" y1="20" x2="20" y2="4"/><circle cx="4" cy="20" r="2.5" fill="currentColor"/><circle cx="20" cy="4" r="2.5" fill="currentColor"/></svg>
+            <button id="draw-tool-trendline" class="tv-draw-btn" onclick="setDrawingTool('trendline')"
+              title="Trend Line">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                <line x1="4" y1="20" x2="20" y2="4" />
+                <circle cx="4" cy="20" r="2.5" fill="currentColor" />
+                <circle cx="20" cy="4" r="2.5" fill="currentColor" />
+              </svg>
             </button>
             <button id="draw-tool-ray_h" class="tv-draw-btn" onclick="setDrawingTool('ray_h')" title="Horizontal Ray">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="5" cy="12" r="2.5" fill="currentColor"/><line x1="7.5" y1="12" x2="22" y2="12"/><polyline points="18 9 22 12 18 15"/></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                <circle cx="5" cy="12" r="2.5" fill="currentColor" />
+                <line x1="7.5" y1="12" x2="22" y2="12" />
+                <polyline points="18 9 22 12 18 15" />
+              </svg>
             </button>
             <button id="draw-tool-ray" class="tv-draw-btn" onclick="setDrawingTool('ray')" title="Arrow Ray">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="12 5 19 5 19 12"/><circle cx="5" cy="19" r="2" fill="currentColor"/></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                <line x1="5" y1="19" x2="19" y2="5" />
+                <polyline points="12 5 19 5 19 12" />
+                <circle cx="5" cy="19" r="2" fill="currentColor" />
+              </svg>
             </button>
-            <button id="draw-tool-fib" class="tv-draw-btn" onclick="setDrawingTool('fib')" title="Fibonacci Retracement">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="4" x2="21" y2="4"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="3" y1="20" x2="21" y2="20"/><line x1="6" y1="4" x2="18" y2="20" stroke-dasharray="2 2" stroke-width="1.2"/></svg>
+            <button id="draw-tool-fib" class="tv-draw-btn" onclick="setDrawingTool('fib')"
+              title="Fibonacci Retracement">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="4" x2="21" y2="4" />
+                <line x1="3" y1="9" x2="21" y2="9" />
+                <line x1="3" y1="15" x2="21" y2="15" />
+                <line x1="3" y1="20" x2="21" y2="20" />
+                <line x1="6" y1="4" x2="18" y2="20" stroke-dasharray="2 2" stroke-width="1.2" />
+              </svg>
             </button>
             <button id="draw-tool-rect" class="tv-draw-btn" onclick="setDrawingTool('rect')" title="Rectangle Zone">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+              </svg>
             </button>
-            <button id="draw-tool-scale" class="tv-draw-btn" onclick="setDrawingTool('scale')" title="Price Range (TV Style Measurement Tool)">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="12" y1="7" x2="12" y2="17"/><polyline points="9 9 12 6 15 9"/><polyline points="9 15 12 18 15 15"/></svg>
+            <button id="draw-tool-scale" class="tv-draw-btn" onclick="setDrawingTool('scale')"
+              title="Price Range (TV Style Measurement Tool)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <line x1="12" y1="7" x2="12" y2="17" />
+                <polyline points="9 9 12 6 15 9" />
+                <polyline points="9 15 12 18 15 15" />
+              </svg>
             </button>
-            <button id="draw-tool-pricenote" class="tv-draw-btn" onclick="setDrawingTool('pricenote')" title="Price Note">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><rect x="3" y="3" width="18" height="13" rx="2"/><circle cx="8" cy="20" r="1.5" fill="currentColor"/><path d="M8 16l4-5"/></svg>
+            <button id="draw-tool-pricenote" class="tv-draw-btn" onclick="setDrawingTool('pricenote')"
+              title="Price Note">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                <rect x="3" y="3" width="18" height="13" rx="2" />
+                <circle cx="8" cy="20" r="1.5" fill="currentColor" />
+                <path d="M8 16l4-5" />
+              </svg>
             </button>
             <button id="draw-tool-text" class="tv-draw-btn" onclick="setDrawingTool('text')" title="Text">
               <span style="font-weight:800;font-size:12px;font-family:serif;">T</span>
             </button>
             <div style="height:1px;background:#2a2e39;margin:4px 3px;"></div>
             <button class="tv-draw-btn" onclick="clearChartDrawings()" title="Clear Drawings">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              </svg>
             </button>
           </div>
           <!-- Chart area wrapper (for single or multi-chart grid) -->
           <div id="max-chart-stage" style="flex:1;position:relative;height:100%;min-width:0;overflow:hidden;">
             <div id="max-chart-lw-container" style="width:100%;height:100%;position:absolute;inset:0;"></div>
             <!-- Drawing overlay canvas -->
-            <canvas id="max-chart-draw-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:12;"></canvas>
+            <canvas id="max-chart-draw-canvas"
+              style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:12;"></canvas>
             <!-- Multi-chart secondary containers -->
             <div id="max-chart-lw-container-2" style="display:none;position:absolute;"></div>
             <div id="max-chart-lw-container-3" style="display:none;position:absolute;"></div>
             <div id="max-chart-lw-container-4" style="display:none;position:absolute;"></div>
-            
+
             <!-- Legend Overlay -->
             <div id="max-chart-tv-legend"
               style="position:absolute;top:10px;left:12px;z-index:18;display:flex;align-items:center;gap:6px;background:rgba(19,23,34,0.85);border:1px solid #2a2e39;padding:3px 8px;border-radius:4px;font-size:11px;font-family:-apple-system,BlinkMacSystemFont,'Trebuchet MS',sans-serif;color:#d1d4dc;backdrop-filter:blur(4px);pointer-events:auto;user-select:none;">
@@ -1407,9 +1604,12 @@
                 style="background:rgba(41,98,255,0.15);border:1px solid rgba(41,98,255,0.35);color:#2962ff;cursor:pointer;padding:2px 6px;display:flex;align-items:center;gap:3px;border-radius:4px;font-size:10px;font-weight:700;transition:all .15s;"
                 onmouseenter="this.style.background='rgba(41,98,255,0.3)';this.style.color='#fff';"
                 onmouseleave="this.style.background='rgba(41,98,255,0.15)';this.style.color='#2962ff';">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
+                  stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                  <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                  </path>
                 </svg>
                 <span>Settings</span>
               </button>
@@ -1423,7 +1623,8 @@
             <!-- Floating Down-Centre Reset View Button -->
             <button id="max-chart-reset-btn" onclick="maxChartResetView()" title="Reset View"
               class="tv-bottom-reset-btn">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
                 <path d="M3 3v5h5" />
               </svg>
@@ -1437,61 +1638,75 @@
             <div id="tv-drawing-floating-toolbar" class="tv-drawing-float-bar" style="display:none;"></div>
           </div>
           <canvas id="max-chart-canvas" style="display:none;"></canvas>
-                    <div id="max-chart-loader"
+          <div id="max-chart-loader"
             style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#050508;color:var(--dim);font-size:11px;pointer-events:none;">
             Loading chart…
           </div>
-        
+
           <!-- TradingView Studio Right Watchlist Sidebar (Visible by default) -->
           <div id="max-chart-sidebar-wl" class="tv-max-sidebar-wl" style="display:flex;">
             <div class="tv-max-sidebar-hdr">
               <span style="font-weight:700;font-size:12px;color:#f0f3fa;">Watchlist</span>
               <div id="max-chart-sidebar-flags" class="tv-max-flags-bar"></div>
+              <button class="tv-max-close-wl-btn" onclick="toggleMaxChartSidebar(false)"
+                title="Close Watchlist Sidebar">✕</button>
             </div>
-            <div id="max-chart-sidebar-tabs" class="tv-max-sidebar-tabs" style="display:flex;align-items:center;gap:4px;overflow-x:auto;padding:4px 8px;background:#0e111a;border-bottom:1px solid #2a2e39;scrollbar-width:none;"></div>
+            <div id="max-chart-sidebar-tabs" class="tv-max-sidebar-tabs"
+              style="display:flex;align-items:center;gap:4px;overflow-x:auto;padding:4px 8px;background:#0e111a;border-bottom:1px solid #2a2e39;scrollbar-width:none;">
+            </div>
             <div style="position:relative;padding:6px 10px;border-bottom:1px solid #2a2e39;background:#141722;">
               <input id="max-chart-sidebar-add-input" placeholder="+ Add symbol to watchlist…"
                 style="width:100%;box-sizing:border-box;background:#1e222d;border:1px solid #2a2e39;color:#f0f3fa;font-size:11px;padding:6px 8px;border-radius:4px;outline:none;"
-                autocomplete="off"
-                oninput="maxChartSidebarSearchInput(this.value)"
+                autocomplete="off" oninput="maxChartSidebarSearchInput(this.value)"
                 onfocus="if(this.value.trim().length > 0) maxChartSidebarSearchInput(this.value)"
                 onkeydown="maxChartSidebarKeyDown(event)">
               <div id="max-chart-sidebar-suggest" class="max-suggest-box"
-                style="display:none;position:absolute;top:100%;left:10px;right:10px;width:auto;z-index:9000;max-height:260px;overflow-y:auto;background:#1e222d;border:1px solid #363c4e;border-radius:5px;box-shadow:0 12px 28px rgba(0,0,0,0.85);"></div>
+                style="display:none;position:absolute;top:100%;left:10px;right:10px;width:auto;z-index:9000;max-height:260px;overflow-y:auto;background:#1e222d;border:1px solid #363c4e;border-radius:5px;box-shadow:0 12px 28px rgba(0,0,0,0.85);">
+              </div>
             </div>
             <div id="max-chart-sidebar-rows" class="tv-max-sidebar-rows"></div>
           </div>
         </div>
         <div id="max-chart-table-container"
           style="flex-shrink:0;background:var(--bg3);border-top:1px solid var(--border);"></div>
-    <!-- TradingView Precise Coordinates Editor Modal -->
-    <div id="tv-coords-dialog" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99999;background:#1e222d;border:1px solid #363c4e;border-radius:8px;box-shadow:0 20px 48px rgba(0,0,0,0.85);width:320px;color:#f0f3fa;font-family:-apple-system,BlinkMacSystemFont,'Trebuchet MS',sans-serif;padding:16px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid #2a2e39;padding-bottom:8px;">
-        <span id="tv-coords-title" style="font-weight:700;font-size:12px;color:#f0f3fa;">Edit Coordinates</span>
-        <button onclick="closeCoordsDialog()" style="background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;padding:0 4px;">✕</button>
-      </div>
-      <div id="tv-coords-fields" style="display:flex;flex-direction:column;gap:10px;font-size:11px;"></div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;border-top:1px solid #2a2e39;padding-top:12px;">
-        <button onclick="closeCoordsDialog()" style="background:#2a2e39;border:none;color:#d1d4dc;padding:6px 12px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">Cancel</button>
-        <button onclick="applyDrawingCoordinates()" style="background:#2962ff;border:none;color:#ffffff;padding:6px 14px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">Apply</button>
-      </div>
-    </div>
+        <!-- TradingView Precise Coordinates Editor Modal -->
+        <div id="tv-coords-dialog"
+          style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99999;background:#1e222d;border:1px solid #363c4e;border-radius:8px;box-shadow:0 20px 48px rgba(0,0,0,0.85);width:320px;color:#f0f3fa;font-family:-apple-system,BlinkMacSystemFont,'Trebuchet MS',sans-serif;padding:16px;">
+          <div
+            style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid #2a2e39;padding-bottom:8px;">
+            <span id="tv-coords-title" style="font-weight:700;font-size:12px;color:#f0f3fa;">Edit Coordinates</span>
+            <button onclick="closeCoordsDialog()"
+              style="background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;padding:0 4px;">✕</button>
+          </div>
+          <div id="tv-coords-fields" style="display:flex;flex-direction:column;gap:10px;font-size:11px;"></div>
+          <div
+            style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;border-top:1px solid #2a2e39;padding-top:12px;">
+            <button onclick="closeCoordsDialog()"
+              style="background:#2a2e39;border:none;color:#d1d4dc;padding:6px 12px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">Cancel</button>
+            <button onclick="applyDrawingCoordinates()"
+              style="background:#2962ff;border:none;color:#ffffff;padding:6px 14px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">Apply</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-    <!-- ── TRADINGVIEW STYLE INDICATOR SETTINGS MODAL ── -->
+  <!-- ── TRADINGVIEW STYLE INDICATOR SETTINGS MODAL ── -->
   <div id="win-settings-overlay" onclick="if(event.target===this)closeWinSettingsModal()"
     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.68);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);">
     <div id="win-settings-dialog" onclick="event.stopPropagation()"
       style="width:520px;max-width:94vw;max-height:88vh;background:#1e222d;border:1px solid #2a2e39;border-radius:8px;box-shadow:0 20px 48px rgba(0,0,0,0.7);display:flex;flex-direction:column;overflow:hidden;color:#d1d4dc;font-family:-apple-system,BlinkMacSystemFont,'Trebuchet MS',Roboto,sans-serif;">
 
       <!-- Modal Header -->
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid #2a2e39;background:#191d28;">
+      <div
+        style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid #2a2e39;background:#191d28;">
         <div style="display:flex;align-items:center;gap:8px;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2962ff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2962ff" stroke-width="2.3"
+            stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+            </path>
           </svg>
           <span style="font-size:14px;font-weight:700;color:#f0f3fa;">Shibu's WIN</span>
           <span style="font-size:11px;color:#787b86;font-weight:500;">Indicator Settings</span>
@@ -1502,7 +1717,8 @@
       </div>
 
       <!-- TV Tabs: Inputs | Style -->
-      <div style="display:flex;align-items:center;border-bottom:1px solid #2a2e39;background:#191d28;padding:0 18px;gap:24px;">
+      <div
+        style="display:flex;align-items:center;border-bottom:1px solid #2a2e39;background:#191d28;padding:0 18px;gap:24px;">
         <button id="win-tab-btn-inputs" class="win-settings-tab active" onclick="switchWinTab('inputs')">Inputs</button>
         <button id="win-tab-btn-style" class="win-settings-tab" onclick="switchWinTab('style')">Style</button>
       </div>
@@ -1587,7 +1803,7 @@
             <span class="tv-label">VT LVN Threshold %</span>
             <input type="number" id="tv-in-vtLvnPct" class="tv-input" step="5" min="10" max="60">
           </div>
-        
+
           <!-- EPS & Sales Fundamentals -->
           <div class="tv-section-title">EPS & Sales Fundamentals</div>
           <div class="tv-row">
@@ -1815,15 +2031,15 @@
               <span>Purple Momentum Dot</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
-            <input type="color" id="tv-style-purpleDot-col" class="tv-color-picker">
-            <select id="tv-style-purpleDot-op" class="tv-select" title="Opacity">
+              <input type="color" id="tv-style-purpleDot-col" class="tv-color-picker">
+              <select id="tv-style-purpleDot-op" class="tv-select" title="Opacity">
                 <option value="100">100%</option>
                 <option value="85">85%</option>
                 <option value="70">70%</option>
                 <option value="50">50%</option>
                 <option value="30">30%</option>
               </select>
-          </div>
+            </div>
           </div>
 
           <!-- VCP Tightness Square -->
@@ -1833,15 +2049,15 @@
               <span>VCP Tightness Marker</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
-            <input type="color" id="tv-style-vcp-col" class="tv-color-picker">
-            <select id="tv-style-vcp-op" class="tv-select" title="Opacity">
+              <input type="color" id="tv-style-vcp-col" class="tv-color-picker">
+              <select id="tv-style-vcp-op" class="tv-select" title="Opacity">
                 <option value="100">100%</option>
                 <option value="85">85%</option>
                 <option value="70">70%</option>
                 <option value="50">50%</option>
                 <option value="30">30%</option>
               </select>
-          </div>
+            </div>
           </div>
 
           <!-- Power Pocket -->
@@ -1851,15 +2067,15 @@
               <span>Power Pocket Marker</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
-            <input type="color" id="tv-style-powerPocket-col" class="tv-color-picker">
-            <select id="tv-style-powerPocket-op" class="tv-select" title="Opacity">
+              <input type="color" id="tv-style-powerPocket-col" class="tv-color-picker">
+              <select id="tv-style-powerPocket-op" class="tv-select" title="Opacity">
                 <option value="100">100%</option>
                 <option value="85">85%</option>
                 <option value="70">70%</option>
                 <option value="50">50%</option>
                 <option value="30">30%</option>
               </select>
-          </div>
+            </div>
           </div>
 
           <div class="tv-section-title">Display & Tables</div>
@@ -1871,7 +2087,7 @@
               <span>WIN HUD Metrics Table (Bottom)</span>
             </div>
           </div>
-        
+
           <!-- EPS & Sales Table -->
           <div class="tv-row">
             <div class="tv-label">
@@ -1892,7 +2108,8 @@
       </div>
 
       <!-- TV Modal Footer -->
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid #2a2e39;background:#191d28;">
+      <div
+        style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid #2a2e39;background:#191d28;">
         <button onclick="resetWinSettingsToDefault()"
           style="background:none;border:1px solid #363a45;color:#787b86;font-size:12px;font-weight:600;padding:5px 12px;border-radius:4px;cursor:pointer;transition:all .15s;"
           onmouseenter="this.style.color='#f0f3fa';this.style.borderColor='#787b86'"
@@ -1931,7 +2148,8 @@
       <div class="cp-tabs">
         <div class="cp-tab active" id="cp-tab-eod" onclick="cpSwitchTab('eod')">📋 EOD Entry</div>
         <div class="cp-tab" id="cp-tab-past" onclick="cpSwitchTab('past')">📅 Past Entry</div>
-        <div class="cp-tab" id="cp-tab-scanner" onclick="cpSwitchTab('scanner')" style="color:var(--blue)">⚡ Scanner</div>
+        <div class="cp-tab" id="cp-tab-scanner" onclick="cpSwitchTab('scanner')" style="color:var(--blue)">⚡ Scanner
+        </div>
         <div class="cp-tab" id="cp-tab-sync" onclick="cpSwitchTab('sync')">☁ Sync</div>
         <div class="cp-tab" id="cp-tab-dhan" onclick="cpSwitchTab('dhan')" style="color:var(--teal)">🏦 Dhan</div>
       </div>
@@ -1950,7 +2168,9 @@
               style="font-size:11px;padding:4px 10px;color:var(--blue);border-color:rgba(59,130,246,.3)"
               onclick="cpTriggerScan()" title="Trigger Daily VCP Scanner">🚀 Run Scan</button>
             <button class="btn btn-sec" style="font-size:11px;padding:4px 10px" onclick="clearInputs()">✕ Clear</button>
-            <button class="btn btn-sec" style="font-size:11px;padding:4px 10px;color:var(--lime);border-color:rgba(74,222,128,.3);margin-left:auto" onclick="openEodChecklistModal()">⚡ 60s EOD Checklist</button>
+            <button class="btn btn-sec"
+              style="font-size:11px;padding:4px 10px;color:var(--lime);border-color:rgba(74,222,128,.3);margin-left:auto"
+              onclick="openEodChecklistModal()">⚡ 60s EOD Checklist</button>
           </div>
 
           <div class="ueg-label">🔵 Nifty 500 Breadth — <a href="https://www.nseindia.com/market-data/advance"
@@ -2195,63 +2415,85 @@
         <div class="cp-section" id="cp-sec-scanner">
           <div class="cp-section-title">DAILY VCP SCANNER &amp; AUTOMATION</div>
           <p style="font-size:12px;color:var(--sub);margin-bottom:14px">
-            Trigger the full scanning pipeline. It executes <code>automate_eod.py</code> and <code>vcp_scanner.py</code> on GitHub Actions, generating updated screener results and sector breadth metrics.
+            Trigger the full scanning pipeline. It executes <code>automate_eod.py</code> and <code>vcp_scanner.py</code>
+            on GitHub Actions, generating updated screener results and sector breadth metrics.
           </p>
 
-          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:14px">
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+          <div
+            style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:14px">
+            <div
+              style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px">
               <div>
                 <div style="font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px">
                   <span>🚀 Trigger Daily Scan</span>
-                  <span id="scan-engine-badge" style="font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.3)">GitHub Actions Cloud</span>
+                  <span id="scan-engine-badge"
+                    style="font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.3)">GitHub
+                    Actions Cloud</span>
                 </div>
-                <div style="font-size:11px;color:var(--dim);margin-top:3px" id="scan-last-status">Click below to dispatch the scan workflow.</div>
+                <div style="font-size:11px;color:var(--dim);margin-top:3px" id="scan-last-status">Click below to
+                  dispatch the scan workflow.</div>
               </div>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                <button class="btn btn-primary" id="btn-start-scan" onclick="cpTriggerScan()" style="background:var(--blue);color:#fff;font-weight:700;padding:7px 16px;font-size:12px">
+                <button class="btn btn-primary" id="btn-start-scan" onclick="cpTriggerScan()"
+                  style="background:var(--blue);color:#fff;font-weight:700;padding:7px 16px;font-size:12px">
                   ▶ Run Scan Now
                 </button>
-                <a class="btn btn-sec" id="btn-gh-action-link" href="https://github.com/mkshibu2/breadth-radar/actions/workflows/update_screener.yaml" target="_blank" style="font-size:11px;padding:6px 12px;color:var(--sub)">
+                <a class="btn btn-sec" id="btn-gh-action-link"
+                  href="https://github.com/mkshibu2/breadth-radar/actions/workflows/update_screener.yaml"
+                  target="_blank" style="font-size:11px;padding:6px 12px;color:var(--sub)">
                   GitHub Actions ↗
                 </a>
               </div>
             </div>
 
             <!-- Live Progress / Console Box -->
-            <div id="scan-progress-box" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:12px;margin-top:10px">
+            <div id="scan-progress-box"
+              style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:12px;margin-top:10px">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
                 <div style="display:flex;align-items:center;gap:8px">
                   <span id="scan-spinner" style="display:inline-block">⏳</span>
-                  <span id="scan-progress-title" style="font-size:12px;font-weight:600;color:var(--text)">Scan in progress...</span>
+                  <span id="scan-progress-title" style="font-size:12px;font-weight:600;color:var(--text)">Scan in
+                    progress...</span>
                 </div>
                 <span id="scan-timer" style="font-family:var(--mono);font-size:11px;color:var(--dim)">0s</span>
               </div>
-              <div id="scan-progress-msg" style="font-size:11px;color:var(--sub);line-height:1.5">Dispatching workflow to GitHub Actions...</div>
+              <div id="scan-progress-msg" style="font-size:11px;color:var(--sub);line-height:1.5">Dispatching workflow
+                to GitHub Actions...</div>
               <div id="scan-result-links" style="display:none;margin-top:10px;gap:8px;flex-wrap:wrap">
-                <a href="screener.html" target="_blank" class="btn btn-sec" style="font-size:11px;padding:4px 10px;color:#38bdf8;border-color:rgba(56,189,248,.35)">🎯 Open Stock Screener ↗</a>
-                <button class="btn btn-sec" onclick="if(typeof sccFetchData==='function')sccFetchData();" style="font-size:11px;padding:4px 10px;color:var(--teal)">↻ Refresh Sector Breadth</button>
+                <a href="screener.html" target="_blank" class="btn btn-sec"
+                  style="font-size:11px;padding:4px 10px;color:#38bdf8;border-color:rgba(56,189,248,.35)">🎯 Open Stock
+                  Screener ↗</a>
+                <button class="btn btn-sec" onclick="if(typeof sccFetchData==='function')sccFetchData();"
+                  style="font-size:11px;padding:4px 10px;color:var(--teal)">↻ Refresh Sector Breadth</button>
               </div>
             </div>
           </div>
 
           <!-- GitHub Token Configuration -->
-          <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:12px">
-            <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:6px">
+          <div
+            style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:12px">
+            <div
+              style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:6px">
               <span>🔑 GitHub Personal Access Token (PAT)</span>
               <span style="font-size:9.5px;color:var(--dim);font-weight:400">(Saved locally on this device)</span>
             </div>
             <div style="font-size:11px;color:var(--sub);line-height:1.5;margin-bottom:8px">
-              To trigger the scan in 1 click from your browser, enter a GitHub Personal Access Token with <b>Actions: Write</b> (or classic <b>repo</b>) scope.
+              To trigger the scan in 1 click from your browser, enter a GitHub Personal Access Token with <b>Actions:
+                Write</b> (or classic <b>repo</b>) scope.
             </div>
             <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
               <input type="password" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off"
                 style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 10px;border-radius:4px;outline:none">
-              <button class="btn btn-sec" onclick="saveGhToken()" style="font-size:11px;padding:6px 12px;color:var(--teal);border-color:rgba(45,212,191,.3)">Save Token</button>
-              <button class="btn btn-sec" onclick="clearGhToken()" style="font-size:11px;padding:6px 10px;color:var(--dim)">Clear</button>
+              <button class="btn btn-sec" onclick="saveGhToken()"
+                style="font-size:11px;padding:6px 12px;color:var(--teal);border-color:rgba(45,212,191,.3)">Save
+                Token</button>
+              <button class="btn btn-sec" onclick="clearGhToken()"
+                style="font-size:11px;padding:6px 10px;color:var(--dim)">Clear</button>
             </div>
             <div style="font-size:10px;color:var(--dim);display:flex;justify-content:space-between">
               <span id="gh-token-status">Token: Not saved</span>
-              <a href="https://github.com/settings/tokens/new?scopes=repo&description=BreadthRadarScannerTrigger" target="_blank" style="color:var(--accent)">Create Token on GitHub ↗</a>
+              <a href="https://github.com/settings/tokens/new?scopes=repo&description=BreadthRadarScannerTrigger"
+                target="_blank" style="color:var(--accent)">Create Token on GitHub ↗</a>
             </div>
           </div>
         </div>
@@ -2723,12 +2965,19 @@
   <div id="about-modal-overlay" onclick="if(event.target===this)closeAboutModal()">
     <div id="about-modal">
 
-      <div class="about-head" style="flex-direction:column;align-items:center;padding:16px 20px 14px;position:relative;border-bottom:1px solid var(--border);text-align:center;">
-        <button class="about-close" onclick="closeAboutModal()" style="position:absolute;top:14px;right:16px;">✕</button>
-        <img src="assets/m-radar-logo.jpg" alt="M.Radar — Market Radar" style="max-width:320px;width:100%;height:auto;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.6);margin-bottom:10px;border:1px solid rgba(255,255,255,0.08);">
+      <div class="about-head"
+        style="flex-direction:column;align-items:center;padding:16px 20px 14px;position:relative;border-bottom:1px solid var(--border);text-align:center;">
+        <button class="about-close" onclick="closeAboutModal()"
+          style="position:absolute;top:14px;right:16px;">✕</button>
+        <img src="assets/m-radar-logo.jpg" alt="M.Radar — Market Radar"
+          style="max-width:320px;width:100%;height:auto;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.6);margin-bottom:10px;border:1px solid rgba(255,255,255,0.08);">
         <div>
-          <div class="about-logo" style="font-size:18px;letter-spacing:1px;"><span style="color:#f59e0b">M.</span>RADAR <span style="font-size:11px;color:var(--text-dim);font-weight:600;letter-spacing:2px;margin-left:4px;">MARKET RADAR</span></div>
-          <div class="about-tagline" style="margin-top:2px;">See the Market. Find Your Edge. · Built for the Indian swing trader</div>
+          <div class="about-logo" style="font-size:18px;letter-spacing:1px;"><span style="color:#f59e0b">M.</span>RADAR
+            <span
+              style="font-size:11px;color:var(--text-dim);font-weight:600;letter-spacing:2px;margin-left:4px;">MARKET
+              RADAR</span></div>
+          <div class="about-tagline" style="margin-top:2px;">See the Market. Find Your Edge. · Built for the Indian
+            swing trader</div>
         </div>
       </div>
 
@@ -2755,7 +3004,8 @@
         <div class="about-section">
           <div class="about-section-title">About the Tool</div>
           <div class="about-tool-desc">
-            <b>M.Radar (Market Radar)</b> is a <b>personal market diagnostics dashboard &amp; screener</b> designed to align your swing trading
+            <b>M.Radar (Market Radar)</b> is a <b>personal market diagnostics dashboard &amp; screener</b> designed to
+            align your swing trading
             exposure with the market environment.<br><br>
             For swing traders following price-and-volume breakout methodologies (such as Minervini, O'Neil, Darvas, and
             Weinstein), capital preservation and performance depend entirely on two core pillars:
@@ -2826,7 +3076,8 @@
         <div class="eod-priority-card" style="border-left:3px solid var(--accent)">
           <div class="eod-priority-title" style="color:var(--accent)">
             <span>1️⃣ PRIORITY 1: The "Permission" Gate (O'Neil / IBD Core)</span>
-            <span class="eod-priority-badge" style="background:rgba(91,163,245,.15);color:var(--accent)">Status &amp; Analysis Strip</span>
+            <span class="eod-priority-badge" style="background:rgba(91,163,245,.15);color:var(--accent)">Status &amp;
+              Analysis Strip</span>
           </div>
           <p style="font-size:11.5px;color:var(--sub);margin:6px 0 8px">
             Ask: <b>Does the market permit me to buy?</b> Stop immediately if conditions are hostile.
@@ -2858,7 +3109,8 @@
             </div>
           </div>
           <div class="eod-stop-banner">
-            ⛔ <b>RULE:</b> If Market Status is <b>Correction</b> or Distribution Days are <b>6+</b>, <b>STOP HERE.</b> Zero new buys tomorrow. Preserve cash.
+            ⛔ <b>RULE:</b> If Market Status is <b>Correction</b> or Distribution Days are <b>6+</b>, <b>STOP HERE.</b>
+            Zero new buys tomorrow. Preserve cash.
           </div>
         </div>
 
@@ -2866,7 +3118,8 @@
         <div class="eod-priority-card" style="border-left:3px solid var(--yellow)">
           <div class="eod-priority-title" style="color:var(--yellow)">
             <span>2️⃣ PRIORITY 2: The "Risk &amp; Exposure" Dial</span>
-            <span class="eod-priority-badge" style="background:rgba(251,191,36,.15);color:var(--yellow)">Breadth Score &amp; BSR</span>
+            <span class="eod-priority-badge" style="background:rgba(251,191,36,.15);color:var(--yellow)">Breadth Score
+              &amp; BSR</span>
           </div>
           <p style="font-size:11.5px;color:var(--sub);margin:6px 0 8px">
             Determine <b>how much total capital to deploy</b> and <b>what risk unit (R) to assign per trade</b>.
@@ -2904,7 +3157,8 @@
         <div class="eod-priority-card" style="border-left:3px solid var(--teal)">
           <div class="eod-priority-title" style="color:var(--teal)">
             <span>3️⃣ PRIORITY 3: The "Sector Leadership" Compass</span>
-            <span class="eod-priority-badge" style="background:rgba(45,212,191,.15);color:var(--teal)">Sector Command Tab</span>
+            <span class="eod-priority-badge" style="background:rgba(45,212,191,.15);color:var(--teal)">Sector Command
+              Tab</span>
           </div>
           <p style="font-size:11.5px;color:var(--sub);margin:6px 0 8px">
             Over 50% of a stock's gain is driven by its sector. <b>Buy leaders in leading sectors only.</b>
@@ -2913,7 +3167,8 @@
             <div class="eod-rule-item">
               <span class="eod-rule-name">RRG Quadrant</span>
               <span class="eod-rule-val">
-                Focus strictly on sectors in or heading toward <b>Leading</b> (green) or <b>Improving</b> (blue). Avoid Lagging.
+                Focus strictly on sectors in or heading toward <b>Leading</b> (green) or <b>Improving</b> (blue). Avoid
+                Lagging.
               </span>
             </div>
             <div class="eod-rule-item">
@@ -2935,7 +3190,8 @@
         <div class="eod-priority-card" style="border-left:3px solid var(--purple)">
           <div class="eod-priority-title" style="color:var(--purple)">
             <span>4️⃣ PRIORITY 4: The "Stock Setup" Trigger</span>
-            <span class="eod-priority-badge" style="background:rgba(168,85,247,.15);color:var(--purple)">VCP Screener</span>
+            <span class="eod-priority-badge" style="background:rgba(168,85,247,.15);color:var(--purple)">VCP
+              Screener</span>
           </div>
           <p style="font-size:11.5px;color:var(--sub);margin:6px 0 8px">
             Only execute if the individual stock meets the strict O'Neil / Minervini breakout criteria.
@@ -2963,15 +3219,20 @@
         </div>
 
         <!-- 60-Second Execution Checklist Box -->
-        <div style="background:var(--bg3);border:1px solid rgba(74,222,128,.3);border-radius:8px;padding:14px 16px;margin-top:4px">
-          <div style="font-size:12px;font-weight:800;color:var(--lime);margin-bottom:8px;text-transform:uppercase;letter-spacing:.6px">
+        <div
+          style="background:var(--bg3);border:1px solid rgba(74,222,128,.3);border-radius:8px;padding:14px 16px;margin-top:4px">
+          <div
+            style="font-size:12px;font-weight:800;color:var(--lime);margin-bottom:8px;text-transform:uppercase;letter-spacing:.6px">
             ⚡ Quick 4-Question Nightly Execution Run
           </div>
           <div style="font-size:11.5px;color:var(--text);line-height:1.6">
-            1. <b>Permission:</b> Is Market Status in Confirmed Uptrend with &lt; 5 Distribution Days? <i>(If No → No new buys tomorrow.)</i><br>
-            2. <b>Sizing:</b> What does Breadth Score permit? <i>(If &lt; 35 → Max 0.25R pilot. If ≥ 45 → Normal 1R.)</i><br>
+            1. <b>Permission:</b> Is Market Status in Confirmed Uptrend with &lt; 5 Distribution Days? <i>(If No → No
+              new buys tomorrow.)</i><br>
+            2. <b>Sizing:</b> What does Breadth Score permit? <i>(If &lt; 35 → Max 0.25R pilot. If ≥ 45 → Normal
+              1R.)</i><br>
             3. <b>Reality Check:</b> Is BSR ≥ 40%? <i>(If No → Breakouts failing. Cut position size by half.)</i><br>
-            4. <b>Stock Setup:</b> Is candidate an A/A+ setup with RS ≥ 80 in a Leading sector? <i>(If Yes → Place buy limit at pivot with 7-8% stop.)</i>
+            4. <b>Stock Setup:</b> Is candidate an A/A+ setup with RS ≥ 80 in a Leading sector? <i>(If Yes → Place buy
+              limit at pivot with 7-8% stop.)</i>
           </div>
         </div>
       </div>
@@ -2980,20 +3241,27 @@
 
 
   <!-- Dhan Quick Connect Modal -->
-  <div id="dhan-chart-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999999;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
-    <div style="background:#131722;border:1px solid #2a2e39;border-radius:8px;width:440px;max-width:92vw;padding:20px;box-shadow:0 12px 36px rgba(0,0,0,0.8);font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#f0f3fa;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid #2a2e39;padding-bottom:10px;">
+  <div id="dhan-chart-modal"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999999;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+    <div
+      style="background:#131722;border:1px solid #2a2e39;border-radius:8px;width:440px;max-width:92vw;padding:20px;box-shadow:0 12px 36px rgba(0,0,0,0.8);font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#f0f3fa;">
+      <div
+        style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid #2a2e39;padding-bottom:10px;">
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="font-size:16px;">⚡</span>
           <b style="font-size:14px;">Connect Dhan HQ Data API</b>
         </div>
-        <button onclick="closeDhanConnectModal()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:16px;">✕</button>
+        <button onclick="closeDhanConnectModal()"
+          style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:16px;">✕</button>
       </div>
 
-      <div style="background:rgba(41,98,255,0.08);border:1px solid rgba(41,98,255,0.25);border-radius:6px;padding:10px;margin-bottom:14px;font-size:11px;line-height:1.5;">
+      <div
+        style="background:rgba(41,98,255,0.08);border:1px solid rgba(41,98,255,0.25);border-radius:6px;padding:10px;margin-bottom:14px;font-size:11px;line-height:1.5;">
         <div style="font-weight:700;color:#38bdf8;margin-bottom:4px;">App Credentials Configured:</div>
-        <div>App Name: <b style="color:#f0f3fa;">M.Radar</b> <span style="font-size:10px;color:var(--dim)">(Market Radar)</span></div>
-        <div>API Key: <code style="color:#22c55e;">232aeb71</code> · Secret: <code style="color:#94a3b8;">608f20b6...</code></div>
+        <div>App Name: <b style="color:#f0f3fa;">M.Radar</b> <span style="font-size:10px;color:var(--dim)">(Market
+            Radar)</span></div>
+        <div>API Key: <code style="color:#22c55e;">232aeb71</code> · Secret: <code
+            style="color:#94a3b8;">608f20b6...</code></div>
       </div>
 
       <!-- Mode 1: Access Token (Quick 24h) -->
@@ -3004,10 +3272,12 @@
         <input id="dhan-quick-token" type="password" placeholder="Paste Access Token from web.dhan.co"
           style="width:100%;box-sizing:border-box;background:#1e222d;border:1px solid #2a2e39;color:#f0f3fa;font-size:11px;padding:8px;border-radius:4px;outline:none;margin-bottom:6px;">
         <div style="display:flex;align-items:center;justify-content:space-between;">
-          <a href="https://web.dhan.co" target="_blank" style="color:#2962ff;font-size:10px;text-decoration:none;font-weight:600;">
+          <a href="https://web.dhan.co" target="_blank"
+            style="color:#2962ff;font-size:10px;text-decoration:none;font-weight:600;">
             Open web.dhan.co to copy Access Token ↗
           </a>
-          <button onclick="dhanSaveQuickToken()" style="background:#2962ff;color:#fff;border:none;padding:5px 14px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">
+          <button onclick="dhanSaveQuickToken()"
+            style="background:#2962ff;color:#fff;border:none;padding:5px 14px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">
             Save &amp; Connect
           </button>
         </div>
@@ -3023,7 +3293,8 @@
         <div style="display:flex;gap:8px;">
           <input id="dhan-quick-clientid" type="text" placeholder="Dhan Client ID (e.g. 1000...)"
             style="flex:1;background:#1e222d;border:1px solid #2a2e39;color:#f0f3fa;font-size:11px;padding:6px 8px;border-radius:4px;outline:none;">
-          <button onclick="dhanQuickOAuthLogin()" style="background:#1e293b;border:1px solid #2a2e39;color:#f0f3fa;padding:6px 12px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">
+          <button onclick="dhanQuickOAuthLogin()"
+            style="background:#1e293b;border:1px solid #2a2e39;color:#f0f3fa;padding:6px 12px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">
             Open Login ↗
           </button>
         </div>
@@ -3051,7 +3322,7 @@
       // Re-trigger sparklines or chart redraw if supported
       try {
         if (typeof renderAllSparklines === 'function') renderAllSparklines();
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Mobile sidebar drawer
@@ -3116,13 +3387,13 @@
         if (tab && ['breadth', 'rrg', 'heatmap', 'chart', 'clusters'].includes(tab)) {
           if (typeof sccTab === 'function') sccTab(tab);
         }
-      } catch (e) {}
+      } catch (e) { }
 
       // Compute and render Sector & Cluster summary on dashboard
       try {
         if (typeof sccComputeClusters === 'function') sccComputeClusters();
         if (typeof sccRenderDashboardWidget === 'function') sccRenderDashboardWidget();
-      } catch (e) {}
+      } catch (e) { }
 
       // Update market status subtitle dynamically when data loads
       setTimeout(() => {

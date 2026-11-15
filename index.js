@@ -740,6 +740,13 @@ function getStockQuarterlyData(symbol) {
   let qData = exactStore[sUpper];
 
   if (!qData || !qData.length) {
+    const radarStore = window.RADAR_FUNDAMENTALS || {};
+    if (radarStore[sUpper] && Array.isArray(radarStore[sUpper].quarterly) && radarStore[sUpper].quarterly.length) {
+      qData = radarStore[sUpper].quarterly;
+    }
+  }
+
+  if (!qData || !qData.length) {
     let stock = null;
     if (window.SCREENER_DATA && Array.isArray(window.SCREENER_DATA.stocks)) {
       stock = window.SCREENER_DATA.stocks.find(s => s && s.symbol && s.symbol.toUpperCase() === sUpper);
@@ -943,7 +950,7 @@ window.updateMaxChartShortlistButton = updateMaxChartShortlistButton;
 // ── MAIN WATCHLIST DIRECT INTEGRATION & TOGGLE ────────────────────
 function sccIsValidWatchlist(name) {
   if (!name) return false;
-  if (name === 'Main' || name === 'Shortlist' || name === 'Clusters' || name === 'CLUSTERS' || name === 'VCP') return true;
+  if (name === 'Main' || name === 'Shortlist' || name === 'Themes' || name === 'THEMES' || name === 'Clusters' || name === 'CLUSTERS' || name === 'VCP') return true;
   if (name.startsWith('__flag_') || name.startsWith('__flage_')) return true;
   return !!(_sccWatchlists && _sccWatchlists[name]);
 }
@@ -2393,7 +2400,7 @@ function sccGetOrderedTabs() {
     });
   }
 
-  const coreTabs = ['Main', 'Shortlist', 'Clusters', 'VCP'];
+  const coreTabs = ['Main', 'Shortlist', 'Themes', 'VCP'];
   const userCustomWls = Object.keys(_sccWatchlists || {}).filter(k => !coreTabs.includes(k));
   const rawTabs = [...coreTabs, ...userCustomWls];
   Object.keys(colorsMap).forEach(c => {
@@ -2405,7 +2412,7 @@ function sccGetOrderedTabs() {
 
   let savedOrder = [];
   try {
-    savedOrder = JSON.parse(localStorage.getItem('_sccCustomTabOrder') || '[]');
+    savedOrder = JSON.parse(localStorage.getItem('_sccCustomTabOrder') || '[]').map(t => t === 'Clusters' ? 'Themes' : t);
   } catch (e) { }
 
   const ordered = [];
@@ -2430,7 +2437,7 @@ function sccWlRenderTabs() {
     const isActive = (name === _sccActiveWatchlist) || (name.startsWith('__flag_') && _sccActiveWatchlist === name.replace('__flag_', '__flage_'));
     const isFlag = name.startsWith('__flag_') || name.startsWith('__flage_');
     const isVcp = (name === 'VCP');
-    const isClusters = (name === 'Clusters' || name === 'CLUSTERS');
+    const isClusters = (name === 'Themes' || name === 'THEMES' || name === 'Clusters' || name === 'CLUSTERS');
 
     if (isFlag) {
       const c = name.replace(/^__flag[e]?_/, '');
@@ -2465,14 +2472,14 @@ function sccWlRenderTabs() {
       const clusterRes = (typeof sccGetClustersWatchlistItems === 'function') ? sccGetClustersWatchlistItems() : null;
       const clusterCount = (clusterRes && clusterRes.flatSymbols) ? clusterRes.flatSymbols.length : 0;
       html += `
-        <div onclick="sccWlSwitchTab('Clusters'); if(typeof updateMaxChartSidebarWatchlist==='function')updateMaxChartSidebarWatchlist();" 
+        <div onclick="sccWlSwitchTab('Themes'); if(typeof updateMaxChartSidebarWatchlist==='function')updateMaxChartSidebarWatchlist();" 
              draggable="true"
-             ondragstart="sccTabDragStart(event, 'Clusters')"
+             ondragstart="sccTabDragStart(event, 'Themes')"
              ondragover="sccTabDragOver(event)"
-             ondrop="sccTabDrop(event, 'Clusters')"
+             ondrop="sccTabDrop(event, 'Themes')"
              ondragend="sccTabDragEnd(event)"
              class="tv-wl-tab-pill ${isActive ? 'active' : ''}">
-          <span>⭐ Clusters</span> <span style="font-size:9px;opacity:0.65;font-family:var(--mono);margin-left:3px;">(${clusterCount})</span>
+          <span>⭐ Themes</span> <span style="font-size:9px;opacity:0.65;font-family:var(--mono);margin-left:3px;">(${clusterCount})</span>
         </div>
       `;
     } else if (name === 'Shortlist') {
@@ -2535,7 +2542,7 @@ function sccWlRenderTabs() {
 }
 function sccWlSwitchTab(name) {
   if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
-  _sccActiveWatchlist = name; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null; _sccWlIsBreadthSorted = false; _sccWlMaxLoaded = 40; if (name === 'VCP') { _sccWatchlistSymbols = []; } else if (name === 'Clusters') { window._sccClustersStockLimit = 40; _sccWatchlistSymbols = []; } else if (name === 'Shortlist') { _sccWatchlistSymbols = Array.from(getShortlistSet()); } else if (name.startsWith('__flag_')) { const color = name.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else { _sccWatchlistSymbols = _sccWatchlists[name] || []; }
+  _sccActiveWatchlist = name; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null; _sccWlIsBreadthSorted = false; _sccWlMaxLoaded = 40; if (name === 'VCP') { _sccWatchlistSymbols = []; } else if (name === 'Themes' || name === 'Clusters') { window._sccClustersStockLimit = 40; _sccWatchlistSymbols = []; } else if (name === 'Shortlist') { _sccWatchlistSymbols = Array.from(getShortlistSet()); } else if (name.startsWith('__flag_')) { const color = name.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else { _sccWatchlistSymbols = _sccWatchlists[name] || []; }
   sccWlRenderTabs(); sccWatchlistRender(); sccWatchlistFetchAll();
   if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
   if (_sccChartLayout === 'watchlist') sccChartRebuildGrid();
@@ -2671,7 +2678,7 @@ function sccWatchlistRender() {
       sortedSectors.forEach(secName => { const sec = activeMap[secName]; if (sec && Array.isArray(sec.stocks) && sec.stocks.length > 0) { const isCollapsed = _sccWlCollapsedSectors.has(secName); watchlistItems.push({ type: 'header', label: secName, isCluster: false, collapsed: isCollapsed }); if (!isCollapsed) { const sortedStocks = [...sec.stocks].sort((a, b) => a.symbol.localeCompare(b.symbol)); sortedStocks.forEach(s => { watchlistItems.push({ type: 'stock', symbol: s.symbol }); flatSymbols.push(s.symbol.toUpperCase()); }); } else { sec.stocks.forEach(s => flatSymbols.push(s.symbol.toUpperCase())); } } });
     }
     _sccWatchlistSymbols = flatSymbols;
-  } else if (_sccActiveWatchlist === 'Clusters' || _sccActiveWatchlist === 'CLUSTERS') {
+  } else if (_sccActiveWatchlist === 'Themes' || _sccActiveWatchlist === 'THEMES' || _sccActiveWatchlist === 'Clusters' || _sccActiveWatchlist === 'CLUSTERS') {
     const clusterRes = sccGetClustersWatchlistItems();
     watchlistItems = clusterRes.items;
     flatSymbols = clusterRes.flatSymbols;
@@ -2710,7 +2717,7 @@ function sccWatchlistRender() {
       html += `
         <div style="padding: 10px 12px; background: var(--bg2); border-top: 1px dashed var(--border); border-bottom: 1px dashed var(--border); margin: 6px 0; text-align: center;">
           <div style="font-size: 10px; color: var(--dim); font-family: var(--mono); margin-bottom: 6px;">
-            Showing ${item.loaded} of ${item.total} cluster stocks
+            Showing ${item.loaded} of ${item.total} theme stocks
           </div>
           <button onclick="sccLoadMoreClustersWatchlist()" class="topbar-btn"
                   style="font-size: 11px; padding: 6px 14px; cursor: pointer; font-weight: 700; width: 100%;">
@@ -5711,6 +5718,14 @@ function getStockDetails(symbol) {
     if (cached.industries) { for (const [indName, indObj] of Object.entries(cached.industries)) { if (indObj && Array.isArray(indObj.stocks)) { const found = indObj.stocks.find(x => x.symbol && x.symbol.toUpperCase() === sUpper); if (found) { industry = indName; if (!company) company = found.company || ''; if (!scanStats) scanStats = found; break; } } } }
   }
   if (!sector || !industry || !company) { const allStocks = n500CsvGetCached() || []; const found = allStocks.find(s => s.symbol && s.symbol.toUpperCase() === sUpper); if (found) { if (!company) company = found.company || ''; const mapping = getMsIndustryMapping(found.symbol, found.company, found.industry); if (!sector) sector = mapping.parentSector || 'Diversified'; if (!industry) industry = mapping.industryGroup || found.industry || ''; } }
+  if (!sector || !industry || !company) {
+    const rf = (window.RADAR_FUNDAMENTALS && window.RADAR_FUNDAMENTALS[sUpper]) || null;
+    if (rf) {
+      if (!company) company = rf.company || '';
+      if (!sector) sector = rf.sector || '';
+      if (!industry) industry = rf.industry || '';
+    }
+  }
   if (!sector || !industry) { const mapping = getMsIndustryMapping(sUpper, company, ''); if (!sector) sector = mapping.parentSector || 'Diversified'; if (!industry) industry = mapping.industryGroup || ''; }
   if (industry.endsWith(' IN')) { industry = industry.slice(0, -3); }
   return { symbol: sUpper, company: company, sector: sector, industry: industry, stats: scanStats };
@@ -5748,7 +5763,33 @@ function generateStatsTableHtml(details) {
     </table>
   `;
 }
+function toggleMaxChartSidebar(forceState) {
+  const sidebar = document.getElementById('max-chart-sidebar-wl');
+  if (!sidebar) return;
+  const isCurrentlyVisible = (sidebar.style.display !== 'none' && getComputedStyle(sidebar).display !== 'none');
+  const shouldShow = (typeof forceState === 'boolean') ? forceState : !isCurrentlyVisible;
+  sidebar.style.display = shouldShow ? 'flex' : 'none';
+  const btn = document.getElementById('max-chart-wl-toggle-btn');
+  if (btn) {
+    if (shouldShow) {
+      btn.classList.add('active');
+      btn.style.background = 'rgba(45,212,191,0.2)';
+      btn.style.color = '#2dd4bf';
+    } else {
+      btn.classList.remove('active');
+      btn.style.background = 'rgba(255,255,255,0.05)';
+      btn.style.color = 'var(--dim)';
+    }
+  }
+}
+window.toggleMaxChartSidebar = toggleMaxChartSidebar;
+
 function openMaximizedChart(symbol) {
+  if (window.innerWidth <= 768) {
+    toggleMaxChartSidebar(false);
+  } else {
+    toggleMaxChartSidebar(true);
+  }
   setTimeout(() => {
     if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
   }, 50);
@@ -6743,32 +6784,39 @@ async function _fetchYfDataWithSymbol(yfSymbol, range, interval) {
   ];
 
   for (const targetUrl of endpoints) {
+    // Priority 1: User's Dedicated Cloudflare Worker Proxy (Sub-300ms, no public rate limits)
+    try {
+      const cfUrl = `https://nse-chart-proxy.shibu-mk.workers.dev/?url=${encodeURIComponent(targetUrl)}`;
+      const candles = await _fetchProxyCandles(cfUrl, 3800);
+      if (candles && candles.length > 0) {
+        _yfDataCache.set(cacheKey, candles);
+        return candles;
+      }
+    } catch (eCf) {
+      // Proceed to backup mirrors if Cloudflare Worker or primary target is slow
+    }
+
+    // Priority 2: Race backup cloud proxies in parallel
     const proxyUrls = [
-      // Cloudflare Worker proxy (custom user proxy, highest reliability)
-      `https://nse-chart-proxy.shibu-mk.workers.dev/?url=${encodeURIComponent(targetUrl)}`,
-      // AllOrigins RAW
       `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-      // AllOrigins GET (wrapped JSON)
-      `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`,
-      // CodeTabs proxy
-      `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`
+      `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
+      `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`
     ];
 
     if (currentOrigin && !currentOrigin.startsWith('file') && currentOrigin !== 'null' && !currentOrigin.includes('github.io')) {
       proxyUrls.push(`${currentOrigin}/api/proxy?url=${encodeURIComponent(targetUrl)}`);
     }
 
-    // Race the cloud proxies in parallel — whichever returns valid candles first wins immediately!
     try {
       const candles = await _promiseAny(
-        proxyUrls.map(pUrl => _fetchProxyCandles(pUrl, 5000))
+        proxyUrls.map(pUrl => _fetchProxyCandles(pUrl, 4500))
       );
       if (candles && candles.length > 0) {
         _yfDataCache.set(cacheKey, candles);
         return candles;
       }
     } catch (err) {
-      // All proxies failed on this mirror, try next mirror
+      // Mirror failed, try next
     }
   }
 
@@ -9638,7 +9686,7 @@ function updateMaxChartSidebarWatchlist() {
       const isActive = (name === _sccActiveWatchlist) || (name.startsWith('__flag_') && _sccActiveWatchlist === name.replace('__flag_', '__flage_'));
       const isFlag = name.startsWith('__flag_') || name.startsWith('__flage_');
       const isVcp = (name === 'VCP');
-      const isClusters = (name === 'Clusters' || name === 'CLUSTERS');
+      const isClusters = (name === 'Themes' || name === 'THEMES' || name === 'Clusters' || name === 'CLUSTERS');
       if (isFlag) {
         const c = name.replace(/^__flag[e]?_/, '');
         const col = colorsMap[c] || c;
@@ -9672,14 +9720,14 @@ function updateMaxChartSidebarWatchlist() {
         const clusterRes = (typeof sccGetClustersWatchlistItems === 'function') ? sccGetClustersWatchlistItems() : null;
         const clusterCount = (clusterRes && clusterRes.flatSymbols) ? clusterRes.flatSymbols.length : 0;
         tabsHtml += `
-          <div onclick="sccWlSwitchTab('Clusters'); updateMaxChartSidebarWatchlist();"
+          <div onclick="sccWlSwitchTab('Themes'); updateMaxChartSidebarWatchlist();"
                draggable="true"
-               ondragstart="sccTabDragStart(event, 'Clusters')"
+               ondragstart="sccTabDragStart(event, 'Themes')"
                ondragover="sccTabDragOver(event)"
-               ondrop="sccTabDrop(event, 'Clusters')"
+               ondrop="sccTabDrop(event, 'Themes')"
                ondragend="sccTabDragEnd(event)"
                class="tv-wl-tab-pill ${isActive ? 'active' : ''}">
-            <span>⭐ Clusters</span> <span style="font-size:9px;opacity:0.65;font-family:var(--mono);margin-left:3px;">(${clusterCount})</span>
+            <span>⭐ Themes</span> <span style="font-size:9px;opacity:0.65;font-family:var(--mono);margin-left:3px;">(${clusterCount})</span>
           </div>
         `;
       } else if (name === 'Shortlist') {
@@ -9773,7 +9821,7 @@ function updateMaxChartSidebarWatchlist() {
       });
     }
     _sccWatchlistSymbols = flatSymbols;
-  } else if (_sccActiveWatchlist === 'Clusters' || _sccActiveWatchlist === 'CLUSTERS') {
+  } else if (_sccActiveWatchlist === 'Themes' || _sccActiveWatchlist === 'THEMES' || _sccActiveWatchlist === 'Clusters' || _sccActiveWatchlist === 'CLUSTERS') {
     const clusterRes = sccGetClustersWatchlistItems();
     items = clusterRes.items;
     flatSymbols = clusterRes.flatSymbols;
@@ -9834,7 +9882,7 @@ function updateMaxChartSidebarWatchlist() {
       rowsHtml += `
         <div style="padding: 10px 12px; background: #141722; border-top: 1px dashed #2a2e39; border-bottom: 1px dashed #2a2e39; margin: 6px 0; text-align: center;">
           <div style="font-size: 10px; color: #94a3b8; font-family: monospace; margin-bottom: 6px;">
-            Showing ${item.loaded} of ${item.total} cluster stocks
+            Showing ${item.loaded} of ${item.total} theme stocks
           </div>
           <button onclick="sccLoadMoreClustersWatchlist()"
                   style="width: 100%; font-size: 11px; font-weight: 700; padding: 6px 12px; cursor: pointer; background: #2962ff; color: #fff; border: none; border-radius: 4px;">
@@ -10133,7 +10181,9 @@ function sccComputeClusters() {
       return; // Skip downtrend stocks trading below their 200 MA
     }
 
-    const ind = (s.industry && s.industry.trim()) || 'Other / Diversified';
+    const themeLookup = window.RADAR_THEMES || {};
+    const sUpper = (s.symbol || '').toUpperCase().trim();
+    const ind = themeLookup[sUpper] || (s.theme && s.theme.trim()) || (s.industry && s.industry.trim()) || 'Other / Diversified';
     if (!indMap[ind]) {
       indMap[ind] = {
         name: ind,
@@ -10273,9 +10323,9 @@ function sccRenderClusters() {
 
     ribbon.innerHTML = `
       <div class="cluster-sum-card">
-        <span class="cluster-sum-label">Active Clusters</span>
+        <span class="cluster-sum-label">Active Themes</span>
         <span class="cluster-sum-val" style="color:var(--text)">${qualClusters} <span style="font-size:11px;color:var(--dim);font-weight:400">of ${totalIndustries}</span></span>
-        <span class="cluster-sum-sub">Granular industry groups</span>
+        <span class="cluster-sum-sub">Granular India themes</span>
       </div>
       <div class="cluster-sum-card">
         <span class="cluster-sum-label">1-Month High Leaders</span>
@@ -10288,7 +10338,7 @@ function sccRenderClusters() {
         <span class="cluster-sum-sub">Stocks within 3% of 52W High</span>
       </div>
       <div class="cluster-sum-card">
-        <span class="cluster-sum-label">Top Cluster</span>
+        <span class="cluster-sum-label">Top Theme</span>
         <span class="cluster-sum-val" style="font-size:13px;color:var(--yellow);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${filtered[0] ? sccEscapeHtml(filtered[0].name) : 'None'}</span>
         <span class="cluster-sum-sub">${filtered[0] ? (filtered[0].pct1m + '% at 1M High (' + filtered[0].h1m + '/' + filtered[0].total + ')') : '—'}</span>
       </div>
@@ -10298,7 +10348,7 @@ function sccRenderClusters() {
   if (!filtered.length) {
     container.innerHTML = `
       <div style="padding:40px 14px; text-align:center; color:var(--dim); font-size:12px;">
-        No industry clusters match the current filter criteria. Try lowering the constituent threshold or clearing search.
+        No industry themes match the current filter criteria. Try lowering the constituent threshold or clearing search.
       </div>`;
     return;
   }
@@ -10322,7 +10372,7 @@ function sccRenderClusters() {
               ${c.sector ? `<span class="cluster-sector-pill">${sccEscapeHtml(c.sector)}</span>` : ''}
             </div>
             <div class="cluster-meta-sub">
-              <span class="cluster-total-badge">${c.total} Stocks in Industry</span>
+              <span class="cluster-total-badge">${c.total} Stocks in Theme</span>
               <span class="cluster-sep">·</span>
               <span class="cluster-stat-pill mint">🔥 ${c.h1m} (${c.pct1m}%) at 1M High</span>
               <span class="cluster-sep">·</span>
@@ -10422,7 +10472,7 @@ function sccCopyTopClustersTv(topN = 5) {
   const text = syms.join(',');
   navigator.clipboard.writeText(text).then(() => {
     if (typeof showChartToast === 'function') {
-      showChartToast(`📋 Copied <b>${syms.length}</b> symbols from Top ${list.length} Clusters for TradingView!`, '#2dd4bf');
+      showChartToast(`📋 Copied <b>${syms.length}</b> symbols from Top ${list.length} Themes for TradingView!`, '#2dd4bf');
     }
   }).catch(() => {
     sccCopyFallback(text);
@@ -10573,18 +10623,18 @@ function sccRenderDashboardWidget(data) {
 window.sccRenderDashboardWidget = sccRenderDashboardWidget;
 
 // ── 1-CLICK HOME PAGE SYNC DATA & FUNDAMENTALS ENGINE ─────────────
-async function triggerHomePageSync(btn) {
+async function triggerHomePageSync(btn, isSilent = false) {
   const btnEl = btn || document.getElementById('hdr-sync-btn');
   const textEl = document.getElementById('hdr-sync-text');
   if (btnEl && btnEl.disabled) return;
 
-  if (btnEl) {
+  if (btnEl && !isSilent) {
     btnEl.disabled = true;
     btnEl.classList.add('spinning');
   }
-  if (textEl) textEl.textContent = 'Syncing...';
-  if (typeof showChartToast === 'function') {
-    showChartToast('🔄 Syncing quotes & quarterly fundamentals...', '#38bdf8');
+  if (textEl && !isSilent) textEl.textContent = 'Syncing...';
+  if (!isSilent && typeof showChartToast === 'function') {
+    showChartToast('🔄 Syncing 994 stocks & quarterly fundamentals...', '#38bdf8');
   }
 
   const payload = {
@@ -10777,6 +10827,15 @@ async function triggerHomePageSync(btn) {
     }
   } catch (eStore) {}
 
+  try {
+    const rResp = await fetch('radar_fundamentals.json?t=' + Date.now());
+    if (rResp && rResp.ok) {
+      const updatedRadar = await rResp.json();
+      window.RADAR_FUNDAMENTALS = updatedRadar;
+      if (!fundaCount) fundaCount = Object.keys(updatedRadar).length;
+    }
+  } catch (eRadar) {}
+
   // 4. Trigger cloud sync if configured
   if (typeof pushToCloud === 'function') {
     try { pushToCloud(); } catch (eCloud) {}
@@ -10848,4 +10907,42 @@ window.addEventListener('focus', function() {
   if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
   if (typeof updateMaxChartShortlistButton === 'function') updateMaxChartShortlistButton();
   if (typeof updateMaxChartMainWlButton === 'function') updateMaxChartMainWlButton();
+});
+
+
+// ── 15-MINUTE MARKET-HOURS POLLING ENGINE (MANAS ARORA PATTERN) ──
+function isNseMarketWindow() {
+  const n = new Date(Date.now() + 5.5 * 3600e3); // Indian Standard Time
+  const day = n.getUTCDay();
+  const mins = n.getUTCHours() * 60 + n.getUTCMinutes();
+  // Regular trading days: Monday (1) to Friday (5)
+  if (day === 0 || day === 6) return false;
+  // Session hours: 9:00 AM to 3:45 PM IST (540 to 945 mins)
+  if (mins < 540 || mins >= 945) return false;
+  return true;
+}
+window.isNseMarketWindow = isNseMarketWindow;
+
+let _lastRadarAutoSync = Date.now();
+setInterval(() => {
+  if (!document.hidden && isNseMarketWindow()) {
+    if (Date.now() - _lastRadarAutoSync >= 900000) { // 15 minutes = 900,000 ms
+      _lastRadarAutoSync = Date.now();
+      if (typeof triggerHomePageSync === 'function') {
+        console.log('[Market Radar] 15-Minute auto-polling triggered during market hours.');
+        triggerHomePageSync(null, true);
+      }
+    }
+  }
+}, 60000); // Check once per minute
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  if (isNseMarketWindow() && Date.now() - _lastRadarAutoSync >= 900000) {
+    _lastRadarAutoSync = Date.now();
+    if (typeof triggerHomePageSync === 'function') {
+      console.log('[Market Radar] Tab visibility resumed. Syncing 15-minute snapshot.');
+      triggerHomePageSync(null, true);
+    }
+  }
 });

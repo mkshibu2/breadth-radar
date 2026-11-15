@@ -171,10 +171,19 @@ td:first-child { font-weight:500; }
 .footer-right { font-family:var(--mono); font-size:10px; color:var(--dim); text-align:right; letter-spacing:.4px; }
 
 @media (max-width:768px) {
-  .hero { grid-template-columns:1fr; } .hero-meta { text-align:left; } .hero-title { font-size:34px; }
+  .topbar { flex-direction:column; align-items:stretch; height:auto; padding:8px 12px; gap:8px; }
+  .topbar-brand { justify-content:space-between; }
+  .topbar-links { overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; display:flex; gap:6px; width:100%; padding-bottom:2px; }
+  .topbar-links::-webkit-scrollbar { display:none; }
+  .topbar-link { white-space:nowrap; flex-shrink:0; padding:4px 10px; font-size:11px; }
+  .hero { grid-template-columns:1fr; } .hero-meta { text-align:left; } .hero-title { font-size:28px; }
   .phase-grid,.rpg-levels,.exp-grid { grid-template-columns:repeat(2,1fr); }
   .rpg-top,.routine-grid,.combo-grid,.def-grid { grid-template-columns:1fr; }
   .footer { flex-direction:column; gap:10px; text-align:center; } .footer-right { text-align:center; }
+  .wrap { padding:12px !important; }
+}
+@media (max-width:480px) {
+  .phase-grid,.rpg-levels,.exp-grid { grid-template-columns:1fr !important; }
 }
 </style>
 </head>
