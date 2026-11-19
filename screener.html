@@ -271,6 +271,8 @@
       align-items: center;
       gap: 14px;
       position: relative;
+      min-width: 0;
+      max-width: 100%;
     }
 
     .screener-cat {
@@ -834,13 +836,28 @@
   gap: 6px;
   margin-left: 14px;
   max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
   flex-wrap: nowrap;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  touch-action: pan-x;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  cursor: grab;
+  user-select: none;
+}
+.fav-quick-nav:active {
+  cursor: grabbing;
 }
 .fav-quick-nav::-webkit-scrollbar {
-  display: none;
+  height: 3px;
+}
+.fav-quick-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.fav-quick-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
 }
 .fav-nav-btn {
   background: rgba(255, 255, 255, 0.03);
@@ -2797,15 +2814,41 @@
       initSyncTimeBadge();
       loadPreset('Momentum-Leaders');
 
-      // Enable horizontal wheel scrolling for favorite presets bar
+      // Enable horizontal scrolling (wheel + mouse drag) for favorite presets bar
       var favNav = document.querySelector('.fav-quick-nav');
       if (favNav) {
         favNav.addEventListener('wheel', function (e) {
-          if (e.deltaY !== 0) {
+          if (e.deltaY !== 0 && !e.shiftKey) {
             e.preventDefault();
             favNav.scrollLeft += e.deltaY;
           }
         }, { passive: false });
+
+        var isFavDown = false, favStartX = 0, favScrollLeft = 0, favMoved = false;
+        favNav.addEventListener('mousedown', function (e) {
+          if (e.button !== 0) return;
+          isFavDown = true;
+          favMoved = false;
+          favStartX = e.pageX - favNav.offsetLeft;
+          favScrollLeft = favNav.scrollLeft;
+        });
+        window.addEventListener('mousemove', function (e) {
+          if (!isFavDown) return;
+          var x = e.pageX - favNav.offsetLeft;
+          var walk = x - favStartX;
+          if (Math.abs(walk) > 4) favMoved = true;
+          favNav.scrollLeft = favScrollLeft - walk;
+        });
+        window.addEventListener('mouseup', function () {
+          isFavDown = false;
+        });
+        favNav.addEventListener('click', function (e) {
+          if (favMoved) {
+            e.stopPropagation();
+            e.preventDefault();
+            favMoved = false;
+          }
+        }, true);
       }
 
       // Close dropdowns on outside click

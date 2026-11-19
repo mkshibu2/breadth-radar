@@ -532,7 +532,7 @@ function sccChartRebuildGrid() {
       grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
     }
   } else if (count === 4) { grid.className = 'scc-chart-grid-4'; grid.style.gridTemplateColumns = 'repeat(2, 1fr)'; } else if (count === 2) { grid.className = 'scc-chart-grid-2'; grid.style.gridTemplateColumns = 'repeat(2, 1fr)'; } else { grid.className = 'scc-chart-grid-1'; grid.style.gridTemplateColumns = '1fr'; }
-  if (typeof _sccLwCharts !== 'undefined') { Object.keys(_sccLwCharts).forEach(k => { try { _sccLwCharts[k].remove(); } catch(e){} }); _sccLwCharts = {}; } if (typeof _sccLwObservers !== 'undefined') { Object.keys(_sccLwObservers).forEach(k => { try { _sccLwObservers[k].disconnect(); } catch(e){} }); _sccLwObservers = {}; }
+  if (typeof _sccLwCharts !== 'undefined') { Object.keys(_sccLwCharts).forEach(k => { try { _sccLwCharts[k].remove(); } catch (e) { } }); _sccLwCharts = {}; } if (typeof _sccLwObservers !== 'undefined') { Object.keys(_sccLwObservers).forEach(k => { try { _sccLwObservers[k].disconnect(); } catch (e) { } }); _sccLwObservers = {}; }
   let html = ''; for (let i = 0; i < count; i++) {
     const symbol = sccChartGetSymbol(i); const timeframe = _sccChartTimeframes[i] || 'D'; const tvUrl = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(symbol)}`; const isActive = i === _sccActivePanelIndex; const borderStyle = isActive ? 'border: 1px solid var(--accent);' : 'border: 1px solid var(--border);'; const shadowStyle = isActive ? 'box-shadow: 0 0 10px rgba(91, 163, 245, 0.25);' : 'box-shadow: none;'; html += `
       <div class="sd-chart-card" id="scc-chart-card-${i}" onclick="sccChartSetActivePanel(${i})" style="cursor: pointer; ${borderStyle} ${shadowStyle}">
@@ -1988,8 +1988,11 @@ function sccRenderLwChart(index, candles, niftyCandles) {
       horzLine: { color: 'rgba(91, 163, 245, 0.3)', width: 1, style: 2 },
     },
     rightPriceScale: {
-      borderColor: 'rgba(255, 255, 255, 0.06)',
+      visible: true,
+      borderColor: 'rgba(255, 255, 255, 0.08)',
       scaleMargins: { top: 0.08, bottom: 0.22 },
+      autoScale: true,
+      alignLabels: true,
     },
     timeScale: {
       borderColor: 'rgba(255, 255, 255, 0.06)',
@@ -2382,6 +2385,16 @@ function sccApplyWatchlistVisibility() {
     panel.style.display = 'flex'; if (btn) { btn.style.background = 'rgba(91, 163, 245, 0.15)'; btn.style.borderColor = 'var(--accent)'; btn.style.color = 'var(--text)'; }
     sccWatchlistFetchAll();
   } else { panel.style.display = 'none'; if (btn) { btn.style.background = 'rgba(91, 163, 245, 0.06)'; btn.style.borderColor = 'rgba(91, 163, 245, 0.2)'; btn.style.color = 'var(--accent)'; } }
+  setTimeout(() => {
+    if (typeof _sccLwCharts === 'object' && _sccLwCharts) {
+      Object.keys(_sccLwCharts).forEach(idx => {
+        const c = document.getElementById(`scc-chart-lw-${idx}`);
+        if (c && _sccLwCharts[idx]) {
+          _sccLwCharts[idx].resize(c.clientWidth, c.clientHeight);
+        }
+      });
+    }
+  }, 60);
 }
 function sccToggleWatchlist() { _sccShowWatchlist = !_sccShowWatchlist; localStorage.setItem('_sccShowWatchlist', _sccShowWatchlist); sccApplyWatchlistVisibility(); }
 function sccGetOrderedTabs() {
@@ -2400,7 +2413,7 @@ function sccGetOrderedTabs() {
     });
   }
 
-  const coreTabs = ['Main', 'Shortlist', 'Themes', 'VCP'];
+  const coreTabs = ['Main', 'Shortlist', 'Themes', 'Tight', 'VCP'];
   const userCustomWls = Object.keys(_sccWatchlists || {}).filter(k => !coreTabs.includes(k));
   const rawTabs = [...coreTabs, ...userCustomWls];
   Object.keys(colorsMap).forEach(c => {
@@ -2482,6 +2495,20 @@ function sccWlRenderTabs() {
           <span>⭐ Themes</span> <span style="font-size:9px;opacity:0.65;font-family:var(--mono);margin-left:3px;">(${clusterCount})</span>
         </div>
       `;
+    } else if (name === 'Tight' || name === 'TIGHT') {
+      const tightCount = (_sccTightSymbolsCache && _sccTightSymbolsCache.length) || 0;
+      html += `
+        <div onclick="sccWlSwitchTab('Tight'); if(typeof updateMaxChartSidebarWatchlist==='function')updateMaxChartSidebarWatchlist();" 
+             draggable="true"
+             ondragstart="sccTabDragStart(event, 'Tight')"
+             ondragover="sccTabDragOver(event)"
+             ondrop="sccTabDrop(event, 'Tight')"
+             ondragend="sccTabDragEnd(event)"
+             class="tv-wl-tab-pill ${isActive ? 'active' : ''}"
+             style="${isActive ? 'color:#eab308;border-bottom-color:#eab308;' : ''}">
+          <span>⚡ Tight</span> <span style="font-size:9px;opacity:0.65;font-family:var(--mono);margin-left:3px;">(${tightCount})</span>
+        </div>
+      `;
     } else if (name === 'Shortlist') {
       const slCount = (typeof getShortlistSet === 'function' ? getShortlistSet().size : 0);
       html += `
@@ -2522,27 +2549,58 @@ function sccWlRenderTabs() {
   `;
   tabsBar.innerHTML = html;
 
-  // Horizontal wheel scroll handler for Sector Command in-page tab bar
-  tabsBar.onwheel = function(e) {
-    if (e.deltaY !== 0) {
-      e.preventDefault();
-      tabsBar.scrollLeft += e.deltaY;
-    }
-  };
+  // Enable horizontal wheel + mouse drag scrolling for Sector Command tabs
+  sccEnableTabsDragScroll(tabsBar);
 
   // Scroll active tab into view
   try {
     const activeTab = tabsBar.querySelector('.tv-wl-tab-pill.active');
     if (activeTab) activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-  } catch (e) {}
+  } catch (e) { }
 
   if (typeof updateMaxChartSidebarWatchlist === 'function') {
     updateMaxChartSidebarWatchlist();
   }
 }
+
+function sccEnableTabsDragScroll(tabsEl) {
+  if (!tabsEl || tabsEl.dataset.dragScrollInit) return;
+  tabsEl.dataset.dragScrollInit = 'true';
+  tabsEl.addEventListener('wheel', function (e) {
+    if (e.deltaY !== 0 && !e.shiftKey) {
+      e.preventDefault();
+      tabsEl.scrollLeft += e.deltaY;
+    }
+  }, { passive: false });
+  let isDown = false, startX = 0, scrollLeft = 0, moved = false;
+  tabsEl.addEventListener('mousedown', function (e) {
+    if (e.button !== 0 || e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+    isDown = true;
+    moved = false;
+    startX = e.pageX - tabsEl.offsetLeft;
+    scrollLeft = tabsEl.scrollLeft;
+  });
+  window.addEventListener('mousemove', function (e) {
+    if (!isDown) return;
+    const x = e.pageX - tabsEl.offsetLeft;
+    const walk = x - startX;
+    if (Math.abs(walk) > 4) moved = true;
+    tabsEl.scrollLeft = scrollLeft - walk;
+  });
+  window.addEventListener('mouseup', function () {
+    isDown = false;
+  });
+  tabsEl.addEventListener('click', function (e) {
+    if (moved) {
+      e.stopPropagation();
+      e.preventDefault();
+      moved = false;
+    }
+  }, true);
+}
 function sccWlSwitchTab(name) {
   if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
-  _sccActiveWatchlist = name; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null; _sccWlIsBreadthSorted = false; _sccWlMaxLoaded = 40; if (name === 'VCP') { _sccWatchlistSymbols = []; } else if (name === 'Themes' || name === 'Clusters') { window._sccClustersStockLimit = 40; _sccWatchlistSymbols = []; } else if (name === 'Shortlist') { _sccWatchlistSymbols = Array.from(getShortlistSet()); } else if (name.startsWith('__flag_')) { const color = name.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else { _sccWatchlistSymbols = _sccWatchlists[name] || []; }
+  _sccActiveWatchlist = name; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null; _sccWlIsBreadthSorted = false; _sccWlMaxLoaded = 40; if (name === 'VCP') { _sccWatchlistSymbols = []; } else if (name === 'Themes' || name === 'Clusters') { window._sccClustersStockLimit = 40; _sccWatchlistSymbols = []; } else if (name === 'Tight' || name === 'TIGHT') { _sccWatchlistSymbols = _sccTightSymbolsCache || []; if (!_sccTightSymbolsCache || !_sccTightSymbolsCache.length) { if (typeof sccScanTightStocks === 'function') sccScanTightStocks(); } } else if (name === 'Shortlist') { _sccWatchlistSymbols = Array.from(getShortlistSet()); } else if (name.startsWith('__flag_')) { const color = name.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else { _sccWatchlistSymbols = _sccWatchlists[name] || []; }
   sccWlRenderTabs(); sccWatchlistRender(); sccWatchlistFetchAll();
   if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
   if (_sccChartLayout === 'watchlist') sccChartRebuildGrid();
@@ -2566,48 +2624,239 @@ function sccWlToggleCluster(name) {
 }
 window.sccWlToggleCluster = sccWlToggleCluster;
 
-let _sccClustersStockLimit = 40;
-window._sccClustersStockLimit = _sccClustersStockLimit;
+let _sccClustersThemeLimit = 30;
+window._sccClustersThemeLimit = _sccClustersThemeLimit;
+
+// ── TIGHT BASE SCANNER (Stocks with 3+ Tight Candles or Right-Side Consolidation Box) ──
+const _sccTightDefaultSeed = ['ASIANPAINT', 'BEL', 'HAL', 'BHEL', 'NTPC', 'TRENT', 'DIXON', 'PERSISTENT', 'OFSS', 'BOSCHLTD', 'COFORGE', 'ITC', 'HDFCBANK', 'ICICIBANK'];
+let _sccTightSymbolsCache = [..._sccTightDefaultSeed];
+let _sccTightDetailsMap = {
+  'ASIANPAINT': { symbol: 'ASIANPAINT', company: 'Asian Paints Ltd.', price: 2550.0, change: 0.5, tightCount: 4, badgeText: '4T', badgeType: 'tight', theme: 'Paints & Specialty Chemicals' },
+  'BEL': { symbol: 'BEL', company: 'Bharat Electronics Ltd.', price: 295.4, change: 1.2, tightCount: 10, badgeText: '10T', badgeType: 'tight', theme: 'Aerospace & Defense' },
+  'HAL': { symbol: 'HAL', company: 'Hindustan Aeronautics Ltd.', price: 4120.0, change: -0.4, tightCount: 5, badgeText: '5T', badgeType: 'tight', theme: 'Aerospace & Defense' },
+  'BHEL': { symbol: 'BHEL', company: 'Bharat Heavy Electricals', price: 228.0, change: 0.8, tightCount: 2, badgeText: '5D 4.8%', badgeType: 'box', theme: 'Power & Capital Goods' },
+  'NTPC': { symbol: 'NTPC', company: 'NTPC Limited', price: 382.5, change: 0.4, tightCount: 8, badgeText: '8T', badgeType: 'tight', theme: 'Power & Capital Goods' },
+  'TRENT': { symbol: 'TRENT', company: 'Trent Ltd.', price: 6510.0, change: 1.8, tightCount: 1, badgeText: '3D 3.7%', badgeType: 'box', theme: 'Retail & Consumer' },
+  'DIXON': { symbol: 'DIXON', company: 'Dixon Technologies Ltd.', price: 15420.0, change: 0.6, tightCount: 2, badgeText: '5D 4.9%', badgeType: 'box', theme: 'Electronics & EMS' },
+  'PERSISTENT': { symbol: 'PERSISTENT', company: 'Persistent Systems Ltd.', price: 5640.0, change: -0.2, tightCount: 8, badgeText: '8T', badgeType: 'tight', theme: 'IT Software' },
+  'OFSS': { symbol: 'OFSS', company: 'Oracle Financial Services', price: 11450.0, change: 1.1, tightCount: 10, badgeText: '10T', badgeType: 'tight', theme: 'IT Software' },
+  'BOSCHLTD': { symbol: 'BOSCHLTD', company: 'Bosch Limited', price: 34800.0, change: 0.3, tightCount: 7, badgeText: '7T', badgeType: 'tight', theme: 'Auto Ancillaries' },
+  'COFORGE': { symbol: 'COFORGE', company: 'Coforge Ltd.', price: 7920.0, change: 0.9, tightCount: 2, badgeText: '3D 3.6%', badgeType: 'box', theme: 'IT Software' },
+  'ITC': { symbol: 'ITC', company: 'ITC Limited', price: 478.2, change: 0.2, tightCount: 3, badgeText: '3T', badgeType: 'tight', theme: 'FMCG' },
+  'HDFCBANK': { symbol: 'HDFCBANK', company: 'HDFC Bank Ltd.', price: 1745.0, change: 0.6, tightCount: 8, badgeText: '8T', badgeType: 'tight', theme: 'Private Banks' },
+  'ICICIBANK': { symbol: 'ICICIBANK', company: 'ICICI Bank Ltd.', price: 1260.0, change: 0.8, tightCount: 6, badgeText: '6T', badgeType: 'tight', theme: 'Private Banks' }
+};
+try {
+  const savedTightSyms = localStorage.getItem('_sccTightSymbolsCache');
+  if (savedTightSyms) {
+    const parsed = JSON.parse(savedTightSyms);
+    if (parsed && parsed.length > 0) _sccTightSymbolsCache = parsed;
+  }
+  const savedTightMap = localStorage.getItem('_sccTightDetailsMap');
+  if (savedTightMap) {
+    const parsedMap = JSON.parse(savedTightMap);
+    if (parsedMap && Object.keys(parsedMap).length > 0) _sccTightDetailsMap = parsedMap;
+  }
+} catch(e) {}
+
+let _sccTightScanning = false;
+
+async function sccScanTightStocks() {
+  if (_sccTightScanning) return;
+  _sccTightScanning = true;
+
+  try {
+    if (!_sccClustersCache || !_sccClustersCache.length) {
+      if (typeof sccComputeClusters === 'function') sccComputeClusters();
+    }
+
+    // 1. Gather all candidate stocks from qualifying Themes and universe leaders near highs
+    const clusterRes = (typeof sccGetClustersWatchlistItems === 'function') ? sccGetClustersWatchlistItems() : null;
+    let candidateSyms = [];
+    if (clusterRes && Array.isArray(clusterRes.flatSymbols) && clusterRes.flatSymbols.length > 0) {
+      candidateSyms = [...clusterRes.flatSymbols];
+    }
+    if (Array.isArray(_sccUniverseStocks) && _sccUniverseStocks.length > 0) {
+      const topUniv = _sccUniverseStocks
+        .filter(s => (s.dist_high_1m_pct != null && s.dist_high_1m_pct <= 9.0) && (!s.sma_200 || s.price >= s.sma_200))
+        .map(s => s.symbol.toUpperCase());
+      candidateSyms = [...candidateSyms, ...topUniv];
+    }
+
+    const uniqueSyms = [...new Set(candidateSyms)].slice(0, 100);
+    if (!uniqueSyms.length) {
+      _sccTightScanning = false;
+      return;
+    }
+
+    const tightResults = [];
+    const batchSize = 10;
+
+    for (let i = 0; i < uniqueSyms.length; i += batchSize) {
+      const batch = uniqueSyms.slice(i, i + batchSize);
+      await Promise.all(batch.map(async (sym) => {
+        try {
+          const sUpper = sym.toUpperCase();
+          const candles = await fetchYfData(sUpper, '1mo', '1d');
+          if (!candles || candles.length < 5) return;
+
+          const clean = candles.filter(c => c && c.high != null && c.low != null && c.close != null && c.close > 0);
+          if (clean.length < 5) return;
+
+          const lastIdx = clean.length - 1;
+          let tightCount = 0;
+          let sumRangePct = 0;
+
+          // 1. Consecutive tight daily candles from right side (<= 3.25% daily range)
+          for (let j = lastIdx; j >= Math.max(0, lastIdx - 14); j--) {
+            const c = clean[j];
+            const dailyRangePct = ((c.high - c.low) / c.close) * 100;
+            if (dailyRangePct <= 3.25) {
+              tightCount++;
+              if (tightCount <= 5) sumRangePct += dailyRangePct;
+            } else {
+              break; // Consecutive from right side
+            }
+          }
+
+          // 2. 3-day and 5-day consolidation boxes
+          const last3 = clean.slice(-3);
+          const maxH3 = Math.max(...last3.map(c => c.high));
+          const minL3 = Math.min(...last3.map(c => c.low));
+          const box3 = minL3 > 0 ? ((maxH3 - minL3) / minL3) * 100 : 99;
+
+          const last5 = clean.slice(-5);
+          const maxH5 = Math.max(...last5.map(c => c.high));
+          const minL5 = Math.min(...last5.map(c => c.low));
+          const box5 = minL5 > 0 ? ((maxH5 - minL5) / minL5) * 100 : 99;
+
+          // 3. Proximity to recent high (Right side of base: within 9% of 20-day high)
+          const high20 = Math.max(...clean.map(c => c.high));
+          const lastCandle = clean[lastIdx];
+          const distHigh = high20 > 0 ? ((high20 - lastCandle.close) / high20) * 100 : 99;
+          const isNearHigh = distHigh <= 9.0;
+
+          // 4. Qualification criteria:
+          // A) 3+ consecutive tight candles (3T+)
+          // B) 3-day tight consolidation box <= 3.8% near highs
+          // C) 5-day tight consolidation base <= 5.2% near highs
+          // D) 2 tight candles within a tight 4.0% 3-day box near highs
+          const is3TPlus = (tightCount >= 3);
+          const isBox3 = (box3 <= 3.8 && isNearHigh);
+          const isBox5 = (box5 <= 5.2 && isNearHigh);
+          const is2TBox = (tightCount >= 2 && box3 <= 4.0 && isNearHigh);
+
+          if (is3TPlus || isBox3 || isBox5 || is2TBox) {
+            let badgeText = '';
+            let badgeType = 'tight';
+            if (tightCount >= 3) {
+              badgeText = `${tightCount}T`;
+              badgeType = 'tight';
+            } else if (isBox3) {
+              badgeText = `3D ${box3.toFixed(1)}%`;
+              badgeType = 'box';
+            } else if (isBox5) {
+              badgeText = `5D ${box5.toFixed(1)}%`;
+              badgeType = 'box';
+            } else {
+              badgeText = `2T ${box3.toFixed(1)}%`;
+              badgeType = 'tight';
+            }
+
+            const avgRange = (tightCount > 0 && sumRangePct > 0)
+              ? (sumRangePct / tightCount)
+              : Math.min(box3, box5);
+            const prevCandle = clean.length > 1 ? clean[lastIdx - 1] : lastCandle;
+            const price = lastCandle.close;
+            const chg = prevCandle.close > 0 ? ((price - prevCandle.close) / prevCandle.close) * 100 : 0;
+
+            const meta = (typeof findStockMetadata === 'function') ? findStockMetadata(sUpper) : {};
+            const themeLookup = window.RADAR_THEMES || {};
+            const themeName = themeLookup[sUpper] || meta.industry || '';
+
+            const resItem = {
+              symbol: sUpper,
+              company: meta.company || sUpper,
+              price: price,
+              change: chg,
+              tightCount: tightCount,
+              badgeText: badgeText,
+              badgeType: badgeType,
+              avgRange: avgRange,
+              box3: box3,
+              box5: box5,
+              distHigh: distHigh,
+              theme: themeName
+            };
+
+            tightResults.push(resItem);
+            _sccTightDetailsMap[sUpper] = resItem;
+          }
+        } catch (eCand) { }
+      }));
+    }
+
+    // Sort: highest tightCount first, then lowest avgRange / box3
+    tightResults.sort((a, b) => (b.tightCount - a.tightCount) || (a.avgRange - b.avgRange));
+    _sccTightSymbolsCache = tightResults.map(r => r.symbol);
+
+    try {
+      localStorage.setItem('_sccTightSymbolsCache', JSON.stringify(_sccTightSymbolsCache));
+      localStorage.setItem('_sccTightDetailsMap', JSON.stringify(_sccTightDetailsMap));
+    } catch(e) {}
+
+    if (_sccActiveWatchlist === 'Tight' || _sccActiveWatchlist === 'TIGHT') {
+      _sccWatchlistSymbols = _sccTightSymbolsCache;
+      if (typeof sccWatchlistRender === 'function') sccWatchlistRender();
+      if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+    }
+    if (typeof sccWlRenderTabs === 'function') sccWlRenderTabs();
+  } catch (err) {
+    console.error('sccScanTightStocks error:', err);
+  } finally {
+    _sccTightScanning = false;
+  }
+}
+window.sccScanTightStocks = sccScanTightStocks;
 
 function sccGetClustersWatchlistItems() {
   if (!_sccClustersCache || !_sccClustersCache.length) {
     if (typeof sccComputeClusters === 'function') sccComputeClusters();
   }
-  const clusters = _sccClustersCache || [];
-  let qualClusters = clusters.filter(c => c.total >= 2 && (c.h1m > 0 || c.h52w > 0)).sort((a, b) => {
-    return (b.pct1m - a.pct1m) || (b.pct52w - a.pct52w) || (b.h1m - a.h1m) || (b.total - a.total);
-  });
-  if (!qualClusters.length) {
-    qualClusters = clusters.slice(0, 30);
+
+  // Always sync with the Themes Tab on sectors.html
+  let qualClusters = [];
+  if (Array.isArray(_sccFilteredClusters) && _sccFilteredClusters.length > 0) {
+    qualClusters = _sccFilteredClusters;
+  } else {
+    // If Themes tab hasn't rendered yet, compute the exact same filtered & ranked themes as sectors.html
+    const clusters = _sccClustersCache || [];
+    qualClusters = clusters.filter(c => c.total >= 3 && (c.h1m > 0 || c.h52w > 0)).sort((a, b) => {
+      return (b.pct1m - a.pct1m) || (b.pct52w - a.pct52w) || (b.h1m - a.h1m) || (b.total - a.total);
+    });
+    if (!qualClusters.length) {
+      qualClusters = clusters.slice(0, 30);
+    }
+    _sccFilteredClusters = qualClusters;
   }
 
-  // Count total unique stocks across all qualifying clusters
-  const allUnique = [];
-  qualClusters.forEach(c => {
-    if (Array.isArray(c.stocks)) {
-      c.stocks.forEach(s => {
-        const u = s.symbol.toUpperCase();
-        if (!allUnique.includes(u)) allUnique.push(u);
-      });
-    }
-  });
-  const totalStocksCount = allUnique.length;
-  const maxStocks = window._sccClustersStockLimit || 40;
-
+  const maxThemes = window._sccClustersThemeLimit || 30;
   const watchlistItems = [];
   const flatSymbols = [];
 
-  for (let ci = 0; ci < qualClusters.length; ci++) {
-    const c = qualClusters[ci];
-    if (flatSymbols.length >= maxStocks) break;
+  const displayClusters = qualClusters.slice(0, maxThemes);
 
+  for (let ci = 0; ci < displayClusters.length; ci++) {
+    const c = displayClusters[ci];
+    const rank = ci + 1;
     const isCollapsed = _sccWlCollapsedClusters.has(c.name);
     const subLabel = `${c.pct1m}% 1M (${c.h1m}/${c.total})`;
+
     watchlistItems.push({
       type: 'header',
-      label: c.name,
-      sub: subLabel,
+      label: `#${rank} ${c.name}`,
       clusterName: c.name,
+      sub: subLabel,
       sector: c.sector,
       isCluster: true,
       collapsed: isCollapsed
@@ -2615,7 +2864,6 @@ function sccGetClustersWatchlistItems() {
 
     if (Array.isArray(c.stocks)) {
       for (let si = 0; si < c.stocks.length; si++) {
-        if (flatSymbols.length >= maxStocks) break;
         const s = c.stocks[si];
         const has200Ma = (s.sma_200 != null && !isNaN(s.sma_200) && s.sma_200 > 0 && !s.is_ipo);
         if (has200Ma && s.price != null && s.price < s.sma_200) {
@@ -2649,23 +2897,24 @@ function sccGetClustersWatchlistItems() {
     }
   }
 
-  if (totalStocksCount > flatSymbols.length) {
+  if (qualClusters.length > maxThemes) {
+    const nextLimit = Math.min(qualClusters.length, maxThemes + 20);
     watchlistItems.push({
       type: 'load_more_clusters',
-      loaded: flatSymbols.length,
-      total: totalStocksCount
+      loaded: maxThemes,
+      total: qualClusters.length,
+      nextCount: nextLimit
     });
   }
 
   return { items: watchlistItems, flatSymbols };
 }
 
-window.sccLoadMoreClustersWatchlist = function() {
-  window._sccClustersStockLimit = (window._sccClustersStockLimit || 40) + 40;
-  if (typeof _sccWlMaxLoaded !== 'undefined') _sccWlMaxLoaded = window._sccClustersStockLimit;
+window.sccLoadMoreClustersWatchlist = function () {
+  window._sccClustersThemeLimit = (window._sccClustersThemeLimit || 30) + 20;
   if (typeof sccWatchlistRender === 'function') sccWatchlistRender();
   if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
-  if (_sccChartLayout === 'watchlist') sccChartRebuildGrid();
+  if (_sccChartLayout === 'watchlist' && typeof sccChartRebuildGrid === 'function') sccChartRebuildGrid();
 };
 window.sccGetClustersWatchlistItems = sccGetClustersWatchlistItems;
 
@@ -2683,6 +2932,29 @@ function sccWatchlistRender() {
     watchlistItems = clusterRes.items;
     flatSymbols = clusterRes.flatSymbols;
     _sccWatchlistSymbols = flatSymbols;
+  } else if (_sccActiveWatchlist === 'Tight' || _sccActiveWatchlist === 'TIGHT') {
+    flatSymbols = _sccTightSymbolsCache || [];
+    if (!flatSymbols.length && !_sccTightScanning) {
+      if (typeof sccScanTightStocks === 'function') sccScanTightStocks();
+    }
+    flatSymbols.forEach(sym => {
+      const sUpper = sym.toUpperCase();
+      const det = _sccTightDetailsMap[sUpper] || {};
+      watchlistItems.push({
+        type: 'stock',
+        symbol: sUpper,
+        company: det.company || sUpper,
+        price: det.price,
+        change_pct: det.change,
+        tightCount: det.tightCount || 3,
+        badgeText: det.badgeText,
+        badgeType: det.badgeType,
+        avgRange: det.avgRange,
+        theme: det.theme,
+        isTight: true
+      });
+    });
+    _sccWatchlistSymbols = flatSymbols;
   } else if (_sccActiveWatchlist === 'Shortlist') {
     flatSymbols = Array.from(getShortlistSet());
     flatSymbols.forEach(sym => { watchlistItems.push({ type: 'stock', symbol: sym }); });
@@ -2690,15 +2962,16 @@ function sccWatchlistRender() {
   } else if (_sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); _sccWatchlistSymbols.forEach(sym => { watchlistItems.push({ type: 'stock', symbol: sym }); }); } else { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; _sccWatchlistSymbols.forEach(sym => { watchlistItems.push({ type: 'stock', symbol: sym }); }); }
   const countEl = document.getElementById('scc-wl-count'); if (countEl) countEl.innerText = `${_sccWatchlistSymbols.length} items`; const rowsContainer = document.getElementById('scc-wl-rows'); if (!rowsContainer) return; if (watchlistItems.length === 0) {
     rowsContainer.innerHTML = `
-      <div style="color:var(--dim); padding:20px; text-align:center; font-size:11px;">
-        Watch list is empty.
+      <div style="color:var(--dim); padding:24px 16px; text-align:center; font-size:11px;">
+        ${_sccTightScanning ? '⚡ Scanning Themes for stocks with 5+ tight candles...' : 'Watch list is empty.'}
+        ${!_sccTightScanning && (_sccActiveWatchlist === 'Tight' || _sccActiveWatchlist === 'TIGHT') ? '<div style="margin-top:8px;"><button onclick="sccScanTightStocks()" class="topbar-btn" style="font-size:10px;padding:4px 10px;cursor:pointer;font-weight:700;">⟳ Scan Themes Now</button></div>' : ''}
       </div>
     `; return;
   }
   const activeSymbols = _sccChartLayout === 'watchlist' ? _sccWatchlistSymbols.map(s => s ? s.toUpperCase() : '') : _sccChartSymbols.map(s => s ? s.toUpperCase() : ''); let html = ''; watchlistItems.forEach(item => {
     if (item.type === 'header') {
       const isCollapsed = item.collapsed;
-      const toggleFn = item.isCluster ? `sccWlToggleCluster('${item.label.replace(/'/g, "\\'")}')` : `sccWlToggleSector('${item.label.replace(/'/g, "\\'")}')`;
+      const toggleFn = item.isCluster ? `sccWlToggleCluster('${(item.clusterName || item.label).replace(/'/g, "\\'")}')` : `sccWlToggleSector('${item.label.replace(/'/g, "\\'")}')`;
       html += `
         <div class="scc-wl-section-hdr" onclick="${toggleFn}" 
              style="padding: 6px 12px; background: var(--bg3); color: var(--teal); font-weight: 700; font-size: 10px; border-bottom: 1px solid var(--border); letter-spacing: 0.5px; text-transform: uppercase; margin-top: 4px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;"
@@ -2713,15 +2986,15 @@ function sccWatchlistRender() {
       `; return;
     }
     if (item.type === 'load_more_clusters') {
-      const nextCount = Math.min(item.total, item.loaded + 40);
+      const nextCount = item.nextCount || Math.min(item.total, item.loaded + 20);
       html += `
         <div style="padding: 10px 12px; background: var(--bg2); border-top: 1px dashed var(--border); border-bottom: 1px dashed var(--border); margin: 6px 0; text-align: center;">
           <div style="font-size: 10px; color: var(--dim); font-family: var(--mono); margin-bottom: 6px;">
-            Showing ${item.loaded} of ${item.total} theme stocks
+            Showing ${item.loaded} of ${item.total} Themes
           </div>
           <button onclick="sccLoadMoreClustersWatchlist()" class="topbar-btn"
                   style="font-size: 11px; padding: 6px 14px; cursor: pointer; font-weight: 700; width: 100%;">
-            ⬇ Load Next 40 Stocks (${item.loaded + 1}–${nextCount})
+            ⬇ Load Next 20 Themes (${item.loaded + 1}–${nextCount})
           </button>
         </div>
       `;
@@ -2740,6 +3013,16 @@ function sccWatchlistRender() {
       priceStr = item.price.toFixed(1); const changeVal = item.change_pct != null ? item.change_pct : 0; const sign = changeVal >= 0 ? '+' : ''; const color = changeVal >= 0 ? 'var(--lime)' : 'var(--red)'; changeStr = `<span style="color:${color}">${sign}${changeVal.toFixed(1)}%</span>`;
     }
     const leaderBadge = item.is52w ? '<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:rgba(45,212,191,0.15);color:var(--teal);margin-left:4px;" title="Within 3% of 52W High">52W</span>' : (item.is1m ? '<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:rgba(52,211,153,0.15);color:#34d399;margin-left:4px;" title="Within 2% of 1M High">1M</span>' : '');
+    const tightDet = (_sccTightDetailsMap && _sccTightDetailsMap[sUpper]) || {};
+    let tightBadge = '';
+    if (item.isTight || tightDet.badgeText || tightDet.tightCount) {
+      if (tightDet.badgeType === 'box') {
+        tightBadge = `<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:rgba(6,182,212,0.18);color:#06b6d4;margin-left:4px;font-weight:700;" title="Consolidation Box: ${tightDet.badgeText || 'BOX'} near highs">${tightDet.badgeText || 'BOX'}</span>`;
+      } else {
+        const tCount = tightDet.tightCount || item.tightCount || 3;
+        tightBadge = `<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:rgba(234,179,8,0.18);color:#eab308;margin-left:4px;font-weight:700;" title="Tight Base: ${tCount} tight daily candles on right side">${tCount}T</span>`;
+      }
+    }
     const showRemoveBtn = _sccActiveWatchlist !== 'VCP' && _sccActiveWatchlist !== 'Clusters'; const removeBtnHtml = showRemoveBtn ? `
       <button class="wl-del-btn" onclick="event.stopPropagation(); sccWatchlistRemoveSymbol('${sUpper}');" title="Remove from Watch List"
               style="background:none; border:none; color:var(--dim); cursor:pointer; font-size:13px; font-weight:bold; padding:0 2px; opacity:0.3; transition:opacity 0.15s, color 0.15s; outline:none;"
@@ -2776,8 +3059,9 @@ function sccWatchlistRender() {
             <div style="display:flex; align-items:center; gap:4px;">
               <span style="font-weight:700; color:var(--text); font-size:12px; font-family:var(--body);">${sUpper}</span>
               ${leaderBadge}
+              ${tightBadge}
             </div>
-            <span style="font-size:9px; color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${companyName}">${companyName}</span>
+            <span style="font-size:9px; color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${companyName}${item.theme ? ' • ' + item.theme : ''}">${companyName}${item.theme ? ' <span style="opacity:0.65;font-size:8px;">(' + item.theme + ')</span>' : ''}</span>
           </div>
         </div>
 
@@ -3504,7 +3788,7 @@ function mergeCloudWatchlists(cloudWls, cloudFlags) {
   _sccWlLastSelectedSymbol = null;
 
   if (hasNewFromLocal) {
-    setTimeout(() => { if (typeof pushToCloud === 'function') pushToCloud().catch(() => {}); }, 1500);
+    setTimeout(() => { if (typeof pushToCloud === 'function') pushToCloud().catch(() => { }); }, 1500);
   }
 }
 window.mergeCloudWatchlists = mergeCloudWatchlists;
@@ -3593,7 +3877,7 @@ function renderChart(data) {
   }); if (pts.length >= 2) { ctx.beginPath(); pts.forEach((p, i) => { const x = PAD.l + i * step, y = PAD.t + cH - p.score / 100 * cH; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.lineTo(PAD.l + (pts.length - 1) * step, PAD.t + cH); ctx.lineTo(PAD.l, PAD.t + cH); ctx.closePath(); const g = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + cH); g.addColorStop(0, 'rgba(56,189,248,0.15)'); g.addColorStop(1, 'rgba(56,189,248,0.0)'); ctx.fillStyle = g; ctx.fill(); for (let i = 1; i < pts.length; i++) { const x0 = PAD.l + (i - 1) * step, y0 = PAD.t + cH - pts[i - 1].score / 100 * cH; const x1 = PAD.l + i * step, y1 = PAD.t + cH - pts[i].score / 100 * cH; ctx.beginPath(); ctx.strokeStyle = colorMap[getZone((pts[i - 1].score + pts[i].score) / 2).color] || '#38bdf8'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); } }
   pts.forEach((p, i) => { const x = PAD.l + i * step, y = PAD.t + cH - p.score / 100 * cH; const c = colorMap[getZone(p.score).color] || '#38bdf8'; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fillStyle = c; ctx.fill(); if (i === pts.length - 1 || pts.length <= 8) { ctx.fillStyle = c; ctx.font = 'bold 10px JetBrains Mono,monospace'; ctx.textAlign = 'center'; ctx.fillText(p.score, x, y - 9); } });
 }
-function renderSnapshot() {}
+function renderSnapshot() { }
 function renderHistory(data) {
   const tbody = document.getElementById('hist-body'); if (!tbody) return; if (!data.length) { tbody.innerHTML = '<tr><td colspan="17" style="color:var(--dim);padding:28px;text-align:center;letter-spacing:2px;font-size:11px;font-family:var(--mono);">NO HISTORY YET</td></tr>'; return; }
   tbody.innerHTML = data.map(r => {
@@ -4042,10 +4326,10 @@ function renderAnalysisDDC() {
   else { status = 'Normal'; color = 'var(--sub)'; hint = `Acc: ${acc} · Dist: ${dist}`; }
   el('as-dist').textContent = dist; el('as-dist').style.color = color; el('as-dist-status').textContent = status; el('as-dist-status').style.color = color; el('as-dist-hint').textContent = hint;
 }
-function renderAnalysisDivergence() {}
-function renderAnalysisTrendBias() {}
-function renderAnalysisExpansionRate() {}
-function renderAnalysisInstBias() {}
+function renderAnalysisDivergence() { }
+function renderAnalysisTrendBias() { }
+function renderAnalysisExpansionRate() { }
+function renderAnalysisInstBias() { }
 const LS_FTD = 'ftd_data'; function ftdLoad() { try { return JSON.parse(lsGet(LS_FTD) || '[]'); } catch (e) { return []; } }
 function ftdSaveData(d) { lsSet(LS_FTD, JSON.stringify(d)); }
 function ftdManualVoid() {
@@ -4515,7 +4799,7 @@ async function seedHistoricalData() {
 (async function init() {
   const hdrDateEl = document.getElementById('hdr-date'); if (hdrDateEl) hdrDateEl.textContent = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }); const _etEl = document.getElementById('entry-today'); if (_etEl) _etEl.textContent = todayISO(); const _bsrDate = document.getElementById('bsr-date'); if (_bsrDate) _bsrDate.value = todayISO(); seedHistoricalData(); ensureOctoberDataSeeded(); if (initGuestMode()) return; const cfg = getCfg(); if (!cfg.key || !cfg.bin) { setSyncStatus('warn', 'Not Configured · Click to Setup'); } else {
     setSyncStatus('syncing', 'Syncing…'); try {
-      const payload = await jbRead(cfg.key, cfg.bin); const isLegacy = Array.isArray(payload); const cRec = isLegacy ? payload : (payload.records || []); saveLocal(mergeByKey(cRec, loadLocal(), r => r.date)); const cBsr = isLegacy ? [] : (payload.bsr || []); bsrSave(mergeByKey(cBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); if (!isLegacy && payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt); if (!isLegacy && payload.bsrQuick) mergeBsrQuick(payload.bsrQuick); const cMpm = isLegacy ? [] : (payload.mpm || []); mpmSave(mergeByKey(cMpm, mpmLoad(), d => d.date)); const cFtd = isLegacy ? [] : (payload.ftd || []); const mergedFtd = mergeByKey(cFtd, ftdLoad(), d => d.date).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ensureOctoberDataSeeded(); ftdScanUndercutAll(); if (!cFtd.some(d => d.date === '2026-10-13' && d.type === 'followthrough') || cFtd.some(d => d.date === '2026-10-14' && d.type === 'attempt') || cFtd.filter(d => d.date === '2026-10-09').length > 1) { setTimeout(() => pushToCloud().catch(() => {}), 1000); } const cSrt = isLegacy ? [] : (payload.srt || []); srtSave(mergeByKey(cSrt, srtLoad(), s => s.id)); const cloudWatchlists = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccWatchlists : null; const cloudSymbolFlags = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccSymbolFlags : null; if (cloudWatchlists) {
+      const payload = await jbRead(cfg.key, cfg.bin); const isLegacy = Array.isArray(payload); const cRec = isLegacy ? payload : (payload.records || []); saveLocal(mergeByKey(cRec, loadLocal(), r => r.date)); const cBsr = isLegacy ? [] : (payload.bsr || []); bsrSave(mergeByKey(cBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); if (!isLegacy && payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt); if (!isLegacy && payload.bsrQuick) mergeBsrQuick(payload.bsrQuick); const cMpm = isLegacy ? [] : (payload.mpm || []); mpmSave(mergeByKey(cMpm, mpmLoad(), d => d.date)); const cFtd = isLegacy ? [] : (payload.ftd || []); const mergedFtd = mergeByKey(cFtd, ftdLoad(), d => d.date).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ensureOctoberDataSeeded(); ftdScanUndercutAll(); if (!cFtd.some(d => d.date === '2026-10-13' && d.type === 'followthrough') || cFtd.some(d => d.date === '2026-10-14' && d.type === 'attempt') || cFtd.filter(d => d.date === '2026-10-09').length > 1) { setTimeout(() => pushToCloud().catch(() => { }), 1000); } const cSrt = isLegacy ? [] : (payload.srt || []); srtSave(mergeByKey(cSrt, srtLoad(), s => s.id)); const cloudWatchlists = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccWatchlists : null; const cloudSymbolFlags = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccSymbolFlags : null; if (cloudWatchlists) {
         mergeCloudWatchlists(cloudWatchlists, cloudSymbolFlags);
       }
       const recCount = loadLocal().length; const bsrCount = bsrLoad().length; const mpmCount = mpmLoad().length; const srtCount = srtLoad().filter(s => s.id !== 'NIFTY50').length; setSyncStatus('ok', 'Synced'); console.log('[Init] Synced — Records:', recCount, 'BSR:', bsrCount, 'MPM:', mpmCount);
@@ -5216,7 +5500,7 @@ async function cpTriggerScan() {
           });
           if (!runsRes.ok) return;
           const runsData = await runsRes.json();
-          const runs = runsData.workflow_runs || [];
+                    const runs = runsData.workflow_runs || [];
 
           let activeRun = runs.find(r => {
             const createdAt = new Date(r.created_at).getTime();
@@ -5367,6 +5651,7 @@ async function savePastEntry() {
 }
 function showPastMsg(msg, color) { const el = document.getElementById('past-save-msg'); if (el) { el.textContent = msg; el.style.color = color; } }
 function cpUpdateHomeStatus() { }
+
 const INFO = { 'breadth-score': { title: 'Breadth Score', what: 'A 0–100 composite score measuring how broadly the NSE Nifty 500 market is participating in any move. High score = wide participation = healthy market.', how: '<b>Advance/Decline Ratio</b> (35%) + <b>% stocks above EMA20</b> (20%) + <b>% above SMA50</b> (15%) + <b>% above SMA200</b> (15%) + <b>52W H/L Ratio</b> (15%). Weighted average of all five, scaled 0–100.', use: 'Above <b>55</b> = Healthy Bull — full position sizing. <b>45–55</b> = Expansion. <b>35–45</b> = Recovery — pilot entries only. Below <b>35</b> = Danger — stand aside. This is your primary market posture signal.' }, 'market-zone': { title: 'Market Zone & Position Size', what: 'Translates the Breadth Score into a named market phase and recommended position size in R (risk units), making it instantly actionable.', how: 'Score &lt; 30 → <b>Correction</b> (0R). 30–45 → <b>Recovery</b> (0.25–0.5R). 45–55 → <b>Expansion</b> (1–2R). &gt;55 → <b>Healthy Bull</b> (2–3R). The R size is a guideline based on O\'Neil / Minervini methodology.', use: 'Check this first every session. It sets your trade sizing ceiling immediately — don\'t take a 2R trade when the zone says Recovery.' }, 'zone-meter': { title: 'Zone Meter (Score Bar)', what: 'A visual progress bar showing where the current Breadth Score sits across the full 0–100 spectrum, with colour-coded zone bands and correct position sizes.', how: '<b style="color:var(--red)">CORRECTION</b> 0–20 (0R) · <b style="color:var(--orange)">DEFENSIVE</b> 20–35 (0.25R pilot) · <b style="color:var(--yellow)">CAUTION</b> 35–45 (0.5–1R) · <b style="color:var(--green)">EXPANDING</b> 45–55 (1–2R) · <b style="color:var(--lime)">HEALTHY</b> 55–100 (2–3R). Fill width = Score/100.', use: 'The score number tells you <i>where</i>; the bar shows you <i>how far into that zone</i> you are — e.g. a score of 52 is near the top of Expansion, almost into Healthy territory. Use this to gauge whether a zone change is imminent.' }, 'bsr-rate': { title: 'BSR — Breakout Success Rate', what: 'The percentage of your logged breakout trades that succeeded — defined as gaining <b>5% or more</b> from the pivot buy point within the trade window.', how: 'From your BSR Trade Log: <b>BSR% = Successful trades ÷ Total trades × 100</b>. A trade is marked success when you log a gain ≥ 5%. The rate is recalculated live as you log trades.', use: 'Above <b>65%</b> — market is rewarding breakouts, act confidently. <b>40–65%</b> — mixed, be selective. Below <b>40%</b> — breakouts are failing, avoid new entries even if the score is decent. This is your real-world feedback loop.' }, 'market-pressure': { title: 'Market Pressure (MPM)', what: 'Net institutional buying pressure over the last 25 sessions. Positive = institutions accumulating. Negative = distribution dominating.', how: '<b>Pressure = Accumulation Days − Distribution Days</b> (rolling 25-day window). An Accumulation Day = Nifty closes higher on above-average volume. A Distribution Day = closes lower on above-average volume. You log each in the Pressure Day Log.', use: '<b>+4 or above</b> — strong institutional backing, high confidence. <b>+1 to +3</b> — mild positive. <b>0 to −2</b> — caution. <b>Below −3</b> — institutional selling dominating, reduce exposure sharply. Always read alongside Breadth Score.' }, 'breadth-momentum': { title: 'Breadth Momentum', what: 'The day-over-day <i>change</i> in Breadth Score. Tells you whether market participation is improving or deteriorating right now.', how: '<b>Momentum = Today\'s Score − Yesterday\'s Score</b>. A jump of +10 in a single day is a strong breadth expansion signal. Negative momentum means participation is narrowing even if the absolute score is still decent.', use: 'Positive and rising → confirm your entries. Flat → neutral, wait for direction. Negative two days in a row → tighten stops and reduce new exposure. Watch for momentum divergence — score still high but momentum turning negative is an early warning.' }, 'breadth-thrust': { title: 'Breadth Thrust', what: 'The 3-day cumulative change in Breadth Score. A momentum acceleration signal that detects rapid, broad market expansion.', how: '<b>Thrust = Today\'s Score − Score 3 days ago</b>. Above <b>+10</b> in 3 days = strong thrust, historically associated with the early stages of sustained rallies. Negative thrust = rapid deterioration.', use: 'A Thrust &gt; +10 alongside a rising score is one of the strongest "all-clear" signals in the dashboard. Combine with FTD confirmation for highest conviction. Thrust &lt; −10 = potential distribution phase beginning — reduce exposure.' }, 'rally-prob': { title: 'Rally Probability Gauge', what: 'A 0–100% composite probability score estimating how likely the current market environment is to sustain a rally. Combines 6 indicators into one reading.', how: '<b>Breadth Score</b> (20pts) + <b>Momentum</b> (15pts) + <b>Thrust</b> (15pts) + <b>BSR</b> (20pts) + <b>Distribution Days</b> (15pts) + <b>Pressure</b> (15pts) + <b>FTD bonus</b> (+10pts). If no BSR trades logged, 20pts redistributed across other 5 indicators and scaled to 100.', use: '<b>85–100%</b> Very High — full sizing. <b>70–84%</b> High — normal entries. <b>50–69%</b> Moderate — selective pilot only. <b>30–49%</b> Low — wait. Below <b>30%</b> — stand aside entirely. This is your single best "go / no-go" signal.' }, 'market-condition': { title: 'Market Condition (William J. O\'Neil System)', what: 'Classifies the Nifty index into one of four conditions based on William J. O\'Neil\'s market-timing system:<br><br>• <b>Confirmed Uptrend</b>: A Confirmed Uptrend market status indicates the Nifty is in an uptrend. The uptrend begins with a follow-through day or when the index reclaims its previous uptrend high. At this stage, the index is not showing signs of significant distribution or heavy selling by institutional investors. This is the perfect time to be looking out for fundamentally strong stocks at proper buy points.<br><br>• <b>Uptrend Under Pressure</b>: An Uptrend Under Pressure market status is normally associated with rising number of distribution days on the Nifty. The index has 3-4 distribution days in the last five weeks and is showing some signs of deterioration. The index may be close to its 50-day and/or 200-day moving average support level, but is typically above at least one of the levels. Investors need to exercise caution and keep their buying decisions reserved to fundamentally strong stocks showing technical strength.<br><br>• <b>Rally Attempt</b>: A Rally Attempt begins the third day the index closes higher off the most recent bottom after being in a Correction (also known as Downtrend). During a Rally Attempt, we are on the lookout for a Follow-Through Day to confirm the trend has reversed and we have entered a Confirmed Uptrend. A Rally Attempt fails and the index goes back into a Correction if it undercuts the most recent low.<br><br>• <b>Correction</b>: A major index generally goes into Correction when the number of distribution days in the last five weeks rises to 5-6. The index has typically declined 5-7% or more from its recent high. Also, the index most likely breaches its support levels of 50-day and 200-day moving averages. Investors should avoid new purchases, get off margin, and raise cash. This is a good time to build your watch list of fundamentally-strong stocks that you would like to own when market condition improves.', how: 'Evaluated automatically from Follow-Through Day confirmation (Day 4+ close >1.5% on higher volume), 5-week distribution count (3–4 days = Uptrend Under Pressure, 5–6 days = Correction), % pullback from peak, and 50-day / 200-day moving average support levels.', use: '<b>Confirmed Uptrend:</b> Perfect time to look for fundamentally strong stocks at proper buy points.<br><b>Uptrend Under Pressure:</b> Investors need to exercise caution and keep their buying decisions reserved to fundamentally strong stocks showing technical strength.<br><b>Rally Attempt:</b> On the lookout for a Follow-Through Day to confirm trend reversal; build watchlist.<br><b>Correction:</b> Avoid new purchases, get off margin, and raise cash.' }, 'ftd': { title: 'Follow-Through Day (FTD)', what: 'A follow-through day is identified when a major index (Sensex or Nifty 50) closes significantly higher, over 1.5% for the day, on higher volume than the previous session. It happens on fourth day or later of an attempted rally. The most powerful follow-through days often happen on fourth through seventh day of an attempted rally. They serve as a confirmation that the market has really changed direction and is in a new uptrend. The strength in a follow-through day can be gauged by the action in leading stocks. A follow-through day coupled with leading stocks breaking out from their base patterns provides signs of a sustainable rally. A follow-through day is a key concept in the market-timing system developed by William J. O\'Neil.', how: 'A Rally Attempt begins the third day the index closes higher off the most recent bottom after being in a Correction. On <b>Day 4 or later</b>, an index close <b>over 1.5%</b> on <b>higher volume than the previous session</b> confirms the FTD. If the index undercuts the most recent low, or accumulates 5–6 distribution days, or declines 5–7%+ from high, the rally attempt / FTD fails and the index reverts to Correction.', use: 'Before FTD: Stand aside or pilot mode (0.25R) only after Day 3 if leading stocks break out. After FTD: Confirmed Uptrend is established — full position sizing justified on fundamentally strong stocks breaking out from sound base patterns.' }, 'dist-days': { title: 'Distribution Days', what: 'A distribution day is indicated by a major market index such as the Sensex or Nifty closing down 0.2% or more on higher volume than the previous day. Distribution in the stock market refers to the increased selling of stock by large institutions. The number of distribution days on the Sensex helps us in tracking the general market condition. Our studies have shown that four to six days of distribution over a period of five weeks are often enough to turn a previously advancing market into decline. Once you notice increasing distribution, it is best to hold off on any further stock purchases, and perhaps even cut back on some of your positions, especially if you are on margin.', how: 'Auto-counted from your Pressure Day Log over a rolling 25-session (5-week) window. Distribution days older than 25 sessions or cancelled by a 5% index rise are dropped.', use: '<b>0–2 days:</b> Healthy market, institutions not distributing.<br><b>3–4 days:</b> Uptrend Under Pressure — rising distribution days on the Nifty (3-4 days in last 5 weeks); index showing signs of deterioration. Exercise caution; keep buying decisions reserved to fundamentally strong stocks showing technical strength.<br><b>5–6 days:</b> Major index generally goes into Correction — avoid new purchases, get off margin, and raise cash.' }, 'hl-ratio': { title: 'H/L Ratio Trend (52-Week)', what: 'The ratio of stocks making new 52-week highs vs new 52-week lows across the Nifty 500. Measures the underlying health and breadth of leadership.', how: '<b>H/L Ratio = New 52W Highs ÷ (New 52W Highs + New 52W Lows) × 100</b>. You enter the raw H and L counts in the EOD entry. The dashboard shows today\'s ratio, the 5-day average, and the 10-day average for trend context.', use: '<b>Above 50%</b> — more stocks making highs than lows = healthy leadership breadth. <b>25–50%</b> — mixed. <b>Below 25%</b> — deteriorating leadership, broad weakness. A falling H/L ratio even as the index holds up = internal distribution, a leading warning signal.' }, 'exposure': { title: 'Personal Exposure Tracker — Market-Adjusted Capital', what: 'Calculates the exact ₹ amount you should have deployed in active positions given current market conditions. Enter your total capital and current invested amount — the tracker shows your suggested ceiling in rupees, your actual deployment, and whether you are over- or under-exposed vs what the market supports.', how: '<b>Suggested Exposure%</b> is computed from: Breadth Score (base 0–87%), MPM Pressure (±4–8%), Distribution Days (−5 to −10%), FTD status (+5%). Suggested ₹ = Exposure% × Your Capital. Gap = Suggested ₹ − Currently Invested.', use: 'If gap is positive → you have headroom to deploy. If gap is negative → you are overexposed, reduce before adding new positions. The status banner in the card provides direct contextual advice. This value also feeds directly into the Risk Advisory section of Market Summary — any overexposure triggers an automatic alert there.' }, 'market-summary': { title: 'Market Summary & Trading Guidance', what: 'A rule-based plain-English synthesis of <b>all</b> dashboard signals into one unified morning briefing — covering market phase, trading rules for today, and risk warnings. Now integrates Breadth Divergence (WBD), Personal Exposure gap, Sector Heatmap trend, and FTD status for a complete picture.', how: 'The engine reads: Breadth Score, Momentum, MPM Pressure, Distribution Days, FTD status, H/L Ratio, Breadth Divergence (from WBD card), and your Personal Exposure gap (from Exposure Tracker). It applies a multi-signal decision tree to generate three sections: <b>Market Summary</b> (phase narrative + MPM + divergence context), <b>Trading Guidance</b> (size rules, divergence actions), <b>Risk Advisory</b> (all red flags in one place).', use: 'Read this card every session morning in under 60 seconds. It tells you exactly what posture to take today. Key integration points: if Breadth Divergence is Bear → guidance automatically adds a no-new-longs rule. If you are overexposed vs the exposure ceiling → Risk Advisory alerts you. If sector heatmap shows broad rotation out → guidance reflects that. Trust this over your instincts on high-conviction days — it applies O\'Neil / Minervini rules mechanically without emotion.' }, 'sector-rotation': { title: 'Sector Rotation Tracker', what: 'Ranks all 13 NSE sector indices by trend strength every week. Uses your manually entered weekly closing prices to auto-calculate 20-week and 50-week moving averages, then classifies each sector into a Stage (1-4) based on where price sits relative to those MAs.', how: '<b>Stage 2</b> = above both MAs - advancing trend, hunt breakouts here. <b>Stage 1</b> = above 20MA but below 50MA - basing, add to watchlist. <b>Stage 3</b> = below 20MA but above 50MA - topping, avoid new entries. <b>Stage 4</b> = below both MAs - declining, skip entirely. <b>RS</b> = sector weekly % minus Nifty 50 weekly % - positive means outperforming. Tap RRG button to see the Relative Rotation Graph.', use: 'Before scanning for stocks, check this card first. Only scan stocks in Stage 2 sectors with positive RS. Update every Friday evening. MAs become reliable after ~20 weeks of history.' }, 'rrg': { title: 'Relative Rotation Graph (RRG)', what: 'A 4-quadrant chart that plots every sector by two metrics: RS-Ratio (X-axis) = is the sector stronger or weaker than Nifty 50? RS-Momentum (Y-axis) = is that relative strength improving or deteriorating? The tail shows the last N weeks of movement so you can see direction, not just position.', how: '<b>Leading</b> (top-right, green) = strong AND improving - best breakout hunting ground. <b>Improving</b> (top-left, blue) = gaining momentum, rotating into leadership - early entry zone. <b>Weakening</b> (bottom-right, yellow) = still strong but momentum slowing - consider exits or tighter stops. <b>Lagging</b> (bottom-left, red) = weak AND deteriorating - avoid completely. Clockwise rotation is the natural cycle: Leading → Weakening → Lagging → Improving → Leading.', use: 'Use tail direction, not just dot position. A sector in Lagging but moving right and upward is recovering - worth watching. A sector in Leading but tail curving down is topping - reduce exposure. Combine with Stage: Stage 2 + Leading quadrant = highest conviction. Use 4w tail for recent momentum, 12w tail for the bigger trend picture.' }, 'score-trend': { what: 'A canvas line chart showing how the Breadth Score has moved over the last 30 trading sessions, giving historical context to the current reading.', how: 'Plots the <b>Breadth Score</b> (blue line) for each saved EOD record. Colour-coded horizontal zone bands: red (Crash), orange (Defensive), yellow (Caution), green (Expansion), lime (Healthy). Up to 30 data points plotted.', use: 'Look for the trend direction, not just today\'s value. A score of 48 rising from 30 is very different from 48 falling from 60. Sustained scores above 45 with rising momentum = confirmed expansion. A score crossing below 35 from above = regime change warning.' }, 'bsr-tracker': { title: 'BSR Tracker — Trade Log', what: 'Your personal breakout trade journal used to calculate the Breakout Success Rate (BSR). Every breakout entry you make should be logged here.', how: 'Log each breakout trade with: Stock, Date, Buy Price, Result (Win/Loss), Exit Price. The dashboard calculates <b>success = exit gain ≥ 5%</b>, counts wins and losses, and updates the BSR% in the status strip in real time. Data saved to localStorage and synced to JSONBin cloud.', use: 'A falling BSR (even if the score looks ok) is your earliest warning that breakouts are failing. Log every trade — the more complete the data, the more reliable the BSR signal. Aim for ≥ 65% in a healthy market.' }, 'mpm-tracker': { title: 'Market Pressure Monitor (MPM)', what: 'A daily log of Accumulation and Distribution Days used to calculate the net market pressure score shown in the status strip.', how: 'Each day you observe: if Nifty closes <b>up on above-avg volume</b> → log as Accumulation (+1). If <b>down on above-avg volume</b> → log as Distribution (−1). The rolling 25-day window is auto-managed. <b>MPM Score = Acc − Dist</b> days in window.', use: 'Maintain the log daily for accurate pressure readings. Missing entries reduce signal accuracy. A shift from positive to negative MPM before the price breaks down is your earliest institutional selling warning. Use this alongside Distribution Day count for confirmation.' }, 'breadth-div': { title: 'Breadth Divergence', what: 'Compares the 5-day direction of Nifty 50 price vs Breadth Score. When they agree — both rising or both falling — the trend is confirmed. When they disagree, that is an early warning signal.', how: 'Price direction = Nifty close today vs 5 sessions ago. Breadth direction = Score today vs 5 sessions ago. Four states: Confirmed ↑ (both up), Confirmed ↓ (both down), Bearish Divergence (price up, breadth down — hidden weakness), Bullish Divergence (price down, breadth up — hidden strength).', use: 'Bearish Divergence → reduce exposure, tighten stops. Bullish Divergence → watch for reversal entry. Confirmed ↑ → normal entry conditions apply per your zone.' }, 'trend-bias': { title: 'Market Trend Bias (10d)', what: 'Counts how many of the last 10 sessions had Nifty closing up vs down. A market spending more time going up is healthier than one spending more time going down.', how: 'Each day is classified as Up (close > prev close), Down, or Flat. Net = Up days − Down days over last 10 sessions. Score direction used as fallback when Nifty close is missing.', use: 'Net ≥+4 = Bullish bias — look for breakouts. Net −1 to +1 = Neutral — be selective. Net ≤−4 = Bearish bias — reduce exposure or stand aside.' }, 'thrust-quality': { title: 'Thrust Quality', what: 'Measures the quality of recent market bounces. Are up-days happening on broad SMA participation, or on narrow/weak breadth? High conviction = stocks broadly above their MAs on up-days.', how: 'Compares average SMA breadth (mean of %>EMA20, %>SMA50, %>SMA200) on positive-breadth days vs negative-breadth days over last 10 sessions. A positive spread = up-days have better participation.', use: 'Strong = breakouts more likely to follow through, act on setups. Weak or Narrow = bounces are traps — avoid new entries until conviction improves.' }, 'inst-bias': { title: 'Institutional Bias 10d', what: 'Shows what institutions have been doing in the last 10 sessions based on MPM data. Accumulation days (close↑ + volume↑) = buying. Distribution days (close↓ + volume↑) = selling.', how: 'From your MPM log: counts Accumulation, Distribution and Neutral days in the last 10 sessions. Net = Acc − Dist. The mini bar chart shows the day-by-day pattern (teal=acc, red=dist, grey=neutral).', use: 'Net ≥+2 = Institutions accumulating — safe to hold and add. Net 0 to −1 = Neutral — hold, no new adds. Net ≤−2 = Institutions distributing — tighten stops, reduce exposure.' }, 'snapshot': { title: 'Detailed Metrics Snapshot', what: 'A compact table showing every key breadth metric for the latest session and previous session side-by-side, with the 10-day trend sparkline, direction arrow, and a signal label. Covers all 7 indicators: EMA20%, SMA50%, SMA200%, Advance/Decline ratio, H/L Ratio, Score, and Momentum.', how: 'Data is pulled from your saved EOD entries. The Change column = Latest − Prev. The 10-Day Trend sparkline is a mini line chart of the last 10 values. Direction = ↑ if improving, ↓ if deteriorating. Signal labels follow the same thresholds used in the Analysis Strip.', use: 'Use this for a quick cross-check when a signal in the status strip surprises you. If Score says Expansion but SMA200% is still low, breadth is improving on short-term MAs only — be selective. If EMA20% and SMA50% are both rising but SMA200% is lagging, the market is recovering from a correction but longer-term structure is not yet repaired. Expand this card only when you want deeper context — the Analysis Strip covers daily use.' }, 'sector-heatmap': { title: 'Sector Leadership Heatmap', what: 'A weekly colour-coded grid showing which NSE sectors are outperforming or underperforming Nifty 50. Green = sector beat the index that week. Red = sector lagged. Reveals which sectors are leading and which are rotating out.', how: 'Each row is a sector. Each column is one week, newest on the right. Colour intensity reflects the degree of outperformance/underperformance. Enter weekly sector close prices in the Control Panel → Sectors tab.', use: 'Your single fastest sector rotation read. Consistently green rows = institutional money is flowing into that sector — prioritise stocks from those sectors for breakout entries. Consecutive red rows = distribution underway in that sector — avoid new longs regardless of individual stock setup quality. Use alongside the RRG for confirmation.' }, 'personal-exposure': { title: 'Personal Exposure Tracker', what: 'Translates the dashboard\'s market-environment exposure percentage into an actual ₹ amount against your real trading capital. Tells you exactly how much money should be deployed right now — and whether you are over- or under-invested vs what current conditions justify.', how: 'Enter your total trading capital and current invested amount. The tracker computes the market-suggested ₹ ceiling (Exposure% × Total Capital), compares it to your actual invested amount, and flags whether you are aligned, overexposed, or have headroom to deploy.', use: 'Check this every morning before placing orders. If you are overexposed, reduce before adding new positions. If you have headroom and the market score is rising, that gap = new setup budget. Never use this as a reason to force-deploy — headroom is an upper limit, not a target.' }, 'wbd-alert': { title: 'Weekly Breadth Divergence Alert', what: 'Detects the most dangerous (and most rewarding) early warning in market analysis: when price and breadth move in opposite directions. A Bear Divergence (price up, breadth down) often precedes corrections. A Bull Divergence (price down, breadth up) often precedes recoveries.', how: 'Compares Nifty 50 price direction and Breadth Score direction over the last 5 trading sessions. Four states: <b style="color:var(--lime)">Confirmed ↑</b> (both up), <b style="color:var(--red)">Confirmed ↓</b> (both down), <b style="color:var(--orange)">Bear Diverge ⚠</b> (price up but breadth falling), <b style="color:var(--teal)">Bull Diverge ✦</b> (price down but breadth improving).', use: '<b>Bear Diverge</b> → Reduce exposure, tighten stop losses, avoid new entries even if price looks bullish. Smart money is not participating. <b>Bull Diverge</b> → Watch for reversal — accumulate pilot positions in strongest RS stocks. <b>Confirmed ↑</b> → Green light, proceed per your zone guidance. This card directly feeds the Risk Advisory in Market Summary — any divergence triggers an automatic alert there too.' }, 'breadth-expansion': { title: 'Breadth Expansion Rate', what: 'Measures how fast breadth is improving or deteriorating — the velocity of change in the Breadth Score over the last 5 sessions. A market can have the same score two weeks apart but the rate of change tells a completely different story.', how: 'Takes the last 5 breadth score readings and calculates the average daily change (pts/day). Positive = expanding, Negative = contracting. Also shows total change over the 5-day window.', use: 'Rapid expansion (+3 to +5 pts/day) = high-quality rally, act on breakouts. Slow (+1 to +2) = improving but unconvincing. Stalling (0) = caution. Contracting = avoid new entries regardless of absolute score level.' }, 'sector-command': { title: 'Sector Command Centre', what: 'Three views in one card. SECTORS tab: auto-populated daily from your VCP scanner — composite MA breadth score per sector across the full Nifty 500 universe. RRG tab: Relative Rotation Graph showing sector momentum trajectories. Heatmap tab: weekly RS vs Nifty 50 history grid.', how: 'Breadth data loads automatically from sector_breadth.json on your GitHub Pages (configure URL once in the SECTORS tab). RRG and Heatmap use weekly data entered via Control Panel → Sectors tab.', use: 'SECTORS tab: Sort by Score to instantly rank sectors by participation breadth. Green ≥60%, Yellow 40–59%, Red <40%. RRG tab: Leading quadrant = strong + improving, hunt breakouts there. Clockwise rotation = bullish. Heatmap: consistent green rows = durable multi-week leaders.' }, 'vcpb': { title: 'Sector Breadth — SECTORS Tab', what: 'Daily breadth across the full Nifty 500 universe per sector. Composite Score = avg(%>20EMA + %>50SMA + %>200SMA). Shows how broadly each sector participates in the rally across all 3 timeframes. RS wk and Stage columns are optional overlays from your manually-entered weekly sector data.', how: 'Fetched automatically from sector_breadth.json generated by vcp_scanner.py at 6 PM IST daily via GitHub Actions. Enter your GitHub Pages base URL once to activate.', use: 'Sectors with Score ≥60 = broad momentum — prioritise for new entries. Trend Bar (3 mini-bars): all green = healthy across all timeframes. High %>200SMA but low %>20EMA = structurally strong but momentum cooling — wait. Cross-check RS wk column against breadth score as a sanity check: if both are green, the sector is genuinely leading.' }, 'scc-feature-breadth': { title: 'SECTORS Tab Features', what: 'Provides daily market breadth analysis across the Nifty 500 index grouped by sector. Features:<ul><li><b>Dynamic Leaderboard:</b> Displays sector ranking with interactive bidirectional headers. Click any column header to sort; click it again to toggle direction (indicated by ▲/▼).</li><li><b>Multi-Sort Controls:</b> Sort sectors by up to six nested criteria sequentially (Sort 1 > Sort 2 > Sort 3 > Sort 4 > Sort 5 > Sort 6). Click "⚡ Minervini", "📈 O\'Neil", or "🔥 Zanger" to instantly load their presets.</li><li><b>Metric Definitions:</b> Point cursor on column headers for explanations.</li><li><b>Participant Drill-down:</b> Click any sector name to open a pop-up listing all constituent stocks and their VCP/EMA setup status.</li><li><b>NSE Index Links:</b> Click "NSE↗" next to any sector to open the live exchange tracking page.</li><li><b>Consensus Strip:</b> Auto-aggregates sectors into Leaders (top 25%), Watch (mid-ranking, improving), and Avoid (bottom 25%) at the top.</li></ul>', how: '• <b>Composite Score:</b> Calculated daily as 50% × (percentage of stocks above 20EMA) + 30% × (percentage of stocks above 50SMA) + 20% × (percentage of stocks above 200SMA).<br>• <b>Med90%:</b> Median 90-day price return of all VCP scanner candidate stocks in that sector.<br>• <b>Accel:</b> Velocity change of breadth (rolling 5d net score gain minus prior 5d net score gain).<br>• <b>A/D:</b> Count of days where Breadth Score rose by ≥2.5 points (Accumulation) vs. fell by ≥2.5 points (Distribution) over the last 20 trading days.', use: '• <b>Mark Minervini Preset (⚡):</b> Stage > RS wk > Score > Accel > @Top > Med90%. Ranks sectors strictly by Stage 2 markup first, then relative strength, then participation.<br>• <b>William O\'Neil Preset (📈):</b> RS wk > A/D > Score > @Top > Accel > Med90%. Ranks sectors by CANSLIM leadership and institutional sponsorship first.<br>• <b>Dan Zanger Preset (🔥):</b> Med90% > Accel > RS wk > Stage > Score > @Top. Ranks sectors by price velocity, momentum expansion, and relative strength first to catch explosive breakouts.' }, 'scc-feature-rrg': { title: 'RRG Tab Features', what: 'Relative Rotation Graph (RRG) visually modeling the relative strength and momentum of sectors vs. the Nifty 50. Features:<ul><li><b>Four-Quadrant Rotation Map:</b> Categorizes sectors into:<ul><li><i>Leading (Green):</i> Outperforming Nifty 50 with rising momentum.</li><li><i>Weakening (Yellow):</i> Outperforming Nifty 50 but momentum is slowing down.</li><li><i>Lagging (Red):</i> Underperforming Nifty 50 with falling momentum.</li><li><i>Improving (Blue):</i> Underperforming Nifty 50 but momentum is gaining speed.</li></ul></li><li><b>Sector Highlighter:</b> Click a tail or a sector label to dim all other sectors.</li><li><b>Time Tail Length Control:</b> Modify weekly history length from 5w to 40w.</li><li><b>Animation Control:</b> Play/pause controls to visualize historical rotation paths.</li></ul>', how: '• <b>RS-Ratio (X-axis):</b> Calculated as the ratio of weekly sector prices vs. Nifty 50, normalized around a benchmark of 100.<br>• <b>RS-Momentum (Y-axis):</b> Calculated as the rate of change of the RS-Ratio over a smoothed period.<br>• A sector\'s position is updated using manual weekly closing prices entered in the Control Panel → Sectors tab.', use: '• Natural rotation moves clockwise. Scan for sectors in the <b>Improving</b> quadrant curving upward and rightward, or established leaders in the <b>Leading</b> quadrant.<br>• Dim sectors to inspect individual trails. A longer tail suggests high velocity; a short tail indicates a tight base or consolidation.' }, 'scc-feature-heatmap': { title: 'Heatmap Tab Features', what: 'A weekly color-coded leadership grid tracking relative performance history. Features:<ul><li><b>Chronological Performance Grid:</b> Matrix showing weekly returns vs Nifty 50 (latest week on the right).</li><li><b>Intensity Color Scales:</b> Green blocks show positive outperformance (darker = stronger). Red blocks show underperformance. Grey blocks are neutral.</li><li><b>Sector Name Links:</b> Click any sector name on the left of the grid to drill down to constituent stocks.</li></ul>', how: 'Calculates the performance spread weekly: <b>Sector Return % − Nifty 50 Return %</b> for each individual week. Colors are scaled dynamically based on the size of the spread.', use: '• Scan for rows with a solid sequence of dark green cells over the last 3-6 weeks, indicating sustained institutional accumulation.<br>• Avoid sectors with consecutive red cells, signaling active distribution and capital flight.<br>• Use alongside RRG to confirm if a sector\'s rotation is supported by actual weekly outperformance.' }, 'scc-feature-chart': { title: 'Chart Tab Features', what: 'A direct multi-chart workbench for manually tracking stocks. Features:<ul><li><b>Layout Options:</b> Toggle between 2-column (2 charts side-by-side) and 4-column (4 charts side-by-side) grid formats.</li><li><b>Independent Settings:</b> Set the symbol and timeframe (Daily/Weekly) for each chart pane individually.</li><li><b>Sync Option:</b> Synchronize all panels to a single symbol for multi-timeframe analysis (e.g. Daily next to Weekly).</li><li><b>TradingView Integration:</b> Quick external links to TradingView chart views.</li><li><b>Maximizer:</b> Instantly enlarge any chart panel into full screen view.</li></ul>', how: 'Fetches historical stock prices directly from Yahoo Finance using the local proxy server or public CORS fallbacks. Renders high-quality price bars or Volume Candles with a smoothed 20-period Exponential Moving Average (EMA 20 in orange).', use: '• <b>Volume Candles:</b> Look for wide, green candles on high volume to confirm massive institutional accumulation.<br>• <b>Multi-Timeframe Analysis:</b> Check the same symbol on both the Daily (6-month view) and Weekly (2-year view) side-by-side. The trend is healthy if the price stays consistently above the rising EMA 20 (orange line) on both timeframes.' }, 'scc-feature-clusters': { title: 'Fresh High Breakout Clusters', what: 'Tracks institutional breakout clustering across 120+ granular industries using the 3,000+ NSE stock universe (inspired by Manas Arora\'s Breadth Ledger methodology). When multiple stocks in the same industry hit or hover near new highs simultaneously, it signals high-conviction group sponsorship.', how: '• <b>Breakout Density Formula:</b> % of industry constituents trading within <b>2% of 1-Month High</b> (short-term momentum leader) and within <b>3% of 52-Week High</b> (structural leadership).<br>• Filtered for minimum group size (default N ≥ 3) to eliminate 1-stock distortions.<br>• Dual-colored visual bars display the exact percentage share of fresh highs across the entire industry.', use: '• <b>Cluster Hunting:</b> Focus on industries where ≥35% of stocks are within 2% of 1-Month Highs — this indicates real group momentum rather than isolated moves.<br>• <b>Watchlist Export:</b> Click the 📋 Copy TV button on any industry card or use the bulk export button to instantly paste tickers into TradingView.<br>• <b>Tier Breakdown:</b> Click on any industry card to expand all constituent stocks, highlighted by High 52W Leaders (Teal), 1-Month High Leaders (Mint), and Base consolidations.' } }; function showInfoTip(id, btnEl) {
   const d = INFO[id]; if (!d) return; const tip = document.getElementById('info-tooltip'); document.getElementById('tip-title').textContent = d.title; const sections = [{ lbl: 'What it is', txt: d.what }, { lbl: 'How it\'s calculated', txt: d.how }, { lbl: 'How to use it', txt: d.use }]; const tipBody = document.getElementById('tip-body'); tipBody.innerHTML = sections.map((s, i) => `<div class="tip-section">
       <div class="tip-sec-lbl">${s.lbl}</div>
@@ -5781,6 +6066,16 @@ function toggleMaxChartSidebar(forceState) {
       btn.style.color = 'var(--dim)';
     }
   }
+  setTimeout(() => {
+    const stage = document.getElementById('max-chart-stage');
+    if (stage && _maxLwChart) {
+      const rect = stage.getBoundingClientRect();
+      if (rect.width > 50 && rect.height > 50) {
+        _maxLwChart.resize(rect.width, rect.height);
+      }
+    }
+    if (typeof redrawChartDrawings === 'function') redrawChartDrawings();
+  }, 50);
 }
 window.toggleMaxChartSidebar = toggleMaxChartSidebar;
 
@@ -5802,13 +6097,15 @@ function openMaximizedChart(symbol) {
   if (loader) { loader.style.display = 'flex'; loader.innerHTML = 'Loading chart…'; }
   _selectedDrawingIndex = null;
   if (typeof hideFloatingToolbar === 'function') hideFloatingToolbar();
+  const maxDrawCanvas = document.getElementById('max-chart-draw-canvas');
+  if (maxDrawCanvas) maxDrawCanvas.style.display = 'block';
   if (typeof initChartDrawingCanvas === 'function') initChartDrawingCanvas();
   if (typeof renderMaxChartEpsTable === 'function') renderMaxChartEpsTable(symbol);
   overlay.style.display = 'flex'; if (typeof updateMaxChartShortlistButton === 'function') updateMaxChartShortlistButton(); if (typeof updateMaxChartMainWlButton === 'function') updateMaxChartMainWlButton();
   _maxFetchAndDraw(symbol);
 }
 function _maxFetchAndDraw(symbol) {
-  
+
   const loader = document.getElementById('max-chart-loader');
   if (loader) { loader.style.display = 'flex'; loader.innerHTML = 'Loading chart…'; }
 
@@ -5818,13 +6115,13 @@ function _maxFetchAndDraw(symbol) {
   const isM = (_sdChartsInterval === 'M');
 
   const range = is15m ? '60d' :
-                is1H ? '730d' :
-                isW ? '10y' :
-                isM ? 'max' : '5y';
+    is1H ? '730d' :
+      isW ? '10y' :
+        isM ? 'max' : '5y';
   const interval = is15m ? '15m' :
-                   is1H ? '60m' :
-                   isW ? '1wk' :
-                   isM ? '1mo' : '1d';
+    is1H ? '60m' :
+      isW ? '1wk' :
+        isM ? '1mo' : '1d';
 
   // Primary Candle Fetcher (Dhan HQ API or Yahoo Finance)
   let candlePromise;
@@ -5886,6 +6183,9 @@ function drawMaxChartLightweight() {
   const container = document.getElementById('max-chart-lw-container');
   if (!container || !_maxCandles || _maxCandles.length === 0 || typeof LightweightCharts === 'undefined') return false;
 
+  const drawCanvas = document.getElementById('max-chart-draw-canvas');
+  if (drawCanvas) drawCanvas.style.display = 'block';
+
   if (_maxLwChart) {
     try { _maxLwChart.remove(); } catch (e) { }
     _maxLwChart = null;
@@ -5934,8 +6234,11 @@ function drawMaxChartLightweight() {
       horzLine: { color: 'rgba(91, 163, 245, 0.4)', width: 1, style: 2 },
     },
     rightPriceScale: {
-      borderColor: 'rgba(255, 255, 255, 0.08)',
+      visible: true,
+      borderColor: 'rgba(255, 255, 255, 0.1)',
       scaleMargins: { top: 0.1, bottom: 0.22 },
+      autoScale: true,
+      alignLabels: true,
     },
     timeScale: {
       borderColor: 'rgba(255, 255, 255, 0.08)',
@@ -6302,6 +6605,8 @@ function drawMaxChartLightweight() {
 }
 
 function drawMaxChart() {
+  const drawCanvas = document.getElementById('max-chart-draw-canvas');
+  if (drawCanvas) drawCanvas.style.display = 'block';
   if (typeof LightweightCharts !== 'undefined' && document.getElementById('max-chart-lw-container')) {
     if (drawMaxChartLightweight()) return;
   }
@@ -6725,7 +7030,7 @@ async function _fetchProxyCandles(pUrl, timeoutMs) {
         if (parsed.contents) {
           text = (typeof parsed.contents === 'string') ? parsed.contents : JSON.stringify(parsed.contents);
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     const trimmed = text.trim();
     if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) throw new Error('Not JSON');
@@ -6742,7 +7047,7 @@ async function _fetchProxyCandles(pUrl, timeoutMs) {
 }
 
 // Polyfill Promise.any for universal browser compatibility
-const _promiseAny = (typeof Promise !== 'undefined' && Promise.any) ? Promise.any.bind(Promise) : function(promises) {
+const _promiseAny = (typeof Promise !== 'undefined' && Promise.any) ? Promise.any.bind(Promise) : function (promises) {
   return new Promise((resolve, reject) => {
     let errors = [];
     let remaining = promises.length;
@@ -7252,7 +7557,7 @@ function ensureOctoberDataSeeded() {
       }
       const cfg = getCfg();
       if (cfg && cfg.key && cfg.bin) {
-        setTimeout(() => { pushToCloud().catch(() => {}); }, 1200);
+        setTimeout(() => { pushToCloud().catch(() => { }); }, 1200);
       }
     }
 
@@ -7531,6 +7836,7 @@ function setDrawingTool(tool) {
 
   const canvas = document.getElementById('max-chart-draw-canvas');
   if (canvas) {
+    canvas.style.display = 'block';
     if (tool === 'select') {
       canvas.style.pointerEvents = _selectedDrawingIndex != null ? 'all' : 'none';
       canvas.style.cursor = 'default';
@@ -7543,6 +7849,20 @@ function setDrawingTool(tool) {
     }
   }
   redrawChartDrawings();
+
+  if (tool === 'trendline') {
+    showChartToast('✏ Trend Line active: Click 2 points or drag to draw', '#38bdf8');
+  } else if (tool === 'scale') {
+    showChartToast('📏 Price Range active: Click 2 points or drag across price levels', '#22c55e');
+  } else if (tool === 'ray_h') {
+    showChartToast('📍 Horizontal Ray: Click any price level to place', '#38bdf8');
+  } else if (tool === 'ray') {
+    showChartToast('↗ Arrow Ray: Click origin then target direction', '#eab308');
+  } else if (tool === 'fib') {
+    showChartToast('🔢 Fibonacci: Click 2 swing points or drag', '#38bdf8');
+  } else if (tool === 'rect') {
+    showChartToast('▢ Rectangle Zone: Click 2 corners or drag', '#38bdf8');
+  }
 }
 window.setDrawingTool = setDrawingTool;
 
@@ -7606,7 +7926,27 @@ function hitTestChartDrawings(x, y) {
     } else if (d.type === 'ray_h') {
       if (Math.hypot(x - pt1.x, y - pt1.y) <= 9) return { index: i, drawing: d, handle: 'p1', pt: pt1 };
       if (Math.abs(y - pt1.y) <= 7 && x >= pt1.x - 6) return { index: i, drawing: d, handle: 'body' };
-    } else if (d.type === 'rect' || d.type === 'scale' || d.type === 'measure') {
+    } else if (d.type === 'scale' || d.type === 'measure') {
+      const minX = Math.min(pt1.x, pt2.x);
+      const maxX = Math.max(pt1.x, pt2.x);
+      const minY = Math.min(pt1.y, pt2.y);
+      const maxY = Math.max(pt1.y, pt2.y);
+
+      // 1. Check anchor handles p1 and p2 (TV Style)
+      if (Math.hypot(x - pt1.x, y - pt1.y) <= 12) return { index: i, drawing: d, handle: 'p1', pt: pt1 };
+      if (Math.hypot(x - pt2.x, y - pt2.y) <= 12) return { index: i, drawing: d, handle: 'p2', pt: pt2 };
+
+      // 2. Check top line, bottom line, or middle vertical line
+      const midX = (minX + maxX) / 2;
+      if (distToSegment(x, y, minX, minY, maxX, minY) <= 8) return { index: i, drawing: d, handle: 'body' };
+      if (distToSegment(x, y, minX, maxY, maxX, maxY) <= 8) return { index: i, drawing: d, handle: 'body' };
+      if (distToSegment(x, y, midX, minY, midX, maxY) <= 8) return { index: i, drawing: d, handle: 'body' };
+
+      // 3. Shaded interior area
+      if (x >= minX - 4 && x <= maxX + 4 && y >= minY - 4 && y <= maxY + 4) {
+        return { index: i, drawing: d, handle: 'body' };
+      }
+    } else if (d.type === 'rect') {
       const minX = Math.min(pt1.x, pt2.x);
       const maxX = Math.max(pt1.x, pt2.x);
       const minY = Math.min(pt1.y, pt2.y);
@@ -7616,12 +7956,6 @@ function hitTestChartDrawings(x, y) {
       if (Math.hypot(x - maxX, y - minY) <= 9) return { index: i, drawing: d, handle: 'ne' };
       if (Math.hypot(x - maxX, y - maxY) <= 9) return { index: i, drawing: d, handle: 'se' };
       if (Math.hypot(x - minX, y - maxY) <= 9) return { index: i, drawing: d, handle: 'sw' };
-
-      if (d.type === 'scale' || d.type === 'measure') {
-        const midX = (minX + maxX) / 2;
-        if (Math.hypot(x - midX, y - pt1.y) <= 9) return { index: i, drawing: d, handle: 'p1' };
-        if (Math.hypot(x - midX, y - pt2.y) <= 9) return { index: i, drawing: d, handle: 'p2' };
-      }
 
       if (x >= minX - 5 && x <= maxX + 5 && y >= minY - 5 && y <= maxY + 5) {
         return { index: i, drawing: d, handle: 'body' };
@@ -7670,13 +8004,16 @@ function initChartDrawingCanvas() {
   const canvas = document.getElementById('max-chart-draw-canvas');
   if (!canvas || canvas._wired) return;
   canvas._wired = true;
+  canvas.style.display = 'block';
   syncCanvasSize();
 
   const getEventCoords = e => {
     syncCanvasSize();
     const rect = canvas.getBoundingClientRect();
-    const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
-    const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+    const clientX = e.clientX != null ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : (window._lastTouchX || 0));
+    const clientY = e.clientY != null ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : (window._lastTouchY || 0));
+    const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+    const y = Math.max(0, Math.min(rect.height, clientY - rect.top));
 
     const { chart, series, timeScale } = getDrawingContext();
 
@@ -7720,6 +8057,7 @@ function initChartDrawingCanvas() {
       const hit = hitTestChartDrawings(x, y);
       if (hit) {
         canvas.style.pointerEvents = 'all';
+        canvas.style.zIndex = '25'; // Elevated above legend when hovering
         if (hit.handle === 'body') canvas.style.cursor = 'move';
         else if (hit.handle === 'nw' || hit.handle === 'se') canvas.style.cursor = 'nwse-resize';
         else if (hit.handle === 'ne' || hit.handle === 'sw') canvas.style.cursor = 'nesw-resize';
@@ -7729,16 +8067,52 @@ function initChartDrawingCanvas() {
         if (_selectedDrawingIndex != null) {
           canvas.style.pointerEvents = 'all';
           canvas.style.cursor = 'default';
+          canvas.style.zIndex = '12';
         } else {
           canvas.style.pointerEvents = 'none';
           canvas.style.cursor = 'default';
+          canvas.style.zIndex = '12';
         }
       }
     });
   }
 
+  // Touch Support for mobile / tablet / stylus
+  const handleTouch = (e, syntheticType) => {
+    if (!e.touches || !e.touches.length) {
+      if (syntheticType === 'mouseup' && _isDrawMouseDown) {
+        const mouseEvt = new MouseEvent('mouseup', {
+          clientX: window._lastTouchX || 0,
+          clientY: window._lastTouchY || 0,
+          bubbles: true
+        });
+        window.dispatchEvent(mouseEvt);
+      }
+      return;
+    }
+    const touch = e.touches[0];
+    window._lastTouchX = touch.clientX;
+    window._lastTouchY = touch.clientY;
+    const mouseEvt = new MouseEvent(syntheticType, {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      bubbles: true,
+      cancelable: true
+    });
+    if (syntheticType === 'mousedown') canvas.dispatchEvent(mouseEvt);
+    else window.dispatchEvent(mouseEvt);
+    if (_currentDrawTool !== 'select' || _dragMode) {
+      if (e.cancelable) e.preventDefault();
+    }
+  };
+
+  canvas.addEventListener('touchstart', e => handleTouch(e, 'mousedown'), { passive: false });
+  canvas.addEventListener('touchmove', e => handleTouch(e, 'mousemove'), { passive: false });
+  canvas.addEventListener('touchend', e => handleTouch(e, 'mouseup'), { passive: false });
+
   // MOUSE DOWN on canvas
   canvas.addEventListener('mousedown', e => {
+    if (e.button != null && e.button !== 0) return;
     const coords = getEventCoords(e);
     const sym = getActiveDrawingSymbol();
     if (!sym) return;
@@ -7784,7 +8158,7 @@ function initChartDrawingCanvas() {
         type: 'ray_h',
         p1: { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price },
         color: '#38bdf8',
-        width: 1,
+        width: 1.5,
         style: 'dashed'
       });
       showChartToast('✔ Placed Horizontal Ray at ₹ ' + (coords.price != null ? coords.price.toFixed(1) : ''), '#38bdf8');
@@ -7802,7 +8176,7 @@ function initChartDrawingCanvas() {
         p2: { x: coords.x + 40, y: coords.y - 45, logical: offsetLogical, price: offsetPrice },
         text: '₹ ' + pVal,
         color: '#2962ff',
-        width: 1,
+        width: 1.5,
         style: 'solid'
       });
       showChartToast('✔ Placed Price Note at ₹ ' + pVal, '#2962ff');
@@ -7827,7 +8201,7 @@ function initChartDrawingCanvas() {
       return;
     }
 
-    // 4. Two-point tools: trendline, ray, rect, scale
+    // 4. Two-point tools: trendline, ray, rect, scale, fib
     if (_drawStep === 0) {
       _drawStep = 1;
       _isDrawMouseDown = true;
@@ -7842,36 +8216,62 @@ function initChartDrawingCanvas() {
         type: _currentDrawTool,
         p1: _drawStart,
         p2: _drawStart,
-        color: _currentDrawTool === 'scale' ? '#22c55e' : _currentDrawTool === 'ray' ? '#eab308' : '#38bdf8',
-        width: 1,
+        color: _currentDrawTool === 'scale' ? '#089981' : _currentDrawTool === 'ray' ? '#eab308' : '#38bdf8',
+        width: _currentDrawTool === 'scale' ? 1 : 1.5,
         style: 'solid',
-        fillOpacity: _currentDrawTool === 'scale' ? 0.15 : 0
+        fillOpacity: _currentDrawTool === 'scale' ? 0.05 : 0,
+        showBackground: true,
+        extend: 'none',
+        statsType: 'percent',
+        fontSize: 11,
+        labelColor: '#868993',
+        showLabelBg: false,
+        showPrice: false,
+        showPercent: true,
+        showBars: false,
+        showDate: false,
+        showBorders: true,
+        badgePos: 'auto'
       };
       redrawChartDrawings();
     } else if (_drawStep === 1) {
+      // Second click in Click-Move-Click mode!
       const p2 = {
         x: coords.x,
         y: coords.y,
         logical: coords.logical,
         price: coords.price != null ? coords.price : _drawStart.price
       };
-      const dx = Math.abs(p2.x - _drawStart.x);
-      const dy = Math.abs(p2.y - _drawStart.y);
-      if (dx >= 2 || dy >= 2) {
+      const dist = Math.hypot(p2.x - _drawStart.x, p2.y - _drawStart.y);
+      if (dist >= 4) {
+        const isScale = (_activeDrawing.type === 'scale' || _activeDrawing.type === 'measure');
         commitNewDrawing({
           type: _activeDrawing.type,
           p1: _activeDrawing.p1,
           p2: p2,
           color: _activeDrawing.color,
-          width: _activeDrawing.width || 1,
+          width: isScale ? 1 : (_activeDrawing.width || 1.5),
           style: _activeDrawing.style || 'solid',
-          fillOpacity: _activeDrawing.fillOpacity != null ? _activeDrawing.fillOpacity : (_activeDrawing.type === 'scale' ? 0.15 : 0)
+          fillOpacity: isScale ? 0.05 : (_activeDrawing.fillOpacity != null ? _activeDrawing.fillOpacity : 0),
+          showBackground: isScale ? true : false,
+          extend: _activeDrawing.extend || 'none',
+          statsType: _activeDrawing.statsType || 'percent',
+          fontSize: _activeDrawing.fontSize || 11,
+          labelColor: _activeDrawing.labelColor || '#868993',
+          showLabelBg: Boolean(_activeDrawing.showLabelBg),
+          showPrice: _activeDrawing.showPrice !== false,
+          showPercent: _activeDrawing.showPercent !== false,
+          showBars: _activeDrawing.showBars !== false,
+          showDate: _activeDrawing.showDate !== false,
+          showBorders: _activeDrawing.showBorders !== false,
+          badgePos: _activeDrawing.badgePos || 'auto'
         });
         showChartToast('✔ Placed ' + _activeDrawing.type, _activeDrawing.color);
       } else {
         _activeDrawing = null;
         _drawStep = 0;
         _drawStart = null;
+        _isDrawMouseDown = false;
         setDrawingTool('select');
         redrawChartDrawings();
       }
@@ -7881,7 +8281,7 @@ function initChartDrawingCanvas() {
   // MOUSE MOVE on window (for smooth preview and modifying drag)
   window.addEventListener('mousemove', e => {
     // A. Preview while drawing
-    if (_drawStep === 1 && _activeDrawing) {
+    if (_drawStep === 1 && _activeDrawing && _drawStart) {
       const coords = getEventCoords(e);
       _activeDrawing.p2 = {
         x: coords.x,
@@ -7958,14 +8358,12 @@ function initChartDrawingCanvas() {
       return;
     }
 
-    // 2. Drag-to-draw gesture for new drawing
+    // 2. Drag-to-draw gesture for new drawing (Press-Drag-Release)
     if (_drawStep === 1 && _isDrawMouseDown && _drawStart && _activeDrawing) {
       _isDrawMouseDown = false;
       const coords = getEventCoords(e);
-      const dx = Math.abs(coords.x - _drawStart.x);
-      const dy = Math.abs(coords.y - _drawStart.y);
-      const dt = Date.now() - _drawStart.time;
-      if (dt >= 150 && (dx >= 20 || dy >= 20)) {
+      const dist = Math.hypot(coords.x - _drawStart.x, coords.y - _drawStart.y);
+      if (dist >= 6) {
         const p2 = {
           x: coords.x,
           y: coords.y,
@@ -7977,12 +8375,19 @@ function initChartDrawingCanvas() {
           p1: _activeDrawing.p1,
           p2: p2,
           color: _activeDrawing.color,
-          width: _activeDrawing.width || 1,
+          width: _activeDrawing.width || 1.5,
           style: _activeDrawing.style || 'solid',
-          fillOpacity: _activeDrawing.fillOpacity != null ? _activeDrawing.fillOpacity : 0
+          fillOpacity: _activeDrawing.fillOpacity != null ? _activeDrawing.fillOpacity : (_activeDrawing.type === 'scale' ? 0.15 : 0),
+          showPrice: _activeDrawing.showPrice !== false,
+          showPercent: _activeDrawing.showPercent !== false,
+          showBars: _activeDrawing.showBars !== false,
+          showDate: _activeDrawing.showDate !== false,
+          showBorders: _activeDrawing.showBorders !== false,
+          badgePos: _activeDrawing.badgePos || 'auto'
         });
         showChartToast('✔ Placed ' + _activeDrawing.type, _activeDrawing.color);
       }
+      // If dist < 6, leave _drawStep = 1 waiting for 2nd click
     }
   });
 
@@ -8046,6 +8451,21 @@ function drawAnchorHandle(ctx, x, y, isHovered = false) {
   ctx.fill();
   ctx.restore();
 }
+
+// TradingView Price Range Anchor Handle: Blue circular ring with dark/transparent center
+function drawTvAnchor(ctx, x, y) {
+  ctx.save();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#1e222d';
+  ctx.strokeStyle = '#2962ff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+window.drawTvAnchor = drawTvAnchor;
 
 function redrawChartDrawings() {
   const canvas = document.getElementById('max-chart-draw-canvas');
@@ -8287,156 +8707,129 @@ function redrawChartDrawings() {
         drawAnchorHandle(ctx, rx, ry + rh);
       }
     } else if (d.type === 'scale' || d.type === 'measure') {
-      const rx = Math.min(x1, x2);
-      const ry = Math.min(y1, y2);
-      const rw = Math.max(2, Math.abs(x2 - x1));
-      const rh = Math.max(2, Math.abs(y2 - y1));
-
       const p1Price = (d.p1 && d.p1.price != null) ? d.p1.price : 0;
       const p2Price = (d.p2 && d.p2.price != null) ? d.p2.price : 0;
       const diffPrice = p2Price - p1Price;
       const pct = p1Price ? ((diffPrice / p1Price) * 100) : 0;
       const isUp = diffPrice >= 0;
 
-      // Color: green (#22c55e) for positive, red (#ef4444) for negative, unless custom color set
-      const clr = (color && color !== '#22c55e' && color !== '#ef4444') ? color : (isUp ? '#22c55e' : '#ef4444');
-      const fillOp = (d.fillOpacity != null) ? d.fillOpacity : 0.15;
+      // Color selection: default TradingView green (#089981) for up, red (#f23645) for down
+      const clr = (color && color !== '#22c55e' && color !== '#ef4444' && color !== '#089981' && color !== '#f23645')
+        ? color
+        : (isUp ? '#089981' : '#f23645');
+      const width = d.width || 1; // Default 1px
+      const style = d.style || 'solid';
+      const fillOp = (d.fillOpacity != null) ? d.fillOpacity : 0.05; // Default 5%
+      const showBg = (d.showBackground !== false && fillOp > 0);
+      const extend = d.extend || 'none';
+      const statsType = d.statsType || (d.showPrice && d.showPercent ? 'both' : (d.showPrice ? 'price' : (d.showPercent !== false ? 'percent' : 'none')));
+      const fontSize = d.fontSize || 11;
+      const labelColor = d.labelColor || '#868993';
+      const showLabelBg = Boolean(d.showLabelBg);
 
-      // 1. Shaded Translucent Background Box
-      if (fillOp > 0) {
-        const bgClr = typeof hexToRgba === 'function' ? hexToRgba(clr, fillOp) : (isUp ? 'rgba(34, 197, 94, 0.14)' : 'rgba(239, 68, 68, 0.14)');
-        ctx.fillStyle = bgClr;
-        ctx.fillRect(rx, ry, rw, rh);
+      const yTop = Math.min(y1, y2);
+      const yBtm = Math.max(y1, y2);
+      const xLeft = Math.min(x1, x2);
+      const xRight = Math.max(x1, x2);
+      const rw = Math.max(2, xRight - xLeft);
+      const rh = Math.max(2, yBtm - yTop);
+
+      let lineLeft = xLeft;
+      let lineRight = xRight;
+      if (extend === 'left' || extend === 'both') lineLeft = 0;
+      if (extend === 'right' || extend === 'both') lineRight = W;
+
+      // 1. Shaded Translucent Background Box (Default 5% transparency)
+      if (showBg) {
+        ctx.fillStyle = typeof hexToRgba === 'function' ? hexToRgba(clr, fillOp) : `rgba(8, 153, 129, ${fillOp})`;
+        ctx.fillRect(xLeft, yTop, rw, rh);
       }
 
-      // 2. TV-Style Boundary Lines
+      // 2. Top and Bottom Horizontal Lines (TradingView Style)
       ctx.strokeStyle = clr;
       ctx.lineWidth = width;
       if (style === 'dashed') ctx.setLineDash([5, 4]);
       else if (style === 'dotted') ctx.setLineDash([2, 3]);
       else ctx.setLineDash([]);
 
-      // Outer bounding box
-      ctx.strokeRect(rx, ry, rw, rh);
-
-      // Emphasize horizontal boundary levels at start price (y1) and end price (y2)
+      // Top Horizontal Line
       ctx.beginPath();
-      ctx.moveTo(rx, y1);
-      ctx.lineTo(rx + rw, y1);
-      ctx.moveTo(rx, y2);
-      ctx.lineTo(rx + rw, y2);
+      ctx.moveTo(lineLeft, yTop);
+      ctx.lineTo(lineRight, yTop);
       ctx.stroke();
 
-      // 3. Vertical Directional Center Arrow Line
-      const midX = rx + rw / 2;
-      ctx.setLineDash([]);
+      // Bottom Horizontal Line
+      ctx.beginPath();
+      ctx.moveTo(lineLeft, yBtm);
+      ctx.lineTo(lineRight, yBtm);
+      ctx.stroke();
+
+      // NOTE: NO left or right vertical border lines (per TradingView and user requirement)
+
+      // 3. Middle Vertical Line connecting top and bottom
+      const midX = (x1 + x2) / 2;
       ctx.beginPath();
       ctx.moveTo(midX, y1);
       ctx.lineTo(midX, y2);
       ctx.stroke();
 
-      // Start Anchor tic (small horizontal bar)
-      ctx.beginPath();
-      ctx.moveTo(midX - 4, y1);
-      ctx.lineTo(midX + 4, y1);
-      ctx.stroke();
+      // Directional arrowhead at end price level (midX, y2)
+      // If y2 > y1 (downward move): points down onto bottom line
+      // If y2 < y1 (upward move): points up onto top line
+      const arrowLen = 9;
+      const arrowW = 4.5;
+      const dirY = (y2 >= y1) ? 1 : -1;
 
-      // Directional Arrowhead at y2
-      const arrowDir = (y2 <= y1) ? -1 : 1; // -1 is upward in screen coords
-      const arrowHeadH = Math.min(rh * 0.45, 8 + width);
-      const arrowHeadW = 4.5 + width * 0.5;
       ctx.fillStyle = clr;
       ctx.beginPath();
       ctx.moveTo(midX, y2);
-      ctx.lineTo(midX - arrowHeadW, y2 - (arrowDir * arrowHeadH));
-      ctx.lineTo(midX + arrowHeadW, y2 - (arrowDir * arrowHeadH));
+      ctx.lineTo(midX - arrowW, y2 - (dirY * arrowLen));
+      ctx.lineTo(midX + arrowW, y2 - (dirY * arrowLen));
       ctx.closePath();
       ctx.fill();
 
-      // 4. Bar Count & Days Calculation
-      const bCount = (d.p1 && d.p1.logical != null && d.p2 && d.p2.logical != null) ? Math.abs(Math.round(d.p2.logical - d.p1.logical)) + 1 : Math.max(1, Math.round(rw / 10));
-      let dayStr = '';
-      if (_maxCandles && _maxCandles.length > 0 && d.p1.logical != null && d.p2.logical != null) {
-        const idx1 = Math.max(0, Math.min(_maxCandles.length - 1, Math.round(d.p1.logical)));
-        const idx2 = Math.max(0, Math.min(_maxCandles.length - 1, Math.round(d.p2.logical)));
-        const c1 = _maxCandles[idx1];
-        const c2 = _maxCandles[idx2];
-        if (c1 && c2 && c1.time && c2.time) {
-          const days = Math.round(Math.abs(c2.time - c1.time) / (1000 * 60 * 60 * 24));
-          if (days > 0) dayStr = days + 'd';
+      // 4. Stats Text Label (TradingView Style, placed below bottom or above top line)
+      if (statsType !== 'none') {
+        const sign = isUp ? '+' : '';
+        let statsStr = '';
+        if (statsType === 'percent') {
+          statsStr = `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`;
+        } else if (statsType === 'price') {
+          statsStr = `${sign}${diffPrice.toFixed(2)}`;
+        } else if (statsType === 'both') {
+          statsStr = `${sign}${diffPrice.toFixed(2)} (${pct > 0 ? '+' : ''}${pct.toFixed(2)}%)`;
+        }
+
+        if (statsStr) {
+          ctx.font = `600 ${fontSize}px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+
+          // Placement: below bottom line if downward move; above top line if upward move
+          const textY = (y2 >= y1) ? (yBtm + 14) : (yTop - 14);
+
+          if (showLabelBg) {
+            const tw = ctx.measureText(statsStr).width;
+            const th = fontSize + 4;
+            ctx.fillStyle = d.labelBgColor || 'rgba(30, 34, 45, 0.9)';
+            const bx = midX - tw / 2 - 4;
+            const by = textY - th / 2 - 2;
+            if (ctx.roundRect) ctx.roundRect(bx, by, tw + 8, th + 4, 3);
+            else ctx.rect(bx, by, tw + 8, th + 4);
+            ctx.fill();
+          }
+
+          ctx.fillStyle = labelColor;
+          ctx.fillText(statsStr, midX, textY);
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'alphabetic';
         }
       }
 
-      // 5. Authentic TradingView 2-Line Stats Badge
-      const sign = isUp ? '+' : '';
-      const line1 = sign + diffPrice.toFixed(2) + ' (' + sign + pct.toFixed(2) + '%)';
-      const line2 = bCount + ' bars' + (dayStr ? ', ' + dayStr : '');
-
-      ctx.font = 'bold 11px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
-      const tw1 = ctx.measureText(line1).width;
-      ctx.font = '10px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
-      const tw2 = ctx.measureText(line2).width;
-
-      const badgeW = Math.max(tw1, tw2) + 18;
-      const badgeH = 34;
-      const bx = Math.max(10, Math.min(W - badgeW - 10, midX - badgeW / 2));
-
-      // Stats badge position (Auto / Above / Inside / Below)
-      let by;
-      const badgePos = d.badgePos || 'auto';
-      if (badgePos === 'inside' || badgePos === 'center') {
-        by = Math.max(10, Math.min(H - badgeH - 10, ry + (rh - badgeH) / 2));
-      } else if (badgePos === 'above') {
-        by = Math.max(10, ry - badgeH - 6);
-      } else if (badgePos === 'below') {
-        by = Math.min(H - badgeH - 10, ry + rh + 6);
-      } else {
-        // Auto position: at the arrowhead (p2)
-        if (isUp) {
-          by = y2 - badgeH - 6;
-          if (by < 10) by = y2 + 8;
-        } else {
-          by = y2 + 6;
-          if (by + badgeH > H - 10) by = y2 - badgeH - 8;
-        }
-        by = Math.max(10, Math.min(H - badgeH - 10, by));
-      }
-
-      // Draw Badge background pill
-      ctx.fillStyle = 'rgba(18, 22, 34, 0.94)';
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(bx, by, badgeW, badgeH, 4);
-      else ctx.rect(bx, by, badgeW, badgeH);
-      ctx.fill();
-
-      // Badge border matching clr
-      ctx.strokeStyle = isSelected ? '#ffffff' : clr;
-      ctx.lineWidth = isSelected ? 1.5 : 1;
-      ctx.stroke();
-
-      // Line 1 Text (points & %)
-      ctx.font = 'bold 11px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
-      ctx.fillStyle = clr;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(line1, bx + badgeW / 2, by + 11);
-
-      // Line 2 Text (bars & days)
-      ctx.font = '10px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
-      ctx.fillStyle = '#94a3b8';
-      ctx.fillText(line2, bx + badgeW / 2, by + 24);
-
-      ctx.textBaseline = 'alphabetic';
-      ctx.textAlign = 'left';
-
-      // 6. Anchor Handles when selected
+      // 5. Two Anchor Handles when selected (TradingView blue circular handles)
       if (isSelected) {
-        drawAnchorHandle(ctx, rx, ry);
-        drawAnchorHandle(ctx, rx + rw, ry);
-        drawAnchorHandle(ctx, rx + rw, ry + rh);
-        drawAnchorHandle(ctx, rx, ry + rh);
-        drawAnchorHandle(ctx, midX, y1);
-        drawAnchorHandle(ctx, midX, y2);
+        drawTvAnchor(ctx, x1, y1);
+        drawTvAnchor(ctx, x2, y2);
       }
     }
     ctx.restore();
@@ -8445,7 +8838,7 @@ function redrawChartDrawings() {
 window.redrawChartDrawings = redrawChartDrawings;
 
 // ── FLOATING CUSTOMIZATION TOOLBAR LOGIC ──
-const TV_DRAW_PALETTE = ['#22c55e', '#ef4444', '#38bdf8', '#2962ff', '#eab308', '#f97316', '#a855f7', '#f0f3fa'];
+const TV_DRAW_PALETTE = ['#22c55e', '#ef4444', '#38bdf8', '#2962ff', '#eab308', '#f97316', '#a855f7', '#ec4899', '#14b8a6', '#f0f3fa'];
 
 function updateFloatingToolbar() {
   const bar = document.getElementById('tv-drawing-floating-toolbar');
@@ -8470,20 +8863,21 @@ function updateFloatingToolbar() {
   const stageW = stage ? stage.clientWidth : 800;
   const stageH = stage ? stage.clientHeight : 500;
 
-  const barW = 220;
-  const targetLeft = Math.max(15, Math.min(stageW - barW - 15, midX - barW / 2));
-  const targetTop = Math.max(50, Math.min(stageH - 60, minY - 44));
+  const isScale = (d.type === 'scale' || d.type === 'measure');
+  const hasFill = (d.type === 'rect' || isScale);
+  const barW = hasFill ? 230 : 200;
+  const targetLeft = Math.max(10, Math.min(stageW - barW - 10, midX - barW / 2));
+  const targetTop = Math.max(48, Math.min(stageH - 60, minY - 44));
 
   bar.style.left = targetLeft + 'px';
   bar.style.top = targetTop + 'px';
   bar.style.display = 'flex';
 
-  const clr = d.color || '#38bdf8';
+  const clr = d.color || (isScale ? '#22c55e' : '#38bdf8');
   const width = d.width || 1;
   const style = d.style || 'solid';
   const styleIcon = style === 'dotted' ? '···' : style === 'dashed' ? '- -' : '──';
-  const hasFill = (d.type === 'rect' || d.type === 'scale' || d.type === 'measure');
-  const fillPct = Math.round((d.fillOpacity != null ? d.fillOpacity : 0) * 100);
+  const fillPct = Math.round((d.fillOpacity != null ? d.fillOpacity : (isScale ? 0.15 : 0)) * 100);
 
   let swatchesHtml = '';
   for (const c of TV_DRAW_PALETTE) {
@@ -8493,52 +8887,87 @@ function updateFloatingToolbar() {
   bar.innerHTML =
     '<div class="tv-float-handle" title="Drag toolbar" onmousedown="startDragFloatingToolbar(event)">⠿</div>' +
     '<div style="position:relative;">' +
-      '<button class="tv-float-btn" onclick="toggleDrawingColorPicker(event)" title="Color">' +
-        '<span class="tv-float-color-dot" style="background:' + clr + ';"></span>' +
-        '<svg width="7" height="5" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg>' +
-      '</button>' +
-      '<div id="tv-float-color-menu" class="tv-float-color-picker" style="display:none;" onclick="event.stopPropagation()">' +
-        swatchesHtml +
-      '</div>' +
+    '<button class="tv-float-btn" onclick="toggleDrawingColorPicker(event)" title="Color">' +
+    '<span class="tv-float-color-dot" style="background:' + clr + ';"></span>' +
+    '<svg width="7" height="5" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg>' +
+    '</button>' +
+    '<div id="tv-float-color-menu" class="tv-float-color-picker" style="display:none;" onclick="event.stopPropagation()">' +
+    swatchesHtml +
+    '</div>' +
     '</div>' +
     '<div class="tv-float-sep"></div>' +
-    '<button class="tv-float-btn" onclick="cycleDrawingWidth(event)" title="Line Width">' +
-      '<span>' + width + 'px</span>' +
+    '<button class="tv-float-btn" onclick="cycleDrawingWidth(event)" title="Line / Border Width">' +
+    '<span>' + width + 'px</span>' +
     '</button>' +
-    '<button class="tv-float-btn" onclick="cycleDrawingStyle(event)" title="Line Style">' +
-      '<span style="font-family:monospace;letter-spacing:1px;">' + styleIcon + '</span>' +
+    '<button class="tv-float-btn" onclick="cycleDrawingStyle(event)" title="Line / Border Style">' +
+    '<span style="font-family:monospace;letter-spacing:1px;">' + styleIcon + '</span>' +
     '</button>' +
     (hasFill ? (
       '<div class="tv-float-sep"></div>' +
-      '<button class="tv-float-btn" onclick="cycleDrawingOpacity(event)" title="Fill Opacity (0% = Transparent)">' +
-        '<span>' + fillPct + '%</span>' +
-      '</button>'
-    ) : '') +
-    (d.type === 'scale' || d.type === 'measure' ? (
-      '<div class="tv-float-sep"></div>' +
-      '<button class="tv-float-btn" onclick="toggleScaleBadgePos(event)" title="Stats Badge Position (Auto / Above / Inside / Below)">' +
-        '<span style="font-size:10px;">' + (
-          d.badgePos === 'inside' ? '■ Inside' :
-          d.badgePos === 'above' ? '▲ Above' :
-          d.badgePos === 'below' ? '▼ Below' : '⚡ Auto'
-        ) + '</span>' +
+      '<button class="tv-float-btn" onclick="cycleDrawingOpacity(event)" title="Fill Transparency">' +
+      '<span>💧 ' + fillPct + '%</span>' +
       '</button>'
     ) : '') +
     (d.type === 'text' || d.type === 'pricenote' ? (
       '<div class="tv-float-sep"></div>' +
-      '<button class="tv-float-btn" onclick="editDrawingText(event)" title="Edit Text / Price Note">' +
-        '<span>✎ Edit</span>' +
+      '<button class="tv-float-btn" onclick="editDrawingText(event)" title="Edit Text">' +
+      '<span>✎ Edit</span>' +
       '</button>'
     ) : '') +
     '<div class="tv-float-sep"></div>' +
-    '<button class="tv-float-btn" onclick="openCoordsDialog(_chartDrawings[getActiveDrawingSymbol()][_selectedDrawingIndex])" title="Precise Coordinates">' +
-      '<span style="font-size:10px;">⌖ Coord</span>' +
+    '<button class="tv-float-btn" onclick="openCoordsDialog(_chartDrawings[getActiveDrawingSymbol()][_selectedDrawingIndex])" title="TradingView Settings">' +
+    '<span style="font-size:12px;">⚙</span>' +
     '</button>' +
     '<button class="tv-float-btn" onclick="deleteSelectedDrawing(event)" title="Delete" style="color:#ef4444;">' +
-      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
+    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
     '</button>' +
     '<button class="tv-float-btn" onclick="deselectDrawing(event)" title="Close" style="color:#94a3b8;font-size:12px;">✕</button>';
 }
+window.updateFloatingToolbar = updateFloatingToolbar;
+
+function toggleScaleBorders(e) {
+  if (e) e.stopPropagation();
+  const sym = getActiveDrawingSymbol();
+  const drawings = _chartDrawings[sym] || [];
+  if (_selectedDrawingIndex != null && drawings[_selectedDrawingIndex]) {
+    const d = drawings[_selectedDrawingIndex];
+    d.showBorders = (d.showBorders === false) ? true : false;
+    saveChartDrawings();
+    redrawChartDrawings();
+    updateFloatingToolbar();
+  }
+}
+window.toggleScaleBorders = toggleScaleBorders;
+
+function toggleScaleField(field, e) {
+  if (e) e.stopPropagation();
+  const sym = getActiveDrawingSymbol();
+  const drawings = _chartDrawings[sym] || [];
+  if (_selectedDrawingIndex != null && drawings[_selectedDrawingIndex]) {
+    const d = drawings[_selectedDrawingIndex];
+    if (field === 'showPrice') {
+      d.showPrice = (d.showPrice === false) ? true : false;
+    } else if (field === 'showPercent') {
+      d.showPercent = (d.showPercent === false) ? true : false;
+    } else if (field === 'showDateBars') {
+      const sb = (d.showBars !== false);
+      const sd = (d.showDate !== false);
+      if (sb && sd) {
+        d.showBars = true; d.showDate = false;
+      } else if (sb && !sd) {
+        d.showBars = false; d.showDate = true;
+      } else if (!sb && sd) {
+        d.showBars = false; d.showDate = false;
+      } else {
+        d.showBars = true; d.showDate = true;
+      }
+    }
+    saveChartDrawings();
+    redrawChartDrawings();
+    updateFloatingToolbar();
+  }
+}
+window.toggleScaleField = toggleScaleField;
 window.updateFloatingToolbar = updateFloatingToolbar;
 
 function hideFloatingToolbar() {
@@ -8971,9 +9400,9 @@ function maxChartAttachTileHeader(tileNum, symbol) {
   hdr.innerHTML = '<button class="tv-tile-sym-btn" onclick="maxChartOpenTilePicker(' + tileNum + ', event)" title="Select stock for Tile ' + tileNum + '">' +
     '<span>' + symbol + '</span>' +
     '<svg width="7" height="5" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg>' +
-  '</button>' +
-  '<button class="tv-tile-nav-btn" onclick="maxChartTilePrevNext(' + tileNum + ', -1, event)" title="Previous Watchlist Stock">◀</button>' +
-  '<button class="tv-tile-nav-btn" onclick="maxChartTilePrevNext(' + tileNum + ', 1, event)" title="Next Watchlist Stock">▶</button>';
+    '</button>' +
+    '<button class="tv-tile-nav-btn" onclick="maxChartTilePrevNext(' + tileNum + ', -1, event)" title="Previous Watchlist Stock">◀</button>' +
+    '<button class="tv-tile-nav-btn" onclick="maxChartTilePrevNext(' + tileNum + ', 1, event)" title="Next Watchlist Stock">▶</button>';
 
   container.appendChild(hdr);
 }
@@ -9060,7 +9489,7 @@ function maxChartTileSearchInput(tileNum, query) {
     return '<div class="tv-tile-picker-item" onclick="maxChartSetTileSymbol(' + tileNum + ', \'' + sUpper + '\'); this.closest(\'.tv-tile-picker-menu\').remove();">' +
       '<span style="font-weight:700;color:var(--teal);">' + sUpper + '</span>' +
       '<span style="font-size:9px;color:#94a3b8;">Select</span>' +
-    '</div>';
+      '</div>';
   }).join('');
 }
 window.maxChartTileSearchInput = maxChartTileSearchInput;
@@ -9530,13 +9959,13 @@ function maxChartSidebarSearchInput(val) {
       const qUpper = query.toUpperCase();
       suggestBox.innerHTML =
         '<div class="max-suggest-item" style="padding:8px 10px;cursor:pointer;border-bottom:1px solid #2a2e39;display:flex;align-items:center;justify-content:space-between;" ' +
-          'onmouseenter="maxChartSidebarHighlightItem(this)" ' +
-          'onmouseleave="this.style.background=\'transparent\'" ' +
-          'onmousedown="maxChartSidebarSelectStock(\'' + qUpper + '\')">' +
-          '<div style="display:flex;align-items:center;gap:6px;">' +
-            '<span style="font-weight:700;font-size:12px;color:var(--teal);font-family:var(--mono);">+ Add "' + qUpper + '"</span>' +
-          '</div>' +
-          '<span style="font-size:10px;font-weight:700;color:#22c55e;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);padding:2px 6px;border-radius:3px;">Custom Ticker</span>' +
+        'onmouseenter="maxChartSidebarHighlightItem(this)" ' +
+        'onmouseleave="this.style.background=\'transparent\'" ' +
+        'onmousedown="maxChartSidebarSelectStock(\'' + qUpper + '\')">' +
+        '<div style="display:flex;align-items:center;gap:6px;">' +
+        '<span style="font-weight:700;font-size:12px;color:var(--teal);font-family:var(--mono);">+ Add "' + qUpper + '"</span>' +
+        '</div>' +
+        '<span style="font-size:10px;font-weight:700;color:#22c55e;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);padding:2px 6px;border-radius:3px;">Custom Ticker</span>' +
         '</div>';
       suggestBox.style.display = 'block';
     } else {
@@ -9558,14 +9987,14 @@ function maxChartSidebarSearchInput(val) {
       'onmouseleave="this.style.background=\'transparent\'" ' +
       'onmousedown="maxChartSidebarSelectStock(\'' + symEsc + '\')">' +
       '<div style="display:flex;flex-direction:column;min-width:0;gap:2px;">' +
-        '<div style="display:flex;align-items:center;gap:6px;">' +
-          '<span style="font-weight:700;font-size:12px;color:var(--teal);font-family:var(--mono);">' + s.symbol + '</span>' +
-          (secName ? '<span style="font-size:9px;color:#787b86;background:rgba(255,255,255,0.05);padding:1px 4px;border-radius:3px;border:1px solid #2a2e39;">' + secName + '</span>' : '') +
-        '</div>' +
-        '<span class="comp-name" style="font-size:10px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px;">' + compName + '</span>' +
+      '<div style="display:flex;align-items:center;gap:6px;">' +
+      '<span style="font-weight:700;font-size:12px;color:var(--teal);font-family:var(--mono);">' + s.symbol + '</span>' +
+      (secName ? '<span style="font-size:9px;color:#787b86;background:rgba(255,255,255,0.05);padding:1px 4px;border-radius:3px;border:1px solid #2a2e39;">' + secName + '</span>' : '') +
+      '</div>' +
+      '<span class="comp-name" style="font-size:10px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px;">' + compName + '</span>' +
       '</div>' +
       '<span style="font-size:10px;font-weight:700;color:#22c55e;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);padding:2px 6px;border-radius:3px;flex-shrink:0;">+ Add</span>' +
-    '</div>';
+      '</div>';
   }).join('');
 
   suggestBox.style.display = 'block';
@@ -9655,7 +10084,7 @@ function maxChartSidebarSelectStock(sym) {
 window.maxChartSidebarSelectStock = maxChartSidebarSelectStock;
 
 function maxChartSidebarEnterKey() {
-  maxChartSidebarKeyDown({ key: 'Enter', preventDefault: () => {} });
+  maxChartSidebarKeyDown({ key: 'Enter', preventDefault: () => { } });
 }
 window.maxChartSidebarEnterKey = maxChartSidebarEnterKey;
 
@@ -9730,6 +10159,20 @@ function updateMaxChartSidebarWatchlist() {
             <span>⭐ Themes</span> <span style="font-size:9px;opacity:0.65;font-family:var(--mono);margin-left:3px;">(${clusterCount})</span>
           </div>
         `;
+      } else if (name === 'Tight' || name === 'TIGHT') {
+        const tightCount = (_sccTightSymbolsCache && _sccTightSymbolsCache.length) || 0;
+        tabsHtml += `
+          <div onclick="sccWlSwitchTab('Tight'); updateMaxChartSidebarWatchlist();"
+               draggable="true"
+               ondragstart="sccTabDragStart(event, 'Tight')"
+               ondragover="sccTabDragOver(event)"
+               ondrop="sccTabDrop(event, 'Tight')"
+               ondragend="sccTabDragEnd(event)"
+               class="tv-wl-tab-pill ${isActive ? 'active' : ''}"
+               style="${isActive ? 'color:#eab308;border-bottom-color:#eab308;' : ''}">
+            <span>⚡ Tight</span> <span style="font-size:9px;opacity:0.65;font-family:var(--mono);margin-left:3px;">(${tightCount})</span>
+          </div>
+        `;
       } else if (name === 'Shortlist') {
         const slCount = (typeof getShortlistSet === 'function' ? getShortlistSet().size : 0);
         tabsHtml += `
@@ -9763,16 +10206,11 @@ function updateMaxChartSidebarWatchlist() {
               style="background:none;border:none;color:#38bdf8;font-size:13px;font-weight:bold;cursor:pointer;padding:2px 6px;">+</button>
     `;
     tabsEl.innerHTML = tabsHtml;
-    tabsEl.onwheel = function(e) {
-      if (e.deltaY !== 0) {
-        e.preventDefault();
-        tabsEl.scrollLeft += e.deltaY;
-      }
-    };
+    sccEnableTabsDragScroll(tabsEl);
     try {
       const activePill = tabsEl.querySelector('.tv-wl-tab-pill.active');
       if (activePill) activePill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-    } catch(e) {}
+    } catch (e) { }
   }
 
   // Active symbol for whichever layout tile is currently focused
@@ -9826,6 +10264,29 @@ function updateMaxChartSidebarWatchlist() {
     items = clusterRes.items;
     flatSymbols = clusterRes.flatSymbols;
     _sccWatchlistSymbols = flatSymbols;
+  } else if (_sccActiveWatchlist === 'Tight' || _sccActiveWatchlist === 'TIGHT') {
+    flatSymbols = _sccTightSymbolsCache || [];
+    if (!flatSymbols.length && !_sccTightScanning) {
+      if (typeof sccScanTightStocks === 'function') sccScanTightStocks();
+    }
+    flatSymbols.forEach(sym => {
+      const sUpper = sym.toUpperCase();
+      const det = _sccTightDetailsMap[sUpper] || {};
+      items.push({
+        type: 'stock',
+        symbol: sUpper,
+        company: det.company || sUpper,
+        price: det.price,
+        change_pct: det.change,
+        tightCount: det.tightCount || 3,
+        badgeText: det.badgeText,
+        badgeType: det.badgeType,
+        avgRange: det.avgRange,
+        theme: det.theme,
+        isTight: true
+      });
+    });
+    _sccWatchlistSymbols = flatSymbols;
   } else if (_sccActiveWatchlist === 'Shortlist') {
     flatSymbols = Array.from(getShortlistSet());
     flatSymbols.forEach(s => items.push({ type: 'stock', symbol: s }));
@@ -9864,7 +10325,7 @@ function updateMaxChartSidebarWatchlist() {
   items.forEach(item => {
     if (item.type === 'header') {
       const isCollapsed = item.collapsed;
-      const toggleFn = item.isCluster ? `sccWlToggleCluster('${item.label.replace(/'/g, "\\'")}')` : `sccWlToggleSector('${item.label.replace(/'/g, "\\'")}')`;
+      const toggleFn = item.isCluster ? `sccWlToggleCluster('${(item.clusterName || item.label).replace(/'/g, "\\'")}')` : `sccWlToggleSector('${item.label.replace(/'/g, "\\'")}')`;
       rowsHtml += `
         <div class="tv-max-wl-section-hdr" onclick="${toggleFn}"
              style="padding: 6px 12px; background: #181c27; color: var(--teal, #2dd4bf); font-weight: 700; font-size: 10px; border-top: 1px solid #2a2e39; border-bottom: 1px solid #2a2e39; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 4px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;">
@@ -9878,15 +10339,15 @@ function updateMaxChartSidebarWatchlist() {
       return;
     }
     if (item.type === 'load_more_clusters') {
-      const nextCount = Math.min(item.total, item.loaded + 40);
+      const nextCount = item.nextCount || Math.min(item.total, item.loaded + 20);
       rowsHtml += `
         <div style="padding: 10px 12px; background: #141722; border-top: 1px dashed #2a2e39; border-bottom: 1px dashed #2a2e39; margin: 6px 0; text-align: center;">
           <div style="font-size: 10px; color: #94a3b8; font-family: monospace; margin-bottom: 6px;">
-            Showing ${item.loaded} of ${item.total} theme stocks
+            Showing ${item.loaded} of ${item.total} Themes
           </div>
           <button onclick="sccLoadMoreClustersWatchlist()"
                   style="width: 100%; font-size: 11px; font-weight: 700; padding: 6px 12px; cursor: pointer; background: #2962ff; color: #fff; border: none; border-radius: 4px;">
-            ⬇ Load Next 40 Stocks (${item.loaded + 1}–${nextCount})
+            ⬇ Load Next 20 Themes (${item.loaded + 1}–${nextCount})
           </button>
         </div>
       `;
@@ -9904,25 +10365,36 @@ function updateMaxChartSidebarWatchlist() {
     const chgColor = chgVal != null ? (chgVal >= 0 ? '#22c55e' : '#ef4444') : '#94a3b8';
 
     const leaderBadge = item.is52w ? '<span style="font-size:8px;padding:1px 3px;border-radius:2px;background:rgba(45,212,191,0.15);color:#2dd4bf;margin-left:4px;" title="Within 3% of 52W High">52W</span>' :
-                        (item.is1m ? '<span style="font-size:8px;padding:1px 3px;border-radius:2px;background:rgba(52,211,153,0.15);color:#34d399;margin-left:4px;" title="Within 2% of 1M High">1M</span>' : '');
+      (item.is1m ? '<span style="font-size:8px;padding:1px 3px;border-radius:2px;background:rgba(52,211,153,0.15);color:#34d399;margin-left:4px;" title="Within 2% of 1M High">1M</span>' : '');
+    const tightDet = (_sccTightDetailsMap && _sccTightDetailsMap[sUpper]) || {};
+    let tightBadge = '';
+    if (item.isTight || tightDet.badgeText || tightDet.tightCount) {
+      if (tightDet.badgeType === 'box') {
+        tightBadge = '<span style="font-size:8px;padding:1px 3px;border-radius:2px;background:rgba(6,182,212,0.18);color:#06b6d4;margin-left:4px;font-weight:700;" title="Consolidation Box: ' + (tightDet.badgeText || 'BOX') + ' near highs">' + (tightDet.badgeText || 'BOX') + '</span>';
+      } else {
+        const tCount = tightDet.tightCount || item.tightCount || 3;
+        tightBadge = '<span style="font-size:8px;padding:1px 3px;border-radius:2px;background:rgba(234,179,8,0.18);color:#eab308;margin-left:4px;font-weight:700;" title="Tight Base: ' + tCount + ' tight candles on right side">' + tCount + 'T</span>';
+      }
+    }
 
     const showRemoveBtn = _sccActiveWatchlist !== 'VCP' && _sccActiveWatchlist !== 'Clusters';
     const removeBtnHtml = showRemoveBtn ? '<button class="tv-max-wl-del-btn" onclick="event.stopPropagation(); sccWatchlistRemoveSymbol(\'' + sUpper + '\');" title="Remove ' + sUpper + ' from ' + _sccActiveWatchlist + '" style="background:none;border:none;color:#787b86;cursor:pointer;font-size:15px;font-weight:bold;line-height:1;padding:0 0 0 5px;opacity:0.35;transition:opacity 0.15s,color 0.15s;outline:none;" onmouseover="this.style.opacity=\'1\';this.style.color=\'#ef4444\';" onmouseout="this.style.opacity=\'0.35\';this.style.color=\'#787b86\';">×</button>' : '';
 
     rowsHtml += '<div class="tv-max-wl-row ' + (isCur ? 'active' : '') + '" onclick="maxChartOnStockSelected(\'' + sUpper + '\')">' +
       '<div style="display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;">' +
-        '<svg width="8" height="12" viewBox="0 0 10 18" fill="' + flagColor + '" onclick="sccWatchlistOpenFlagPopup(this, \'' + sUpper + '\'); event.stopPropagation();" style="cursor:pointer;flex-shrink:0;" title="Change flag color">' +
-          '<path d="M0 0h10v18l-5-4-5 4V0z"/>' +
-        '</svg>' +
-        '<span style="font-weight:700;' + (isCur ? 'color:#2962ff;' : '') + '">' + sUpper + '</span>' +
-        leaderBadge +
+      '<svg width="8" height="12" viewBox="0 0 10 18" fill="' + flagColor + '" onclick="sccWatchlistOpenFlagPopup(this, \'' + sUpper + '\'); event.stopPropagation();" style="cursor:pointer;flex-shrink:0;" title="Change flag color">' +
+      '<path d="M0 0h10v18l-5-4-5 4V0z"/>' +
+      '</svg>' +
+      '<span style="font-weight:700;' + (isCur ? 'color:#2962ff;' : '') + '">' + sUpper + '</span>' +
+      leaderBadge +
+      tightBadge +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">' +
-        '<span style="color:#94a3b8;">' + price + '</span>' +
-        '<span style="color:' + chgColor + ';font-weight:600;min-width:44px;text-align:right;">' + chg + '</span>' +
-        removeBtnHtml +
+      '<span style="color:#94a3b8;">' + price + '</span>' +
+      '<span style="color:' + chgColor + ';font-weight:600;min-width:44px;text-align:right;">' + chg + '</span>' +
+      removeBtnHtml +
       '</div>' +
-    '</div>';
+      '</div>';
   });
 
   rowsEl.innerHTML = rowsHtml;
@@ -9986,9 +10458,9 @@ window.addEventListener('keydown', e => {
     return;
   }
 
-  // 3. Universal Navigation: Space / Shift+Space / ArrowDown / ArrowUp / PageDown / PageUp
-  const isNextKey = e.key === 'ArrowDown' || (e.code === 'Space' && !e.shiftKey) || e.key === ' ' || e.key === 'PageDown';
-  const isPrevKey = e.key === 'ArrowUp' || (e.code === 'Space' && e.shiftKey) || e.key === 'PageUp';
+  // 3. Universal Navigation: Space / Shift+Space / ArrowDown / ArrowUp / ArrowRight / ArrowLeft / PageDown / PageUp
+  const isNextKey = e.key === 'ArrowDown' || e.key === 'ArrowRight' || (e.code === 'Space' && !e.shiftKey) || e.key === ' ' || e.key === 'PageDown';
+  const isPrevKey = e.key === 'ArrowUp' || e.key === 'ArrowLeft' || (e.code === 'Space' && e.shiftKey) || e.key === 'PageUp';
 
   if (isNextKey || isPrevKey) {
     if (isMaxOpen) {
@@ -10042,7 +10514,34 @@ if (document.readyState === 'loading') {
 }
 
 
-// ── TRADINGVIEW PRECISE COORDINATES EDITOR ──
+// ── TRADINGVIEW PRECISE COORDINATES & STYLE SETTINGS MODAL ──
+function switchTvCoordsTab(tab) {
+  const tabs = ['style', 'text', 'coords', 'visibility'];
+  tabs.forEach(t => {
+    const tabEl = document.getElementById('tv-tab-' + t);
+    const panelEl = document.getElementById('tv-panel-' + t);
+    if (tabEl) {
+      if (t === tab) {
+        tabEl.classList.add('active');
+        tabEl.style.color = '#ffffff';
+        tabEl.style.borderBottom = '2px solid #ffffff';
+      } else {
+        tabEl.classList.remove('active');
+        tabEl.style.color = '#787b86';
+        tabEl.style.borderBottom = '2px solid transparent';
+      }
+    }
+    if (panelEl) {
+      panelEl.style.display = (t === tab) ? 'flex' : 'none';
+    }
+  });
+  if (tab === 'coords') {
+    const inp1 = document.getElementById('tv-coord-p1-price');
+    if (inp1) { inp1.focus(); inp1.select(); }
+  }
+}
+window.switchTvCoordsTab = switchTvCoordsTab;
+
 function openCoordsDialog(drawing) {
   const dlg = document.getElementById('tv-coords-dialog');
   const titleEl = document.getElementById('tv-coords-title');
@@ -10050,45 +10549,256 @@ function openCoordsDialog(drawing) {
   if (!dlg || !titleEl || !fieldsEl || !drawing) return;
 
   const names = {
-    scale: 'Price & Date Range Coordinates',
-    measure: 'Price & Date Range Coordinates',
-    pricenote: 'Price Note Coordinates',
-    ray_h: 'Horizontal Ray Coordinate',
-    ray: 'Arrow Ray Coordinates',
-    trendline: 'Trend Line Coordinates',
-    rect: 'Rectangle Zone Coordinates',
-    fib: 'Fibonacci Retracement Coordinates',
-    text: 'Text Annotation'
+    scale: 'Price range',
+    measure: 'Price range',
+    pricenote: 'Price Note',
+    ray_h: 'Horizontal Ray',
+    ray: 'Arrow Ray',
+    trendline: 'Trend Line',
+    rect: 'Rectangle Zone',
+    fib: 'Fibonacci Retracement',
+    text: 'Text'
   };
 
-  titleEl.innerText = names[drawing.type] || 'Edit Coordinates';
+  titleEl.innerText = names[drawing.type] || 'Settings';
 
-  let html = '';
-  const p1Val = drawing.p1 && drawing.p1.price != null ? drawing.p1.price.toFixed(2) : '';
-  html += `<div>
-    <label class="tv-coord-label">Point 1 Price (₹)</label>
-    <input type="number" step="0.05" id="tv-coord-p1-price" class="tv-coord-input" value="${p1Val}">
+  const clr = drawing.color || ((drawing.type === 'scale' || drawing.type === 'measure') ? '#089981' : '#38bdf8');
+  const width = drawing.width || 1;
+  const style = drawing.style || 'solid';
+  const isScale = (drawing.type === 'scale' || drawing.type === 'measure');
+  const fillOp = (drawing.fillOpacity != null) ? drawing.fillOpacity : (isScale ? 0.05 : 0);
+  const showBg = (drawing.showBackground !== false && fillOp > 0);
+  const extend = drawing.extend || 'none';
+  const statsType = drawing.statsType || (drawing.showPrice && drawing.showPercent ? 'both' : (drawing.showPrice ? 'price' : 'percent'));
+  const fontSize = drawing.fontSize || 11;
+  const labelColor = drawing.labelColor || '#868993';
+  const showLabelBg = Boolean(drawing.showLabelBg);
+  const labelBgColor = drawing.labelBgColor || '#1e222d';
+
+  // Build 4-Tab TradingView Header
+  let html = `
+    <div style="display:flex;border-bottom:1px solid #2a2e39;margin-bottom:14px;gap:18px;font-size:13px;font-weight:500;">
+      <button id="tv-tab-style" class="tv-dialog-tab active" type="button" onclick="switchTvCoordsTab('style')" style="color:#ffffff;border-bottom:2px solid #ffffff;">Style</button>
+      <button id="tv-tab-text" class="tv-dialog-tab" type="button" onclick="switchTvCoordsTab('text')" style="color:#787b86;border-bottom:2px solid transparent;">Text</button>
+      <button id="tv-tab-coords" class="tv-dialog-tab" type="button" onclick="switchTvCoordsTab('coords')" style="color:#787b86;border-bottom:2px solid transparent;">Coordinates</button>
+      <button id="tv-tab-visibility" class="tv-dialog-tab" type="button" onclick="switchTvCoordsTab('visibility')" style="color:#787b86;border-bottom:2px solid transparent;">Visibility</button>
+    </div>
+  `;
+
+  // Tab 1: Style Panel (Exact match with TradingView Price Range screenshot)
+  html += `<div id="tv-panel-style" style="display:flex;flex-direction:column;gap:12px;">`;
+
+  if (isScale) {
+    html += `
+      <!-- Line -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 0;">
+        <span style="font-size:13px;color:#d1d4dc;">Line</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="color" id="tv-coord-color" value="${clr}" style="width:34px;height:24px;border:1px solid #363c4e;border-radius:4px;background:${clr};cursor:pointer;padding:0;">
+          <select id="tv-coord-width" class="tv-coord-input" style="width:68px;height:26px;padding:2px 6px;">
+            <option value="1" ${width === 1 ? 'selected' : ''}>1px</option>
+            <option value="2" ${width === 2 ? 'selected' : ''}>2px</option>
+            <option value="3" ${width === 3 ? 'selected' : ''}>3px</option>
+            <option value="4" ${width === 4 ? 'selected' : ''}>4px</option>
+          </select>
+          <select id="tv-coord-style" class="tv-coord-input" style="width:72px;height:26px;padding:2px 6px;">
+            <option value="solid" ${style === 'solid' ? 'selected' : ''}>Solid</option>
+            <option value="dashed" ${style === 'dashed' ? 'selected' : ''}>Dashed</option>
+            <option value="dotted" ${style === 'dotted' ? 'selected' : ''}>Dotted</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Background -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 0;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#d1d4dc;cursor:pointer;margin:0;">
+          <input type="checkbox" id="tv-scale-show-bg" ${showBg ? 'checked' : ''} style="cursor:pointer;accent-color:#2962ff;width:15px;height:15px;" onchange="document.getElementById('tv-scale-fill-opacity').disabled = !this.checked">
+          <span>Background</span>
+        </label>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <select id="tv-scale-fill-opacity" class="tv-coord-input" style="width:96px;height:26px;padding:2px 6px;" ${!showBg ? 'disabled' : ''}>
+            <option value="0.05" ${Math.abs(fillOp - 0.05) < 0.02 || fillOp === 0 ? 'selected' : ''}>5%</option>
+            <option value="0.10" ${Math.abs(fillOp - 0.10) < 0.02 ? 'selected' : ''}>10%</option>
+            <option value="0.15" ${Math.abs(fillOp - 0.15) < 0.02 ? 'selected' : ''}>15%</option>
+            <option value="0.25" ${Math.abs(fillOp - 0.25) < 0.02 ? 'selected' : ''}>25%</option>
+            <option value="0.50" ${Math.abs(fillOp - 0.50) < 0.02 ? 'selected' : ''}>50%</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Extend -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 0;">
+        <span style="font-size:13px;color:#d1d4dc;">Extend</span>
+        <select id="tv-scale-extend" class="tv-coord-input" style="width:145px;height:26px;padding:2px 8px;">
+          <option value="none" ${(!extend || extend === 'none') ? 'selected' : ''}>Don't extend</option>
+          <option value="left" ${extend === 'left' ? 'selected' : ''}>Extend lines left</option>
+          <option value="right" ${extend === 'right' ? 'selected' : ''}>Extend lines right</option>
+          <option value="both" ${extend === 'both' ? 'selected' : ''}>Extend lines both</option>
+        </select>
+      </div>
+
+      <!-- INFO Divider -->
+      <div style="font-size:10px;font-weight:700;color:#787b86;letter-spacing:0.8px;margin-top:10px;margin-bottom:2px;text-transform:uppercase;">INFO</div>
+
+      <!-- Stats -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 0;">
+        <span style="font-size:13px;color:#d1d4dc;">Stats</span>
+        <select id="tv-scale-stats-type" class="tv-coord-input" style="width:145px;height:26px;padding:2px 8px;">
+          <option value="percent" ${statsType === 'percent' ? 'selected' : ''}>Percent change</option>
+          <option value="price" ${statsType === 'price' ? 'selected' : ''}>Price difference</option>
+          <option value="both" ${statsType === 'both' ? 'selected' : ''}>Both</option>
+          <option value="none" ${statsType === 'none' ? 'selected' : ''}>None</option>
+        </select>
+      </div>
+
+      <!-- Label -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 0;">
+        <span style="font-size:13px;color:#d1d4dc;">Label</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="color" id="tv-scale-label-color" value="${labelColor}" style="width:34px;height:24px;border:1px solid #363c4e;border-radius:4px;cursor:pointer;padding:0;">
+          <select id="tv-scale-label-size" class="tv-coord-input" style="width:72px;height:26px;padding:2px 6px;">
+            <option value="10" ${fontSize === 10 ? 'selected' : ''}>10</option>
+            <option value="11" ${fontSize === 11 ? 'selected' : ''}>11</option>
+            <option value="12" ${fontSize === 12 ? 'selected' : ''}>12</option>
+            <option value="14" ${fontSize === 14 ? 'selected' : ''}>14</option>
+            <option value="16" ${fontSize === 16 ? 'selected' : ''}>16</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Label background -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 0;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#d1d4dc;cursor:pointer;margin:0;">
+          <input type="checkbox" id="tv-scale-label-bg" ${showLabelBg ? 'checked' : ''} style="cursor:pointer;accent-color:#2962ff;width:15px;height:15px;">
+          <span>Label background</span>
+        </label>
+        <input type="color" id="tv-scale-label-bg-color" value="${labelBgColor}" style="width:34px;height:24px;border:1px solid #363c4e;border-radius:4px;cursor:pointer;padding:0;">
+      </div>
+    `;
+  } else if (drawing.type === 'rect') {
+    html += `
+      <div class="tv-setting-row">
+        <span>Color</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <input type="color" id="tv-coord-color" value="${clr}" style="width:34px;height:24px;border:1px solid #363c4e;border-radius:4px;cursor:pointer;padding:0;">
+        </div>
+      </div>
+      <div class="tv-setting-row">
+        <span>Line Width</span>
+        <select id="tv-coord-width" class="tv-coord-input" style="padding:2px 8px;width:120px;">
+          <option value="1" ${width === 1 ? 'selected' : ''}>1px</option>
+          <option value="2" ${width === 2 ? 'selected' : ''}>2px</option>
+          <option value="3" ${width === 3 ? 'selected' : ''}>3px</option>
+          <option value="4" ${width === 4 ? 'selected' : ''}>4px</option>
+        </select>
+      </div>
+      <div class="tv-setting-row">
+        <span>Line Style</span>
+        <select id="tv-coord-style" class="tv-coord-input" style="padding:2px 8px;width:120px;">
+          <option value="solid" ${style === 'solid' ? 'selected' : ''}>Solid</option>
+          <option value="dashed" ${style === 'dashed' ? 'selected' : ''}>Dashed</option>
+          <option value="dotted" ${style === 'dotted' ? 'selected' : ''}>Dotted</option>
+        </select>
+      </div>
+      <div class="tv-setting-row">
+        <span>Fill Opacity</span>
+        <select id="tv-rect-fill-opacity" class="tv-coord-input" style="padding:2px 8px;width:120px;">
+          <option value="0" ${fillOp === 0 ? 'selected' : ''}>0% (Outline Only)</option>
+          <option value="0.05" ${Math.abs(fillOp - 0.05) < 0.02 ? 'selected' : ''}>5%</option>
+          <option value="0.10" ${Math.abs(fillOp - 0.10) < 0.02 ? 'selected' : ''}>10%</option>
+          <option value="0.20" ${Math.abs(fillOp - 0.20) < 0.02 ? 'selected' : ''}>20%</option>
+          <option value="0.30" ${Math.abs(fillOp - 0.30) < 0.02 ? 'selected' : ''}>30%</option>
+          <option value="0.50" ${Math.abs(fillOp - 0.50) < 0.02 ? 'selected' : ''}>50%</option>
+        </select>
+      </div>
+    `;
+  } else {
+    // Other tools (Trendline, Rays, Fib, etc.)
+    html += `
+      <div class="tv-setting-row">
+        <span>Color</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <input type="color" id="tv-coord-color" value="${clr}" style="width:34px;height:24px;border:1px solid #363c4e;border-radius:4px;cursor:pointer;padding:0;">
+          <span style="font-family:var(--mono);font-size:10px;color:#94a3b8;">${clr.toUpperCase()}</span>
+        </div>
+      </div>
+
+      <div class="tv-setting-row">
+        <span>Line Width</span>
+        <select id="tv-coord-width" class="tv-coord-input" style="padding:2px 8px;width:120px;">
+          <option value="1" ${width === 1 ? 'selected' : ''}>1px (Thin)</option>
+          <option value="2" ${width === 2 ? 'selected' : ''}>2px (Standard)</option>
+          <option value="3" ${width === 3 ? 'selected' : ''}>3px (Bold)</option>
+          <option value="4" ${width === 4 ? 'selected' : ''}>4px (Heavy)</option>
+        </select>
+      </div>
+
+      <div class="tv-setting-row">
+        <span>Line Style</span>
+        <select id="tv-coord-style" class="tv-coord-input" style="padding:2px 8px;width:120px;">
+          <option value="solid" ${style === 'solid' ? 'selected' : ''}>Solid ─────</option>
+          <option value="dashed" ${style === 'dashed' ? 'selected' : ''}>Dashed - - - -</option>
+          <option value="dotted" ${style === 'dotted' ? 'selected' : ''}>Dotted · · · ·</option>
+        </select>
+      </div>
+    `;
+  }
+
+  html += `</div>`; // Close tv-panel-style
+
+  // Tab 2: Text Panel
+  html += `<div id="tv-panel-text" style="display:none;flex-direction:column;gap:12px;">
+    <div>
+      <label class="tv-coord-label" style="font-size:12px;color:#868993;margin-bottom:6px;display:block;">Annotation / Note Text</label>
+      <input type="text" id="tv-coord-text" class="tv-coord-input" value="${(drawing.text || '').replace(/"/g, '&quot;')}" placeholder="e.g. 5-day tight pivot..." style="height:32px;">
+    </div>
+    <div class="tv-setting-row">
+      <span>Font Size</span>
+      <select id="tv-coord-font-size" class="tv-coord-input" style="padding:2px 8px;width:120px;">
+        <option value="10" ${drawing.fontSize === 10 ? 'selected' : ''}>10px</option>
+        <option value="11" ${drawing.fontSize === 11 ? 'selected' : ''}>11px</option>
+        <option value="12" ${!drawing.fontSize || drawing.fontSize === 12 ? 'selected' : ''}>12px</option>
+        <option value="14" ${drawing.fontSize === 14 ? 'selected' : ''}>14px</option>
+        <option value="16" ${drawing.fontSize === 16 ? 'selected' : ''}>16px</option>
+      </select>
+    </div>
   </div>`;
 
-  if (drawing.p2 || drawing.type === 'scale' || drawing.type === 'measure' || drawing.type === 'trendline' || drawing.type === 'ray' || drawing.type === 'rect' || drawing.type === 'fib') {
+  // Tab 3: Coordinates Panel
+  html += `<div id="tv-panel-coords" style="display:none;flex-direction:column;gap:12px;">`;
+  const p1Val = drawing.p1 && drawing.p1.price != null ? drawing.p1.price.toFixed(2) : '';
+  html += `<div>
+    <label class="tv-coord-label" style="font-size:12px;color:#868993;margin-bottom:6px;display:block;">Price 1 (₹)</label>
+    <input type="number" step="0.05" id="tv-coord-p1-price" class="tv-coord-input" value="${p1Val}" style="height:32px;">
+  </div>`;
+
+  if (drawing.p2 || isScale || drawing.type === 'trendline' || drawing.type === 'ray' || drawing.type === 'rect' || drawing.type === 'fib') {
     const p2Val = drawing.p2 && drawing.p2.price != null ? drawing.p2.price.toFixed(2) : (drawing.p1 && drawing.p1.price != null ? drawing.p1.price.toFixed(2) : '');
     html += `<div>
-      <label class="tv-coord-label">Point 2 Price (₹)</label>
-      <input type="number" step="0.05" id="tv-coord-p2-price" class="tv-coord-input" value="${p2Val}">
+      <label class="tv-coord-label" style="font-size:12px;color:#868993;margin-bottom:6px;display:block;">Price 2 (₹)</label>
+      <input type="number" step="0.05" id="tv-coord-p2-price" class="tv-coord-input" value="${p2Val}" style="height:32px;">
     </div>`;
   }
+  html += `</div>`; // Close tv-panel-coords
 
-  if (drawing.type === 'pricenote' || drawing.type === 'text') {
-    html += `<div>
-      <label class="tv-coord-label">Label / Note Text</label>
-      <input type="text" id="tv-coord-text" class="tv-coord-input" value="${(drawing.text || '').replace(/"/g, '&quot;')}">
-    </div>`;
-  }
+  // Tab 4: Visibility Panel
+  html += `<div id="tv-panel-visibility" style="display:none;flex-direction:column;gap:10px;">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#d1d4dc;cursor:pointer;">
+      <input type="checkbox" checked disabled style="accent-color:#2962ff;width:15px;height:15px;">
+      <span>Daily Candles</span>
+    </label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#d1d4dc;cursor:pointer;">
+      <input type="checkbox" checked disabled style="accent-color:#2962ff;width:15px;height:15px;">
+      <span>Weekly Candles</span>
+    </label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#d1d4dc;cursor:pointer;">
+      <input type="checkbox" checked disabled style="accent-color:#2962ff;width:15px;height:15px;">
+      <span>Volume & Moving Averages</span>
+    </label>
+  </div>`;
 
   fieldsEl.innerHTML = html;
   dlg.style.display = 'block';
-  const inp1 = document.getElementById('tv-coord-p1-price');
-  if (inp1) { inp1.focus(); inp1.select(); }
 }
 window.openCoordsDialog = openCoordsDialog;
 
@@ -10108,9 +10818,60 @@ function applyDrawingCoordinates() {
   const d = drawings[_selectedDrawingIndex];
   const { series } = getDrawingContext();
 
+  // 1. Color, width, style
+  const colInp = document.getElementById('tv-coord-color');
+  if (colInp) d.color = colInp.value;
+  const widthInp = document.getElementById('tv-coord-width');
+  if (widthInp) d.width = parseInt(widthInp.value, 10) || 1;
+  const styleInp = document.getElementById('tv-coord-style');
+  if (styleInp) d.style = styleInp.value;
+
+  // 2. Scale / Price Range properties
+  if (d.type === 'scale' || d.type === 'measure') {
+    const bgInp = document.getElementById('tv-scale-show-bg');
+    const opInp = document.getElementById('tv-scale-fill-opacity');
+    if (bgInp && !bgInp.checked) {
+      d.showBackground = false;
+      d.fillOpacity = 0;
+    } else {
+      d.showBackground = true;
+      d.fillOpacity = opInp ? (parseFloat(opInp.value) || 0.05) : 0.05;
+    }
+    const extInp = document.getElementById('tv-scale-extend');
+    if (extInp) d.extend = extInp.value;
+    const statsInp = document.getElementById('tv-scale-stats-type');
+    if (statsInp) {
+      d.statsType = statsInp.value;
+      d.showPercent = (statsInp.value === 'percent' || statsInp.value === 'both');
+      d.showPrice = (statsInp.value === 'price' || statsInp.value === 'both');
+    }
+    const lblColInp = document.getElementById('tv-scale-label-color');
+    if (lblColInp) d.labelColor = lblColInp.value;
+    const lblSizeInp = document.getElementById('tv-scale-label-size');
+    if (lblSizeInp) d.fontSize = parseInt(lblSizeInp.value, 10) || 11;
+    const lblBgInp = document.getElementById('tv-scale-label-bg');
+    if (lblBgInp) d.showLabelBg = lblBgInp.checked;
+    const lblBgColInp = document.getElementById('tv-scale-label-bg-color');
+    if (lblBgColInp) d.labelBgColor = lblBgColInp.value;
+    d.showBorders = true;
+  } else if (d.type === 'rect') {
+    const opInp = document.getElementById('tv-rect-fill-opacity');
+    if (opInp) d.fillOpacity = parseFloat(opInp.value);
+  }
+
+  // 3. Text properties
+  const txtInp = document.getElementById('tv-coord-text');
+  if (txtInp) {
+    d.text = txtInp.value.trim();
+  }
+  const fontInp = document.getElementById('tv-coord-font-size');
+  if (fontInp) {
+    d.fontSize = parseInt(fontInp.value, 10) || 12;
+  }
+
+  // 4. Coordinates
   const p1Inp = document.getElementById('tv-coord-p1-price');
   const p2Inp = document.getElementById('tv-coord-p2-price');
-  const txtInp = document.getElementById('tv-coord-text');
 
   if (p1Inp && p1Inp.value) {
     const newP1 = parseFloat(p1Inp.value);
@@ -10135,9 +10896,7 @@ function applyDrawingCoordinates() {
     }
   }
 
-  if (txtInp) {
-    d.text = txtInp.value.trim();
-  } else if (d.type === 'pricenote' && p1Inp && p1Inp.value) {
+  if (d.type === 'pricenote' && p1Inp && p1Inp.value && !txtInp) {
     d.text = '₹ ' + parseFloat(p1Inp.value).toFixed(2);
   }
 
@@ -10145,7 +10904,7 @@ function applyDrawingCoordinates() {
   saveChartDrawings();
   redrawChartDrawings();
   updateFloatingToolbar();
-  showChartToast('✔ Coordinates updated precisely', '#22c55e');
+  showChartToast('✔ Settings updated', '#22c55e');
 }
 window.applyDrawingCoordinates = applyDrawingCoordinates;
 
@@ -10236,6 +10995,11 @@ function sccComputeClusters() {
   });
 
   _sccClustersCache = clusters;
+  setTimeout(() => {
+    if (typeof sccScanTightStocks === 'function' && (!_sccTightSymbolsCache || !_sccTightSymbolsCache.length)) {
+      sccScanTightStocks();
+    }
+  }, 1200);
   if (typeof sccRenderDashboardWidget === 'function') {
     sccRenderDashboardWidget();
   }
@@ -10313,6 +11077,13 @@ function sccRenderClusters() {
 
   _sccFilteredClusters = filtered;
 
+  // Immediately synchronize Charts Watchlist with Themes Tab
+  if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+  if (typeof sccWatchlistRender === 'function') sccWatchlistRender();
+  if (typeof _sccChartLayout !== 'undefined' && _sccChartLayout === 'watchlist' && typeof sccChartRebuildGrid === 'function') {
+    sccChartRebuildGrid();
+  }
+
   if (ribbon) {
     const totalIndustries = _sccClustersCache.length;
     const qualClusters = filtered.length;
@@ -10381,6 +11152,9 @@ function sccRenderClusters() {
           </div>
           
           <div class="cluster-card-actions">
+            <button class="cluster-btn-action" style="padding:4px 9px;font-size:10px;background:rgba(45,212,191,0.14);color:var(--teal,#2dd4bf);border:1px solid rgba(45,212,191,0.3);border-radius:4px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:4px;" onclick="event.stopPropagation(); sccOpenThemeInChart(${idx})" title="Scan this Theme in Charts">
+              📈 Chart (${c.stocks.length})
+            </button>
             <button class="cluster-btn-copy" onclick="event.stopPropagation(); sccCopyClusterTv(${idx})" title="Copy TradingView Watchlist for this Industry">
               📋 Copy TV (${c.total})
             </button>
@@ -10399,21 +11173,21 @@ function sccRenderClusters() {
 
         <div class="cluster-chips-panel" id="${safeId}" style="display: ${isExpanded ? 'flex' : 'none'};">
           ${c.stocks.map(s => {
-            const chipClass = s.is52w ? 'leader-52w' : (s.is1m ? 'leader-1m' : 'base');
-            const distLabel = s.is52w ? `⭐ 52W (-${s.dist_52w.toFixed(1)}%)` : (s.is1m ? `🔥 1M (-${s.dist_1m.toFixed(1)}%)` : `-${s.dist_1m.toFixed(1)}% 1M`);
-            const chgSign = s.change_pct >= 0 ? '+' : '';
-            const chgClass = s.change_pct >= 0 ? 'pos' : 'neg';
-            const priceStr = s.price ? '₹' + s.price.toLocaleString('en-IN', { maximumFractionDigits: 1 }) : '';
-            return `
+      const chipClass = s.is52w ? 'leader-52w' : (s.is1m ? 'leader-1m' : 'base');
+      const distLabel = s.is52w ? `⭐ 52W (-${s.dist_52w.toFixed(1)}%)` : (s.is1m ? `🔥 1M (-${s.dist_1m.toFixed(1)}%)` : `-${s.dist_1m.toFixed(1)}% 1M`);
+      const chgSign = s.change_pct >= 0 ? '+' : '';
+      const chgClass = s.change_pct >= 0 ? 'pos' : 'neg';
+      const priceStr = s.price ? '₹' + s.price.toLocaleString('en-IN', { maximumFractionDigits: 1 }) : '';
+      return `
               <div class="cluster-stock-chip ${chipClass}" 
-                   onclick="sccClusterChipClick('${s.symbol}')"
-                   title="${sccEscapeHtml(s.company)} · ${priceStr} (${chgSign}${s.change_pct.toFixed(2)}%) · Click to open TradingView chart">
+                   onclick="sccClusterChipClick('${s.symbol}', event)"
+                   title="${sccEscapeHtml(s.company)} · ${priceStr} (${chgSign}${s.change_pct.toFixed(2)}%) · Click to scan chart">
                 <span class="cluster-chip-sym">${s.symbol}</span>
                 <span class="cluster-chip-dist">${distLabel}</span>
                 <span class="cluster-chip-chg ${chgClass}">${chgSign}${s.change_pct.toFixed(1)}%</span>
               </div>
             `;
-          }).join('')}
+    }).join('')}
         </div>
       </div>
     `;
@@ -10421,6 +11195,30 @@ function sccRenderClusters() {
 
   container.innerHTML = html;
 }
+
+function sccOpenThemeInChart(idx) {
+  const c = _sccFilteredClusters && _sccFilteredClusters[idx];
+  if (!c || !c.stocks || !c.stocks.length) return;
+  const firstStock = c.stocks[0].symbol.toUpperCase();
+  _sccActiveWatchlist = 'Themes';
+  if (typeof _sccWlCollapsedClusters !== 'undefined') {
+    _sccWlCollapsedClusters.delete(c.name); // Ensure theme is expanded
+  }
+  const sccChartPane = document.getElementById('scc-pane-chart');
+  if (sccChartPane && typeof sccTab === 'function') {
+    sccTab('chart');
+    if (typeof sccChartRenderPanel === 'function') sccChartRenderPanel(0, firstStock);
+    if (typeof sccWatchlistRender === 'function') sccWatchlistRender();
+  }
+  const overlay = document.getElementById('chart-max-overlay');
+  if (overlay && overlay.style.display !== 'none' && typeof openMaximizedChart === 'function') {
+    openMaximizedChart(firstStock);
+  }
+  if (typeof showChartToast === 'function') {
+    showChartToast(`📈 Switched to Theme #${idx + 1}: <b>${sccEscapeHtml(c.name)}</b>`, '#2dd4bf');
+  }
+}
+window.sccOpenThemeInChart = sccOpenThemeInChart;
 
 function sccToggleClusterChips(idx) {
   const c = _sccFilteredClusters[idx];
@@ -10436,11 +11234,30 @@ function sccToggleClusterChips(idx) {
   }
 }
 
-function sccClusterChipClick(symbol) {
+function sccClusterChipClick(symbol, e) {
   if (!symbol) return;
+  if (e && (e.ctrlKey || e.metaKey || e.altKey)) {
+    const url = 'https://in.tradingview.com/chart/fZ5fwxUh/?symbol=NSE:' + encodeURIComponent(symbol);
+    window.open(url, '_blank');
+    return;
+  }
+  const sUpper = symbol.toUpperCase().replace('.NS', '');
+  const sccChartPane = document.getElementById('scc-pane-chart');
+  if (sccChartPane && typeof sccTab === 'function') {
+    sccTab('chart');
+    if (typeof sccChartRenderPanel === 'function') sccChartRenderPanel(0, sUpper);
+    if (typeof sccWatchlistRender === 'function') sccWatchlistRender();
+    if (typeof showChartToast === 'function') showChartToast(`📊 Loaded <b>${sUpper}</b> in Chart`, '#2dd4bf');
+    return;
+  }
+  if (typeof openMaximizedChart === 'function') {
+    openMaximizedChart(sUpper);
+    return;
+  }
   const url = 'https://in.tradingview.com/chart/fZ5fwxUh/?symbol=NSE:' + encodeURIComponent(symbol);
   window.open(url, '_blank');
 }
+window.sccClusterChipClick = sccClusterChipClick;
 
 function sccCopyClusterTv(idx) {
   const c = _sccFilteredClusters[idx];
@@ -10547,9 +11364,9 @@ function sccRenderDashboardWidget(data) {
       topSecEl.innerHTML = top5.map((s, idx) => {
         const scoreCol = s.score >= 60 ? 'var(--lime)' : (s.score >= 40 ? 'var(--yellow)' : 'var(--red)');
         const rankBadge = idx === 0 ? '<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--yellow);background:rgba(250,204,21,0.12);border:1px solid rgba(250,204,21,0.3);padding:1px 5px;border-radius:3px;">#1</span>' :
-                          idx === 1 ? '<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--teal);background:rgba(45,212,191,0.12);border:1px solid rgba(45,212,191,0.3);padding:1px 5px;border-radius:3px;">#2</span>' :
-                          idx === 2 ? '<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--teal);background:rgba(45,212,191,0.12);border:1px solid rgba(45,212,191,0.3);padding:1px 5px;border-radius:3px;">#3</span>' :
-                          `<span style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--dim);background:var(--bg);border:1px solid var(--border);padding:1px 5px;border-radius:3px;">#${idx + 1}</span>`;
+          idx === 1 ? '<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--teal);background:rgba(45,212,191,0.12);border:1px solid rgba(45,212,191,0.3);padding:1px 5px;border-radius:3px;">#2</span>' :
+            idx === 2 ? '<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--teal);background:rgba(45,212,191,0.12);border:1px solid rgba(45,212,191,0.3);padding:1px 5px;border-radius:3px;">#3</span>' :
+              `<span style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--dim);background:var(--bg);border:1px solid var(--border);padding:1px 5px;border-radius:3px;">#${idx + 1}</span>`;
         const stagePill = s.stage ? `<span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.3);font-family:var(--mono)">${s.stage}</span>` : '';
         const shortName = (typeof SRT_SHORT !== 'undefined' && SRT_SHORT[s.sector]) ? SRT_SHORT[s.sector] : s.sector;
         return `
@@ -10584,9 +11401,9 @@ function sccRenderDashboardWidget(data) {
       const top3 = clusters.slice(0, 3);
       topClustEl.innerHTML = top3.map((c, idx) => {
         const rankBadge = idx === 0 ? '<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--yellow);background:rgba(250,204,21,0.12);border:1px solid rgba(250,204,21,0.3);padding:1px 5px;border-radius:3px;">#1</span>' :
-                          idx === 1 ? '<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--teal);background:rgba(45,212,191,0.12);border:1px solid rgba(45,212,191,0.3);padding:1px 5px;border-radius:3px;">#2</span>' :
-                          '<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--teal);background:rgba(45,212,191,0.12);border:1px solid rgba(45,212,191,0.3);padding:1px 5px;border-radius:3px;">#3</span>';
-        
+          idx === 1 ? '<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--teal);background:rgba(45,212,191,0.12);border:1px solid rgba(45,212,191,0.3);padding:1px 5px;border-radius:3px;">#2</span>' :
+            '<span style="font-family:var(--mono);font-size:10px;font-weight:800;color:var(--teal);background:rgba(45,212,191,0.12);border:1px solid rgba(45,212,191,0.3);padding:1px 5px;border-radius:3px;">#3</span>';
+
         const topStocks = (c.stocks || []).slice(0, 4);
         const chipsHtml = topStocks.map(s => {
           const chipColor = s.is52w ? 'var(--teal)' : (s.is1m ? '#34d399' : 'var(--text)');
@@ -10816,7 +11633,7 @@ async function triggerHomePageSync(btn, isSilent = false) {
       const fData = await fResp.json();
       if (fData && fData.success) fundaCount = fData.total || 0;
     }
-  } catch (eFunda) {}
+  } catch (eFunda) { }
 
   try {
     const storeResp = await fetch('exact_quarterly_financials.json?t=' + Date.now());
@@ -10825,7 +11642,7 @@ async function triggerHomePageSync(btn, isSilent = false) {
       window.EXACT_QUARTERLY_DATA = updatedStore;
       fundaCount = Object.keys(updatedStore).length;
     }
-  } catch (eStore) {}
+  } catch (eStore) { }
 
   try {
     const rResp = await fetch('radar_fundamentals.json?t=' + Date.now());
@@ -10834,16 +11651,19 @@ async function triggerHomePageSync(btn, isSilent = false) {
       window.RADAR_FUNDAMENTALS = updatedRadar;
       if (!fundaCount) fundaCount = Object.keys(updatedRadar).length;
     }
-  } catch (eRadar) {}
+  } catch (eRadar) { }
 
   // 4. Trigger cloud sync if configured
   if (typeof pushToCloud === 'function') {
-    try { pushToCloud(); } catch (eCloud) {}
+    try { pushToCloud(); } catch (eCloud) { }
   }
 
-  // 5. Refresh open watchlists if visible
+  // 5. Refresh open watchlists and scan tight setups
+  if (typeof sccScanTightStocks === 'function') {
+    try { sccScanTightStocks(); } catch (eTight) { }
+  }
   if (typeof sccWatchlistRender === 'function') {
-    try { sccWatchlistRender(); } catch (eWl) {}
+    try { sccWatchlistRender(); } catch (eWl) { }
   }
 
   if (textEl) textEl.textContent = '✓ Synced!';
@@ -10891,7 +11711,7 @@ if (document.readyState === 'loading') {
 
 
 // ── CROSS-TAB REAL-TIME WATCHLIST & SHORTLIST SYNCHRONIZATION ──
-window.addEventListener('storage', function(e) {
+window.addEventListener('storage', function (e) {
   if (e.key === '_sccWatchlists' || e.key === '_sccSymbolFlags' || e.key === '_sccActiveWatchlist' || e.key === 'nse_shortlist_stocks' || e.key === '_sccWatchlistsUpdatedAt') {
     if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
     if (typeof sccWlRenderTabs === 'function') sccWlRenderTabs();
@@ -10902,7 +11722,7 @@ window.addEventListener('storage', function(e) {
   }
 });
 
-window.addEventListener('focus', function() {
+window.addEventListener('focus', function () {
   if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
   if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
   if (typeof updateMaxChartShortlistButton === 'function') updateMaxChartShortlistButton();

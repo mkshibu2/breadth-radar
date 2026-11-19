@@ -1,4 +1,3 @@
-v
 <!DOCTYPE html>
 <html lang="en">
 
@@ -18,7 +17,7 @@ v
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@600;700;800&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="index.css?v=3.0.7">
+  <link rel="stylesheet" href="index.css?v=3.1.2">
   <script>
     (function () {
       var m = localStorage.getItem('tj_color_mode') || 'carbon';
@@ -269,7 +268,8 @@ v
               <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
               <polyline points="16 7 22 7 22 13"></polyline>
             </svg>
-            Chart Studio
+            <span class="btn-text-full">Chart Studio</span>
+            <span class="btn-text-short" style="display:none;">Chart</span>
           </button>
           <button class="hdr-sync-btn" id="hdr-sync-btn" onclick="triggerHomePageSync(this)"
             title="1-Click Sync: Fetch latest stock quotes &amp; quarterly fundamentals">
@@ -279,7 +279,8 @@ v
               <polyline points="1 20 1 14 7 14"></polyline>
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
             </svg>
-            <span id="hdr-sync-text">Sync Data</span>
+            <span id="hdr-sync-text"><span class="btn-text-full">Sync Data</span><span class="btn-text-short"
+                style="display:none;">Sync</span></span>
           </button>
           <button class="cp-btn" onclick="openControlPanel()"
             title="Open Control Panel — EOD Data Entry &amp; Settings">
@@ -290,7 +291,8 @@ v
               <rect x="3" y="14" width="7" height="7" rx="1" />
               <rect x="14" y="14" width="7" height="7" rx="1" />
             </svg>
-            Control Panel
+            <span class="btn-text-full">Control Panel</span>
+            <span class="btn-text-short" style="display:none;">Panel</span>
           </button>
           <div class="sync-status" onclick="showSetup()" title="Cloud sync settings">
             <div class="sync-dot" id="sync-dot"></div>
@@ -1299,7 +1301,7 @@ v
   <script src="screener_stocks.js"></script>
   <script src="radar_fundamentals.js"></script>
   <script src="radar_themes.js"></script>
-  <script src="index.js?v=3.0.7"></script>
+  <script src="index.js?v=3.1.2"></script>
 
   <div id="sector-drill-overlay"
     style="display:none;position:fixed;inset:0;background:rgba(3,3,5,.85);z-index:5000;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)"
@@ -1669,22 +1671,31 @@ v
         </div>
         <div id="max-chart-table-container"
           style="flex-shrink:0;background:var(--bg3);border-top:1px solid var(--border);"></div>
-        <!-- TradingView Precise Coordinates Editor Modal -->
+        <!-- TradingView Precise Coordinates & Style Settings Modal -->
         <div id="tv-coords-dialog"
-          style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99999;background:#1e222d;border:1px solid #363c4e;border-radius:8px;box-shadow:0 20px 48px rgba(0,0,0,0.85);width:320px;color:#f0f3fa;font-family:-apple-system,BlinkMacSystemFont,'Trebuchet MS',sans-serif;padding:16px;">
+          style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99999;background:#1e222d;border:1px solid #363c4e;border-radius:10px;box-shadow:0 20px 48px rgba(0,0,0,0.85);width:380px;max-width:92vw;color:#f0f3fa;font-family:-apple-system,BlinkMacSystemFont,'Trebuchet MS',sans-serif;padding:16px;">
           <div
-            style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid #2a2e39;padding-bottom:8px;">
-            <span id="tv-coords-title" style="font-weight:700;font-size:12px;color:#f0f3fa;">Edit Coordinates</span>
+            style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:4px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span id="tv-coords-title" style="font-weight:600;font-size:15px;color:#f0f3fa;">Price range</span>
+              <span style="color:#787b86;font-size:13px;cursor:pointer;">✎</span>
+            </div>
             <button onclick="closeCoordsDialog()"
-              style="background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;padding:0 4px;">✕</button>
+              style="background:none;border:none;color:#868993;font-size:16px;cursor:pointer;padding:2px 6px;">✕</button>
           </div>
-          <div id="tv-coords-fields" style="display:flex;flex-direction:column;gap:10px;font-size:11px;"></div>
+          <div id="tv-coords-fields" style="display:flex;flex-direction:column;gap:10px;font-size:12px;"></div>
           <div
-            style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;border-top:1px solid #2a2e39;padding-top:12px;">
-            <button onclick="closeCoordsDialog()"
-              style="background:#2a2e39;border:none;color:#d1d4dc;padding:6px 12px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">Cancel</button>
-            <button onclick="applyDrawingCoordinates()"
-              style="background:#2962ff;border:none;color:#ffffff;padding:6px 14px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">Apply</button>
+            style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;border-top:1px solid #2a2e39;padding-top:14px;">
+            <button type="button"
+              onclick="if(typeof showChartToast==='function')showChartToast('Template saved as default', '#22c55e')"
+              style="background:#2a2e39;border:1px solid #363c4e;color:#d1d4dc;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;">Template
+              ⌄</button>
+            <div style="display:flex;gap:8px;">
+              <button type="button" onclick="closeCoordsDialog()"
+                style="background:#2a2e39;border:none;color:#d1d4dc;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Cancel</button>
+              <button type="button" onclick="applyDrawingCoordinates()"
+                style="background:#f0f3fa;border:none;color:#131722;padding:6px 18px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">Ok</button>
+            </div>
           </div>
         </div>
       </div>
@@ -2975,7 +2986,8 @@ v
           <div class="about-logo" style="font-size:18px;letter-spacing:1px;"><span style="color:#f59e0b">M.</span>RADAR
             <span
               style="font-size:11px;color:var(--text-dim);font-weight:600;letter-spacing:2px;margin-left:4px;">MARKET
-              RADAR</span></div>
+              RADAR</span>
+          </div>
           <div class="about-tagline" style="margin-top:2px;">See the Market. Find Your Edge. · Built for the Indian
             swing trader</div>
         </div>
