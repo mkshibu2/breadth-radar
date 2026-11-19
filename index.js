@@ -3,6 +3,16 @@ var _chartDataSource = 'yf'; // 'yf' | 'dhan'
 var _maxLwChart = null;
 var _maxLwPriceSeries = null;
 var _maxLwResizeObserver = null;
+var _sectorStocksCache = null;
+var _n500CsvCache = null;
+var _filterStocksCache = null;
+var LS_SECTOR_STOCKS = 'nse_sector_stocks_v1';
+var LS_N500_CSV = 'nse_n500csv_v1';
+var LS_FILTER_STOCKS_CSV = 'nse_filter_stocks_csv_v1';
+var _sccClustersCache = [];
+var _sccFilteredClusters = [];
+var _sccUniverseStocks = [];
+var _sccClusterExpandedMap = {};
 
 
 function showChartToast(msg, color = '#2962ff') {
@@ -950,7 +960,8 @@ window.updateMaxChartShortlistButton = updateMaxChartShortlistButton;
 // ── MAIN WATCHLIST DIRECT INTEGRATION & TOGGLE ────────────────────
 function sccIsValidWatchlist(name) {
   if (!name) return false;
-  if (name === 'Main' || name === 'Shortlist' || name === 'Themes' || name === 'THEMES' || name === 'Clusters' || name === 'CLUSTERS' || name === 'VCP') return true;
+  const nUpper = name.toUpperCase().trim();
+  if (nUpper === 'MAIN' || nUpper === 'SHORTLIST' || nUpper === 'THEMES' || nUpper === 'CLUSTERS' || nUpper === 'TIGHT' || nUpper === 'VCP') return true;
   if (name.startsWith('__flag_') || name.startsWith('__flage_')) return true;
   return !!(_sccWatchlists && _sccWatchlists[name]);
 }
@@ -970,8 +981,20 @@ function sccSyncWatchlistsFromStorage() {
         if (!_sccWatchlists["Main"] || !Array.isArray(_sccWatchlists["Main"])) {
           _sccWatchlists["Main"] = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT'];
         }
-        if (_sccActiveWatchlist && !_sccActiveWatchlist.startsWith('__flag_') && _sccActiveWatchlist !== 'VCP' && _sccActiveWatchlist !== 'Clusters' && _sccActiveWatchlist !== 'Shortlist') {
-          _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+        const actUpper = (_sccActiveWatchlist || '').toUpperCase();
+        const isSmartTab = actUpper === 'VCP' || actUpper === 'THEMES' || actUpper === 'CLUSTERS' || actUpper === 'TIGHT' || actUpper === 'SHORTLIST' || _sccActiveWatchlist.startsWith('__flag_') || _sccActiveWatchlist.startsWith('__flage_');
+        if (_sccActiveWatchlist && !isSmartTab) {
+          const actUpper = (_sccActiveWatchlist || '').toUpperCase();
+    const isSmartTab = actUpper === 'VCP' || actUpper === 'THEMES' || actUpper === 'CLUSTERS' || actUpper === 'TIGHT' || actUpper === 'SHORTLIST';
+    if (!isSmartTab) { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; }
+    else if (actUpper === 'TIGHT') { _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || [])); }
+    else if (actUpper === 'SHORTLIST') { if (typeof getShortlistSet === 'function') _sccWatchlistSymbols = Array.from(getShortlistSet()); }
+        } else if (actUpper === 'TIGHT') {
+          _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || []));
+        } else if (actUpper === 'THEMES' || actUpper === 'CLUSTERS') {
+          if (typeof sccGetClustersWatchlistItems === 'function') _sccWatchlistSymbols = sccGetClustersWatchlistItems().flatSymbols;
+        } else if (actUpper === 'SHORTLIST') {
+          if (typeof getShortlistSet === 'function') _sccWatchlistSymbols = Array.from(getShortlistSet());
         }
       }
     }
@@ -2496,7 +2519,7 @@ function sccWlRenderTabs() {
         </div>
       `;
     } else if (name === 'Tight' || name === 'TIGHT') {
-      const tightCount = (_sccTightSymbolsCache && _sccTightSymbolsCache.length) || 0;
+      const tightCount = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols().length : ((_sccTightSymbolsCache && _sccTightSymbolsCache.length) || 0));
       html += `
         <div onclick="sccWlSwitchTab('Tight'); if(typeof updateMaxChartSidebarWatchlist==='function')updateMaxChartSidebarWatchlist();" 
              draggable="true"
@@ -2600,7 +2623,7 @@ function sccEnableTabsDragScroll(tabsEl) {
 }
 function sccWlSwitchTab(name) {
   if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
-  _sccActiveWatchlist = name; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null; _sccWlIsBreadthSorted = false; _sccWlMaxLoaded = 40; if (name === 'VCP') { _sccWatchlistSymbols = []; } else if (name === 'Themes' || name === 'Clusters') { window._sccClustersStockLimit = 40; _sccWatchlistSymbols = []; } else if (name === 'Tight' || name === 'TIGHT') { _sccWatchlistSymbols = _sccTightSymbolsCache || []; if (!_sccTightSymbolsCache || !_sccTightSymbolsCache.length) { if (typeof sccScanTightStocks === 'function') sccScanTightStocks(); } } else if (name === 'Shortlist') { _sccWatchlistSymbols = Array.from(getShortlistSet()); } else if (name.startsWith('__flag_')) { const color = name.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else { _sccWatchlistSymbols = _sccWatchlists[name] || []; }
+  _sccActiveWatchlist = name; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null; _sccWlIsBreadthSorted = false; _sccWlMaxLoaded = 40; if (name === 'VCP') { _sccWatchlistSymbols = []; } else if (name === 'Themes' || name === 'Clusters') { window._sccClustersStockLimit = 40; _sccWatchlistSymbols = []; } else if (name === 'Tight' || name === 'TIGHT') { _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || [])); if (!_sccTightSymbolsCache || !_sccTightSymbolsCache.length) { if (typeof sccScanTightStocks === 'function') sccScanTightStocks(); } } else if (name === 'Shortlist') { _sccWatchlistSymbols = Array.from(getShortlistSet()); } else if (name.startsWith('__flag_')) { const color = name.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else { _sccWatchlistSymbols = _sccWatchlists[name] || []; }
   sccWlRenderTabs(); sccWatchlistRender(); sccWatchlistFetchAll();
   if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
   if (_sccChartLayout === 'watchlist') sccChartRebuildGrid();
@@ -2627,25 +2650,37 @@ window.sccWlToggleCluster = sccWlToggleCluster;
 let _sccClustersThemeLimit = 30;
 window._sccClustersThemeLimit = _sccClustersThemeLimit;
 
-// ── TIGHT BASE SCANNER (Stocks with 3+ Tight Candles or Right-Side Consolidation Box) ──
-const _sccTightDefaultSeed = ['ASIANPAINT', 'BEL', 'HAL', 'BHEL', 'NTPC', 'TRENT', 'DIXON', 'PERSISTENT', 'OFSS', 'BOSCHLTD', 'COFORGE', 'ITC', 'HDFCBANK', 'ICICIBANK'];
+// ── TIGHT BASE SCANNER (Strictly Filtered From Active Outperforming Themes WL Only) ──
+const _sccTightDefaultSeed = ['GROWW', 'MOTILALOFS', 'ANGELONE', 'DLF', 'LODHA', 'PHOENIXLTD', 'PRESTIGE', 'SBIN', 'PNB', 'BANKBARODA', 'OFSS', 'BOSCHLTD', 'GAIL', 'PETRONET'];
 let _sccTightSymbolsCache = [..._sccTightDefaultSeed];
 let _sccTightDetailsMap = {
-  'ASIANPAINT': { symbol: 'ASIANPAINT', company: 'Asian Paints Ltd.', price: 2550.0, change: 0.5, tightCount: 4, badgeText: '4T', badgeType: 'tight', theme: 'Paints & Specialty Chemicals' },
-  'BEL': { symbol: 'BEL', company: 'Bharat Electronics Ltd.', price: 295.4, change: 1.2, tightCount: 10, badgeText: '10T', badgeType: 'tight', theme: 'Aerospace & Defense' },
-  'HAL': { symbol: 'HAL', company: 'Hindustan Aeronautics Ltd.', price: 4120.0, change: -0.4, tightCount: 5, badgeText: '5T', badgeType: 'tight', theme: 'Aerospace & Defense' },
-  'BHEL': { symbol: 'BHEL', company: 'Bharat Heavy Electricals', price: 228.0, change: 0.8, tightCount: 2, badgeText: '5D 4.8%', badgeType: 'box', theme: 'Power & Capital Goods' },
-  'NTPC': { symbol: 'NTPC', company: 'NTPC Limited', price: 382.5, change: 0.4, tightCount: 8, badgeText: '8T', badgeType: 'tight', theme: 'Power & Capital Goods' },
-  'TRENT': { symbol: 'TRENT', company: 'Trent Ltd.', price: 6510.0, change: 1.8, tightCount: 1, badgeText: '3D 3.7%', badgeType: 'box', theme: 'Retail & Consumer' },
-  'DIXON': { symbol: 'DIXON', company: 'Dixon Technologies Ltd.', price: 15420.0, change: 0.6, tightCount: 2, badgeText: '5D 4.9%', badgeType: 'box', theme: 'Electronics & EMS' },
-  'PERSISTENT': { symbol: 'PERSISTENT', company: 'Persistent Systems Ltd.', price: 5640.0, change: -0.2, tightCount: 8, badgeText: '8T', badgeType: 'tight', theme: 'IT Software' },
-  'OFSS': { symbol: 'OFSS', company: 'Oracle Financial Services', price: 11450.0, change: 1.1, tightCount: 10, badgeText: '10T', badgeType: 'tight', theme: 'IT Software' },
-  'BOSCHLTD': { symbol: 'BOSCHLTD', company: 'Bosch Limited', price: 34800.0, change: 0.3, tightCount: 7, badgeText: '7T', badgeType: 'tight', theme: 'Auto Ancillaries' },
-  'COFORGE': { symbol: 'COFORGE', company: 'Coforge Ltd.', price: 7920.0, change: 0.9, tightCount: 2, badgeText: '3D 3.6%', badgeType: 'box', theme: 'IT Software' },
-  'ITC': { symbol: 'ITC', company: 'ITC Limited', price: 478.2, change: 0.2, tightCount: 3, badgeText: '3T', badgeType: 'tight', theme: 'FMCG' },
-  'HDFCBANK': { symbol: 'HDFCBANK', company: 'HDFC Bank Ltd.', price: 1745.0, change: 0.6, tightCount: 8, badgeText: '8T', badgeType: 'tight', theme: 'Private Banks' },
-  'ICICIBANK': { symbol: 'ICICIBANK', company: 'ICICI Bank Ltd.', price: 1260.0, change: 0.8, tightCount: 6, badgeText: '6T', badgeType: 'tight', theme: 'Private Banks' }
+  'GROWW': { symbol: 'GROWW', company: 'Billionbrains Garage (Groww)', price: 168.5, change: 1.4, tightCount: 5, badgeText: '5T', badgeType: 'tight', theme: 'Investment Banking & Broking' },
+  'MOTILALOFS': { symbol: 'MOTILALOFS', company: 'Motilal Oswal Financial', price: 924.0, change: 0.8, tightCount: 4, badgeText: '4T', badgeType: 'tight', theme: 'Investment Banking & Broking' },
+  'ANGELONE': { symbol: 'ANGELONE', company: 'Angel One Ltd.', price: 2840.0, change: 1.1, tightCount: 2, badgeText: '3D 3.2%', badgeType: 'box', theme: 'Investment Banking & Broking' },
+  'DLF': { symbol: 'DLF', company: 'DLF Limited', price: 835.0, change: 0.7, tightCount: 6, badgeText: '6T', badgeType: 'tight', theme: 'Real Estate' },
+  'LODHA': { symbol: 'LODHA', company: 'Macrotech Developers (Lodha)', price: 1210.0, change: 1.5, tightCount: 3, badgeText: '3T', badgeType: 'tight', theme: 'Real Estate' },
+  'PHOENIXLTD': { symbol: 'PHOENIXLTD', company: 'The Phoenix Mills Ltd.', price: 1680.0, change: 0.4, tightCount: 2, badgeText: '5D 4.2%', badgeType: 'box', theme: 'Real Estate' },
+  'PRESTIGE': { symbol: 'PRESTIGE', company: 'Prestige Estates Projects', price: 1740.0, change: 1.2, tightCount: 4, badgeText: '4T', badgeType: 'tight', theme: 'Real Estate' },
+  'SBIN': { symbol: 'SBIN', company: 'State Bank of India', price: 818.0, change: 0.5, tightCount: 5, badgeText: '5T', badgeType: 'tight', theme: 'PSU Banks' },
+  'PNB': { symbol: 'PNB', company: 'Punjab National Bank', price: 104.2, change: 0.9, tightCount: 7, badgeText: '7T', badgeType: 'tight', theme: 'PSU Banks' },
+  'BANKBARODA': { symbol: 'BANKBARODA', company: 'Bank of Baroda', price: 248.5, change: 0.3, tightCount: 3, badgeText: '3T', badgeType: 'tight', theme: 'PSU Banks' },
+  'OFSS': { symbol: 'OFSS', company: 'Oracle Financial Services', price: 11450.0, change: 1.1, tightCount: 8, badgeText: '8T', badgeType: 'tight', theme: 'Software Products' },
+  'BOSCHLTD': { symbol: 'BOSCHLTD', company: 'Bosch Limited', price: 34800.0, change: 0.3, tightCount: 4, badgeText: '4T', badgeType: 'tight', theme: 'Auto Ancilaries' },
+  'GAIL': { symbol: 'GAIL', company: 'GAIL (India) Limited', price: 198.0, change: 0.6, tightCount: 2, badgeText: '3D 3.5%', badgeType: 'box', theme: 'Gas Distribution' },
+  'PETRONET': { symbol: 'PETRONET', company: 'Petronet LNG Ltd.', price: 342.0, change: 0.2, tightCount: 5, badgeText: '5T', badgeType: 'tight', theme: 'Gas Distribution' }
 };
+
+// Helper: strictly enforce that Tight WL only returns symbols that belong to active Outperforming Themes
+function sccGetTightSymbols() {
+  const clusterRes = (typeof sccGetClustersWatchlistItems === 'function') ? sccGetClustersWatchlistItems() : null;
+  const themeSymbolsSet = new Set((clusterRes && clusterRes.flatSymbols ? clusterRes.flatSymbols : []).map(s => s.toUpperCase()));
+  if (themeSymbolsSet.size > 0 && Array.isArray(_sccTightSymbolsCache)) {
+    return _sccTightSymbolsCache.filter(sym => themeSymbolsSet.has(sym.toUpperCase()));
+  }
+  return _sccTightSymbolsCache || [];
+}
+window.sccGetTightSymbols = sccGetTightSymbols;
+
 try {
   const savedTightSyms = localStorage.getItem('_sccTightSymbolsCache');
   if (savedTightSyms) {
@@ -2670,20 +2705,26 @@ async function sccScanTightStocks() {
       if (typeof sccComputeClusters === 'function') sccComputeClusters();
     }
 
-    // 1. Gather all candidate stocks from qualifying Themes and universe leaders near highs
+    // 1. Gather candidate stocks STRICTLY & EXCLUSIVELY from qualifying Themes WL
     const clusterRes = (typeof sccGetClustersWatchlistItems === 'function') ? sccGetClustersWatchlistItems() : null;
     let candidateSyms = [];
+    const themeBySymbol = {};
     if (clusterRes && Array.isArray(clusterRes.flatSymbols) && clusterRes.flatSymbols.length > 0) {
       candidateSyms = [...clusterRes.flatSymbols];
-    }
-    if (Array.isArray(_sccUniverseStocks) && _sccUniverseStocks.length > 0) {
-      const topUniv = _sccUniverseStocks
-        .filter(s => (s.dist_high_1m_pct != null && s.dist_high_1m_pct <= 9.0) && (!s.sma_200 || s.price >= s.sma_200))
-        .map(s => s.symbol.toUpperCase());
-      candidateSyms = [...candidateSyms, ...topUniv];
+      if (Array.isArray(clusterRes.items)) {
+        let curTheme = '';
+        clusterRes.items.forEach(it => {
+          if (it.type === 'header') {
+            curTheme = it.clusterName || (it.label || '').replace(/^#\d+\s*/, '').trim();
+          } else if (it.type === 'stock' && it.symbol) {
+            themeBySymbol[it.symbol.toUpperCase()] = curTheme || it.theme || '';
+          }
+        });
+      }
     }
 
-    const uniqueSyms = [...new Set(candidateSyms)].slice(0, 100);
+    // STRICT THEME-ONLY RULE: No stocks outside the active Themes WL are permitted
+    const uniqueSyms = [...new Set(candidateSyms)].slice(0, 150);
     if (!uniqueSyms.length) {
       _sccTightScanning = false;
       return;
@@ -2772,7 +2813,7 @@ async function sccScanTightStocks() {
 
             const meta = (typeof findStockMetadata === 'function') ? findStockMetadata(sUpper) : {};
             const themeLookup = window.RADAR_THEMES || {};
-            const themeName = themeLookup[sUpper] || meta.industry || '';
+            const themeName = themeBySymbol[sUpper] || themeLookup[sUpper] || meta.theme || meta.industry || 'Leading Theme';
 
             const resItem = {
               symbol: sUpper,
@@ -2798,7 +2839,10 @@ async function sccScanTightStocks() {
 
     // Sort: highest tightCount first, then lowest avgRange / box3
     tightResults.sort((a, b) => (b.tightCount - a.tightCount) || (a.avgRange - b.avgRange));
-    _sccTightSymbolsCache = tightResults.map(r => r.symbol);
+    
+    // Strict theme filter: ensure symbols strictly belong to active Themes WL
+    const themeSet = new Set(uniqueSyms.map(s => s.toUpperCase()));
+    _sccTightSymbolsCache = tightResults.map(r => r.symbol).filter(sym => themeSet.has(sym.toUpperCase()));
 
     try {
       localStorage.setItem('_sccTightSymbolsCache', JSON.stringify(_sccTightSymbolsCache));
@@ -2806,7 +2850,7 @@ async function sccScanTightStocks() {
     } catch(e) {}
 
     if (_sccActiveWatchlist === 'Tight' || _sccActiveWatchlist === 'TIGHT') {
-      _sccWatchlistSymbols = _sccTightSymbolsCache;
+      _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : _sccTightSymbolsCache);
       if (typeof sccWatchlistRender === 'function') sccWatchlistRender();
       if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
     }
@@ -2933,7 +2977,7 @@ function sccWatchlistRender() {
     flatSymbols = clusterRes.flatSymbols;
     _sccWatchlistSymbols = flatSymbols;
   } else if (_sccActiveWatchlist === 'Tight' || _sccActiveWatchlist === 'TIGHT') {
-    flatSymbols = _sccTightSymbolsCache || [];
+    flatSymbols = (typeof sccGetTightSymbols === 'function') ? sccGetTightSymbols() : (_sccTightSymbolsCache || []);
     if (!flatSymbols.length && !_sccTightScanning) {
       if (typeof sccScanTightStocks === 'function') sccScanTightStocks();
     }
@@ -2963,8 +3007,8 @@ function sccWatchlistRender() {
   const countEl = document.getElementById('scc-wl-count'); if (countEl) countEl.innerText = `${_sccWatchlistSymbols.length} items`; const rowsContainer = document.getElementById('scc-wl-rows'); if (!rowsContainer) return; if (watchlistItems.length === 0) {
     rowsContainer.innerHTML = `
       <div style="color:var(--dim); padding:24px 16px; text-align:center; font-size:11px;">
-        ${_sccTightScanning ? '⚡ Scanning Themes for stocks with 5+ tight candles...' : 'Watch list is empty.'}
-        ${!_sccTightScanning && (_sccActiveWatchlist === 'Tight' || _sccActiveWatchlist === 'TIGHT') ? '<div style="margin-top:8px;"><button onclick="sccScanTightStocks()" class="topbar-btn" style="font-size:10px;padding:4px 10px;cursor:pointer;font-weight:700;">⟳ Scan Themes Now</button></div>' : ''}
+        ${_sccTightScanning ? '⚡ Scanning active Themes for tight candles (3T+) & consolidations...' : 'No tight setups found in the active Outperforming Themes.'}
+        ${!_sccTightScanning && (_sccActiveWatchlist === 'Tight' || _sccActiveWatchlist === 'TIGHT') ? '<div style="margin-top:8px;"><button onclick="sccScanTightStocks()" class="topbar-btn" style="font-size:10px;padding:4px 10px;cursor:pointer;font-weight:700;">⟳ Scan Outperforming Themes Now</button></div>' : ''}
       </div>
     `; return;
   }
@@ -3341,7 +3385,11 @@ function sccWatchlistSetFlag(symbol, color) {
     const hasSymbols = Object.keys(_sccSymbolFlags).some(s => _sccSymbolFlags[s] === activeColor);
     if (!hasSymbols) {
       _sccActiveWatchlist = Object.keys(_sccWatchlists)[0] || "Main";
-      _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+      const actUpper = (_sccActiveWatchlist || '').toUpperCase();
+    const isSmartTab = actUpper === 'VCP' || actUpper === 'THEMES' || actUpper === 'CLUSTERS' || actUpper === 'TIGHT' || actUpper === 'SHORTLIST';
+    if (!isSmartTab) { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; }
+    else if (actUpper === 'TIGHT') { _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || [])); }
+    else if (actUpper === 'SHORTLIST') { if (typeof getShortlistSet === 'function') _sccWatchlistSymbols = Array.from(getShortlistSet()); }
       localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
     }
   }
@@ -3398,7 +3446,11 @@ function sccWatchlistRemoveSymbol(symbol) {
     const hasSymbols = Object.keys(_sccSymbolFlags).some(s => _sccSymbolFlags[s] === color);
     if (!hasSymbols) {
       _sccActiveWatchlist = Object.keys(_sccWatchlists)[0] || "Main";
-      _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+      const actUpper = (_sccActiveWatchlist || '').toUpperCase();
+    const isSmartTab = actUpper === 'VCP' || actUpper === 'THEMES' || actUpper === 'CLUSTERS' || actUpper === 'TIGHT' || actUpper === 'SHORTLIST';
+    if (!isSmartTab) { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; }
+    else if (actUpper === 'TIGHT') { _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || [])); }
+    else if (actUpper === 'SHORTLIST') { if (typeof getShortlistSet === 'function') _sccWatchlistSymbols = Array.from(getShortlistSet()); }
       localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
     }
     sccSaveWatchlistsLocalAndSync();
@@ -3778,11 +3830,23 @@ function mergeCloudWatchlists(cloudWls, cloudFlags) {
     _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main";
     localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
   }
-  if (_sccActiveWatchlist.startsWith('__flag_')) {
-    const color = _sccActiveWatchlist.replace('__flag_', '');
+  const actUpper = (_sccActiveWatchlist || '').toUpperCase();
+  const isSmartTab = actUpper === 'VCP' || actUpper === 'THEMES' || actUpper === 'CLUSTERS' || actUpper === 'TIGHT' || actUpper === 'SHORTLIST' || _sccActiveWatchlist.startsWith('__flag_') || _sccActiveWatchlist.startsWith('__flage_');
+  if (_sccActiveWatchlist.startsWith('__flag_') || _sccActiveWatchlist.startsWith('__flage_')) {
+    const color = _sccActiveWatchlist.replace(/^__flag[e]?_/, '');
     _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
-  } else if (_sccActiveWatchlist !== 'VCP') {
-    _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+  } else if (!isSmartTab) {
+    const actUpper = (_sccActiveWatchlist || '').toUpperCase();
+    const isSmartTab = actUpper === 'VCP' || actUpper === 'THEMES' || actUpper === 'CLUSTERS' || actUpper === 'TIGHT' || actUpper === 'SHORTLIST';
+    if (!isSmartTab) { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; }
+    else if (actUpper === 'TIGHT') { _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || [])); }
+    else if (actUpper === 'SHORTLIST') { if (typeof getShortlistSet === 'function') _sccWatchlistSymbols = Array.from(getShortlistSet()); }
+  } else if (actUpper === 'TIGHT') {
+    _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || []));
+  } else if (actUpper === 'THEMES' || actUpper === 'CLUSTERS') {
+    if (typeof sccGetClustersWatchlistItems === 'function') _sccWatchlistSymbols = sccGetClustersWatchlistItems().flatSymbols;
+  } else if (actUpper === 'SHORTLIST') {
+    if (typeof getShortlistSet === 'function') _sccWatchlistSymbols = Array.from(getShortlistSet());
   }
   _sccWlSelectedSymbols = [];
   _sccWlLastSelectedSymbol = null;
@@ -5367,100 +5431,6 @@ async function forcePushMpm() {
 function mpmRenderAll() { const days = mpmLoad(); mpmRenderHero(days); mpmRenderTable(days); renderMarketCycle(); ddcRender(); }
 function bsrRenderAll() { const trades = bsrLoad(); bsrRenderHero(trades); bsrRenderTable(trades); bsrRenderChart(); renderRPG(); renderMarketSummary(); renderMarketCycle(); bsrUpdateModeUI(); }
 function openControlPanel(tab) { const overlay = document.getElementById('cp-overlay'); if (!overlay) return; overlay.classList.add('open'); cpSwitchTab(tab || 'eod'); const el = document.getElementById('entry-today'); if (el) el.textContent = todayISO(); cpRefreshSyncState(); if (tab === 'past') renderPastSeedList(); }
-function closeControlPanel() { const overlay = document.getElementById('cp-overlay'); if (overlay) overlay.classList.remove('open'); }
-function cpSwitchTab(tab) {
-  ['eod', 'past', 'scanner', 'sync', 'dhan'].forEach(t => {
-    const tb = document.getElementById('cp-tab-' + t);
-    const sc = document.getElementById('cp-sec-' + t);
-    if (tb) tb.classList.toggle('active', t === tab);
-    if (sc) sc.classList.toggle('active', t === tab);
-  });
-  if (tab === 'past') renderPastSeedList();
-  if (tab === 'sync') cpRefreshSyncState();
-  if (tab === 'scanner') cpRefreshScannerState();
-}
-
-const LS_GH_PAT = 'nse_gh_pat_v1';
-function getGhToken() { return lsGet(LS_GH_PAT) || ''; }
-function saveGhToken() {
-  const inp = document.getElementById('gh-token-input');
-  if (!inp) return;
-  const val = inp.value.trim();
-  if (!val) { alert('Please enter a GitHub Personal Access Token.'); return; }
-  lsSet(LS_GH_PAT, val);
-  cpRefreshScannerState();
-  setupFlash('GitHub Token Saved', 'var(--teal)');
-}
-function clearGhToken() {
-  if (!confirm('Remove GitHub token from this device?')) return;
-  lsDel(LS_GH_PAT);
-  const inp = document.getElementById('gh-token-input');
-  if (inp) inp.value = '';
-  cpRefreshScannerState();
-  setupFlash('GitHub Token Cleared', 'var(--yellow)');
-}
-function cpRefreshScannerState() {
-  const token = getGhToken();
-  const inp = document.getElementById('gh-token-input');
-  const statusEl = document.getElementById('gh-token-status');
-  if (inp && token) inp.value = token;
-  if (statusEl) {
-    if (token) {
-      statusEl.innerHTML = `<span style="color:var(--lime);font-weight:600">✓ Token saved (${token.substring(0, 4)}••••${token.slice(-4)})</span>`;
-    } else {
-      statusEl.innerHTML = `<span style="color:var(--dim)">Token: Not configured</span>`;
-    }
-  }
-}
-
-let _scanPollInterval = null;
-let _scanStartTime = null;
-
-async function cpTriggerScan() {
-  cpSwitchTab('scanner');
-
-  const progressBox = document.getElementById('scan-progress-box');
-  const progressTitle = document.getElementById('scan-progress-title');
-  const progressMsg = document.getElementById('scan-progress-msg');
-  const timerEl = document.getElementById('scan-timer');
-  const linksEl = document.getElementById('scan-result-links');
-  const spinnerEl = document.getElementById('scan-spinner');
-  const startBtn = document.getElementById('btn-start-scan');
-  const quickBtn = document.getElementById('btn-quick-scan');
-
-  const token = getGhToken();
-  if (!token) {
-    if (progressBox) progressBox.style.display = 'block';
-    if (progressTitle) {
-      progressTitle.textContent = 'GitHub Token Required for 1-Click Scan';
-      progressTitle.style.color = 'var(--yellow)';
-    }
-    if (progressMsg) {
-      progressMsg.innerHTML = 'Enter a GitHub Personal Access Token below to trigger scans directly with 1 click, or <a href="https://github.com/mkshibu2/breadth-radar/actions/workflows/update_screener.yaml" target="_blank" style="color:var(--accent);font-weight:700">Open GitHub Actions ↗</a> to run manually.';
-    }
-    const inp = document.getElementById('gh-token-input');
-    if (inp) inp.focus();
-    return;
-  }
-
-  if (_scanPollInterval) clearInterval(_scanPollInterval);
-
-  if (progressBox) progressBox.style.display = 'block';
-  if (linksEl) linksEl.style.display = 'none';
-  if (spinnerEl) spinnerEl.style.display = 'inline-block';
-  if (startBtn) startBtn.disabled = true;
-  if (quickBtn) quickBtn.disabled = true;
-
-  _scanStartTime = Date.now();
-  const updateTimer = () => {
-    if (timerEl && _scanStartTime) {
-      const elapsed = Math.round((Date.now() - _scanStartTime) / 1000);
-      const m = Math.floor(elapsed / 60);
-      const s = elapsed % 60;
-      timerEl.textContent = (m > 0 ? `${m}m ` : '') + `${s}s`;
-    }
-  };
-  updateTimer();
   const timerInterval = setInterval(updateTimer, 1000);
 
   if (progressTitle) {
@@ -5500,7 +5470,7 @@ async function cpTriggerScan() {
           });
           if (!runsRes.ok) return;
           const runsData = await runsRes.json();
-                    const runs = runsData.workflow_runs || [];
+          const runs = runsData.workflow_runs || [];
 
           let activeRun = runs.find(r => {
             const createdAt = new Date(r.created_at).getTime();
@@ -5928,7 +5898,7 @@ document.addEventListener('keydown', e => {
     }
     // Note: Never call closeMaximizedChart() on Escape!
   }
-}); const LS_SECTOR_STOCKS = 'nse_sector_stocks_v1'; const LS_N500_CSV = 'nse_n500csv_v1'; const LS_FILTER_STOCKS_CSV = 'nse_filter_stocks_csv_v1'; let _sectorStocksCache = null; let _n500CsvCache = null; let _filterStocksCache = null; let _sdCurrentSector = ''; let _sdCurrentData = null; let _sdActiveTab = 'vcp'; let _sdSearchQuery = ''; let _sdChartsSource = 'vcp'; let _sdChartsPage = 0; let _sdChartsPerPage = 9; let _sdChartsInterval = 'D'; let _sdChartsLayout = 'auto'; let _sdAutoChartsLimit = 12; let _sdChartType = 'volume_candles'; let _sdSortBy = 'score'; let _sdMaximizedChartSymbol = null; let _sdMaximizedChartCompany = null; let _sdMaximizedChartStats = '';
+}); var LS_SECTOR_STOCKS = 'nse_sector_stocks_v1'; var LS_N500_CSV = 'nse_n500csv_v1'; var LS_FILTER_STOCKS_CSV = 'nse_filter_stocks_csv_v1'; var _sectorStocksCache = null; var _n500CsvCache = null; var _filterStocksCache = null; let _sdCurrentSector = ''; let _sdCurrentData = null; let _sdActiveTab = 'vcp'; let _sdSearchQuery = ''; let _sdChartsSource = 'vcp'; let _sdChartsPage = 0; let _sdChartsPerPage = 9; let _sdChartsInterval = 'D'; let _sdChartsLayout = 'auto'; let _sdAutoChartsLimit = 12; let _sdChartType = 'volume_candles'; let _sdSortBy = 'score'; let _sdMaximizedChartSymbol = null; let _sdMaximizedChartCompany = null; let _sdMaximizedChartStats = '';
 // ── Max chart TV-style interaction state ──
 let _maxCandles = null;          // full candle array for the maximized chart
 let _maxNiftyCandles = null;
@@ -5950,7 +5920,11 @@ let _maxBaDragStartBw = 8;
 let _sccChartSymbols = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK']; let _sccChartTimeframes = ['D', 'W', '1H', 'M']; let _sccChartLayout = '1'; let _sccChartType = 'volume_candles'; let _sccSyncSymbols = false; let _sccChartZoomFactors = [1.0, 1.0, 1.0, 1.0]; let _sccWatchlists = { "Main": ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT'] }; let _sccActiveWatchlist = "Main"; let _sccWatchlistSymbols = _sccWatchlists["Main"]; let _sccWatchlistData = {}; let _sccSymbolFlags = {}; let _sccShowWatchlist = true; let _sccWlSelectedSymbols = []; let _sccWlLastSelectedSymbol = null; let _sccWlCollapsedSectors = new Set(); let _sccWlOriginalOrders = {}; let _sccWlIsBreadthSorted = false; let _sccDraggedTabName = null; let _sccDraggedRowSymbol = null; let _sccTouchActive = false; let _sccTouchTimeout = null; let _sccTouchDraggedSym = null; let _sccTouchStartY = 0; let _sccTouchDraggedEl = null; let _sccFlagHoldTimeout = null; let _sccFlagHoldActive = false; try {
   const savedSyms = localStorage.getItem('_sccChartSymbols'); if (savedSyms) _sccChartSymbols = JSON.parse(savedSyms); const savedTfs = localStorage.getItem('_sccChartTimeframes'); if (savedTfs) _sccChartTimeframes = JSON.parse(savedTfs); const savedLayout = localStorage.getItem('_sccChartLayout'); if (savedLayout) _sccChartLayout = savedLayout; if (window.innerWidth <= 600 && _sccChartLayout !== 'watchlist') _sccChartLayout = '1'; const savedType = localStorage.getItem('_sccChartType'); if (savedType) _sccChartType = savedType; const savedSync = localStorage.getItem('_sccSyncSymbols'); if (savedSync) _sccSyncSymbols = JSON.parse(savedSync); const savedZooms = localStorage.getItem('_sccChartZoomFactors'); if (savedZooms) _sccChartZoomFactors = JSON.parse(savedZooms); const savedWls = localStorage.getItem('_sccWatchlists'); if (savedWls) _sccWatchlists = JSON.parse(savedWls); const savedActiveWl = localStorage.getItem('_sccActiveWatchlist'); if (savedActiveWl) _sccActiveWatchlist = savedActiveWl; const savedFlags = localStorage.getItem('_sccSymbolFlags'); if (savedFlags) _sccSymbolFlags = JSON.parse(savedFlags); if (_sccActiveWatchlist && _sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else {
     if (!sccIsValidWatchlist(_sccActiveWatchlist)) { const keys = Object.keys(_sccWatchlists || {}); _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main"; if (keys.length === 0) { _sccWatchlists["Main"] = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT']; } }
-    _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || [];
+    const actUpper = (_sccActiveWatchlist || '').toUpperCase();
+    const isSmartTab = actUpper === 'VCP' || actUpper === 'THEMES' || actUpper === 'CLUSTERS' || actUpper === 'TIGHT' || actUpper === 'SHORTLIST';
+    if (!isSmartTab) { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; }
+    else if (actUpper === 'TIGHT') { _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || [])); }
+    else if (actUpper === 'SHORTLIST') { if (typeof getShortlistSet === 'function') _sccWatchlistSymbols = Array.from(getShortlistSet()); }
   }
   const savedShowWl = localStorage.getItem('_sccShowWatchlist'); if (savedShowWl !== null) _sccShowWatchlist = savedShowWl === 'true';
 } catch (e) { console.warn("Failed to load Chart tab / Watchlist localStorage preferences", e); }
@@ -10160,7 +10134,7 @@ function updateMaxChartSidebarWatchlist() {
           </div>
         `;
       } else if (name === 'Tight' || name === 'TIGHT') {
-        const tightCount = (_sccTightSymbolsCache && _sccTightSymbolsCache.length) || 0;
+        const tightCount = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols().length : ((_sccTightSymbolsCache && _sccTightSymbolsCache.length) || 0));
         tabsHtml += `
           <div onclick="sccWlSwitchTab('Tight'); updateMaxChartSidebarWatchlist();"
                draggable="true"
@@ -10265,7 +10239,7 @@ function updateMaxChartSidebarWatchlist() {
     flatSymbols = clusterRes.flatSymbols;
     _sccWatchlistSymbols = flatSymbols;
   } else if (_sccActiveWatchlist === 'Tight' || _sccActiveWatchlist === 'TIGHT') {
-    flatSymbols = _sccTightSymbolsCache || [];
+    flatSymbols = (typeof sccGetTightSymbols === 'function') ? sccGetTightSymbols() : (_sccTightSymbolsCache || []);
     if (!flatSymbols.length && !_sccTightScanning) {
       if (typeof sccScanTightStocks === 'function') sccScanTightStocks();
     }
@@ -10380,14 +10354,20 @@ function updateMaxChartSidebarWatchlist() {
     const showRemoveBtn = _sccActiveWatchlist !== 'VCP' && _sccActiveWatchlist !== 'Clusters';
     const removeBtnHtml = showRemoveBtn ? '<button class="tv-max-wl-del-btn" onclick="event.stopPropagation(); sccWatchlistRemoveSymbol(\'' + sUpper + '\');" title="Remove ' + sUpper + ' from ' + _sccActiveWatchlist + '" style="background:none;border:none;color:#787b86;cursor:pointer;font-size:15px;font-weight:bold;line-height:1;padding:0 0 0 5px;opacity:0.35;transition:opacity 0.15s,color 0.15s;outline:none;" onmouseover="this.style.opacity=\'1\';this.style.color=\'#ef4444\';" onmouseout="this.style.opacity=\'0.35\';this.style.color=\'#787b86\';">×</button>' : '';
 
+    const themeName = item.theme || tightDet.theme || '';
     rowsHtml += '<div class="tv-max-wl-row ' + (isCur ? 'active' : '') + '" onclick="maxChartOnStockSelected(\'' + sUpper + '\')">' +
       '<div style="display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;">' +
       '<svg width="8" height="12" viewBox="0 0 10 18" fill="' + flagColor + '" onclick="sccWatchlistOpenFlagPopup(this, \'' + sUpper + '\'); event.stopPropagation();" style="cursor:pointer;flex-shrink:0;" title="Change flag color">' +
       '<path d="M0 0h10v18l-5-4-5 4V0z"/>' +
       '</svg>' +
+      '<div style="display:flex;flex-direction:column;min-width:0;overflow:hidden;">' +
+      '<div style="display:flex;align-items:center;gap:4px;">' +
       '<span style="font-weight:700;' + (isCur ? 'color:#2962ff;' : '') + '">' + sUpper + '</span>' +
       leaderBadge +
       tightBadge +
+      '</div>' +
+      (themeName ? '<span style="font-size:9px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + themeName + '">' + themeName + '</span>' : '') +
+      '</div>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">' +
       '<span style="color:#94a3b8;">' + price + '</span>' +
@@ -10398,6 +10378,12 @@ function updateMaxChartSidebarWatchlist() {
   });
 
   rowsEl.innerHTML = rowsHtml;
+  try {
+    const curActiveRow = rowsEl.querySelector('.tv-max-wl-row.active');
+    if (curActiveRow) {
+      curActiveRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  } catch (e) { }
 }
 window.updateMaxChartSidebarWatchlist = updateMaxChartSidebarWatchlist;
 
@@ -10912,10 +10898,10 @@ window.applyDrawingCoordinates = applyDrawingCoordinates;
 // ⭐ SECTOR COMMAND: FRESH HIGHS & BREAKOUT CLUSTERS ENGINE (Manas Arora Model)
 // ==============================================================================
 
-let _sccClustersCache = [];
-let _sccFilteredClusters = [];
-let _sccUniverseStocks = [];
-let _sccClusterExpandedMap = {};
+var _sccClustersCache = [];
+var _sccFilteredClusters = [];
+var _sccUniverseStocks = [];
+var _sccClusterExpandedMap = {};
 
 function sccEscapeHtml(str) {
   if (!str) return '';
@@ -10995,6 +10981,17 @@ function sccComputeClusters() {
   });
 
   _sccClustersCache = clusters;
+  // Strictly filter cached tight symbols so only active Themes WL stocks remain
+  try {
+    const clusterRes = (typeof sccGetClustersWatchlistItems === 'function') ? sccGetClustersWatchlistItems() : null;
+    if (clusterRes && Array.isArray(clusterRes.flatSymbols) && clusterRes.flatSymbols.length > 0) {
+      const themeSet = new Set(clusterRes.flatSymbols.map(s => s.toUpperCase()));
+      if (Array.isArray(_sccTightSymbolsCache)) {
+        _sccTightSymbolsCache = _sccTightSymbolsCache.filter(s => themeSet.has(s.toUpperCase()));
+        localStorage.setItem('_sccTightSymbolsCache', JSON.stringify(_sccTightSymbolsCache));
+      }
+    }
+  } catch (eFilter) {}
   setTimeout(() => {
     if (typeof sccScanTightStocks === 'function' && (!_sccTightSymbolsCache || !_sccTightSymbolsCache.length)) {
       sccScanTightStocks();
