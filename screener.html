@@ -1118,7 +1118,16 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      max-width: 130px;
+      max-width: 180px;
+    }
+
+    #chart-active-sector {
+      font-size: 10px;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 220px;
     }
 
     .chart-price {
@@ -1228,6 +1237,68 @@
       background: #070d18;
       overflow: hidden;
       min-height: 280px;
+    }
+
+    /* On-Chart Sector & Industry Classification Badge */
+    .chart-onchart-meta {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      z-index: 10;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(9, 15, 28, 0.84);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 5px;
+      padding: 3px 10px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      pointer-events: none;
+      user-select: none;
+      font-family: var(--sans);
+      max-width: calc(100% - 120px);
+    }
+
+    .chart-onchart-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    .chart-onchart-k {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--text-dim);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .chart-onchart-v-sec {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--cyan);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chart-onchart-v-ind {
+      font-size: 11px;
+      font-weight: 600;
+      color: #e2e8f0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chart-onchart-sep {
+      color: rgba(255, 255, 255, 0.25);
+      font-size: 10px;
+      flex-shrink: 0;
     }
 
     /* Quarterly Fundamental Box (MarketSmith / Minervini style) */
@@ -1911,6 +1982,20 @@
         max-width: 100px;
       }
 
+      .chart-onchart-meta {
+        top: 6px;
+        left: 8px;
+        padding: 2px 7px;
+        gap: 5px;
+        max-width: calc(100% - 60px);
+      }
+
+      .chart-onchart-v-sec,
+      .chart-onchart-v-ind {
+        font-size: 10px;
+        max-width: 110px;
+      }
+
       .chart-sub-bar {
         padding: 4px 8px;
         font-size: 10px;
@@ -2214,9 +2299,9 @@
         <div class="chart-title-group">
           <a class="chart-sym" id="chart-active-sym" href="#" onclick="openActiveStockPersonalTv();return false;"
             title="Click to open in Personal TradingView Chart Studio Layout">DIVISLAB</a>
-          <div style="display:flex;flex-direction:column;gap:1px;overflow:hidden;">
+          <div style="display:flex;flex-direction:column;gap:1px;overflow:hidden;min-width:0;">
             <span class="chart-comp" id="chart-active-comp">Divi's Laboratories Limited</span>
-            <span style="font-size:10px;color:var(--text-muted);" id="chart-active-sector">Health technology</span>
+            <span id="chart-active-sector" title="Sector: Health Technology | Industry: Pharmaceuticals: Major">Health Technology • Pharmaceuticals: Major</span>
           </div>
           <div style="display:flex;align-items:baseline;gap:6px;margin-left:6px;">
             <span class="chart-price" id="chart-active-price">₹11,696.00</span>
@@ -2306,6 +2391,19 @@
       <!-- MAIN CHART AREA -->
       <div class="chart-body-container" id="chart-body-container">
         <div id="chart-lw-container" style="width:100%;height:100%;"></div>
+
+        <!-- On-Chart Sector & Industry Classification Badge Overlay -->
+        <div id="chart-onchart-meta-box" class="chart-onchart-meta" title="Sector: Health Technology | Industry: Pharmaceuticals: Major">
+          <div class="chart-onchart-tag">
+            <span class="chart-onchart-k">SECTOR:</span>
+            <span class="chart-onchart-v-sec" id="chart-onchart-sector">Health Technology</span>
+          </div>
+          <span class="chart-onchart-sep">•</span>
+          <div class="chart-onchart-tag">
+            <span class="chart-onchart-k">INDUSTRY:</span>
+            <span class="chart-onchart-v-ind" id="chart-onchart-industry">Pharmaceuticals: Major</span>
+          </div>
+        </div>
 
         <!-- Quarterly Fundamental Box (MarketSmith / Minervini style) -->
         <div id="chart-quarterly-box" class="chart-quarterly-box" style="display:none;"
@@ -4523,8 +4621,25 @@
       chgEl.textContent = (isUp ? '+' : '') + stock.change_pct.toFixed(2) + '%';
       chgEl.style.color = isUp ? 'var(--lime)' : 'var(--red)';
 
+      var sec = (stock.sector && stock.sector.trim()) ? stock.sector.trim() : 'NSE Equities';
+      var ind = (stock.industry && stock.industry.trim()) ? stock.industry.trim() : '';
+
       var sectEl = document.getElementById('chart-active-sector');
-      if (sectEl) sectEl.textContent = stock.sector || 'NSE Equities';
+      if (sectEl) {
+        var headerLabel = (ind && ind !== 'General' && ind !== sec) ? (sec + ' • ' + ind) : sec;
+        sectEl.textContent = headerLabel;
+        sectEl.title = 'Sector: ' + sec + (ind ? ' | Industry: ' + ind : '');
+      }
+
+      var onChartBox = document.getElementById('chart-onchart-meta-box');
+      var onChartSec = document.getElementById('chart-onchart-sector');
+      var onChartInd = document.getElementById('chart-onchart-industry');
+      if (onChartBox && onChartSec && onChartInd) {
+        onChartSec.textContent = sec;
+        onChartInd.textContent = ind || 'General';
+        onChartBox.style.display = 'inline-flex';
+        onChartBox.title = 'Sector: ' + sec + ' | Industry: ' + (ind || 'General');
+      }
 
       renderQuarterlyBox(stock);
       updateChartShortlistButton();
