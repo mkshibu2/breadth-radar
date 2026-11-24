@@ -4136,7 +4136,25 @@ async function jbUpdate(key, bin, payload) { const body = JSON.stringify(payload
 function setSyncStatus(state, label) { const dot = document.getElementById('sync-dot'); const lbl = document.getElementById('sync-label'); const btn = dot && dot.closest('.sync-status'); if (dot) dot.className = 'sync-dot ' + (state || ''); if (lbl) lbl.textContent = label || 'Cloud Sync'; if (btn) { btn.title = state === 'warn' ? 'Click to configure cloud sync' : state === 'ok' ? 'Synced — click to manage' : state === 'err' ? 'Sync error — click to fix' : 'Cloud sync settings'; btn.style.borderColor = state === 'warn' ? 'rgba(224,123,58,.4)' : state === 'ok' ? 'rgba(61,214,140,.3)' : state === 'err' ? 'rgba(224,84,84,.3)' : ''; } }
 function showSetup() { openControlPanel('sync'); }
 function setupFlash(msg, color) { cfgBanner(msg, color === 'var(--lime)' ? 'ok' : color === 'var(--red)' ? 'err' : color === 'var(--orange)' ? 'warn' : 'inf', 'cfg-banner'); }
-function buildPayload() { const now = Date.now(); return { _pushedAt: now, records: loadLocal(), bsr: bsrLoad(), bsrMode: bsrGetMode(), bsrModeUpdatedAt: parseInt(lsGet('_bsrModeUpdatedAt') || '0', 10), bsrQuick: bsrQuickLoad(), mpm: mpmLoad(), ftd: ftdLoad(), srt: srtLoad(), sccWatchlists: _sccWatchlists, sccSymbolFlags: _sccSymbolFlags, sccWatchlistsUpdatedAt: parseInt(localStorage.getItem('_sccWatchlistsUpdatedAt') || '0', 10) || now }; }
+function buildPayload() {
+  const now = Date.now();
+  const fyersCreds = (typeof fyersGetCreds === 'function') ? fyersGetCreds() : null;
+  return {
+    _pushedAt: now,
+    records: loadLocal(),
+    bsr: bsrLoad(),
+    bsrMode: bsrGetMode(),
+    bsrModeUpdatedAt: parseInt(lsGet('_bsrModeUpdatedAt') || '0', 10),
+    bsrQuick: bsrQuickLoad(),
+    mpm: mpmLoad(),
+    ftd: ftdLoad(),
+    srt: srtLoad(),
+    sccWatchlists: _sccWatchlists,
+    sccSymbolFlags: _sccSymbolFlags,
+    sccWatchlistsUpdatedAt: parseInt(localStorage.getItem('_sccWatchlistsUpdatedAt') || '0', 10) || now,
+    fyersCreds: fyersCreds || null
+  };
+}
 
 function mergeCloudWatchlists(cloudWls, cloudFlags, cloudUpdatedAt = 0) {
   if (!cloudWls || typeof cloudWls !== 'object') return;
@@ -5209,6 +5227,18 @@ async function seedHistoricalData() {
       const payload = await jbRead(cfg.key, cfg.bin); const isLegacy = Array.isArray(payload); const cRec = isLegacy ? payload : (payload.records || []); saveLocal(mergeByKey(cRec, loadLocal(), r => r.date)); const cBsr = isLegacy ? [] : (payload.bsr || []); bsrSave(mergeByKey(cBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); if (!isLegacy && payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt); if (!isLegacy && payload.bsrQuick) mergeBsrQuick(payload.bsrQuick); const cMpm = isLegacy ? [] : (payload.mpm || []); mpmSave(mergeByKey(cMpm, mpmLoad(), d => d.date)); const cFtd = isLegacy ? [] : (payload.ftd || []); const mergedFtd = mergeByKey(cFtd, ftdLoad(), d => d.date).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ensureOctoberDataSeeded(); ftdScanUndercutAll(); if (!cFtd.some(d => d.date === '2026-10-13' && d.type === 'followthrough') || cFtd.some(d => d.date === '2026-10-14' && d.type === 'attempt') || cFtd.filter(d => d.date === '2026-10-09').length > 1) { setTimeout(() => pushToCloud().catch(() => { }), 1000); } const cSrt = isLegacy ? [] : (payload.srt || []); srtSave(mergeByKey(cSrt, srtLoad(), s => s.id)); const cloudWatchlists = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccWatchlists : null; const cloudSymbolFlags = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccSymbolFlags : null; const cloudWatchlistsUpdatedAt = (typeof payload === 'object' && !Array.isArray(payload)) ? (payload.sccWatchlistsUpdatedAt || payload._pushedAt || 0) : 0; if (cloudWatchlists) {
         mergeCloudWatchlists(cloudWatchlists, cloudSymbolFlags, cloudWatchlistsUpdatedAt);
       }
+      if (typeof payload === 'object' && !Array.isArray(payload) && payload.fyersCreds && payload.fyersCreds.token) {
+        const localFyers = (typeof fyersGetCreds === 'function') ? fyersGetCreds() : null;
+        const cloudFyers = payload.fyersCreds;
+        const cloudSavedAt = cloudFyers.savedAt || payload._pushedAt || 0;
+        const localSavedAt = localFyers ? (localFyers.savedAt || 0) : 0;
+        if (cloudSavedAt >= localSavedAt || !localFyers || !localFyers.token) {
+          if (typeof fyersSaveCreds === 'function') {
+            fyersSaveCreds(cloudFyers.appId || '', cloudFyers.token || '', cloudFyers.secretId || '');
+            console.log('[Fyers Cloud Init] Adopted Fyers credentials from cloud.');
+          }
+        }
+      }
       const recCount = loadLocal().length; const bsrCount = bsrLoad().length; const mpmCount = mpmLoad().length; const srtCount = srtLoad().filter(s => s.id !== 'NIFTY50').length; setSyncStatus('ok', 'Synced'); console.log('[Init] Synced — Records:', recCount, 'BSR:', bsrCount, 'MPM:', mpmCount);
     } catch (e) { setSyncStatus('warn', 'Offline · Local data shown'); console.warn('[Init] Cloud pull failed:', e.message); }
   }
@@ -6230,6 +6260,32 @@ async function pullFromCloudSilently() {
     if (cloudWatchlists) {
       mergeCloudWatchlists(cloudWatchlists, cloudSymbolFlags, cloudWatchlistsUpdatedAt);
     }
+    // Pull Fyers credentials & active token if present in cloud
+    if (typeof raw === 'object' && !Array.isArray(raw) && raw.fyersCreds && raw.fyersCreds.token) {
+      const localFyers = (typeof fyersGetCreds === 'function') ? fyersGetCreds() : null;
+      const cloudFyers = raw.fyersCreds;
+      const cloudSavedAt = cloudFyers.savedAt || raw._pushedAt || 0;
+      const localSavedAt = localFyers ? (localFyers.savedAt || 0) : 0;
+      if (cloudSavedAt >= localSavedAt || !localFyers || !localFyers.token) {
+        if (typeof fyersSaveCreds === 'function') {
+          fyersSaveCreds(cloudFyers.appId || '', cloudFyers.token || '', cloudFyers.secretId || '');
+          console.log('[Fyers Cloud Pull] Adopted fresh Fyers credentials from cloud.');
+        }
+      }
+    }
+    // Pull Fyers credentials & active token if present in cloud
+    if (typeof raw === 'object' && !Array.isArray(raw) && raw.fyersCreds && raw.fyersCreds.token) {
+      const localFyers = (typeof fyersGetCreds === 'function') ? fyersGetCreds() : null;
+      const cloudFyers = raw.fyersCreds;
+      const cloudSavedAt = cloudFyers.savedAt || raw._pushedAt || 0;
+      const localSavedAt = localFyers ? (localFyers.savedAt || 0) : 0;
+      if (cloudSavedAt >= localSavedAt || !localFyers || !localFyers.token) {
+        if (typeof fyersSaveCreds === 'function') {
+          fyersSaveCreds(cloudFyers.appId || '', cloudFyers.token || '', cloudFyers.secretId || '');
+          console.log('[Fyers Cloud Sync] Adopted fresh Fyers credentials from cloud.');
+        }
+      }
+    }
     setSyncStatus('ok', 'Synced');
     renderAll();
     bsrRenderAll();
@@ -6540,9 +6596,18 @@ function _maxFetchAndDraw(symbol) {
       isW ? '1wk' :
         isM ? '1mo' : '1d';
 
-  // Primary Candle Fetcher (Dhan HQ API or Yahoo Finance)
+  // Primary Candle Fetcher (FYERS API, Dhan HQ API or Yahoo Finance)
   let candlePromise;
-  if (_chartDataSource === 'dhan') {
+  if (_chartDataSource === 'fyers') {
+    candlePromise = fetchFyersCandles(symbol, range, interval).catch(err => {
+      console.warn('[Fyers API] Could not load candles:', err.message);
+      showChartToast('⚡ Fyers: ' + err.message + ' (Using YF fallback)', '#f59e0b');
+      if (err.message.includes('Token') || err.message.includes('App ID') || err.message.includes('401')) {
+        openFyersConnectModal();
+      }
+      return fetchYfData(symbol, range, interval);
+    });
+  } else if (_chartDataSource === 'dhan') {
     candlePromise = fetchDhanCandles(symbol, range, interval).catch(err => {
       console.warn('[Dhan API] Could not load candles:', err.message);
       showChartToast('⚡ Dhan: ' + err.message + ' (Using YF fallback)', '#f59e0b');
@@ -9949,7 +10014,9 @@ async function maxChartRenderSubTile(tileNum, symbol) {
 
   try {
     let candles;
-    if (_chartDataSource === 'dhan') {
+    if (_chartDataSource === 'fyers') {
+      candles = await fetchFyersCandles(symbol, '1y', '1d').catch(() => fetchYfData(symbol, '1y', '1d'));
+    } else if (_chartDataSource === 'dhan') {
       candles = await fetchDhanCandles(symbol, '1y', '1d').catch(() => fetchYfData(symbol, '1y', '1d'));
     } else {
       candles = await fetchYfData(symbol, '1y', '1d');
@@ -10167,12 +10234,295 @@ function dhanQuickOAuthLogin() {
 }
 window.dhanQuickOAuthLogin = dhanQuickOAuthLogin;
 
+// ── FYERS API v3 ENGINE ──────────────────────────────────────
+const FYERS_LS_CRED = 'nse_fyers_cred_v1';
+
+function fyersGetCreds() {
+  try {
+    return JSON.parse(localStorage.getItem(FYERS_LS_CRED) || 'null');
+  } catch (e) {
+    return null;
+  }
+}
+
+function fyersSaveCreds(appId, token, secretId) {
+  const existing = fyersGetCreds() || {};
+  localStorage.setItem(FYERS_LS_CRED, JSON.stringify({
+    appId: (appId || existing.appId || '').trim(),
+    token: (token || existing.token || '').trim(),
+    secretId: (secretId !== undefined ? secretId : (existing.secretId || '')).trim(),
+    savedAt: Date.now()
+  }));
+}
+
+function openFyersConnectModal() {
+  const modal = document.getElementById('fyers-chart-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    const creds = fyersGetCreds();
+    if (creds) {
+      const appInp = document.getElementById('fyers-quick-appid');
+      const secInp = document.getElementById('fyers-quick-secretid');
+      const tokInp = document.getElementById('fyers-quick-token');
+      if (appInp && !appInp.value) appInp.value = creds.appId || '';
+      if (secInp && !secInp.value) secInp.value = creds.secretId || '';
+      if (tokInp && !tokInp.value) tokInp.value = creds.token || '';
+    }
+  }
+}
+window.openFyersConnectModal = openFyersConnectModal;
+
+function closeFyersConnectModal() {
+  const modal = document.getElementById('fyers-chart-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeFyersConnectModal = closeFyersConnectModal;
+
+// 1-Click Launch Fyers OAuth Login in browser
+function fyersOpenOAuthLogin() {
+  const appInp = document.getElementById('fyers-quick-appid');
+  const appId = appInp ? appInp.value.trim() : '';
+  if (!appId) {
+    alert('Please enter your Fyers App ID first (from the right panel of myapi.fyers.in).');
+    return;
+  }
+  const redirectUri = encodeURIComponent('https://trade.fyers.in/api-login/redirect-uri/index.html');
+  const loginUrl = `https://api-t1.fyers.in/api/v3/generate-authcode?client_id=${encodeURIComponent(appId)}&redirect_uri=${redirectUri}&response_type=code&state=mradar`;
+  window.open(loginUrl, '_blank');
+}
+window.fyersOpenOAuthLogin = fyersOpenOAuthLogin;
+
+// Exchange Auth Code or Redirect URL for full Access Token
+async function fyersExchangeAuthCode() {
+  const appInp = document.getElementById('fyers-quick-appid');
+  const secInp = document.getElementById('fyers-quick-secretid');
+  const authInp = document.getElementById('fyers-quick-authcode');
+  const btn = document.getElementById('fyers-exchange-btn');
+
+  const appId = appInp ? appInp.value.trim() : '';
+  const secretId = secInp ? secInp.value.trim() : '';
+  let authInput = authInp ? authInp.value.trim() : '';
+
+  if (!appId) {
+    alert('Please enter your App ID.');
+    return;
+  }
+  if (!secretId) {
+    alert('Please enter your Secret ID.');
+    return;
+  }
+  if (!authInput) {
+    alert('Please paste the auth_code or the redirected URL.');
+    return;
+  }
+
+  // If user pasted full redirect URL, extract auth_code
+  let code = authInput;
+  if (authInput.includes('auth_code=')) {
+    try {
+      const urlObj = new URL(authInput);
+      code = urlObj.searchParams.get('auth_code') || authInput;
+    } catch (e) {
+      const match = authInput.match(/auth_code=([^&]+)/);
+      if (match) code = decodeURIComponent(match[1]);
+    }
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating Token…'; }
+
+  let proxyFailed = false;
+  try {
+    const resp = await fetch('http://localhost:9090/fyers/validate-authcode', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ appId, secretId, authCode: code })
+    });
+
+    const data = await resp.json();
+    if (data.s === 'ok' && data.access_token) {
+      fyersSaveCreds(appId, data.access_token, secretId);
+      const tokInp = document.getElementById('fyers-quick-token');
+      if (tokInp) tokInp.value = data.access_token;
+
+      closeFyersConnectModal();
+      showChartToast('⚡ Fyers Connected Successfully! Active for 24h', '#22c55e');
+
+      _chartDataSource = 'fyers';
+      const dsSelect = document.getElementById('max-chart-datasource');
+      if (dsSelect) dsSelect.value = 'fyers';
+
+      maxChartRefresh();
+      return;
+    } else {
+      throw new Error(data.message || 'Token generation failed');
+    }
+  } catch (err) {
+    console.warn('[Fyers Proxy]:', err.message);
+    if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+      proxyFailed = true;
+    } else {
+      alert('Error from Fyers: ' + err.message + '\n\nPlease ensure your App ID and Secret ID match your Fyers App dashboard.');
+      return;
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Generate Token & Connect'; }
+  }
+
+  if (proxyFailed) {
+    alert('Local Proxy server (port 9090) is not currently running.\n\nTo connect Fyers without proxy:\n1. Run "launch_dashboard.bat" (which starts the local proxy in background), OR\n2. Run this command in terminal to generate token:\npython get_fyers_token.py ' + appId + ' ' + secretId + ' ' + code);
+  }
+}
+window.fyersExchangeAuthCode = fyersExchangeAuthCode;
+
+function fyersSaveQuickToken() {
+  const appInp = document.getElementById('fyers-quick-appid');
+  const secInp = document.getElementById('fyers-quick-secretid');
+  const tokInp = document.getElementById('fyers-quick-token');
+  const appId = appInp ? appInp.value.trim() : '';
+  const secretId = secInp ? secInp.value.trim() : '';
+  const token = tokInp ? tokInp.value.trim() : '';
+
+  if (!appId) {
+    alert('Please enter your Fyers App ID (e.g. XXXXXXXX-100)');
+    return;
+  }
+  if (!token) {
+    alert('Please enter your Fyers Access Token');
+    return;
+  }
+
+  fyersSaveCreds(appId, token, secretId);
+  closeFyersConnectModal();
+  showChartToast('⚡ Fyers API Connected! Refreshing chart…', '#22c55e');
+
+  _chartDataSource = 'fyers';
+  const dsSelect = document.getElementById('max-chart-datasource');
+  if (dsSelect) dsSelect.value = 'fyers';
+
+  maxChartRefresh();
+}
+window.fyersSaveQuickToken = fyersSaveQuickToken;
+
+// Convert raw ticker to Fyers symbol format (e.g. RELIANCE -> NSE:RELIANCE-EQ, BAGMANE.RR -> NSE:BAGMANE-RR or NSE:BAGMANE-EQ)
+function toFyersSymbol(rawSymbol) {
+  if (!rawSymbol) return 'NSE:NIFTY50-INDEX';
+  let sym = rawSymbol.toUpperCase().replace(/\.(NS|BO)$/i, '').trim();
+
+  if (sym === '^NSEI' || sym === 'NIFTY' || sym === 'NIFTY50') {
+    return 'NSE:NIFTY50-INDEX';
+  }
+  if (sym === '^NSEBANK' || sym === 'BANKNIFTY') {
+    return 'NSE:NIFTYBANK-INDEX';
+  }
+  if (sym === '^CNXIT' || sym === 'NIFTYIT') {
+    return 'NSE:NIFTYIT-INDEX';
+  }
+
+  // REITs / InvITs format handling (e.g. BAGMANE.RR -> NSE:BAGMANE-RR or NSE:BAGMANE-EQ)
+  if (sym.includes('.')) {
+    const parts = sym.split('.');
+    return `NSE:${parts[0]}-${parts[1]}`;
+  }
+  return `NSE:${sym}-EQ`;
+}
+
+// Fetch historical candlestick bars from Fyers API v3
+async function fetchFyersCandles(symbol, range, interval) {
+  const fyersSym = toFyersSymbol(symbol);
+  const creds = fyersGetCreds();
+  if (!creds || !creds.appId || !creds.token) {
+    throw new Error('Fyers App ID or Access Token missing');
+  }
+
+  // Fyers resolution: "D" for daily, "1W" for weekly, "1M" for monthly, "15" for 15m, "60" for 1H
+  let resolution = 'D';
+  if (interval === '15m') resolution = '15';
+  else if (interval === '60m' || interval === '1H') resolution = '60';
+  else if (interval === '1wk' || interval === 'W') resolution = '1W';
+  else if (interval === '1mo' || interval === 'M') resolution = '1M';
+
+  // Date range calculation (up to 5 years for daily, 100 days max chunk for intraday)
+  const toDateObj = new Date();
+  const toDate = toDateObj.toISOString().split('T')[0];
+  const fromDateObj = new Date();
+  if (resolution === '15' || resolution === '60') {
+    fromDateObj.setDate(fromDateObj.getDate() - 90); // 90 days of intraday
+  } else {
+    fromDateObj.setFullYear(fromDateObj.getFullYear() - 5); // 5 years of daily
+  }
+  const fromDate = fromDateObj.toISOString().split('T')[0];
+
+  const authHeader = `${creds.appId}:${creds.token}`;
+  const queryParams = new URLSearchParams({
+    symbol: fyersSym,
+    resolution: resolution,
+    date_format: '1',
+    range_from: fromDate,
+    range_to: toDate,
+    cont_flag: '1'
+  }).toString();
+
+  const urls = [
+    `http://localhost:9090/fyers/data/history?${queryParams}`,
+    `https://api-t1.fyers.in/data/history?${queryParams}`
+  ];
+
+  let lastErr;
+  for (const url of urls) {
+    try {
+      const resp = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!resp.ok) {
+        const errObj = await resp.json().catch(() => ({}));
+        throw new Error(errObj.message || errObj.error || (`HTTP ${resp.status}`));
+      }
+
+      const data = await resp.json();
+      if (data.s !== 'ok' || !data.candles || !data.candles.length) {
+        throw new Error(data.message || `No candles returned for ${fyersSym}`);
+      }
+
+      // Fyers candle: [timestamp, open, high, low, close, volume]
+      const candles = data.candles.map(c => ({
+        time: c[0] * 1000,
+        open: c[1],
+        high: c[2],
+        low: c[3],
+        close: c[4],
+        volume: c[5] || 0
+      }));
+
+      return candles;
+    } catch (e) {
+      lastErr = e;
+      if (url === urls[0] && (e.name === 'TypeError' || e.message.includes('CORS') || e.message.includes('Failed to fetch'))) {
+        continue; // Try direct/alternate
+      }
+      throw e;
+    }
+  }
+  throw lastErr;
+}
+
 function maxChartSetDataSource(source) {
   _chartDataSource = source;
   const dsSelect = document.getElementById('max-chart-datasource');
   if (dsSelect) dsSelect.value = source;
 
-  if (source === 'dhan') {
+  if (source === 'fyers') {
+    const creds = fyersGetCreds();
+    if (!creds || !creds.appId || !creds.token) {
+      openFyersConnectModal();
+    } else {
+      showChartToast('⚡ Connected to Fyers API (Free)', '#22c55e');
+    }
+  } else if (source === 'dhan') {
     const creds = (typeof dhanGetApiKeyCreds === 'function') ? dhanGetApiKeyCreds() : null;
     const tokenCreds = (typeof dhanGetCreds === 'function') ? dhanGetCreds() : null;
     const hasToken = (creds && creds.cachedToken) || (tokenCreds && tokenCreds.token);

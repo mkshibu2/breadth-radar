@@ -1301,7 +1301,7 @@
   <script src="screener_stocks.js"></script>
   <script src="radar_fundamentals.js"></script>
   <script src="radar_themes.js"></script>
-  <script src="index.js?v=3.1.8"></script>
+  <script src="index.js?v=3.1.9"></script>
 
   <div id="sector-drill-overlay"
     style="display:none;position:fixed;inset:0;background:rgba(3,3,5,.85);z-index:5000;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)"
@@ -1466,10 +1466,11 @@
           </select>
         </div>
 
-        <!-- Data Source select (Yahoo Finance vs Dhan HQ API) -->
+        <!-- Data Source select (Yahoo Finance vs Fyers Free API vs Dhan HQ API) -->
         <select id="max-chart-datasource" onchange="maxChartSetDataSource(this.value)" title="Chart Data Source"
           style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:28px;cursor:pointer;flex-shrink:0;">
           <option value="yf" selected>YF Data</option>
+          <option value="fyers">⚡ Fyers (Free API)</option>
           <option value="dhan">Dhan HQ (API)</option>
         </select>
 
@@ -3255,6 +3256,77 @@
     </div>
   </div>
 
+
+  <!-- Fyers Quick Connect Modal -->
+  <div id="fyers-chart-modal"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999999;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+    <div
+      style="background:#131722;border:1px solid #2a2e39;border-radius:8px;width:460px;max-width:92vw;padding:20px;box-shadow:0 12px 36px rgba(0,0,0,0.8);font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#f0f3fa;">
+      <div
+        style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid #2a2e39;padding-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">⚡</span>
+          <b style="font-size:14px;">Connect Fyers API (Free Historical &amp; Live Data)</b>
+        </div>
+        <button onclick="closeFyersConnectModal()"
+          style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:16px;">✕</button>
+      </div>
+
+      <div
+        style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:6px;padding:10px;margin-bottom:14px;font-size:11px;line-height:1.5;">
+        <div style="font-weight:700;color:#4ade80;margin-bottom:4px;">100% Free Standard API:</div>
+        <div>Includes 5 years of daily candles, 1 year of intraday candles, and full NSE REITs coverage (e.g. <b>BAGMANE</b>, <b>EMBASSY</b>) with zero subscription fees.</div>
+      </div>
+
+      <!-- Step 1: App Credentials -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div>
+          <label style="display:block;font-size:10px;font-weight:700;margin-bottom:3px;color:#d1d4dc;">
+            App ID (Client ID):
+          </label>
+          <input id="fyers-quick-appid" type="text" placeholder="e.g. XXXXXXXX-100"
+            style="width:100%;box-sizing:border-box;background:#1e222d;border:1px solid #2a2e39;color:#f0f3fa;font-size:11px;padding:6px 8px;border-radius:4px;outline:none;">
+        </div>
+        <div>
+          <label style="display:block;font-size:10px;font-weight:700;margin-bottom:3px;color:#d1d4dc;">
+            Secret ID:
+          </label>
+          <input id="fyers-quick-secretid" type="password" placeholder="From myapi.fyers.in"
+            style="width:100%;box-sizing:border-box;background:#1e222d;border:1px solid #2a2e39;color:#f0f3fa;font-size:11px;padding:6px 8px;border-radius:4px;outline:none;">
+        </div>
+      </div>
+
+      <!-- Quick 1-Click Browser Login -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid #2a2e39;border-radius:6px;padding:10px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:11px;font-weight:700;color:#38bdf8;">1-Click OAuth Login:</span>
+          <button onclick="fyersOpenOAuthLogin()"
+            style="background:#0284c7;color:#fff;border:none;padding:5px 12px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;">
+            Open Fyers Login ↗
+          </button>
+        </div>
+        <div style="font-size:10px;color:var(--dim);line-height:1.4;margin-bottom:6px;">
+          After logging in on Fyers, you will be redirected. Copy the <b>auth_code</b> (or entire redirected URL) and paste it below:
+        </div>
+        <div style="display:flex;gap:6px;">
+          <input id="fyers-quick-authcode" type="text" placeholder="Paste auth_code or full redirected URL"
+            style="flex:1;background:#1e222d;border:1px solid #2a2e39;color:#f0f3fa;font-size:11px;padding:6px 8px;border-radius:4px;outline:none;">
+          <button id="fyers-exchange-btn" onclick="fyersExchangeAuthCode()"
+            style="background:#22c55e;color:#0e1420;border:none;padding:6px 12px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">
+            Generate &amp; Connect
+          </button>
+        </div>
+      </div>
+
+      <!-- Or Manual Token Paste -->
+      <div style="font-size:10px;color:var(--dim);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;">
+        <span>Or paste existing Access Token:</span>
+        <button onclick="fyersSaveQuickToken()" style="background:none;border:none;color:#38bdf8;cursor:pointer;font-size:10px;text-decoration:underline;">Save Token</button>
+      </div>
+      <input id="fyers-quick-token" type="password" placeholder="Existing Access Token (optional)"
+        style="width:100%;box-sizing:border-box;background:#1e222d;border:1px solid #2a2e39;color:#f0f3fa;font-size:11px;padding:6px 8px;border-radius:4px;outline:none;">
+    </div>
+  </div>
 
   <!-- Dhan Quick Connect Modal -->
   <div id="dhan-chart-modal"

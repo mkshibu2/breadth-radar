@@ -8,7 +8,7 @@ const server = http.createServer((req, res) => {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, access-token, client-id');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, authorization, access-token, client-id');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
@@ -74,6 +74,65 @@ const server = http.createServer((req, res) => {
 
       sendProxyRequest(req, res, targetUrl, req.method, rawBody, headers);
     });
+    return;
+  }
+
+  // 1b. Route Fyers requests (starts with /fyers/)
+  if (parsedUrl.pathname.startsWith('/fyers/')) {
+    const targetPath = parsedUrl.pathname.replace('/fyers', ''); // remove prefix
+
+    // Handle token validation route: /fyers/validate-authcode
+    if (targetPath === '/validate-authcode') {
+      const crypto = require('crypto');
+      let bodyData = [];
+      req.on('data', chunk => bodyData.push(chunk)).on('end', () => {
+        try {
+          const { appId, secretId, authCode } = JSON.parse(Buffer.concat(bodyData).toString());
+          if (!appId || !secretId || !authCode) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ s: 'error', message: 'Missing appId, secretId or authCode' }));
+            return;
+          }
+          const rawHash = `${appId}:${secretId}`;
+          const appIdHash = crypto.createHash('sha256').update(rawHash).digest('hex');
+
+          const payload = JSON.stringify({
+            grant_type: 'authorization_code',
+            appIdHash: appIdHash,
+            code: authCode
+          });
+
+          console.log('[Fyers OAuth] Exchanging authCode for Access Token...');
+          sendProxyRequest(req, res, 'https://api-t1.fyers.in/api/v3/validate-authcode', 'POST', payload, {
+            'Content-Type': 'application/json'
+          });
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ s: 'error', message: err.message }));
+        }
+      });
+      return;
+    }
+
+    const targetUrl = `https://api-t1.fyers.in${targetPath}${parsedUrl.search || ''}`;
+    console.log(`[Fyers API] ${req.method} -> ${targetUrl}`);
+
+    const headers = {};
+    if (req.headers['authorization']) headers['Authorization'] = req.headers['authorization'];
+    if (req.headers['content-type']) headers['Content-Type'] = req.headers['content-type'];
+
+    if (req.method === 'POST' || req.method === 'PUT') {
+      let bodyData = [];
+      req.on('data', chunk => {
+        bodyData.push(chunk);
+      }).on('end', () => {
+        const rawBody = Buffer.concat(bodyData).toString();
+        sendProxyRequest(req, res, targetUrl, req.method, rawBody, headers);
+      });
+      return;
+    }
+
+    sendProxyRequest(req, res, targetUrl, req.method, null, headers);
     return;
   }
 
