@@ -7430,4 +7430,254 @@ thead th[onclick]:hover {
   }
 }
 
+/* ==============================================================================
+   ⭐ TRADINGVIEW STYLE WATCHLIST: DRAG-AND-MOVE & SECTIONS / SEPARATORS
+   ============================================================================== */
+
+/* Drop insertion indicator lines with glowing circular dot */
+.tv-wl-drop-above {
+  position: relative !important;
+}
+.tv-wl-drop-above::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #2962ff;
+  box-shadow: 0 0 8px #2962ff;
+  z-index: 40;
+  pointer-events: none;
+}
+.tv-wl-drop-above::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2962ff;
+  box-shadow: 0 0 6px #2962ff;
+  z-index: 41;
+  pointer-events: none;
+}
+
+.tv-wl-drop-below {
+  position: relative !important;
+}
+.tv-wl-drop-below::before {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #2962ff;
+  box-shadow: 0 0 8px #2962ff;
+  z-index: 40;
+  pointer-events: none;
+}
+.tv-wl-drop-below::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2962ff;
+  box-shadow: 0 0 6px #2962ff;
+  z-index: 41;
+  pointer-events: none;
+}
+
+.tv-max-wl-row.wl-dragging,
+.scc-wl-item.wl-dragging,
+.tv-wl-section-header.wl-dragging,
+.tv-wl-separator.wl-dragging {
+  opacity: 0.35 !important;
+  background: rgba(41, 98, 255, 0.12) !important;
+  border: 1px dashed #2962ff !important;
+}
+
+/* Subtle 6-dot drag handle on row hover */
+.tv-wl-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 11px;
+  letter-spacing: -1.5px;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
+  width: 14px;
+  user-select: none;
+  line-height: 1;
+}
+.tv-max-wl-row:hover .tv-wl-drag-handle,
+.scc-wl-item:hover .tv-wl-drag-handle,
+.tv-wl-section-header:hover .tv-wl-drag-handle {
+  opacity: 0.75;
+}
+.tv-wl-drag-handle:hover {
+  opacity: 1 !important;
+  color: #38bdf8 !important;
+}
+
+/* TradingView Section Header */
+.tv-wl-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: #181c27;
+  border-top: 1px solid #2a2e39;
+  border-bottom: 1px solid #2a2e39;
+  cursor: grab;
+  user-select: none;
+  transition: background 0.15s ease;
+  color: #f0f3fa;
+  min-height: 28px;
+  box-sizing: border-box;
+  margin-top: 2px;
+}
+.tv-wl-section-header:hover {
+  background: #202636;
+}
+.tv-wl-sec-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+.tv-wl-sec-arrow {
+  font-size: 8px;
+  color: #94a3b8;
+  flex-shrink: 0;
+  cursor: pointer;
+  width: 12px;
+  display: inline-block;
+  transition: transform 0.15s;
+}
+.tv-wl-sec-title {
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--teal, #2dd4bf);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tv-wl-sec-count {
+  font-size: 9px;
+  color: #787b86;
+  font-family: var(--mono, monospace);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.tv-wl-sec-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+.tv-wl-section-header:hover .tv-wl-sec-actions {
+  opacity: 1;
+}
+.tv-wl-sec-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 1px 4px;
+  border-radius: 3px;
+  transition: all 0.15s;
+  line-height: 1;
+}
+.tv-wl-sec-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+.tv-wl-sec-btn.del:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* TradingView Separator Divider Line */
+.tv-wl-separator {
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  cursor: grab;
+  user-select: none;
+  min-height: 14px;
+}
+.tv-wl-sep-line {
+  flex: 1;
+  height: 1px;
+  background: #363c4e;
+  transition: background 0.15s, height 0.15s;
+}
+.tv-wl-separator:hover .tv-wl-sep-line {
+  background: #38bdf8;
+  height: 1.5px;
+}
+.tv-wl-sep-del {
+  position: absolute;
+  right: 8px;
+  background: #1e222d;
+  border: 1px solid #363c4e;
+  color: #94a3b8;
+  font-size: 9px;
+  cursor: pointer;
+  padding: 0 4px;
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  line-height: 1.2;
+}
+.tv-wl-separator:hover .tv-wl-sep-del {
+  opacity: 1;
+}
+.tv-wl-sep-del:hover {
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+/* "+ Section" button */
+.tv-btn-add-section {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  height: 28px;
+  box-sizing: border-box;
+}
+.tv-btn-add-section:hover {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
 

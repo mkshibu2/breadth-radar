@@ -4920,18 +4920,8 @@
         .then(function (j) {
           if (!j || !j.record) return;
           var rec = j.record;
-          var cloudWls = rec.sccWatchlists || {};
-          Object.keys(wls).forEach(function (k) {
-            var list = wls[k] || [];
-            var cList = cloudWls[k] || [];
-            var merged = [].concat(list);
-            cList.forEach(function (s) {
-              if (!merged.includes(s)) merged.push(s);
-            });
-            cloudWls[k] = merged;
-          });
-          rec.sccWatchlists = cloudWls;
-          if (flags) rec.sccSymbolFlags = Object.assign({}, rec.sccSymbolFlags || {}, flags);
+          rec.sccWatchlists = wls;
+          if (flags) rec.sccSymbolFlags = flags;
           rec.sccWatchlistsUpdatedAt = Date.now();
 
           return fetch('https://api.jsonbin.io/v3/b/' + bin, {

@@ -984,11 +984,7 @@ function sccSyncWatchlistsFromStorage() {
         const actUpper = (_sccActiveWatchlist || '').toUpperCase();
         const isSmartTab = actUpper === 'VCP' || actUpper === 'THEMES' || actUpper === 'CLUSTERS' || actUpper === 'TIGHT' || actUpper === 'SHORTLIST' || _sccActiveWatchlist.startsWith('__flag_') || _sccActiveWatchlist.startsWith('__flage_');
         if (_sccActiveWatchlist && !isSmartTab) {
-          const actUpper = (_sccActiveWatchlist || '').toUpperCase();
-    const isSmartTab = actUpper === 'VCP' || actUpper === 'THEMES' || actUpper === 'CLUSTERS' || actUpper === 'TIGHT' || actUpper === 'SHORTLIST';
-    if (!isSmartTab) { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; }
-    else if (actUpper === 'TIGHT') { _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || [])); }
-    else if (actUpper === 'SHORTLIST') { if (typeof getShortlistSet === 'function') _sccWatchlistSymbols = Array.from(getShortlistSet()); }
+          _sccWatchlistSymbols = (_sccWatchlists[_sccActiveWatchlist] || []).filter(s => typeof s === 'string' && !s.startsWith('###'));
         } else if (actUpper === 'TIGHT') {
           _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || []));
         } else if (actUpper === 'THEMES' || actUpper === 'CLUSTERS') {
@@ -1029,9 +1025,10 @@ function maxChartToggleMainWl(targetSym) {
     _sccWatchlists["Main"] = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT'];
   }
 
-  const idx = _sccWatchlists["Main"].indexOf(sym);
+  const cleanList = _sccWatchlists["Main"].map(s => String(s).toUpperCase().replace('.NS', '').trim());
+  const idx = cleanList.indexOf(sym);
   if (idx !== -1) {
-    _sccWatchlists["Main"].splice(idx, 1);
+    _sccWatchlists["Main"] = _sccWatchlists["Main"].filter(s => String(s).toUpperCase().replace('.NS', '').trim() !== sym);
     showChartToast('Removed <b>' + sym + '</b> from Main Watchlist', '#f87171');
   } else {
     _sccWatchlists["Main"].push(sym);
@@ -1039,7 +1036,7 @@ function maxChartToggleMainWl(targetSym) {
   }
 
   if (_sccActiveWatchlist === 'Main') {
-    _sccWatchlistSymbols = _sccWatchlists["Main"];
+    _sccWatchlistSymbols = _sccWatchlists["Main"].filter(s => typeof s === 'string' && !s.startsWith('###'));
   }
 
   sccSaveWatchlistsLocalAndSync();
@@ -3003,7 +3000,47 @@ function sccWatchlistRender() {
     flatSymbols = Array.from(getShortlistSet());
     flatSymbols.forEach(sym => { watchlistItems.push({ type: 'stock', symbol: sym }); });
     _sccWatchlistSymbols = flatSymbols;
-  } else if (_sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); _sccWatchlistSymbols.forEach(sym => { watchlistItems.push({ type: 'stock', symbol: sym }); }); } else { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; _sccWatchlistSymbols.forEach(sym => { watchlistItems.push({ type: 'stock', symbol: sym }); }); }
+  } else if (_sccActiveWatchlist.startsWith('__flag_')) {
+    const color = _sccActiveWatchlist.replace('__flag_', '');
+    _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
+    _sccWatchlistSymbols.forEach(sym => { watchlistItems.push({ type: 'stock', symbol: sym }); });
+  } else {
+    const rawList = _sccWatchlists[_sccActiveWatchlist] || [];
+    _sccWatchlistSymbols = rawList.filter(s => typeof s === 'string' && !s.startsWith('###'));
+    let isCurrentSecCollapsed = false;
+    const secCounts = {};
+    let activeSec = null;
+    rawList.forEach(raw => {
+      if (typeof raw === 'string' && raw.startsWith('###') && raw !== '###---' && raw !== '###') {
+        activeSec = raw;
+        secCounts[activeSec] = 0;
+      } else if (activeSec && typeof raw === 'string' && !raw.startsWith('###')) {
+        secCounts[activeSec]++;
+      }
+    });
+
+    rawList.forEach(raw => {
+      if (typeof raw === 'string' && (raw === '###---' || raw === '###')) {
+        watchlistItems.push({ type: 'custom_separator', raw });
+      } else if (typeof raw === 'string' && raw.startsWith('###')) {
+        const title = raw.replace(/^###/, '');
+        const key = `${_sccActiveWatchlist}::${title}`;
+        isCurrentSecCollapsed = _sccWlCollapsedSections.has(key);
+        watchlistItems.push({
+          type: 'custom_section',
+          raw,
+          title,
+          key,
+          collapsed: isCurrentSecCollapsed,
+          count: secCounts[raw] || 0
+        });
+      } else {
+        if (!isCurrentSecCollapsed) {
+          watchlistItems.push({ type: 'stock', symbol: raw });
+        }
+      }
+    });
+  }
   const countEl = document.getElementById('scc-wl-count'); if (countEl) countEl.innerText = `${_sccWatchlistSymbols.length} items`; const rowsContainer = document.getElementById('scc-wl-rows'); if (!rowsContainer) return; if (watchlistItems.length === 0) {
     rowsContainer.innerHTML = `
       <div style="color:var(--dim); padding:24px 16px; text-align:center; font-size:11px;">
@@ -3044,6 +3081,52 @@ function sccWatchlistRender() {
       `;
       return;
     }
+    if (item.type === 'custom_separator') {
+      const rawEsc = item.raw.replace(/'/g, "\\'");
+      html += `
+        <div class="tv-wl-separator" draggable="true" data-raw-item="${rawEsc}"
+             ondragstart="sccRowDragStart(event, '${rawEsc}')"
+             ondragover="sccRowDragOver(event)"
+             ondragleave="sccRowDragLeave(event)"
+             ondrop="sccRowDrop(event, '${rawEsc}')"
+             ondragend="sccRowDragEnd(event)"
+             ontouchstart="sccRowTouchStart(event, '${rawEsc}')"
+             ontouchmove="sccRowTouchMove(event)"
+             ontouchend="sccRowTouchEnd(event)">
+          <div class="tv-wl-sep-line"></div>
+          <button class="tv-wl-sep-del" title="Delete separator" onclick="event.stopPropagation(); sccWlDeleteSection('${rawEsc}')">×</button>
+        </div>
+      `;
+      return;
+    }
+    if (item.type === 'custom_section') {
+      const rawEsc = item.raw.replace(/'/g, "\\'");
+      const keyEsc = item.key.replace(/'/g, "\\'");
+      const isCollapsed = item.collapsed;
+      html += `
+        <div class="tv-wl-section-header" draggable="true" data-raw-item="${rawEsc}"
+             ondragstart="sccRowDragStart(event, '${rawEsc}')"
+             ondragover="sccRowDragOver(event)"
+             ondragleave="sccRowDragLeave(event)"
+             ondrop="sccRowDrop(event, '${rawEsc}')"
+             ondragend="sccRowDragEnd(event)"
+             ontouchstart="sccRowTouchStart(event, '${rawEsc}')"
+             ontouchmove="sccRowTouchMove(event)"
+             ontouchend="sccRowTouchEnd(event)">
+          <div class="tv-wl-sec-left" onclick="sccWlToggleCustomSection('${keyEsc}')">
+            <span class="tv-wl-drag-handle" title="Drag to reorder section">⋮⋮</span>
+            <span class="tv-wl-sec-arrow">${isCollapsed ? '▶' : '▼'}</span>
+            <span class="tv-wl-sec-title">${item.title}</span>
+            <span class="tv-wl-sec-count">(${item.count})</span>
+          </div>
+          <div class="tv-wl-sec-actions">
+            <button class="tv-wl-sec-btn" title="Rename section" onclick="event.stopPropagation(); sccWlRenameSection('${rawEsc}')">✎</button>
+            <button class="tv-wl-sec-btn del" title="Delete section" onclick="event.stopPropagation(); sccWlDeleteSection('${rawEsc}')">✕</button>
+          </div>
+        </div>
+      `;
+      return;
+    }
     const sym = item.symbol; const sUpper = sym.toUpperCase(); const data = _sccWatchlistData[sUpper]; const isSelected = _sccWlSelectedSymbols.includes(sUpper); const isChartActive = activeSymbols.includes(sUpper); let itemBg = 'background: transparent;'; if (isSelected) { itemBg = 'background: rgba(91, 163, 245, 0.15);'; } else if (isChartActive) { itemBg = 'background: rgba(91, 163, 245, 0.05);'; }
     const borderStyle = isChartActive ? 'border-left: 3px solid var(--accent);' : 'border-left: 3px solid transparent;'; const itemPadding = isChartActive ? 'padding: 8px 12px 8px 9px;' : 'padding: 8px 12px;'; const meta = findStockMetadata(sUpper); const companyName = item.company || meta.company; const flagColorName = _sccSymbolFlags[sUpper] || 'none'; const hasFlag = flagColorName !== 'none'; const colorsMap = { red: '#ef4444', blue: '#3b82f6', green: '#22c55e', yellow: '#eab308', purple: '#a855f7', cyan: '#06b6d4', pink: '#ec4899' }; const flagColor = hasFlag ? colorsMap[flagColorName] : 'var(--dim)'; const flagClass = hasFlag ? 'wl-flag-flagged' : 'wl-flag-unflagged';
     let priceStr = '<span style="color:var(--dim)">...</span>'; let changeStr = '<span style="color:var(--dim)">...</span>';
@@ -3074,7 +3157,7 @@ function sccWatchlistRender() {
               onmouseout="this.style.opacity='0.3'; this.style.color='var(--dim)';">
         ×
       </button>
-    `: ''; const dragAttr = isRowDraggable ? `draggable="true" ondragstart="sccRowDragStart(event, '${sUpper}')" ondragover="sccRowDragOver(event)" ondrop="sccRowDrop(event, '${sUpper}')" ondragend="sccRowDragEnd(event)" ontouchstart="sccRowTouchStart(event, '${sUpper}')" ontouchmove="sccRowTouchMove(event)" ontouchend="sccRowTouchEnd(event)"` : ''; html += `
+    `: ''; const isRowDraggable = _sccActiveWatchlist !== 'VCP' && _sccActiveWatchlist !== 'Clusters' && _sccActiveWatchlist !== 'Themes'; const dragAttr = isRowDraggable ? `draggable="true" data-raw-item="${sUpper}" ondragstart="sccRowDragStart(event, '${sUpper}')" ondragover="sccRowDragOver(event)" ondragleave="sccRowDragLeave(event)" ondrop="sccRowDrop(event, '${sUpper}')" ondragend="sccRowDragEnd(event)" ontouchstart="sccRowTouchStart(event, '${sUpper}')" ontouchmove="sccRowTouchMove(event)" ontouchend="sccRowTouchEnd(event)"` : ''; const dragHandle = isRowDraggable ? `<span class="tv-wl-drag-handle" title="Drag to reorder">⋮⋮</span>` : ''; html += `
       <div class="scc-wl-item" id="scc-wl-item-${sUpper}" ${dragAttr}
            onclick="sccWlItemClick(event, '${sUpper}')" 
            oncontextmenu="sccWlItemContextMenu(event, '${sUpper}')"
@@ -3083,7 +3166,7 @@ function sccWatchlistRender() {
            onmouseout="this.style.background='${isSelected ? 'rgba(91, 163, 245, 0.15)' : (isChartActive ? 'rgba(91, 163, 245, 0.05)' : 'transparent')}'">
 
         <div style="display:flex; align-items:center; min-width:0; flex:1; padding-right:8px;">
-          
+          ${dragHandle}
           <svg class="${flagClass}" 
                onclick="sccWatchlistFlagClick(event, this, '${sUpper}')" 
                onmousedown="sccFlagPressStart(event, this, '${sUpper}')" 
@@ -3127,6 +3210,88 @@ function sccWlToggleSector(secName) {
   if (_sccWlCollapsedSectors.has(secName)) { _sccWlCollapsedSectors.delete(secName); } else { _sccWlCollapsedSectors.add(secName); }
   sccWatchlistRender();
   if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+}
+function sccWlSaveCollapsedSections() {
+  try {
+    localStorage.setItem('_sccWlCollapsedSections', JSON.stringify(Array.from(_sccWlCollapsedSections)));
+  } catch (e) { }
+}
+function sccWlToggleCustomSection(secKey) {
+  if (_sccWlCollapsedSections.has(secKey)) {
+    _sccWlCollapsedSections.delete(secKey);
+  } else {
+    _sccWlCollapsedSections.add(secKey);
+  }
+  sccWlSaveCollapsedSections();
+  sccWatchlistRender();
+  if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+}
+function sccWlPromptAddSection(targetSym) {
+  if (_sccActiveWatchlist === 'VCP' || _sccActiveWatchlist === 'Clusters' || _sccActiveWatchlist === 'Themes' || _sccActiveWatchlist === 'Tight') {
+    alert("Sections and separators are supported in custom watchlists (like Main, Shortlist, or user created lists).");
+    return;
+  }
+  const name = prompt("Enter Section Header name (e.g. LEADERS, BREAKOUTS) or enter '---' / leave blank for divider line:", "");
+  if (name === null) return;
+  const trimmed = name.trim();
+  let rawSection = '';
+  if (!trimmed || trimmed === '---' || trimmed === '-' || trimmed === '###---') {
+    rawSection = '###---';
+  } else {
+    rawSection = trimmed.startsWith('###') ? trimmed.toUpperCase() : ('###' + trimmed.toUpperCase());
+  }
+
+  if (!_sccWatchlists[_sccActiveWatchlist]) _sccWatchlists[_sccActiveWatchlist] = [];
+  const list = _sccWatchlists[_sccActiveWatchlist];
+  if (targetSym) {
+    const idx = list.indexOf(targetSym);
+    if (idx !== -1) {
+      list.splice(idx, 0, rawSection);
+    } else {
+      list.push(rawSection);
+    }
+  } else {
+    list.push(rawSection);
+  }
+
+  sccSaveWatchlistsLocalAndSync();
+  sccWatchlistRender();
+  if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+  if (typeof showChartToast === 'function') {
+    const label = rawSection === '###---' ? 'Divider separator' : rawSection.replace(/^###/, '');
+    showChartToast('➕ Added section: <b>' + label + '</b>', '#38bdf8');
+  }
+}
+function sccWlRenameSection(rawSection) {
+  if (!rawSection || !rawSection.startsWith('###')) return;
+  const oldTitle = rawSection.replace(/^###/, '');
+  const newName = prompt("Rename section header:", oldTitle);
+  if (newName === null) return;
+  const trimmed = newName.trim();
+  if (!trimmed) return;
+  const newRaw = trimmed.startsWith('###') ? trimmed.toUpperCase() : ('###' + trimmed.toUpperCase());
+  if (newRaw === rawSection) return;
+
+  const list = _sccWatchlists[_sccActiveWatchlist] || [];
+  const idx = list.indexOf(rawSection);
+  if (idx !== -1) {
+    list[idx] = newRaw;
+    sccSaveWatchlistsLocalAndSync();
+    sccWatchlistRender();
+    if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+  }
+}
+function sccWlDeleteSection(rawSection) {
+  if (!rawSection) return;
+  const list = _sccWatchlists[_sccActiveWatchlist] || [];
+  const idx = list.indexOf(rawSection);
+  if (idx !== -1) {
+    list.splice(idx, 1);
+    sccSaveWatchlistsLocalAndSync();
+    sccWatchlistRender();
+    if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+    if (typeof showChartToast === 'function') showChartToast('Removed section', '#ef4444');
+  }
 }
 function sccGetStockSector(symbol) {
   if (!symbol) return 'Other'; const sUpper = symbol.toUpperCase().replace('.NS', ''); const cachedDrill = sectorDrillGetCached(); if (cachedDrill) { const activeMap = _vcpbViewMode === 'industry' ? cachedDrill.industries : cachedDrill.sectors; if (activeMap) { for (const secName in activeMap) { const sec = activeMap[secName]; if (sec && Array.isArray(sec.stocks)) { if (sec.stocks.some(x => x.symbol && x.symbol.toUpperCase() === sUpper)) { return secName; } } } } }
@@ -3177,23 +3342,134 @@ function sccTabDrop(event, targetName) {
   }
 }
 function sccTabDragEnd(event) { event.target.style.opacity = '1'; _sccDraggedTabName = null; }
-function sccRowDragStart(event, symbol) { _sccDraggedRowSymbol = symbol.toUpperCase(); event.dataTransfer.effectAllowed = 'move'; event.currentTarget.classList.add('wl-dragging'); }
-function sccRowDragOver(event) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; }
-function sccRowDrop(event, targetSymbol) { event.preventDefault(); const dragSym = _sccDraggedRowSymbol; const targetSym = targetSymbol.toUpperCase(); if (!dragSym || dragSym === targetSym) return; sccPerformStockSwap(dragSym, targetSym); }
-function sccRowDragEnd(event) { event.currentTarget.classList.remove('wl-dragging'); _sccDraggedRowSymbol = null; }
-function sccRowTouchStart(event, symbol) { const touch = event.touches[0]; _sccTouchStartY = touch.clientY; _sccTouchDraggedSym = symbol.toUpperCase(); _sccTouchDraggedEl = event.currentTarget; _sccTouchActive = false; _sccTouchTimeout = setTimeout(() => { _sccTouchActive = true; if (_sccTouchDraggedEl) { _sccTouchDraggedEl.classList.add('wl-dragging'); } }, 250); }
+function sccRowDragStart(event, itemRaw) {
+  _sccDraggedRowSymbol = itemRaw;
+  event.dataTransfer.effectAllowed = 'move';
+  try { event.dataTransfer.setData('text/plain', itemRaw); } catch (e) { }
+  if (event.currentTarget) event.currentTarget.classList.add('wl-dragging');
+}
+function sccRowDragOver(event) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+  const target = event.currentTarget;
+  if (!target) return;
+  const rect = target.getBoundingClientRect();
+  const relY = event.clientY - rect.top;
+  const isAbove = relY < (rect.height / 2);
+  target.classList.toggle('tv-wl-drop-above', isAbove);
+  target.classList.toggle('tv-wl-drop-below', !isAbove);
+}
+function sccRowDragLeave(event) {
+  if (event.currentTarget) {
+    event.currentTarget.classList.remove('tv-wl-drop-above', 'tv-wl-drop-below');
+  }
+}
+function sccRowDrop(event, targetRaw) {
+  event.preventDefault();
+  const target = event.currentTarget;
+  const isAbove = target ? ((event.clientY - target.getBoundingClientRect().top) < (target.getBoundingClientRect().height / 2)) : false;
+  if (target) target.classList.remove('tv-wl-drop-above', 'tv-wl-drop-below');
+  const dragItem = _sccDraggedRowSymbol;
+  if (!dragItem || dragItem === targetRaw) return;
+  sccPerformItemMove(dragItem, targetRaw, isAbove ? 'before' : 'after');
+}
+function sccRowDragEnd(event) {
+  if (event.currentTarget) event.currentTarget.classList.remove('wl-dragging');
+  _sccDraggedRowSymbol = null;
+  document.querySelectorAll('.tv-wl-drop-above, .tv-wl-drop-below, .wl-dragging').forEach(el => {
+    el.classList.remove('tv-wl-drop-above', 'tv-wl-drop-below', 'wl-dragging');
+  });
+}
+function sccRowTouchStart(event, itemRaw) {
+  const touch = event.touches[0];
+  _sccTouchStartY = touch.clientY;
+  _sccTouchDraggedSym = itemRaw;
+  _sccTouchDraggedEl = event.currentTarget;
+  _sccTouchActive = false;
+  _sccTouchTimeout = setTimeout(() => {
+    _sccTouchActive = true;
+    if (_sccTouchDraggedEl) _sccTouchDraggedEl.classList.add('wl-dragging');
+  }, 250);
+}
 function sccRowTouchMove(event) {
-  if (!_sccTouchDraggedSym) return; const touch = event.touches[0]; if (!_sccTouchActive) {
-    if (Math.abs(touch.clientY - _sccTouchStartY) > 10) { clearTimeout(_sccTouchTimeout); _sccTouchDraggedSym = null; _sccTouchDraggedEl = null; }
+  if (!_sccTouchDraggedSym) return;
+  const touch = event.touches[0];
+  if (!_sccTouchActive) {
+    if (Math.abs(touch.clientY - _sccTouchStartY) > 10) {
+      clearTimeout(_sccTouchTimeout);
+      _sccTouchDraggedSym = null;
+      _sccTouchDraggedEl = null;
+    }
     return;
   }
-  event.preventDefault(); const elementUnderTouch = document.elementFromPoint(touch.clientX, touch.clientY); if (!elementUnderTouch) return; const targetEl = elementUnderTouch.closest('.scc-wl-item'); if (!targetEl || targetEl === _sccTouchDraggedEl) return; const targetSym = targetEl.id.replace('scc-wl-item-', '').toUpperCase(); if (!targetSym || targetSym === _sccTouchDraggedSym) return; sccPerformStockSwap(_sccTouchDraggedSym, targetSym); const newDraggedEl = document.getElementById(`scc-wl-item-${_sccTouchDraggedSym}`); if (newDraggedEl) { _sccTouchDraggedEl = newDraggedEl; _sccTouchDraggedEl.classList.add('wl-dragging'); }
+  event.preventDefault();
+  const elementUnderTouch = document.elementFromPoint(touch.clientX, touch.clientY);
+  if (!elementUnderTouch) return;
+  const targetEl = elementUnderTouch.closest('.scc-wl-item, .tv-max-wl-row, .tv-wl-section-header, .tv-wl-separator');
+  if (!targetEl || targetEl === _sccTouchDraggedEl) return;
+  const targetRaw = targetEl.getAttribute('data-raw-item') || targetEl.id.replace('scc-wl-item-', '');
+  if (!targetRaw || targetRaw === _sccTouchDraggedSym) return;
+  const rect = targetEl.getBoundingClientRect();
+  const isAbove = (touch.clientY - rect.top) < (rect.height / 2);
+  sccPerformItemMove(_sccTouchDraggedSym, targetRaw, isAbove ? 'before' : 'after');
 }
 function sccRowTouchEnd(event) {
-  clearTimeout(_sccTouchTimeout); if (_sccTouchDraggedEl) { _sccTouchDraggedEl.classList.remove('wl-dragging'); }
-  _sccTouchDraggedSym = null; _sccTouchDraggedEl = null; _sccTouchActive = false;
+  clearTimeout(_sccTouchTimeout);
+  if (_sccTouchDraggedEl) _sccTouchDraggedEl.classList.remove('wl-dragging');
+  _sccTouchDraggedSym = null;
+  _sccTouchDraggedEl = null;
+  _sccTouchActive = false;
+  document.querySelectorAll('.tv-wl-drop-above, .tv-wl-drop-below, .wl-dragging').forEach(el => {
+    el.classList.remove('tv-wl-drop-above', 'tv-wl-drop-below', 'wl-dragging');
+  });
 }
-function sccPerformStockSwap(dragSym, targetSym) { dragSym = dragSym.toUpperCase(); targetSym = targetSym.toUpperCase(); if (dragSym === targetSym) return; if (_sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); const currentList = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); const fromIndex = currentList.indexOf(dragSym); const toIndex = currentList.indexOf(targetSym); if (fromIndex !== -1 && toIndex !== -1) { currentList.splice(fromIndex, 1); currentList.splice(toIndex, 0, dragSym); const newFlags = {}; currentList.forEach(s => { newFlags[s] = color; }); Object.keys(_sccSymbolFlags).forEach(s => { if (_sccSymbolFlags[s] !== color) { newFlags[s] = _sccSymbolFlags[s]; } }); _sccSymbolFlags = newFlags; _sccWatchlistSymbols = currentList; sccSaveWatchlistsLocalAndSync(); sccWatchlistRender(); } } else if (_sccActiveWatchlist !== 'VCP') { const currentList = _sccWatchlists[_sccActiveWatchlist] || []; const fromIndex = currentList.indexOf(dragSym); const toIndex = currentList.indexOf(targetSym); if (fromIndex !== -1 && toIndex !== -1) { currentList.splice(fromIndex, 1); currentList.splice(toIndex, 0, dragSym); _sccWatchlists[_sccActiveWatchlist] = currentList; _sccWatchlistSymbols = currentList; sccSaveWatchlistsLocalAndSync(); sccWatchlistRender(); } } if (_sccChartLayout === 'watchlist') sccChartRebuildGrid(); }
+function sccPerformItemMove(dragItem, targetItem, position) {
+  if (!dragItem || !targetItem || dragItem === targetItem) return;
+
+  if (_sccActiveWatchlist.startsWith('__flag_')) {
+    const color = _sccActiveWatchlist.replace('__flag_', '');
+    const currentList = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
+    const fromIndex = currentList.indexOf(dragItem);
+    let toIndex = currentList.indexOf(targetItem);
+    if (fromIndex !== -1 && toIndex !== -1) {
+      currentList.splice(fromIndex, 1);
+      if (fromIndex < toIndex) toIndex--;
+      if (position === 'after') toIndex++;
+      currentList.splice(toIndex, 0, dragItem);
+      const newFlags = {};
+      currentList.forEach(s => { newFlags[s] = color; });
+      Object.keys(_sccSymbolFlags).forEach(s => {
+        if (_sccSymbolFlags[s] !== color) newFlags[s] = _sccSymbolFlags[s];
+      });
+      _sccSymbolFlags = newFlags;
+      _sccWatchlistSymbols = currentList;
+      sccSaveWatchlistsLocalAndSync();
+      sccWatchlistRender();
+      if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+    }
+  } else if (_sccActiveWatchlist !== 'VCP' && _sccActiveWatchlist !== 'Clusters' && _sccActiveWatchlist !== 'Themes' && _sccActiveWatchlist !== 'Tight') {
+    const list = _sccWatchlists[_sccActiveWatchlist] || [];
+    const fromIndex = list.indexOf(dragItem);
+    let toIndex = list.indexOf(targetItem);
+    if (fromIndex !== -1 && toIndex !== -1) {
+      list.splice(fromIndex, 1);
+      if (fromIndex < toIndex) toIndex--;
+      if (position === 'after') toIndex++;
+      list.splice(toIndex, 0, dragItem);
+      _sccWatchlists[_sccActiveWatchlist] = list;
+      _sccWatchlistSymbols = list.filter(s => typeof s === 'string' && !s.startsWith('###'));
+      sccSaveWatchlistsLocalAndSync();
+      sccWatchlistRender();
+      if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+    }
+  }
+  if (typeof _sccChartLayout !== 'undefined' && _sccChartLayout === 'watchlist' && typeof sccChartRebuildGrid === 'function') {
+    sccChartRebuildGrid();
+  }
+}
+function sccPerformStockSwap(dragSym, targetSym) {
+  sccPerformItemMove(dragSym, targetSym, 'after');
+}
 function sccFlagPressStart(event, element, symbol) { _sccFlagHoldActive = false; _sccFlagHoldTimeout = setTimeout(() => { _sccFlagHoldActive = true; sccWatchlistOpenFlagPopup(element, symbol); }, 350); }
 function sccFlagPressEnd(event, element, symbol) { clearTimeout(_sccFlagHoldTimeout); if (_sccFlagHoldActive) { event.preventDefault(); event.stopPropagation(); } }
 function sccFlagPressCancel() { clearTimeout(_sccFlagHoldTimeout); }
@@ -3270,6 +3546,10 @@ function sccWlOpenContextMenu(event) {
     <div class="scc-ctx-item" onclick="sccWlCreateListFromSelected()" style="padding: 8px 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: background 0.15s;">
       <span>Move to new list...</span>
     </div>
+    ${(_sccActiveWatchlist !== 'VCP' && _sccActiveWatchlist !== 'Clusters' && _sccActiveWatchlist !== 'Themes' && _sccActiveWatchlist !== 'Tight' && !_sccActiveWatchlist.startsWith('__flag_')) ? `
+    <div class="scc-ctx-item" onclick="sccWlCloseContextMenu(); sccWlPromptAddSection('${((_sccWlSelectedSymbols && _sccWlSelectedSymbols[0]) || '').replace(/'/g, "\\'")}')" style="padding: 8px 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: background 0.15s; border-top: 1px solid var(--border);">
+      <span>➕ Add section above</span>
+    </div>` : ''}
     <div style="height: 1px; background: var(--border); margin: 4px 0;"></div>
     <div class="scc-ctx-item" onclick="sccWlDeleteSelected()" style="padding: 8px 16px; cursor: pointer; color: var(--red); display: flex; align-items: center; justify-content: space-between; transition: background 0.15s;">
       <span>Delete selected</span>
@@ -3300,10 +3580,47 @@ function sccWlCreateListFromSelected() {
   _sccWatchlists[cleaned] = [..._sccWlSelectedSymbols]; const currentList = _sccWatchlists[_sccActiveWatchlist]; _sccWlSelectedSymbols.forEach(sym => { const s = sym.toUpperCase(); if (_sccActiveWatchlist.startsWith('__flag_')) { delete _sccSymbolFlags[s]; } else if (currentList) { const idx = currentList.indexOf(s); if (idx !== -1) currentList.splice(idx, 1); } }); _sccActiveWatchlist = cleaned; _sccWatchlistSymbols = _sccWatchlists[cleaned]; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); sccSaveWatchlistsLocalAndSync(); sccWlCloseContextMenu(); _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null; sccWlRenderTabs(); sccWatchlistRender(); sccWatchlistFetchAll();
 }
 function sccWlDeleteSelected() {
-  if (_sccActiveWatchlist === 'VCP' || _sccActiveWatchlist === 'Clusters') { alert("This is an automatic system watchlist based on screener data and cannot be modified manually."); return; }
-  if (_sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWlSelectedSymbols.forEach(sym => { delete _sccSymbolFlags[sym.toUpperCase()]; }); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); const hasSymbols = Object.keys(_sccSymbolFlags).some(s => _sccSymbolFlags[s] === color); if (!hasSymbols) { _sccActiveWatchlist = Object.keys(_sccWatchlists)[0] || "Main"; _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); } } else { const currentList = _sccWatchlists[_sccActiveWatchlist]; if (currentList) { _sccWlSelectedSymbols.forEach(sym => { const idx = currentList.indexOf(sym.toUpperCase()); if (idx !== -1) { currentList.splice(idx, 1); } }); } }
-  sccSaveWatchlistsLocalAndSync(); sccWlCloseContextMenu(); _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null; sccWlRenderTabs(); sccWatchlistRender();
-  if (_sccChartLayout === 'watchlist') sccChartRebuildGrid();
+  if (_sccActiveWatchlist === 'VCP' || _sccActiveWatchlist === 'Clusters' || _sccActiveWatchlist === 'Themes' || _sccActiveWatchlist === 'Tight') {
+    alert("This is an automatic system watchlist based on screener data and cannot be modified manually.");
+    return;
+  }
+  if (_sccActiveWatchlist === 'Shortlist') {
+    const set = (typeof getShortlistSet === 'function') ? getShortlistSet() : new Set();
+    _sccWlSelectedSymbols.forEach(sym => set.delete(sym.toUpperCase().replace('.NS', '').trim()));
+    if (typeof saveShortlistSet === 'function') saveShortlistSet(set);
+    _sccWatchlistSymbols = Array.from(set);
+  } else if (_sccActiveWatchlist.startsWith('__flag_')) {
+    const color = _sccActiveWatchlist.replace('__flag_', '');
+    _sccWlSelectedSymbols.forEach(sym => { delete _sccSymbolFlags[sym.toUpperCase().replace('.NS', '').trim()]; });
+    _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
+    const hasSymbols = Object.keys(_sccSymbolFlags).some(s => _sccSymbolFlags[s] === color);
+    if (!hasSymbols) {
+      _sccActiveWatchlist = Object.keys(_sccWatchlists)[0] || "Main";
+      _sccWatchlistSymbols = (_sccWatchlists[_sccActiveWatchlist] || []).filter(s => typeof s === 'string' && !s.startsWith('###'));
+      localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+    }
+  } else {
+    const currentList = _sccWatchlists[_sccActiveWatchlist];
+    if (currentList) {
+      const selectedUpper = _sccWlSelectedSymbols.map(s => String(s).toUpperCase().replace('.NS', '').trim());
+      _sccWatchlists[_sccActiveWatchlist] = currentList.filter(s => {
+        if (!s) return false;
+        const clean = String(s).toUpperCase().replace('.NS', '').trim();
+        return !selectedUpper.includes(clean);
+      });
+      _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist].filter(s => typeof s === 'string' && !s.startsWith('###'));
+    }
+  }
+  sccSaveWatchlistsLocalAndSync();
+  sccWlCloseContextMenu();
+  _sccWlSelectedSymbols = [];
+  _sccWlLastSelectedSymbol = null;
+  sccWlRenderTabs();
+  sccWatchlistRender();
+  if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+  if (typeof updateMaxChartMainWlButton === 'function') updateMaxChartMainWlButton();
+  if (typeof updateMaxChartShortlistButton === 'function') updateMaxChartShortlistButton();
+  if (_sccChartLayout === 'watchlist' && typeof sccChartRebuildGrid === 'function') sccChartRebuildGrid();
 }
 function sccWatchlistOpenFlagPopup(element, symbol) {
   sccWatchlistCloseFlagPopup();
@@ -3425,9 +3742,43 @@ function sccWatchlistSelect(symbol) {
   localStorage.setItem('_sccChartSymbols', JSON.stringify(_sccChartSymbols)); sccChartRebuildGrid(); sccWatchlistRender();
 }
 function sccWatchlistAddSymbol(symbol) {
-  if (_sccActiveWatchlist === 'VCP' || _sccActiveWatchlist === 'Clusters') { alert("This is an automatic system watchlist based on screener data and cannot be modified manually."); return; }
-  const sym = symbol.toUpperCase().trim(); if (!sym) return; if (_sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccSymbolFlags[sym] = color; _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); sccSaveWatchlistsLocalAndSync(); sccWlRenderTabs(); sccWatchlistRender(); sccWatchlistFetchSymbolData(sym); } else { if (!_sccWatchlistSymbols.includes(sym)) { _sccWatchlistSymbols.push(sym); sccSaveWatchlistsLocalAndSync(); sccWatchlistRender(); sccWatchlistFetchSymbolData(sym); } }
-  if (_sccChartLayout === 'watchlist') sccChartRebuildGrid();
+  if (_sccActiveWatchlist === 'VCP' || _sccActiveWatchlist === 'Clusters' || _sccActiveWatchlist === 'Themes' || _sccActiveWatchlist === 'Tight') {
+    alert("This is an automatic system watchlist based on screener data and cannot be modified manually.");
+    return;
+  }
+  const sym = symbol.toUpperCase().trim();
+  if (!sym) return;
+
+  if (sym.startsWith('###')) {
+    if (!_sccWatchlists[_sccActiveWatchlist]) _sccWatchlists[_sccActiveWatchlist] = [];
+    _sccWatchlists[_sccActiveWatchlist].push(sym);
+    _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist].filter(s => typeof s === 'string' && !s.startsWith('###'));
+    sccSaveWatchlistsLocalAndSync();
+    sccWatchlistRender();
+    if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+    return;
+  }
+
+  if (_sccActiveWatchlist.startsWith('__flag_')) {
+    const color = _sccActiveWatchlist.replace('__flag_', '');
+    _sccSymbolFlags[sym] = color;
+    _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
+    sccSaveWatchlistsLocalAndSync();
+    sccWlRenderTabs();
+    sccWatchlistRender();
+    sccWatchlistFetchSymbolData(sym);
+  } else {
+    if (!_sccWatchlists[_sccActiveWatchlist]) _sccWatchlists[_sccActiveWatchlist] = [];
+    if (!_sccWatchlists[_sccActiveWatchlist].includes(sym)) {
+      _sccWatchlists[_sccActiveWatchlist].push(sym);
+      _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist].filter(s => typeof s === 'string' && !s.startsWith('###'));
+      sccSaveWatchlistsLocalAndSync();
+      sccWatchlistRender();
+      sccWatchlistFetchSymbolData(sym);
+    }
+  }
+  if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+  if (_sccChartLayout === 'watchlist' && typeof sccChartRebuildGrid === 'function') sccChartRebuildGrid();
 }
 function sccWatchlistRemoveSymbol(symbol) {
   const sym = String(symbol || '').toUpperCase().replace('.NS', '').trim();
@@ -3447,25 +3798,23 @@ function sccWatchlistRemoveSymbol(symbol) {
     if (!hasSymbols) {
       _sccActiveWatchlist = Object.keys(_sccWatchlists)[0] || "Main";
       const actUpper = (_sccActiveWatchlist || '').toUpperCase();
-    const isSmartTab = actUpper === 'VCP' || actUpper === 'THEMES' || actUpper === 'CLUSTERS' || actUpper === 'TIGHT' || actUpper === 'SHORTLIST';
-    if (!isSmartTab) { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; }
-    else if (actUpper === 'TIGHT') { _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || [])); }
-    else if (actUpper === 'SHORTLIST') { if (typeof getShortlistSet === 'function') _sccWatchlistSymbols = Array.from(getShortlistSet()); }
+      const isSmartTab = actUpper === 'VCP' || actUpper === 'THEMES' || actUpper === 'CLUSTERS' || actUpper === 'TIGHT' || actUpper === 'SHORTLIST';
+      if (!isSmartTab) { _sccWatchlistSymbols = (_sccWatchlists[_sccActiveWatchlist] || []).filter(s => typeof s === 'string' && !s.startsWith('###')); }
+      else if (actUpper === 'TIGHT') { _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || [])); }
+      else if (actUpper === 'SHORTLIST') { if (typeof getShortlistSet === 'function') _sccWatchlistSymbols = Array.from(getShortlistSet()); }
       localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
     }
     sccSaveWatchlistsLocalAndSync();
     if (typeof showChartToast === 'function') showChartToast('Removed flag from <b>' + sym + '</b>', '#f87171');
   } else {
     if (_sccWatchlists && _sccWatchlists[_sccActiveWatchlist]) {
-      const idx = _sccWatchlists[_sccActiveWatchlist].indexOf(sym);
-      if (idx !== -1) {
-        _sccWatchlists[_sccActiveWatchlist].splice(idx, 1);
-      }
+      _sccWatchlists[_sccActiveWatchlist] = _sccWatchlists[_sccActiveWatchlist].filter(s => {
+        if (!s) return false;
+        const clean = String(s).toUpperCase().replace('.NS', '').trim();
+        return clean !== sym;
+      });
     }
-    const index = _sccWatchlistSymbols.indexOf(sym);
-    if (index !== -1) {
-      _sccWatchlistSymbols.splice(index, 1);
-    }
+    _sccWatchlistSymbols = (_sccWatchlists[_sccActiveWatchlist] || []).filter(s => typeof s === 'string' && !s.startsWith('###'));
     sccSaveWatchlistsLocalAndSync();
     if (typeof showChartToast === 'function') showChartToast('Removed <b>' + sym + '</b> from ' + _sccActiveWatchlist, '#f87171');
   }
@@ -3476,11 +3825,11 @@ function sccWatchlistRemoveSymbol(symbol) {
   if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
   if (typeof updateMaxChartMainWlButton === 'function') updateMaxChartMainWlButton();
   if (typeof updateMaxChartShortlistButton === 'function') updateMaxChartShortlistButton();
-  if (_sccChartLayout === 'watchlist') sccChartRebuildGrid();
+  if (_sccChartLayout === 'watchlist' && typeof sccChartRebuildGrid === 'function') sccChartRebuildGrid();
 }
 window.sccWatchlistRemoveSymbol = sccWatchlistRemoveSymbol;
 function sccWatchlistSuggest(val) {
-  const suggestBox = document.getElementById('scc-wl-suggest'); if (!suggestBox) return; const query = val.trim().toLowerCase(); if (!query) { suggestBox.style.display = 'none'; suggestBox.innerHTML = ''; return; }
+  const suggestBox = document.getElementById('scc-wl-suggest'); if (!suggestBox) return; const query = val.trim().toLowerCase(); if (!query || query.startsWith('###')) { suggestBox.style.display = 'none'; suggestBox.innerHTML = ''; return; }
   let allStocks = n500CsvGetCached() || []; if (allStocks.length === 0 && _sdCurrentData?.stocks) { allStocks = _sdCurrentData.stocks; }
   const matches = []; for (const s of allStocks) { if ((s.symbol && s.symbol.toLowerCase().includes(query)) || (s.company && s.company.toLowerCase().includes(query))) { matches.push(s); if (matches.length >= 6) break; } }
   if (matches.length === 0) { suggestBox.style.display = 'none'; suggestBox.innerHTML = ''; return; }
@@ -3787,43 +4136,45 @@ async function jbUpdate(key, bin, payload) { const body = JSON.stringify(payload
 function setSyncStatus(state, label) { const dot = document.getElementById('sync-dot'); const lbl = document.getElementById('sync-label'); const btn = dot && dot.closest('.sync-status'); if (dot) dot.className = 'sync-dot ' + (state || ''); if (lbl) lbl.textContent = label || 'Cloud Sync'; if (btn) { btn.title = state === 'warn' ? 'Click to configure cloud sync' : state === 'ok' ? 'Synced — click to manage' : state === 'err' ? 'Sync error — click to fix' : 'Cloud sync settings'; btn.style.borderColor = state === 'warn' ? 'rgba(224,123,58,.4)' : state === 'ok' ? 'rgba(61,214,140,.3)' : state === 'err' ? 'rgba(224,84,84,.3)' : ''; } }
 function showSetup() { openControlPanel('sync'); }
 function setupFlash(msg, color) { cfgBanner(msg, color === 'var(--lime)' ? 'ok' : color === 'var(--red)' ? 'err' : color === 'var(--orange)' ? 'warn' : 'inf', 'cfg-banner'); }
-function buildPayload() { const now = Date.now(); return { _pushedAt: now, records: loadLocal(), bsr: bsrLoad(), bsrMode: bsrGetMode(), bsrModeUpdatedAt: parseInt(lsGet('_bsrModeUpdatedAt') || '0', 10), bsrQuick: bsrQuickLoad(), mpm: mpmLoad(), ftd: ftdLoad(), srt: srtLoad(), sccWatchlists: _sccWatchlists, sccSymbolFlags: _sccSymbolFlags, sccWatchlistsUpdatedAt: parseInt(localStorage.getItem('_sccWatchlistsUpdatedAt') || '0') }; }
+function buildPayload() { const now = Date.now(); return { _pushedAt: now, records: loadLocal(), bsr: bsrLoad(), bsrMode: bsrGetMode(), bsrModeUpdatedAt: parseInt(lsGet('_bsrModeUpdatedAt') || '0', 10), bsrQuick: bsrQuickLoad(), mpm: mpmLoad(), ftd: ftdLoad(), srt: srtLoad(), sccWatchlists: _sccWatchlists, sccSymbolFlags: _sccSymbolFlags, sccWatchlistsUpdatedAt: parseInt(localStorage.getItem('_sccWatchlistsUpdatedAt') || '0', 10) || now }; }
 
-function mergeCloudWatchlists(cloudWls, cloudFlags) {
+function mergeCloudWatchlists(cloudWls, cloudFlags, cloudUpdatedAt = 0) {
   if (!cloudWls || typeof cloudWls !== 'object') return;
   sccSyncWatchlistsFromStorage();
   if (!_sccWatchlists || typeof _sccWatchlists !== 'object') _sccWatchlists = {};
 
-  let hasNewFromLocal = false;
-  Object.keys(cloudWls).forEach(key => {
-    const cloudList = Array.isArray(cloudWls[key]) ? cloudWls[key] : [];
-    if (!_sccWatchlists[key] || !Array.isArray(_sccWatchlists[key])) {
-      _sccWatchlists[key] = [...cloudList];
-    } else {
-      const localList = _sccWatchlists[key];
-      const diff = localList.filter(s => !cloudList.includes(s));
-      if (diff.length > 0) hasNewFromLocal = true;
-      cloudList.forEach(sym => {
-        const sUpper = String(sym).toUpperCase().trim();
-        if (sUpper && !localList.some(s => s.toUpperCase() === sUpper)) {
-          localList.push(sUpper);
-        }
-      });
-    }
-  });
+  const localUpdatedAt = parseInt(localStorage.getItem('_sccWatchlistsUpdatedAt') || '0', 10);
+  const cloudTime = parseInt(cloudUpdatedAt || '0', 10);
 
-  Object.keys(_sccWatchlists).forEach(k => {
-    if (!cloudWls[k]) hasNewFromLocal = true;
-  });
-
-  if (cloudFlags && typeof cloudFlags === 'object') {
-    if (!_sccSymbolFlags || typeof _sccSymbolFlags !== 'object') _sccSymbolFlags = {};
-    _sccSymbolFlags = { ...cloudFlags, ..._sccSymbolFlags };
+  // If local changes are newer than cloud, do NOT overwrite or resurrect deleted stocks!
+  if (localUpdatedAt > cloudTime) {
+    console.log('[Watchlist Sync] Local is newer (' + localUpdatedAt + ' > ' + cloudTime + '). Keeping local watchlists.');
+    setTimeout(() => { if (typeof pushToCloud === 'function') pushToCloud().catch(() => {}); }, 1200);
+    return;
   }
 
-  localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
-  localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
-  localStorage.setItem('_sccWatchlistsUpdatedAt', Date.now().toString());
+  // If cloud is newer (e.g. modified on another device), adopt cloud data directly
+  if (cloudTime > localUpdatedAt) {
+    console.log('[Watchlist Sync] Cloud is newer (' + cloudTime + ' > ' + localUpdatedAt + '). Adopting cloud watchlists.');
+    _sccWatchlists = { ...cloudWls };
+    if (cloudFlags && typeof cloudFlags === 'object') {
+      _sccSymbolFlags = { ...cloudFlags };
+    }
+    localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
+    localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+    localStorage.setItem('_sccWatchlistsUpdatedAt', cloudTime.toString());
+  } else {
+    // If local has no watchlists at all (e.g. fresh installation), adopt cloud
+    const localKeys = Object.keys(_sccWatchlists || {});
+    const isLocalEmpty = localKeys.length === 0 || (localKeys.length === 1 && localKeys[0] === 'Main' && (!_sccWatchlists['Main'] || !_sccWatchlists['Main'].length));
+    if (isLocalEmpty && Object.keys(cloudWls).length > 0) {
+      _sccWatchlists = { ...cloudWls };
+      if (cloudFlags && typeof cloudFlags === 'object') _sccSymbolFlags = { ...cloudFlags };
+      localStorage.setItem('_sccWatchlists', JSON.stringify(_sccWatchlists));
+      localStorage.setItem('_sccSymbolFlags', JSON.stringify(_sccSymbolFlags));
+      if (cloudTime > 0) localStorage.setItem('_sccWatchlistsUpdatedAt', cloudTime.toString());
+    }
+  }
 
   if (!sccIsValidWatchlist(_sccActiveWatchlist)) {
     const keys = Object.keys(_sccWatchlists || {});
@@ -3836,11 +4187,7 @@ function mergeCloudWatchlists(cloudWls, cloudFlags) {
     const color = _sccActiveWatchlist.replace(/^__flag[e]?_/, '');
     _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color);
   } else if (!isSmartTab) {
-    const actUpper = (_sccActiveWatchlist || '').toUpperCase();
-    const isSmartTab = actUpper === 'VCP' || actUpper === 'THEMES' || actUpper === 'CLUSTERS' || actUpper === 'TIGHT' || actUpper === 'SHORTLIST';
-    if (!isSmartTab) { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; }
-    else if (actUpper === 'TIGHT') { _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || [])); }
-    else if (actUpper === 'SHORTLIST') { if (typeof getShortlistSet === 'function') _sccWatchlistSymbols = Array.from(getShortlistSet()); }
+    _sccWatchlistSymbols = (_sccWatchlists[_sccActiveWatchlist] || []).filter(s => typeof s === 'string' && !s.startsWith('###'));
   } else if (actUpper === 'TIGHT') {
     _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || []));
   } else if (actUpper === 'THEMES' || actUpper === 'CLUSTERS') {
@@ -3850,10 +4197,6 @@ function mergeCloudWatchlists(cloudWls, cloudFlags) {
   }
   _sccWlSelectedSymbols = [];
   _sccWlLastSelectedSymbol = null;
-
-  if (hasNewFromLocal) {
-    setTimeout(() => { if (typeof pushToCloud === 'function') pushToCloud().catch(() => { }); }, 1500);
-  }
 }
 window.mergeCloudWatchlists = mergeCloudWatchlists;
 
@@ -3870,8 +4213,8 @@ async function testConnection() {
 async function pullFromCloud(key, bin) {
   const cfg = key ? { key, bin } : getCfg(); if (!cfg.key || !cfg.bin) { setupFlash('No credentials configured', 'var(--orange)'); return; }
   setSyncStatus('syncing', 'Pulling…'); try {
-    const raw = await jbRead(cfg.key, cfg.bin); const cloudRecs = Array.isArray(raw) ? raw : (raw.records || []); const cloudBsr = Array.isArray(raw) ? [] : (raw.bsr || []); const cloudMpm = Array.isArray(raw) ? [] : (raw.mpm || []); const cloudFtd = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd || []) : []; const cloudSrt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.srt || []) : []; saveLocal(mergeByKey(cloudRecs, loadLocal(), r => r.date)); bsrSave(mergeByKey(cloudBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); mpmSave(mergeByKey(cloudMpm, mpmLoad(), d => d.date)); srtSave(mergeByKey(cloudSrt, srtLoad(), s => s.id)); const mergedFtd = mergeByKey(cloudFtd, ftdLoad(), d => d.date).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ensureOctoberDataSeeded(); ftdScanUndercutAll(); if (typeof raw === 'object' && !Array.isArray(raw)) { if (raw.bsrMode) mergeBsrMode(raw.bsrMode, raw.bsrModeUpdatedAt); if (raw.bsrQuick) mergeBsrQuick(raw.bsrQuick); } const cloudWatchlists = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccWatchlists : null; const cloudSymbolFlags = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccSymbolFlags : null; if (cloudWatchlists) {
-      mergeCloudWatchlists(cloudWatchlists, cloudSymbolFlags);
+    const raw = await jbRead(cfg.key, cfg.bin); const cloudRecs = Array.isArray(raw) ? raw : (raw.records || []); const cloudBsr = Array.isArray(raw) ? [] : (raw.bsr || []); const cloudMpm = Array.isArray(raw) ? [] : (raw.mpm || []); const cloudFtd = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd || []) : []; const cloudSrt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.srt || []) : []; saveLocal(mergeByKey(cloudRecs, loadLocal(), r => r.date)); bsrSave(mergeByKey(cloudBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); mpmSave(mergeByKey(cloudMpm, mpmLoad(), d => d.date)); srtSave(mergeByKey(cloudSrt, srtLoad(), s => s.id)); const mergedFtd = mergeByKey(cloudFtd, ftdLoad(), d => d.date).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ensureOctoberDataSeeded(); ftdScanUndercutAll(); if (typeof raw === 'object' && !Array.isArray(raw)) { if (raw.bsrMode) mergeBsrMode(raw.bsrMode, raw.bsrModeUpdatedAt); if (raw.bsrQuick) mergeBsrQuick(raw.bsrQuick); } const cloudWatchlists = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccWatchlists : null; const cloudSymbolFlags = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccSymbolFlags : null; const cloudWatchlistsUpdatedAt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.sccWatchlistsUpdatedAt || raw._pushedAt || 0) : 0; if (cloudWatchlists) {
+      mergeCloudWatchlists(cloudWatchlists, cloudSymbolFlags, cloudWatchlistsUpdatedAt);
     }
     const merged = loadLocal(); setSyncStatus('ok', 'Synced'); setupFlash(`✓ Pulled — ${merged.length} breadth + ${bsrLoad().length} BSR + ${mpmLoad().length} MPM + ${srtLoad().length} sectors`, 'var(--lime)'); renderAll(); bsrRenderAll(); mpmRenderAll(); renderRPG(); renderMarketSummary(); renderMarketCycle(); ftdRender(); renderAnalysisFTD(); srtRender(); sccWlRenderTabs(); sccWatchlistRender(); sccWatchlistFetchAll();
   } catch (e) { setSyncStatus('err', 'Sync Error'); setupFlash('✗ Pull failed: ' + e.message, 'var(--red)'); }
@@ -4863,8 +5206,8 @@ async function seedHistoricalData() {
 (async function init() {
   const hdrDateEl = document.getElementById('hdr-date'); if (hdrDateEl) hdrDateEl.textContent = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }); const _etEl = document.getElementById('entry-today'); if (_etEl) _etEl.textContent = todayISO(); const _bsrDate = document.getElementById('bsr-date'); if (_bsrDate) _bsrDate.value = todayISO(); seedHistoricalData(); ensureOctoberDataSeeded(); if (initGuestMode()) return; const cfg = getCfg(); if (!cfg.key || !cfg.bin) { setSyncStatus('warn', 'Not Configured · Click to Setup'); } else {
     setSyncStatus('syncing', 'Syncing…'); try {
-      const payload = await jbRead(cfg.key, cfg.bin); const isLegacy = Array.isArray(payload); const cRec = isLegacy ? payload : (payload.records || []); saveLocal(mergeByKey(cRec, loadLocal(), r => r.date)); const cBsr = isLegacy ? [] : (payload.bsr || []); bsrSave(mergeByKey(cBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); if (!isLegacy && payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt); if (!isLegacy && payload.bsrQuick) mergeBsrQuick(payload.bsrQuick); const cMpm = isLegacy ? [] : (payload.mpm || []); mpmSave(mergeByKey(cMpm, mpmLoad(), d => d.date)); const cFtd = isLegacy ? [] : (payload.ftd || []); const mergedFtd = mergeByKey(cFtd, ftdLoad(), d => d.date).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ensureOctoberDataSeeded(); ftdScanUndercutAll(); if (!cFtd.some(d => d.date === '2026-10-13' && d.type === 'followthrough') || cFtd.some(d => d.date === '2026-10-14' && d.type === 'attempt') || cFtd.filter(d => d.date === '2026-10-09').length > 1) { setTimeout(() => pushToCloud().catch(() => { }), 1000); } const cSrt = isLegacy ? [] : (payload.srt || []); srtSave(mergeByKey(cSrt, srtLoad(), s => s.id)); const cloudWatchlists = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccWatchlists : null; const cloudSymbolFlags = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccSymbolFlags : null; if (cloudWatchlists) {
-        mergeCloudWatchlists(cloudWatchlists, cloudSymbolFlags);
+      const payload = await jbRead(cfg.key, cfg.bin); const isLegacy = Array.isArray(payload); const cRec = isLegacy ? payload : (payload.records || []); saveLocal(mergeByKey(cRec, loadLocal(), r => r.date)); const cBsr = isLegacy ? [] : (payload.bsr || []); bsrSave(mergeByKey(cBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); if (!isLegacy && payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt); if (!isLegacy && payload.bsrQuick) mergeBsrQuick(payload.bsrQuick); const cMpm = isLegacy ? [] : (payload.mpm || []); mpmSave(mergeByKey(cMpm, mpmLoad(), d => d.date)); const cFtd = isLegacy ? [] : (payload.ftd || []); const mergedFtd = mergeByKey(cFtd, ftdLoad(), d => d.date).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ensureOctoberDataSeeded(); ftdScanUndercutAll(); if (!cFtd.some(d => d.date === '2026-10-13' && d.type === 'followthrough') || cFtd.some(d => d.date === '2026-10-14' && d.type === 'attempt') || cFtd.filter(d => d.date === '2026-10-09').length > 1) { setTimeout(() => pushToCloud().catch(() => { }), 1000); } const cSrt = isLegacy ? [] : (payload.srt || []); srtSave(mergeByKey(cSrt, srtLoad(), s => s.id)); const cloudWatchlists = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccWatchlists : null; const cloudSymbolFlags = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccSymbolFlags : null; const cloudWatchlistsUpdatedAt = (typeof payload === 'object' && !Array.isArray(payload)) ? (payload.sccWatchlistsUpdatedAt || payload._pushedAt || 0) : 0; if (cloudWatchlists) {
+        mergeCloudWatchlists(cloudWatchlists, cloudSymbolFlags, cloudWatchlistsUpdatedAt);
       }
       const recCount = loadLocal().length; const bsrCount = bsrLoad().length; const mpmCount = mpmLoad().length; const srtCount = srtLoad().filter(s => s.id !== 'NIFTY50').length; setSyncStatus('ok', 'Synced'); console.log('[Init] Synced — Records:', recCount, 'BSR:', bsrCount, 'MPM:', mpmCount);
     } catch (e) { setSyncStatus('warn', 'Offline · Local data shown'); console.warn('[Init] Cloud pull failed:', e.message); }
@@ -5883,8 +6226,9 @@ async function pullFromCloudSilently() {
     }
     const cloudWatchlists = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccWatchlists : null;
     const cloudSymbolFlags = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccSymbolFlags : null;
+    const cloudWatchlistsUpdatedAt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.sccWatchlistsUpdatedAt || raw._pushedAt || 0) : 0;
     if (cloudWatchlists) {
-      mergeCloudWatchlists(cloudWatchlists, cloudSymbolFlags);
+      mergeCloudWatchlists(cloudWatchlists, cloudSymbolFlags, cloudWatchlistsUpdatedAt);
     }
     setSyncStatus('ok', 'Synced');
     renderAll();
@@ -6011,16 +6355,21 @@ let _maxRsDragStartPad = 0.06;
 let _maxBaDragActive = false;    // dragging bottom axis (horizontal zoom)
 let _maxBaDragStartX = 0;
 let _maxBaDragStartBw = 8;
-let _sccChartSymbols = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK']; let _sccChartTimeframes = ['D', 'W', '1H', 'M']; let _sccChartLayout = '1'; let _sccChartType = 'volume_candles'; let _sccSyncSymbols = false; let _sccChartZoomFactors = [1.0, 1.0, 1.0, 1.0]; let _sccWatchlists = { "Main": ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT'] }; let _sccActiveWatchlist = "Main"; let _sccWatchlistSymbols = _sccWatchlists["Main"]; let _sccWatchlistData = {}; let _sccSymbolFlags = {}; let _sccShowWatchlist = true; let _sccWlSelectedSymbols = []; let _sccWlLastSelectedSymbol = null; let _sccWlCollapsedSectors = new Set(); let _sccWlOriginalOrders = {}; let _sccWlIsBreadthSorted = false; let _sccDraggedTabName = null; let _sccDraggedRowSymbol = null; let _sccTouchActive = false; let _sccTouchTimeout = null; let _sccTouchDraggedSym = null; let _sccTouchStartY = 0; let _sccTouchDraggedEl = null; let _sccFlagHoldTimeout = null; let _sccFlagHoldActive = false; try {
-  const savedSyms = localStorage.getItem('_sccChartSymbols'); if (savedSyms) _sccChartSymbols = JSON.parse(savedSyms); const savedTfs = localStorage.getItem('_sccChartTimeframes'); if (savedTfs) _sccChartTimeframes = JSON.parse(savedTfs); const savedLayout = localStorage.getItem('_sccChartLayout'); if (savedLayout) _sccChartLayout = savedLayout; if (window.innerWidth <= 600 && _sccChartLayout !== 'watchlist') _sccChartLayout = '1'; const savedType = localStorage.getItem('_sccChartType'); if (savedType) _sccChartType = savedType; const savedSync = localStorage.getItem('_sccSyncSymbols'); if (savedSync) _sccSyncSymbols = JSON.parse(savedSync); const savedZooms = localStorage.getItem('_sccChartZoomFactors'); if (savedZooms) _sccChartZoomFactors = JSON.parse(savedZooms); const savedWls = localStorage.getItem('_sccWatchlists'); if (savedWls) _sccWatchlists = JSON.parse(savedWls); const savedActiveWl = localStorage.getItem('_sccActiveWatchlist'); if (savedActiveWl) _sccActiveWatchlist = savedActiveWl; const savedFlags = localStorage.getItem('_sccSymbolFlags'); if (savedFlags) _sccSymbolFlags = JSON.parse(savedFlags); if (_sccActiveWatchlist && _sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else {
+let _sccChartSymbols = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK']; let _sccChartTimeframes = ['D', 'W', '1H', 'M']; let _sccChartLayout = '1'; let _sccChartType = 'volume_candles'; let _sccSyncSymbols = false; let _sccChartZoomFactors = [1.0, 1.0, 1.0, 1.0]; let _sccWatchlists = { "Main": ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT'] }; let _sccActiveWatchlist = "Main"; let _sccWatchlistSymbols = _sccWatchlists["Main"]; let _sccWatchlistData = {}; let _sccSymbolFlags = {}; let _sccShowWatchlist = true; let _sccWlSelectedSymbols = []; let _sccWlLastSelectedSymbol = null; let _sccWlCollapsedSectors = new Set(); let _sccWlCollapsedSections = new Set(); let _sccWlOriginalOrders = {}; let _sccWlIsBreadthSorted = false; let _sccDraggedTabName = null; let _sccDraggedRowSymbol = null; let _sccTouchActive = false; let _sccTouchTimeout = null; let _sccTouchDraggedSym = null; let _sccTouchStartY = 0; let _sccTouchDraggedEl = null; let _sccFlagHoldTimeout = null; let _sccFlagHoldActive = false; try {
+  const savedSyms = localStorage.getItem('_sccChartSymbols'); if (savedSyms) _sccChartSymbols = JSON.parse(savedSyms); const savedTfs = localStorage.getItem('_sccChartTimeframes'); if (savedTfs) _sccChartTimeframes = JSON.parse(savedTfs); const savedLayout = localStorage.getItem('_sccChartLayout'); if (savedLayout) _sccChartLayout = savedLayout; if (window.innerWidth <= 600 && _sccChartLayout !== 'watchlist') _sccChartLayout = '1'; const savedType = localStorage.getItem('_sccChartType'); if (savedType) _sccChartType = savedType; const savedSync = localStorage.getItem('_sccSyncSymbols'); if (savedSync) _sccSyncSymbols = JSON.parse(savedSync); const savedZooms = localStorage.getItem('_sccChartZoomFactors'); if (savedZooms) _sccChartZoomFactors = JSON.parse(savedZooms); const savedWls = localStorage.getItem('_sccWatchlists'); if (savedWls) _sccWatchlists = JSON.parse(savedWls); const savedActiveWl = localStorage.getItem('_sccActiveWatchlist'); if (savedActiveWl) _sccActiveWatchlist = savedActiveWl; const savedFlags = localStorage.getItem('_sccSymbolFlags'); if (savedFlags) _sccSymbolFlags = JSON.parse(savedFlags);
+  const savedCollapsedSecs = localStorage.getItem('_sccWlCollapsedSections'); if (savedCollapsedSecs) _sccWlCollapsedSections = new Set(JSON.parse(savedCollapsedSecs));
+  if (_sccActiveWatchlist && _sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else {
     if (!sccIsValidWatchlist(_sccActiveWatchlist)) { const keys = Object.keys(_sccWatchlists || {}); _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main"; if (keys.length === 0) { _sccWatchlists["Main"] = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT']; } }
     const actUpper = (_sccActiveWatchlist || '').toUpperCase();
     const isSmartTab = actUpper === 'VCP' || actUpper === 'THEMES' || actUpper === 'CLUSTERS' || actUpper === 'TIGHT' || actUpper === 'SHORTLIST';
-    if (!isSmartTab) { _sccWatchlistSymbols = _sccWatchlists[_sccActiveWatchlist] || []; }
+    if (!isSmartTab) { _sccWatchlistSymbols = (_sccWatchlists[_sccActiveWatchlist] || []).filter(s => typeof s === 'string' && !s.startsWith('###')); }
     else if (actUpper === 'TIGHT') { _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || [])); }
     else if (actUpper === 'SHORTLIST') { if (typeof getShortlistSet === 'function') _sccWatchlistSymbols = Array.from(getShortlistSet()); }
   }
   const savedShowWl = localStorage.getItem('_sccShowWatchlist'); if (savedShowWl !== null) _sccShowWatchlist = savedShowWl === 'true';
+  if (!localStorage.getItem('_sccWatchlistsUpdatedAt')) {
+    localStorage.setItem('_sccWatchlistsUpdatedAt', Date.now().toString());
+  }
 } catch (e) { console.warn("Failed to load Chart tab / Watchlist localStorage preferences", e); }
 function sectorDrillGetCached() { if (_sectorStocksCache) return _sectorStocksCache; try { _sectorStocksCache = JSON.parse(localStorage.getItem(LS_SECTOR_STOCKS)) || null; return _sectorStocksCache; } catch (e) { return null; } }
 function sectorDrillSetCached(data) { _sectorStocksCache = data; try { localStorage.setItem(LS_SECTOR_STOCKS, JSON.stringify(data)); } catch (e) { } }
@@ -9994,6 +10343,10 @@ function maxChartSidebarSearchInput(val) {
 
   _sidebarSuggestActiveIdx = -1;
   const query = (val || '').trim().toLowerCase();
+  if (query.startsWith('###')) {
+    suggestBox.style.display = 'none';
+    return;
+  }
   const allStocks = getAllAvailableStocks();
 
   let matches = [];
@@ -10114,6 +10467,11 @@ function maxChartSidebarKeyDown(e) {
 
   if (e.key === 'Enter') {
     e.preventDefault();
+    const val = inp.value.trim().toUpperCase();
+    if (val.startsWith('###')) {
+      maxChartSidebarSelectStock(val);
+      return;
+    }
     if (_sidebarSuggestActiveIdx >= 0 && items[_sidebarSuggestActiveIdx]) {
       const sym = items[_sidebarSuggestActiveIdx].getAttribute('data-symbol');
       if (sym) { maxChartSidebarSelectStock(sym); return; }
@@ -10122,12 +10480,12 @@ function maxChartSidebarKeyDown(e) {
       const sym = items[0].getAttribute('data-symbol');
       if (sym) { maxChartSidebarSelectStock(sym); return; }
     }
-    const val = inp.value.trim().toUpperCase();
     if (val) {
       maxChartSidebarSelectStock(val);
     }
     return;
   }
+
 
   if (e.key === 'Escape') {
     if (suggestBox) suggestBox.style.display = 'none';
@@ -10147,7 +10505,12 @@ function maxChartSidebarSelectStock(sym) {
   _sidebarSuggestActiveIdx = -1;
 
   maxChartSidebarAddSymbol(sym);
-  showChartToast('⭐ Added <b>' + sym + '</b> to Watchlist', '#22c55e');
+  if (sym && sym.startsWith('###')) {
+    const label = (sym === '###---' || sym === '###') ? 'Divider separator' : sym.replace(/^###/, '');
+    showChartToast('➕ Added section: <b>' + label + '</b>', '#38bdf8');
+  } else {
+    showChartToast('⭐ Added <b>' + sym + '</b> to Watchlist', '#22c55e');
+  }
 }
 window.maxChartSidebarSelectStock = maxChartSidebarSelectStock;
 
@@ -10365,15 +10728,52 @@ function updateMaxChartSidebarWatchlist() {
     flatSymbols.forEach(s => items.push({ type: 'stock', symbol: s }));
     _sccWatchlistSymbols = flatSymbols;
   } else if (typeof _sccWatchlists !== 'undefined' && _sccWatchlists && _sccWatchlists[_sccActiveWatchlist] && _sccWatchlists[_sccActiveWatchlist].length) {
-    flatSymbols = _sccWatchlists[_sccActiveWatchlist];
-    flatSymbols.forEach(s => items.push({ type: 'stock', symbol: s }));
+    const rawList = _sccWatchlists[_sccActiveWatchlist];
+    flatSymbols = rawList.filter(s => typeof s === 'string' && !s.startsWith('###'));
+    let isCurrentSecCollapsed = false;
+    const secCounts = {};
+    let activeSec = null;
+    rawList.forEach(raw => {
+      if (typeof raw === 'string' && raw.startsWith('###') && raw !== '###---' && raw !== '###') {
+        activeSec = raw;
+        secCounts[activeSec] = 0;
+      } else if (activeSec && typeof raw === 'string' && !raw.startsWith('###')) {
+        secCounts[activeSec]++;
+      }
+    });
+
+    rawList.forEach(raw => {
+      if (typeof raw === 'string' && (raw === '###---' || raw === '###')) {
+        items.push({ type: 'custom_separator', raw });
+      } else if (typeof raw === 'string' && raw.startsWith('###')) {
+        const title = raw.replace(/^###/, '');
+        const key = `${_sccActiveWatchlist}::${title}`;
+        isCurrentSecCollapsed = _sccWlCollapsedSections.has(key);
+        items.push({
+          type: 'custom_section',
+          raw,
+          title,
+          key,
+          collapsed: isCurrentSecCollapsed,
+          count: secCounts[raw] || 0
+        });
+      } else {
+        if (!isCurrentSecCollapsed) {
+          items.push({ type: 'stock', symbol: raw });
+        }
+      }
+    });
     _sccWatchlistSymbols = flatSymbols;
   } else if (typeof _sccWatchlists !== 'undefined' && _sccWatchlists && Object.keys(_sccWatchlists).length) {
-    flatSymbols = Object.values(_sccWatchlists)[0] || [];
-    flatSymbols.forEach(s => items.push({ type: 'stock', symbol: s }));
+    const firstKey = Object.keys(_sccWatchlists)[0];
+    const rawList = _sccWatchlists[firstKey] || [];
+    flatSymbols = rawList.filter(s => typeof s === 'string' && !s.startsWith('###'));
+    rawList.forEach(s => {
+      if (typeof s === 'string' && !s.startsWith('###')) items.push({ type: 'stock', symbol: s });
+    });
     _sccWatchlistSymbols = flatSymbols;
   } else if (typeof _wlItems !== 'undefined' && _wlItems.length) {
-    flatSymbols = _wlItems.map(i => i.s);
+    flatSymbols = _wlItems.map(i => i.s).filter(s => typeof s === 'string' && !s.startsWith('###'));
     flatSymbols.forEach(s => items.push({ type: 'stock', symbol: s }));
     _sccWatchlistSymbols = flatSymbols;
   } else {
@@ -10391,6 +10791,52 @@ function updateMaxChartSidebarWatchlist() {
   const flagCols = { red: '#ef4444', blue: '#3b82f6', green: '#22c55e', yellow: '#eab308', pink: '#ec4899', purple: '#a855f7', cyan: '#06b6d4' };
 
   items.forEach(item => {
+    if (item.type === 'custom_separator') {
+      const rawEsc = item.raw.replace(/'/g, "\\'");
+      rowsHtml += `
+        <div class="tv-wl-separator" draggable="true" data-raw-item="${rawEsc}"
+             ondragstart="sccRowDragStart(event, '${rawEsc}')"
+             ondragover="sccRowDragOver(event)"
+             ondragleave="sccRowDragLeave(event)"
+             ondrop="sccRowDrop(event, '${rawEsc}')"
+             ondragend="sccRowDragEnd(event)"
+             ontouchstart="sccRowTouchStart(event, '${rawEsc}')"
+             ontouchmove="sccRowTouchMove(event)"
+             ontouchend="sccRowTouchEnd(event)">
+          <div class="tv-wl-sep-line"></div>
+          <button class="tv-wl-sep-del" title="Delete separator" onclick="event.stopPropagation(); sccWlDeleteSection('${rawEsc}')">×</button>
+        </div>
+      `;
+      return;
+    }
+    if (item.type === 'custom_section') {
+      const rawEsc = item.raw.replace(/'/g, "\\'");
+      const keyEsc = item.key.replace(/'/g, "\\'");
+      const isCollapsed = item.collapsed;
+      rowsHtml += `
+        <div class="tv-wl-section-header" draggable="true" data-raw-item="${rawEsc}"
+             ondragstart="sccRowDragStart(event, '${rawEsc}')"
+             ondragover="sccRowDragOver(event)"
+             ondragleave="sccRowDragLeave(event)"
+             ondrop="sccRowDrop(event, '${rawEsc}')"
+             ondragend="sccRowDragEnd(event)"
+             ontouchstart="sccRowTouchStart(event, '${rawEsc}')"
+             ontouchmove="sccRowTouchMove(event)"
+             ontouchend="sccRowTouchEnd(event)">
+          <div class="tv-wl-sec-left" onclick="sccWlToggleCustomSection('${keyEsc}')">
+            <span class="tv-wl-drag-handle" title="Drag to reorder section">⋮⋮</span>
+            <span class="tv-wl-sec-arrow">${isCollapsed ? '▶' : '▼'}</span>
+            <span class="tv-wl-sec-title">${item.title}</span>
+            <span class="tv-wl-sec-count">(${item.count})</span>
+          </div>
+          <div class="tv-wl-sec-actions">
+            <button class="tv-wl-sec-btn" title="Rename section" onclick="event.stopPropagation(); sccWlRenameSection('${rawEsc}')">✎</button>
+            <button class="tv-wl-sec-btn del" title="Delete section" onclick="event.stopPropagation(); sccWlDeleteSection('${rawEsc}')">✕</button>
+          </div>
+        </div>
+      `;
+      return;
+    }
     if (item.type === 'header') {
       const isCollapsed = item.collapsed;
       const toggleFn = item.isCluster ? `sccWlToggleCluster('${(item.clusterName || item.label).replace(/'/g, "\\'")}')` : `sccWlToggleSector('${item.label.replace(/'/g, "\\'")}')`;
@@ -10449,8 +10895,12 @@ function updateMaxChartSidebarWatchlist() {
     const removeBtnHtml = showRemoveBtn ? '<button class="tv-max-wl-del-btn" onclick="event.stopPropagation(); sccWatchlistRemoveSymbol(\'' + sUpper + '\');" title="Remove ' + sUpper + ' from ' + _sccActiveWatchlist + '" style="background:none;border:none;color:#787b86;cursor:pointer;font-size:15px;font-weight:bold;line-height:1;padding:0 0 0 5px;opacity:0.35;transition:opacity 0.15s,color 0.15s;outline:none;" onmouseover="this.style.opacity=\'1\';this.style.color=\'#ef4444\';" onmouseout="this.style.opacity=\'0.35\';this.style.color=\'#787b86\';">×</button>' : '';
 
     const themeName = item.theme || tightDet.theme || '';
-    rowsHtml += '<div class="tv-max-wl-row ' + (isCur ? 'active' : '') + '" onclick="maxChartOnStockSelected(\'' + sUpper + '\')">' +
+    const isDraggable = _sccActiveWatchlist !== 'VCP' && _sccActiveWatchlist !== 'Clusters' && _sccActiveWatchlist !== 'Themes';
+    const dragAttr = isDraggable ? 'draggable="true" data-raw-item="' + sUpper + '" ondragstart="sccRowDragStart(event, \'' + sUpper + '\')" ondragover="sccRowDragOver(event)" ondragleave="sccRowDragLeave(event)" ondrop="sccRowDrop(event, \'' + sUpper + '\')" ondragend="sccRowDragEnd(event)" ontouchstart="sccRowTouchStart(event, \'' + sUpper + '\')" ontouchmove="sccRowTouchMove(event)" ontouchend="sccRowTouchEnd(event)"' : '';
+    const dragHandle = isDraggable ? '<span class="tv-wl-drag-handle" title="Drag to move stock">⋮⋮</span>' : '';
+    rowsHtml += '<div class="tv-max-wl-row ' + (isCur ? 'active' : '') + '" ' + dragAttr + ' onclick="maxChartOnStockSelected(\'' + sUpper + '\')">' +
       '<div style="display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;">' +
+      dragHandle +
       '<svg width="8" height="12" viewBox="0 0 10 18" fill="' + flagColor + '" onclick="sccWatchlistOpenFlagPopup(this, \'' + sUpper + '\'); event.stopPropagation();" style="cursor:pointer;flex-shrink:0;" title="Change flag color">' +
       '<path d="M0 0h10v18l-5-4-5 4V0z"/>' +
       '</svg>' +
