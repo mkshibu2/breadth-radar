@@ -1908,44 +1908,49 @@ function renderWinHudTableHtml(candles, details, vt) {
       const sStr = sVal != null ? (sVal >= 0 ? '+' : '') + Math.round(sVal) + '%' : '—';
       const eCol = (eVal != null && eVal >= 0) ? '#4ade80' : (eVal != null ? '#f87171' : 'var(--sub)');
       const sCol = (sVal != null && sVal >= 0) ? '#4ade80' : (sVal != null ? '#f87171' : 'var(--sub)');
-      return `<span style="padding:1px 4px;border-radius:2px;background:rgba(255,255,255,0.04);margin-right:3px;border:1px solid rgba(255,255,255,0.06);" title="${q.qtr || 'Quarter'}">` +
-        `<span style="color:var(--dim)">${q.qtr || 'Q'}:</span> ` +
+      return `<span style="padding:1px 5px;border-radius:3px;background:rgba(255,255,255,0.05);margin-right:3px;border:1px solid rgba(255,255,255,0.08);" title="${q.qtr || 'Quarter'}">` +
+        `<span style="color:#94a3b8;font-weight:600">${q.qtr || 'Q'}:</span> ` +
         `E <b style="color:${eCol}">${eStr}</b> ` +
         `S <b style="color:${sCol}">${sStr}</b>` +
         `</span>`;
     }).join('');
-    qHtml = `<span><span style="color:var(--teal);font-weight:700">Qtr Trend:</span> ${qChips}</span>`;
+    qHtml = `<span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#2dd4bf;font-weight:700;margin-right:4px;">Qtr Trend:</span>${qChips}</span>`;
   }
 
   return `
-    <div style="width:100%;background:var(--bg3);border-collapse:collapse;font-size:10px;font-family:var(--mono);">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 10px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px;">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <span><span style="color:var(--dim);font-weight:600">P/${inp.ema1Period}EMA:</span> <b style="color:${c10}">${dist10Txt}</b></span>
-          <span><span style="color:var(--dim);font-weight:600">P/${inp.sma1Period}SMA:</span> <b style="color:${c50}">${dist50Txt}</b></span>
-          <span><span style="color:var(--dim);font-weight:600">P/${inp.sma2Period}SMA:</span> <b style="color:${c200}">${dist200Txt}</b></span>
-          <span><span style="color:var(--dim);font-weight:600">P/52W Hi:</span> <b style="color:${c52}">${dist52Txt}</b></span>
-          <span><span style="color:var(--dim);font-weight:600">ADR(${inp.adrLen}):</span> <b style="color:${cAdr}">${adrTxt}</b></span>
-          <span><span style="color:var(--dim);font-weight:600">ATR%(${inp.atrLen}):</span> <b style="color:${cAtr}">${atrTxt}</b></span>
-          <span><span style="color:var(--dim);font-weight:600">AvgVol:</span> <b style="color:var(--text)">${avgVolTxt}</b></span>
-          <span><span style="color:var(--dim);font-weight:600">Vol:</span> <b style="color:var(--text)">${volTxt}</b></span>
-          <span><span style="color:var(--dim);font-weight:600">RVol:</span> <b style="color:${cRvol}">${rVolTxt}</b></span>
-          <span><span style="color:var(--dim);font-weight:600">U/D(${inp.udLen}):</span> <b style="color:${cUd}">${udTxt}</b></span>
-          <span><span style="color:var(--dim);font-weight:600">VT GTT:</span> <b style="color:${cVt}">${vtTxt}</b></span>
+    <div style="width:100%;background:#0b0e14;border-top:1px solid #1e222d;border-collapse:collapse;font-size:10px;font-family:var(--mono);line-height:1.35;user-select:none;">
+      <!-- Row 1: Technical Indicators -->
+      <div style="display:flex;align-items:center;padding:3px 10px;border-bottom:1px solid rgba(255,255,255,0.06);flex-wrap:wrap;gap:6px;">
+        <span style="background:rgba(56,189,248,0.14);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;padding:1px 6px;border-radius:3px;font-weight:800;font-size:9px;letter-spacing:0.4px;">📈 TECH</span>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">P/${inp.ema1Period}EMA:</span> <b style="color:${c10};margin-left:3px;">${dist10Txt}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">P/${inp.sma1Period}SMA:</span> <b style="color:${c50};margin-left:3px;">${dist50Txt}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">P/${inp.sma2Period}SMA:</span> <b style="color:${c200};margin-left:3px;">${dist200Txt}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">P/52W Hi:</span> <b style="color:${c52};margin-left:3px;">${dist52Txt}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">ADR(${inp.adrLen}):</span> <b style="color:${cAdr};margin-left:3px;">${adrTxt}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">ATR%(${inp.atrLen}):</span> <b style="color:${cAtr};margin-left:3px;">${atrTxt}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">AvgVol:</span> <b style="color:#f8fafc;margin-left:3px;">${avgVolTxt}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Vol:</span> <b style="color:#f8fafc;margin-left:3px;">${volTxt}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">RVol:</span> <b style="color:${cRvol};margin-left:3px;">${rVolTxt}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">U/D(${inp.udLen}):</span> <b style="color:${cUd};margin-left:3px;">${udTxt}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">VT GTT:</span> <b style="color:${cVt};margin-left:3px;">${vtTxt}</b></span>
         </div>
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 10px;flex-wrap:wrap;gap:8px;background:rgba(0,0,0,0.18);">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <span><span style="color:var(--dim);font-weight:600">Sector:</span> <span style="color:var(--text)">${(details && details.sector) || '—'}</span></span>
-          <span><span style="color:var(--dim);font-weight:600">Industry:</span> <span style="color:var(--sub)">${(details && details.industry) || '—'}</span></span>
-          <span><span style="color:var(--dim);font-weight:600">Cap:</span> <span style="color:var(--teal)">${capVal}</span></span>
-          <span><span style="color:var(--dim);font-weight:600">ROE:</span> <b style="color:${roeColor}">${roeVal}</b></span>
-          <span><span style="color:var(--dim);font-weight:600">90D%:</span> <b style="color:${r90Color}">${r90}</b></span>
-          <span><span style="color:var(--dim);font-weight:600">DD%:</span> <b style="color:${ddColor}">${dd}</b></span>
-          <span><span style="color:var(--dim);font-weight:600">Setup:</span> <b style="color:var(--text)">${setupVal}</b></span>
-          <span><span style="color:var(--dim);font-weight:600">RS Rating:</span> <b style="color:#fb923c">${rsRating}</b></span>
-          <span><span style="color:var(--dim);font-weight:600">Score:</span> <b style="color:var(--teal)">${scoreVal}</b></span>
-          <span><span style="color:var(--dim);font-weight:600">Grade:</span> <span style="background:${gradeColor}18;border:1px solid ${gradeColor}40;color:${gradeColor};padding:1px 5px;border-radius:3px;font-weight:700">${gradeVal}</span></span>
+
+      <!-- Row 2: Fundamental & Scanner Metrics -->
+      <div style="display:flex;align-items:center;padding:3px 10px;flex-wrap:wrap;gap:6px;background:rgba(0,0,0,0.22);">
+        <span style="background:rgba(45,212,191,0.14);border:1px solid rgba(45,212,191,0.35);color:#2dd4bf;padding:1px 6px;border-radius:3px;font-weight:800;font-size:9px;letter-spacing:0.4px;">🏢 FUNDAMENTALS</span>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Sector:</span> <b style="color:#38bdf8;font-weight:700;margin-left:3px;">${(details && details.sector) || '—'}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Industry:</span> <b style="color:#f1f5f9;font-weight:600;margin-left:3px;">${(details && details.industry) || '—'}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Cap:</span> <b style="color:#2dd4bf;font-weight:700;margin-left:3px;">${capVal}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">ROE:</span> <b style="color:${roeColor};font-weight:700;margin-left:3px;">${roeVal}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">90D%:</span> <b style="color:${r90Color};margin-left:3px;">${r90}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">DD%:</span> <b style="color:${ddColor};margin-left:3px;">${dd}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Setup:</span> <b style="color:#f8fafc;margin-left:3px;">${setupVal}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">RS Rating:</span> <b style="color:#fb923c;font-weight:700;margin-left:3px;">${rsRating}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Score:</span> <b style="color:#2dd4bf;font-weight:700;margin-left:3px;">${scoreVal}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Grade:</span> <span style="background:${gradeColor}25;border:1px solid ${gradeColor}60;color:${gradeColor};padding:1px 6px;border-radius:3px;font-weight:800;margin-left:3px;">${gradeVal}</span></span>
           ${qHtml}
         </div>
       </div>
@@ -4152,6 +4157,8 @@ function buildPayload() {
     sccWatchlists: _sccWatchlists,
     sccSymbolFlags: _sccSymbolFlags,
     sccWatchlistsUpdatedAt: parseInt(localStorage.getItem('_sccWatchlistsUpdatedAt') || '0', 10) || now,
+    chartDrawings: (typeof _chartDrawings === 'object' && _chartDrawings) ? _chartDrawings : {},
+    chartDrawingsUpdatedAt: parseInt(localStorage.getItem('_chartDrawingsUpdatedAt') || '0', 10) || now,
     fyersCreds: fyersCreds || null
   };
 }
@@ -4218,6 +4225,31 @@ function mergeCloudWatchlists(cloudWls, cloudFlags, cloudUpdatedAt = 0) {
 }
 window.mergeCloudWatchlists = mergeCloudWatchlists;
 
+function mergeCloudChartDrawings(cloudDrawings, cloudUpdatedAt = 0) {
+  if (!cloudDrawings || typeof cloudDrawings !== 'object') return;
+  const localUpdatedAt = parseInt(localStorage.getItem('_chartDrawingsUpdatedAt') || '0', 10);
+  const cloudTime = parseInt(cloudUpdatedAt || '0', 10);
+
+  // If local changes are strictly newer, keep local and schedule cloud push
+  if (localUpdatedAt > cloudTime) {
+    console.log('[Drawings Sync] Local is newer (' + localUpdatedAt + ' > ' + cloudTime + '). Keeping local drawings.');
+    setTimeout(() => { if (typeof pushToCloud === 'function') pushToCloud().catch(() => {}); }, 1500);
+    return;
+  }
+
+  const localHasDrawings = typeof _chartDrawings === 'object' && Object.keys(_chartDrawings || {}).some(k => (_chartDrawings[k] || []).length > 0);
+  if (cloudTime >= localUpdatedAt || !localHasDrawings) {
+    console.log('[Drawings Sync] Adopting cloud drawings (' + cloudTime + ' >= ' + localUpdatedAt + ').');
+    _chartDrawings = { ...cloudDrawings };
+    localStorage.setItem('nse_chart_drawings_v2', JSON.stringify(_chartDrawings));
+    localStorage.setItem('_chartDrawingsUpdatedAt', (cloudTime || Date.now()).toString());
+    if (typeof redrawChartDrawings === 'function') {
+      try { redrawChartDrawings(); } catch (e) { }
+    }
+  }
+}
+window.mergeCloudChartDrawings = mergeCloudChartDrawings;
+
 function mergeByKey(cloudArr, localArr, keyFn) {
   const map = {}; (cloudArr || []).forEach(d => { const k = keyFn(d); if (k) map[k] = d; }); (localArr || []).forEach(d => {
     const k = keyFn(d); if (!k) return; const existing = map[k]; if (!existing) { map[k] = d; return; }
@@ -4233,6 +4265,11 @@ async function pullFromCloud(key, bin) {
   setSyncStatus('syncing', 'Pulling…'); try {
     const raw = await jbRead(cfg.key, cfg.bin); const cloudRecs = Array.isArray(raw) ? raw : (raw.records || []); const cloudBsr = Array.isArray(raw) ? [] : (raw.bsr || []); const cloudMpm = Array.isArray(raw) ? [] : (raw.mpm || []); const cloudFtd = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.ftd || []) : []; const cloudSrt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.srt || []) : []; saveLocal(mergeByKey(cloudRecs, loadLocal(), r => r.date)); bsrSave(mergeByKey(cloudBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); mpmSave(mergeByKey(cloudMpm, mpmLoad(), d => d.date)); srtSave(mergeByKey(cloudSrt, srtLoad(), s => s.id)); const mergedFtd = mergeByKey(cloudFtd, ftdLoad(), d => d.date).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ensureOctoberDataSeeded(); ftdScanUndercutAll(); if (typeof raw === 'object' && !Array.isArray(raw)) { if (raw.bsrMode) mergeBsrMode(raw.bsrMode, raw.bsrModeUpdatedAt); if (raw.bsrQuick) mergeBsrQuick(raw.bsrQuick); } const cloudWatchlists = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccWatchlists : null; const cloudSymbolFlags = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.sccSymbolFlags : null; const cloudWatchlistsUpdatedAt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.sccWatchlistsUpdatedAt || raw._pushedAt || 0) : 0; if (cloudWatchlists) {
       mergeCloudWatchlists(cloudWatchlists, cloudSymbolFlags, cloudWatchlistsUpdatedAt);
+    }
+    const cloudDrawings = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.chartDrawings : null;
+    const cloudDrawingsUpdatedAt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.chartDrawingsUpdatedAt || raw._pushedAt || 0) : 0;
+    if (cloudDrawings) {
+      mergeCloudChartDrawings(cloudDrawings, cloudDrawingsUpdatedAt);
     }
     const merged = loadLocal(); setSyncStatus('ok', 'Synced'); setupFlash(`✓ Pulled — ${merged.length} breadth + ${bsrLoad().length} BSR + ${mpmLoad().length} MPM + ${srtLoad().length} sectors`, 'var(--lime)'); renderAll(); bsrRenderAll(); mpmRenderAll(); renderRPG(); renderMarketSummary(); renderMarketCycle(); ftdRender(); renderAnalysisFTD(); srtRender(); sccWlRenderTabs(); sccWatchlistRender(); sccWatchlistFetchAll();
   } catch (e) { setSyncStatus('err', 'Sync Error'); setupFlash('✗ Pull failed: ' + e.message, 'var(--red)'); }
@@ -5227,6 +5264,11 @@ async function seedHistoricalData() {
       const payload = await jbRead(cfg.key, cfg.bin); const isLegacy = Array.isArray(payload); const cRec = isLegacy ? payload : (payload.records || []); saveLocal(mergeByKey(cRec, loadLocal(), r => r.date)); const cBsr = isLegacy ? [] : (payload.bsr || []); bsrSave(mergeByKey(cBsr, bsrLoad(), t => t.id || (t.sym + '_' + t.date))); if (!isLegacy && payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt); if (!isLegacy && payload.bsrQuick) mergeBsrQuick(payload.bsrQuick); const cMpm = isLegacy ? [] : (payload.mpm || []); mpmSave(mergeByKey(cMpm, mpmLoad(), d => d.date)); const cFtd = isLegacy ? [] : (payload.ftd || []); const mergedFtd = mergeByKey(cFtd, ftdLoad(), d => d.date).sort((a, b) => b.date.localeCompare(a.date)); ftdSaveData(mergedFtd); ensureOctoberDataSeeded(); ftdScanUndercutAll(); if (!cFtd.some(d => d.date === '2026-10-13' && d.type === 'followthrough') || cFtd.some(d => d.date === '2026-10-14' && d.type === 'attempt') || cFtd.filter(d => d.date === '2026-10-09').length > 1) { setTimeout(() => pushToCloud().catch(() => { }), 1000); } const cSrt = isLegacy ? [] : (payload.srt || []); srtSave(mergeByKey(cSrt, srtLoad(), s => s.id)); const cloudWatchlists = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccWatchlists : null; const cloudSymbolFlags = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.sccSymbolFlags : null; const cloudWatchlistsUpdatedAt = (typeof payload === 'object' && !Array.isArray(payload)) ? (payload.sccWatchlistsUpdatedAt || payload._pushedAt || 0) : 0; if (cloudWatchlists) {
         mergeCloudWatchlists(cloudWatchlists, cloudSymbolFlags, cloudWatchlistsUpdatedAt);
       }
+      const cloudDrawings = (typeof payload === 'object' && !Array.isArray(payload)) ? payload.chartDrawings : null;
+      const cloudDrawingsUpdatedAt = (typeof payload === 'object' && !Array.isArray(payload)) ? (payload.chartDrawingsUpdatedAt || payload._pushedAt || 0) : 0;
+      if (cloudDrawings) {
+        mergeCloudChartDrawings(cloudDrawings, cloudDrawingsUpdatedAt);
+      }
       if (typeof payload === 'object' && !Array.isArray(payload) && payload.fyersCreds && payload.fyersCreds.token) {
         const localFyers = (typeof fyersGetCreds === 'function') ? fyersGetCreds() : null;
         const cloudFyers = payload.fyersCreds;
@@ -6131,6 +6173,9 @@ async function cfgConnectGuest() {
     if (typeof payload === 'object' && !Array.isArray(payload)) {
       if (payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt);
       if (payload.bsrQuick) mergeBsrQuick(payload.bsrQuick);
+      const cloudDrawings = payload.chartDrawings;
+      const cloudDrawingsUpdatedAt = payload.chartDrawingsUpdatedAt || payload._pushedAt || 0;
+      if (cloudDrawings) mergeCloudChartDrawings(cloudDrawings, cloudDrawingsUpdatedAt);
     }
     lsSet(LS_GUEST_BIN, bin);
     cfgBanner(`✅ Connected! ${recs.length} records · ${bsr.length} BSR · ${mpm.length} MPM · ${srt.length} sectors loaded.`, 'ok', 'cfg-guest-msg');
@@ -6172,6 +6217,9 @@ async function guestPullData() {
     if (typeof payload === 'object' && !Array.isArray(payload)) {
       if (payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt);
       if (payload.bsrQuick) mergeBsrQuick(payload.bsrQuick);
+      const cloudDrawings = payload.chartDrawings;
+      const cloudDrawingsUpdatedAt = payload.chartDrawingsUpdatedAt || payload._pushedAt || 0;
+      if (cloudDrawings) mergeCloudChartDrawings(cloudDrawings, cloudDrawingsUpdatedAt);
     }
     setSyncStatus('ok', `Guest · ${recs.length}rec · ${mpm.length}mpm · ${srt.length}sec`);
     renderAll();
@@ -6214,6 +6262,9 @@ function initGuestMode() {
     if (typeof payload === 'object' && !Array.isArray(payload)) {
       if (payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt);
       if (payload.bsrQuick) mergeBsrQuick(payload.bsrQuick);
+      const cloudDrawings = payload.chartDrawings;
+      const cloudDrawingsUpdatedAt = payload.chartDrawingsUpdatedAt || payload._pushedAt || 0;
+      if (cloudDrawings) mergeCloudChartDrawings(cloudDrawings, cloudDrawingsUpdatedAt);
     }
     setSyncStatus('ok', `Guest · ${recs.length}rec · ${mpm.length}mpm · ${srt.length}sec`);
     renderAll();
@@ -6259,6 +6310,11 @@ async function pullFromCloudSilently() {
     const cloudWatchlistsUpdatedAt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.sccWatchlistsUpdatedAt || raw._pushedAt || 0) : 0;
     if (cloudWatchlists) {
       mergeCloudWatchlists(cloudWatchlists, cloudSymbolFlags, cloudWatchlistsUpdatedAt);
+    }
+    const cloudDrawings = (typeof raw === 'object' && !Array.isArray(raw)) ? raw.chartDrawings : null;
+    const cloudDrawingsUpdatedAt = (typeof raw === 'object' && !Array.isArray(raw)) ? (raw.chartDrawingsUpdatedAt || raw._pushedAt || 0) : 0;
+    if (cloudDrawings) {
+      mergeCloudChartDrawings(cloudDrawings, cloudDrawingsUpdatedAt);
     }
     // Pull Fyers credentials & active token if present in cloud
     if (typeof raw === 'object' && !Array.isArray(raw) && raw.fyersCreds && raw.fyersCreds.token) {
@@ -6319,6 +6375,9 @@ async function guestPullDataSilently() {
     if (typeof payload === 'object' && !Array.isArray(payload)) {
       if (payload.bsrMode) mergeBsrMode(payload.bsrMode, payload.bsrModeUpdatedAt);
       if (payload.bsrQuick) mergeBsrQuick(payload.bsrQuick);
+      const cloudDrawings = payload.chartDrawings;
+      const cloudDrawingsUpdatedAt = payload.chartDrawingsUpdatedAt || payload._pushedAt || 0;
+      if (cloudDrawings) mergeCloudChartDrawings(cloudDrawings, cloudDrawingsUpdatedAt);
     }
     renderAll();
     bsrRenderAll();
@@ -6489,36 +6548,43 @@ function getStockDetails(symbol) {
   return { symbol: sUpper, company: company, sector: sector, industry: industry, stats: scanStats };
 }
 function generateStatsTableHtml(details) {
-  const stats = details.stats; const fmt = (val, isPct = false) => {
-    if (val == null || isNaN(val)) return '—'; const num = parseFloat(val); if (isPct) { return (num >= 0 ? '+' : '') + num.toFixed(1) + '%'; }
+  const stats = details.stats;
+  const fmt = (val, isPct = false) => {
+    if (val == null || isNaN(val)) return '—';
+    const num = parseFloat(val);
+    if (isPct) { return (num >= 0 ? '+' : '') + num.toFixed(1) + '%'; }
     return num.toFixed(1);
-  }; const r90Val = stats ? fmt(stats.r90, true) : '—'; const dist52Val = stats ? fmt(stats.dist52, true) : '—'; const ddVal = stats ? fmt(stats.drawdown, true) : '—'; const setupVal = stats ? (stats.setup || '—') : '—'; const rsVal = stats ? (stats.rs_rating != null ? Math.round(stats.rs_rating) : '—') : '—'; const scoreVal = stats ? (stats.final_score != null ? Math.round(stats.final_score) : '—') : '—'; const gradeVal = stats ? (stats.grade || '—') : '—'; const getGradeColor = (g) => { const colors = { 'A+': '#2dd4bf', 'A': '#4ade80', 'B': '#fbbf24', 'C': '#fb923c', 'REJECT': '#f87171' }; return colors[g] || 'var(--dim)'; }; const gradeColor = getGradeColor(gradeVal); const r90Color = stats && stats.r90 >= 50 ? '#4ade80' : (stats && stats.r90 >= 30 ? '#fbbf24' : (stats && stats.r90 < 0 ? '#f87171' : 'var(--text)')); const ddColor = stats && stats.drawdown >= -5 ? '#4ade80' : (stats && stats.drawdown >= -15 ? '#fbbf24' : '#f87171'); return `
-    <table style="width:100%; border-collapse:collapse; font-size:10px; text-align:center; table-layout: fixed; background:var(--bg3);">
-      <thead>
-        <tr style="color:var(--dim); font-size:8px; text-transform:uppercase; letter-spacing:0.3px; background:rgba(0,0,0,0.25); border-bottom: 1px solid var(--border);">
-          <th style="padding:4px 2px; border-right:1px solid var(--border); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">90D%</th>
-          <th style="padding:4px 2px; border-right:1px solid var(--border); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">52W%</th>
-          <th style="padding:4px 2px; border-right:1px solid var(--border); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">DD%</th>
-          <th style="padding:4px 2px; border-right:1px solid var(--border); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width: 30%;">Setup</th>
-          <th style="padding:4px 2px; border-right:1px solid var(--border); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">RS</th>
-          <th style="padding:4px 2px; border-right:1px solid var(--border); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Score</th>
-          <th style="padding:4px 2px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Grade</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr style="height: 24px;">
-          <td style="padding:4px 2px; border-right:1px solid var(--border); font-family:var(--mono); color:${r90Color}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r90Val}</td>
-          <td style="padding:4px 2px; border-right:1px solid var(--border); font-family:var(--mono); color:#60a5fa; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${dist52Val}</td>
-          <td style="padding:4px 2px; border-right:1px solid var(--border); font-family:var(--mono); color:${ddColor}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${ddVal}</td>
-          <td style="padding:4px 2px; border-right:1px solid var(--border); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:9px; color:var(--text);" title="${setupVal}">${setupVal}</td>
-          <td style="padding:4px 2px; border-right:1px solid var(--border); font-family:var(--mono); color:#fb923c; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${rsVal}</td>
-          <td style="padding:4px 2px; border-right:1px solid var(--border); font-family:var(--mono); color:var(--teal); font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${scoreVal}</td>
-          <td style="padding:4px 2px; font-weight:bold; color:${gradeColor}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-            <span style="background:${gradeColor}15; border:1px solid ${gradeColor}30; padding:1px 4px; border-radius:3px; font-size:9px;">${gradeVal}</span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  };
+  const r90Val = stats ? fmt(stats.r90, true) : '—';
+  const dist52Val = stats ? fmt(stats.dist52, true) : '—';
+  const ddVal = stats ? fmt(stats.drawdown, true) : '—';
+  const setupVal = stats ? (stats.setup || '—') : '—';
+  const rsVal = stats ? (stats.rs_rating != null ? Math.round(stats.rs_rating) : '—') : '—';
+  const scoreVal = stats ? (stats.final_score != null ? Math.round(stats.final_score) : '—') : '—';
+  const gradeVal = stats ? (stats.grade || '—') : '—';
+  const getGradeColor = (g) => {
+    const colors = { 'A+': '#2dd4bf', 'A': '#4ade80', 'B': '#fbbf24', 'C': '#fb923c', 'REJECT': '#f87171' };
+    return colors[g] || 'var(--dim)';
+  };
+  const gradeColor = getGradeColor(gradeVal);
+  const r90Color = stats && stats.r90 >= 50 ? '#4ade80' : (stats && stats.r90 >= 30 ? '#fbbf24' : (stats && stats.r90 < 0 ? '#f87171' : 'var(--text)'));
+  const ddColor = stats && stats.drawdown >= -5 ? '#4ade80' : (stats && stats.drawdown >= -15 ? '#fbbf24' : '#f87171');
+
+  return `
+    <div style="width:100%;background:#0b0e14;border-top:1px solid #1e222d;padding:4px 10px;font-size:10px;font-family:var(--mono);line-height:1.35;user-select:none;display:flex;align-items:center;flex-wrap:wrap;gap:8px;">
+      <span style="background:rgba(45,212,191,0.14);border:1px solid rgba(45,212,191,0.35);color:#2dd4bf;padding:1px 6px;border-radius:3px;font-weight:800;font-size:9px;letter-spacing:0.4px;">🏢 FUNDAMENTALS</span>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Sector:</span> <b style="color:#38bdf8;font-weight:700;margin-left:3px;">${(details && details.sector) || '—'}</b></span>
+        <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Industry:</span> <b style="color:#f1f5f9;font-weight:600;margin-left:3px;">${(details && details.industry) || '—'}</b></span>
+        <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">90D%:</span> <b style="color:${r90Color};margin-left:3px;">${r90Val}</b></span>
+        <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">52W%:</span> <b style="color:#60a5fa;margin-left:3px;">${dist52Val}</b></span>
+        <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">DD%:</span> <b style="color:${ddColor};margin-left:3px;">${ddVal}</b></span>
+        <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Setup:</span> <b style="color:#f8fafc;margin-left:3px;">${setupVal}</b></span>
+        <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">RS:</span> <b style="color:#fb923c;font-weight:700;margin-left:3px;">${rsVal}</b></span>
+        <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Score:</span> <b style="color:#2dd4bf;font-weight:700;margin-left:3px;">${scoreVal}</b></span>
+        <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Grade:</span> <span style="background:${gradeColor}25;border:1px solid ${gradeColor}60;color:${gradeColor};padding:1px 6px;border-radius:3px;font-weight:800;margin-left:3px;">${gradeVal}</span></span>
+      </div>
+    </div>
   `;
 }
 function toggleMaxChartSidebar(forceState) {
@@ -8248,6 +8314,42 @@ let _dragStartDrawing = null; // clone of drawing at drag start
 let _floatBarOffset = { x: 0, y: 0 };
 let _isDrawMouseDown = false;
 
+function getDefaultFibLevels() {
+  return [
+    { r: 0, c: '#787b86', enabled: true },
+    { r: 0.236, c: '#f23645', enabled: true },
+    { r: 0.382, c: '#ff9800', enabled: true },
+    { r: 0.5, c: '#4caf50', enabled: true },
+    { r: 0.618, c: '#089981', enabled: true },
+    { r: 0.786, c: '#00bcd4', enabled: true },
+    { r: 1.0, c: '#787b86', enabled: true },
+    { r: 1.272, c: '#ab47bc', enabled: false },
+    { r: 1.618, c: '#2962ff', enabled: true },
+    { r: 2.618, c: '#ec4899', enabled: false },
+    { r: 3.618, c: '#9c27b0', enabled: false },
+    { r: 4.236, c: '#e91e63', enabled: false }
+  ];
+}
+window.getDefaultFibLevels = getDefaultFibLevels;
+
+function getDefaultFibExtLevels() {
+  return [
+    { r: 0, c: '#787b86', enabled: true },
+    { r: 0.382, c: '#ff9800', enabled: true },
+    { r: 0.5, c: '#4caf50', enabled: true },
+    { r: 0.618, c: '#089981', enabled: true },
+    { r: 0.786, c: '#00bcd4', enabled: false },
+    { r: 1.0, c: '#787b86', enabled: true },
+    { r: 1.272, c: '#ab47bc', enabled: true },
+    { r: 1.618, c: '#2962ff', enabled: true },
+    { r: 2.0, c: '#38bdf8', enabled: true },
+    { r: 2.618, c: '#ec4899', enabled: true },
+    { r: 3.618, c: '#9c27b0', enabled: false },
+    { r: 4.236, c: '#e91e63', enabled: false }
+  ];
+}
+window.getDefaultFibExtLevels = getDefaultFibExtLevels;
+
 let _chartDrawings = {};
 try {
   _chartDrawings = JSON.parse(localStorage.getItem('nse_chart_drawings_v2') || '{}');
@@ -8275,9 +8377,20 @@ function syncCanvasSize() {
 }
 window.syncCanvasSize = syncCanvasSize;
 
-function saveChartDrawings() {
+let _cloudPushDrawingsDebounce = null;
+function saveChartDrawings(syncCloud = true) {
   try {
     localStorage.setItem('nse_chart_drawings_v2', JSON.stringify(_chartDrawings));
+    const now = Date.now();
+    localStorage.setItem('_chartDrawingsUpdatedAt', now.toString());
+    if (syncCloud) {
+      if (_cloudPushDrawingsDebounce) clearTimeout(_cloudPushDrawingsDebounce);
+      _cloudPushDrawingsDebounce = setTimeout(() => {
+        if (typeof pushToCloud === 'function') {
+          pushToCloud().catch(e => console.warn('[Cloud Sync Drawings] push failed:', e.message));
+        }
+      }, 1500);
+    }
   } catch (e) { }
 }
 
@@ -8341,9 +8454,17 @@ function setDrawingTool(tool) {
   } else if (tool === 'ray') {
     showChartToast('↗ Arrow Ray: Click origin then target direction', '#eab308');
   } else if (tool === 'fib') {
-    showChartToast('🔢 Fibonacci: Click 2 swing points or drag', '#38bdf8');
+    showChartToast('🔢 Fib Retracement: Click 2 swing points or drag', '#38bdf8');
+  } else if (tool === 'fib_ext') {
+    showChartToast('🔢 Fib Extension: Click 3 points (Origin, Peak, Pullback)', '#38bdf8');
+  } else if (tool === 'curve') {
+    showChartToast('〰 Curve: Click 2 endpoints then adjust bend', '#38bdf8');
   } else if (tool === 'rect') {
-    showChartToast('▢ Rectangle Zone: Click 2 corners or drag', '#38bdf8');
+    showChartToast('▢ Rectangle: Click 2 corners or drag', '#38bdf8');
+  } else if (tool === 'path') {
+    showChartToast('〽 Path: Click points, double-click or Enter to finish', '#38bdf8');
+  } else if (tool === 'comment') {
+    showChartToast('💬 Comment: Click to place callout balloon', '#38bdf8');
   }
 }
 window.setDrawingTool = setDrawingTool;
@@ -8395,7 +8516,23 @@ function hitTestChartDrawings(x, y) {
 
   for (let i = drawings.length - 1; i >= 0; i--) {
     const d = drawings[i];
-    if (!d || !d.p1) continue;
+    if (!d || (!d.p1 && (!d.points || !d.points.length))) continue;
+
+    // Multi-point tool: Path
+    if (d.type === 'path' && d.points && d.points.length >= 2) {
+      const pts = d.points.map(p => pointToPixels(p, timeScale, series));
+      for (let k = 0; k < pts.length; k++) {
+        if (Math.hypot(x - pts[k].x, y - pts[k].y) <= 10) {
+          return { index: i, drawing: d, handle: 'pt_' + k, pt: pts[k] };
+        }
+      }
+      for (let k = 0; k < pts.length - 1; k++) {
+        if (distToSegment(x, y, pts[k].x, pts[k].y, pts[k + 1].x, pts[k + 1].y) <= 8) {
+          return { index: i, drawing: d, handle: 'body' };
+        }
+      }
+      continue;
+    }
 
     const pt1 = pointToPixels(d.p1, timeScale, series);
     const pt2 = d.p2 ? pointToPixels(d.p2, timeScale, series) : pt1;
@@ -8405,6 +8542,18 @@ function hitTestChartDrawings(x, y) {
       if (Math.hypot(x - pt1.x, y - pt1.y) <= 9) return { index: i, drawing: d, handle: 'p1', pt: pt1 };
       if (Math.hypot(x - pt2.x, y - pt2.y) <= 9) return { index: i, drawing: d, handle: 'p2', pt: pt2 };
       if (distToSegment(x, y, pt1.x, pt1.y, pt2.x, pt2.y) <= 7) return { index: i, drawing: d, handle: 'body' };
+    } else if (d.type === 'curve') {
+      const pt3 = d.p3 ? pointToPixels(d.p3, timeScale, series) : { x: (pt1.x + pt2.x) / 2, y: (pt1.y + pt2.y) / 2 };
+      if (Math.hypot(x - pt1.x, y - pt1.y) <= 10) return { index: i, drawing: d, handle: 'p1', pt: pt1 };
+      if (Math.hypot(x - pt2.x, y - pt2.y) <= 10) return { index: i, drawing: d, handle: 'p2', pt: pt2 };
+      if (Math.hypot(x - pt3.x, y - pt3.y) <= 10) return { index: i, drawing: d, handle: 'p3', pt: pt3 };
+      const cpX = 2 * pt3.x - 0.5 * pt1.x - 0.5 * pt2.x;
+      const cpY = 2 * pt3.y - 0.5 * pt1.y - 0.5 * pt2.y;
+      for (let t = 0; t <= 1; t += 0.05) {
+        const px = (1 - t) * (1 - t) * pt1.x + 2 * (1 - t) * t * cpX + t * t * pt2.x;
+        const py = (1 - t) * (1 - t) * pt1.y + 2 * (1 - t) * t * cpY + t * t * pt2.y;
+        if (Math.hypot(x - px, y - py) <= 8) return { index: i, drawing: d, handle: 'body' };
+      }
     } else if (d.type === 'ray_h') {
       if (Math.hypot(x - pt1.x, y - pt1.y) <= 9) return { index: i, drawing: d, handle: 'p1', pt: pt1 };
       if (Math.abs(y - pt1.y) <= 7 && x >= pt1.x - 6) return { index: i, drawing: d, handle: 'body' };
@@ -8446,11 +8595,57 @@ function hitTestChartDrawings(x, y) {
       if (Math.hypot(x - pt1.x, y - pt1.y) <= 10) return { index: i, drawing: d, handle: 'p1', pt: pt1 };
       if (Math.hypot(x - pt2.x, y - pt2.y) <= 10) return { index: i, drawing: d, handle: 'p2', pt: pt2 };
       if (distToSegment(x, y, pt1.x, pt1.y, pt2.x, pt2.y) <= 8) return { index: i, drawing: d, handle: 'body' };
-      const minY = Math.min(pt1.y, pt2.y) - 6;
-      const maxY = Math.max(pt1.y, pt2.y) + 6;
-      const minX = Math.min(pt1.x, pt2.x) - 10;
-      const maxX = Math.max(pt1.x, pt2.x, 900);
-      if (y >= minY && y <= maxY && x >= minX && x <= maxX) {
+      const p1Price = (d.p1 && d.p1.price != null) ? d.p1.price : 0;
+      const p2Price = (d.p2 && d.p2.price != null) ? d.p2.price : 0;
+      const fibLvls = (d.levels && d.levels.length) ? d.levels.filter(l => l.enabled !== false) : getDefaultFibLevels().filter(l => l.enabled !== false);
+      const minX = Math.min(pt1.x, pt2.x) - 40;
+      const isReverse = Boolean(d.reverse);
+      for (const lvl of fibLvls) {
+        const r = lvl.r;
+        const lvlP = isReverse ? (p1Price + r * (p2Price - p1Price)) : (p2Price + r * (p1Price - p2Price));
+        let lvlY = isReverse ? (pt1.y + r * (pt2.y - pt1.y)) : (pt2.y + r * (pt1.y - pt2.y));
+        if (series && typeof series.priceToCoordinate === 'function') {
+          const cy = series.priceToCoordinate(lvlP);
+          if (cy != null && isFinite(cy)) lvlY = cy;
+        }
+        if (Math.abs(y - lvlY) <= 7 && x >= minX) return { index: i, drawing: d, handle: 'body' };
+      }
+    } else if (d.type === 'fib_ext') {
+      const pt3 = d.p3 ? pointToPixels(d.p3, timeScale, series) : pt2;
+      if (Math.hypot(x - pt1.x, y - pt1.y) <= 10) return { index: i, drawing: d, handle: 'p1', pt: pt1 };
+      if (Math.hypot(x - pt2.x, y - pt2.y) <= 10) return { index: i, drawing: d, handle: 'p2', pt: pt2 };
+      if (Math.hypot(x - pt3.x, y - pt3.y) <= 10) return { index: i, drawing: d, handle: 'p3', pt: pt3 };
+      if (distToSegment(x, y, pt1.x, pt1.y, pt2.x, pt2.y) <= 8) return { index: i, drawing: d, handle: 'body' };
+      if (distToSegment(x, y, pt2.x, pt2.y, pt3.x, pt3.y) <= 8) return { index: i, drawing: d, handle: 'body' };
+      const p1Price = (d.p1 && d.p1.price != null) ? d.p1.price : 0;
+      const p2Price = (d.p2 && d.p2.price != null) ? d.p2.price : 0;
+      const p3Price = (d.p3 && d.p3.price != null) ? d.p3.price : p2Price;
+      const deltaP = p2Price - p1Price;
+      const extLvls = (d.levels && d.levels.length) ? d.levels.filter(l => l.enabled !== false) : getDefaultFibExtLevels().filter(l => l.enabled !== false);
+      const minX = pt3.x - 10;
+      for (const lvl of extLvls) {
+        const r = lvl.r;
+        const lvlP = p3Price + r * deltaP;
+        let lvlY = pt3.y;
+        if (series && typeof series.priceToCoordinate === 'function') {
+          const cy = series.priceToCoordinate(lvlP);
+          if (cy != null && isFinite(cy)) lvlY = cy;
+        }
+        if (Math.abs(y - lvlY) <= 7 && x >= minX) return { index: i, drawing: d, handle: 'body' };
+      }
+    } else if (d.type === 'comment') {
+      const pt2 = d.p2 ? pointToPixels(d.p2, timeScale, series) : { x: pt1.x + 45, y: pt1.y - 40 };
+      if (Math.hypot(x - pt1.x, y - pt1.y) <= 10) return { index: i, drawing: d, handle: 'p1', pt: pt1 };
+      if (Math.hypot(x - pt2.x, y - pt2.y) <= 10) return { index: i, drawing: d, handle: 'p2', pt: pt2 };
+      const txt = d.text || 'Comment';
+      const bw = Math.max(65, (txt.length * 7.5) + 24);
+      const bh = 28;
+      const bx = pt2.x - bw / 2;
+      const by = pt2.y - bh / 2;
+      if (x >= bx - 4 && x <= bx + bw + 4 && y >= by - 4 && y <= by + bh + 4) {
+        return { index: i, drawing: d, handle: 'p2', pt: pt2 };
+      }
+      if (distToSegment(x, y, pt1.x, pt1.y, pt2.x, pt2.y) <= 8) {
         return { index: i, drawing: d, handle: 'body' };
       }
     } else if (d.type === 'pricenote') {
@@ -8528,6 +8723,34 @@ function initChartDrawingCanvas() {
 
   // Stage Mousemove: Dynamically grant pointer-events when hovering existing drawings in select mode
   const stage = document.getElementById('max-chart-stage') || canvas.parentElement;
+  if (stage && !stage._dragScaleWired) {
+    stage._dragScaleWired = true;
+    stage.addEventListener('wheel', () => {
+      requestAnimationFrame(redrawChartDrawings);
+    }, { passive: true });
+
+    let isPriceScaleDragging = false;
+    stage.addEventListener('mousedown', e => {
+      const rect = stage.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const chartPlotW = rect.width - 65;
+      if (x >= chartPlotW || e.shiftKey || e.button === 0) {
+        isPriceScaleDragging = true;
+      }
+    });
+    window.addEventListener('mousemove', () => {
+      if (isPriceScaleDragging) {
+        requestAnimationFrame(redrawChartDrawings);
+      }
+    });
+    window.addEventListener('mouseup', () => {
+      if (isPriceScaleDragging) {
+        isPriceScaleDragging = false;
+        requestAnimationFrame(redrawChartDrawings);
+      }
+    });
+  }
+
   if (stage && !stage._hoverWired) {
     stage._hoverWired = true;
     stage.addEventListener('mousemove', e => {
@@ -8665,7 +8888,29 @@ function initChartDrawingCanvas() {
       return;
     }
 
-    // 3. Single-click tool: Text Annotation
+    // 3. Single-click tool: Comment Tool
+    if (_currentDrawTool === 'comment') {
+      const text = prompt('Enter comment:', 'Note');
+      if (text && text.trim()) {
+        const offsetLogical = coords.logical != null ? coords.logical + 4 : null;
+        const offsetPrice = coords.price != null ? coords.price * 1.025 : null;
+        commitNewDrawing({
+          type: 'comment',
+          p1: { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price },
+          p2: { x: coords.x + 45, y: coords.y - 40, logical: offsetLogical, price: offsetPrice },
+          text: text.trim(),
+          color: '#38bdf8',
+          width: 1,
+          style: 'solid'
+        });
+        showChartToast('✔ Placed Comment', '#38bdf8');
+      } else {
+        setDrawingTool('select');
+      }
+      return;
+    }
+
+    // 4. Single-click tool: Text Annotation
     if (_currentDrawTool === 'text') {
       const text = prompt('Enter annotation text:', 'Key Level / Breakout');
       if (text && text.trim()) {
@@ -8683,7 +8928,83 @@ function initChartDrawingCanvas() {
       return;
     }
 
-    // 4. Two-point tools: trendline, ray, rect, scale, fib
+    // 5. Multi-point tool: Path Tool
+    if (_currentDrawTool === 'path') {
+      if (_drawStep === 0) {
+        _drawStep = 1;
+        _activeDrawing = {
+          type: 'path',
+          points: [
+            { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price },
+            { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price }
+          ],
+          color: '#38bdf8',
+          width: 1,
+          style: 'solid'
+        };
+        redrawChartDrawings();
+        showChartToast('Path: Click to add vertices, double-click or Enter to finish', '#38bdf8');
+      } else if (_activeDrawing && _activeDrawing.points && _activeDrawing.points.length >= 2) {
+        const lastPt = _activeDrawing.points[_activeDrawing.points.length - 2];
+        const dist = lastPt ? Math.hypot(coords.x - lastPt.x, coords.y - lastPt.y) : 99;
+        if (dist >= 5) {
+          _activeDrawing.points[_activeDrawing.points.length - 1] = {
+            x: coords.x, y: coords.y, logical: coords.logical, price: coords.price
+          };
+          _activeDrawing.points.push({
+            x: coords.x, y: coords.y, logical: coords.logical, price: coords.price
+          });
+          redrawChartDrawings();
+        } else if (_activeDrawing.points.length >= 3) {
+          _activeDrawing.points.pop();
+          commitNewDrawing(_activeDrawing);
+          showChartToast('✔ Placed Path', '#38bdf8');
+        }
+      }
+      return;
+    }
+
+    // 6. 3-point tools: Curve and Fibonacci Extension
+    if (_currentDrawTool === 'curve' || _currentDrawTool === 'fib_ext') {
+      if (_drawStep === 0) {
+        _drawStep = 1;
+        _drawStart = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price };
+        _activeDrawing = {
+          type: _currentDrawTool,
+          p1: _drawStart,
+          p2: _drawStart,
+          p3: _drawStart,
+          color: '#38bdf8',
+          width: 1,
+          style: 'solid',
+          levels: _currentDrawTool === 'fib_ext' ? getDefaultFibExtLevels() : undefined,
+          showTrendline: true,
+          showBackground: true,
+          fillOpacity: 0.08,
+          extend: 'right',
+          showLabels: true,
+          labelPos: 'left',
+          levelsFormat: 'values'
+        };
+        redrawChartDrawings();
+        const nextPrompt = _currentDrawTool === 'curve' ? '〰 Click 2nd endpoint' : '🔢 Click 2nd point (Peak)';
+        showChartToast(nextPrompt, '#38bdf8');
+      } else if (_drawStep === 1) {
+        _drawStep = 2;
+        _activeDrawing.p2 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price != null ? coords.price : _drawStart.price };
+        _activeDrawing.p3 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price != null ? coords.price : _drawStart.price };
+        redrawChartDrawings();
+        const nextPrompt = _currentDrawTool === 'curve' ? '〰 Move and click to set curve bend' : '🔢 Click 3rd point (Pullback)';
+        showChartToast(nextPrompt, '#38bdf8');
+      } else if (_drawStep === 2) {
+        _activeDrawing.p3 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price };
+        commitNewDrawing({ ..._activeDrawing });
+        showChartToast('✔ Placed ' + (_activeDrawing.type === 'curve' ? 'Curve' : 'Fib Extension'), '#38bdf8');
+      }
+      return;
+    }
+
+    // 7. Two-point tools: trendline, ray, rect, scale, fib
     if (_drawStep === 0) {
       _drawStep = 1;
       _isDrawMouseDown = true;
@@ -8699,11 +9020,16 @@ function initChartDrawingCanvas() {
         p1: _drawStart,
         p2: _drawStart,
         color: _currentDrawTool === 'scale' ? '#089981' : _currentDrawTool === 'ray' ? '#eab308' : '#38bdf8',
-        width: _currentDrawTool === 'scale' ? 1 : 1.5,
+        width: 1,
         style: 'solid',
-        fillOpacity: _currentDrawTool === 'scale' ? 0.05 : 0,
+        fillOpacity: _currentDrawTool === 'scale' ? 0.05 : (_currentDrawTool === 'fib' ? 0.08 : 0),
         showBackground: true,
-        extend: 'none',
+        extend: _currentDrawTool === 'fib' ? 'right' : 'none',
+        levels: _currentDrawTool === 'fib' ? getDefaultFibLevels() : undefined,
+        showTrendline: true,
+        showLabels: true,
+        labelPos: 'left',
+        levelsFormat: 'values',
         statsType: 'percent',
         fontSize: 11,
         labelColor: '#868993',
@@ -8732,7 +9058,7 @@ function initChartDrawingCanvas() {
           p1: _activeDrawing.p1,
           p2: p2,
           color: _activeDrawing.color,
-          width: isScale ? 1 : (_activeDrawing.width || 1.5),
+          width: isScale ? 1 : (_activeDrawing.width || 1),
           style: _activeDrawing.style || 'solid',
           fillOpacity: isScale ? 0.05 : (_activeDrawing.fillOpacity != null ? _activeDrawing.fillOpacity : 0),
           showBackground: isScale ? true : false,
@@ -8763,6 +9089,17 @@ function initChartDrawingCanvas() {
   // MOUSE MOVE on window (for smooth preview and modifying drag)
   window.addEventListener('mousemove', e => {
     // A. Preview while drawing
+    if (_drawStep === 1 && _activeDrawing && _activeDrawing.type === 'path' && _activeDrawing.points && _activeDrawing.points.length >= 2) {
+      const coords = getEventCoords(e);
+      _activeDrawing.points[_activeDrawing.points.length - 1] = {
+        x: coords.x,
+        y: coords.y,
+        logical: coords.logical,
+        price: coords.price
+      };
+      redrawChartDrawings();
+      return;
+    }
     if (_drawStep === 1 && _activeDrawing && _drawStart) {
       const coords = getEventCoords(e);
       _activeDrawing.p2 = {
@@ -8770,6 +9107,20 @@ function initChartDrawingCanvas() {
         y: coords.y,
         logical: coords.logical,
         price: coords.price != null ? coords.price : _drawStart.price
+      };
+      if (_activeDrawing.type === 'curve' || _activeDrawing.type === 'fib_ext') {
+        _activeDrawing.p3 = { ..._activeDrawing.p2 };
+      }
+      redrawChartDrawings();
+      return;
+    }
+    if (_drawStep === 2 && _activeDrawing && (_activeDrawing.type === 'curve' || _activeDrawing.type === 'fib_ext')) {
+      const coords = getEventCoords(e);
+      _activeDrawing.p3 = {
+        x: coords.x,
+        y: coords.y,
+        logical: coords.logical,
+        price: coords.price
       };
       redrawChartDrawings();
       return;
@@ -8789,6 +9140,13 @@ function initChartDrawingCanvas() {
           d.p1 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price };
         } else if (h === 'p2') {
           d.p2 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price };
+        } else if (h === 'p3') {
+          d.p3 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price };
+        } else if (h.startsWith('pt_')) {
+          const pIdx = parseInt(h.split('_')[1], 10);
+          if (d.points && d.points[pIdx]) {
+            d.points[pIdx] = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price };
+          }
         } else if (h === 'nw') {
           d.p1 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price };
         } else if (h === 'se') {
@@ -8808,16 +9166,37 @@ function initChartDrawingCanvas() {
         const dLogical = (coords.logical != null && _dragOrigin.logical != null) ? (coords.logical - _dragOrigin.logical) : 0;
         const dPrice = (coords.price != null && _dragOrigin.price != null) ? (coords.price - _dragOrigin.price) : 0;
 
-        d.p1.x = _dragStartDrawing.p1.x + dx;
-        d.p1.y = _dragStartDrawing.p1.y + dy;
-        if (_dragStartDrawing.p1.logical != null) d.p1.logical = _dragStartDrawing.p1.logical + dLogical;
-        if (_dragStartDrawing.p1.price != null) d.p1.price = _dragStartDrawing.p1.price + dPrice;
+        if (d.p1 && _dragStartDrawing.p1) {
+          d.p1.x = _dragStartDrawing.p1.x + dx;
+          d.p1.y = _dragStartDrawing.p1.y + dy;
+          if (_dragStartDrawing.p1.logical != null) d.p1.logical = _dragStartDrawing.p1.logical + dLogical;
+          if (_dragStartDrawing.p1.price != null) d.p1.price = _dragStartDrawing.p1.price + dPrice;
+        }
 
         if (d.p2 && _dragStartDrawing.p2) {
           d.p2.x = _dragStartDrawing.p2.x + dx;
           d.p2.y = _dragStartDrawing.p2.y + dy;
           if (_dragStartDrawing.p2.logical != null) d.p2.logical = _dragStartDrawing.p2.logical + dLogical;
           if (_dragStartDrawing.p2.price != null) d.p2.price = _dragStartDrawing.p2.price + dPrice;
+        }
+
+        if (d.p3 && _dragStartDrawing.p3) {
+          d.p3.x = _dragStartDrawing.p3.x + dx;
+          d.p3.y = _dragStartDrawing.p3.y + dy;
+          if (_dragStartDrawing.p3.logical != null) d.p3.logical = _dragStartDrawing.p3.logical + dLogical;
+          if (_dragStartDrawing.p3.price != null) d.p3.price = _dragStartDrawing.p3.price + dPrice;
+        }
+
+        if (d.points && _dragStartDrawing.points) {
+          for (let k = 0; k < d.points.length; k++) {
+            const origPt = _dragStartDrawing.points[k];
+            if (origPt) {
+              d.points[k].x = origPt.x + dx;
+              d.points[k].y = origPt.y + dy;
+              if (origPt.logical != null) d.points[k].logical = origPt.logical + dLogical;
+              if (origPt.price != null) d.points[k].price = origPt.price + dPrice;
+            }
+          }
         }
       }
 
@@ -8841,6 +9220,10 @@ function initChartDrawingCanvas() {
     }
 
     // 2. Drag-to-draw gesture for new drawing (Press-Drag-Release)
+    if (_activeDrawing && (_activeDrawing.type === 'curve' || _activeDrawing.type === 'fib_ext' || _activeDrawing.type === 'path')) {
+      return; // multi-step tools use click-based steps
+    }
+
     if (_drawStep === 1 && _isDrawMouseDown && _drawStart && _activeDrawing) {
       _isDrawMouseDown = false;
       const coords = getEventCoords(e);
@@ -8857,7 +9240,7 @@ function initChartDrawingCanvas() {
           p1: _activeDrawing.p1,
           p2: p2,
           color: _activeDrawing.color,
-          width: _activeDrawing.width || 1.5,
+          width: _activeDrawing.width || 1,
           style: _activeDrawing.style || 'solid',
           fillOpacity: _activeDrawing.fillOpacity != null ? _activeDrawing.fillOpacity : (_activeDrawing.type === 'scale' ? 0.15 : 0),
           showPrice: _activeDrawing.showPrice !== false,
@@ -8873,10 +9256,26 @@ function initChartDrawingCanvas() {
     }
   });
 
-  // KEYBOARD: ESC deselects, Delete/Backspace removes selected drawing
+  // KEYBOARD: ESC deselects, Delete/Backspace removes selected drawing, Enter finishes Path
   window.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      if (_currentDrawTool === 'path' && _activeDrawing && _activeDrawing.points && _activeDrawing.points.length >= 2) {
+        e.preventDefault();
+        _activeDrawing.points.pop();
+        if (_activeDrawing.points.length >= 2) {
+          commitNewDrawing(_activeDrawing);
+          showChartToast('✔ Placed Path', '#38bdf8');
+        } else {
+          _activeDrawing = null;
+          _drawStep = 0;
+          setDrawingTool('select');
+          redrawChartDrawings();
+        }
+        return;
+      }
+    }
     if (e.key === 'Escape') {
-      if (_drawStep === 1 || _currentDrawTool !== 'select') {
+      if (_drawStep >= 1 || _currentDrawTool !== 'select') {
         _activeDrawing = null;
         _drawStep = 0;
         _drawStart = null;
@@ -8898,14 +9297,30 @@ function initChartDrawingCanvas() {
     }
   });
 
-  // Double-click to edit text, price notes, or open coordinates/properties
+  // Double-click to edit text, price notes, comment, finish path, or open coordinates/properties
   canvas.addEventListener('dblclick', e => {
+    if (_currentDrawTool === 'path' && _activeDrawing && _activeDrawing.points && _activeDrawing.points.length >= 2) {
+      e.preventDefault();
+      e.stopPropagation();
+      _activeDrawing.points.pop();
+      if (_activeDrawing.points.length >= 2) {
+        commitNewDrawing(_activeDrawing);
+        showChartToast('✔ Placed Path', '#38bdf8');
+      } else {
+        _activeDrawing = null;
+        _drawStep = 0;
+        setDrawingTool('select');
+        redrawChartDrawings();
+      }
+      return;
+    }
+
     const coords = getEventCoords(e);
     const hit = hitTestChartDrawings(coords.x, coords.y);
     if (hit) {
       _selectedDrawingIndex = hit.index;
       updateFloatingToolbar();
-      if (hit.drawing.type === 'text' || hit.drawing.type === 'pricenote') {
+      if (hit.drawing.type === 'text' || hit.drawing.type === 'pricenote' || hit.drawing.type === 'comment') {
         editDrawingText(e);
       } else {
         openCoordsDialog(hit.drawing);
@@ -8969,11 +9384,24 @@ function redrawChartDrawings() {
   const drawings = saved.concat(_activeDrawing ? [_activeDrawing] : []);
   if (!drawings.length) return;
 
+  // Calculate actual plot area width excluding right price scale column
+  let chartPlotW = W - 65;
+  if (timeScale && typeof timeScale.width === 'function') {
+    const tsw = timeScale.width();
+    if (tsw > 50 && tsw < W) chartPlotW = tsw;
+  }
+
+  // Clip all drawings strictly to the plot area so lines and labels never overlap the price scale!
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, chartPlotW, H);
+  ctx.clip();
+
   const toPx = p => pointToPixels(p, timeScale, series);
 
   for (let idx = 0; idx < drawings.length; idx++) {
     const d = drawings[idx];
-    if (!d || !d.p1) continue;
+    if (!d || (!d.p1 && (!d.points || !d.points.length))) continue;
 
     const isSelected = (idx === _selectedDrawingIndex);
     const color = d.color || '#38bdf8';
@@ -8981,6 +9409,102 @@ function redrawChartDrawings() {
     const style = d.style || 'solid';
 
     ctx.save();
+
+    // Path (Multi-point polyline with directional TV arrowhead)
+    if (d.type === 'path' && d.points && d.points.length >= 2) {
+      const pts = d.points.map(toPx).filter(p => p.x != null && p.y != null);
+      if (pts.length >= 2) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width || 2;
+        if (style === 'dashed') ctx.setLineDash([6, 4]);
+        else if (style === 'dotted') ctx.setLineDash([2, 3]);
+        else ctx.setLineDash([]);
+
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let k = 1; k < pts.length; k++) {
+          ctx.lineTo(pts[k].x, pts[k].y);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Directional arrowhead on final segment
+        const last = pts[pts.length - 1];
+        const prev = pts[pts.length - 2];
+        const angle = Math.atan2(last.y - prev.y, last.x - prev.x);
+        const arrowLen = 12;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(last.x, last.y);
+        ctx.lineTo(last.x - arrowLen * Math.cos(angle - Math.PI / 6), last.y - arrowLen * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(last.x - arrowLen * Math.cos(angle + Math.PI / 6), last.y - arrowLen * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fill();
+
+        if (isSelected) {
+          for (let k = 0; k < pts.length; k++) {
+            drawAnchorHandle(ctx, pts[k].x, pts[k].y);
+          }
+        }
+      }
+      ctx.restore();
+      continue;
+    }
+
+    // Comment Callout Speech Bubble
+    if (d.type === 'comment') {
+      const pt1 = toPx(d.p1);
+      const pt2 = d.p2 ? toPx(d.p2) : { x: pt1.x + 45, y: pt1.y - 40 };
+      if (pt1.x != null && pt1.y != null && pt2.x != null && pt2.y != null) {
+        const txt = d.text || 'Comment';
+        ctx.font = 'bold 11px -apple-system,BlinkMacSystemFont,sans-serif';
+        const tw = ctx.measureText(txt).width;
+        const bw = Math.max(65, tw + 20);
+        const bh = 26;
+        const bx = pt2.x - bw / 2;
+        const by = pt2.y - bh / 2;
+
+        // Pointer line connecting pin to bubble
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        ctx.moveTo(pt1.x, pt1.y);
+        ctx.lineTo(pt2.x, pt2.y);
+        ctx.stroke();
+
+        // Pin dot on candle
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(pt1.x, pt1.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Speech bubble box
+        ctx.fillStyle = '#1e222d';
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 5);
+        else ctx.rect(bx, by, bw, bh);
+        ctx.fill();
+
+        ctx.strokeStyle = isSelected ? '#ffffff' : color;
+        ctx.lineWidth = isSelected ? 1.8 : 1.2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#f0f3fa';
+        ctx.textAlign = 'center';
+        ctx.fillText(txt, bx + bw / 2, by + 17);
+        ctx.textAlign = 'left';
+
+        if (isSelected) {
+          drawAnchorHandle(ctx, pt1.x, pt1.y);
+          drawAnchorHandle(ctx, pt2.x, pt2.y);
+        }
+      }
+      ctx.restore();
+      continue;
+    }
 
     // 1. Horizontal Ray (ray_h)
     if (d.type === 'ray_h') {
@@ -8996,7 +9520,7 @@ function redrawChartDrawings() {
 
         ctx.beginPath();
         ctx.moveTo(x, y);
-        ctx.lineTo(W, y);
+        ctx.lineTo(chartPlotW, y);
         ctx.stroke();
         ctx.setLineDash([]);
 
@@ -9006,18 +9530,18 @@ function redrawChartDrawings() {
         ctx.arc(x, y, 4, 0, Math.PI * 2);
         ctx.fill();
 
-        // Right edge price tag
+        // Right edge price tag (clamped inside chart plot area)
         const pTxt = d.p1.price != null ? ('₹ ' + d.p1.price.toFixed(1)) : '';
         if (pTxt) {
           ctx.font = 'bold 10px -apple-system,BlinkMacSystemFont,sans-serif';
           const tw = ctx.measureText(pTxt).width;
           ctx.fillStyle = '#1e222d';
-          ctx.fillRect(W - tw - 16, y - 10, tw + 14, 20);
+          ctx.fillRect(chartPlotW - tw - 16, y - 10, tw + 14, 20);
           ctx.strokeStyle = color;
           ctx.lineWidth = 1;
-          ctx.strokeRect(W - tw - 16, y - 10, tw + 14, 20);
+          ctx.strokeRect(chartPlotW - tw - 16, y - 10, tw + 14, 20);
           ctx.fillStyle = color;
-          ctx.fillText(pTxt, W - tw - 9, y + 3.5);
+          ctx.fillText(pTxt, chartPlotW - tw - 9, y + 3.5);
         }
 
         if (isSelected) {
@@ -9219,7 +9743,8 @@ function redrawChartDrawings() {
       let lineLeft = xLeft;
       let lineRight = xRight;
       if (extend === 'left' || extend === 'both') lineLeft = 0;
-      if (extend === 'right' || extend === 'both') lineRight = W;
+      if (extend === 'right' || extend === 'both') lineRight = chartPlotW;
+      else lineRight = Math.min(xRight, chartPlotW);
 
       // 1. Shaded Translucent Background Box (Default 5% transparency)
       if (showBg) {
@@ -9313,9 +9838,271 @@ function redrawChartDrawings() {
         drawTvAnchor(ctx, x1, y1);
         drawTvAnchor(ctx, x2, y2);
       }
+    } else if (d.type === 'fib') {
+      const p1Price = (d.p1 && d.p1.price != null) ? d.p1.price : 0;
+      const p2Price = (d.p2 && d.p2.price != null) ? d.p2.price : 0;
+      const userLevels = (d.levels && d.levels.length) ? d.levels : getDefaultFibLevels();
+      const activeLevels = userLevels.filter(l => l.enabled !== false);
+
+      const xLeft = Math.min(x1, x2);
+      const xRight = Math.max(x1, x2);
+      let lineLeft = xLeft;
+      let lineRight = xRight;
+      const ext = d.extend || 'right';
+      if (ext === 'left' || ext === 'both') lineLeft = 0;
+      if (ext === 'right' || ext === 'both') lineRight = chartPlotW;
+      else lineRight = Math.min(xRight, chartPlotW);
+      lineLeft = Math.max(0, lineLeft);
+
+      // TradingView Retracement Placement:
+      // Point 1 is start of swing (Level 1.0), Point 2 is end of swing (Level 0.0)
+      // Retracement calculates pullback from Point 2 back toward Point 1
+      const isReverse = Boolean(d.reverse);
+      const lvlPoints = activeLevels.map(l => {
+        const priceLvl = isReverse
+          ? (p1Price + l.r * (p2Price - p1Price))
+          : (p2Price + l.r * (p1Price - p2Price));
+        let yLvl = isReverse
+          ? (y1 + l.r * (y2 - y1))
+          : (y2 + l.r * (y1 - y2));
+        if (series && typeof series.priceToCoordinate === 'function') {
+          const cy = series.priceToCoordinate(priceLvl);
+          if (cy != null && isFinite(cy)) yLvl = cy;
+        }
+        return { ...l, price: priceLvl, y: yLvl };
+      });
+
+      // Translucent bands between levels
+      if (d.showBackground !== false && (d.fillOpacity == null || d.fillOpacity > 0)) {
+        const fillOp = d.fillOpacity != null ? d.fillOpacity : 0.08;
+        const sortedByY = [...lvlPoints].sort((a, b) => a.y - b.y);
+        for (let i = 0; i < sortedByY.length - 1; i++) {
+          const topY = sortedByY[i].y;
+          const btmY = sortedByY[i + 1].y;
+          const bandCol = sortedByY[i + 1].c || color;
+          ctx.fillStyle = typeof hexToRgba === 'function' ? hexToRgba(bandCol, fillOp) : `rgba(41, 98, 255, ${fillOp})`;
+          ctx.fillRect(lineLeft, topY, lineRight - lineLeft, btmY - topY);
+        }
+      }
+
+      // Connecting trendline p1 -> p2 (matches TradingView anchor 1 to anchor 2)
+      if (d.showTrendline !== false) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width || 1;
+        if (style === 'dashed') ctx.setLineDash([4, 4]);
+        else if (style === 'dotted') ctx.setLineDash([2, 3]);
+        else ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Horizontal lines & labels
+      ctx.font = '10px -apple-system,BlinkMacSystemFont,sans-serif';
+      lvlPoints.forEach(l => {
+        ctx.strokeStyle = l.c;
+        ctx.lineWidth = width || 1;
+        ctx.beginPath();
+        ctx.moveTo(lineLeft, l.y);
+        ctx.lineTo(lineRight, l.y);
+        ctx.stroke();
+
+        if (d.showLabels !== false) {
+          const pTxt = l.price.toFixed(2);
+          const showValues = d.showValues !== false;
+          const showPercents = Boolean(d.showPercents);
+          const showPrices = d.showPrices !== false;
+
+          let parts = [];
+          if (showValues && showPercents) {
+            parts.push(`${l.r} (${(l.r * 100).toFixed(1)}%)`);
+          } else if (showValues) {
+            parts.push(`${l.r}`);
+          } else if (showPercents) {
+            parts.push(`${(l.r * 100).toFixed(1)}%`);
+          }
+
+          if (showPrices) {
+            parts.push(`(${pTxt})`);
+          }
+
+          let lblStr = parts.join(' ');
+          if (!lblStr) lblStr = `${l.r}`;
+
+          ctx.fillStyle = l.c;
+          const labelPos = d.labelPos || 'left';
+          if (labelPos === 'center') {
+            ctx.textAlign = 'center';
+            ctx.fillText(lblStr, (lineLeft + lineRight) / 2, l.y - 4);
+          } else if (labelPos === 'right') {
+            ctx.textAlign = 'right';
+            ctx.fillText(lblStr, lineRight - 6, l.y - 4);
+          } else if (labelPos === 'left_inside') {
+            ctx.textAlign = 'left';
+            ctx.fillText(lblStr, lineLeft + 6, l.y - 4);
+          } else {
+            // Default: 'left' (placed on left side OUTSIDE of the drawing)
+            if (lineLeft >= 55) {
+              ctx.textAlign = 'right';
+              ctx.fillText(lblStr, lineLeft - 6, l.y - 4);
+            } else {
+              ctx.textAlign = 'left';
+              ctx.fillText(lblStr, Math.max(4, lineLeft + 6), l.y - 4);
+            }
+          }
+        }
+      });
+      ctx.textAlign = 'left';
+
+      if (isSelected) {
+        drawAnchorHandle(ctx, x1, y1);
+        drawAnchorHandle(ctx, x2, y2);
+      }
+    } else if (d.type === 'fib_ext') {
+      const pt3 = d.p3 ? toPx(d.p3) : pt2;
+      const x3 = pt3.x, y3 = pt3.y;
+      const p1Price = (d.p1 && d.p1.price != null) ? d.p1.price : 0;
+      const p2Price = (d.p2 && d.p2.price != null) ? d.p2.price : 0;
+      const p3Price = (d.p3 && d.p3.price != null) ? d.p3.price : p2Price;
+      const deltaP = p2Price - p1Price;
+
+      const userLevels = (d.levels && d.levels.length) ? d.levels : getDefaultFibExtLevels();
+      const activeLevels = userLevels.filter(l => l.enabled !== false);
+
+      let lineLeft = x3;
+      let lineRight = x3 + 120;
+      const ext = d.extend || 'right';
+      if (ext === 'left' || ext === 'both') lineLeft = 0;
+      if (ext === 'right' || ext === 'both') lineRight = chartPlotW;
+      else lineRight = Math.min(x3 + 120, chartPlotW);
+      lineLeft = Math.max(0, lineLeft);
+
+      const lvlPoints = activeLevels.map(l => {
+        const priceLvl = p3Price + l.r * deltaP;
+        let yLvl = y3;
+        if (series && typeof series.priceToCoordinate === 'function') {
+          const cy = series.priceToCoordinate(priceLvl);
+          if (cy != null && isFinite(cy)) yLvl = cy;
+        } else {
+          yLvl = y3 - l.r * (y1 - y2);
+        }
+        return { ...l, price: priceLvl, y: yLvl };
+      });
+
+      // Translucent bands
+      if (d.showBackground !== false && (d.fillOpacity == null || d.fillOpacity > 0)) {
+        const fillOp = d.fillOpacity != null ? d.fillOpacity : 0.08;
+        const sortedByY = [...lvlPoints].sort((a, b) => a.y - b.y);
+        for (let i = 0; i < sortedByY.length - 1; i++) {
+          const topY = sortedByY[i].y;
+          const btmY = sortedByY[i + 1].y;
+          const bandCol = sortedByY[i + 1].c || color;
+          ctx.fillStyle = typeof hexToRgba === 'function' ? hexToRgba(bandCol, fillOp) : `rgba(41, 98, 255, ${fillOp})`;
+          ctx.fillRect(lineLeft, topY, lineRight - lineLeft, btmY - topY);
+        }
+      }
+
+      // Connecting dashed trendlines p1 -> p2 and p2 -> p3
+      if (d.showTrendline !== false) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width || 1;
+        if (style === 'dashed') ctx.setLineDash([4, 4]);
+        else if (style === 'dotted') ctx.setLineDash([2, 3]);
+        else ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineTo(x3, y3);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Horizontal lines & labels
+      ctx.font = '10px -apple-system,BlinkMacSystemFont,sans-serif';
+      lvlPoints.forEach(l => {
+        ctx.strokeStyle = l.c;
+        ctx.lineWidth = width || 1;
+        ctx.beginPath();
+        ctx.moveTo(lineLeft, l.y);
+        ctx.lineTo(lineRight, l.y);
+        ctx.stroke();
+
+        if (d.showLabels !== false) {
+          const pTxt = l.price.toFixed(2);
+          const showValues = d.showValues !== false;
+          const showPercents = Boolean(d.showPercents);
+          const showPrices = d.showPrices !== false;
+
+          let parts = [];
+          if (showValues && showPercents) {
+            parts.push(`${l.r} (${(l.r * 100).toFixed(1)}%)`);
+          } else if (showValues) {
+            parts.push(`${l.r}`);
+          } else if (showPercents) {
+            parts.push(`${(l.r * 100).toFixed(1)}%`);
+          }
+
+          if (showPrices) {
+            parts.push(`(${pTxt})`);
+          }
+
+          let lblStr = parts.join(' ');
+          if (!lblStr) lblStr = `${l.r}`;
+
+          ctx.fillStyle = l.c;
+          const labelPos = d.labelPos || 'left';
+          if (labelPos === 'center') {
+            ctx.textAlign = 'center';
+            ctx.fillText(lblStr, (lineLeft + lineRight) / 2, l.y - 4);
+          } else if (labelPos === 'right') {
+            ctx.textAlign = 'right';
+            ctx.fillText(lblStr, lineRight - 6, l.y - 4);
+          } else if (labelPos === 'left_inside') {
+            ctx.textAlign = 'left';
+            ctx.fillText(lblStr, lineLeft + 6, l.y - 4);
+          } else {
+            // Default: 'left' (placed on left side OUTSIDE of the drawing)
+            if (lineLeft >= 55) {
+              ctx.textAlign = 'right';
+              ctx.fillText(lblStr, lineLeft - 6, l.y - 4);
+            } else {
+              ctx.textAlign = 'left';
+              ctx.fillText(lblStr, Math.max(4, lineLeft + 6), l.y - 4);
+            }
+          }
+        }
+      });
+      ctx.textAlign = 'left';
+
+      if (isSelected) {
+        drawAnchorHandle(ctx, x1, y1);
+        drawAnchorHandle(ctx, x2, y2);
+        drawAnchorHandle(ctx, x3, y3);
+      }
+    } else if (d.type === 'curve') {
+      const pt3 = d.p3 ? toPx(d.p3) : { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
+      const x3 = pt3.x, y3 = pt3.y;
+      const cpX = 2 * x3 - 0.5 * x1 - 0.5 * x2;
+      const cpY = 2 * y3 - 0.5 * y1 - 0.5 * y2;
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width || 1;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.quadraticCurveTo(cpX, cpY, x2, y2);
+      ctx.stroke();
+
+      if (isSelected) {
+        drawAnchorHandle(ctx, x1, y1);
+        drawAnchorHandle(ctx, x2, y2);
+        drawAnchorHandle(ctx, x3, y3);
+      }
     }
     ctx.restore();
   }
+  ctx.restore(); // Restore chartPlotW clipping
 }
 window.redrawChartDrawings = redrawChartDrawings;
 
@@ -9335,8 +10122,14 @@ function updateFloatingToolbar() {
 
   const d = drawings[_selectedDrawingIndex];
   const { timeScale, series } = getDrawingContext();
-  const pt1 = pointToPixels(d.p1, timeScale, series);
-  const pt2 = d.p2 ? pointToPixels(d.p2, timeScale, series) : pt1;
+  let pt1, pt2;
+  if (d.type === 'path' && d.points && d.points.length) {
+    pt1 = pointToPixels(d.points[0], timeScale, series);
+    pt2 = pointToPixels(d.points[d.points.length - 1], timeScale, series);
+  } else {
+    pt1 = d.p1 ? pointToPixels(d.p1, timeScale, series) : { x: 100, y: 100 };
+    pt2 = d.p2 ? pointToPixels(d.p2, timeScale, series) : pt1;
+  }
 
   const midX = (pt1.x + pt2.x) / 2;
   const minY = Math.min(pt1.y, pt2.y);
@@ -9390,7 +10183,7 @@ function updateFloatingToolbar() {
       '<span>💧 ' + fillPct + '%</span>' +
       '</button>'
     ) : '') +
-    (d.type === 'text' || d.type === 'pricenote' ? (
+    (d.type === 'text' || d.type === 'pricenote' || d.type === 'comment' ? (
       '<div class="tv-float-sep"></div>' +
       '<button class="tv-float-btn" onclick="editDrawingText(event)" title="Edit Text">' +
       '<span>✎ Edit</span>' +
@@ -9552,7 +10345,7 @@ function editDrawingText(e) {
   const drawings = _chartDrawings[sym] || [];
   if (_selectedDrawingIndex != null && drawings[_selectedDrawingIndex]) {
     const d = drawings[_selectedDrawingIndex];
-    const promptMsg = d.type === 'pricenote' ? 'Edit Price Note text / price:' : 'Edit annotation text:';
+    const promptMsg = d.type === 'pricenote' ? 'Edit Price Note text / price:' : (d.type === 'comment' ? 'Edit comment:' : 'Edit annotation text:');
     const val = prompt(promptMsg, d.text || '');
     if (val != null && val.trim()) {
       d.text = val.trim();
@@ -11429,14 +12222,18 @@ function openCoordsDialog(drawing) {
   if (!dlg || !titleEl || !fieldsEl || !drawing) return;
 
   const names = {
-    scale: 'Price range',
-    measure: 'Price range',
+    scale: 'Price Range',
+    measure: 'Price Range',
     pricenote: 'Price Note',
+    comment: 'Comment',
     ray_h: 'Horizontal Ray',
     ray: 'Arrow Ray',
     trendline: 'Trend Line',
-    rect: 'Rectangle Zone',
-    fib: 'Fibonacci Retracement',
+    curve: 'Curve',
+    rect: 'Rectangle',
+    path: 'Path',
+    fib: 'Fib Retracement',
+    fib_ext: 'Fib Extension',
     text: 'Text'
   };
 
@@ -11489,20 +12286,15 @@ function openCoordsDialog(drawing) {
         </div>
       </div>
 
-      <!-- Background -->
+      <!-- Background (Scalable Slider) -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 0;">
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#d1d4dc;cursor:pointer;margin:0;">
           <input type="checkbox" id="tv-scale-show-bg" ${showBg ? 'checked' : ''} style="cursor:pointer;accent-color:#2962ff;width:15px;height:15px;" onchange="document.getElementById('tv-scale-fill-opacity').disabled = !this.checked">
           <span>Background</span>
         </label>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <select id="tv-scale-fill-opacity" class="tv-coord-input" style="width:96px;height:26px;padding:2px 6px;" ${!showBg ? 'disabled' : ''}>
-            <option value="0.05" ${Math.abs(fillOp - 0.05) < 0.02 || fillOp === 0 ? 'selected' : ''}>5%</option>
-            <option value="0.10" ${Math.abs(fillOp - 0.10) < 0.02 ? 'selected' : ''}>10%</option>
-            <option value="0.15" ${Math.abs(fillOp - 0.15) < 0.02 ? 'selected' : ''}>15%</option>
-            <option value="0.25" ${Math.abs(fillOp - 0.25) < 0.02 ? 'selected' : ''}>25%</option>
-            <option value="0.50" ${Math.abs(fillOp - 0.50) < 0.02 ? 'selected' : ''}>50%</option>
-          </select>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="range" id="tv-scale-fill-opacity" min="0" max="100" step="1" value="${Math.round((fillOp || 0.05) * 100)}" style="width:110px;cursor:pointer;accent-color:#2962ff;" ${!showBg ? 'disabled' : ''} oninput="document.getElementById('tv-scale-fill-val').textContent = this.value + '%'">
+          <span id="tv-scale-fill-val" style="font-family:var(--mono);font-size:11px;color:#94a3b8;width:34px;text-align:right;">${Math.round((fillOp || 0.05) * 100)}%</span>
         </div>
       </div>
 
@@ -11555,6 +12347,120 @@ function openCoordsDialog(drawing) {
         <input type="color" id="tv-scale-label-bg-color" value="${labelBgColor}" style="width:34px;height:24px;border:1px solid #363c4e;border-radius:4px;cursor:pointer;padding:0;">
       </div>
     `;
+  } else if (drawing.type === 'fib' || drawing.type === 'fib_ext') {
+    const isFibExt = drawing.type === 'fib_ext';
+    const lvls = (drawing.levels && drawing.levels.length) ? drawing.levels : (isFibExt ? getDefaultFibExtLevels() : getDefaultFibLevels());
+    const showTrendline = drawing.showTrendline !== false;
+    const showBackground = drawing.showBackground !== false;
+    const fillOpacity = drawing.fillOpacity != null ? drawing.fillOpacity : 0.08;
+    const extend = drawing.extend || 'right';
+    const showLabels = drawing.showLabels !== false;
+    const labelPos = drawing.labelPos || 'left';
+    const showValues = drawing.showValues !== false;
+    const showPercents = Boolean(drawing.showPercents);
+    const showPrices = drawing.showPrices !== false;
+    const isReverse = Boolean(drawing.reverse);
+
+    html += `
+      <!-- Trendline -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 0;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#d1d4dc;cursor:pointer;margin:0;">
+          <input type="checkbox" id="tv-fib-trendline-chk" ${showTrendline ? 'checked' : ''} style="cursor:pointer;accent-color:#2962ff;width:15px;height:15px;">
+          <span>Trend line</span>
+        </label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="color" id="tv-coord-color" value="${clr}" style="width:34px;height:24px;border:1px solid #363c4e;border-radius:4px;cursor:pointer;padding:0;">
+          <select id="tv-coord-width" class="tv-coord-input" style="width:68px;height:26px;padding:2px 6px;">
+            <option value="1" ${width === 1 ? 'selected' : ''}>1px</option>
+            <option value="2" ${width === 2 ? 'selected' : ''}>2px</option>
+            <option value="3" ${width === 3 ? 'selected' : ''}>3px</option>
+            <option value="4" ${width === 4 ? 'selected' : ''}>4px</option>
+          </select>
+          <select id="tv-coord-style" class="tv-coord-input" style="width:72px;height:26px;padding:2px 6px;">
+            <option value="solid" ${style === 'solid' ? 'selected' : ''}>Solid</option>
+            <option value="dashed" ${style === 'dashed' ? 'selected' : ''}>Dashed</option>
+            <option value="dotted" ${style === 'dotted' ? 'selected' : ''}>Dotted</option>
+          </select>
+        </div>
+      </div>
+      ${!isFibExt ? `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 0 2px 24px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#d1d4dc;cursor:pointer;margin:0;">
+          <input type="checkbox" id="tv-fib-reverse-chk" ${isReverse ? 'checked' : ''} style="cursor:pointer;accent-color:#2962ff;width:14px;height:14px;">
+          <span>Reverse (Invert levels)</span>
+        </label>
+      </div>` : ''}
+
+      <!-- LEVELS Grid (Exact TV 2-column layout) -->
+      <div style="font-size:10px;font-weight:700;color:#787b86;letter-spacing:0.8px;margin-top:6px;margin-bottom:2px;text-transform:uppercase;">LEVELS</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;background:#171b26;padding:8px;border-radius:6px;border:1px solid #2a2e39;">
+        ${lvls.map((lvl, k) => `
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#d1d4dc;cursor:pointer;margin:0;">
+              <input type="checkbox" class="tv-fib-lvl-chk" data-idx="${k}" ${lvl.enabled !== false ? 'checked' : ''} style="cursor:pointer;accent-color:#2962ff;width:14px;height:14px;">
+              <input type="number" step="0.001" class="tv-fib-lvl-val tv-coord-input" data-idx="${k}" value="${lvl.r}" style="width:60px;height:24px;padding:2px 4px;font-size:12px;">
+            </label>
+            <input type="color" class="tv-fib-lvl-col" data-idx="${k}" value="${lvl.c || '#787b86'}" style="width:26px;height:22px;border:1px solid #363c4e;border-radius:4px;cursor:pointer;padding:0;">
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- Background with scalable range slider -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 0;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#d1d4dc;cursor:pointer;margin:0;">
+          <input type="checkbox" id="tv-fib-bg-chk" ${showBackground ? 'checked' : ''} style="cursor:pointer;accent-color:#2962ff;width:15px;height:15px;" onchange="document.getElementById('tv-fib-bg-opacity').disabled = !this.checked">
+          <span>Background</span>
+        </label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="range" id="tv-fib-bg-opacity" min="0" max="100" step="1" value="${Math.round((fillOpacity || 0.08) * 100)}" style="width:110px;cursor:pointer;accent-color:#2962ff;" ${!showBackground ? 'disabled' : ''} oninput="document.getElementById('tv-fib-bg-val').textContent = this.value + '%'">
+          <span id="tv-fib-bg-val" style="font-family:var(--mono);font-size:11px;color:#94a3b8;width:34px;text-align:right;">${Math.round((fillOpacity || 0.08) * 100)}%</span>
+        </div>
+      </div>
+
+      <!-- Extend lines -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 0;">
+        <span style="font-size:13px;color:#d1d4dc;">Extend lines</span>
+        <select id="tv-fib-extend" class="tv-coord-input" style="width:145px;height:26px;padding:2px 8px;">
+          <option value="none" ${(!extend || extend === 'none') ? 'selected' : ''}>Don't extend</option>
+          <option value="right" ${extend === 'right' || !extend ? 'selected' : ''}>Extend lines right</option>
+          <option value="left" ${extend === 'left' ? 'selected' : ''}>Extend lines left</option>
+          <option value="both" ${extend === 'both' ? 'selected' : ''}>Extend lines both</option>
+        </select>
+      </div>
+
+      <!-- LABELS -->
+      <div style="font-size:10px;font-weight:700;color:#787b86;letter-spacing:0.8px;margin-top:8px;margin-bottom:2px;text-transform:uppercase;">LABELS</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 0;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#d1d4dc;cursor:pointer;margin:0;">
+          <input type="checkbox" id="tv-fib-labels-chk" ${showLabels ? 'checked' : ''} style="cursor:pointer;accent-color:#2962ff;width:15px;height:15px;">
+          <span>Show Labels</span>
+        </label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:12px;color:#868993;">Position:</span>
+          <select id="tv-fib-labels-pos" class="tv-coord-input" style="width:115px;height:26px;padding:2px 6px;">
+            <option value="left" ${(!labelPos || labelPos === 'left') ? 'selected' : ''}>Left (Outside)</option>
+            <option value="left_inside" ${labelPos === 'left_inside' ? 'selected' : ''}>Left (Inside)</option>
+            <option value="center" ${labelPos === 'center' ? 'selected' : ''}>Center</option>
+            <option value="right" ${labelPos === 'right' ? 'selected' : ''}>Right</option>
+          </select>
+        </div>
+      </div>
+      <!-- Values, Percentages, and Prices Ticks -->
+      <div style="display:flex;align-items:center;justify-content:flex-start;gap:14px;padding:5px 8px 5px 24px;background:#171b26;border-radius:4px;margin-top:2px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#d1d4dc;cursor:pointer;margin:0;">
+          <input type="checkbox" id="tv-fib-show-values" ${showValues ? 'checked' : ''} style="cursor:pointer;accent-color:#2962ff;width:14px;height:14px;">
+          <span>Values (0.618)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#d1d4dc;cursor:pointer;margin:0;">
+          <input type="checkbox" id="tv-fib-show-percents" ${showPercents ? 'checked' : ''} style="cursor:pointer;accent-color:#2962ff;width:14px;height:14px;">
+          <span>Percentages (%)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#d1d4dc;cursor:pointer;margin:0;">
+          <input type="checkbox" id="tv-fib-show-prices" ${showPrices ? 'checked' : ''} style="cursor:pointer;accent-color:#2962ff;width:14px;height:14px;">
+          <span>Prices (₹)</span>
+        </label>
+      </div>
+    `;
   } else if (drawing.type === 'rect') {
     html += `
       <div class="tv-setting-row">
@@ -11582,14 +12488,10 @@ function openCoordsDialog(drawing) {
       </div>
       <div class="tv-setting-row">
         <span>Fill Opacity</span>
-        <select id="tv-rect-fill-opacity" class="tv-coord-input" style="padding:2px 8px;width:120px;">
-          <option value="0" ${fillOp === 0 ? 'selected' : ''}>0% (Outline Only)</option>
-          <option value="0.05" ${Math.abs(fillOp - 0.05) < 0.02 ? 'selected' : ''}>5%</option>
-          <option value="0.10" ${Math.abs(fillOp - 0.10) < 0.02 ? 'selected' : ''}>10%</option>
-          <option value="0.20" ${Math.abs(fillOp - 0.20) < 0.02 ? 'selected' : ''}>20%</option>
-          <option value="0.30" ${Math.abs(fillOp - 0.30) < 0.02 ? 'selected' : ''}>30%</option>
-          <option value="0.50" ${Math.abs(fillOp - 0.50) < 0.02 ? 'selected' : ''}>50%</option>
-        </select>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="range" id="tv-rect-fill-opacity" min="0" max="100" step="1" value="${Math.round((fillOp || 0) * 100)}" style="width:110px;cursor:pointer;accent-color:#2962ff;" oninput="document.getElementById('tv-rect-fill-val').textContent = this.value + '%'">
+          <span id="tv-rect-fill-val" style="font-family:var(--mono);font-size:11px;color:#94a3b8;width:34px;text-align:right;">${Math.round((fillOp || 0) * 100)}%</span>
+        </div>
       </div>
     `;
   } else {
@@ -11652,11 +12554,18 @@ function openCoordsDialog(drawing) {
     <input type="number" step="0.05" id="tv-coord-p1-price" class="tv-coord-input" value="${p1Val}" style="height:32px;">
   </div>`;
 
-  if (drawing.p2 || isScale || drawing.type === 'trendline' || drawing.type === 'ray' || drawing.type === 'rect' || drawing.type === 'fib') {
+  if (drawing.p2 || isScale || drawing.type === 'trendline' || drawing.type === 'ray' || drawing.type === 'rect' || drawing.type === 'fib' || drawing.type === 'fib_ext' || drawing.type === 'curve') {
     const p2Val = drawing.p2 && drawing.p2.price != null ? drawing.p2.price.toFixed(2) : (drawing.p1 && drawing.p1.price != null ? drawing.p1.price.toFixed(2) : '');
     html += `<div>
       <label class="tv-coord-label" style="font-size:12px;color:#868993;margin-bottom:6px;display:block;">Price 2 (₹)</label>
       <input type="number" step="0.05" id="tv-coord-p2-price" class="tv-coord-input" value="${p2Val}" style="height:32px;">
+    </div>`;
+  }
+  if (drawing.type === 'fib_ext' || drawing.type === 'curve') {
+    const p3Val = drawing.p3 && drawing.p3.price != null ? drawing.p3.price.toFixed(2) : (drawing.p2 && drawing.p2.price != null ? drawing.p2.price.toFixed(2) : '');
+    html += `<div>
+      <label class="tv-coord-label" style="font-size:12px;color:#868993;margin-bottom:6px;display:block;">Price 3 (₹)</label>
+      <input type="number" step="0.05" id="tv-coord-p3-price" class="tv-coord-input" value="${p3Val}" style="height:32px;">
     </div>`;
   }
   html += `</div>`; // Close tv-panel-coords
@@ -11715,7 +12624,7 @@ function applyDrawingCoordinates() {
       d.fillOpacity = 0;
     } else {
       d.showBackground = true;
-      d.fillOpacity = opInp ? (parseFloat(opInp.value) || 0.05) : 0.05;
+      d.fillOpacity = opInp ? ((parseFloat(opInp.value) || 5) / 100) : 0.05;
     }
     const extInp = document.getElementById('tv-scale-extend');
     if (extInp) d.extend = extInp.value;
@@ -11734,9 +12643,55 @@ function applyDrawingCoordinates() {
     const lblBgColInp = document.getElementById('tv-scale-label-bg-color');
     if (lblBgColInp) d.labelBgColor = lblBgColInp.value;
     d.showBorders = true;
+  } else if (d.type === 'fib' || d.type === 'fib_ext') {
+    const trendlineChk = document.getElementById('tv-fib-trendline-chk');
+    if (trendlineChk) d.showTrendline = trendlineChk.checked;
+
+    // Read customized levels grid
+    const chks = document.querySelectorAll('.tv-fib-lvl-chk');
+    const vals = document.querySelectorAll('.tv-fib-lvl-val');
+    const cols = document.querySelectorAll('.tv-fib-lvl-col');
+    if (chks && chks.length) {
+      const newLvls = [];
+      chks.forEach((chk, k) => {
+        const valInput = vals[k];
+        const colInput = cols[k];
+        const rVal = valInput ? parseFloat(valInput.value) : 0;
+        const cVal = colInput ? colInput.value : '#787b86';
+        newLvls.push({
+          r: isNaN(rVal) ? 0 : rVal,
+          c: cVal,
+          enabled: Boolean(chk.checked)
+        });
+      });
+      d.levels = newLvls;
+    }
+
+    const bgChk = document.getElementById('tv-fib-bg-chk');
+    if (bgChk) d.showBackground = bgChk.checked;
+    const bgOp = document.getElementById('tv-fib-bg-opacity');
+    if (bgOp) d.fillOpacity = (parseFloat(bgOp.value) || 8) / 100;
+
+    const extSel = document.getElementById('tv-fib-extend');
+    if (extSel) d.extend = extSel.value;
+
+    const lblChk = document.getElementById('tv-fib-labels-chk');
+    if (lblChk) d.showLabels = lblChk.checked;
+    const lblPosSel = document.getElementById('tv-fib-labels-pos');
+    if (lblPosSel) d.labelPos = lblPosSel.value;
+
+    const showValsChk = document.getElementById('tv-fib-show-values');
+    if (showValsChk) d.showValues = showValsChk.checked;
+    const showPctsChk = document.getElementById('tv-fib-show-percents');
+    if (showPctsChk) d.showPercents = showPctsChk.checked;
+    const showPricesChk = document.getElementById('tv-fib-show-prices');
+    if (showPricesChk) d.showPrices = showPricesChk.checked;
+
+    const revChk = document.getElementById('tv-fib-reverse-chk');
+    if (revChk) d.reverse = revChk.checked;
   } else if (d.type === 'rect') {
     const opInp = document.getElementById('tv-rect-fill-opacity');
-    if (opInp) d.fillOpacity = parseFloat(opInp.value);
+    if (opInp) d.fillOpacity = (parseFloat(opInp.value) || 0) / 100;
   }
 
   // 3. Text properties
@@ -11772,6 +12727,19 @@ function applyDrawingCoordinates() {
       if (series && typeof series.priceToCoordinate === 'function') {
         const cy = series.priceToCoordinate(newP2);
         if (cy != null && isFinite(cy)) d.p2.y = cy;
+      }
+    }
+  }
+
+  const p3Inp = document.getElementById('tv-coord-p3-price');
+  if (p3Inp && p3Inp.value) {
+    const newP3 = parseFloat(p3Inp.value);
+    if (!isNaN(newP3)) {
+      if (!d.p3) d.p3 = { ...(d.p2 || d.p1) };
+      d.p3.price = newP3;
+      if (series && typeof series.priceToCoordinate === 'function') {
+        const cy = series.priceToCoordinate(newP3);
+        if (cy != null && isFinite(cy)) d.p3.y = cy;
       }
     }
   }
