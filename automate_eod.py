@@ -717,7 +717,9 @@ def main():
         print(json.dumps(record, indent=2))
         return
 
-    # 8. Push to JSONBin.io (Option A)
+    # 8. Push to Cloudflare D1 (preferred) or JSONBin.io (legacy fallback)
+    cf_url = (os.environ.get("CF_WORKER_URL") or "").strip().rstrip("/")
+    cf_token = (os.environ.get("CF_SYNC_TOKEN") or "").strip()
     bin_id = os.environ.get("JSONBIN_BIN") or os.environ.get("JSONBIN_ID")
     master_key = os.environ.get("JSONBIN_KEY") or os.environ.get("JSONBIN_MASTER_KEY")
 
@@ -726,27 +728,40 @@ def main():
     if master_key:
         master_key = master_key.strip()
 
-    if not bin_id or not master_key:
-        print(json.dumps({"error": "JSONBIN_BIN (or JSONBIN_ID) and JSONBIN_KEY (or JSONBIN_MASTER_KEY) environment variables must be set for --push"}), file=sys.stderr)
+    use_cf = bool(cf_url)
+    if not use_cf and (not bin_id or not master_key):
+        print(json.dumps({"error": "Set CF_WORKER_URL (recommended) or JSONBIN_BIN + JSONBIN_KEY environment variables for --push"}), file=sys.stderr)
         sys.exit(1)
 
-    print(f"Fetching current bin data from JSONBin (Bin: {bin_id})...")
-    url = f"https://api.jsonbin.io/v3/b/{bin_id}/latest"
-    req = urllib.request.Request(
-        url,
-        headers={
-            "X-Master-Key": master_key,
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        }
-    )
-    
-    try:
-        response_bytes = execute_request_with_retry(req)
-        payload = json.loads(response_bytes.decode('utf-8'))['record']
-    except Exception as e:
-        print(json.dumps({"warning": f"Skipping JSONBin sync. Failed to fetch data: {str(e)}"}), file=sys.stderr)
-        # Exit with 0 to allow the rest of the daily scanner workflow (VCP scanner and Git commit) to succeed
-        sys.exit(0)
+    if use_cf:
+        print(f"Fetching current data from Cloudflare D1 ({cf_url})...")
+        cf_headers = {"User-Agent": "M.Radar-EOD-Bot/1.0"}
+        if cf_token:
+            cf_headers["Authorization"] = f"Bearer {cf_token}"
+        req = urllib.request.Request(f"{cf_url}/api/sync", headers=cf_headers)
+        try:
+            response_bytes = execute_request_with_retry(req)
+            payload = json.loads(response_bytes.decode('utf-8'))
+        except Exception as e:
+            print(json.dumps({"warning": f"Skipping Cloudflare D1 sync. Failed to fetch data: {str(e)}"}), file=sys.stderr)
+            sys.exit(0)
+    else:
+        print(f"Fetching current bin data from JSONBin (Bin: {bin_id})...")
+        url = f"https://api.jsonbin.io/v3/b/{bin_id}/latest"
+        req = urllib.request.Request(
+            url,
+            headers={
+                "X-Master-Key": master_key,
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+        )
+        try:
+            response_bytes = execute_request_with_retry(req)
+            payload = json.loads(response_bytes.decode('utf-8'))['record']
+        except Exception as e:
+            print(json.dumps({"warning": f"Skipping JSONBin sync. Failed to fetch data: {str(e)}"}), file=sys.stderr)
+            # Exit with 0 to allow the rest of the daily scanner workflow (VCP scanner and Git commit) to succeed
+            sys.exit(0)
 
     # Ensure records exists
     if "records" not in payload:
@@ -830,27 +845,48 @@ def main():
     payload["_pushedAt"] = int(datetime.now().timestamp() * 1000)
 
     # Push updated record back
-    print("Pushing updated payload to JSONBin...")
-    update_url = f"https://api.jsonbin.io/v3/b/{bin_id}"
-    update_req = urllib.request.Request(
-        update_url,
-        data=json.dumps(payload).encode('utf-8'),
-        headers={
+    if use_cf:
+        print("Pushing updated payload to Cloudflare D1...")
+        cf_put_headers = {
             "Content-Type": "application/json",
-            "X-Master-Key": master_key,
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        },
-        method="PUT"
-    )
+            "User-Agent": "M.Radar-EOD-Bot/1.0"
+        }
+        if cf_token:
+            cf_put_headers["Authorization"] = f"Bearer {cf_token}"
+        update_req = urllib.request.Request(
+            f"{cf_url}/api/sync",
+            data=json.dumps(payload).encode('utf-8'),
+            headers=cf_put_headers,
+            method="PUT"
+        )
+        try:
+            execute_request_with_retry(update_req)
+            print(f"✅ Success! Cloudflare D1 updated. Record for {target_date_str} synced.")
+        except Exception as e:
+            print(json.dumps({"warning": f"Skipping Cloudflare D1 sync. Failed to push data: {str(e)}"}), file=sys.stderr)
+            sys.exit(0)
+    else:
+        print("Pushing updated payload to JSONBin...")
+        update_url = f"https://api.jsonbin.io/v3/b/{bin_id}"
+        update_req = urllib.request.Request(
+            update_url,
+            data=json.dumps(payload).encode('utf-8'),
+            headers={
+                "Content-Type": "application/json",
+                "X-Master-Key": master_key,
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            },
+            method="PUT"
+        )
 
-    try:
-        response_bytes = execute_request_with_retry(update_req)
-        result = json.loads(response_bytes.decode('utf-8'))
-        print(f"✅ Success! JSONBin updated. Record for {target_date_str} synced.")
-    except Exception as e:
-        print(json.dumps({"warning": f"Skipping JSONBin sync. Failed to push data: {str(e)}"}), file=sys.stderr)
-        # Exit with 0 so the daily scanner workflow continues
-        sys.exit(0)
+        try:
+            response_bytes = execute_request_with_retry(update_req)
+            result = json.loads(response_bytes.decode('utf-8'))
+            print(f"✅ Success! JSONBin updated. Record for {target_date_str} synced.")
+        except Exception as e:
+            print(json.dumps({"warning": f"Skipping JSONBin sync. Failed to push data: {str(e)}"}), file=sys.stderr)
+            # Exit with 0 so the daily scanner workflow continues
+            sys.exit(0)
 
 if __name__ == "__main__":
     main()
