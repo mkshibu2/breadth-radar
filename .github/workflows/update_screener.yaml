@@ -51,15 +51,20 @@ jobs:
       - name: Run VCP Scanner Script
         run: python vcp_scanner.py
 
+      - name: Update NSE Screener & Themes Universe
+        run: python fetch_tv_universe.py
+
       - name: Commit and Push Results
         run: |
           # Configure the Git bot identity
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Stage the JSON sidecars required for Sector Command breadth tracking
+          # Stage the JSON/JS sidecars required for Sector Command & Themes breadth tracking
           git add sector_breadth.json
           git add sector_stocks.json
+          git add screener_stocks.json
+          git add screener_stocks.js
 
           # FIX 4: Only commit and push IF there are actual changes (Prevents 128)
           if ! git diff --cached --quiet; then
