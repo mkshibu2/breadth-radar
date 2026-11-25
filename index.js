@@ -4135,9 +4135,42 @@ function srtRender() {
   if (empty) empty.style.display = 'none'; tbody.innerHTML = sorted.map((s, i) => srtBuildRow(s, i, { clickable: true, deletable: true })).join('');
 }
 const LS_MPM = 'nse_mpm_v1'; const LS_GUEST_BIN = 'nse_guest_bin'; function isGuestMode() { return !!lsGet(LS_GUEST_BIN); }
-const mpmLoad = () => { try { return JSON.parse(lsGet(LS_MPM)) || []; } catch (e) { return []; } }; const mpmSave = d => lsSet(LS_MPM, JSON.stringify(d.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 150))); const getCfg = () => ({ key: lsGet(LS_KEY) || '', bin: lsGet(LS_BIN) || '' }); const saveCfg = (k, b) => { lsSet(LS_KEY, k); lsSet(LS_BIN, b); }; const JB = 'https://api.jsonbin.io/v3'; async function jbCreate(key, data) { const payload = Array.isArray(data) ? { records: data, bsr: [] } : data; const r = await fetch(`${JB}/b`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Master-Key': key, 'X-Bin-Name': 'NSE-Breadth-Radar', 'X-Bin-Private': 'true' }, body: JSON.stringify(payload) }); if (!r.ok) throw new Error('Create failed: ' + r.status); const j = await r.json(); return j.metadata.id; }
-async function jbRead(key, bin) { const r = await fetch(`${JB}/b/${bin}/latest`, { headers: { 'X-Master-Key': key } }); if (!r.ok) throw new Error('Read failed: ' + r.status); const j = await r.json(); const rec = j.record; console.log('[jbRead] OK — records:', rec?.records?.length || 0, 'mpm:', rec?.mpm?.length || 0, 'bsr:', rec?.bsr?.length || 0); return rec; }
-async function jbUpdate(key, bin, payload) { const body = JSON.stringify(payload); const r = await fetch(`${JB}/b/${bin}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': key }, body: body }); const respText = await r.text(); if (!r.ok) throw new Error('Update failed: ' + r.status + ' ' + respText.slice(0, 100)); console.log('[jbUpdate] OK — pushed', JSON.parse(body)?.records?.length || 0, 'records'); }
+const LS_CF_URL = 'nse_cf_worker_url';
+const LS_CF_TOKEN = 'nse_cf_sync_token';
+const getCfCfg = () => ({ url: (lsGet(LS_CF_URL) || '').trim().replace(/\/+$/, ''), token: (lsGet(LS_CF_TOKEN) || '').trim() });
+const saveCfCfg = (u, t) => { lsSet(LS_CF_URL, (u || '').trim().replace(/\/+$/, '')); lsSet(LS_CF_TOKEN, (t || '').trim()); };
+const clearCfCfg = () => { lsDel(LS_CF_URL); lsDel(LS_CF_TOKEN); };
+const mpmLoad = () => { try { return JSON.parse(lsGet(LS_MPM)) || []; } catch (e) { return []; } }; const mpmSave = d => lsSet(LS_MPM, JSON.stringify(d.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 150)));
+const getCfg = () => { const cf = getCfCfg(); if (cf.url) return { key: cf.token || 'cf-d1', bin: cf.url, isCf: true }; return { key: lsGet(LS_KEY) || '', bin: lsGet(LS_BIN) || '', isCf: false }; };
+const saveCfg = (k, b) => { lsSet(LS_KEY, k); lsSet(LS_BIN, b); }; const JB = 'https://api.jsonbin.io/v3'; async function jbCreate(key, data) { const payload = Array.isArray(data) ? { records: data, bsr: [] } : data; const r = await fetch(`${JB}/b`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Master-Key': key, 'X-Bin-Name': 'NSE-Breadth-Radar', 'X-Bin-Private': 'true' }, body: JSON.stringify(payload) }); if (!r.ok) throw new Error('Create failed: ' + r.status); const j = await r.json(); return j.metadata.id; }
+async function jbRead(key, bin) {
+  const cf = getCfCfg();
+  if (cf.url || (bin && bin.startsWith('http'))) {
+    const baseUrl = (bin && bin.startsWith('http')) ? bin.replace(/\/+$/, '') : cf.url;
+    const headers = {};
+    if (key && key !== 'cf-d1') headers['Authorization'] = `Bearer ${key}`;
+    const r = await fetch(`${baseUrl}/api/sync`, { headers });
+    if (!r.ok) throw new Error('D1 Read failed: ' + r.status);
+    const rec = await r.json();
+    console.log('[cfD1Read] OK — records:', rec?.records?.length || 0, 'mpm:', rec?.mpm?.length || 0, 'bsr:', rec?.bsr?.length || 0);
+    return rec;
+  }
+  const r = await fetch(`${JB}/b/${bin}/latest`, { headers: { 'X-Master-Key': key } }); if (!r.ok) throw new Error('Read failed: ' + r.status); const j = await r.json(); const rec = j.record; console.log('[jbRead] OK — records:', rec?.records?.length || 0, 'mpm:', rec?.mpm?.length || 0, 'bsr:', rec?.bsr?.length || 0); return rec;
+}
+async function jbUpdate(key, bin, payload) {
+  const cf = getCfCfg();
+  if (cf.url || (bin && bin.startsWith('http'))) {
+    const baseUrl = (bin && bin.startsWith('http')) ? bin.replace(/\/+$/, '') : cf.url;
+    const headers = { 'Content-Type': 'application/json' };
+    if (key && key !== 'cf-d1') headers['Authorization'] = `Bearer ${key}`;
+    const r = await fetch(`${baseUrl}/api/sync`, { method: 'PUT', headers, body: JSON.stringify(payload) });
+    const respText = await r.text();
+    if (!r.ok) throw new Error('D1 Update failed: ' + r.status + ' ' + respText.slice(0, 120));
+    console.log('[cfD1Update] OK — pushed', payload?.records?.length || 0, 'records');
+    return;
+  }
+  const body = JSON.stringify(payload); const r = await fetch(`${JB}/b/${bin}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': key }, body: body }); const respText = await r.text(); if (!r.ok) throw new Error('Update failed: ' + r.status + ' ' + respText.slice(0, 100)); console.log('[jbUpdate] OK — pushed', JSON.parse(body)?.records?.length || 0, 'records');
+}
 function setSyncStatus(state, label) { const dot = document.getElementById('sync-dot'); const lbl = document.getElementById('sync-label'); const btn = dot && dot.closest('.sync-status'); if (dot) dot.className = 'sync-dot ' + (state || ''); if (lbl) lbl.textContent = label || 'Cloud Sync'; if (btn) { btn.title = state === 'warn' ? 'Click to configure cloud sync' : state === 'ok' ? 'Synced — click to manage' : state === 'err' ? 'Sync error — click to fix' : 'Cloud sync settings'; btn.style.borderColor = state === 'warn' ? 'rgba(224,123,58,.4)' : state === 'ok' ? 'rgba(61,214,140,.3)' : state === 'err' ? 'rgba(224,84,84,.3)' : ''; } }
 function showSetup() { openControlPanel('sync'); }
 function setupFlash(msg, color) { cfgBanner(msg, color === 'var(--lime)' ? 'ok' : color === 'var(--red)' ? 'err' : color === 'var(--orange)' ? 'warn' : 'inf', 'cfg-banner'); }
@@ -4286,7 +4319,7 @@ async function forcePush() {
   const cfg = getCfg(); if (!cfg.key || !cfg.bin) { setupFlash('No credentials configured', 'var(--orange)'); return; }
   setSyncStatus('syncing', 'Pushing…'); try { await jbUpdate(cfg.key, cfg.bin, buildPayload()); setSyncStatus('ok', 'Synced'); setupFlash('✓ All local data pushed to cloud', 'var(--lime)'); } catch (e) { setSyncStatus('err', 'Error'); setupFlash('✗ Push failed: ' + e.message, 'var(--red)'); }
 }
-function clearCredentials() { if (!confirm('Remove cloud credentials from this device?')) return; lsDel(LS_KEY); lsDel(LS_BIN); const kEl = document.getElementById('cfg-key'); if (kEl) kEl.value = ''; const bEl = document.getElementById('cfg-bin'); if (bEl) bEl.value = ''; setSyncStatus('warn', 'Not Configured · Click to Setup'); setupFlash('Credentials cleared from this device', 'var(--yellow)'); cpRefreshSyncState(); }
+function clearCredentials() { if (!confirm('Remove cloud credentials from this device?')) return; lsDel(LS_KEY); lsDel(LS_BIN); clearCfCfg(); const kEl = document.getElementById('cfg-key'); if (kEl) kEl.value = ''; const bEl = document.getElementById('cfg-bin'); if (bEl) bEl.value = ''; const cu = document.getElementById('cfg-cf-url'); if (cu) cu.value = ''; const ct = document.getElementById('cfg-cf-token'); if (ct) ct.value = ''; setSyncStatus('warn', 'Not Configured · Click to Setup'); setupFlash('Credentials cleared from this device', 'var(--yellow)'); cpRefreshSyncState(); }
 const todayISO = () => new Date().toISOString().slice(0, 10); const fmt = iso => { if (!iso) return '—'; const d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }); }; const fmtLong = iso => { if (!iso) return '—'; const d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }); }; function calcScore(r) { const adv = +r.adv || 0, dec = +r.dec || 0, hi = +r.hi || 0, lo = +r.lo || 0; const e20 = +r.e20 || 0, s50 = +r.s50 || 0, s200 = +r.s200 || 0; const advPct = adv / (adv + dec || 1) * 100; const hlPct = (hi + lo) > 0 ? hi / (hi + lo) * 100 : 50; const smaPct = (e20 + s50 + s200) / 3; return Math.min(100, Math.max(0, Math.round(advPct * 0.35 + hlPct * 0.15 + smaPct * 0.50))); }
 function getZone(s) { if (s >= 55) return { name: 'HEALTHY', r: '2–3R', color: 'var(--lime)', bg: 'rgba(74,222,128,0.12)' }; if (s >= 45) return { name: 'EXPANDING', r: '1–2R', color: 'var(--green)', bg: 'rgba(34,197,94,0.12)' }; if (s >= 35) return { name: 'CAUTION', r: '0.5–1R', color: 'var(--yellow)', bg: 'rgba(250,204,21,0.12)' }; if (s >= 20) return { name: 'DEFENSIVE', r: '0.25R pilot', color: 'var(--orange)', bg: 'rgba(251,146,60,0.12)' }; return { name: 'CORRECTION', r: '0R — stand aside', color: 'var(--red)', bg: 'rgba(248,113,113,0.12)' }; }
 function spark(vals, w, h, color) { const v = vals.filter(x => x != null && !isNaN(x)); if (v.length < 2) return `<svg class="spk" width="${w}" height="${h}"></svg>`; const mn = Math.min(...v), mx = Math.max(...v), rng = mx - mn || 1; const pts = v.map((n, i) => `${i / (v.length - 1) * w},${h - (n - mn) / rng * (h - 4) + 2}`).join(' '); const lx = w, ly = h - (v[v.length - 1] - mn) / rng * (h - 4) + 2; return `<svg class="spk" width="${w}" height="${h}"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${lx}" cy="${ly}" r="3" fill="${color}"/></svg>`; }
@@ -6073,12 +6106,44 @@ async function cpTriggerScan() {
 }
 
 function cpRefreshSyncState() {
-  const cfg = getCfg(); const configured = document.getElementById('cp-sync-configured'); const setup = document.getElementById('cp-sync-setup'); if (!configured || !setup) return; if (cfg.key && cfg.bin) { configured.style.display = 'block'; setup.style.display = 'none'; const disp = document.getElementById('cp-sync-binid-display'); if (disp) disp.textContent = 'Bin ID: ' + cfg.bin; } else {
-    configured.style.display = 'none'; setup.style.display = 'block'; if (cfg.key) { const k = document.getElementById('cfg-key'); if (k) k.value = cfg.key; }
-    if (cfg.bin) { const b = document.getElementById('cfg-bin'); if (b) b.value = cfg.bin; }
+  const cfg = getCfg(); const cf = getCfCfg(); const configured = document.getElementById('cp-sync-configured'); const setup = document.getElementById('cp-sync-setup'); if (!configured || !setup) return; if (cfg.key && cfg.bin) { configured.style.display = 'block'; setup.style.display = 'none'; const disp = document.getElementById('cp-sync-binid-display'); if (disp) disp.textContent = cfg.isCf ? ('Cloudflare D1: ' + cfg.bin) : ('Bin ID: ' + cfg.bin); } else {
+    configured.style.display = 'none'; setup.style.display = 'block'; if (cf.url) { const cu = document.getElementById('cfg-cf-url'); if (cu) cu.value = cf.url; }
+    if (cf.token) { const ct = document.getElementById('cfg-cf-token'); if (ct) ct.value = cf.token; }
+    if (!cfg.isCf && cfg.key) { const k = document.getElementById('cfg-key'); if (k) k.value = cfg.key; }
+    if (!cfg.isCf && cfg.bin) { const b = document.getElementById('cfg-bin'); if (b) b.value = cfg.bin; }
     const guestBin = lsGet(LS_GUEST_BIN); if (guestBin) { const gb = document.getElementById('cfg-guest-bin'); if (gb) gb.value = guestBin; const ex = document.getElementById('cfg-exit-guest-btn'); if (ex) ex.style.display = 'inline-block'; }
   }
 }
+
+async function cfConnectD1() {
+  const urlInp = document.getElementById('cfg-cf-url');
+  const tokInp = document.getElementById('cfg-cf-token');
+  const btn = document.getElementById('cfg-cf-connect-btn');
+  const url = (urlInp ? urlInp.value : '').trim().replace(/\/+$/, '');
+  const token = (tokInp ? tokInp.value : '').trim();
+  if (!url || !url.startsWith('http')) {
+    cfgBanner('⚠ Enter your Cloudflare Worker URL (https://...workers.dev)', 'warn', 'cfg-cf-banner');
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = 'Connecting…'; }
+  cfgBanner('🔄 Testing Cloudflare D1 Worker…', 'inf', 'cfg-cf-banner');
+  try {
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const r = await fetch(`${url}/api/sync`, { headers });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    saveCfCfg(url, token);
+    await jbUpdate(token || 'cf-d1', url, buildPayload());
+    setSyncStatus('ok', 'Synced');
+    cfgBanner('✅ Connected to Cloudflare D1 & migrated local data!', 'ok', 'cfg-cf-banner');
+    cpRefreshSyncState();
+  } catch (e) {
+    cfgBanner('✗ D1 Connection failed: ' + e.message, 'err', 'cfg-cf-banner');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Connect Cloudflare D1'; }
+  }
+}
+window.cfConnectD1 = cfConnectD1;
 function cpClearPastForm() { ['p-adv', 'p-dec', 'p-unc', 'p-hi', 'p-lo', 'p-e20', 'p-s50', 'p-s200', 'p-nifty', 'p-nifty-low', 'p-vol'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); const pCb = document.getElementById('p-ftd-attempt'); if (pCb) pCb.checked = false; const pF = document.getElementById('p-ftd-followthrough'); if (pF) pF.checked = false; const d = new Date(); d.setDate(d.getDate() - 1); const pd = document.getElementById('p-date'); if (pd) pd.value = d.toISOString().split('T')[0]; const msg = document.getElementById('past-save-msg'); if (msg) msg.textContent = ''; }
 function openPastEntry() { openControlPanel('past'); }
 function closePastEntry() { const old = document.getElementById('past-modal'); if (old && old.style.display !== 'none') { old.style.display = 'none'; } else { closeControlPanel(); } }

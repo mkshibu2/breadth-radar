@@ -1,0 +1,17 @@
+name = "mradar-sync-api"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "mradar-db"
+database_id = "d8e37668-28c5-4721-af40-abaf7c75ae9f"
+
+# Optional: uncomment after creating R2 bucket & KV namespace
+# [[r2_buckets]]
+# binding = "BUCKET"
+# bucket_name = "mradar-snapshots"
+#
+# [[kv_namespaces]]
+# binding = "KV"
+# id = "REPLACE_WITH_YOUR_KV_ID"

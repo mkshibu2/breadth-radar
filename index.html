@@ -2588,6 +2588,25 @@
           </div>
 
           <div id="cp-sync-setup">
+            <div style="margin-bottom:16px;padding:12px;border:1px solid rgba(56,189,248,.28);border-radius:6px;background:rgba(56,189,248,.05)">
+              <div style="font-family:var(--mono);font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:#38bdf8;margin-bottom:8px;font-weight:700">
+                ⚡ Cloudflare D1 Sync (Recommended · No 100 KB Limit)</div>
+              <div class="cfg-field">
+                <label>Cloudflare Worker URL</label>
+                <input type="text" id="cfg-cf-url" placeholder="https://mradar-sync-api.your-subdomain.workers.dev" autocomplete="off">
+              </div>
+              <div class="cfg-field">
+                <label>Sync Token <span style="color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">(optional if SYNC_TOKEN secret is not set)</span></label>
+                <input type="password" id="cfg-cf-token" placeholder="Your SYNC_TOKEN secret" autocomplete="off">
+              </div>
+              <div class="cfg-banner" id="cfg-cf-banner"></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+                <button class="cfg-btn-primary" id="cfg-cf-connect-btn" onclick="cfConnectD1()">Connect Cloudflare D1</button>
+              </div>
+            </div>
+
+            <div style="font-family:var(--mono);font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);margin-bottom:8px">
+              Legacy JSONBin.io (100 KB Free Limit)</div>
             <div class="cfg-field">
               <label>JSONBin Master Key</label>
               <input type="password" id="cfg-key" placeholder="$2a$10$xxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off">
