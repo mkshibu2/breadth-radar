@@ -2373,17 +2373,20 @@
             style="color:#fff">—</b> Vol <b style="color:#fff">—</b>
         </div>
         <div class="chart-indicator-tags">
+          <span class="ind-tag" id="legend-ema10" title="Distance from 10 EMA">
+            <span class="ind-dot" style="background:#3b82f6;"></span>P/10E: <b id="val-ema10">—</b>
+          </span>
           <span class="ind-tag" id="legend-ema20" onclick="toggleChartIndicator('ema20')"
-            title="Click to toggle EMA 20 (Orange)">
-            <span class="ind-dot" style="background:#f59e0b;"></span>EMA 20: <b id="val-ema20">—</b>
+            title="Distance from 20 EMA (Click to toggle EMA 20)">
+            <span class="ind-dot" style="background:#f59e0b;"></span>P/20E: <b id="val-ema20">—</b>
           </span>
           <span class="ind-tag" id="legend-ema50" onclick="toggleChartIndicator('ema50')"
-            title="Click to toggle EMA 50 (Cyan)">
-            <span class="ind-dot" style="background:#06b6d4;"></span>EMA 50: <b id="val-ema50">—</b>
+            title="Click to toggle EMA 50 (Cyan)" style="display:none;">
+            <span class="ind-dot" style="background:#06b6d4;"></span>P/50E: <b id="val-ema50">—</b>
           </span>
           <span class="ind-tag" id="legend-sma200" onclick="toggleChartIndicator('sma200')"
-            title="Click to toggle SMA 200 (Purple)">
-            <span class="ind-dot" style="background:#a855f7;"></span>SMA 200: <b id="val-sma200">—</b>
+            title="Distance from 200 SMA (Click to toggle SMA 200)">
+            <span class="ind-dot" style="background:#a855f7;"></span>P/200S: <b id="val-sma200">—</b>
           </span>
         </div>
       </div>
@@ -2443,6 +2446,9 @@
           </button>
         </div>
       </div>
+
+      <!-- TECH & FUNDA Bottom HUD for Split Chart -->
+      <div id="sc-chart-hud-container" style="flex-shrink:0;background:#0b0e14;border-top:1px solid #1e222d;"></div>
     </div>
 
   </div>
@@ -4244,13 +4250,15 @@
         }
         var candlePrice = param.seriesPrices.get(_lwPriceSeries);
         var volVal = param.seriesPrices.get(_lwVolSeries);
-        var ema20Val = param.seriesPrices.get(_lwEma20Series);
+        var ema10Val = window._scEma10Map ? window._scEma10Map.get(param.time) : null;
+        var ema20Val = param.seriesPrices.get(_lwEma20Series) || (window._scEma20Map ? window._scEma20Map.get(param.time) : null);
         var ema50Val = param.seriesPrices.get(_lwEma50Series);
-        var sma200Val = param.seriesPrices.get(_lwSma200Series);
+        var sma200Val = param.seriesPrices.get(_lwSma200Series) || (window._scSma200Map ? window._scSma200Map.get(param.time) : null);
 
         updateLegendValues({
           ohlc: candlePrice,
           volume: volVal,
+          ema10: ema10Val,
           ema20: ema20Val,
           ema50: ema50Val,
           sma200: sma200Val
@@ -4306,10 +4314,23 @@
 
     function updateLegendValues(data) {
       var ohlcEl = document.getElementById('chart-legend-ohlc');
+      var e10El = document.getElementById('val-ema10');
       var e20El = document.getElementById('val-ema20');
       var e50El = document.getElementById('val-ema50');
       var s200El = document.getElementById('val-sma200');
       if (!ohlcEl) return;
+
+      var setDist = function (el, closeP, maVal, greenMax, amberMax) {
+        if (!el) return;
+        if (closeP == null || maVal == null || maVal <= 0) {
+          el.textContent = '—';
+          el.style.color = '#94a3b8';
+          return;
+        }
+        var d = ((closeP - maVal) / maVal) * 100;
+        el.textContent = (d >= 0 ? '+' : '') + d.toFixed(1) + '%';
+        el.style.color = d <= greenMax ? '#22c55e' : (d <= amberMax ? '#fb923c' : '#ef4444');
+      };
 
       if (data && data.ohlc) {
         var p = data.ohlc;
@@ -4322,9 +4343,10 @@
           + '<span style="color:' + (isUp ? 'var(--lime)' : 'var(--red)') + '">(' + (isUp ? '+' : '') + chg.toFixed(2) + '%)</span>'
           + (data.volume ? ' Vol <b style="color:#fff">' + formatVol(data.volume) + '</b>' : '');
 
-        if (e20El) e20El.textContent = data.ema20 != null ? data.ema20.toFixed(2) : '—';
-        if (e50El) e50El.textContent = data.ema50 != null ? data.ema50.toFixed(2) : '—';
-        if (s200El) s200El.textContent = data.sma200 != null ? data.sma200.toFixed(2) : '—';
+        setDist(e10El, p.close, data.ema10, 4, 8);
+        setDist(e20El, p.close, data.ema20, 6, 12);
+        setDist(e50El, p.close, data.ema50, 15, 30);
+        setDist(s200El, p.close, data.sma200, 35, 55);
       } else if (_currentCandles && _currentCandles.length > 0) {
         var last = _currentCandles[_currentCandles.length - 1];
         var isUp = last.close >= last.open;
@@ -4336,13 +4358,125 @@
           + '<span style="color:' + (isUp ? 'var(--lime)' : 'var(--red)') + '">(' + (isUp ? '+' : '') + chg.toFixed(2) + '%)</span>'
           + ' Vol <b style="color:#fff">' + formatVol(last.volume) + '</b>';
 
+        var e10Last = window._scEma10Map ? window._scEma10Map.get(last.time) : null;
+        var e20Last = window._scEma20Map ? window._scEma20Map.get(last.time) : null;
+        var s200Last = window._scSma200Map ? window._scSma200Map.get(last.time) : null;
         var stock = STOCKS_DATA.find(function (s) { return s.symbol === _currentCandlesSymbol; });
-        if (stock) {
-          if (e20El) e20El.textContent = stock.ema_20 ? stock.ema_20.toFixed(2) : '—';
-          if (e50El) e50El.textContent = stock.ema_50 ? stock.ema_50.toFixed(2) : '—';
-          if (s200El) s200El.textContent = stock.sma_200 ? stock.sma_200.toFixed(2) : '—';
-        }
+        setDist(e10El, last.close, e10Last, 4, 8);
+        setDist(e20El, last.close, e20Last != null ? e20Last : (stock ? stock.ema_20 : null), 6, 12);
+        setDist(e50El, last.close, stock ? stock.ema_50 : null, 15, 30);
+        setDist(s200El, last.close, s200Last != null ? s200Last : (stock ? stock.sma_200 : null), 35, 55);
       }
+    }
+
+    function renderScreenerSplitHud(sym, candles) {
+      var container = document.getElementById('sc-chart-hud-container');
+      if (!container) return;
+      if (!candles || candles.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+      var last = candles[candles.length - 1];
+      var closeP = last.close;
+      var e10Arr = calculateEMA(candles, 10);
+      var e20Arr = calculateEMA(candles, 20);
+      var s50Arr = calculateSMA(candles, 50);
+      var s200Arr = calculateSMA(candles, 200);
+      var e10 = e10Arr[candles.length - 1];
+      var e20 = e20Arr[candles.length - 1];
+      var s50 = s50Arr[candles.length - 1];
+      var s200 = s200Arr[candles.length - 1];
+
+      var fmtD = function (ma, gMax, aMax) {
+        if (ma == null || ma <= 0) return { txt: '—', col: '#94a3b8' };
+        var d = ((closeP - ma) / ma) * 100;
+        return {
+          txt: (d >= 0 ? '+' : '') + d.toFixed(1) + '%',
+          col: d <= gMax ? '#22c55e' : (d <= aMax ? '#fb923c' : '#ef4444')
+        };
+      };
+      var d10 = fmtD(e10, 4, 8);
+      var d20 = fmtD(e20, 6, 12);
+      var d50 = fmtD(s50, 15, 30);
+      var d200 = fmtD(s200, 35, 55);
+
+      var slice52 = candles.slice(Math.max(0, candles.length - 252));
+      var hh52 = -Infinity;
+      for (var i = 0; i < slice52.length; i++) if (slice52[i].high > hh52) hh52 = slice52[i].high;
+      var d52 = hh52 > 0 ? ((closeP - hh52) / hh52) * 100 : null;
+      var d52Txt = d52 != null ? d52.toFixed(1) + '%' : '—';
+      var c52 = d52 == null ? '#94a3b8' : (d52 >= -10 ? '#22c55e' : (d52 >= -25 ? '#fb923c' : '#ef4444'));
+
+      var adrSlice = candles.slice(Math.max(0, candles.length - 20));
+      var adrSum = 0;
+      for (var j = 0; j < adrSlice.length; j++) {
+        if (adrSlice[j].low > 0) adrSum += ((adrSlice[j].high - adrSlice[j].low) / adrSlice[j].low) * 100;
+      }
+      var adrVal = adrSlice.length ? (adrSum / adrSlice.length) : null;
+      var adrTxt = adrVal != null ? adrVal.toFixed(1) + '%' : '—';
+      var cAdr = adrVal == null ? '#94a3b8' : (adrVal >= 5 ? '#22c55e' : (adrVal >= 3 ? '#fb923c' : '#ef4444'));
+
+      var volSlice = candles.slice(Math.max(0, candles.length - 50));
+      var volSum = 0;
+      for (var k = 0; k < volSlice.length; k++) volSum += (volSlice[k].volume || 0);
+      var avgVol = volSlice.length ? (volSum / volSlice.length) : 0;
+      var rVol = avgVol > 0 ? Math.round(((last.volume || 0) / avgVol) * 100) : null;
+      var cRvol = rVol == null ? '#94a3b8' : (rVol >= 110 ? '#22c55e' : (rVol >= 80 ? '#fb923c' : '#ef4444'));
+
+      var stock = STOCKS_DATA.find(function (s) { return s.symbol === sym; }) || {};
+      var secTxt = stock.sector || '—';
+      var indTxt = stock.theme || stock.industry || '—';
+      var capTxt = stock.mkt_cap_cr ? (stock.mkt_cap_cr >= 20000 ? 'Large' : (stock.mkt_cap_cr >= 5000 ? 'Mid' : 'Small')) : '—';
+      var peTxt = stock.pe_ratio != null ? Number(stock.pe_ratio).toFixed(1) : '—';
+      var r90Val = stock.perf_3m != null ? Number(stock.perf_3m) : null;
+      var r90Txt = r90Val != null ? (r90Val >= 0 ? '+' : '') + r90Val.toFixed(1) + '%' : '—';
+      var r90Col = r90Val == null ? '#94a3b8' : (r90Val >= 30 ? '#4ade80' : (r90Val >= 0 ? '#fbbf24' : '#f87171'));
+
+      var qHtml = '';
+      if (Array.isArray(stock.quarterly) && stock.quarterly.length) {
+        var chips = stock.quarterly.slice(0, 4).map(function (q) {
+          var eV = q.eps_growth != null ? q.eps_growth : q.eps_pct;
+          var sV = q.sales_growth != null ? q.sales_growth : q.sales_pct;
+          var eS = eV != null ? (eV >= 0 ? '+' : '') + Math.round(eV) + '%' : '—';
+          var sS = sV != null ? (sV >= 0 ? '+' : '') + Math.round(sV) + '%' : '—';
+          var eC = (eV != null && eV >= 0) ? '#4ade80' : (eV != null ? '#f87171' : '#94a3b8');
+          var sC = (sV != null && sV >= 0) ? '#4ade80' : (sV != null ? '#f87171' : '#94a3b8');
+          return '<span style="padding:1px 4px;border-radius:3px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);margin-right:3px;">'
+            + '<span style="color:#94a3b8;">' + (q.qtr || 'Q') + ':</span> '
+            + 'E <b style="color:' + eC + '">' + eS + '</b> '
+            + 'S <b style="color:' + sC + '">' + sS + '</b></span>';
+        }).join('');
+        qHtml = '<span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#2dd4bf;font-weight:700;margin-right:4px;">Qtr:</span>' + chips + '</span>';
+      }
+
+      var pill = function (lbl, val, col) {
+        return '<span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;white-space:nowrap;"><span style="color:#94a3b8;">' + lbl + ':</span> <b style="color:' + (col || '#f8fafc') + ';margin-left:2px;">' + val + '</b></span>';
+      };
+
+      container.innerHTML =
+        '<div style="font-size:10px;font-family:var(--mono);line-height:1.35;user-select:none;">'
+        + '<div style="display:flex;align-items:center;padding:3px 10px;border-bottom:1px solid rgba(255,255,255,0.06);gap:6px;overflow-x:auto;scrollbar-width:none;">'
+        + '<span style="background:rgba(56,189,248,0.14);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;padding:1px 6px;border-radius:3px;font-weight:800;font-size:9px;flex-shrink:0;">📈 TECH</span>'
+        + pill('P/10EMA', d10.txt, d10.col)
+        + pill('P/20EMA', d20.txt, d20.col)
+        + pill('P/50SMA', d50.txt, d50.col)
+        + pill('P/200SMA', d200.txt, d200.col)
+        + pill('P/52W Hi', d52Txt, c52)
+        + pill('ADR(20)', adrTxt, cAdr)
+        + pill('AvgVol', formatVol(avgVol), '#f8fafc')
+        + pill('Vol', formatVol(last.volume || 0), '#f8fafc')
+        + pill('RVol', rVol != null ? rVol + '%' : '—', cRvol)
+        + '</div>'
+        + '<div style="display:flex;align-items:center;padding:3px 10px;gap:6px;background:rgba(0,0,0,0.22);overflow-x:auto;scrollbar-width:none;">'
+        + '<span style="background:rgba(45,212,191,0.14);border:1px solid rgba(45,212,191,0.35);color:#2dd4bf;padding:1px 6px;border-radius:3px;font-weight:800;font-size:9px;flex-shrink:0;">🏢 FUNDA</span>'
+        + pill('Sector', secTxt, '#38bdf8')
+        + pill('Industry', indTxt, '#f1f5f9')
+        + pill('Cap', capTxt, '#2dd4bf')
+        + pill('P/E', peTxt, '#f8fafc')
+        + pill('3M%', r90Txt, r90Col)
+        + qHtml
+        + '</div>'
+        + '</div>';
     }
 
     function calculateEMA(candles, period) {
@@ -4679,18 +4813,24 @@
         });
         _lwVolSeries.setData(volData);
 
+        var ema10 = calculateEMA(candles, 10);
         var ema20 = calculateEMA(candles, 20);
         var ema50 = calculateEMA(candles, 50);
         var sma200 = calculateSMA(candles, 200);
+
+        window._scEma10Map = new Map();
+        window._scEma20Map = new Map();
+        window._scSma200Map = new Map();
 
         var e20Data = [];
         var e50Data = [];
         var s200Data = [];
         for (var i = 0; i < candles.length; i++) {
           var t = candles[i].time;
-          if (ema20[i] != null) e20Data.push({ time: t, value: ema20[i] });
+          if (ema10[i] != null) window._scEma10Map.set(t, ema10[i]);
+          if (ema20[i] != null) { e20Data.push({ time: t, value: ema20[i] }); window._scEma20Map.set(t, ema20[i]); }
           if (ema50[i] != null) e50Data.push({ time: t, value: ema50[i] });
-          if (sma200[i] != null) s200Data.push({ time: t, value: sma200[i] });
+          if (sma200[i] != null) { s200Data.push({ time: t, value: sma200[i] }); window._scSma200Map.set(t, sma200[i]); }
         }
 
         _lwEma20Series.setData(_showEma20 ? e20Data : []);
@@ -4700,6 +4840,7 @@
         resetChartPriceScale(_lwScreenerChart, 'right');
         applyPreservedChartZoom(candles.length, (tf === 'W'));
         updateLegendValues(null);
+        renderScreenerSplitHud(sym, candles);
       } catch (err) {
         if (curReqId !== _activeChartReqId) return;
         if (loadingEl) loadingEl.style.display = 'none';

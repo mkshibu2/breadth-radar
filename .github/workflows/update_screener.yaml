@@ -69,6 +69,7 @@ jobs:
           # FIX 4: Only commit and push IF there are actual changes (Prevents 128)
           if ! git diff --cached --quiet; then
             git commit -m "📊 Auto-updated VCP Scanner Results"
+            git pull --rebase origin main
             git push
             echo "✅ Changes pushed to GitHub successfully."
           else
