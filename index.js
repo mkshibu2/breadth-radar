@@ -6132,18 +6132,18 @@ async function cpTriggerScan() {
                 (async () => {
                   try {
                     const base = (typeof vcpbGetUrl === 'function' && vcpbGetUrl()) ? vcpbGetUrl() : 'https://mkshibu2.github.io/breadth-radar';
-                    const r = await fetch(base.replace(/\/+$/, '') + '/screener_stocks.json?_=' + Date.now(), { cache: 'no-store' });
-                    if (r.ok) {
-                      const freshScreener = await r.json();
-                      if (freshScreener && Array.isArray(freshScreener.stocks)) {
-                        window.SCREENER_DATA = window.SCREENER_UNIVERSE = freshScreener;
-                        if (typeof sccComputeClusters === 'function') sccComputeClusters();
-                        if (typeof sccRenderClusters === 'function') sccRenderClusters();
-                        if (typeof sccWlRenderTabs === 'function') sccWlRenderTabs();
-                        if (typeof sccWatchlistRender === 'function') sccWatchlistRender();
-                        if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
-                      }
-                    }
+                    await new Promise((resolve, reject) => {
+                      const sc = document.createElement('script');
+                      sc.src = base.replace(/\/+$/, '') + '/screener_stocks.js?_=' + Date.now();
+                      sc.onload = resolve;
+                      sc.onerror = reject;
+                      document.head.appendChild(sc);
+                    });
+                    if (typeof sccComputeClusters === 'function') sccComputeClusters();
+                    if (typeof sccRenderClusters === 'function') sccRenderClusters();
+                    if (typeof sccWlRenderTabs === 'function') sccWlRenderTabs();
+                    if (typeof sccWatchlistRender === 'function') sccWatchlistRender();
+                    if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
                   } catch (e) { console.warn('[Post-Scan Themes Refresh]', e); }
                 })();
               } else {

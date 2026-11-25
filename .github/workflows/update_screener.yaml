@@ -63,13 +63,12 @@ jobs:
           # Stage the JSON/JS sidecars required for Sector Command & Themes breadth tracking
           git add sector_breadth.json
           git add sector_stocks.json
-          git add screener_stocks.json
           git add screener_stocks.js
 
           # FIX 4: Only commit and push IF there are actual changes (Prevents 128)
           if ! git diff --cached --quiet; then
             git commit -m "📊 Auto-updated VCP Scanner Results"
-            git pull --rebase origin main
+            git pull --rebase --autostash origin main
             git push
             echo "✅ Changes pushed to GitHub successfully."
           else
