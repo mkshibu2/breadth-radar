@@ -11295,74 +11295,105 @@ async function fetchFyersCandles(symbol, range, interval) {
   else if (interval === '1wk' || interval === 'W') resolution = '1W';
   else if (interval === '1mo' || interval === 'M') resolution = '1M';
 
-  // Date range calculation (up to 5 years for daily, 100 days max chunk for intraday)
-  const toDateObj = new Date();
-  const toDate = toDateObj.toISOString().split('T')[0];
-  const fromDateObj = new Date();
+  // Fyers /data/history caps each request at 366 days (1D/1W/1M) or 100 days (intraday).
+  // Chunk multi-year requests into <=360-day windows so Fyers never returns "Invalid input".
+  const fmtIst = (d) => new Date(d.getTime() + 19800000).toISOString().split('T')[0];
+  const now = new Date();
+  const chunks = [];
   if (resolution === '15' || resolution === '60') {
-    fromDateObj.setDate(fromDateObj.getDate() - 90); // 90 days of intraday
+    const fromD = new Date(now.getTime() - 90 * 86400000);
+    chunks.push({ from: fmtIst(fromD), to: fmtIst(now) });
   } else {
-    fromDateObj.setFullYear(fromDateObj.getFullYear() - 5); // 5 years of daily
-  }
-  const fromDate = fromDateObj.toISOString().split('T')[0];
-
-  const authHeader = `${creds.appId}:${creds.token}`;
-  const queryParams = new URLSearchParams({
-    symbol: fyersSym,
-    resolution: resolution,
-    date_format: '1',
-    range_from: fromDate,
-    range_to: toDate,
-    cont_flag: '1'
-  }).toString();
-
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
-  const directUrl = `https://api-t1.fyers.in/data/history?${queryParams}`;
-  const urls = isLocal
-    ? [`http://localhost:9090/fyers/data/history?${queryParams}`, directUrl]
-    : [directUrl];
-
-  let lastErr;
-  for (const url of urls) {
-    try {
-      const resp = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': authHeader,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!resp.ok) {
-        const errObj = await resp.json().catch(() => ({}));
-        throw new Error(errObj.message || errObj.error || (`HTTP ${resp.status}`));
-      }
-
-      const data = await resp.json();
-      if (data.s !== 'ok' || !data.candles || !data.candles.length) {
-        throw new Error(data.message || `No candles returned for ${fyersSym}`);
-      }
-
-      // Fyers candle: [timestamp, open, high, low, close, volume]
-      const candles = data.candles.map(c => ({
-        time: c[0] * 1000,
-        open: c[1],
-        high: c[2],
-        low: c[3],
-        close: c[4],
-        volume: c[5] || 0
-      }));
-
-      return candles;
-    } catch (e) {
-      lastErr = e;
-      if (url === urls[0] && (e.name === 'TypeError' || e.message.includes('CORS') || e.message.includes('Failed to fetch'))) {
-        continue; // Try direct/alternate
-      }
-      throw e;
+    const totalChunks = (resolution === '1W' || resolution === '1M') ? 3 : 2; // ~3y W/M, ~2y D
+    for (let i = 0; i < totalChunks; i++) {
+      const toD = new Date(now.getTime() - i * 360 * 86400000);
+      const fromD = new Date(toD.getTime() - 359 * 86400000);
+      chunks.push({ from: fmtIst(fromD), to: fmtIst(toD) });
     }
   }
-  throw lastErr;
+
+  const authHeader = `${creds.appId}:${creds.token}`;
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+
+  const fetchChunk = async (chunk) => {
+    const queryParams = new URLSearchParams({
+      symbol: fyersSym,
+      resolution: resolution,
+      date_format: '1',
+      range_from: chunk.from,
+      range_to: chunk.to,
+      cont_flag: '1'
+    }).toString();
+
+    const directUrl = `https://api-t1.fyers.in/data/history?${queryParams}`;
+    const urls = isLocal
+      ? [`http://localhost:9090/fyers/data/history?${queryParams}`, directUrl]
+      : [directUrl];
+
+    let lastErr;
+    for (const url of urls) {
+      try {
+        const resp = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': authHeader,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!resp.ok) {
+          const errObj = await resp.json().catch(() => ({}));
+          throw new Error(errObj.message || errObj.error || (`HTTP ${resp.status}`));
+        }
+
+        const data = await resp.json();
+        if (data.s === 'ok' && Array.isArray(data.candles)) {
+          return data.candles;
+        }
+        if (data.s === 'no_data') {
+          return [];
+        }
+        throw new Error(data.message || `No candles returned for ${fyersSym}`);
+      } catch (e) {
+        lastErr = e;
+        if (url === urls[0] && urls.length > 1 && (e.name === 'TypeError' || e.message.includes('CORS') || e.message.includes('Failed to fetch'))) {
+          continue;
+        }
+        throw e;
+      }
+    }
+    throw lastErr;
+  };
+
+  const chunkResults = await Promise.all(chunks.map((c, idx) =>
+    fetchChunk(c).catch(err => {
+      if (idx === 0) throw err; // Latest chunk must succeed
+      return []; // Older chunks can gracefully return empty (e.g., IPOs)
+    })
+  ));
+
+  const seenTs = new Set();
+  const candles = [];
+  for (const list of chunkResults) {
+    for (const c of list) {
+      if (!seenTs.has(c[0])) {
+        seenTs.add(c[0]);
+        candles.push({
+          time: c[0] * 1000,
+          open: c[1],
+          high: c[2],
+          low: c[3],
+          close: c[4],
+          volume: c[5] || 0
+        });
+      }
+    }
+  }
+  if (!candles.length) {
+    throw new Error(`No candles returned for ${fyersSym}`);
+  }
+  candles.sort((a, b) => a.time - b.time);
+  return candles;
 }
 
 let _fyersLiveTimer = null;
