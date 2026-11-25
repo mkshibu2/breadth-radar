@@ -6131,7 +6131,14 @@ async function cfConnectD1() {
     const headers = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const r = await fetch(`${url}/api/sync`, { headers });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+    if (!r.ok) {
+      let errDetail = 'HTTP ' + r.status;
+      try {
+        const errJson = await r.json();
+        if (errJson && errJson.error) errDetail += ' — ' + errJson.error;
+      } catch (_) { }
+      throw new Error(errDetail);
+    }
     saveCfCfg(url, token);
     await jbUpdate(token || 'cf-d1', url, buildPayload());
     setSyncStatus('ok', 'Synced');
