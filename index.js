@@ -1811,6 +1811,13 @@ function renderWinHudTableHtml(candles, details, vt) {
   const dist10Txt = dist10 != null ? (dist10 >= 0 ? '+' : '') + dist10.toFixed(1) + '%' : '—';
   const c10 = dist10 == null ? 'var(--sub)' : dist10 <= 4 ? '#22c55e' : dist10 <= 8 ? '#fb923c' : '#ef4444';
 
+  // EMA2 (default 20)
+  const ema20Vals = calculateEMA(candles, inp.ema2Period || 20);
+  const ema20 = ema20Vals[candles.length - 1];
+  const dist20 = ema20 != null ? ((close - ema20) / ema20) * 100 : null;
+  const dist20Txt = dist20 != null ? (dist20 >= 0 ? '+' : '') + dist20.toFixed(1) + '%' : '—';
+  const c20 = dist20 == null ? 'var(--sub)' : dist20 <= 6 ? '#22c55e' : dist20 <= 12 ? '#fb923c' : '#ef4444';
+
   // SMA1 (default 50)
   const sma50Vals = calculateSMA(candles, inp.sma1Period);
   const sma50 = sma50Vals[candles.length - 1];
@@ -1913,13 +1920,19 @@ function renderWinHudTableHtml(candles, details, vt) {
     qHtml = `<span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#2dd4bf;font-weight:700;margin-right:4px;">Qtr Trend:</span>${qChips}</span>`;
   }
 
+  const isHudCollapsedMobile = localStorage.getItem('nse_hud_mobile_collapsed') === '1';
   return `
-    <div style="width:100%;background:#0b0e14;border-top:1px solid #1e222d;border-collapse:collapse;font-size:10px;font-family:var(--mono);line-height:1.35;user-select:none;">
+    <div class="win-hud-wrap ${isHudCollapsedMobile ? 'hud-mobile-collapsed' : ''}" style="width:100%;background:#0b0e14;border-top:1px solid #1e222d;border-collapse:collapse;font-size:10px;font-family:var(--mono);line-height:1.35;user-select:none;">
+      <div class="win-hud-mobile-bar" onclick="const w=this.parentElement; w.classList.toggle('hud-mobile-collapsed'); localStorage.setItem('nse_hud_mobile_collapsed', w.classList.contains('hud-mobile-collapsed')?'1':'0'); this.querySelector('.hud-mob-arrow').textContent=w.classList.contains('hud-mobile-collapsed')?'▸ Show TECH / FUNDA':'▾ Hide TECH / FUNDA';">
+        <span>📊 TECH · FUNDA</span>
+        <span class="hud-mob-arrow" style="color:#38bdf8;font-weight:700;">${isHudCollapsedMobile ? '▸ Show TECH / FUNDA' : '▾ Hide TECH / FUNDA'}</span>
+      </div>
       <!-- Row 1: Technical Indicators -->
-      <div style="display:flex;align-items:center;padding:3px 10px;border-bottom:1px solid rgba(255,255,255,0.06);flex-wrap:wrap;gap:6px;">
-        <span style="background:rgba(56,189,248,0.14);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;padding:1px 6px;border-radius:3px;font-weight:800;font-size:9px;letter-spacing:0.4px;">📈 TECH</span>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div class="win-hud-row" style="display:flex;align-items:center;padding:3px 10px;border-bottom:1px solid rgba(255,255,255,0.06);flex-wrap:wrap;gap:6px;">
+        <span style="background:rgba(56,189,248,0.14);border:1px solid rgba(56,189,248,0.35);color:#38bdf8;padding:1px 6px;border-radius:3px;font-weight:800;font-size:9px;letter-spacing:0.4px;flex-shrink:0;">📈 TECH</span>
+        <div class="win-hud-items" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">P/${inp.ema1Period}EMA:</span> <b style="color:${c10};margin-left:3px;">${dist10Txt}</b></span>
+          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">P/${inp.ema2Period || 20}EMA:</span> <b style="color:${c20};margin-left:3px;">${dist20Txt}</b></span>
           <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">P/${inp.sma1Period}SMA:</span> <b style="color:${c50};margin-left:3px;">${dist50Txt}</b></span>
           <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">P/${inp.sma2Period}SMA:</span> <b style="color:${c200};margin-left:3px;">${dist200Txt}</b></span>
           <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">P/52W Hi:</span> <b style="color:${c52};margin-left:3px;">${dist52Txt}</b></span>
@@ -1929,14 +1942,13 @@ function renderWinHudTableHtml(candles, details, vt) {
           <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Vol:</span> <b style="color:#f8fafc;margin-left:3px;">${volTxt}</b></span>
           <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">RVol:</span> <b style="color:${cRvol};margin-left:3px;">${rVolTxt}</b></span>
           <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">U/D(${inp.udLen}):</span> <b style="color:${cUd};margin-left:3px;">${udTxt}</b></span>
-          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">VT GTT:</span> <b style="color:${cVt};margin-left:3px;">${vtTxt}</b></span>
         </div>
       </div>
 
       <!-- Row 2: Fundamental & Scanner Metrics -->
-      <div style="display:flex;align-items:center;padding:3px 10px;flex-wrap:wrap;gap:6px;background:rgba(0,0,0,0.22);">
-        <span style="background:rgba(45,212,191,0.14);border:1px solid rgba(45,212,191,0.35);color:#2dd4bf;padding:1px 6px;border-radius:3px;font-weight:800;font-size:9px;letter-spacing:0.4px;">🏢 FUNDA</span>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div class="win-hud-row" style="display:flex;align-items:center;padding:3px 10px;flex-wrap:wrap;gap:6px;background:rgba(0,0,0,0.22);">
+        <span style="background:rgba(45,212,191,0.14);border:1px solid rgba(45,212,191,0.35);color:#2dd4bf;padding:1px 6px;border-radius:3px;font-weight:800;font-size:9px;letter-spacing:0.4px;flex-shrink:0;">🏢 FUNDA</span>
+        <div class="win-hud-items" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Sector:</span> <b style="color:#38bdf8;font-weight:700;margin-left:3px;">${(details && details.sector) || '—'}</b></span>
           <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Industry:</span> <b style="color:#f1f5f9;font-weight:600;margin-left:3px;">${(details && details.industry) || '—'}</b></span>
           <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Cap:</span> <b style="color:#2dd4bf;font-weight:700;margin-left:3px;">${capVal}</b></span>
@@ -13449,8 +13461,19 @@ function sccComputeClusters() {
       return; // Skip downtrend stocks trading below their 200 MA
     }
 
-    const themeLookup = window.RADAR_THEMES || {};
     const sUpper = (s.symbol || '').toUpperCase().trim();
+    if (!sUpper || /\.(E1|RR|IV|BZ|GB)$/i.test(sUpper) || /-RE$/i.test(sUpper) || (typeof _hiddenUnchartableSymbols !== 'undefined' && _hiddenUnchartableSymbols.has(sUpper))) {
+      return; // Skip special non-equity series and hidden unchartable symbols
+    }
+
+    // Liquidity filter: Remove very illiquid stocks (< ₹1 Cr 30-day average daily turnover or < 5,000 avg daily volume)
+    const avgVol = s.avg_vol_30d != null ? Number(s.avg_vol_30d) : (s.volume != null ? Number(s.volume) : 0);
+    const avgTurnCr = (avgVol > 0 && s.price > 0) ? ((avgVol * s.price) / 1e7) : (s.turnover_cr != null ? Number(s.turnover_cr) : 0);
+    if (avgTurnCr < 1.0 || (avgVol > 0 && avgVol < 5000)) {
+      return; // Skip very illiquid stocks from Themes tab and Themes WL
+    }
+
+    const themeLookup = window.RADAR_THEMES || {};
     const ind = themeLookup[sUpper] || (s.theme && s.theme.trim()) || (s.industry && s.industry.trim()) || 'Other / Diversified';
     if (!indMap[ind]) {
       indMap[ind] = {

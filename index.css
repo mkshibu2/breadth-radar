@@ -5896,6 +5896,9 @@ thead th[onclick]:hover {
 
 
 /* ── TRADINGVIEW STYLE FLOATING EPS & SALES TABLE ── */
+.win-hud-mobile-bar {
+  display: none;
+}
 .tv-floating-table {
   position: absolute;
   bottom: 135px;
@@ -7393,11 +7396,43 @@ thead th[onclick]:hover {
     width: 26px !important;
     height: 26px !important;
   }
+  .win-hud-mobile-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 10px;
+    background: #111622;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 10px;
+    color: #94a3b8;
+    cursor: pointer;
+  }
+  .win-hud-wrap.hud-mobile-collapsed .win-hud-row {
+    display: none !important;
+  }
+  .win-hud-row {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 3px 8px !important;
+    gap: 6px !important;
+  }
+  .win-hud-row::-webkit-scrollbar {
+    display: none;
+  }
+  .win-hud-items {
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+    gap: 6px !important;
+  }
   .tv-floating-table {
-    bottom: 95px !important;
-    right: 8px !important;
-    font-size: 8.5px !important;
-    max-width: 220px !important;
+    bottom: 65px !important;
+    right: 6px !important;
+    font-size: 8px !important;
+    max-width: 190px !important;
+    transform: scale(0.88);
+    transform-origin: bottom right;
   }
   .scc-dash-top-grid {
     grid-template-columns: 1fr !important;
