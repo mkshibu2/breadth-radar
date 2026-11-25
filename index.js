@@ -797,9 +797,8 @@ function generateEpsTableHtml(sUpper, qData) {
         <thead><tr><th style="text-align:left;">Quarter</th><th>EPS YoY</th><th>Sales YoY</th></tr></thead>
         <tbody>
           <tr><td colspan="3" style="text-align:center;padding:8px 6px;color:#94a3b8;">
-            <div style="font-weight:700;color:#f0f3fa;margin-bottom:4px;">${sUpper}</div>
-            <a href="https://www.screener.in/company/${encodeURIComponent(sUpper)}/consolidated/" target="_blank"
-               style="color:#2962ff;text-decoration:none;font-weight:700;font-size:9px;">View on Screener ↗</a>
+            <div style="font-weight:700;color:#f0f3fa;">${sUpper}</div>
+            <div style="font-size:9px;color:#64748b;margin-top:2px;">No Qtr data</div>
           </td></tr>
         </tbody>
       </table>
@@ -840,9 +839,6 @@ function generateEpsTableHtml(sUpper, qData) {
         ${rowsHtml}
       </tbody>
     </table>
-    <div style="display:flex;align-items:center;justify-content:flex-end;padding:3px 8px;background:rgba(0,0,0,0.35);border-top:1px solid #2a2e39;font-size:8px;">
-      <a href="https://www.screener.in/company/${encodeURIComponent(sUpper)}/consolidated/" target="_blank" style="color:#2962ff;text-decoration:none;font-weight:600;">Screener ↗</a>
-    </div>
   `;
 }
 
@@ -1939,7 +1935,7 @@ function renderWinHudTableHtml(candles, details, vt) {
 
       <!-- Row 2: Fundamental & Scanner Metrics -->
       <div style="display:flex;align-items:center;padding:3px 10px;flex-wrap:wrap;gap:6px;background:rgba(0,0,0,0.22);">
-        <span style="background:rgba(45,212,191,0.14);border:1px solid rgba(45,212,191,0.35);color:#2dd4bf;padding:1px 6px;border-radius:3px;font-weight:800;font-size:9px;letter-spacing:0.4px;">🏢 FUNDAMENTALS</span>
+        <span style="background:rgba(45,212,191,0.14);border:1px solid rgba(45,212,191,0.35);color:#2dd4bf;padding:1px 6px;border-radius:3px;font-weight:800;font-size:9px;letter-spacing:0.4px;">🏢 FUNDA</span>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Sector:</span> <b style="color:#38bdf8;font-weight:700;margin-left:3px;">${(details && details.sector) || '—'}</b></span>
           <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Industry:</span> <b style="color:#f1f5f9;font-weight:600;margin-left:3px;">${(details && details.industry) || '—'}</b></span>
@@ -1992,6 +1988,7 @@ function sccRenderLwChart(index, candles, niftyCandles) {
     }
   }
   if (cleanCandles.length === 0) return false;
+  window._maxCleanCandles = cleanCandles;
 
   const chart = LightweightCharts.createChart(container, {
     width: width,
@@ -5377,6 +5374,14 @@ async function seedHistoricalData() {
       const recCount = loadLocal().length; const bsrCount = bsrLoad().length; const mpmCount = mpmLoad().length; const srtCount = srtLoad().filter(s => s.id !== 'NIFTY50').length; setSyncStatus('ok', 'Synced'); console.log('[Init] Synced — Records:', recCount, 'BSR:', bsrCount, 'MPM:', mpmCount);
     } catch (e) { setSyncStatus('warn', 'Offline · Local data shown'); console.warn('[Init] Cloud pull failed:', e.message); }
   }
+  try {
+    const savedChart = JSON.parse(sessionStorage.getItem('nse_active_max_chart') || 'null');
+    if (savedChart && savedChart.symbol && typeof openMaximizedChart === 'function') {
+      if (savedChart.interval) _sdChartsInterval = savedChart.interval;
+      if (savedChart.type) _sdChartType = savedChart.type;
+      setTimeout(() => { openMaximizedChart(savedChart.symbol); }, 80);
+    }
+  } catch (e) { }
   renderAll(); bsrRenderAll(); mpmRenderAll(); renderRPG(); renderMarketSummary(); renderMarketCycle(); eodAutoFill(); cpUpdateHomeStatus();
 })(); window.addEventListener('resize', () => { setTimeout(() => { renderChart(loadLocal()); bsrRenderChart(); renderA1Sparkline(loadLocal()); if (typeof brrgDraw === 'function') brrgDraw(); if (document.getElementById('sector-drill-overlay') && document.getElementById('sector-drill-overlay').style.display !== 'none' && _sdActiveTab === 'charts' && _sdChartsLayout === 'auto') { sdRenderCharts(_sdCurrentSector, _sdCurrentData); } if (document.getElementById('chart-max-overlay') && document.getElementById('chart-max-overlay').style.display !== 'none' && _sdMaximizedChartSymbol) { drawMaxChart(); } const sccChartPane = document.getElementById('scc-pane-chart'); if (sccChartPane && sccChartPane.style.display !== 'none') { const count = sccChartGetCount(); for (let i = 0; i < count; i++) { sccChartRenderPanel(i); } } }, 100); }); window.addEventListener('load', () => { setTimeout(() => { renderA1Sparkline(loadLocal()); renderChart(loadLocal()); brrgRebuildChips(); if (typeof brrgDraw === 'function') brrgDraw(); }, 300); }); (function setupResizeObservers() {
   const _origErr = window.onerror; window.onerror = function (msg, src, line, col, err) { if (typeof msg === 'string' && msg.includes('ResizeObserver loop')) return true; return _origErr ? _origErr(msg, src, line, col, err) : false; }; const chartWrap = document.querySelector('.chart-canvas-wrap'); const bsrWrap = document.querySelector('.bsr-canvas-wrap'); let chartRafId = null, bsrRafId = null; const ssWrap = document.getElementById('ss-chart-wrap'); if (window.ResizeObserver && ssWrap) { let ssCellRafId = null; const roCell = new ResizeObserver(() => { if (ssCellRafId) cancelAnimationFrame(ssCellRafId); ssCellRafId = requestAnimationFrame(() => { renderA1Sparkline(loadLocal()); ssCellRafId = null; }); }); roCell.observe(ssWrap); }
@@ -6764,7 +6769,7 @@ function generateStatsTableHtml(details) {
 
   return `
     <div style="width:100%;background:#0b0e14;border-top:1px solid #1e222d;padding:4px 10px;font-size:10px;font-family:var(--mono);line-height:1.35;user-select:none;display:flex;align-items:center;flex-wrap:wrap;gap:8px;">
-      <span style="background:rgba(45,212,191,0.14);border:1px solid rgba(45,212,191,0.35);color:#2dd4bf;padding:1px 6px;border-radius:3px;font-weight:800;font-size:9px;letter-spacing:0.4px;">🏢 FUNDAMENTALS</span>
+      <span style="background:rgba(45,212,191,0.14);border:1px solid rgba(45,212,191,0.35);color:#2dd4bf;padding:1px 6px;border-radius:3px;font-weight:800;font-size:9px;letter-spacing:0.4px;">🏢 FUNDA</span>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Sector:</span> <b style="color:#38bdf8;font-weight:700;margin-left:3px;">${(details && details.sector) || '—'}</b></span>
         <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Industry:</span> <b style="color:#f1f5f9;font-weight:600;margin-left:3px;">${(details && details.industry) || '—'}</b></span>
@@ -6832,6 +6837,13 @@ function openMaximizedChart(symbol) {
   if (typeof initChartDrawingCanvas === 'function') initChartDrawingCanvas();
   if (typeof renderMaxChartEpsTable === 'function') renderMaxChartEpsTable(symbol);
   overlay.style.display = 'flex'; if (typeof updateMaxChartShortlistButton === 'function') updateMaxChartShortlistButton(); if (typeof updateMaxChartMainWlButton === 'function') updateMaxChartMainWlButton();
+  try {
+    sessionStorage.setItem('nse_active_max_chart', JSON.stringify({
+      symbol: symbol.toUpperCase().replace('.NS', ''),
+      interval: _sdChartsInterval,
+      type: _sdChartType
+    }));
+  } catch (e) { }
   _maxFetchAndDraw(symbol);
 }
 function _maxFetchAndDraw(symbol) {
@@ -6960,6 +6972,7 @@ function drawMaxChartLightweight() {
     }
   }
   if (cleanCandles.length === 0) return false;
+  window._maxCleanCandles = cleanCandles;
 
   _maxLwChart = LightweightCharts.createChart(container, {
     width: width,
@@ -7776,7 +7789,7 @@ function sdRenderUniverse(sectorName) {
     return;
   }
   const rows = filtered.map(s => {
-    const tvUrl = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(s.symbol)}`; const msUrl = `https://marketsmithindia.com/mstool/eval/${s.symbol.toLowerCase()}/evaluation.jsp#/`; const isVcp = vcpSymbols.has(s.symbol); const symColor = isVcp ? 'var(--teal)' : 'var(--text)'; const scannerStockObj = isVcp ? (_sdCurrentData?.stocks || []).find(x => x.symbol === s.symbol) : null; const rsBadge = (isVcp && scannerStockObj && scannerStockObj.rs_rating != null) ? `<span style="font-size:8px;background:rgba(167,139,250,.15);color:var(--purple);padding:0 4px;border-radius:2px;margin-left:4px;border:1px solid rgba(167,139,250,.25)" title="Scanner Relative Strength Rating">RS ${scannerStockObj.rs_rating}</span>` : ''; const vcpBadge = isVcp ? `<span style="font-size:8px;background:rgba(45,212,191,.15);color:var(--teal);padding:0 4px;border-radius:2px;margin-left:4px;border:1px solid rgba(45,212,191,.25)">VCP</span>${rsBadge}` : ''; return `<tr style="border-bottom:1px solid var(--border)" onmouseenter="this.style.background='rgba(255,255,255,.03)'" onmouseleave="this.style.background='transparent'">
+    const tvUrl = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(s.symbol)}`; const msUrl = `https://marketsmithindia.com/mstool/eval/${s.symbol.toLowerCase()}/evaluation.jsp#/`; const isVcp = vcpSymbols.has(s.symbol); const symColor = isVcp ? 'var(--teal)' : 'var(--text)'; const vcpBadge = isVcp ? `<span style="font-size:8px;background:rgba(45,212,191,.15);color:var(--teal);padding:0 4px;border-radius:2px;margin-left:4px;border:1px solid rgba(45,212,191,.25)">VCP</span>` : ''; return `<tr style="border-bottom:1px solid var(--border)" onmouseenter="this.style.background='rgba(255,255,255,.03)'" onmouseleave="this.style.background='transparent'">
       <td style="padding:7px 10px;font-weight:800;font-size:13px;font-family:var(--mono);color:${symColor};white-space:nowrap">
         <a href="javascript:void(0)" onclick="openMaximizedChart('${s.symbol}')" style="color:inherit;text-decoration:none;cursor:pointer" title="Click to view chart">${s.symbol}</a>${vcpBadge}
       </td>
@@ -8669,9 +8682,67 @@ function getActiveDrawingSymbol() {
   return ((_maxChartLayout !== '1' && _layoutSymbols[_activeLayoutTile - 1]) || _sdMaximizedChartSymbol || 'DEFAULT').toUpperCase().replace('.NS', '');
 }
 
+let _drawMagnetMode = false;
+const _drawUndoStack = {};
+const _drawRedoStack = {};
+
+function toggleDrawMagnetMode() {
+  _drawMagnetMode = !_drawMagnetMode;
+  const btn = document.getElementById('draw-tool-magnet');
+  if (btn) btn.classList.toggle('active', _drawMagnetMode);
+  if (typeof showChartToast === 'function') {
+    showChartToast(_drawMagnetMode ? '🧲 Magnet Mode ON (Snaps to OHLC)' : 'Magnet Mode OFF', _drawMagnetMode ? '#38bdf8' : '#94a3b8');
+  }
+}
+window.toggleDrawMagnetMode = toggleDrawMagnetMode;
+
+function pushDrawHistory(sym) {
+  if (!sym) return;
+  if (!_drawUndoStack[sym]) _drawUndoStack[sym] = [];
+  const snap = JSON.parse(JSON.stringify(_chartDrawings[sym] || []));
+  _drawUndoStack[sym].push(snap);
+  if (_drawUndoStack[sym].length > 50) _drawUndoStack[sym].shift();
+  _drawRedoStack[sym] = [];
+}
+
+function undoChartDrawing() {
+  const sym = getActiveDrawingSymbol();
+  if (!sym || !_drawUndoStack[sym] || _drawUndoStack[sym].length === 0) {
+    if (typeof showChartToast === 'function') showChartToast('Nothing to undo', '#94a3b8');
+    return;
+  }
+  if (!_drawRedoStack[sym]) _drawRedoStack[sym] = [];
+  _drawRedoStack[sym].push(JSON.parse(JSON.stringify(_chartDrawings[sym] || [])));
+  _chartDrawings[sym] = _drawUndoStack[sym].pop();
+  _selectedDrawingIndex = null;
+  hideFloatingToolbar();
+  saveChartDrawings();
+  redrawChartDrawings();
+  if (typeof showChartToast === 'function') showChartToast('↶ Undid drawing change', '#38bdf8');
+}
+window.undoChartDrawing = undoChartDrawing;
+
+function redoChartDrawing() {
+  const sym = getActiveDrawingSymbol();
+  if (!sym || !_drawRedoStack[sym] || _drawRedoStack[sym].length === 0) {
+    if (typeof showChartToast === 'function') showChartToast('Nothing to redo', '#94a3b8');
+    return;
+  }
+  if (!_drawUndoStack[sym]) _drawUndoStack[sym] = [];
+  _drawUndoStack[sym].push(JSON.parse(JSON.stringify(_chartDrawings[sym] || [])));
+  _chartDrawings[sym] = _drawRedoStack[sym].pop();
+  _selectedDrawingIndex = null;
+  hideFloatingToolbar();
+  saveChartDrawings();
+  redrawChartDrawings();
+  if (typeof showChartToast === 'function') showChartToast('↷ Redid drawing change', '#38bdf8');
+}
+window.redoChartDrawing = redoChartDrawing;
+
 function clearChartDrawings() {
   const sym = getActiveDrawingSymbol();
   if (!sym) return;
+  pushDrawHistory(sym);
   _chartDrawings[sym] = [];
   _selectedDrawingIndex = null;
   hideFloatingToolbar();
@@ -8973,12 +9044,40 @@ function initChartDrawingCanvas() {
     if (series && typeof series.coordinateToPrice === 'function') {
       try { price = series.coordinateToPrice(y); } catch (err) { }
     }
-    return { x, y, logical, price };
+    let finalX = x, finalY = y;
+    if (_drawMagnetMode && logical != null && price != null) {
+      const candlesArr = (_activeLayoutTile > 1 && _subLwCandles[_activeLayoutTile]) ? _subLwCandles[_activeLayoutTile] : (window._maxCleanCandles || _maxCandles);
+      const barIdx = Math.round(logical);
+      if (candlesArr && barIdx >= 0 && barIdx < candlesArr.length) {
+        const bar = candlesArr[barIdx];
+        if (bar && bar.open != null && bar.high != null && bar.low != null && bar.close != null) {
+          const ohlc = [bar.open, bar.high, bar.low, bar.close];
+          let closestP = ohlc[0];
+          let minDiff = Math.abs(price - ohlc[0]);
+          for (let k = 1; k < ohlc.length; k++) {
+            const diff = Math.abs(price - ohlc[k]);
+            if (diff < minDiff) { minDiff = diff; closestP = ohlc[k]; }
+          }
+          price = closestP;
+          logical = barIdx;
+          if (timeScale && typeof timeScale.logicalToCoordinate === 'function') {
+            const sx = timeScale.logicalToCoordinate(barIdx);
+            if (sx != null && isFinite(sx)) finalX = sx;
+          }
+          if (series && typeof series.priceToCoordinate === 'function') {
+            const sy = series.priceToCoordinate(closestP);
+            if (sy != null && isFinite(sy)) finalY = sy;
+          }
+        }
+      }
+    }
+    return { x: finalX, y: finalY, logical, price };
   };
 
   const commitNewDrawing = (drawing) => {
     const sym = getActiveDrawingSymbol();
     if (!sym) return;
+    pushDrawHistory(sym);
     if (!_chartDrawings[sym]) _chartDrawings[sym] = [];
     _chartDrawings[sym].push(drawing);
     saveChartDrawings();
@@ -9507,7 +9606,7 @@ function initChartDrawingCanvas() {
           price: coords.price != null ? coords.price : _drawStart.price
         };
         commitNewDrawing({
-          type: _activeDrawing.type,
+          ..._activeDrawing,
           p1: _activeDrawing.p1,
           p2: p2,
           color: _activeDrawing.color,
@@ -9564,6 +9663,22 @@ function initChartDrawingCanvas() {
       if (_selectedDrawingIndex != null) {
         e.preventDefault();
         deleteSelectedDrawing();
+      }
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+      const tag = (e.target && e.target.tagName) || '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable) return;
+      const overlay = document.getElementById('chart-max-overlay');
+      if (overlay && overlay.style.display !== 'none') {
+        e.preventDefault();
+        undoChartDrawing();
+      }
+    } else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
+      const tag = (e.target && e.target.tagName) || '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable) return;
+      const overlay = document.getElementById('chart-max-overlay');
+      if (overlay && overlay.style.display !== 'none') {
+        e.preventDefault();
+        redoChartDrawing();
       }
     }
   });
@@ -10667,6 +10782,7 @@ function deleteSelectedDrawing(e) {
   const sym = getActiveDrawingSymbol();
   const drawings = _chartDrawings[sym] || [];
   if (_selectedDrawingIndex != null && drawings[_selectedDrawingIndex]) {
+    pushDrawHistory(sym);
     drawings.splice(_selectedDrawingIndex, 1);
     _selectedDrawingIndex = null;
     hideFloatingToolbar();
@@ -10721,6 +10837,7 @@ window.addEventListener('mousedown', e => {
 });
 
 function closeMaximizedChart() {
+  try { sessionStorage.removeItem('nse_active_max_chart'); } catch (e) { }
   if (typeof stopFyersLivePolling === 'function') stopFyersLivePolling();
   const overlay = document.getElementById('chart-max-overlay');
   if (overlay) overlay.style.display = 'none';

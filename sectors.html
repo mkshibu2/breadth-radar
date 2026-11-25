@@ -1294,6 +1294,27 @@
               </svg>
             </button>
             <div style="height:1px;background:#2a2e39;margin:4px 3px;"></div>
+            <button id="draw-tool-magnet" class="tv-draw-btn" onclick="toggleDrawMagnetMode()" title="Magnet Mode (Snap to OHLC)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1">
+                <path d="M6 15v-5a6 6 0 1 1 12 0v5" />
+                <line x1="6" y1="15" x2="6" y2="19" />
+                <line x1="18" y1="15" x2="18" y2="19" />
+                <line x1="4" y1="15" x2="8" y2="15" />
+                <line x1="16" y1="15" x2="20" y2="15" />
+              </svg>
+            </button>
+            <button class="tv-draw-btn" onclick="undoChartDrawing()" title="Undo (Ctrl+Z)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M9 14L4 9l5-5" />
+                <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" />
+              </svg>
+            </button>
+            <button class="tv-draw-btn" onclick="redoChartDrawing()" title="Redo (Ctrl+Y)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M15 14l5-5-5-5" />
+                <path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13" />
+              </svg>
+            </button>
             <button class="tv-draw-btn" onclick="clearChartDrawings()" title="Clear Drawings">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
                 <polyline points="3 6 5 6 21 6" />
