@@ -6738,6 +6738,7 @@ function drawMaxChartLightweight() {
     try { _maxLwChart.remove(); } catch (e) { }
     _maxLwChart = null;
   }
+  if (typeof stopFyersLivePolling === 'function') stopFyersLivePolling();
   container.innerHTML = '';
 
   const rect = container.getBoundingClientRect();
@@ -7093,13 +7094,21 @@ function drawMaxChartLightweight() {
   };
 
   const lastC = cleanCandles[cleanCandles.length - 1];
+  let _isCrosshairHovering = false;
   formatTip(lastC.time, lastC, lastC.volume);
 
   _maxLwChart.subscribeCrosshairMove(param => {
     if (!param || !param.time || !param.seriesData.get(priceSeries)) {
-      formatTip(lastC.time, lastC, lastC.volume);
+      _isCrosshairHovering = false;
+      const latest = _maxCandles && _maxCandles.length ? _maxCandles[_maxCandles.length - 1] : null;
+      if (latest) {
+        formatTip(Math.floor(latest.time / 1000), latest, latest.volume);
+      } else {
+        formatTip(lastC.time, lastC, lastC.volume);
+      }
       return;
     }
+    _isCrosshairHovering = true;
     const bar = param.seriesData.get(priceSeries);
     const vol = volSeries ? param.seriesData.get(volSeries)?.value : null;
     formatTip(param.time, bar, vol);
@@ -7149,6 +7158,18 @@ function drawMaxChartLightweight() {
     }
   });
   _maxLwResizeObserver.observe(container);
+  if (_chartDataSource === 'fyers' && _sdMaximizedChartSymbol && typeof startFyersLivePolling === 'function') {
+    startFyersLivePolling({
+      symbol: _sdMaximizedChartSymbol,
+      interval: _sdChartsInterval,
+      priceSeries: priceSeries,
+      volSeries: volSeries,
+      lastCandle: lastC,
+      onBarUpdate: (bar, vol) => {
+        if (!_isCrosshairHovering) formatTip(bar.time, bar, vol);
+      }
+    });
+  }
   return true;
 }
 
@@ -10416,6 +10437,7 @@ window.addEventListener('mousedown', e => {
 });
 
 function closeMaximizedChart() {
+  if (typeof stopFyersLivePolling === 'function') stopFyersLivePolling();
   const overlay = document.getElementById('chart-max-overlay');
   if (overlay) overlay.style.display = 'none';
   _selectedDrawingIndex = null;
@@ -11255,10 +11277,11 @@ async function fetchFyersCandles(symbol, range, interval) {
     cont_flag: '1'
   }).toString();
 
-  const urls = [
-    `http://localhost:9090/fyers/data/history?${queryParams}`,
-    `https://api-t1.fyers.in/data/history?${queryParams}`
-  ];
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+  const directUrl = `https://api-t1.fyers.in/data/history?${queryParams}`;
+  const urls = isLocal
+    ? [`http://localhost:9090/fyers/data/history?${queryParams}`, directUrl]
+    : [directUrl];
 
   let lastErr;
   for (const url of urls) {
@@ -11303,7 +11326,168 @@ async function fetchFyersCandles(symbol, range, interval) {
   throw lastErr;
 }
 
+let _fyersLiveTimer = null;
+let _fyersLiveInFlight = false;
+
+async function fetchFyersQuote(symbol) {
+  const fyersSym = toFyersSymbol(symbol);
+  const creds = fyersGetCreds();
+  if (!creds || !creds.appId || !creds.token) {
+    throw new Error('Fyers App ID or Access Token missing');
+  }
+  const authHeader = `${creds.appId}:${creds.token}`;
+  const qs = `symbols=${encodeURIComponent(fyersSym)}`;
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+  const directUrl = `https://api-t1.fyers.in/data/quotes?${qs}`;
+  const urls = isLocal
+    ? [`http://localhost:9090/fyers/data/quotes?${qs}`, directUrl]
+    : [directUrl];
+
+  let lastErr;
+  for (const url of urls) {
+    try {
+      const resp = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!resp.ok) {
+        const errObj = await resp.json().catch(() => ({}));
+        throw new Error(errObj.message || errObj.error || (`HTTP ${resp.status}`));
+      }
+      const data = await resp.json();
+      if (data.s !== 'ok' || !Array.isArray(data.d) || !data.d.length || !data.d[0].v) {
+        throw new Error(data.message || `No quote returned for ${fyersSym}`);
+      }
+      return data.d[0].v;
+    } catch (e) {
+      lastErr = e;
+      if (url === urls[0] && urls.length > 1 && (e.name === 'TypeError' || e.message.includes('CORS') || e.message.includes('Failed to fetch'))) {
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw lastErr;
+}
+
+function stopFyersLivePolling() {
+  if (_fyersLiveTimer) {
+    clearInterval(_fyersLiveTimer);
+    _fyersLiveTimer = null;
+  }
+  _fyersLiveInFlight = false;
+}
+window.stopFyersLivePolling = stopFyersLivePolling;
+
+function startFyersLivePolling({ symbol, interval, priceSeries, volSeries, lastCandle, onBarUpdate }) {
+  stopFyersLivePolling();
+  if (!symbol || !priceSeries || !lastCandle) return;
+  if (typeof isNseMarketWindow === 'function' && !isNseMarketWindow()) return;
+
+  let liveBar = {
+    time: lastCandle.time,
+    open: lastCandle.open,
+    high: lastCandle.high,
+    low: lastCandle.low,
+    close: lastCandle.close
+  };
+  let liveVol = lastCandle.volume || 0;
+
+  const toIstDate = (sec) => new Date((sec + 19800) * 1000).toISOString().split('T')[0];
+
+  const pollOnce = async () => {
+    const overlay = document.getElementById('chart-max-overlay');
+    if (document.hidden || _fyersLiveInFlight || _chartDataSource !== 'fyers' || !_maxLwChart || (overlay && overlay.style.display === 'none')) {
+      return;
+    }
+    if (typeof isNseMarketWindow === 'function' && !isNseMarketWindow()) {
+      stopFyersLivePolling();
+      return;
+    }
+    _fyersLiveInFlight = true;
+    try {
+      const v = await fetchFyersQuote(symbol);
+      const ltp = Number(v.lp);
+      if (!isFinite(ltp) || ltp <= 0) return;
+
+      const nowSec = Math.floor(Date.now() / 1000);
+      let isNewBar = false;
+
+      if (interval === '15m' || interval === '1H') {
+        const bucketSec = interval === '15m'
+          ? Math.floor(nowSec / 900) * 900
+          : Math.floor((nowSec - 900) / 3600) * 3600 + 900;
+        if (bucketSec > liveBar.time) {
+          isNewBar = true;
+          liveBar = { time: bucketSec, open: ltp, high: ltp, low: ltp, close: ltp };
+          liveVol = 0;
+        } else {
+          liveBar.high = Math.max(liveBar.high, ltp);
+          liveBar.low = Math.min(liveBar.low, ltp);
+          liveBar.close = ltp;
+        }
+      } else if (interval === 'W' || interval === 'M') {
+        liveBar.high = Math.max(liveBar.high, ltp);
+        liveBar.low = Math.min(liveBar.low, ltp);
+        liveBar.close = ltp;
+      } else {
+        // Daily ('D')
+        if (toIstDate(liveBar.time) === toIstDate(nowSec)) {
+          if (v.open_price > 0) liveBar.open = v.open_price;
+          liveBar.high = Math.max(liveBar.high, v.high_price > 0 ? v.high_price : ltp, ltp);
+          liveBar.low = Math.min(liveBar.low, v.low_price > 0 ? v.low_price : ltp, ltp);
+          liveBar.close = ltp;
+          if (v.volume > 0) liveVol = v.volume;
+        } else {
+          isNewBar = true;
+          liveBar = {
+            time: v.tt > liveBar.time ? v.tt : nowSec,
+            open: v.open_price > 0 ? v.open_price : ltp,
+            high: v.high_price > 0 ? v.high_price : ltp,
+            low: v.low_price > 0 ? v.low_price : ltp,
+            close: ltp
+          };
+          liveVol = v.volume > 0 ? v.volume : 0;
+        }
+      }
+
+      if (_maxLwChart && priceSeries) {
+        priceSeries.update(liveBar);
+        if (volSeries) {
+          volSeries.update({
+            time: liveBar.time,
+            value: liveVol,
+            color: liveBar.close >= liveBar.open ? '#4caf50' : '#f23645'
+          });
+        }
+        if (Array.isArray(_maxCandles) && _maxCandles.length) {
+          const updatedItem = { ...liveBar, time: liveBar.time * 1000, volume: liveVol };
+          if (isNewBar) _maxCandles.push(updatedItem);
+          else _maxCandles[_maxCandles.length - 1] = updatedItem;
+        }
+        if (typeof onBarUpdate === 'function') onBarUpdate(liveBar, liveVol);
+      }
+    } catch (err) {
+      console.warn('[Fyers Live Poll]', err.message);
+      if (err.message.includes('401') || err.message.includes('Token')) {
+        stopFyersLivePolling();
+      }
+    } finally {
+      _fyersLiveInFlight = false;
+    }
+  };
+
+  _fyersLiveTimer = setInterval(pollOnce, 3000);
+}
+window.startFyersLivePolling = startFyersLivePolling;
+
 function maxChartSetDataSource(source) {
+  if (source !== 'fyers' && typeof stopFyersLivePolling === 'function') {
+    stopFyersLivePolling();
+  }
   _chartDataSource = source;
   const dsSelect = document.getElementById('max-chart-datasource');
   if (dsSelect) dsSelect.value = source;
