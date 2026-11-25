@@ -2554,10 +2554,9 @@
         </div>
 
         <div class="cp-section" id="cp-sec-sync">
-          <div class="cp-section-title">CLOUD SYNC — JSONBin</div>
-          <div style="font-size:12px;color:var(--sub);line-height:1.65;margin-bottom:16px">All dashboard data (Breadth,
-            MPM, BSR, FTD) syncs to a free <a href="https://jsonbin.io" target="_blank"
-              style="color:var(--accent)">JSONBin.io</a> bin. Use the same Master Key + Bin ID on any device.</div>
+          <div class="cp-section-title" id="cp-sync-title">CLOUD SYNC — CLOUDFLARE D1</div>
+          <div id="cp-sync-desc" style="font-size:12px;color:var(--sub);line-height:1.65;margin-bottom:16px">All dashboard data (Breadth,
+            MPM, BSR, FTD, Watchlists &amp; Chart Drawings) syncs to your Cloudflare D1 database. Use the same Worker URL + Sync Token on any device.</div>
 
           <div id="cp-sync-configured" style="display:none;margin-bottom:16px">
             <div
@@ -2568,7 +2567,7 @@
                 <div style="font-size:11px;color:var(--sub);margin-top:2px" id="cp-sync-binid-display">—</div>
               </div>
             </div>
-            <div style="font-size:11px;color:var(--sub);line-height:1.5;margin-bottom:12px">
+            <div id="cp-sync-jb-share-hint" style="font-size:11px;color:var(--sub);line-height:1.5;margin-bottom:12px">
               Share view-only access with others without giving your Master Key. Make sure the bin is <b>Public</b>
               first.
             </div>

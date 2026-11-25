@@ -6106,7 +6106,24 @@ async function cpTriggerScan() {
 }
 
 function cpRefreshSyncState() {
-  const cfg = getCfg(); const cf = getCfCfg(); const configured = document.getElementById('cp-sync-configured'); const setup = document.getElementById('cp-sync-setup'); if (!configured || !setup) return; if (cfg.key && cfg.bin) { configured.style.display = 'block'; setup.style.display = 'none'; const disp = document.getElementById('cp-sync-binid-display'); if (disp) disp.textContent = cfg.isCf ? ('Cloudflare D1: ' + cfg.bin) : ('Bin ID: ' + cfg.bin); } else {
+  const cfg = getCfg(); const cf = getCfCfg(); const configured = document.getElementById('cp-sync-configured'); const setup = document.getElementById('cp-sync-setup'); if (!configured || !setup) return;
+  const titleEl = document.getElementById('cp-sync-title');
+  const descEl = document.getElementById('cp-sync-desc');
+  const jbShareHint = document.getElementById('cp-sync-jb-share-hint');
+  const jbOnlyIds = ['cfg-make-public-btn', 'cfg-copy-guest-link-btn', 'cfg-make-private-btn'];
+  if (cfg.key && cfg.bin) {
+    configured.style.display = 'block'; setup.style.display = 'none';
+    const disp = document.getElementById('cp-sync-binid-display');
+    if (disp) disp.textContent = cfg.isCf ? ('Cloudflare D1: ' + cfg.bin) : ('Bin ID: ' + cfg.bin);
+    if (titleEl) titleEl.textContent = cfg.isCf ? 'CLOUD SYNC — CLOUDFLARE D1' : 'CLOUD SYNC — JSONBIN';
+    if (descEl) descEl.textContent = cfg.isCf
+      ? 'All dashboard data (Breadth, MPM, BSR, FTD, Watchlists & Chart Drawings) syncs to your Cloudflare D1 database. Use the same Worker URL + Sync Token on any device.'
+      : 'All dashboard data (Breadth, MPM, BSR, FTD) syncs to JSONBin.io. Use the same Master Key + Bin ID on any device.';
+    if (jbShareHint) jbShareHint.style.display = cfg.isCf ? 'none' : 'block';
+    jbOnlyIds.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = cfg.isCf ? 'none' : ''; });
+  } else {
+    if (titleEl) titleEl.textContent = 'CLOUD SYNC — CLOUDFLARE D1';
+    if (descEl) descEl.textContent = 'All dashboard data (Breadth, MPM, BSR, FTD, Watchlists & Chart Drawings) syncs to your Cloudflare D1 database. Use the same Worker URL + Sync Token on any device.';
     configured.style.display = 'none'; setup.style.display = 'block'; if (cf.url) { const cu = document.getElementById('cfg-cf-url'); if (cu) cu.value = cf.url; }
     if (cf.token) { const ct = document.getElementById('cfg-cf-token'); if (ct) ct.value = cf.token; }
     if (!cfg.isCf && cfg.key) { const k = document.getElementById('cfg-key'); if (k) k.value = cfg.key; }

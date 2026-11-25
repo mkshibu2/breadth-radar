@@ -5019,14 +5019,34 @@
     
     function syncWatchlistsToCloudSilently() {
       try {
-        var key = localStorage.getItem('nse_jb_key');
-        var bin = localStorage.getItem('nse_jb_bin');
-        if (!key || !bin) return;
+        var cfUrl = (localStorage.getItem('nse_cf_worker_url') || '').trim().replace(/\/+$/, '');
+        var cfTok = (localStorage.getItem('nse_cf_sync_token') || '').trim();
         var rawWls = localStorage.getItem('_sccWatchlists');
         if (!rawWls) return;
         var wls = JSON.parse(rawWls);
         var rawFlags = localStorage.getItem('_sccSymbolFlags');
         var flags = rawFlags ? JSON.parse(rawFlags) : {};
+
+        if (cfUrl) {
+          var cfHeaders = { 'Content-Type': 'application/json' };
+          if (cfTok) cfHeaders['Authorization'] = 'Bearer ' + cfTok;
+          fetch(cfUrl + '/api/sync', {
+            method: 'PUT',
+            headers: cfHeaders,
+            body: JSON.stringify({
+              sccWatchlists: wls,
+              sccSymbolFlags: flags || {},
+              sccWatchlistsUpdatedAt: Date.now()
+            })
+          })
+          .then(function () { console.log('[Screener] Watchlists synced to Cloudflare D1'); })
+          .catch(function (err) { console.warn('[Screener] D1 sync failed:', err); });
+          return;
+        }
+
+        var key = localStorage.getItem('nse_jb_key');
+        var bin = localStorage.getItem('nse_jb_bin');
+        if (!key || !bin) return;
 
         fetch('https://api.jsonbin.io/v3/b/' + bin + '/latest', {
           headers: { 'X-Master-Key': key }
