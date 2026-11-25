@@ -6668,7 +6668,7 @@ function _maxFetchAndDraw(symbol) {
     candlePromise = fetchFyersCandles(symbol, range, interval).catch(err => {
       console.warn('[Fyers API] Could not load candles:', err.message);
       showChartToast('⚡ Fyers: ' + err.message + ' (Using YF fallback)', '#f59e0b');
-      if (err.message.includes('Token') || err.message.includes('App ID') || err.message.includes('401')) {
+      if (err.message.includes('Token') || err.message.includes('App ID') || err.message.includes('401') || err.message.toLowerCase().includes('authenticate')) {
         openFyersConnectModal();
       }
       return fetchYfData(symbol, range, interval);
@@ -11145,16 +11145,55 @@ async function fyersExchangeAuthCode() {
 
   if (btn) { btn.disabled = true; btn.textContent = 'Generating Token…'; }
 
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
   let proxyFailed = false;
   try {
-    const resp = await fetch('http://localhost:9090/fyers/validate-authcode', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ appId, secretId, authCode: code })
+    // Compute SHA-256(appId:secretId) in browser so direct Fyers v3 endpoint works online without local proxy
+    const enc = new TextEncoder().encode(`${appId}:${secretId}`);
+    const hashBuf = await crypto.subtle.digest('SHA-256', enc);
+    const appIdHash = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    const fyersPayload = JSON.stringify({
+      grant_type: 'authorization_code',
+      appIdHash: appIdHash,
+      code: code
     });
+    const directUrl = 'https://api-t1.fyers.in/api/v3/validate-authcode';
+    const workerUrl = `https://nse-chart-proxy.shibu-mk.workers.dev/?url=${encodeURIComponent(directUrl)}`;
 
-    const data = await resp.json();
-    if (data.s === 'ok' && data.access_token) {
+    const attempts = isLocal
+      ? [
+          { url: 'http://localhost:9090/fyers/validate-authcode', body: JSON.stringify({ appId, secretId, authCode: code }) },
+          { url: directUrl, body: fyersPayload },
+          { url: workerUrl, body: fyersPayload }
+        ]
+      : [
+          { url: directUrl, body: fyersPayload },
+          { url: workerUrl, body: fyersPayload }
+        ];
+
+    let data = null;
+    let lastNetErr = null;
+    for (const att of attempts) {
+      try {
+        const resp = await fetch(att.url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: att.body
+        });
+        data = await resp.json();
+        lastNetErr = null;
+        break;
+      } catch (netErr) {
+        lastNetErr = netErr;
+        if (netErr.name === 'TypeError' || netErr.message.includes('Failed to fetch') || netErr.message.includes('NetworkError') || netErr.message.includes('CORS')) {
+          continue;
+        }
+        throw netErr;
+      }
+    }
+    if (lastNetErr) throw lastNetErr;
+
+    if (data && data.s === 'ok' && data.access_token) {
       fyersSaveCreds(appId, data.access_token, secretId);
       const tokInp = document.getElementById('fyers-quick-token');
       if (tokInp) tokInp.value = data.access_token;
@@ -11169,11 +11208,11 @@ async function fyersExchangeAuthCode() {
       maxChartRefresh();
       return;
     } else {
-      throw new Error(data.message || 'Token generation failed');
+      throw new Error((data && data.message) || 'Token generation failed');
     }
   } catch (err) {
-    console.warn('[Fyers Proxy]:', err.message);
-    if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+    console.warn('[Fyers Auth]:', err.message);
+    if (err.name === 'TypeError' || err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
       proxyFailed = true;
     } else {
       alert('Error from Fyers: ' + err.message + '\n\nPlease ensure your App ID and Secret ID match your Fyers App dashboard.');
@@ -11184,7 +11223,7 @@ async function fyersExchangeAuthCode() {
   }
 
   if (proxyFailed) {
-    alert('Local Proxy server (port 9090) is not currently running.\n\nTo connect Fyers without proxy:\n1. Run "launch_dashboard.bat" (which starts the local proxy in background), OR\n2. Run this command in terminal to generate token:\npython get_fyers_token.py ' + appId + ' ' + secretId + ' ' + code);
+    alert('Could not reach Fyers auth endpoint directly (CORS/network blocked) and Local Proxy (port 9090) is not running.\n\nTo generate token:\n1. Run "launch_dashboard.bat" locally, OR\n2. Run in terminal:\npython get_fyers_token.py ' + appId + ' ' + secretId + ' ' + code);
   }
 }
 window.fyersExchangeAuthCode = fyersExchangeAuthCode;
