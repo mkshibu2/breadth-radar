@@ -45859,5 +45859,44 @@
       "eps_growth": 63,
       "sales_growth": 2
     }
+  ],
+  "SSRETAIL": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": null,
+      "sales_growth": null
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": null,
+      "sales_growth": null
+    },
+    {
+      "qtr": "Sep-25",
+      "eps_growth": null,
+      "sales_growth": null
+    },
+    {
+      "qtr": "Jun-25",
+      "eps_growth": null,
+      "sales_growth": null
+    }
+  ],
+  "FUSIONCX": [
+    {
+      "qtr": "Sep-26",
+      "eps_growth": null,
+      "sales_growth": null
+    },
+    {
+      "qtr": "Jun-26",
+      "eps_growth": null,
+      "sales_growth": null
+    },
+    {
+      "qtr": "Mar-25",
+      "eps_growth": null,
+      "sales_growth": null
+    }
   ]
 }

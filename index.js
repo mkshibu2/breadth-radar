@@ -365,11 +365,11 @@ function applyPreservedChartZoom(chartInstance, candleCount, timeframe) {
   const isIntraday = (timeframe === '15m' || timeframe === '1H' || timeframe === '60m');
 
   let targetSpan = isWeekly ? _chartUserZoomSpanWeekly : (isIntraday ? _chartUserZoomSpanIntraday : _chartUserZoomSpanDaily);
-  targetSpan = Math.min(candleCount, Math.max(15, targetSpan || (isWeekly ? 52 : 90)));
+  targetSpan = Math.max(15, targetSpan || (isWeekly ? 52 : 90));
 
   const offset = (_chartUserZoomOffset != null && isFinite(_chartUserZoomOffset)) ? _chartUserZoomOffset : 8;
   const to = (candleCount - 1) + offset;
-  const from = Math.max(0, to - targetSpan);
+  const from = to - targetSpan;
 
   _isProgrammaticZoom = true;
   try {

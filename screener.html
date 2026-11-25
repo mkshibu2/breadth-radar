@@ -4045,11 +4045,11 @@
       var ts = _lwScreenerChart.timeScale();
 
       var targetSpan = isWeekly ? _userZoomSpanWeekly : _userZoomSpanDaily;
-      targetSpan = Math.min(candleCount, Math.max(15, targetSpan || (isWeekly ? 65 : 80)));
+      targetSpan = Math.max(15, targetSpan || (isWeekly ? 65 : 80));
 
       var offset = (_userZoomRightOffset != null) ? _userZoomRightOffset : 6;
       var to = (candleCount - 1) + offset;
-      var from = Math.max(0, to - targetSpan);
+      var from = to - targetSpan;
 
       _isProgrammaticZoom = true;
       try {
