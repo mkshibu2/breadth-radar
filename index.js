@@ -1949,7 +1949,6 @@ function renderWinHudTableHtml(candles, details, vt) {
           <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">DD%:</span> <b style="color:${ddColor};margin-left:3px;">${dd}</b></span>
           <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Setup:</span> <b style="color:#f8fafc;margin-left:3px;">${setupVal}</b></span>
           <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">RS Rating:</span> <b style="color:#fb923c;font-weight:700;margin-left:3px;">${rsRating}</b></span>
-          <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Score:</span> <b style="color:#2dd4bf;font-weight:700;margin-left:3px;">${scoreVal}</b></span>
           <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Grade:</span> <span style="background:${gradeColor}25;border:1px solid ${gradeColor}60;color:${gradeColor};padding:1px 6px;border-radius:3px;font-weight:800;margin-left:3px;">${gradeVal}</span></span>
           ${qHtml}
         </div>
@@ -3190,6 +3189,7 @@ function sccWatchlistRender() {
           <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
             <div style="display:flex; align-items:center; gap:4px;">
               <span style="font-weight:700; color:var(--text); font-size:12px; font-family:var(--body);">${sUpper}</span>
+              ${(meta.rs_rating != null && meta.rs_rating !== '') ? `<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:${meta.rs_rating >= 80 ? 'rgba(34,197,94,0.16)' : (meta.rs_rating >= 60 ? 'rgba(251,146,60,0.16)' : 'rgba(148,163,184,0.15)')};color:${meta.rs_rating >= 80 ? '#4ade80' : (meta.rs_rating >= 60 ? '#fb923c' : '#94a3b8')};font-weight:700;font-family:var(--mono);" title="Relative Strength Rating">RS ${Math.round(meta.rs_rating)}</span>` : ''}
               ${leaderBadge}
               ${tightBadge}
             </div>
@@ -4171,6 +4171,28 @@ async function jbUpdate(key, bin, payload) {
   }
   const body = JSON.stringify(payload); const r = await fetch(`${JB}/b/${bin}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': key }, body: body }); const respText = await r.text(); if (!r.ok) throw new Error('Update failed: ' + r.status + ' ' + respText.slice(0, 100)); console.log('[jbUpdate] OK — pushed', JSON.parse(body)?.records?.length || 0, 'records');
 }
+async function cfPushSymbolDrawings(sym, drawingsArr, updatedAt) {
+  try {
+    const cf = (typeof getCfCfg === 'function') ? getCfCfg() : null;
+    if (!cf || !cf.url || !sym) return false;
+    const baseUrl = cf.url.replace(/\/+$/, '');
+    const headers = { 'Content-Type': 'application/json' };
+    if (cf.token && cf.token !== 'cf-d1') headers['Authorization'] = `Bearer ${cf.token}`;
+    const r = await fetch(`${baseUrl}/api/drawings/${encodeURIComponent(sym.toUpperCase())}`, {
+      method: 'PUT',
+      headers,
+      keepalive: true,
+      body: JSON.stringify({ drawings: drawingsArr || [], updatedAt: updatedAt || Date.now() })
+    });
+    if (r.ok) {
+      console.log('[cfD1Drawings] Saved', (drawingsArr || []).length, 'drawings for', sym);
+      return true;
+    }
+  } catch (e) {
+    console.warn('[cfD1Drawings] Push failed:', e.message);
+  }
+  return false;
+}
 function setSyncStatus(state, label) { const dot = document.getElementById('sync-dot'); const lbl = document.getElementById('sync-label'); const btn = dot && dot.closest('.sync-status'); if (dot) dot.className = 'sync-dot ' + (state || ''); if (lbl) lbl.textContent = label || 'Cloud Sync'; if (btn) { btn.title = state === 'warn' ? 'Click to configure cloud sync' : state === 'ok' ? 'Synced — click to manage' : state === 'err' ? 'Sync error — click to fix' : 'Cloud sync settings'; btn.style.borderColor = state === 'warn' ? 'rgba(224,123,58,.4)' : state === 'ok' ? 'rgba(61,214,140,.3)' : state === 'err' ? 'rgba(224,84,84,.3)' : ''; } }
 function showSetup() { openControlPanel('sync'); }
 function setupFlash(msg, color) { cfgBanner(msg, color === 'var(--lime)' ? 'ok' : color === 'var(--red)' ? 'err' : color === 'var(--orange)' ? 'warn' : 'inf', 'cfg-banner'); }
@@ -4263,22 +4285,40 @@ function mergeCloudChartDrawings(cloudDrawings, cloudUpdatedAt = 0) {
   const localUpdatedAt = parseInt(localStorage.getItem('_chartDrawingsUpdatedAt') || '0', 10);
   const cloudTime = parseInt(cloudUpdatedAt || '0', 10);
 
-  // If local changes are strictly newer, keep local and schedule cloud push
-  if (localUpdatedAt > cloudTime) {
-    console.log('[Drawings Sync] Local is newer (' + localUpdatedAt + ' > ' + cloudTime + '). Keeping local drawings.');
-    setTimeout(() => { if (typeof pushToCloud === 'function') pushToCloud().catch(() => {}); }, 1500);
-    return;
+  if (!_chartDrawings || typeof _chartDrawings !== 'object') _chartDrawings = {};
+  let changed = false;
+  let localHasExtra = false;
+
+  // Merge per symbol so drawings on one device never wipe out symbols drawn on another device
+  for (const sym of Object.keys(cloudDrawings)) {
+    const cloudArr = Array.isArray(cloudDrawings[sym]) ? cloudDrawings[sym] : [];
+    const localArr = Array.isArray(_chartDrawings[sym]) ? _chartDrawings[sym] : [];
+    if (localArr.length === 0 && cloudArr.length > 0) {
+      _chartDrawings[sym] = cloudArr;
+      changed = true;
+    } else if (cloudTime >= localUpdatedAt && cloudArr.length > 0) {
+      _chartDrawings[sym] = cloudArr;
+      changed = true;
+    }
   }
 
-  const localHasDrawings = typeof _chartDrawings === 'object' && Object.keys(_chartDrawings || {}).some(k => (_chartDrawings[k] || []).length > 0);
-  if (cloudTime >= localUpdatedAt || !localHasDrawings) {
-    console.log('[Drawings Sync] Adopting cloud drawings (' + cloudTime + ' >= ' + localUpdatedAt + ').');
-    _chartDrawings = { ...cloudDrawings };
+  for (const sym of Object.keys(_chartDrawings)) {
+    if (Array.isArray(_chartDrawings[sym]) && _chartDrawings[sym].length > 0 && (!cloudDrawings[sym] || cloudDrawings[sym].length === 0)) {
+      localHasExtra = true;
+    }
+  }
+
+  if (changed) {
     localStorage.setItem('nse_chart_drawings_v2', JSON.stringify(_chartDrawings));
-    localStorage.setItem('_chartDrawingsUpdatedAt', (cloudTime || Date.now()).toString());
+    localStorage.setItem('_chartDrawingsUpdatedAt', Math.max(cloudTime, localUpdatedAt, Date.now()).toString());
+    console.log('[Drawings Sync] Merged cloud drawings across symbols.');
     if (typeof redrawChartDrawings === 'function') {
       try { redrawChartDrawings(); } catch (e) { }
     }
+  }
+
+  if (localHasExtra || localUpdatedAt > cloudTime) {
+    setTimeout(() => { if (typeof pushToCloud === 'function') pushToCloud().catch(() => {}); }, 1200);
   }
 }
 window.mergeCloudChartDrawings = mergeCloudChartDrawings;
@@ -6592,6 +6632,9 @@ function findStockMetadata(symbol) {
   if (!symbol) return { company: '', rs_rating: '' }; const sUpper = symbol.toUpperCase().replace('.NS', ''); let company = ''; let rs_rating = ''; const cachedDrill = sectorDrillGetCached(); if (cachedDrill) {
     if (typeof calculateRSRatings === 'function') { calculateRSRatings(cachedDrill); }
     const activeMap = cachedDrill.sectors || cachedDrill.industries; if (activeMap) { for (const secName in activeMap) { const sec = activeMap[secName]; if (sec && Array.isArray(sec.stocks)) { const found = sec.stocks.find(x => x.symbol && x.symbol.toUpperCase() === sUpper); if (found) { company = found.company || ''; rs_rating = found.rs_rating != null ? found.rs_rating : ''; break; } } } }
+    if ((rs_rating === '' || rs_rating == null) && cachedDrill.rs_map && cachedDrill.rs_map[sUpper] != null) {
+      rs_rating = Math.round(cachedDrill.rs_map[sUpper]);
+    }
   }
   if (!company) { const allStocks = n500CsvGetCached() || []; const found = allStocks.find(s => s.symbol && s.symbol.toUpperCase() === sUpper); if (found) { company = found.company || ''; } }
   if (!rs_rating && _sdCurrentData && Array.isArray(_sdCurrentData.stocks)) { const found = _sdCurrentData.stocks.find(x => x.symbol && x.symbol.toUpperCase() === sUpper); if (found) { if (!company) company = found.company || ''; rs_rating = found.rs_rating != null ? found.rs_rating : ''; } }
@@ -6616,12 +6659,52 @@ function sdHandleSearch(val) {
 }
 function sdClearSearch() { const input = document.getElementById('sd-search-input'); if (input) { input.value = ''; sdHandleSearch(''); } }
 let _sdFilter = 'all'; function sdSetFilter(f) { _sdFilter = f; if (_sdActiveTab === 'charts') { _sdAutoChartsLimit = 12; sdRenderCharts(_sdCurrentSector, _sdCurrentData); } else { sdRenderVcp(_sdCurrentSector, _sdCurrentData); } }
-function calculateRSRatings(data) { if (!data) return; const uniqueStocks = []; const symbolMap = new Map(); const mapsToProcess = []; if (data.sectors) mapsToProcess.push(data.sectors); if (data.industries) mapsToProcess.push(data.industries); mapsToProcess.forEach(m => { for (const secName in m) { const sec = m[secName]; if (sec && Array.isArray(sec.stocks)) { sec.stocks.forEach(s => { if (!symbolMap.has(s.symbol)) { const r90 = parseFloat(s.r90) || 0; const dist52 = parseFloat(s.dist52) || 0; const drawdown = parseFloat(s.drawdown) || 0; const score = r90 * 1.5 + (100 + dist52) * 1.0 + (100 + drawdown) * 0.5; const obj = { symbol: s.symbol, score, stockRefs: [s] }; symbolMap.set(s.symbol, obj); uniqueStocks.push(obj); } else { symbolMap.get(s.symbol).stockRefs.push(s); } }); } } }); if (uniqueStocks.length === 0) return; uniqueStocks.sort((a, b) => a.score - b.score); const N = uniqueStocks.length; uniqueStocks.forEach((obj, idx) => { const rank = N > 1 ? Math.min(99, Math.max(1, Math.round((idx / (N - 1)) * 98) + 1)) : 99; obj.stockRefs.forEach(s => { s.rs_rating = rank; }); }); }
+function calculateRSRatings(data) {
+  if (!data) return;
+  const fallbackStocks = [];
+  const symbolMap = new Map();
+  const mapsToProcess = [];
+  if (data.sectors) mapsToProcess.push(data.sectors);
+  if (data.industries) mapsToProcess.push(data.industries);
+  mapsToProcess.forEach(m => {
+    for (const secName in m) {
+      const sec = m[secName];
+      if (sec && Array.isArray(sec.stocks)) {
+        sec.stocks.forEach(s => {
+          // Preserve universe-wide RS Rating computed by vcp_scanner.py when present
+          if (s.rs_rating != null && s.rs_rating !== '' && !isNaN(parseFloat(s.rs_rating))) {
+            s.rs_rating = Math.min(99, Math.max(1, Math.round(parseFloat(s.rs_rating))));
+            return;
+          }
+          if (!symbolMap.has(s.symbol)) {
+            const r90 = parseFloat(s.r90) || 0;
+            const dist52 = parseFloat(s.dist52) || 0;
+            const drawdown = parseFloat(s.drawdown) || 0;
+            const score = r90 * 1.5 + (100 + dist52) * 1.0 + (100 + drawdown) * 0.5;
+            const obj = { symbol: s.symbol, score, stockRefs: [s] };
+            symbolMap.set(s.symbol, obj);
+            fallbackStocks.push(obj);
+          } else {
+            symbolMap.get(s.symbol).stockRefs.push(s);
+          }
+        });
+      }
+    }
+  });
+  if (fallbackStocks.length === 0) return;
+  fallbackStocks.sort((a, b) => a.score - b.score);
+  const N = fallbackStocks.length;
+  fallbackStocks.forEach((obj, idx) => {
+    const rank = N > 1 ? Math.min(99, Math.max(1, Math.round((idx / (N - 1)) * 98) + 1)) : 99;
+    obj.stockRefs.forEach(s => { s.rs_rating = rank; });
+  });
+}
 function getStockDetails(symbol) {
   if (!symbol) return { symbol: '', company: '', sector: '', industry: '', stats: null }; const sUpper = symbol.toUpperCase().replace('.NS', ''); let sector = ''; let industry = ''; let company = ''; let scanStats = null; const cached = sectorDrillGetCached(); if (cached) {
     if (typeof calculateRSRatings === 'function' && !cached._rs_calculated) { calculateRSRatings(cached); cached._rs_calculated = true; }
     if (cached.sectors) { for (const [secName, secObj] of Object.entries(cached.sectors)) { if (secObj && Array.isArray(secObj.stocks)) { const found = secObj.stocks.find(x => x.symbol && x.symbol.toUpperCase() === sUpper); if (found) { sector = secName; company = found.company || ''; scanStats = found; break; } } } }
     if (cached.industries) { for (const [indName, indObj] of Object.entries(cached.industries)) { if (indObj && Array.isArray(indObj.stocks)) { const found = indObj.stocks.find(x => x.symbol && x.symbol.toUpperCase() === sUpper); if (found) { industry = indName; if (!company) company = found.company || ''; if (!scanStats) scanStats = found; break; } } } }
+    if (!scanStats && cached.rs_map && cached.rs_map[sUpper] != null) { scanStats = { rs_rating: Math.round(cached.rs_map[sUpper]) }; }
   }
   if (!sector || !industry || !company) { const allStocks = n500CsvGetCached() || []; const found = allStocks.find(s => s.symbol && s.symbol.toUpperCase() === sUpper); if (found) { if (!company) company = found.company || ''; const mapping = getMsIndustryMapping(found.symbol, found.company, found.industry); if (!sector) sector = mapping.parentSector || 'Diversified'; if (!industry) industry = mapping.industryGroup || found.industry || ''; } }
   if (!sector || !industry || !company) {
@@ -6670,7 +6753,6 @@ function generateStatsTableHtml(details) {
         <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">DD%:</span> <b style="color:${ddColor};margin-left:3px;">${ddVal}</b></span>
         <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Setup:</span> <b style="color:#f8fafc;margin-left:3px;">${setupVal}</b></span>
         <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">RS:</span> <b style="color:#fb923c;font-weight:700;margin-left:3px;">${rsVal}</b></span>
-        <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Score:</span> <b style="color:#2dd4bf;font-weight:700;margin-left:3px;">${scoreVal}</b></span>
         <span style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:1px 6px;border-radius:4px;"><span style="color:#94a3b8;font-weight:500">Grade:</span> <span style="background:${gradeColor}25;border:1px solid ${gradeColor}60;color:${gradeColor};padding:1px 6px;border-radius:3px;font-weight:800;margin-left:3px;">${gradeVal}</span></span>
       </div>
     </div>
@@ -6719,7 +6801,7 @@ function openMaximizedChart(symbol) {
   updateWinPillStyles();
   updateWinLegendLabels();
   const overlay = document.getElementById('chart-max-overlay'); const maxSymbol = document.getElementById('max-chart-symbol'); const maxCompany = document.getElementById('max-chart-company'); const maxStats = document.getElementById('max-chart-stats'); const loader = document.getElementById('max-chart-loader'); const tfSelect = document.getElementById('max-chart-timeframe'); const typeSelect = document.getElementById('max-chart-type'); if (!overlay) return; _sdMaximizedChartSymbol = symbol; _maxViewOffset = 0;// reset pan on new symbol
-  if (tfSelect) tfSelect.value = _sdChartsInterval; if (typeSelect) typeSelect.value = _sdChartType; const details = getStockDetails(symbol); let statsHtml = ''; if (details.stats) { const s = details.stats; const rsVal = s.rs_rating != null ? s.rs_rating : '—'; const score = s.final_score > 0 ? s.final_score : s.vcp_score; statsHtml = score != null ? `RS: <b style="color:var(--purple)">${rsVal}</b> · Score: <b style="color:var(--teal)">${Math.round(score)}</b>` : `RS: <b style="color:var(--purple)">${rsVal}</b>`; }
+  if (tfSelect) tfSelect.value = _sdChartsInterval; if (typeSelect) typeSelect.value = _sdChartType; const details = getStockDetails(symbol); let statsHtml = ''; if (details.stats) { const s = details.stats; const rsVal = s.rs_rating != null ? s.rs_rating : '—'; statsHtml = `RS: <b style="color:var(--purple)">${rsVal}</b>`; }
   _sdMaximizedChartCompany = details.company; _sdMaximizedChartStats = statsHtml; if (maxSymbol) maxSymbol.textContent = details.symbol; if (maxCompany) { maxCompany.innerHTML = `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;">${details.company || '—'}</span><span style="font-size:10px;color:var(--dim);background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:1px 6px;border-radius:3px;font-weight:500;white-space:nowrap;flex-shrink:0;">${details.sector}</span><span style="font-size:10px;color:var(--sub);font-weight:500;white-space:nowrap;flex-shrink:0;">${details.industry}</span>`; }
   if (maxStats) maxStats.innerHTML = statsHtml || ''; const maxTableContainer = document.getElementById('max-chart-table-container'); if (maxTableContainer) { maxTableContainer.innerHTML = generateStatsTableHtml(details); }
   if (loader) { loader.style.display = 'flex'; loader.innerHTML = 'Loading chart…'; }
@@ -7930,9 +8012,9 @@ function sdRenderCharts(sectorName, secData) {
   const totalCharts = stocks.length; const isAuto = (_sdChartsLayout === 'auto'); let pageStocks; let startIdx = 0; let endIdx = 0; let totalPages = 1; if (isAuto) { startIdx = 0; endIdx = Math.min(_sdAutoChartsLimit, totalCharts); pageStocks = stocks.slice(0, endIdx); } else { totalPages = Math.ceil(totalCharts / _sdChartsPerPage); if (_sdChartsPage >= totalPages) _sdChartsPage = Math.max(0, totalPages - 1); startIdx = _sdChartsPage * _sdChartsPerPage; endIdx = Math.min(startIdx + _sdChartsPerPage, totalCharts); pageStocks = stocks.slice(startIdx, endIdx); }
   const cardHeight = getChartsCardHeight(_sdChartsLayout); const gridStyle = getChartsGridStyle(_sdChartsLayout); const chartCardsHtml = pageStocks.map(s => {
     const tvUrl = `https://www.tradingview.com/chart/?symbol=NSE%3A${encodeURIComponent(s.symbol)}`; const msUrl = `https://marketsmithindia.com/mstool/eval/${s.symbol.toLowerCase()}/evaluation.jsp#/`; let statsHtml = ''; const emaLegend = ` | <span style="color:var(--dim);font-size:9px">EMA20: <b style="color:rgba(239, 68, 68, 0.5)">●</b></span>`; if (_sdChartsSource === 'vcp') {
-      const rsVal = s.rs_rating != null ? s.rs_rating : '—'; const score = s.final_score > 0 ? s.final_score : s.vcp_score; statsHtml = `
+      const rsVal = s.rs_rating != null ? s.rs_rating : '—'; statsHtml = `
         <span style="color:var(--dim);font-size:9px">
-          RS: <b style="color:var(--purple)">${rsVal}</b> | Score: <b style="color:var(--teal)">${Math.round(score)}</b>${emaLegend}
+          RS: <b style="color:var(--purple)">${rsVal}</b>${emaLegend}
         </span>`;
     } else {
       const vcpData = (_sdCurrentData?.stocks || []).find(x => x.symbol === s.symbol); let vcpBadges = ''; if (vcpData) {
@@ -8494,15 +8576,29 @@ function saveChartDrawings(syncCloud = true) {
     const now = Date.now();
     localStorage.setItem('_chartDrawingsUpdatedAt', now.toString());
     if (syncCloud) {
+      const activeSym = (typeof getActiveDrawingSymbol === 'function') ? getActiveDrawingSymbol() : null;
+      if (activeSym && typeof cfPushSymbolDrawings === 'function') {
+        cfPushSymbolDrawings(activeSym, _chartDrawings[activeSym] || [], now);
+      }
       if (_cloudPushDrawingsDebounce) clearTimeout(_cloudPushDrawingsDebounce);
       _cloudPushDrawingsDebounce = setTimeout(() => {
+        _cloudPushDrawingsDebounce = null;
         if (typeof pushToCloud === 'function') {
           pushToCloud().catch(e => console.warn('[Cloud Sync Drawings] push failed:', e.message));
         }
-      }, 1500);
+      }, 600);
     }
   } catch (e) { }
 }
+window.addEventListener('pagehide', () => {
+  if (_cloudPushDrawingsDebounce) {
+    clearTimeout(_cloudPushDrawingsDebounce);
+    _cloudPushDrawingsDebounce = null;
+    if (typeof pushToCloud === 'function') {
+      try { pushToCloud().catch(() => {}); } catch (e) { }
+    }
+  }
+});
 
 function getActiveDrawingSymbol() {
   return ((_maxChartLayout !== '1' && _layoutSymbols[_activeLayoutTile - 1]) || _sdMaximizedChartSymbol || 'DEFAULT').toUpperCase().replace('.NS', '');
@@ -10213,6 +10309,40 @@ function redrawChartDrawings() {
     ctx.restore();
   }
   ctx.restore(); // Restore chartPlotW clipping
+
+  // When Price Range tool is selected, render both end price values directly on the Price Scale
+  if (_selectedDrawingIndex != null && drawings[_selectedDrawingIndex]) {
+    const selD = drawings[_selectedDrawingIndex];
+    if ((selD.type === 'scale' || selD.type === 'measure') && selD.p1 && selD.p2) {
+      const pt1 = toPx(selD.p1);
+      const pt2 = toPx(selD.p2);
+      const p1Val = selD.p1.price;
+      const p2Val = selD.p2.price;
+      const isUp = (p2Val != null && p1Val != null) ? (p2Val >= p1Val) : true;
+      const clr = (selD.color && selD.color !== '#22c55e' && selD.color !== '#ef4444' && selD.color !== '#089981' && selD.color !== '#f23645')
+        ? selD.color
+        : (isUp ? '#089981' : '#f23645');
+      const scaleW = Math.max(50, W - chartPlotW);
+      const drawScaleTag = (yCoord, priceVal) => {
+        if (yCoord == null || !isFinite(yCoord) || priceVal == null || !isFinite(priceVal)) return;
+        if (yCoord < 0 || yCoord > H) return;
+        const txt = priceVal.toFixed(2);
+        const bh = 18;
+        const by = Math.max(0, Math.min(H - bh, yCoord - bh / 2));
+        ctx.fillStyle = clr;
+        ctx.fillRect(chartPlotW, by, scaleW, bh);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px -apple-system,BlinkMacSystemFont,sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(txt, chartPlotW + scaleW / 2, by + bh / 2 + 0.5);
+      };
+      ctx.save();
+      drawScaleTag(pt1.y, p1Val);
+      drawScaleTag(pt2.y, p2Val);
+      ctx.restore();
+    }
+  }
 }
 window.redrawChartDrawings = redrawChartDrawings;
 
@@ -12381,6 +12511,8 @@ function updateMaxChartSidebarWatchlist() {
     const removeBtnHtml = showRemoveBtn ? '<button class="tv-max-wl-del-btn" onclick="event.stopPropagation(); sccWatchlistRemoveSymbol(\'' + sUpper + '\');" title="Remove ' + sUpper + ' from ' + _sccActiveWatchlist + '" style="background:none;border:none;color:#787b86;cursor:pointer;font-size:15px;font-weight:bold;line-height:1;padding:0 0 0 5px;opacity:0.35;transition:opacity 0.15s,color 0.15s;outline:none;" onmouseover="this.style.opacity=\'1\';this.style.color=\'#ef4444\';" onmouseout="this.style.opacity=\'0.35\';this.style.color=\'#787b86\';">×</button>' : '';
 
     const themeName = item.theme || tightDet.theme || '';
+    const metaWl = (typeof findStockMetadata === 'function') ? findStockMetadata(sUpper) : {};
+    const rsWlBadge = (metaWl.rs_rating != null && metaWl.rs_rating !== '') ? '<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:' + (metaWl.rs_rating >= 80 ? 'rgba(34,197,94,0.16)' : (metaWl.rs_rating >= 60 ? 'rgba(251,146,60,0.16)' : 'rgba(148,163,184,0.15)')) + ';color:' + (metaWl.rs_rating >= 80 ? '#4ade80' : (metaWl.rs_rating >= 60 ? '#fb923c' : '#94a3b8')) + ';font-weight:700;font-family:var(--mono);" title="Relative Strength Rating">RS ' + Math.round(metaWl.rs_rating) + '</span>' : '';
     const isDraggable = _sccActiveWatchlist !== 'VCP' && _sccActiveWatchlist !== 'Clusters' && _sccActiveWatchlist !== 'Themes';
     const dragAttr = isDraggable ? 'draggable="true" data-raw-item="' + sUpper + '" ondragstart="sccRowDragStart(event, \'' + sUpper + '\')" ondragover="sccRowDragOver(event)" ondragleave="sccRowDragLeave(event)" ondrop="sccRowDrop(event, \'' + sUpper + '\')" ondragend="sccRowDragEnd(event)" ontouchstart="sccRowTouchStart(event, \'' + sUpper + '\')" ontouchmove="sccRowTouchMove(event)" ontouchend="sccRowTouchEnd(event)"' : '';
     const dragHandle = isDraggable ? '<span class="tv-wl-drag-handle" title="Drag to move stock">⋮⋮</span>' : '';
@@ -12393,6 +12525,7 @@ function updateMaxChartSidebarWatchlist() {
       '<div style="display:flex;flex-direction:column;min-width:0;overflow:hidden;">' +
       '<div style="display:flex;align-items:center;gap:4px;">' +
       '<span style="font-weight:700;' + (isCur ? 'color:#2962ff;' : '') + '">' + sUpper + '</span>' +
+      rsWlBadge +
       leaderBadge +
       tightBadge +
       '</div>' +

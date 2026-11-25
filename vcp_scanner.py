@@ -499,11 +499,11 @@ def vcp_pullbacks(df, base_info=None):
 # ═══════════════════════════════════════════════════════════════════════
 def rs_proxy_raw(df, bench_df=None):
     """
-    Evaluates relative performance over approx 3M (63d), 6M (126d), and 12M (252d)
+    Evaluates relative performance using IBD/MarketSmith 12-month weighted formula:
+    40% 3M (63d) + 20% 6M (126d) + 20% 9M (189d) + 20% 12M (252d)
     relative to the benchmark (Nifty 500 / Nifty 50).
     """
     c   = df['Close']
-    cur = c.iloc[-1]
     def ret(series, n):
         idx = max(0, len(series) - n - 1)
         p   = series.iloc[idx]
@@ -511,26 +511,29 @@ def rs_proxy_raw(df, bench_df=None):
 
     r63  = ret(c, 63)
     r126 = ret(c, 126)
+    r189 = ret(c, 189)
     r252 = ret(c, 252)
 
     if bench_df is not None and len(bench_df) >= 200:
         bc   = bench_df['Close']
         b63  = ret(bc, 63)
         b126 = ret(bc, 126)
+        b189 = ret(bc, 189)
         b252 = ret(bc, 252)
         rel63  = r63 - b63
         rel126 = r126 - b126
+        rel189 = r189 - b189
         rel252 = r252 - b252
     else:
-        rel63, rel126, rel252 = r63, r126, r252
+        rel63, rel126, rel189, rel252 = r63, r126, r189, r252
 
-    composite = round(rel63 * 0.4 + rel126 * 0.3 + rel252 * 0.3, 2)
+    composite = round(rel63 * 0.4 + rel126 * 0.2 + rel189 * 0.2 + rel252 * 0.2, 2)
     return composite, r63, r126, r252
 
 def compute_rs_scores(results, all_composites=None):
     """
-    Ranks relative-performance composite against the scanned universe as a true percentile (0.0 - 99.9).
-    Explicitly labelled as rs_proxy_percentile.
+    Ranks relative-performance composite against the scanned universe as a 1-99 integer percentile
+    (matching IBD / MarketSmith RS Rating scale).
     """
     if not results: return results
     composites = all_composites if (all_composites and len(all_composites) > 10) else [r['_rs_composite'] for r in results]
@@ -541,8 +544,8 @@ def compute_rs_scores(results, all_composites=None):
         val = r['_rs_composite']
         import bisect
         rank = bisect.bisect_right(sorted_comps, val)
-        pctile = round((rank / n) * 99.0, 1)
-        pctile = min(99.0, max(1.0, pctile))
+        pctile = int(round((rank / n) * 98.0)) + 1 if n > 1 else 99
+        pctile = min(99, max(1, pctile))
         r['rs_proxy_percentile'] = pctile
         r['rs_score'] = pctile  # alias for backward-compatibility
     return results
@@ -2008,6 +2011,7 @@ def main():
                 print(f"⚠️ Cache save warning: {se}")
 
     all_universe_composites = []
+    all_universe_rs_map = {}
     print(f'Scanning {total} NSE stocks via Yahoo Finance...\n')
 
     for i, sym in enumerate(symbols_to_scan, 1):
@@ -2034,6 +2038,7 @@ def main():
             try:
                 u_comp, _, _, _ = rs_proxy_raw(df, BENCHMARK_HISTORY)
                 all_universe_composites.append(u_comp)
+                all_universe_rs_map[sym.upper()] = u_comp
             except Exception:
                 pass
 
@@ -2109,6 +2114,16 @@ def main():
     print(f'\n═══ Computing RS Scores & Final Rankings ═══')
 
     results = compute_rs_scores(results, all_universe_composites)
+
+    rs_map = {}
+    if all_universe_composites:
+        import bisect
+        sorted_comps = sorted(all_universe_composites)
+        n_univ = len(sorted_comps)
+        for u_sym, u_val in all_universe_rs_map.items():
+            rank = bisect.bisect_right(sorted_comps, u_val)
+            pct = int(round((rank / n_univ) * 98.0)) + 1 if n_univ > 1 else 99
+            rs_map[u_sym] = min(99, max(1, pct))
 
     for r in results:
         r['rs_score']   = r.get('rs_score', 0)
@@ -2289,7 +2304,8 @@ def main():
         'scan_date': datetime.now().strftime('%Y-%m-%d'),
         'scan_time': scan_time,
         'sectors': sectors_stocks_map,
-        'industries': industries_stocks_map
+        'industries': industries_stocks_map,
+        'rs_map': rs_map
     }
 
     try:

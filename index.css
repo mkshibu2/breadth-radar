@@ -5898,7 +5898,7 @@ thead th[onclick]:hover {
 /* ── TRADINGVIEW STYLE FLOATING EPS & SALES TABLE ── */
 .tv-floating-table {
   position: absolute;
-  bottom: 30px;
+  bottom: 135px;
   right: 65px;
   z-index: 20;
   background: rgba(18, 22, 32, 0.90);
@@ -7394,7 +7394,7 @@ thead th[onclick]:hover {
     height: 26px !important;
   }
   .tv-floating-table {
-    bottom: 24px !important;
+    bottom: 95px !important;
     right: 8px !important;
     font-size: 8.5px !important;
     max-width: 220px !important;
