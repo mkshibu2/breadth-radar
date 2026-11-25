@@ -2864,6 +2864,24 @@ async function sccScanTightStocks() {
 }
 window.sccScanTightStocks = sccScanTightStocks;
 
+const _hiddenUnchartableSymbols = new Set((() => {
+  try { return JSON.parse(localStorage.getItem('nse_hidden_unchartable_syms') || '[]'); } catch (e) { return []; }
+})());
+function hideUnchartableSymbol(sym) {
+  if (!sym) return;
+  const sUpper = sym.toUpperCase().replace(/\.(NS|BO)$/i, '').trim();
+  _hiddenUnchartableSymbols.add(sUpper);
+  try { localStorage.setItem('nse_hidden_unchartable_syms', JSON.stringify(Array.from(_hiddenUnchartableSymbols))); } catch (e) { }
+  if (typeof sccWatchlistRender === 'function') sccWatchlistRender();
+  if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+  if (typeof showChartToast === 'function') showChartToast('🚫 Hidden ' + sUpper + ' from Watchlist', '#f59e0b');
+  if (typeof _sccWatchlistSymbols !== 'undefined' && Array.isArray(_sccWatchlistSymbols) && _sccWatchlistSymbols.length > 0) {
+    const nextSym = _sccWatchlistSymbols[0];
+    if (nextSym && typeof maxChartOnStockSelected === 'function') maxChartOnStockSelected(nextSym);
+  }
+}
+window.hideUnchartableSymbol = hideUnchartableSymbol;
+
 function sccGetClustersWatchlistItems() {
   if (!_sccClustersCache || !_sccClustersCache.length) {
     if (typeof sccComputeClusters === 'function') sccComputeClusters();
@@ -2915,6 +2933,9 @@ function sccGetClustersWatchlistItems() {
           continue; // Skip downtrend stocks trading below their 200 MA
         }
         const sUpper = s.symbol.toUpperCase();
+        if (/\.(E1|RR|IV|BZ|GB)$/i.test(sUpper) || /-RE$/i.test(sUpper) || _hiddenUnchartableSymbols.has(sUpper)) {
+          continue; // Skip non-equity special series & hidden unchartable symbols
+        }
         if (!_sccWatchlistData[sUpper] && s.price != null) {
           _sccWatchlistData[sUpper] = {
             price: s.price,
@@ -3189,7 +3210,6 @@ function sccWatchlistRender() {
           <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
             <div style="display:flex; align-items:center; gap:4px;">
               <span style="font-weight:700; color:var(--text); font-size:12px; font-family:var(--body);">${sUpper}</span>
-              ${(meta.rs_rating != null && meta.rs_rating !== '') ? `<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:${meta.rs_rating >= 80 ? 'rgba(34,197,94,0.16)' : (meta.rs_rating >= 60 ? 'rgba(251,146,60,0.16)' : 'rgba(148,163,184,0.15)')};color:${meta.rs_rating >= 80 ? '#4ade80' : (meta.rs_rating >= 60 ? '#fb923c' : '#94a3b8')};font-weight:700;font-family:var(--mono);" title="Relative Strength Rating">RS ${Math.round(meta.rs_rating)}</span>` : ''}
               ${leaderBadge}
               ${tightBadge}
             </div>
@@ -6889,9 +6909,15 @@ function _maxFetchAndDraw(symbol) {
           <iframe src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(tvSym)}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=131722&theme=dark&style=1&timezone=Asia%2FKolkata&locale=in"
                   style="width:100%;height:100%;border:none;display:block;"
                   allowtransparency="true" scrolling="no" allowfullscreen></iframe>
-          <div style="position:absolute;top:8px;right:75px;background:rgba(20,24,35,0.9);border:1px solid #363c4e;border-radius:4px;padding:3px 10px;font-size:10px;color:#38bdf8;font-weight:600;z-index:5;pointer-events:none;display:flex;align-items:center;gap:4px;">
-            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#38bdf8;"></span>
-            TradingView Live Feed
+          <div style="position:absolute;top:8px;right:75px;display:flex;align-items:center;gap:6px;z-index:5;">
+            <div style="background:rgba(20,24,35,0.9);border:1px solid #363c4e;border-radius:4px;padding:3px 10px;font-size:10px;color:#38bdf8;font-weight:600;pointer-events:none;display:flex;align-items:center;gap:4px;">
+              <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#38bdf8;"></span>
+              TradingView Live Feed
+            </div>
+            <button onclick="hideUnchartableSymbol('${cleanSym}')" title="Hide this unchartable symbol from Watchlists"
+                    style="background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.45);border-radius:4px;padding:3px 8px;font-size:10px;color:#fca5a5;font-weight:700;cursor:pointer;">
+              🚫 Hide from WL
+            </button>
           </div>
         </div>
       `;
@@ -7285,6 +7311,44 @@ function drawMaxChartLightweight() {
     formatTip(param.time, bar, vol);
   });
 
+  // Compute live IBD-weighted RS Rating fallback from chart candles vs Nifty when scanner RS is absent
+  const computeLiveStockRS = (candlesArr, niftyArr, weeklyMode) => {
+    if (!candlesArr || candlesArr.length < 15) return null;
+    const retN = (arr, n) => {
+      if (!arr || arr.length < 2) return 0;
+      const idx = Math.max(0, arr.length - n - 1);
+      const base = arr[idx].close;
+      const cur = arr[arr.length - 1].close;
+      return base > 0 ? ((cur / base) - 1) * 100 : 0;
+    };
+    const n3 = weeklyMode ? 13 : 63;
+    const n6 = weeklyMode ? 26 : 126;
+    const n9 = weeklyMode ? 39 : 189;
+    const n12 = weeklyMode ? 52 : 252;
+    const r3 = retN(candlesArr, n3), r6 = retN(candlesArr, n6), r9 = retN(candlesArr, n9), r12 = retN(candlesArr, n12);
+    let b3 = 0, b6 = 0, b9 = 0, b12 = 0;
+    if (niftyArr && niftyArr.length >= 20) {
+      b3 = retN(niftyArr, n3); b6 = retN(niftyArr, n6); b9 = retN(niftyArr, n9); b12 = retN(niftyArr, n12);
+    }
+    const comp = (r3 - b3) * 0.4 + (r6 - b6) * 0.2 + (r9 - b9) * 0.2 + (r12 - b12) * 0.2;
+    return Math.min(99, Math.max(1, Math.round(50 + 49 * Math.tanh(comp / 28))));
+  };
+
+  const details = typeof getStockDetails === 'function' && _sdMaximizedChartSymbol ? getStockDetails(_sdMaximizedChartSymbol) : { symbol: _sdMaximizedChartSymbol };
+  if (!details.stats || details.stats.rs_rating == null || details.stats.rs_rating === '') {
+    const liveRs = computeLiveStockRS(cleanCandles, _maxNiftyCandles, isWeekly);
+    if (liveRs != null) {
+      details.stats = { ...(details.stats || {}), rs_rating: liveRs };
+    }
+  }
+  const hdrStatsEl = document.getElementById('max-chart-stats');
+  if (hdrStatsEl && details.stats && details.stats.rs_rating != null) {
+    const rVal = Math.round(details.stats.rs_rating);
+    const rCol = rVal >= 80 ? '#4ade80' : (rVal >= 60 ? '#fb923c' : '#94a3b8');
+    const rBg = rVal >= 80 ? 'rgba(34,197,94,0.14)' : (rVal >= 60 ? 'rgba(251,146,60,0.14)' : 'rgba(148,163,184,0.12)');
+    hdrStatsEl.innerHTML = `<span style="background:${rBg};border:1px solid ${rCol}55;color:${rCol};padding:2px 7px;border-radius:4px;font-weight:700;font-family:var(--mono);font-size:11px;" title="Relative Strength Rating vs Nifty">RS ${rVal}</span>`;
+  }
+
   // Render WIN HUD Table in modal
   const tableContainer = document.getElementById('max-chart-table-container');
   if (tableContainer) {
@@ -7292,7 +7356,6 @@ function drawMaxChartLightweight() {
       tableContainer.style.display = 'none';
     } else {
       tableContainer.style.display = 'block';
-      const details = typeof getStockDetails === 'function' && _sdMaximizedChartSymbol ? getStockDetails(_sdMaximizedChartSymbol) : { symbol: _sdMaximizedChartSymbol };
       tableContainer.innerHTML = renderWinHudTableHtml(cleanCandles, details, vt);
     }
   }
@@ -7899,6 +7962,8 @@ function getYfSymbolCandidates(symbol) {
     candidates.push(clean.replace(/(INVIT|INVT)$/i, '') + '-IV.NS');
   }
 
+  candidates.push(clean + '-SM.NS');
+  candidates.push(clean + '-BE.NS');
   candidates.push(clean + '.BO');
   if (base !== clean) {
     candidates.push(base + '.BO');
@@ -12293,12 +12358,18 @@ function updateMaxChartSidebarWatchlist() {
             const sortedStocks = [...sec.stocks].sort((a, b) => a.symbol.localeCompare(b.symbol));
             sortedStocks.forEach(s => {
               const sUpper = s.symbol.toUpperCase();
+              if (/\.(E1|RR|IV|BZ|GB)$/i.test(sUpper) || /-RE$/i.test(sUpper) || _hiddenUnchartableSymbols.has(sUpper)) {
+                return; // Skip non-equity special series & hidden unchartable symbols
+              }
               items.push({ type: 'stock', symbol: sUpper, company: s.company || sUpper, price: s.price, change_pct: s.change_pct });
               if (!flatSymbols.includes(sUpper)) flatSymbols.push(sUpper);
             });
           } else {
             sec.stocks.forEach(s => {
               const sUpper = s.symbol.toUpperCase();
+              if (/\.(E1|RR|IV|BZ|GB)$/i.test(sUpper) || /-RE$/i.test(sUpper) || _hiddenUnchartableSymbols.has(sUpper)) {
+                return; // Skip non-equity special series & hidden unchartable symbols
+              }
               if (!flatSymbols.includes(sUpper)) flatSymbols.push(sUpper);
             });
           }
@@ -12511,8 +12582,6 @@ function updateMaxChartSidebarWatchlist() {
     const removeBtnHtml = showRemoveBtn ? '<button class="tv-max-wl-del-btn" onclick="event.stopPropagation(); sccWatchlistRemoveSymbol(\'' + sUpper + '\');" title="Remove ' + sUpper + ' from ' + _sccActiveWatchlist + '" style="background:none;border:none;color:#787b86;cursor:pointer;font-size:15px;font-weight:bold;line-height:1;padding:0 0 0 5px;opacity:0.35;transition:opacity 0.15s,color 0.15s;outline:none;" onmouseover="this.style.opacity=\'1\';this.style.color=\'#ef4444\';" onmouseout="this.style.opacity=\'0.35\';this.style.color=\'#787b86\';">×</button>' : '';
 
     const themeName = item.theme || tightDet.theme || '';
-    const metaWl = (typeof findStockMetadata === 'function') ? findStockMetadata(sUpper) : {};
-    const rsWlBadge = (metaWl.rs_rating != null && metaWl.rs_rating !== '') ? '<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:' + (metaWl.rs_rating >= 80 ? 'rgba(34,197,94,0.16)' : (metaWl.rs_rating >= 60 ? 'rgba(251,146,60,0.16)' : 'rgba(148,163,184,0.15)')) + ';color:' + (metaWl.rs_rating >= 80 ? '#4ade80' : (metaWl.rs_rating >= 60 ? '#fb923c' : '#94a3b8')) + ';font-weight:700;font-family:var(--mono);" title="Relative Strength Rating">RS ' + Math.round(metaWl.rs_rating) + '</span>' : '';
     const isDraggable = _sccActiveWatchlist !== 'VCP' && _sccActiveWatchlist !== 'Clusters' && _sccActiveWatchlist !== 'Themes';
     const dragAttr = isDraggable ? 'draggable="true" data-raw-item="' + sUpper + '" ondragstart="sccRowDragStart(event, \'' + sUpper + '\')" ondragover="sccRowDragOver(event)" ondragleave="sccRowDragLeave(event)" ondrop="sccRowDrop(event, \'' + sUpper + '\')" ondragend="sccRowDragEnd(event)" ontouchstart="sccRowTouchStart(event, \'' + sUpper + '\')" ontouchmove="sccRowTouchMove(event)" ontouchend="sccRowTouchEnd(event)"' : '';
     const dragHandle = isDraggable ? '<span class="tv-wl-drag-handle" title="Drag to move stock">⋮⋮</span>' : '';
@@ -12525,7 +12594,6 @@ function updateMaxChartSidebarWatchlist() {
       '<div style="display:flex;flex-direction:column;min-width:0;overflow:hidden;">' +
       '<div style="display:flex;align-items:center;gap:4px;">' +
       '<span style="font-weight:700;' + (isCur ? 'color:#2962ff;' : '') + '">' + sUpper + '</span>' +
-      rsWlBadge +
       leaderBadge +
       tightBadge +
       '</div>' +
