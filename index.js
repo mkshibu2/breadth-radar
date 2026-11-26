@@ -3166,12 +3166,12 @@ function sccWatchlistRender() {
     let priceStr = '<span style="color:var(--dim)">...</span>'; let changeStr = '<span style="color:var(--dim)">...</span>';
     if (data) {
       if (data.error) {
-        priceStr = '<span style="color:var(--red)">Err</span>'; changeStr = '<span style="color:var(--red)">--</span>';
+        priceStr = `<span data-wl-price="${sUpper}" style="color:var(--red)">Err</span>`; changeStr = `<span data-wl-chg="${sUpper}" style="color:var(--red)">--</span>`;
       } else {
-        priceStr = data.price.toFixed(1); const changeVal = data.change; const sign = changeVal >= 0 ? '+' : ''; const color = changeVal >= 0 ? 'var(--lime)' : 'var(--red)'; changeStr = `<span style="color:${color}">${sign}${changeVal.toFixed(1)}%</span>`;
+        priceStr = `<span data-wl-price="${sUpper}">${data.price.toFixed(1)}</span>`; const changeVal = data.change; const sign = changeVal >= 0 ? '+' : ''; const color = changeVal >= 0 ? 'var(--lime)' : 'var(--red)'; changeStr = `<span data-wl-chg="${sUpper}" style="color:${color}">${sign}${changeVal.toFixed(1)}%</span>`;
       }
     } else if (item.price != null) {
-      priceStr = item.price.toFixed(1); const changeVal = item.change_pct != null ? item.change_pct : 0; const sign = changeVal >= 0 ? '+' : ''; const color = changeVal >= 0 ? 'var(--lime)' : 'var(--red)'; changeStr = `<span style="color:${color}">${sign}${changeVal.toFixed(1)}%</span>`;
+      priceStr = `<span data-wl-price="${sUpper}">${item.price.toFixed(1)}</span>`; const changeVal = item.change_pct != null ? item.change_pct : 0; const sign = changeVal >= 0 ? '+' : ''; const color = changeVal >= 0 ? 'var(--lime)' : 'var(--red)'; changeStr = `<span data-wl-chg="${sUpper}" style="color:${color}">${sign}${changeVal.toFixed(1)}%</span>`;
     }
     const leaderBadge = item.is52w ? '<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:rgba(45,212,191,0.15);color:var(--teal);margin-left:4px;" title="Within 3% of 52W High">52W</span>' : (item.is1m ? '<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:rgba(52,211,153,0.15);color:#34d399;margin-left:4px;" title="Within 2% of 1M High">1M</span>' : '');
     const tightDet = (_sccTightDetailsMap && _sccTightDetailsMap[sUpper]) || {};
@@ -3882,12 +3882,97 @@ function sccWatchlistAddFromInput(val) {
     const suggestBox = document.getElementById('scc-wl-suggest'); if (suggestBox) suggestBox.style.display = 'none';
   }
 }
-async function sccWatchlistFetchSymbolData(symbol) {
-  const sym = symbol.toUpperCase(); try { const candles = await fetchYfData(sym, '5d', '1d'); if (candles && candles.length > 0) { const lastCandle = candles[candles.length - 1]; const prevCandle = candles.length > 1 ? candles[candles.length - 2] : lastCandle; const price = lastCandle.close; const pctChange = ((price - prevCandle.close) / prevCandle.close) * 100; _sccWatchlistData[sym] = { price, change: pctChange }; } } catch (err) { console.error("Watchlist fetch error for " + sym, err); if (!_sccWatchlistData[sym]) { _sccWatchlistData[sym] = { error: true }; } }
-  sccWatchlistRender();
+function syncWatchlistPriceInDom(symbol, price, change, source) {
+  if (!symbol || !isFinite(price) || price <= 0) return;
+  const sym = symbol.toUpperCase().replace(/\.(NS|BO)$/i, '').trim();
+  const prev = _sccWatchlistData[sym] || {};
+  const chgVal = isFinite(change) ? change : (prev.change != null ? prev.change : 0);
+  _sccWatchlistData[sym] = { price, change: chgVal, _source: source || prev._source || 'yf' };
+
+  const priceText = price.toFixed(1);
+  const sign = chgVal >= 0 ? '+' : '';
+  const chgText = `${sign}${chgVal.toFixed(1)}%`;
+
+  document.querySelectorAll(`[data-wl-price="${sym}"]`).forEach(el => {
+    el.textContent = priceText;
+  });
+  document.querySelectorAll(`[data-wl-chg="${sym}"]`).forEach(el => {
+    el.textContent = chgText;
+    const inSidebar = !!el.closest('#max-chart-sidebar-rows');
+    el.style.color = chgVal >= 0 ? (inSidebar ? '#22c55e' : 'var(--lime)') : (inSidebar ? '#ef4444' : 'var(--red)');
+  });
 }
-function sccWatchlistFetchAll(bypassCache = false) {
-  const symsToFetch = _sccWatchlistSymbols.slice(0, 40);
+window.syncWatchlistPriceInDom = syncWatchlistPriceInDom;
+
+async function sccWatchlistFetchSymbolData(symbol) {
+  const sym = symbol.toUpperCase();
+  if (_chartDataSource === 'fyers' && typeof fetchFyersQuote === 'function' && typeof fyersGetCreds === 'function') {
+    const creds = fyersGetCreds();
+    if (creds && creds.appId && creds.token) {
+      try {
+        const v = await fetchFyersQuote(sym);
+        const ltp = Number(v.lp);
+        if (isFinite(ltp) && ltp > 0) {
+          let pctChange = Number(v.chp);
+          if (!isFinite(pctChange) && Number(v.prev_close_price) > 0) {
+            pctChange = ((ltp - Number(v.prev_close_price)) / Number(v.prev_close_price)) * 100;
+          }
+          _sccWatchlistData[sym] = { price: ltp, change: isFinite(pctChange) ? pctChange : 0, _source: 'fyers' };
+          sccWatchlistRender();
+          if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+          return;
+        }
+      } catch (fErr) {
+        console.warn('[WL Fyers Quote fallback]', sym, fErr.message);
+      }
+    }
+  }
+  try {
+    const candles = await fetchYfData(sym, '5d', '1d');
+    if (candles && candles.length > 0) {
+      const lastCandle = candles[candles.length - 1];
+      const prevCandle = candles.length > 1 ? candles[candles.length - 2] : lastCandle;
+      const price = lastCandle.close;
+      const pctChange = prevCandle.close > 0 ? ((price - prevCandle.close) / prevCandle.close) * 100 : 0;
+      _sccWatchlistData[sym] = { price, change: pctChange, _source: 'yf' };
+    }
+  } catch (err) {
+    console.error("Watchlist fetch error for " + sym, err);
+    if (!_sccWatchlistData[sym]) { _sccWatchlistData[sym] = { error: true }; }
+  }
+  sccWatchlistRender();
+  if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+}
+
+async function sccWatchlistFetchAll(bypassCache = false) {
+  const symsToFetch = _sccWatchlistSymbols.slice(0, _chartDataSource === 'fyers' ? 50 : 40);
+  if (_chartDataSource === 'fyers' && typeof fetchFyersQuotesBatch === 'function' && typeof fyersGetCreds === 'function') {
+    const creds = fyersGetCreds();
+    if (creds && creds.appId && creds.token && symsToFetch.length > 0) {
+      try {
+        const quotes = await fetchFyersQuotesBatch(symsToFetch);
+        const missing = [];
+        symsToFetch.forEach(sym => {
+          const sUpper = sym.toUpperCase();
+          const q = quotes[sUpper];
+          if (q && isFinite(q.price) && q.price > 0) {
+            _sccWatchlistData[sUpper] = { price: q.price, change: q.change, _source: 'fyers' };
+          } else {
+            missing.push(sUpper);
+          }
+        });
+        sccWatchlistRender();
+        if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+        missing.forEach(sUpper => {
+          sccWatchlistFetchSymbolData(sUpper);
+        });
+        return;
+      } catch (err) {
+        console.warn('[WL Fyers Batch fallback]', err.message);
+      }
+    }
+  }
+
   symsToFetch.forEach(sym => {
     const sUpper = sym.toUpperCase();
     if (bypassCache) {
@@ -6927,6 +7012,13 @@ function _maxFetchAndDraw(symbol) {
     if (loader) loader.style.display = 'none';
     _maxCandles = candles;
     _maxNiftyCandles = niftyCandles;
+    if (_chartDataSource === 'fyers' && Array.isArray(candles) && candles.length > 0 && typeof syncWatchlistPriceInDom === 'function') {
+      const lastC = candles[candles.length - 1];
+      const prevC = candles.length > 1 ? candles[candles.length - 2] : null;
+      const isDaily = (!is15m && !is1H && !isW && !isM);
+      const chg = (isDaily && prevC && prevC.close > 0) ? ((lastC.close - prevC.close) / prevC.close) * 100 : undefined;
+      syncWatchlistPriceInDom(symbol, lastC.close, chg, 'fyers');
+    }
     try {
       drawMaxChart();
       if (typeof _maxSetupInteraction === 'function') _maxSetupInteraction();
@@ -11280,6 +11372,12 @@ async function maxChartRenderSubTile(tileNum, symbol) {
       }
       clean.sort((a, b) => a.time - b.time);
       series.setData(clean);
+      if (_chartDataSource === 'fyers' && clean.length > 0 && typeof syncWatchlistPriceInDom === 'function') {
+        const lastC = clean[clean.length - 1];
+        const prevC = clean.length > 1 ? clean[clean.length - 2] : null;
+        const chg = (prevC && prevC.close > 0) ? ((lastC.close - prevC.close) / prevC.close) * 100 : undefined;
+        syncWatchlistPriceInDom(symbol, lastC.close, chg, 'fyers');
+      }
       resetChartPriceScale(chart, 'right');
       applyPreservedChartZoom(chart, clean.length, 'D');
       chart.subscribeDblClick(() => {
@@ -11638,6 +11736,7 @@ async function fyersExchangeAuthCode() {
       if (dsSelect) dsSelect.value = 'fyers';
 
       maxChartRefresh();
+      if (typeof sccWatchlistFetchAll === 'function') sccWatchlistFetchAll(true);
       return;
     } else {
       throw new Error((data && data.message) || 'Token generation failed');
@@ -11686,6 +11785,7 @@ function fyersSaveQuickToken() {
   if (dsSelect) dsSelect.value = 'fyers';
 
   maxChartRefresh();
+  if (typeof sccWatchlistFetchAll === 'function') sccWatchlistFetchAll(true);
 }
 window.fyersSaveQuickToken = fyersSaveQuickToken;
 
@@ -11875,6 +11975,84 @@ async function fetchFyersQuote(symbol) {
   throw lastErr;
 }
 
+async function fetchFyersQuotesBatch(symbols) {
+  const creds = fyersGetCreds();
+  if (!creds || !creds.appId || !creds.token) {
+    throw new Error('Fyers App ID or Access Token missing');
+  }
+  const authHeader = `${creds.appId}:${creds.token}`;
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+
+  const result = {};
+  const list = Array.from(new Set((symbols || []).map(s => String(s || '').toUpperCase().trim()).filter(Boolean)));
+  for (let i = 0; i < list.length; i += 50) {
+    const chunk = list.slice(i, i + 50);
+    const fyersToOrig = {};
+    const fyersSyms = [];
+    chunk.forEach(sym => {
+      const fSym = toFyersSymbol(sym);
+      if (!fyersToOrig[fSym]) {
+        fyersToOrig[fSym] = [];
+        fyersSyms.push(fSym);
+      }
+      fyersToOrig[fSym].push(sym);
+    });
+
+    const qs = `symbols=${encodeURIComponent(fyersSyms.join(','))}`;
+    const directUrl = `https://api-t1.fyers.in/data/quotes?${qs}`;
+    const urls = isLocal
+      ? [`http://localhost:9090/fyers/data/quotes?${qs}`, directUrl]
+      : [directUrl];
+
+    let data = null;
+    let lastErr;
+    for (const url of urls) {
+      try {
+        const resp = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': authHeader,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (!resp.ok) {
+          const errObj = await resp.json().catch(() => ({}));
+          throw new Error(errObj.message || errObj.error || (`HTTP ${resp.status}`));
+        }
+        data = await resp.json();
+        break;
+      } catch (e) {
+        lastErr = e;
+        if (url === urls[0] && urls.length > 1 && (e.name === 'TypeError' || e.message.includes('CORS') || e.message.includes('Failed to fetch'))) {
+          continue;
+        }
+        throw e;
+      }
+    }
+    if (!data) throw lastErr || new Error('No quotes response');
+
+    if (data.s === 'ok' && Array.isArray(data.d)) {
+      data.d.forEach(item => {
+        if (!item || item.s !== 'ok' || !item.v) return;
+        const v = item.v;
+        const ltp = Number(v.lp);
+        if (!isFinite(ltp) || ltp <= 0) return;
+        let chg = Number(v.chp);
+        if (!isFinite(chg) && Number(v.prev_close_price) > 0) {
+          chg = ((ltp - Number(v.prev_close_price)) / Number(v.prev_close_price)) * 100;
+        }
+        if (!isFinite(chg)) chg = 0;
+        const origSyms = fyersToOrig[item.n] || [];
+        origSyms.forEach(orig => {
+          result[orig] = { price: ltp, change: chg, prevClose: Number(v.prev_close_price) || null, _source: 'fyers' };
+        });
+      });
+    }
+  }
+  return result;
+}
+window.fetchFyersQuotesBatch = fetchFyersQuotesBatch;
+
 function stopFyersLivePolling() {
   if (_fyersLiveTimer) {
     clearInterval(_fyersLiveTimer);
@@ -11914,6 +12092,14 @@ function startFyersLivePolling({ symbol, interval, priceSeries, volSeries, lastC
       const v = await fetchFyersQuote(symbol);
       const ltp = Number(v.lp);
       if (!isFinite(ltp) || ltp <= 0) return;
+
+      let liveChg = Number(v.chp);
+      if (!isFinite(liveChg) && Number(v.prev_close_price) > 0) {
+        liveChg = ((ltp - Number(v.prev_close_price)) / Number(v.prev_close_price)) * 100;
+      }
+      if (typeof syncWatchlistPriceInDom === 'function') {
+        syncWatchlistPriceInDom(symbol, ltp, liveChg, 'fyers');
+      }
 
       const nowSec = Math.floor(Date.now() / 1000);
       let isNewBar = false;
@@ -11982,11 +12168,13 @@ function startFyersLivePolling({ symbol, interval, priceSeries, volSeries, lastC
     }
   };
 
+  setTimeout(pollOnce, 50);
   _fyersLiveTimer = setInterval(pollOnce, 3000);
 }
 window.startFyersLivePolling = startFyersLivePolling;
 
 function maxChartSetDataSource(source) {
+  const prevSource = _chartDataSource;
   if (source !== 'fyers' && typeof stopFyersLivePolling === 'function') {
     stopFyersLivePolling();
   }
@@ -11994,10 +12182,12 @@ function maxChartSetDataSource(source) {
   const dsSelect = document.getElementById('max-chart-datasource');
   if (dsSelect) dsSelect.value = source;
 
+  let shouldRefreshWl = (prevSource !== source);
   if (source === 'fyers') {
     const creds = fyersGetCreds();
     if (!creds || !creds.appId || !creds.token) {
       openFyersConnectModal();
+      shouldRefreshWl = false;
     } else {
       showChartToast('⚡ Connected to Fyers API (Free)', '#22c55e');
     }
@@ -12015,6 +12205,9 @@ function maxChartSetDataSource(source) {
     showChartToast('📈 Yahoo Finance Active', '#2962ff');
   }
   maxChartRefresh();
+  if (shouldRefreshWl && typeof sccWatchlistFetchAll === 'function') {
+    sccWatchlistFetchAll(true);
+  }
 }
 window.maxChartSetDataSource = maxChartSetDataSource;
 
@@ -12038,7 +12231,16 @@ function toggleMaxChartWatchlist() {
     }
   }, 80);
 
-  if (isHidden) updateMaxChartSidebarWatchlist();
+  if (isHidden) {
+    updateMaxChartSidebarWatchlist();
+    if (_chartDataSource === 'fyers' && typeof sccWatchlistFetchAll === 'function') {
+      const needsFyers = _sccWatchlistSymbols.slice(0, 50).some(s => {
+        const d = _sccWatchlistData[s.toUpperCase()];
+        return !d || d._source !== 'fyers';
+      });
+      if (needsFyers) sccWatchlistFetchAll();
+    }
+  }
 }
 window.toggleMaxChartWatchlist = toggleMaxChartWatchlist;
 
@@ -12749,8 +12951,8 @@ function updateMaxChartSidebarWatchlist() {
       '</div>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">' +
-      '<span style="color:#94a3b8;">' + price + '</span>' +
-      '<span style="color:' + chgColor + ';font-weight:600;min-width:44px;text-align:right;">' + chg + '</span>' +
+      '<span data-wl-price="' + sUpper + '" style="color:#94a3b8;">' + price + '</span>' +
+      '<span data-wl-chg="' + sUpper + '" style="color:' + chgColor + ';font-weight:600;min-width:44px;text-align:right;">' + chg + '</span>' +
       removeBtnHtml +
       '</div>' +
       '</div>';
