@@ -1504,6 +1504,31 @@
           </svg>
         </button>
 
+        <!-- Fullscreen button (TV style) -->
+        <button id="max-chart-fullscreen-btn" onclick="toggleMaxChartFullscreen()" class="tv-header-icon-btn"
+          title="Fullscreen mode">
+          <svg id="max-chart-fullscreen-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+            <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+            <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+            <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+          </svg>
+        </button>
+
+        <!-- Snapshot button (TV style) -->
+        <button id="max-chart-snapshot-btn" onclick="toggleMaxChartSnapshotMenu(event)" class="tv-header-icon-btn"
+          title="Take a snapshot">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </svg>
+        </button>
+
+        <!-- Divider -->
+        <div style="width:1px;height:18px;background:var(--border);flex-shrink:0;"></div>
+
         <!-- Close -->
         <button onclick="closeMaximizedChart()"
           style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;font-size:16px;color:var(--dim);background:none;border:1px solid transparent;cursor:pointer;border-radius:4px;line-height:1;flex-shrink:0;"
@@ -1736,6 +1761,35 @@
         </div>
         <div id="max-chart-table-container"
           style="flex-shrink:0;background:var(--bg3);border-top:1px solid var(--border);"></div>
+        <!-- Snapshot Dropdown Menu (TV style) -->
+        <div id="max-chart-snapshot-menu" class="tv-snapshot-menu" style="display:none;" onclick="event.stopPropagation()">
+          <button class="tv-snapshot-item" onclick="maxChartSnapshotAction('download')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span>Download image</span>
+          </button>
+          <button class="tv-snapshot-item" onclick="maxChartSnapshotAction('copy')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+            <span>Copy image</span>
+          </button>
+          <button class="tv-snapshot-item" onclick="maxChartSnapshotAction('open')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+            <span>Open image in new tab</span>
+          </button>
+        </div>
         <!-- TradingView Precise Coordinates & Style Settings Modal -->
         <div id="tv-coords-dialog"
           style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99999;background:#1e222d;border:1px solid #363c4e;border-radius:10px;box-shadow:0 20px 48px rgba(0,0,0,0.85);width:420px;max-width:94vw;max-height:90vh;color:#f0f3fa;font-family:-apple-system,BlinkMacSystemFont,'Trebuchet MS',sans-serif;padding:16px;box-sizing:border-box;">

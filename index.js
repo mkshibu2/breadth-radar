@@ -10962,6 +10962,10 @@ window.addEventListener('mousedown', e => {
 function closeMaximizedChart() {
   try { sessionStorage.removeItem('nse_active_max_chart'); } catch (e) { }
   if (typeof stopFyersLivePolling === 'function') stopFyersLivePolling();
+  if (typeof closeMaxChartSnapshotMenu === 'function') closeMaxChartSnapshotMenu();
+  if (document.fullscreenElement) {
+    try { document.exitFullscreen().catch(() => { }); } catch (e) { }
+  }
   const overlay = document.getElementById('chart-max-overlay');
   if (overlay) overlay.style.display = 'none';
   _selectedDrawingIndex = null;
@@ -11040,6 +11044,274 @@ function maxChartRefresh() {
   }
 }
 window.maxChartRefresh = maxChartRefresh;
+
+// ── TV-STYLE FULLSCREEN MODE & SNAPSHOT ──
+function resizeAllMaxCharts() {
+  const c1 = document.getElementById('max-chart-lw-container');
+  if (c1 && _maxLwChart) {
+    const r1 = c1.getBoundingClientRect();
+    if (r1.width > 20 && r1.height > 20) {
+      try { _maxLwChart.resize(r1.width, r1.height); } catch (e) { }
+    }
+  }
+  for (let i = 2; i <= 4; i++) {
+    const ci = document.getElementById('max-chart-lw-container-' + i);
+    if (ci && ci.style.display !== 'none' && _subLwCharts[i]) {
+      const ri = ci.getBoundingClientRect();
+      if (ri.width > 20 && ri.height > 20) {
+        try { _subLwCharts[i].resize(ri.width, ri.height); } catch (e) { }
+      }
+    }
+  }
+  if (typeof syncCanvasSize === 'function') syncCanvasSize();
+  if (typeof redrawChartDrawings === 'function') redrawChartDrawings();
+}
+
+function syncMaxChartFullscreenUI() {
+  const isFs = !!document.fullscreenElement;
+  const btn = document.getElementById('max-chart-fullscreen-btn');
+  const icon = document.getElementById('max-chart-fullscreen-icon');
+  if (btn) {
+    btn.classList.toggle('active', isFs);
+    btn.title = isFs ? 'Exit Fullscreen (Esc)' : 'Fullscreen mode';
+  }
+  if (icon) {
+    icon.innerHTML = isFs
+      ? '<path d="M4 14h6v6" /><path d="M20 10h-6V4" /><path d="M14 10l7-7" /><path d="M3 21l7-7" />'
+      : '<path d="M8 3H5a2 2 0 0 0-2 2v3" /><path d="M21 8V5a2 2 0 0 0-2-2h-3" /><path d="M3 16v3a2 2 0 0 0 2 2h3" /><path d="M16 21h3a2 2 0 0 0 2-2v-3" />';
+  }
+}
+
+async function toggleMaxChartFullscreen() {
+  closeMaxChartSnapshotMenu();
+  const target = document.documentElement;
+  try {
+    if (!document.fullscreenElement) {
+      if (target.requestFullscreen) {
+        await target.requestFullscreen();
+      } else if (target.webkitRequestFullscreen) {
+        target.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+  } catch (err) {
+    if (typeof showChartToast === 'function') {
+      showChartToast('Fullscreen unavailable in this view', '#f59e0b');
+    }
+  }
+  syncMaxChartFullscreenUI();
+  setTimeout(resizeAllMaxCharts, 80);
+}
+window.toggleMaxChartFullscreen = toggleMaxChartFullscreen;
+
+document.addEventListener('fullscreenchange', () => {
+  syncMaxChartFullscreenUI();
+  setTimeout(resizeAllMaxCharts, 80);
+});
+
+function closeMaxChartSnapshotMenu() {
+  const menu = document.getElementById('max-chart-snapshot-menu');
+  const btn = document.getElementById('max-chart-snapshot-btn');
+  if (menu) menu.style.display = 'none';
+  if (btn) btn.classList.remove('active');
+}
+window.closeMaxChartSnapshotMenu = closeMaxChartSnapshotMenu;
+
+function toggleMaxChartSnapshotMenu(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('max-chart-snapshot-menu');
+  const btn = document.getElementById('max-chart-snapshot-btn');
+  if (!menu || !btn) return;
+  const isOpen = menu.style.display === 'flex';
+  if (isOpen) {
+    closeMaxChartSnapshotMenu();
+    return;
+  }
+  const rect = btn.getBoundingClientRect();
+  menu.style.display = 'flex';
+  const menuW = 196;
+  const left = Math.max(8, Math.min(rect.right - menuW, window.innerWidth - menuW - 8));
+  menu.style.top = (rect.bottom + 6) + 'px';
+  menu.style.left = left + 'px';
+  btn.classList.add('active');
+}
+window.toggleMaxChartSnapshotMenu = toggleMaxChartSnapshotMenu;
+
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('max-chart-snapshot-menu');
+  if (!menu || menu.style.display === 'none') return;
+  if (!e.target.closest('#max-chart-snapshot-menu') && !e.target.closest('#max-chart-snapshot-btn')) {
+    closeMaxChartSnapshotMenu();
+  }
+});
+
+function captureMaxChartSnapshotCanvas() {
+  const stage = document.getElementById('max-chart-stage');
+  if (!stage) return null;
+  const stageRect = stage.getBoundingClientRect();
+  const w = Math.max(1, Math.round(stageRect.width));
+  const h = Math.max(1, Math.round(stageRect.height));
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  const out = document.createElement('canvas');
+  out.width = Math.round(w * dpr);
+  out.height = Math.round(h * dpr);
+  const ctx = out.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // Base background
+  ctx.fillStyle = '#050508';
+  ctx.fillRect(0, 0, w, h);
+
+  // Composite LightweightCharts instances (single or multi-chart layout)
+  const tiles = [
+    { id: 'max-chart-lw-container', chart: _maxLwChart },
+    { id: 'max-chart-lw-container-2', chart: _subLwCharts[2] },
+    { id: 'max-chart-lw-container-3', chart: _subLwCharts[3] },
+    { id: 'max-chart-lw-container-4', chart: _subLwCharts[4] }
+  ];
+
+  let drewAnyChart = false;
+  for (const t of tiles) {
+    const el = document.getElementById(t.id);
+    if (!el || el.style.display === 'none' || !t.chart || typeof t.chart.takeScreenshot !== 'function') continue;
+    const r = el.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) continue;
+    try {
+      const shot = t.chart.takeScreenshot();
+      if (shot) {
+        ctx.drawImage(shot, r.left - stageRect.left, r.top - stageRect.top, r.width, r.height);
+        drewAnyChart = true;
+      }
+    } catch (e) { }
+  }
+
+  // Fallback canvas if LightweightCharts wasn't active
+  if (!drewAnyChart) {
+    const fb = document.getElementById('max-chart-canvas');
+    if (fb && fb.style.display !== 'none' && fb.width > 0 && fb.height > 0) {
+      ctx.drawImage(fb, 0, 0, w, h);
+    }
+  }
+
+  // Draw multi-chart tile dividers if in multi-chart mode
+  if (typeof _maxChartLayout !== 'undefined' && _maxChartLayout !== '1') {
+    ctx.strokeStyle = '#2a2e39';
+    ctx.lineWidth = 1;
+    if (_maxChartLayout === '2h' || _maxChartLayout === '4') {
+      ctx.beginPath(); ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2, h); ctx.stroke();
+    }
+    if (_maxChartLayout === '2v' || _maxChartLayout === '4') {
+      ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
+    }
+  }
+
+  // Composite user drawings overlay canvas
+  const drawCanvas = document.getElementById('max-chart-draw-canvas');
+  if (drawCanvas && drawCanvas.style.display !== 'none' && drawCanvas.width > 0 && drawCanvas.height > 0) {
+    ctx.drawImage(drawCanvas, 0, 0, w, h);
+  }
+
+  // Top-left TV-style symbol + timeframe label
+  const sym = (_sdMaximizedChartSymbol || 'CHART').toUpperCase().replace('.NS', '');
+  const tf = _sdChartsInterval || 'D';
+  const company = _sdMaximizedChartCompany && _sdMaximizedChartCompany !== '—' ? ('  ·  ' + _sdMaximizedChartCompany) : '';
+  const headerText = `${sym} · ${tf}${company}`;
+  ctx.font = "700 12px -apple-system, BlinkMacSystemFont, 'Trebuchet MS', sans-serif";
+  const textW = ctx.measureText(headerText).width;
+  ctx.fillStyle = 'rgba(19, 23, 34, 0.82)';
+  ctx.fillRect(10, 10, Math.min(textW + 18, w - 20), 24);
+  ctx.strokeStyle = '#2a2e39';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(10, 10, Math.min(textW + 18, w - 20), 24);
+  ctx.fillStyle = '#f0f3fa';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(headerText, 19, 22);
+
+  // Subtle bottom-left watermark
+  const stamp = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  ctx.font = "600 10px -apple-system, BlinkMacSystemFont, 'Trebuchet MS', sans-serif";
+  ctx.fillStyle = 'rgba(148, 163, 184, 0.55)';
+  ctx.fillText(`Breadth Radar · ${stamp}`, 12, h - 14);
+
+  return out;
+}
+
+function flashSnapshotStage() {
+  const stage = document.getElementById('max-chart-stage');
+  if (!stage) return;
+  const flash = document.createElement('div');
+  flash.style.cssText = 'position:absolute;inset:0;background:rgba(255,255,255,0.18);pointer-events:none;z-index:99;transition:opacity 0.28s ease-out;opacity:1;';
+  stage.appendChild(flash);
+  requestAnimationFrame(() => { flash.style.opacity = '0'; });
+  setTimeout(() => { flash.remove(); }, 300);
+}
+
+async function maxChartSnapshotAction(action) {
+  closeMaxChartSnapshotMenu();
+  const canvas = captureMaxChartSnapshotCanvas();
+  if (!canvas) {
+    if (typeof showChartToast === 'function') showChartToast('Unable to capture chart snapshot', '#ef4444');
+    return;
+  }
+  flashSnapshotStage();
+
+  const sym = (_sdMaximizedChartSymbol || 'CHART').toUpperCase().replace('.NS', '');
+  const tf = _sdChartsInterval || 'D';
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const filename = `${sym}_${tf}_${dateStr}.png`;
+
+  if (action === 'download') {
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    if (typeof showChartToast === 'function') showChartToast(`📷 Saved <b>${filename}</b>`, '#2dd4bf');
+    return;
+  }
+
+  if (action === 'open') {
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }, 'image/png');
+    return;
+  }
+
+  if (action === 'copy') {
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      try {
+        if (navigator.clipboard && window.ClipboardItem) {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          if (typeof showChartToast === 'function') showChartToast('📋 Snapshot copied to clipboard', '#2dd4bf');
+          return;
+        }
+      } catch (err) { }
+      // Fallback to download if clipboard write is blocked
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      if (typeof showChartToast === 'function') showChartToast(`📷 Clipboard blocked — downloaded <b>${filename}</b>`, '#f59e0b');
+    }, 'image/png');
+  }
+}
+window.maxChartSnapshotAction = maxChartSnapshotAction;
 
 function loadSeedIntoModal() { }
 window.loadSeedIntoModal = loadSeedIntoModal;
