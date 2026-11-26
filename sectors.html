@@ -158,30 +158,98 @@
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       overflow: hidden;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       flex: 1;
+      min-height: 0;
     }
 
     .scc-tab-bar {
       display: flex;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      border-bottom: 1px solid var(--border);
+      flex-direction: column;
+      width: 190px;
+      flex-shrink: 0;
+      border-right: 1px solid var(--border);
       background: var(--bg3);
-      flex-wrap: nowrap !important;
+      padding: 12px 8px;
+      gap: 4px;
     }
 
-    .scc-tab-bar::-webkit-scrollbar {
-      display: none;
+    .scc-side-hdr {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--dim);
+      padding: 4px 10px 8px;
     }
 
-    .scc-tab {
+    .scc-tab-bar .scc-tab {
       white-space: nowrap;
       flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border-bottom: none !important;
+      border-left: 3px solid transparent;
+      font-size: 11.5px;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .scc-tab-bar .scc-tab:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text) !important;
+    }
+
+    .scc-tab-bar .scc-tab.active {
+      background: rgba(45, 212, 191, 0.09);
+      border-left-color: currentColor;
+    }
+
+    .sectors-content-pane {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
     }
 
     @media (max-width: 900px) {
+      .sectors-card-shell {
+        flex-direction: column;
+      }
+
+      .scc-tab-bar {
+        flex-direction: row;
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 0;
+        gap: 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        flex-wrap: nowrap !important;
+      }
+
+      .scc-tab-bar::-webkit-scrollbar {
+        display: none;
+      }
+
+      .scc-side-hdr {
+        display: none;
+      }
+
+      .scc-tab-bar .scc-tab {
+        border-left: none;
+        border-radius: 0;
+        padding: 10px 12px;
+      }
+
+      .scc-tab-bar .scc-tab.active {
+        background: transparent;
+      }
       .topbar {
         height: auto;
         padding: 8px 12px;
@@ -347,9 +415,10 @@
   <!-- Full-Page Sector Command Workspace -->
   <main class="sectors-main-wrap">
     <div class="sectors-card-shell" id="srt-home-card">
-      <div class="scc-tab-bar">
-        <div id="scc-tab-breadth" class="scc-tab" onclick="sccTab('breadth')"
-          style="border-bottom-color: var(--teal); color: var(--teal); font-weight: 700;">
+      <aside class="scc-tab-bar" aria-label="Sector Command Views">
+        <div class="scc-side-hdr">Sector Command</div>
+        <div id="scc-tab-breadth" class="scc-tab active" onclick="sccTab('breadth')"
+          style="color: var(--teal); font-weight: 700;">
           <span style="color:inherit;font-weight:inherit">📶 SECTORS</span>
           <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-breadth',this)"
             title="About SECTORS tab features">i</button>
@@ -369,13 +438,9 @@
           <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-heatmap',this)"
             title="About Heatmap tab features">i</button>
         </div>
-        <div id="scc-tab-chart" class="scc-tab" onclick="sccTab('chart')">
-          <span style="color:inherit;font-weight:inherit">📈 Chart</span>
-          <button class="info-btn" onclick="event.stopPropagation();showInfoTip('scc-feature-chart',this)"
-            title="About Chart tab features">i</button>
-        </div>
-      </div>
+      </aside>
 
+      <div class="sectors-content-pane">
       <div id="scc-pane-breadth">
 
         <div id="vcpb-source-row"
@@ -984,6 +1049,7 @@
           <!-- Dynamically rendered cluster cards -->
         </div>
       </div>
+      </div>
     </div>
   </main>
 
@@ -1105,6 +1171,12 @@
           title="Toggle Shortlist (Press 'S' to toggle)">
           ☆ Shortlist
         </button>
+
+        <!-- Divider -->
+        <div style="width:1px;height:20px;background:var(--border);flex-shrink:0;"></div>
+
+        <!-- MarketSmith 4-Score Ratings (inline in header, zero chart space lost) -->
+        <div id="max-chart-ms-bar" class="ms-ratings-bar inline" style="display:none;"></div>
 
         <!-- Divider -->
         <div style="width:1px;height:20px;background:var(--border);flex-shrink:0;"></div>
@@ -1967,6 +2039,8 @@
   </div>
 
   <script src="radar_themes.js"></script>
+  <script src="chart_core.js?v=1.0.0"></script>
+  <script src="chart_draw.js?v=1.0.0"></script>
   <script src="index.js?v=3.1.9"></script>
 
   <script>
@@ -1977,7 +2051,8 @@
       if (sideSelect) sideSelect.value = mode;
 
       const urlParams = new URLSearchParams(window.location.search);
-      const tab = urlParams.get('tab') || 'breadth';
+      const rawTab = urlParams.get('tab');
+      const tab = (rawTab && rawTab !== 'chart') ? rawTab : 'breadth';
       if (typeof sccTab === 'function') {
         sccTab(tab);
       }
