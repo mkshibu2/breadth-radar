@@ -2075,6 +2075,30 @@
         display: none;
       }
     }
+    /* ── MARKETSMITH 4-SCORE RATINGS BAR ── */
+    .ms-ratings-bar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 4px 12px;
+      background: #0a0f1a;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .ms-ratings-bar::-webkit-scrollbar { display: none; }
+    .ms-rating-item { display: flex; flex-direction: column; gap: 1px; min-width: 82px; flex-shrink: 0; }
+    .ms-rating-label { font-size: 8.5px; font-weight: 600; color: #8b949e; line-height: 1.1; }
+    .ms-rating-val { font-size: 10.5px; font-weight: 800; font-family: 'JetBrains Mono', monospace; line-height: 1.2; }
+    .ms-rating-track { width: 100%; height: 2.5px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; margin-top: 1px; }
+    .ms-rating-fill { height: 100%; border-radius: 2px; transition: width 0.25s ease; }
+    .ms-tone-great .ms-rating-val { color: #38bdf8; } .ms-tone-great .ms-rating-fill { background: #3b82f6; }
+    .ms-tone-good .ms-rating-val { color: #60a5fa; } .ms-tone-good .ms-rating-fill { background: #3b82f6; }
+    .ms-tone-fair .ms-rating-val { color: #94a3b8; } .ms-tone-fair .ms-rating-fill { background: #64748b; }
+    .ms-tone-poor .ms-rating-val { color: #f87171; } .ms-tone-poor .ms-rating-fill { background: #ef4444; }
+    .ms-ratings-meta { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 9.5px; color: #8b949e; flex-shrink: 0; }
+    .ms-meta-pill { padding: 1px 6px; border-radius: 3px; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.28); color: #93c5fd; font-weight: 700; white-space: nowrap; }
   </style>
 </head>
 
@@ -2296,17 +2320,14 @@
     <!-- RIGHT: INTEGRATED LIVE CHART PANEL (LIGHTWEIGHT CHARTS) -->
     <div class="chart-panel" id="chart-panel">
       <div class="chart-panel-header">
-        <div class="chart-title-group">
+        <div class="chart-title-group" style="flex:1;min-width:0;gap:10px;">
           <a class="chart-sym" id="chart-active-sym" href="#" onclick="openActiveStockPersonalTv();return false;"
             title="Click to open in Personal TradingView Chart Studio Layout">DIVISLAB</a>
-          <div style="display:flex;flex-direction:column;gap:1px;overflow:hidden;min-width:0;">
-            <span class="chart-comp" id="chart-active-comp">Divi's Laboratories Limited</span>
-            <span id="chart-active-sector" title="Sector: Health Technology | Industry: Pharmaceuticals: Major">Health Technology • Pharmaceuticals: Major</span>
-          </div>
-          <div style="display:flex;align-items:baseline;gap:6px;margin-left:6px;">
+          <div style="display:flex;align-items:baseline;gap:6px;flex-shrink:0;">
             <span class="chart-price" id="chart-active-price">₹11,696.00</span>
             <span class="chart-chg" id="chart-active-chg" style="color:var(--lime);">+4.66%</span>
           </div>
+          <div id="screener-ms-bar" class="ms-ratings-bar" style="display:none;flex:1;min-width:0;background:transparent;border-bottom:none;padding:0 4px;"></div>
         </div>
 
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
@@ -3964,6 +3985,7 @@
 
     function handleRowClick(sym, rowEl) {
       ACTIVE_STOCK_SYMBOL = sym;
+      renderScreenerMsBar(sym);
       document.querySelectorAll('#table-body tr').forEach(function (r) { r.classList.remove('selected-row'); });
       if (rowEl) rowEl.classList.add('selected-row');
 
@@ -4148,6 +4170,7 @@
 
     function selectStockForChart(sym, rowEl) {
       ACTIVE_STOCK_SYMBOL = sym;
+      renderScreenerMsBar(sym);
 
       // Highlight row in table
       document.querySelectorAll('#table-body tr').forEach(function (r) { r.classList.remove('selected-row'); });
@@ -4739,15 +4762,94 @@
       box.style.display = 'block';
     }
 
+    async function renderScreenerMsBar(sym) {
+      var el = document.getElementById('screener-ms-bar');
+      if (!el) return;
+      var s = String(sym || '').trim().toUpperCase().replace(/\.(NS|BO)$/i, '');
+      if (!s || s === '^NSEI') { el.style.display = 'none'; return; }
+      el.dataset.msSym = s;
+      el.style.display = 'flex';
+      el.innerHTML = '<span style="font-size:10px;color:#8b949e;">Loading MS ratings…</span>';
+
+      var data = null;
+      try {
+        var store = JSON.parse(localStorage.getItem('nse_ms_ratings_v1') || '{}');
+        if (store[s] && (Date.now() - (store[s].fetchedAt || 0)) < 6 * 60 * 60 * 1000) data = store[s];
+      } catch (e) { }
+
+      if (!data) {
+        var urls = ['http://localhost:9090/ms-ratings?symbol=' + encodeURIComponent(s)];
+        try {
+          var cf = (localStorage.getItem('nse_cf_worker_url') || '').trim().replace(/\/+$/, '');
+          if (cf) urls.push(cf + '/api/ms-ratings?symbol=' + encodeURIComponent(s));
+        } catch (e) { }
+        for (var i = 0; i < urls.length; i++) {
+          try {
+            var res = await fetch(urls[i]);
+            if (res.ok) {
+              var j = await res.json();
+              if (j && j.ok) {
+                data = j;
+                try {
+                  var st = JSON.parse(localStorage.getItem('nse_ms_ratings_v1') || '{}');
+                  st[s] = j;
+                  localStorage.setItem('nse_ms_ratings_v1', JSON.stringify(st));
+                } catch (e) { }
+                break;
+              }
+            }
+          } catch (e) { }
+        }
+      }
+
+      if (el.dataset.msSym !== s) return;
+      if (!data) { el.style.display = 'none'; return; }
+
+      function meta(kind, raw) {
+        var v = raw != null ? String(raw).trim() : '';
+        if (!v) return { label: '—', val: '—', pct: 0, tone: 'fair' };
+        if (kind === 'eps' || kind === 'price') {
+          var n = parseInt(v, 10);
+          if (isNaN(n)) return { label: '—', val: v, pct: 0, tone: 'fair' };
+          return { label: n >= 80 ? 'GREAT' : n >= 60 ? 'GOOD' : n >= 40 ? 'FAIR' : 'POOR', val: String(n), pct: Math.max(4, Math.min(100, n)), tone: n >= 80 ? 'great' : n >= 60 ? 'good' : n >= 40 ? 'fair' : 'poor' };
+        }
+        if (kind === 'demand') {
+          var u = v.toUpperCase();
+          var m = { 'A+':['GREAT',98,'great'], 'A':['GREAT',92,'great'], 'A-':['GREAT',85,'great'], 'B+':['GOOD',78,'good'], 'B':['GOOD',70,'good'], 'B-':['GOOD',62,'good'], 'C+':['FAIR',54,'fair'], 'C':['FAIR',46,'fair'], 'C-':['FAIR',38,'fair'], 'D+':['POOR',28,'poor'], 'D':['POOR',20,'poor'], 'D-':['POOR',14,'poor'], 'E':['POOR',8,'poor'] }[u] || ['FAIR',50,'fair'];
+          return { label: m[0], val: u, pct: m[1], tone: m[2] };
+        }
+        var p = v.match(/(\d+)\s*of\s*(\d+)/i);
+        var r = p ? parseInt(p[1], 10) : parseInt(v, 10);
+        var tot = p ? parseInt(p[2], 10) : 197;
+        if (isNaN(r)) return { label: '—', val: v, pct: 0, tone: 'fair' };
+        return { label: r <= 40 ? 'GREAT' : r <= 80 ? 'GOOD' : r <= 130 ? 'FAIR' : 'POOR', val: String(r), pct: Math.max(6, Math.min(100, Math.round(((tot - r + 1) / tot) * 100))), tone: r <= 40 ? 'great' : r <= 80 ? 'good' : r <= 130 ? 'fair' : 'poor' };
+      }
+
+      var items = [
+        ['EPS Strength', meta('eps', data.epsStrength)],
+        ['Price Strength', meta('price', data.priceStrength)],
+        ['Buyer Demand', meta('demand', data.buyerDemand)],
+        ['Group Rank', meta('group', data.groupRank)]
+      ];
+      var html = items.map(function (it) {
+        var m = it[1];
+        var txt = m.label !== '—' ? (m.label + ' : ' + m.val) : '—';
+        return '<div class="ms-rating-item ms-tone-' + m.tone + '"><div class="ms-rating-label">' + it[0] + '</div><div class="ms-rating-val">' + txt + '</div><div class="ms-rating-track"><div class="ms-rating-fill" style="width:' + m.pct + '%"></div></div></div>';
+      }).join('');
+      if (data.masterScore) html += '<div class="ms-ratings-meta"><span class="ms-meta-pill">Master: ' + data.masterScore + '</span></div>';
+      el.innerHTML = html;
+    }
+
     async function updateChartPanel(sym) {
       var stock = STOCKS_DATA.find(function (s) { return s.symbol === sym; });
       if (!stock) return;
 
       ACTIVE_STOCK_SYMBOL = sym;
+      renderScreenerMsBar(sym);
 
       document.getElementById('chart-active-sym').textContent = stock.symbol;
-      document.getElementById('chart-active-comp').textContent = stock.company || stock.symbol;
-      document.getElementById('chart-active-comp').title = stock.company || stock.symbol;
+      var compEl = document.getElementById('chart-active-comp');
+      if (compEl) { compEl.textContent = stock.company || stock.symbol; compEl.title = stock.company || stock.symbol; }
       document.getElementById('chart-active-price').textContent = '₹' + stock.price.toLocaleString('en-IN', { minimumFractionDigits: 2 });
 
       var chgEl = document.getElementById('chart-active-chg');

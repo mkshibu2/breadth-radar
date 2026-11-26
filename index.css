@@ -1429,6 +1429,145 @@ body {
   color: #ffffff;
 }
 
+/* ── MARKETSMITH 4-SCORE RATINGS BAR ── */
+.ms-ratings-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 5px 14px;
+  background: #0c1018;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ms-ratings-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.ms-rating-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 112px;
+  flex-shrink: 0;
+}
+
+.ms-rating-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: #8b949e;
+  letter-spacing: 0.2px;
+  line-height: 1.1;
+}
+
+.ms-rating-val {
+  font-size: 11px;
+  font-weight: 800;
+  font-family: var(--mono);
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+}
+
+.ms-rating-track {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 1px;
+}
+
+.ms-rating-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.25s ease;
+}
+
+.ms-tone-great .ms-rating-val { color: #38bdf8; }
+.ms-tone-great .ms-rating-fill { background: #3b82f6; }
+
+.ms-tone-good .ms-rating-val { color: #60a5fa; }
+.ms-tone-good .ms-rating-fill { background: #3b82f6; }
+
+.ms-tone-fair .ms-rating-val { color: #94a3b8; }
+.ms-tone-fair .ms-rating-fill { background: #64748b; }
+
+.ms-tone-poor .ms-rating-val { color: #f87171; }
+.ms-tone-poor .ms-rating-fill { background: #ef4444; }
+
+.ms-ratings-meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  font-size: 10px;
+  color: #8b949e;
+}
+
+.ms-meta-pill {
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Compact variant for Watchlist & Sector Drilldown multi-chart cards */
+.ms-ratings-bar.compact {
+  gap: 10px;
+  padding: 3px 8px;
+  background: #0a0d14;
+}
+
+.ms-ratings-bar.compact .ms-rating-item {
+  min-width: 72px;
+  gap: 1px;
+}
+
+.ms-ratings-bar.compact .ms-rating-label {
+  font-size: 8px;
+}
+
+.ms-ratings-bar.compact .ms-rating-val {
+  font-size: 10px;
+}
+
+.ms-ratings-bar.compact .ms-rating-track {
+  height: 2px;
+}
+
+.ms-ratings-bar.compact .ms-ratings-meta {
+  display: none;
+}
+
+/* Inline header variant (zero vertical chart space lost) */
+.ms-ratings-bar.inline {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border-bottom: none;
+  padding: 0 4px;
+  gap: 14px;
+}
+
+.ms-ratings-bar.inline .ms-rating-item {
+  min-width: 88px;
+}
+
+.ms-ratings-bar.inline.compact {
+  gap: 8px;
+  padding: 0 2px;
+}
+
+.ms-ratings-bar.inline.compact .ms-rating-item {
+  min-width: 56px;
+}
+
 .max-suggest-box {
   position: absolute;
   top: 100%;

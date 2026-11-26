@@ -185,6 +185,26 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // 2d. MarketSmith India Ratings (/ms-ratings?symbol=RELIANCE)
+  if (parsedUrl.pathname === '/ms-ratings') {
+    const rawSym = (parsedUrl.query.symbol || '').toString().trim().toUpperCase().replace(/\.(NS|BO)$/i, '');
+    if (!rawSym) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: 'Missing symbol parameter' }));
+      return;
+    }
+    getMarketSmithRatings(rawSym)
+      .then((data) => {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(data));
+      })
+      .catch((err) => {
+        res.writeHead(502, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, symbol: rawSym, error: err.message }));
+      });
+    return;
+  }
+
   // 3. Route Yahoo Finance / Chart / TradingView Scanner requests (using ?url= parameter)
   const targetUrl = parsedUrl.query.url;
   if (!targetUrl) {
@@ -268,3 +288,98 @@ server.listen(PORT, () => {
   console.log('\nKeep this window open. Chart and Dhan features');
   console.log('will now work dynamically from your dashboard.\n');
 });
+
+// ── MARKETSMITH INDIA RATINGS HELPER ──
+const _msSession = { token: '', fetchedAt: 0 };
+const _msRatingsCache = new Map(); // symbol -> { data, ts }
+const MS_CACHE_TTL = 6 * 60 * 60 * 1000;
+const MS_BASE = 'https://marketsmithindia.com/gateway/simple-api/ms-india';
+
+function httpGetText(targetUrl, headers = {}) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(targetUrl, { headers }, (resp) => {
+      let body = '';
+      resp.on('data', (c) => { body += c; });
+      resp.on('end', () => resolve({ status: resp.statusCode, headers: resp.headers, body }));
+    });
+    req.setTimeout(12000, () => req.destroy(new Error('MarketSmith request timeout')));
+    req.on('error', reject);
+  });
+}
+
+async function getMsSessionToken(force = false) {
+  if (!force && _msSession.token && (Date.now() - _msSession.fetchedAt) < 25 * 60 * 1000) {
+    return _msSession.token;
+  }
+  const resp = await httpGetText('https://marketsmithindia.com/mstool/eval/reliance/evaluation.jsp', {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+  });
+  const setCookies = resp.headers['set-cookie'] || [];
+  for (const c of setCookies) {
+    const m = c.match(/MSSESSIONID=([^;]+)/);
+    if (m) {
+      _msSession.token = m[1];
+      _msSession.fetchedAt = Date.now();
+      return _msSession.token;
+    }
+  }
+  throw new Error('Could not obtain MarketSmith session token');
+}
+
+async function getMarketSmithRatings(symbol) {
+  const cached = _msRatingsCache.get(symbol);
+  if (cached && (Date.now() - cached.ts) < MS_CACHE_TTL) {
+    return cached.data;
+  }
+
+  const ua = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'Referer': 'https://marketsmithindia.com/',
+  };
+
+  const srchResp = await httpGetText(`${MS_BASE}/instr/srch.json?text=${encodeURIComponent(symbol)}&lang=en&ver=2`, ua);
+  if (srchResp.status !== 200) throw new Error(`MS search HTTP ${srchResp.status}`);
+  const srchJson = JSON.parse(srchResp.body);
+  const results = (srchJson.response && srchJson.response.results) || [];
+  if (!results.length) throw new Error(`Symbol ${symbol} not found on MarketSmith`);
+
+  const match = results.find((x) => String(x.symbol || '').toUpperCase() === symbol) || results[0];
+  const instrId = match.instrumentId;
+  if (!instrId) throw new Error(`No instrumentId for ${symbol}`);
+
+  let token = await getMsSessionToken(false);
+  let wResp = await httpGetText(
+    `${MS_BASE}/instr/0/${instrId}/wisdom.json?lang=en&ver=2&x=y&ms-auth=${encodeURIComponent(token)}`,
+    { ...ua, 'Cookie': `MSSESSIONID=${token}` }
+  );
+  if (wResp.status === 401 || wResp.status === 403) {
+    token = await getMsSessionToken(true);
+    wResp = await httpGetText(
+      `${MS_BASE}/instr/0/${instrId}/wisdom.json?lang=en&ver=2&x=y&ms-auth=${encodeURIComponent(token)}`,
+      { ...ua, 'Cookie': `MSSESSIONID=${token}` }
+    );
+  }
+  if (wResp.status !== 200) throw new Error(`MS wisdom HTTP ${wResp.status}`);
+
+  const wJson = JSON.parse(wResp.body);
+  const items = (wJson.response && wJson.response.results) || [];
+  const pick = (msid) => {
+    const it = items.find((x) => Number(x.msid) === msid);
+    return it ? (it.itemValue != null ? String(it.itemValue) : null) : null;
+  };
+
+  const data = {
+    ok: true,
+    symbol,
+    instrumentId: instrId,
+    epsStrength: pick(4589),
+    priceStrength: pick(2),
+    buyerDemand: pick(5),
+    groupRank: pick(1989),
+    masterScore: pick(1746),
+    marketDirection: pick(4453),
+    fetchedAt: Date.now(),
+  };
+  _msRatingsCache.set(symbol, { data, ts: Date.now() });
+  return data;
+}

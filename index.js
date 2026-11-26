@@ -35,6 +35,165 @@ function showChartToast(msg, color = '#2962ff') {
 }
 window.showChartToast = showChartToast;
 
+// ── MARKETSMITH INDIA 4-SCORE RATINGS (EPS, PRICE, BUYER DEMAND, GROUP RANK) ──
+const _msRatingsMemCache = new Map();
+const _msRatingsInFlight = new Map();
+const LS_MS_RATINGS = 'nse_ms_ratings_v1';
+const MS_RATINGS_TTL = 6 * 60 * 60 * 1000;
+
+function _msLoadStore() {
+  try { return JSON.parse(localStorage.getItem(LS_MS_RATINGS) || '{}'); } catch (e) { return {}; }
+}
+
+function _msSaveStore(sym, data) {
+  try {
+    const store = _msLoadStore();
+    const keys = Object.keys(store);
+    if (keys.length > 250) {
+      keys.sort((a, b) => (store[a].fetchedAt || 0) - (store[b].fetchedAt || 0));
+      for (let i = 0; i < keys.length - 200; i++) delete store[keys[i]];
+    }
+    store[sym] = data;
+    localStorage.setItem(LS_MS_RATINGS, JSON.stringify(store));
+  } catch (e) { }
+}
+
+function _getMsEndpoints(sym) {
+  const urls = [`http://localhost:9090/ms-ratings?symbol=${encodeURIComponent(sym)}`];
+  try {
+    const cfUrl = (localStorage.getItem('nse_cf_worker_url') || '').trim().replace(/\/+$/, '');
+    if (cfUrl) urls.push(`${cfUrl}/api/ms-ratings?symbol=${encodeURIComponent(sym)}`);
+  } catch (e) { }
+  return urls;
+}
+
+async function fetchMsRatings(symbol) {
+  const sym = String(symbol || '').trim().toUpperCase().replace(/\.(NS|BO)$/i, '');
+  if (!sym || sym === '-' || sym === '^NSEI') return null;
+
+  const mem = _msRatingsMemCache.get(sym);
+  if (mem && (Date.now() - (mem.fetchedAt || 0)) < MS_RATINGS_TTL) return mem;
+
+  const store = _msLoadStore();
+  if (store[sym] && (Date.now() - (store[sym].fetchedAt || 0)) < MS_RATINGS_TTL) {
+    _msRatingsMemCache.set(sym, store[sym]);
+    return store[sym];
+  }
+
+  if (_msRatingsInFlight.has(sym)) return _msRatingsInFlight.get(sym);
+
+  const p = (async () => {
+    for (const url of _getMsEndpoints(sym)) {
+      try {
+        const res = await fetch(url, { signal: AbortSignal.timeout ? AbortSignal.timeout(9000) : undefined });
+        if (!res.ok) continue;
+        const json = await res.json();
+        if (json && json.ok) {
+          _msRatingsMemCache.set(sym, json);
+          _msSaveStore(sym, json);
+          return json;
+        }
+      } catch (e) { }
+    }
+    return null;
+  })();
+
+  _msRatingsInFlight.set(sym, p);
+  try { return await p; } finally { _msRatingsInFlight.delete(sym); }
+}
+window.fetchMsRatings = fetchMsRatings;
+
+function msScoreMeta(kind, rawVal) {
+  const val = rawVal != null ? String(rawVal).trim() : '';
+  if (!val) return { label: '—', displayVal: '—', pct: 0, tone: 'fair' };
+
+  if (kind === 'eps' || kind === 'price') {
+    const n = parseInt(val, 10);
+    if (isNaN(n)) return { label: '—', displayVal: val, pct: 0, tone: 'fair' };
+    const tone = n >= 80 ? 'great' : n >= 60 ? 'good' : n >= 40 ? 'fair' : 'poor';
+    const label = n >= 80 ? 'GREAT' : n >= 60 ? 'GOOD' : n >= 40 ? 'FAIR' : 'POOR';
+    return { label, displayVal: String(n), pct: Math.min(100, Math.max(4, n)), tone };
+  }
+
+  if (kind === 'demand') {
+    const u = val.toUpperCase();
+    const map = {
+      'A+': ['GREAT', 98, 'great'], 'A': ['GREAT', 92, 'great'], 'A-': ['GREAT', 85, 'great'],
+      'B+': ['GOOD', 78, 'good'], 'B': ['GOOD', 70, 'good'], 'B-': ['GOOD', 62, 'good'],
+      'C+': ['FAIR', 54, 'fair'], 'C': ['FAIR', 46, 'fair'], 'C-': ['FAIR', 38, 'fair'],
+      'D+': ['POOR', 28, 'poor'], 'D': ['POOR', 20, 'poor'], 'D-': ['POOR', 14, 'poor'],
+      'E': ['POOR', 8, 'poor']
+    };
+    const m = map[u] || ['FAIR', 50, 'fair'];
+    return { label: m[0], displayVal: u, pct: m[1], tone: m[2] };
+  }
+
+  if (kind === 'group') {
+    const parts = val.match(/(\d+)\s*of\s*(\d+)/i);
+    const rank = parts ? parseInt(parts[1], 10) : parseInt(val, 10);
+    const total = parts ? parseInt(parts[2], 10) : 197;
+    if (isNaN(rank)) return { label: '—', displayVal: val, pct: 0, tone: 'fair' };
+    const tone = rank <= 40 ? 'great' : rank <= 80 ? 'good' : rank <= 130 ? 'fair' : 'poor';
+    const label = rank <= 40 ? 'GREAT' : rank <= 80 ? 'GOOD' : rank <= 130 ? 'FAIR' : 'POOR';
+    const pct = Math.min(100, Math.max(6, Math.round(((total - rank + 1) / total) * 100)));
+    return { label, displayVal: String(rank), pct, tone };
+  }
+
+  return { label: '', displayVal: val, pct: 50, tone: 'fair' };
+}
+
+function generateMsRatingsHtml(data, compact = false) {
+  const items = [
+    { name: compact ? 'EPS' : 'EPS Strength', meta: msScoreMeta('eps', data.epsStrength) },
+    { name: compact ? 'Price RS' : 'Price Strength', meta: msScoreMeta('price', data.priceStrength) },
+    { name: compact ? 'Demand' : 'Buyer Demand', meta: msScoreMeta('demand', data.buyerDemand) },
+    { name: compact ? 'Grp Rank' : 'Group Rank', meta: msScoreMeta('group', data.groupRank) },
+  ];
+
+  const cardsHtml = items.map(it => {
+    const text = it.meta.label !== '—' ? `${it.meta.label} : ${it.meta.displayVal}` : '—';
+    return `
+      <div class="ms-rating-item ms-tone-${it.meta.tone}">
+        <div class="ms-rating-label">${it.name}</div>
+        <div class="ms-rating-val">${text}</div>
+        <div class="ms-rating-track"><div class="ms-rating-fill" style="width:${it.meta.pct}%"></div></div>
+      </div>`;
+  }).join('');
+
+  const metaBits = [];
+  if (data.masterScore) metaBits.push(`<span class="ms-meta-pill">Master: ${data.masterScore}</span>`);
+  if (data.marketDirection) metaBits.push(`<span style="white-space:nowrap;">${data.marketDirection}</span>`);
+  const metaHtml = metaBits.length ? `<div class="ms-ratings-meta">${metaBits.join('')}</div>` : '';
+
+  return cardsHtml + metaHtml;
+}
+
+async function renderMsRatingsBar(containerId, symbol, opts = {}) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const sym = String(symbol || '').trim().toUpperCase().replace(/\.(NS|BO)$/i, '');
+  if (!sym || sym === '-' || sym === '^NSEI') {
+    el.style.display = 'none';
+    return;
+  }
+
+  el.dataset.msSym = sym;
+  el.style.display = 'flex';
+  if (!el.innerHTML || el.dataset.msLoaded !== sym) {
+    el.innerHTML = `<span style="font-size:10px;color:var(--dim);font-family:var(--mono);">Loading MS ratings for ${sym}…</span>`;
+  }
+
+  const data = await fetchMsRatings(sym);
+  if (el.dataset.msSym !== sym) return; // Symbol changed while loading
+  if (!data) {
+    el.style.display = 'none';
+    return;
+  }
+  el.dataset.msLoaded = sym;
+  el.innerHTML = generateMsRatingsHtml(data, !!opts.compact);
+}
+window.renderMsRatingsBar = renderMsRatingsBar;
+
 function toggleCollapse(bodyId, iconId) { const body = document.getElementById(bodyId); const icon = document.getElementById(iconId); if (!body) return; const isHidden = body.style.display === 'none'; body.style.display = isHidden ? 'block' : 'none'; if (icon) { icon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)'; } }
 async function cfgMakePublic() {
   const cfg = getCfg(); if (!cfg.key || !cfg.bin) { cfgBanner('⚠ No credentials configured.', 'warn', 'cp-sync-msg'); return; }
@@ -558,9 +717,7 @@ function sccChartRebuildGrid() {
             <div id="scc-chart-suggest-${i}" class="max-suggest-box" style="width: 160px; left: 0; top: 100%;"></div>
           </div>
 
-          <div id="scc-chart-title-${i}" style="display:flex; align-items:center; overflow:hidden; flex: 1; min-width: 0; padding-left: 2px;">
-            <span style="font-family:var(--disp);font-size:11px;font-weight:800;color:var(--teal)">${symbol}</span>
-          </div>
+          <div id="scc-chart-ms-${i}" class="ms-ratings-bar inline compact" style="display:none;"></div>
 
           <div id="scc-chart-stats-${i}" style="font-size: 10px; display:flex; align-items:center; white-space:nowrap; gap: 4px;"></div>
 
@@ -2303,6 +2460,7 @@ async function sccChartRenderPanel(index) {
   }
   const tableEl = document.getElementById(`scc-chart-table-${index}`); if (tableEl) { tableEl.innerHTML = generateStatsTableHtml(details); }
   if (typeof renderSccChartEpsTable === 'function') renderSccChartEpsTable(index, symbol);
+  if (typeof renderMsRatingsBar === 'function') renderMsRatingsBar(`scc-chart-ms-${index}`, symbol, { compact: true });
   try {
     const [candles, niftyCandles] = await Promise.all([fetchYfData(symbol.toUpperCase(), range, interval), symbol.toUpperCase() !== '^NSEI' ? fetchYfData('^NSEI', range, interval).catch(() => null) : Promise.resolve(null)]);
     if (loader) loader.style.display = 'none';
@@ -6963,6 +7121,7 @@ function openMaximizedChart(symbol) {
   _maxFetchAndDraw(symbol);
 }
 function _maxFetchAndDraw(symbol) {
+  if (typeof renderMsRatingsBar === 'function') renderMsRatingsBar('max-chart-ms-bar', symbol);
 
   const loader = document.getElementById('max-chart-loader');
   if (loader) { loader.style.display = 'flex'; loader.innerHTML = 'Loading chart…'; }
@@ -8231,13 +8390,10 @@ function sdRenderCharts(sectorName, secData) {
     }
     return `
       <div class="sd-chart-card" id="sd-card-${s.symbol}" data-symbol="${s.symbol}" style="height:${cardHeight}">
-        <div class="sd-chart-header">
-          <div style="display:flex;align-items:center;gap:6px">
-            <span style="font-weight:800;font-size:12px;color:var(--teal);font-family:var(--mono)">${s.symbol}</span>
-            <span style="color:var(--dim);font-size:9px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.company}</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            ${statsHtml}
+        <div class="sd-chart-header" style="gap:6px;">
+          <span style="font-weight:800;font-size:12px;color:var(--teal);font-family:var(--mono);flex-shrink:0;">${s.symbol}</span>
+          <div id="sd-chart-ms-${s.symbol}" class="ms-ratings-bar inline compact" style="display:none;"></div>
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
             <a href="${tvUrl}" target="_blank" rel="noopener"
                style="font-size:8px;color:var(--accent);text-decoration:none;padding:1px 4px;border-radius:2px;border:1px solid rgba(91,163,245,.2);background:rgba(91,163,245,.08)"
                title="Open full chart on TradingView">TV↗</a>
@@ -8347,7 +8503,7 @@ style="background:var(--bg4);border:1px solid var(--border);color:${_sdChartsPag
     </div>`+ viewMoreHtml; const range = _sdChartsInterval === 'D' ? '1y' : '2y'; const interval = _sdChartsInterval === 'D' ? '1d' : '1wk'; const observer = new IntersectionObserver((entries, obs) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        const symbol = entry.target.getAttribute('data-symbol'); obs.unobserve(entry.target); Promise.all([fetchYfData(symbol, range, interval), symbol.toUpperCase() !== '^NSEI' ? fetchYfData('^NSEI', range, interval).catch(() => null) : Promise.resolve(null)]).then(([candles, niftyCandles]) => { const loader = document.getElementById(`yf-loader-${symbol}`); if (loader) loader.style.display = 'none'; drawAnyChart(`yf-chart-${symbol}`, candles, _sdChartType, null, niftyCandles); }).catch(err => {
+        const symbol = entry.target.getAttribute('data-symbol'); obs.unobserve(entry.target); if (typeof renderMsRatingsBar === 'function') renderMsRatingsBar(`sd-chart-ms-${symbol}`, symbol, { compact: true }); Promise.all([fetchYfData(symbol, range, interval), symbol.toUpperCase() !== '^NSEI' ? fetchYfData('^NSEI', range, interval).catch(() => null) : Promise.resolve(null)]).then(([candles, niftyCandles]) => { const loader = document.getElementById(`yf-loader-${symbol}`); if (loader) loader.style.display = 'none'; drawAnyChart(`yf-chart-${symbol}`, candles, _sdChartType, null, niftyCandles); }).catch(err => {
           console.error("YF Chart Error for " + symbol, err); const loader = document.getElementById(`yf-loader-${symbol}`); if (loader) {
             loader.innerHTML = `
                 <div style="color:var(--sub);font-size:10px;text-align:center;padding:12px;line-height:1.5;max-width:260px;margin:0 auto;">

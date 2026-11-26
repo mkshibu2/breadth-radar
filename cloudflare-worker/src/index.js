@@ -32,6 +32,55 @@ export default {
       return jsonResponse({ ok: true, backend: 'cloudflare-d1' });
     }
 
+    if (path === '/api/ms-ratings' && request.method === 'GET') {
+      const rawSym = (url.searchParams.get('symbol') || '').trim().toUpperCase().replace(/\.(NS|BO)$/i, '');
+      if (!rawSym) return jsonResponse({ ok: false, error: 'Missing symbol' }, 400);
+      try {
+        const ua = {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Referer': 'https://marketsmithindia.com/',
+        };
+        const msBase = 'https://marketsmithindia.com/gateway/simple-api/ms-india';
+        const srchRes = await fetch(`${msBase}/instr/srch.json?text=${encodeURIComponent(rawSym)}&lang=en&ver=2`, { headers: ua });
+        const srchJson = await srchRes.json();
+        const results = (srchJson.response && srchJson.response.results) || [];
+        if (!results.length) return jsonResponse({ ok: false, symbol: rawSym, error: 'Not found' }, 404);
+        const match = results.find((x) => String(x.symbol || '').toUpperCase() === rawSym) || results[0];
+        const instrId = match.instrumentId;
+
+        const pageRes = await fetch('https://marketsmithindia.com/mstool/eval/reliance/evaluation.jsp', { headers: ua });
+        const setCookie = pageRes.headers.get('set-cookie') || '';
+        const m = setCookie.match(/MSSESSIONID=([^;]+)/);
+        const token = m ? m[1] : '';
+
+        const wRes = await fetch(
+          `${msBase}/instr/0/${instrId}/wisdom.json?lang=en&ver=2&x=y&ms-auth=${encodeURIComponent(token)}`,
+          { headers: { ...ua, 'Cookie': `MSSESSIONID=${token}` } }
+        );
+        if (!wRes.ok) return jsonResponse({ ok: false, symbol: rawSym, error: `HTTP ${wRes.status}` }, 502);
+        const wJson = await wRes.json();
+        const items = (wJson.response && wJson.response.results) || [];
+        const pick = (msid) => {
+          const it = items.find((x) => Number(x.msid) === msid);
+          return it && it.itemValue != null ? String(it.itemValue) : null;
+        };
+        return jsonResponse({
+          ok: true,
+          symbol: rawSym,
+          instrumentId: instrId,
+          epsStrength: pick(4589),
+          priceStrength: pick(2),
+          buyerDemand: pick(5),
+          groupRank: pick(1989),
+          masterScore: pick(1746),
+          marketDirection: pick(4453),
+          fetchedAt: Date.now(),
+        });
+      } catch (err) {
+        return jsonResponse({ ok: false, symbol: rawSym, error: err.message }, 502);
+      }
+    }
+
     if (!isAuthorized(request, env)) {
       return jsonResponse({ error: 'Unauthorized: invalid or missing SYNC_TOKEN' }, 401);
     }
