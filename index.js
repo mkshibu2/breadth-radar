@@ -204,151 +204,6 @@ async function cfgMakePublic() {
   } catch (e) { cfgBanner('✗ ' + e.message, 'err', 'cp-sync-msg'); if (btn) { btn.disabled = false; btn.textContent = '🌐 Make Bin Public (for Guest sharing)'; } }
 }
 async function cfgMakePrivate() { const cfg = getCfg(); if (!cfg.key || !cfg.bin) return; try { const r = await fetch(`${JB}/b/${cfg.bin}/meta/privacy`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': cfg.key, 'X-Bin-Private': 'true' } }); if (!r.ok) throw new Error('Failed: ' + r.status); cfgBanner('✅ Bin is now Private again.', 'ok', 'cp-sync-msg'); const btn = document.getElementById('cfg-make-public-btn'); if (btn) { btn.disabled = false; btn.textContent = '🌐 Make Bin Public (for Guest sharing)'; btn.style.color = ''; btn.style.borderColor = ''; } } catch (e) { cfgBanner('✗ ' + e.message, 'err', 'cp-sync-msg'); } }
-function exportSnapshot() {
-  const records = loadLocal(); const mpm = mpmLoad(); const bsr = bsrLoad(); const ftd = ftdLoad(); if (!records.length) { alert('No data to export. Save some EOD entries first.'); return; }
-  const today = records[0]; const score = today.score || 0; const zone = getZone(score); const prev = records[1] || {}; const momentum = prev.score ? score - prev.score : null; const mpm25 = mpm.slice(0, 25); const mpmAcc = mpm25.filter(d => d.dtype === 'acc').length; const mpmDist = mpm25.filter(d => d.dtype === 'dist').length; const mpmNet = mpmAcc - mpmDist; const bsrStats = bsrGetEffectiveStats(); const bsrSucc = bsrStats.succ; const bsrFail = bsrStats.fail; const bsrPct = bsrStats.pct; const hist = records.slice(0, 30); const sparkScores = records.slice(0, 25).map(r => r.score || 0).reverse(); const zc = s => s >= 55 ? '#4ade80' : s >= 45 ? '#34d399' : s >= 35 ? '#fbbf24' : s >= 20 ? '#fb923c' : '#f87171'; const znm = s => s >= 55 ? 'Healthy' : s >= 45 ? 'Expanding' : s >= 35 ? 'Caution' : s >= 20 ? 'Defensive' : 'Correction'; const exportDate = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }); const dataDate = fmtLong(today.date); const histRows = hist.map(r => {
-    const z2 = getZone(r.score || 0); const adv = +r.adv || 0, dec = +r.dec || 0; const adr = dec > 0 ? (adv / dec).toFixed(2) : '—'; return `<tr>
-      <td>${r.date}</td>
-      <td style="color:${adv >= dec ? '#4ade80' : '#f87171'}">${adv}</td>
-      <td style="color:${dec > adv ? '#f87171' : '#8899b0'}">${dec}</td>
-      <td>${adr}</td>
-      <td style="color:#fbbf24">${r.e20 || '—'}%</td>
-      <td style="color:#5ba3f5">${r.s50 || '—'}%</td>
-      <td style="color:#34d399">${r.s200 || '—'}%</td>
-      <td style="font-weight:700;color:${z2.color}">${r.score || '—'}</td>
-      <td><span style="background:${z2.bg};color:${z2.color};padding:2px 7px;border-radius:3px;font-size:10px;font-weight:600">${r.zone || '—'}</span></td>
-    </tr>`;
-  }).join(''); const mpmRows = mpm.slice(0, 15).map(d => {
-    const c = d.dtype === 'acc' ? '#4ade80' : d.dtype === 'dist' ? '#f87171' : '#8899b0'; const lbl = d.dtype === 'acc' ? '▲ Acc' : d.dtype === 'dist' ? '▼ Dist' : '→ Neut'; return `<tr>
-      <td>${d.date}</td>
-      <td style="color:${c};font-weight:600">${lbl}</td>
-      <td>${d.close || '—'}</td>
-      <td>${d.pclose || '—'}</td>
-    </tr>`;
-  }).join(''); const momLabel = momentum === null ? '—' : momentum > 0 ? `+${momentum} ↑` : momentum < 0 ? `${momentum} ↓` : '0 →'; const momColor = momentum > 0 ? '#4ade80' : momentum < 0 ? '#f87171' : '#8899b0'; const expInfo = (() => { if (score >= 55) return { pct: '75–100%', note: 'Full position sizing. Act on quality breakouts.' }; if (score >= 45) return { pct: '50–75%', note: 'Normal entries. 1–2R per position.' }; if (score >= 35) return { pct: '25–50%', note: 'Pilot entries only. 0.5–1R max.' }; if (score >= 20) return { pct: '0–25%', note: 'Minimal exposure. 0.25R pilot only.' }; return { pct: '0%', note: 'Stand aside. Capital preservation.' }; })(); const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>M.Radar — Snapshot ${today.date}</title>
-<style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0e1420;color:#dde6f0;font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;line-height:1.5}.hdr{background:#161e2e;padding:12px 20px;border-bottom:1px solid #273447;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}.logo{font-size:18px;font-weight:800;letter-spacing:3px;color:#5ba3f5;display:flex;align-items:center;gap:8px}.logo em{color:#4a5e76;font-style:normal}.badge{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);color:#f87171;font-size:10px;padding:3px 10px;border-radius:3px;font-weight:600;letter-spacing:.5px}.meta{font-size:11px;color:#8899b0;text-align:right}.page{padding:14px;display:flex;flex-direction:column;gap:10px;max-width:1400px;margin:0 auto}.card{background:#161e2e;border:1px solid #273447;border-radius:6px;overflow:hidden}.card-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#8899b0;padding:10px 14px;border-bottom:1px solid #273447;background:#1c2638}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{padding:14px;background:#1c2638;border:1px solid #273447;border-radius:6px}.metric-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#4a5e76;margin-bottom:6px}.metric-val{font-size:32px;font-weight:800;line-height:1;font-family:'Segoe UI',sans-serif}.metric-sub{font-size:11px;color:#8899b0;margin-top:5px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#1c2638;color:#8899b0;text-transform:uppercase;font-size:10px;letter-spacing:.3px;padding:7px 10px;text-align:left;border-bottom:1px solid #273447}td{padding:6px 10px;border-bottom:1px solid rgba(39,52,71,.4);color:#dde6f0}tr:last-child td{border-bottom:none}tr:hover td{background:rgba(91,163,245,.04)}.pill{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600}.warn{background:rgba(252,211,77,.1);color:#fbbf24;border:1px solid rgba(252,211,77,.2);padding:10px 14px;border-radius:5px;font-size:12px;margin:0 14px 14px}.sparkbar{display:inline-block;width:8px;border-radius:2px 2px 0 0;vertical-align:bottom;margin:0 1px}@media(max-width:600px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}</style>
-</head>
-<body>
-
-<div class="hdr">
-  <div class="logo">
-    <svg viewBox="0 0 24 24" width="22" height="22"><rect width="24" height="24" rx="4" fill="#1c2638"/>
-    <rect x="2" y="17" width="3" height="5" rx=".5" fill="#f87171" opacity=".9"/>
-    <rect x="6" y="14" width="3" height="8" rx=".5" fill="#fb923c" opacity=".9"/>
-    <rect x="10" y="11" width="3" height="11" rx=".5" fill="#fbbf24" opacity=".9"/>
-    <rect x="14" y="8" width="3" height="14" rx=".5" fill="#34d399" opacity=".9"/>
-    <rect x="18" y="5" width="3" height="17" rx=".5" fill="#4ade80" opacity=".9"/>
-    <path d="M 2 19 Q 12 3 22 19" fill="none" stroke="#5ba3f5" stroke-width="1.2" stroke-linecap="round" opacity=".7"/>
-    <circle cx="12" cy="4" r="1.2" fill="#5ba3f5"/></svg>
-    <span style="color:#f59e0b">M.</span><span style="color:#ffffff">RADAR</span> <span style="font-size:11px;color:#8899b0;margin-left:6px;letter-spacing:1px;font-weight:600">MARKET RADAR</span>
-  </div>
-  <div class="badge">📸 READ-ONLY SNAPSHOT</div>
-  <div class="meta">Data as of ${dataDate}<br>Snapshot generated: ${exportDate}<br>© 2026 Shibu M K</div>
-</div>
-
-<div class="page">
-
-  <div class="grid4">
-    <div class="metric" style="border-top:3px solid ${zone.color}">
-      <div class="metric-lbl">Breadth Score</div>
-      <div class="metric-val" style="color:${zone.color}">${score}</div>
-      <div class="metric-sub">out of 100</div>
-    </div>
-    <div class="metric" style="border-top:3px solid ${zone.color}">
-      <div class="metric-lbl">Market Zone</div>
-      <div class="metric-val" style="color:${zone.color};font-size:22px">${znm(score)}</div>
-      <div class="metric-sub">Position: ${zone.r}</div>
-    </div>
-    <div class="metric" style="border-top:3px solid ${momColor}">
-      <div class="metric-lbl">Breadth Momentum</div>
-      <div class="metric-val" style="color:${momColor};font-size:28px">${momLabel}</div>
-      <div class="metric-sub">vs previous session</div>
-    </div>
-    <div class="metric" style="border-top:3px solid #2dd4bf">
-      <div class="metric-lbl">Market Pressure (MPM)</div>
-      <div class="metric-val" style="color:${mpmNet >= 0 ? '#4ade80' : '#f87171'};font-size:28px">${mpmNet >= 0 ? '+' : ''}${mpmNet}</div>
-      <div class="metric-sub">${mpmAcc} Acc · ${mpmDist} Dist (25d)</div>
-    </div>
-  </div>
-
-  <div class="grid2">
-    <div class="metric" style="border-top:3px solid #2dd4bf">
-      <div class="metric-lbl">📈 Recommended Market Exposure</div>
-      <div class="metric-val" style="color:#2dd4bf;font-size:26px">${expInfo.pct}</div>
-      <div class="metric-sub">${expInfo.note}</div>
-    </div>
-    <div class="metric" style="border-top:3px solid #a78bfa">
-      <div class="metric-lbl">🎯 BSR — Breakout Success Rate</div>
-      <div class="metric-val" style="color:#a78bfa;font-size:26px">${bsrPct !== null ? bsrPct + '%' : '—'}</div>
-      <div class="metric-sub">${bsrSucc} success · ${bsrFail} failed of ${bsrSucc + bsrFail} evaluated</div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">📊 Breadth Score — Last ${sparkScores.length} Sessions</div>
-    <div style="padding:14px;display:flex;align-items:flex-end;gap:3px;height:90px;overflow:hidden">
-      ${sparkScores.map((s, i) => {
-    const h = Math.max(4, Math.round(s / 100 * 64));
-    const c = zc(s);
-    const isLast = i === sparkScores.length - 1;
-    return `<div class="sparkbar"style="height:${h}px;background:${c};opacity:${isLast ? 1 : 0.7};flex:1;${isLast ? 'outline:1px solid ' + c : ''}"title="Score: ${s}"></div>`;
-  }).join('')}
-    </div>
-    <div style="padding:0 14px 10px;font-size:10px;color:#4a5e76;display:flex;justify-content:space-between">
-      <span>${hist[Math.min(24, hist.length - 1)]?.date || ''}</span>
-      <span>Latest: <b style="color:${zc(score)}">${score}</b></span>
-      <span>${today.date}</span>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">📋 Today's Breadth Detail — ${today.date}</div>
-    <div style="padding:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px">
-      ${[
-      ['Advances', today.adv, '#4ade80'],
-      ['Declines', today.dec, '#f87171'],
-      ['Unchanged', today.unc || '—', '#8899b0'],
-      ['52W Highs', today.hi || '—', '#4ade80'],
-      ['52W Lows', today.lo || '—', '#f87171'],
-      ['% > EMA20', today.e20 ? today.e20 + '%' : '—', '#fbbf24'],
-      ['% > SMA50', today.s50 ? today.s50 + '%' : '—', '#5ba3f5'],
-      ['% > SMA200', today.s200 ? today.s200 + '%' : '—', '#34d399'],
-      ['Nifty Close', today.nifty || '—', '#dde6f0'],
-    ].map(([lbl, val, clr]) => `<div style="background:#1c2638;border:1px solid #273447;border-radius:5px;padding:10px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:#4a5e76;margin-bottom:4px">${lbl}</div><div style="font-size:18px;font-weight:700;color:${clr}">${val}</div></div>`).join('')}
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">📅 30-Day Breadth History</div>
-    <div style="overflow-x:auto">
-      <table>
-        <thead><tr>
-          <th>Date</th><th>Adv</th><th>Dec</th><th>A/D</th>
-          <th>EMA20</th><th>SMA50</th><th>SMA200</th>
-          <th>Score</th><th>Zone</th>
-        </tr></thead>
-        <tbody>${histRows}</tbody>
-      </table>
-    </div>
-  </div>
-
-  ${mpm.length ? `<div class="card"><div class="card-title">💹 Market Pressure Log — Last 15 Sessions</div><div style="overflow-x:auto"><table><thead><tr><th>Date</th><th>Type</th><th>Nifty Close</th><th>Prev Close</th></tr></thead><tbody>${mpmRows}</tbody></table></div></div>` : ''}
-
-  <div style="font-size:11px;color:#4a5e76;text-align:center;padding:14px;border-top:1px solid #273447;line-height:1.8">
-    <strong style="color:#8899b0">M.Radar (Market Radar)</strong> — Snapshot by <strong style="color:#8899b0">Shibu M K</strong><br>
-    For educational purposes only · Not investment advice · Data as of ${today.date}<br>
-    <em>See the Market. Find Your Edge. — Clarity in every market cycle</em>
-  </div>
-
-</div>
-</body>
-</html>`; try { const blob = new Blob([html], { type: 'text/html' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `M_Radar_Snapshot_${today.date}.html`; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 300); } catch (e) { try { const encoded = encodeURIComponent(html); const a = document.createElement('a'); a.href = 'data:text/html;charset=utf-8,' + encoded; a.download = `M_Radar_Snapshot_${today.date}.html`; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => document.body.removeChild(a), 300); } catch (e2) { const w = window.open(); if (w) { w.document.write(html); w.document.close(); alert('File opened in new tab. Use Ctrl+S (or Share → Save) to save it.'); } else { alert('Could not download. Please allow popups for this site and try again.'); } } }
-}
 const _mem = {}; const _store = (() => {
   for (const s of [() => window.localStorage, () => window.sessionStorage]) { try { const store = s(); const k = '__nbr__'; store.setItem(k, k); if (store.getItem(k) === k) { store.removeItem(k); return store; } } catch (e) { } }
   return null;
@@ -375,15 +230,6 @@ function srtUpsertSector(fullName, shortName, close, niftyClose, date) {
 }
 const SRT_NAME_MAP = { 'it': 'NIFTY IT', 'pharma': 'NIFTY PHARMA', 'fmcg': 'NIFTY FMCG', 'bank': 'NIFTY BANK', 'auto': 'NIFTY AUTO', 'metal': 'NIFTY METAL', 'realty': 'NIFTY REALTY', 'infra': 'NIFTY INFRA', 'chemicals': 'NIFTY COMMODITIES', 'chem': 'NIFTY COMMODITIES', 'psu bank': 'NIFTY PSU BANK', 'psub': 'NIFTY PSU BANK', 'energy': 'NIFTY ENERGY', 'financial services': 'NIFTY FINANCIAL SERVICES', 'fin services': 'NIFTY FINANCIAL SERVICES', 'finserv': 'NIFTY FINANCIAL SERVICES', 'india manufacturing': 'NIFTY INDIA MANUFACTURING', 'manufacturing': 'NIFTY INDIA MANUFACTURING', 'capital market': 'NIFTY CAPITAL MARKETS', 'cap market': 'NIFTY CAPITAL MARKETS', 'defence': 'NIFTY INDIA DEFENCE', 'defense': 'NIFTY INDIA DEFENCE', 'pse': 'NIFTY CPSE', 'cpse': 'NIFTY CPSE' }; const SRT_SHORT_MAP = { 'NIFTY IT': 'Information Technology', 'NIFTY PHARMA': 'Pharma', 'NIFTY FMCG': 'Fast Moving Consumer Goods', 'NIFTY BANK': 'Banks', 'NIFTY AUTO': 'Automobile and Auto Components', 'NIFTY METAL': 'Metals & Mining', 'NIFTY REALTY': 'Realty', 'NIFTY INFRA': 'Construction', 'NIFTY COMMODITIES': 'Specialty Chemicals', 'NIFTY PSU BANK': 'PSU Bank', 'NIFTY ENERGY': 'Oil Gas & Consumable Fuels', 'NIFTY FINANCIAL SERVICES': 'NBFCs & Finance', 'NIFTY INDIA MANUFACTURING': 'Capital Goods', 'NIFTY CAPITAL MARKETS': 'Capital Goods', 'NIFTY INDIA DEFENCE': 'Defense', 'NIFTY CPSE': 'PSE' }; const SRT_LINKS = { 'NIFTY IT': 'https://www.nseindia.com/index-tracker/NIFTY%20IT', 'NIFTY PHARMA': 'https://www.nseindia.com/index-tracker/NIFTY%20PHARMA', 'NIFTY FMCG': 'https://www.nseindia.com/index-tracker/NIFTY%20FMCG', 'NIFTY BANK': 'https://www.nseindia.com/index-tracker/NIFTY%20BANK', 'NIFTY AUTO': 'https://www.nseindia.com/index-tracker/NIFTY%20AUTO', 'NIFTY METAL': 'https://www.nseindia.com/index-tracker/NIFTY%20METAL', 'NIFTY REALTY': 'https://www.nseindia.com/index-tracker/NIFTY%20REALTY', 'NIFTY INFRA': 'https://www.nseindia.com/index-tracker/NIFTY%20INFRA', 'NIFTY COMMODITIES': 'https://www.nseindia.com/index-tracker/NIFTY%20CHEMICALS', 'NIFTY PSU BANK': 'https://www.nseindia.com/index-tracker/NIFTY%20PSU%20BANK', 'NIFTY ENERGY': 'https://www.nseindia.com/index-tracker/NIFTY%20ENERGY', 'NIFTY FINANCIAL SERVICES': 'https://www.nseindia.com/index-tracker/NIFTY%20FIN%20SERVICE', 'NIFTY INDIA MANUFACTURING': 'https://www.nseindia.com/index-tracker/NIFTY%20INDIA%20MFG', 'NIFTY CAPITAL MARKETS': 'https://www.nseindia.com/index-tracker/NIFTY%20CAPITAL%20MKT', 'NIFTY INDIA DEFENCE': 'https://www.nseindia.com/index-tracker/NIFTY%20IND%20DEFENCE', 'NIFTY CPSE': 'https://www.nseindia.com/index-tracker/NIFTY%20PSE' }; function srtGetSessionNifty() { try { return JSON.parse(localStorage.getItem('nse_srt_nifty')) || null; } catch (e) { return null; } }
 function srtSetSessionNifty(close, date) { localStorage.setItem('nse_srt_nifty', JSON.stringify({ close, date })); }
-function srtSetNifty() {
-  const val = parseFloat(document.getElementById('srt-nifty').value); const statusEl = document.getElementById('srt-nifty-status'); if (isNaN(val) || val <= 0) { if (statusEl) { statusEl.style.color = 'var(--red)'; statusEl.textContent = 'Enter a valid Nifty 50 close price.'; } return; }
-  const date = new Date().toISOString().slice(0, 10); srtSetSessionNifty(val, date); if (statusEl) { statusEl.style.color = 'var(--lime)'; statusEl.textContent = 'Set: ' + val + ' on ' + date + ' — applies to all sectors this session.'; }
-}
-function srtNiftyStatusRefresh() { const n = srtGetSessionNifty(); const statusEl = document.getElementById('srt-nifty-status'); const inp = document.getElementById('srt-nifty'); if (!statusEl) return; if (n) { statusEl.style.color = 'var(--lime)'; statusEl.textContent = 'Set: ' + n.close + ' on ' + n.date; if (inp && !inp.value) inp.value = n.close; } else { statusEl.style.color = 'var(--dim)'; statusEl.textContent = 'Not set for this week — enter above first.'; } }
-function srtSaveEntry() {
-  const selVal = document.getElementById('srt-sel').value; const close = parseFloat(document.getElementById('srt-close').value); const msg = document.getElementById('srt-msg'); if (!selVal || isNaN(close)) { msg.style.display = 'block'; msg.style.color = 'var(--red)'; msg.textContent = 'Select a sector and enter its closing price.'; return; }
-  const nSession = srtGetSessionNifty(); const nifty = nSession ? nSession.close : 0; const [fullName, shortName] = selVal.split('|'); const date = new Date().toISOString().slice(0, 10); srtUpsertSector(fullName, shortName, close, nifty, date); pushToCloud(); srtRender(); document.getElementById('srt-close').value = ''; const weeks = (srtLoad().find(s => s.id === fullName) || {}).weeks || 1; const progress = weeks < 20 ? ' (' + weeks + '/20 wks)' : ' (full MA)'; msg.style.display = 'block'; msg.style.color = 'var(--lime)'; msg.textContent = shortName + ' saved' + progress + (nifty ? '' : ' — set Nifty 50 for RS calc'); setTimeout(() => { msg.style.display = 'none'; }, 3000);
-}
 const SRT_BULK_ORDER = ['NIFTY IT', 'NIFTY PHARMA', 'NIFTY FMCG', 'NIFTY BANK', 'NIFTY AUTO', 'NIFTY METAL', 'NIFTY REALTY', 'NIFTY INFRA', 'NIFTY COMMODITIES', 'NIFTY PSU BANK', 'NIFTY ENERGY', 'NIFTY FINANCIAL SERVICES', 'NIFTY INDIA MANUFACTURING', 'NIFTY CAPITAL MARKETS', 'NIFTY INDIA DEFENCE', 'NIFTY CPSE']; const SRT_BULK_NAMES = ['Information Technology', 'Pharma', 'Fast Moving Consumer Goods', 'Banks', 'Automobile and Auto Components', 'Metals & Mining', 'Realty', 'Construction', 'Specialty Chemicals', 'PSU Bank', 'Oil Gas & Consumable Fuels', 'NBFCs & Finance', 'Capital Goods', 'Capital Goods', 'Defense', 'PSE']; const SRT_SHORT = { 'Information Technology': 'IT', 'Pharma': 'Pharma', 'Fast Moving Consumer Goods': 'FMCG', 'Banks': 'Banks', 'Automobile and Auto Components': 'Auto', 'Metals & Mining': 'Metals', 'Realty': 'Realty', 'Construction': 'Infra', 'Construction Materials': 'Const Mat', 'Specialty Chemicals': 'Chemicals', 'PSU Bank': 'PSU Bank', 'Oil Gas & Consumable Fuels': 'Energy', 'NBFCs & Finance': 'NBFCs', 'Capital Goods': 'Cap Goods', 'Defense': 'Defense', 'PSE': 'PSE', 'Hospitals & Healthcare': 'Healthcare', 'Railways': 'Railways', 'Agrochemicals & Fertilizers': 'Agrochem', 'Consumer Services': 'Cons Svc', 'Consumer Durables': 'Cons Dur', 'Telecommunication': 'Telecom', 'Services': 'Services', 'Power': 'Power', 'Media Entertainment & Publication': 'Media', 'Diversified': 'Diversified', 'Textiles': 'Textiles', 'Market (Index)': 'Market', }; function srtBulkImport() {
   const txt = (document.getElementById('srt-bulk-txt').value || '').trim(); const msg = document.getElementById('srt-bulk-msg'); if (!txt) { msg.style.display = 'block'; msg.style.color = 'var(--red)'; msg.textContent = 'Nothing to import.'; return; }
   let rowsOk = 0, errors = []; txt.split('\n').forEach((line, i) => {
@@ -396,7 +242,6 @@ const SRT_BULK_ORDER = ['NIFTY IT', 'NIFTY PHARMA', 'NIFTY FMCG', 'NIFTY BANK', 
     }); if (rowOk) rowsOk++;
   }); pushToCloud(); srtRender(); msg.style.display = 'block'; if (rowsOk) { msg.style.color = 'var(--lime)'; msg.textContent = rowsOk + ' week(s) imported across all sectors.' + (errors.length ? ' ' + errors.length + ' error(s): ' + errors.slice(0, 3).join('; ') : ''); } else { msg.style.color = 'var(--red)'; msg.textContent = 'Nothing saved. ' + errors.slice(0, 3).join('; '); }
 }
-function srtClearForm() { const el = document.getElementById('srt-close'); if (el) el.value = ''; }
 function srtDelete(id) { if (!confirm('Remove ' + id + ' from tracker?')) return; srtSave(srtLoad().filter(s => s.id !== id)); pushToCloud(); srtRender(); }
 function srtEditLoad(id) { const s = srtLoad().find(x => x.id === id); if (!s) return; document.getElementById('srt-sel').value = s.id + '|' + s.name; document.getElementById('srt-close').value = s.close || ''; const nEl = document.getElementById('srt-nifty'); if (nEl && s.history && s.history.length) nEl.value = s.history[s.history.length - 1].niftyClose || ''; }
 function srtStageMeta(stage) { if (stage === 'S2') return { label: 'Stage 2', color: 'var(--lime)', bg: 'rgba(74,222,128,.15)', score: 4 }; if (stage === 'S1') return { label: 'Stage 1', color: 'var(--accent)', bg: 'rgba(91,163,245,.12)', score: 3 }; if (stage === 'S3') return { label: 'Stage 3', color: 'var(--yellow)', bg: 'rgba(251,191,36,.12)', score: 2 }; return { label: 'Stage 4', color: 'var(--red)', bg: 'rgba(239,68,68,.12)', score: 1 }; }
@@ -460,11 +305,6 @@ function sccTab(tab) {
     if (window.innerWidth <= 600 && _sccChartLayout !== '1') { _sccChartLayout = '1'; const layoutSelect = document.getElementById('scc-chart-layout-select'); if (layoutSelect) layoutSelect.value = '1'; }
     setTimeout(() => sccChartRebuildGrid(), 50);
   }
-}
-function toggleMaximizeSectorCommand() {
-  const card = document.getElementById('srt-home-card'); const btn = document.getElementById('srt-max-btn'); if (!card) return; const isMax = card.classList.toggle('maximized'); if (btn) { if (isMax) { btn.innerHTML = '<span style="font-size:12px;line-height:1;">🗗</span>'; btn.title = 'Restore Window'; } else { btn.innerHTML = '<span style="font-size:12px;line-height:1;">⛶</span>'; btn.title = 'Maximize Window'; } }
-  if (isMax) { document.body.style.overflow = 'hidden'; } else { document.body.style.overflow = ''; }
-  const isRrgActive = document.getElementById('scc-pane-rrg').style.display !== 'none'; const isHeatmapActive = document.getElementById('scc-pane-heatmap').style.display !== 'none'; const isChartActive = document.getElementById('scc-pane-chart') && document.getElementById('scc-pane-chart').style.display !== 'none'; const isClustersActive = document.getElementById('scc-pane-clusters') && document.getElementById('scc-pane-clusters').style.display !== 'none'; if (isRrgActive) { setTimeout(() => { if (typeof brrgDraw === 'function') brrgDraw(); }, 80); } else if (isHeatmapActive) { setTimeout(() => { if (typeof slhRender === 'function') slhRender(); }, 80); } else if (isChartActive) { setTimeout(() => { const count = parseInt(_sccChartLayout); for (let i = 0; i < count; i++) { sccChartRenderPanel(i); } }, 80); } else if (isClustersActive) { setTimeout(() => { if (typeof sccRenderClusters === 'function') sccRenderClusters(); }, 80); } else { setTimeout(() => { if (typeof brrgDraw === 'function') brrgDraw(); }, 80); }
 }
 // ==============================================================================
 // UNIFIED ROBUST CHARTING CONTROLS (SHARED ACROSS SCREENER, SECTORS & CHART STUDIO)
@@ -3394,9 +3234,6 @@ function sccPerformItemMove(dragItem, targetItem, position) {
     sccChartRebuildGrid();
   }
 }
-function sccPerformStockSwap(dragSym, targetSym) {
-  sccPerformItemMove(dragSym, targetSym, 'after');
-}
 function sccFlagPressStart(event, element, symbol) { _sccFlagHoldActive = false; _sccFlagHoldTimeout = setTimeout(() => { _sccFlagHoldActive = true; sccWatchlistOpenFlagPopup(element, symbol); }, 350); }
 function sccFlagPressEnd(event, element, symbol) { clearTimeout(_sccFlagHoldTimeout); if (_sccFlagHoldActive) { event.preventDefault(); event.stopPropagation(); } }
 function sccFlagPressCancel() { clearTimeout(_sccFlagHoldTimeout); }
@@ -4109,25 +3946,6 @@ function brrgDraw(animUpTo) {
     const lbl = SRT_SHORT[name] || name.split(' ')[0]; const side = cx2 > W * 0.72 ? 'right' : 'left'; ctx.font = highlighted ? 'bold 10px sans-serif' : '9px sans-serif'; ctx.fillStyle = color; ctx.globalAlpha = highlighted ? 1 : 0.6 * opacity; ctx.textAlign = side; ctx.fillText(lbl, cx2 + (side === 'right' ? -9 : 9), cy2 + 3); ctx.font = '8px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillText(Math.round(cur.score), cx2 + (side === 'right' ? -9 : 9), cy2 + 12); ctx.globalAlpha = 1;
   });
 }
-function brrgShowSeedPanel() { const p = document.getElementById('brrg-seed-panel'); if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none'; }
-function brrgSeedFromEod() {
-  const msg = document.getElementById('brrg-seed-eod-msg'); const setMsg = (t, c) => { if (msg) { msg.textContent = t; msg.style.color = c; } }; let records = []; try { const LS_EOD = 'nse_eod_v1'; records = JSON.parse(localStorage.getItem(LS_EOD)) || []; } catch (e) { }
-  if (!records.length) { setMsg('No 30-day history found.', 'var(--red)'); return; }
-  const hist = vcpbGetHist(); let added = 0; records.forEach(r => { if (!r.date) return; const a20 = parseFloat(r.e20) || 0, a50 = parseFloat(r.s50) || 0, a200 = parseFloat(r.s200) || 0; if (!a20 && !a50 && !a200) return; const sec = 'Market (Index)'; if (!hist[sec]) hist[sec] = []; if (hist[sec].some(e => e.date === r.date)) return; hist[sec].push({ date: r.date, score: Math.round(a20 * 0.50 + a50 * 0.30 + a200 * 0.20), a20, a50, a200 }); added++; }); if (added) { Object.keys(hist).forEach(k => hist[k].sort((a, b) => a.date.localeCompare(b.date))); vcpbSetHist(hist); setMsg(`✓ Added ${added} days as "Market (Index)"`, 'var(--lime)'); brrgRebuildChips(); brrgDraw(); } else { setMsg('Already seeded or no new dates found.', 'var(--yellow)'); }
-}
-function brrgImportCsv() {
-  const ta = document.getElementById('brrg-csv-input'); const msg = document.getElementById('brrg-csv-msg'); const setMsg = (t, c) => { if (msg) { msg.textContent = t; msg.style.color = c; } }; if (!ta || !ta.value.trim()) { setMsg('Nothing to import.', 'var(--yellow)'); return; }
-  const hist = vcpbGetHist(); let added = 0, skipped = 0, errors = 0; ta.value.trim().split('\n').forEach(line => {
-    line = line.trim(); if (!line || line.startsWith('#') || line.toLowerCase().startsWith('date')) return; const [date, sector, a20Raw, a50Raw, a200Raw] = line.split(',').map(p => p.trim()); if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { errors++; return; }
-    const a20 = parseFloat(a20Raw), a50 = parseFloat(a50Raw), a200 = parseFloat(a200Raw); if (isNaN(a20) || isNaN(a50) || isNaN(a200)) { errors++; return; }
-    if (!hist[sector]) hist[sector] = []; if (hist[sector].some(e => e.date === date)) { skipped++; return; }
-    hist[sector].push({ date, score: Math.round(a20 * 0.50 + a50 * 0.30 + a200 * 0.20), a20, a50, a200 }); added++;
-  }); Object.keys(hist).forEach(k => hist[k].sort((a, b) => a.date.localeCompare(b.date))); vcpbSetHist(hist); const parts = [`✓ ${added} rows`]; if (skipped) parts.push(`${skipped} duplicates skipped`); if (errors) parts.push(`${errors} bad rows`); setMsg(parts.join(' · '), added ? 'var(--lime)' : 'var(--yellow)'); if (added) { brrgRebuildChips(); brrgDraw(); }
-}
-function brrgClearHistory() {
-  if (!confirm('Clear all Breadth RRG history from localStorage?')) return; localStorage.removeItem(LS_VCPB_HIST); _sectorStocksCache = null; const msg = document.getElementById('brrg-csv-msg'); if (msg) { msg.textContent = 'History cleared.'; msg.style.color = 'var(--yellow)'; }
-  brrgRebuildChips(); brrgDraw();
-}
 function srtRender() {
   const sectors = srtLoad(); const sorted = [...sectors].filter(s => s.id !== 'NIFTY50').sort((a, b) => { const sa = srtStageMeta(a.stage).score; const sb = srtStageMeta(b.stage).score; if (sb !== sa) return sb - sa; return (b.vs20 || 0) - (a.vs20 || 0); }); const lead = sorted.filter(s => s.stage === 'S2').length; const base = sorted.filter(s => s.stage === 'S1').length; const weak = sorted.filter(s => s.stage === 'S3' || s.stage === 'S4').length; const hLead = document.getElementById('srt-hero-lead'); const hBase = document.getElementById('srt-hero-base'); const hWeak = document.getElementById('srt-hero-weak'); const hSub = document.getElementById('srt-hero-sub'); const hRows = document.getElementById('srt-hero-rows'); const hEmpty = document.getElementById('srt-hero-empty'); if (hLead) hLead.textContent = sorted.length ? lead : '—'; if (hBase) hBase.textContent = sorted.length ? base : '—'; if (hWeak) hWeak.textContent = sorted.length ? weak : '—'; if (hSub) {
     if (sorted.length) {
@@ -4336,10 +4154,6 @@ function mergeByKey(cloudArr, localArr, keyFn) {
     const ct = existing._updatedAt || 0; const lt = d._updatedAt || 0; if (lt > ct) map[k] = d;
   }); return Object.values(map);
 }
-async function testConnection() {
-  const cfg = getCfg(); if (!cfg.key || !cfg.bin) { setupFlash('Enter Key and Bin ID first', 'var(--orange)'); return; }
-  setSyncStatus('syncing', 'Testing…'); try { const raw = await jbRead(cfg.key, cfg.bin); const recs = Array.isArray(raw) ? raw : (raw.records || []); const bsrT = Array.isArray(raw) ? [] : (raw.bsr || []); setSyncStatus('ok', 'Synced'); setupFlash(`✓ Connection OK — ${recs.length} breadth records + ${bsrT.length} BSR trades in cloud`, 'var(--lime)'); } catch (e) { setSyncStatus('err', 'Error'); setupFlash('✗ ' + e.message, 'var(--red)'); }
-}
 async function pullFromCloud(key, bin) {
   const cfg = key ? { key, bin } : getCfg(); if (!cfg.key || !cfg.bin) { setupFlash('No credentials configured', 'var(--orange)'); return; }
   setSyncStatus('syncing', 'Pulling…'); try {
@@ -4369,10 +4183,6 @@ async function forcePush() {
 function clearCredentials() { if (!confirm('Remove cloud credentials from this device?')) return; lsDel(LS_KEY); lsDel(LS_BIN); clearCfCfg(); const kEl = document.getElementById('cfg-key'); if (kEl) kEl.value = ''; const bEl = document.getElementById('cfg-bin'); if (bEl) bEl.value = ''; const cu = document.getElementById('cfg-cf-url'); if (cu) cu.value = ''; const ct = document.getElementById('cfg-cf-token'); if (ct) ct.value = ''; setSyncStatus('warn', 'Not Configured · Click to Setup'); setupFlash('Credentials cleared from this device', 'var(--yellow)'); cpRefreshSyncState(); }
 const todayISO = () => new Date().toISOString().slice(0, 10); const fmt = iso => { if (!iso) return '—'; const d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }); }; const fmtLong = iso => { if (!iso) return '—'; const d = new Date(iso + 'T00:00:00'); return d.toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }); }; function calcScore(r) { const adv = +r.adv || 0, dec = +r.dec || 0, hi = +r.hi || 0, lo = +r.lo || 0; const e20 = +r.e20 || 0, s50 = +r.s50 || 0, s200 = +r.s200 || 0; const advPct = adv / (adv + dec || 1) * 100; const hlPct = (hi + lo) > 0 ? hi / (hi + lo) * 100 : 50; const smaPct = (e20 + s50 + s200) / 3; return Math.min(100, Math.max(0, Math.round(advPct * 0.35 + hlPct * 0.15 + smaPct * 0.50))); }
 function getZone(s) { if (s >= 55) return { name: 'HEALTHY', r: '2–3R', color: 'var(--lime)', bg: 'rgba(74,222,128,0.12)' }; if (s >= 45) return { name: 'EXPANDING', r: '1–2R', color: 'var(--green)', bg: 'rgba(34,197,94,0.12)' }; if (s >= 35) return { name: 'CAUTION', r: '0.5–1R', color: 'var(--yellow)', bg: 'rgba(250,204,21,0.12)' }; if (s >= 20) return { name: 'DEFENSIVE', r: '0.25R pilot', color: 'var(--orange)', bg: 'rgba(251,146,60,0.12)' }; return { name: 'CORRECTION', r: '0R — stand aside', color: 'var(--red)', bg: 'rgba(248,113,113,0.12)' }; }
-function spark(vals, w, h, color) { const v = vals.filter(x => x != null && !isNaN(x)); if (v.length < 2) return `<svg class="spk" width="${w}" height="${h}"></svg>`; const mn = Math.min(...v), mx = Math.max(...v), rng = mx - mn || 1; const pts = v.map((n, i) => `${i / (v.length - 1) * w},${h - (n - mn) / rng * (h - 4) + 2}`).join(' '); const lx = w, ly = h - (v[v.length - 1] - mn) / rng * (h - 4) + 2; return `<svg class="spk" width="${w}" height="${h}"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${lx}" cy="${ly}" r="3" fill="${color}"/></svg>`; }
-function trendDir(vals) { const v = vals.filter(x => x != null && !isNaN(x)); if (v.length < 3) return 'flat'; const recent = v.slice(-3).reduce((a, b) => a + b, 0) / 3; const older = v.slice(0, 3).reduce((a, b) => a + b, 0) / 3; if (recent - older > 1.5) return 'up'; if (recent - older < -1.5) return 'dn'; return 'flat'; }
-function chgArrow(curr, prev) { if (prev == null || prev === '' || isNaN(+prev)) return '<span class="flat">—</span>'; const d = (+curr) - (+prev); if (d > 0.05) return `<span class="up">&#9650; ${Math.abs(d).toFixed(1)}</span>`; if (d < -0.05) return `<span class="dn">&#9660; ${Math.abs(d).toFixed(1)}</span>`; return '<span class="flat">&#9644; 0</span>'; }
-function dirLabel(dir) { if (dir === 'up') return '<span class="trend-dir up">&#9650;&#9650; Rising</span>'; if (dir === 'dn') return '<span class="trend-dir dn">&#9660;&#9660; Falling</span>'; return '<span class="trend-dir flat">&#9644; Sideways</span>'; }
 const pctClr = v => v >= 60 ? 'var(--lime)' : v >= 50 ? 'var(--green)' : v >= 40 ? 'var(--yellow)' : v >= 25 ? 'var(--orange)' : 'var(--red)'; const adClr = v => v >= 1.8 ? 'var(--lime)' : v >= 1.2 ? 'var(--green)' : v >= 0.8 ? 'var(--yellow)' : 'var(--red)'; function sigLabel(type, val) { const v = +val; const L = (t, c) => `<span style="color:${c};font-size:10px;font-weight:600;font-family:var(--mono)">${t}</span>`; if (type === 'adv') return v >= 65 ? L('STRONG BULL', 'var(--lime)') : v >= 55 ? L('BULL', 'var(--green)') : v >= 45 ? L('NEUTRAL', 'var(--yellow)') : L('BEAR', 'var(--red)'); if (type === 'e20') return v >= 60 ? L('RALLY MODE', 'var(--lime)') : v >= 50 ? L('RISING', 'var(--green)') : v >= 40 ? L('MIXED', 'var(--yellow)') : L('WEAK', 'var(--red)'); if (type === 's50') return v >= 55 ? L('HEALTHY', 'var(--lime)') : v >= 45 ? L('MIXED', 'var(--yellow)') : L('BREADTH WEAK', 'var(--red)'); if (type === 's200') return v >= 50 ? L('BULL MKT', 'var(--green)') : v >= 35 ? L('MIXED', 'var(--yellow)') : L('DOWNTREND', 'var(--red)'); if (type === 'hl') return v >= 70 ? L('EXPANDING', 'var(--lime)') : v >= 50 ? L('POSITIVE', 'var(--green)') : L('CONTRACTING', 'var(--red)'); return ''; }
 async function saveToday() {
   const g = id => document.getElementById(id).value.trim(); const adv = g('i-adv'), dec = g('i-dec'), e20 = g('i-e20'), s50 = g('i-s50'), s200 = g('i-s200'); if (!adv && !dec && !e20 && !s50) { flash('⚠ Enter at least Advances + Declines or EMA/SMA values', 'var(--orange)'); return; }
@@ -4407,8 +4217,6 @@ function renderHero(data) {
 function renderMomentumThrust(data) {
   const el = id => document.getElementById(id) || { textContent: '', innerHTML: '', style: {}, className: '', classList: { add: () => { }, remove: () => { }, contains: () => false }, value: '', offsetWidth: 0, offsetHeight: 0, getBoundingClientRect: () => ({ width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 }) }; function momentumColor(d) { if (d >= 10) return 'var(--lime)'; if (d >= 5) return '#86efac'; if (d >= 0) return 'var(--yellow)'; return 'var(--red)'; }
   function momentumLabel(d) { if (d >= 10) return 'Strong Expansion'; if (d >= 5) return 'Improving Breadth'; if (d >= 0) return 'Neutral'; return 'Weakening Breadth'; }
-  function thrustColor(d) { if (d >= 15) return 'var(--lime)'; if (d >= 10) return '#86efac'; return 'var(--sub)'; }
-  function thrustSignal(d) { if (d >= 15) return '🚀 Strong Breadth Thrust'; if (d >= 10) return '↑ Moderate Thrust'; return 'No Thrust'; }
   const mCell = document.getElementById('momentum-cell'); if (data.length >= 2) { const d = data[0].score - data[1].score; const sign = d > 0 ? '+' : ''; const col = momentumColor(d); el('h-momentum').textContent = sign + d; el('h-momentum').style.color = col; el('h-momentum-label').textContent = momentumLabel(d); el('h-momentum-label').style.color = col; if (mCell) mCell.style.background = d >= 10 ? 'rgba(74,222,128,.07)' : d < 0 ? 'rgba(248,113,113,.06)' : 'rgba(250,204,21,.05)'; } else { el('h-momentum').textContent = '—'; el('h-momentum-label').textContent = 'Need 2+ entries'; el('h-momentum').style.color = 'var(--dim)'; el('h-momentum-label').style.color = 'var(--dim)'; }
 }
 function renderChart(data) {
@@ -4868,10 +4676,6 @@ function renderAnalysisDDC() {
   else { status = 'Normal'; color = 'var(--sub)'; hint = `Acc: ${acc} · Dist: ${dist}`; }
   el('as-dist').textContent = dist; el('as-dist').style.color = color; el('as-dist-status').textContent = status; el('as-dist-status').style.color = color; el('as-dist-hint').textContent = hint;
 }
-function renderAnalysisDivergence() { }
-function renderAnalysisTrendBias() { }
-function renderAnalysisExpansionRate() { }
-function renderAnalysisInstBias() { }
 const LS_FTD = 'ftd_data'; function ftdLoad() { try { return JSON.parse(lsGet(LS_FTD) || '[]'); } catch (e) { return []; } }
 function ftdSaveData(d) { lsSet(LS_FTD, JSON.stringify(d)); }
 function ftdManualVoid() {
@@ -5125,7 +4929,6 @@ function ftdScanUndercutAll() {
   ftdSaveData(updated);
   return 'Rally low ' + day1Ref + ' undercut by ' + undercutValue + ' on ' + undercutDate + '. Rally attempt reset.';
 }
-function ftdCheckUndercut(days, todayLow, todayClose, todayDate) { return ftdScanUndercutAll(); }
 function ftdRender() {
   const el = id => document.getElementById(id) || { textContent: '', innerHTML: '', style: {}, className: '', classList: { add: () => { }, remove: () => { }, contains: () => false }, value: '', offsetWidth: 0, offsetHeight: 0, getBoundingClientRect: () => ({ width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 }) };
   const set = (id, prop, val) => { const e = el(id); if (e) e[prop] = val; };
@@ -5241,22 +5044,6 @@ function ddcRender() {
   const ftdDays = ftdLoad(); const voidIdx = ftdDays.findIndex(d => d.type === 'void'); const activeDays = voidIdx >= 0 ? ftdDays.slice(0, voidIdx) : ftdDays; const attempts = activeDays.filter(d => d.type === 'attempt'); const ftds = activeDays.filter(d => d.type === 'followthrough'); const attemptDate = attempts.length ? attempts[0].date : (ftds.length ? ftds[0].date : null); if (!attemptDate) { el('ddc-count').textContent = '0'; el('ddc-count').style.color = 'var(--dim)'; el('ddc-status').textContent = 'Reset (Correction)'; el('ddc-status').style.color = 'var(--dim)'; el('ddc-net').textContent = '—'; el('ddc-acc').textContent = '0'; el('ddc-hint').textContent = 'Count resets to 0 during Correction'; el('ddc-gauge').innerHTML = ''; return; }
   const dist = countDistributionDays(mpmLoad(), attemptDate); const acc = days.filter(d => d.dtype === 'acc' && d.date >= attemptDate).length; const net = acc - dist; el('ddc-count').textContent = dist; el('ddc-acc').textContent = acc; el('ddc-net').textContent = (net >= 0 ? '+' : '') + net; el('ddc-net').style.color = net >= 3 ? 'var(--lime)' : net >= 0 ? 'var(--yellow)' : 'var(--red)'; let status, hint, color; if (dist >= 6) { status = '⚠ Heavy Distribution'; color = 'var(--red)'; hint = dist + ' distribution days — historically precedes corrections. Reduce exposure, tighten stops.'; } else if (dist >= 4) { status = 'Elevated Distribution'; color = 'var(--orange)'; hint = dist + ' distribution days — caution warranted. Avoid adding new positions.'; } else if (dist <= 1 && acc >= 4) { status = 'Accumulation Phase'; color = 'var(--lime)'; hint = 'Low distribution, strong accumulation. Institutions are buying. Favourable for breakouts.'; } else { status = 'Normal'; color = 'var(--sub)'; hint = 'Distribution within normal range. Monitor for clustering of dist days.'; }
   el('ddc-count').style.color = color; el('ddc-status').textContent = status; el('ddc-status').style.color = color; el('ddc-hint').textContent = hint; const last10 = [...days].sort((a, b) => a.date.localeCompare(b.date)).slice(-10); el('ddc-gauge').innerHTML = last10.map(d => { const c = d.dtype === 'dist' ? '#f87171' : d.dtype === 'acc' ? '#4ade80' : '#4a5e76'; const h = d.dtype === 'neutral' ? 6 : 24; return `<div class="ddc-bar-w"><div class="ddc-bar-b" style="background:${c};height:${h}px"></div><div class="ddc-bar-n">${d.dtype === 'dist' ? 'D' : d.dtype === 'acc' ? 'A' : 'N'}</div></div>`; }).join('');
-}
-function nhnlRender(data) {
-  const el = id => document.getElementById(id) || { textContent: '', innerHTML: '', style: {}, className: '', classList: { add: () => { }, remove: () => { }, contains: () => false }, value: '', offsetWidth: 0, offsetHeight: 0, getBoundingClientRect: () => ({ width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 }) }; if (!el('nhnl-today') || !data.length) {
-    if (el('nhnl-today')) { el('nhnl-today').textContent = '—'; el('nhnl-5d').textContent = '—'; el('nhnl-10d').textContent = '—'; el('nhnl-trend').textContent = '—'; el('nhnl-bars').innerHTML = ''; }
-    return;
-  }
-  function hlRatio(r) { const hi = +r.hi || 0, lo = +r.lo || 0; return (hi + lo) > 0 ? hi / (hi + lo) : null; }
-  const today = hlRatio(data[0]); const todayPct = today !== null ? Math.round(today * 100) : null; el('nhnl-today').textContent = todayPct !== null ? todayPct + '%' : '—'; el('nhnl-today').style.color = todayPct === null ? 'var(--dim)' : todayPct >= 60 ? 'var(--lime)' : todayPct >= 40 ? 'var(--yellow)' : 'var(--red)'; let sig = '—', sigColor = 'var(--dim)'; if (todayPct !== null) {
-    if (todayPct >= 70) { sig = '🟢 Strongly Bullish'; sigColor = 'var(--lime)'; }
-    else if (todayPct >= 55) { sig = '↑ Bullish'; sigColor = 'var(--lime)'; }
-    else if (todayPct >= 40) { sig = '→ Neutral'; sigColor = 'var(--yellow)'; }
-    else if (todayPct >= 25) { sig = '↓ Bearish'; sigColor = 'var(--orange)'; }
-    else { sig = '🔴 Strongly Bearish'; sigColor = 'var(--red)'; }
-  }
-  el('nhnl-signal').textContent = sig; el('nhnl-signal').style.color = sigColor; const ratios5 = data.slice(0, 5).map(hlRatio).filter(v => v !== null); const avg5 = ratios5.length ? Math.round(ratios5.reduce((a, b) => a + b, 0) / ratios5.length * 100) : null; el('nhnl-5d').textContent = avg5 !== null ? avg5 + '%' : '—'; el('nhnl-5d').style.color = avg5 === null ? 'var(--dim)' : avg5 >= 55 ? 'var(--lime)' : avg5 >= 40 ? 'var(--yellow)' : 'var(--red)'; const ratios10 = data.slice(0, 10).map(hlRatio).filter(v => v !== null); const avg10 = ratios10.length ? Math.round(ratios10.reduce((a, b) => a + b, 0) / ratios10.length * 100) : null; el('nhnl-10d').textContent = avg10 !== null ? avg10 + '%' : '—'; el('nhnl-10d').style.color = 'var(--sub)'; if (avg5 !== null && avg10 !== null) { const diff = avg5 - avg10; const trendSymbol = diff >= 5 ? '↑↑' : diff >= 0 ? '↑' : diff >= -5 ? '↓' : '↓↓'; const trendColor = diff >= 3 ? 'var(--lime)' : diff >= 0 ? 'var(--yellow)' : 'var(--red)'; el('nhnl-trend').textContent = trendSymbol; el('nhnl-trend').style.color = trendColor; el('nhnl-trend-sig').textContent = (diff >= 0 ? '+' : '') + diff + 'pp — ' + (diff >= 3 ? 'Expanding' : diff >= 0 ? 'Stable' : 'Contracting'); el('nhnl-trend-sig').style.color = trendColor; } else { el('nhnl-trend').textContent = '—'; el('nhnl-trend-sig').textContent = 'Need 5+ entries'; }
-  const bars = data.slice(0, 10).reverse(); el('nhnl-bars').innerHTML = bars.map(r => { const ratio = hlRatio(r); const h = ratio !== null ? Math.max(3, Math.round(ratio * 28)) : 3; const c = ratio === null ? 'var(--dim)' : ratio >= 0.6 ? '#4ade80' : ratio >= 0.4 ? '#fbbf24' : '#f87171'; return `<div class="nhnl-bar" style="background:${c};height:${h}px;flex:1"></div>`; }).join('');
 }
 function renderMarketSummary() {
   const _dummy = { textContent: '', innerHTML: '', style: {} }; const el = id => document.getElementById(id) || _dummy; if (!document.getElementById('msem-phase')) return; const records = loadLocal(); const mpmDays = mpmLoad().slice(0, 25); const bsrTrades = bsrLoad(); const ftdDays = ftdLoad(); if (!records.length) { el('msem-phase').textContent = '—'; el('msem-phase').style.color = 'var(--dim)'; el('msem-summary').textContent = 'Save your first EOD entry to generate market summary.'; el('msem-guidance').innerHTML = '<li>No data yet</li>'; el('msem-risk').innerHTML = '—'; el('msem-exp-pct').textContent = '—'; el('msem-exp-range').textContent = '—'; el('msem-exp-note').textContent = 'Save EOD data to calculate exposure.'; el('msem-exp-fill').style.width = '0%'; return; }
@@ -5756,7 +5543,6 @@ function bsrUpdatePrice(id, newPrice) {
   const trades = bsrLoad(); const t = trades.find(x => x.id === id); if (!t) return; const prevStatus = bsrEval(t); t.curr = parseFloat(newPrice); t._updatedAt = Date.now(); const newStatus = bsrEval(t); bsrSave(trades); if (prevStatus !== newStatus) { if (newStatus === 'success') flashBsrSaved('🎯 ' + t.sym + ' → Success! ≥5% above pivot'); else if (newStatus === 'failed') flashBsrSaved('✗ ' + t.sym + ' → Failed — hit stop loss'); else if (newStatus === 'stale') flashBsrSaved('⏳ ' + t.sym + ' → Stale — pending >60 days'); } else { flashBsrSaved('✓ BSR Score Saved'); }
   bsrRenderAll(); renderRPG(); renderMarketSummary(); renderMarketCycle(); pushToCloud();
 }
-function bsrFlash(msg, color) { flashBsrSaved(msg); }
 function bsrRenderHero(trades) {
   const _d = { textContent: '', innerHTML: '', style: {}, className: '' }; const el = id => document.getElementById(id) || _d;
   const stats = bsrGetEffectiveStats();
@@ -5902,7 +5688,6 @@ async function mpmImportConfirm() {
     } catch (err) { if (syncMsgEl) { syncMsgEl.textContent = '✗ Cloud push failed: ' + err.message; syncMsgEl.style.color = 'var(--red)'; } }
   }
 }
-function mpmClassifyNoVol(close, pclose) { const c = parseFloat(close), p = parseFloat(pclose); if (isNaN(c) || isNaN(p) || p === 0) return 'neutral'; return c > p ? 'acc' : c < p ? 'dist' : 'neutral'; }
 function mpmDelete(id) { if (!confirm('Remove this day?')) return; const days = mpmLoad().filter(d => d.id !== id); mpmSave(days); mpmRenderAll(); pushToCloud(); }
 function mpmRenderHero(days) {
   const _d = { textContent: '', innerHTML: '', style: {}, className: '' }; const el = id => document.getElementById(id) || _d; const last25 = days.slice(0, 25); const acc = last25.filter(d => d.dtype === 'acc').length; const dist = last25.filter(d => d.dtype === 'dist').length; const neut = last25.filter(d => d.dtype === 'neutral').length; const score = acc - dist; const cond = mpmCondition(score); el('mpm-acc-n').textContent = acc; el('mpm-dist-n').textContent = dist; el('mpm-neut-n').textContent = neut; el('mpm-window').textContent = 'Showing ' + last25.length + ' of last 25 trading days'; if (!days.length) { el('mpm-score').textContent = '—'; el('mpm-score').style.color = 'var(--dim)'; el('mpm-cond').textContent = 'No Data'; el('mpm-cond').style.color = 'var(--dim)'; el('mpm-hint').textContent = 'Enter Nifty daily data to see market pressure analysis.'; el('mpm-needle').style.left = '50%'; el('mpm-bars').innerHTML = ''; el('hero-mpm-score').textContent = '—'; el('hero-mpm-score').style.color = 'var(--dim)'; el('hero-mpm-cond').textContent = '—'; el('hero-mpm-cond').style.color = 'var(--dim)'; el('hero-mpm-counts').textContent = 'A:0 D:0 / 25d'; return; }
@@ -6243,8 +6028,6 @@ async function cfConnectD1() {
 }
 window.cfConnectD1 = cfConnectD1;
 function cpClearPastForm() { ['p-adv', 'p-dec', 'p-unc', 'p-hi', 'p-lo', 'p-e20', 'p-s50', 'p-s200', 'p-nifty', 'p-nifty-low', 'p-vol'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); const pCb = document.getElementById('p-ftd-attempt'); if (pCb) pCb.checked = false; const pF = document.getElementById('p-ftd-followthrough'); if (pF) pF.checked = false; const d = new Date(); d.setDate(d.getDate() - 1); const pd = document.getElementById('p-date'); if (pd) pd.value = d.toISOString().split('T')[0]; const msg = document.getElementById('past-save-msg'); if (msg) msg.textContent = ''; }
-function openPastEntry() { openControlPanel('past'); }
-function closePastEntry() { const old = document.getElementById('past-modal'); if (old && old.style.display !== 'none') { old.style.display = 'none'; } else { closeControlPanel(); } }
 function loadPastRowIntoModal(date) {
   const row = loadLocal().find(r => r.date === date); if (!row) return; cpSwitchTab('past'); document.getElementById('p-date').value = date; document.getElementById('p-adv').value = row.adv || ''; document.getElementById('p-dec').value = row.dec || ''; document.getElementById('p-unc').value = row.unc || ''; document.getElementById('p-hi').value = row.hi || ''; document.getElementById('p-lo').value = row.lo || ''; document.getElementById('p-e20').value = row.e20 || ''; document.getElementById('p-s50').value = row.s50 || ''; document.getElementById('p-s200').value = row.s200 || ''; document.getElementById('p-nifty').value = row.nifty || ''; const pnl = document.getElementById('p-nifty-low'); if (pnl) pnl.value = row.niftyLow || ''; const pv = document.getElementById('p-vol'); if (pv) pv.value = row.vol || ''; const pCb = document.getElementById('p-ftd-attempt'); const pF = document.getElementById('p-ftd-followthrough'); const ftdEntry = ftdLoad().find(d => d.date === date); if (pCb) { pCb.checked = !!(ftdEntry && (ftdEntry.type === 'attempt' || (ftdEntry.type === 'void' && ftdEntry._origType === 'attempt'))); }
   if (pF) { pF.checked = !!(ftdEntry && (ftdEntry.type === 'followthrough' || (ftdEntry.type === 'void' && ftdEntry._origType === 'followthrough'))); }
@@ -8281,8 +8064,6 @@ function sdPopulateSectorsDropdown(data) {
 }
 function sdChangeSector(sec) { const dropdown = document.getElementById('sd-sector-dropdown'); if (dropdown) dropdown.style.display = 'none'; sectorDrillOpen(sec, _sdActiveTab); }
 document.addEventListener('click', () => { const dropdown = document.getElementById('sd-sector-dropdown'); if (dropdown) dropdown.style.display = 'none'; });
-function sdChangeSector(sec) { const dropdown = document.getElementById('sd-sector-dropdown'); if (dropdown) dropdown.style.display = 'none'; sectorDrillOpen(sec, _sdActiveTab); }
-document.addEventListener('click', () => { const dropdown = document.getElementById('sd-sector-dropdown'); if (dropdown) dropdown.style.display = 'none'; });
 function ensureOctoberDataSeeded() {
   try {
     // 1. Seed October Breadth Records if missing or update key Nifty levels
@@ -8578,27 +8359,6 @@ function parseScreenerHtml(symbol, html) {
   };
 }
 
-async function fetchScreenerFundamentals(symbol) {
-  if (!symbol) return null;
-  const sUpper = symbol.toUpperCase().replace('.NS', '').trim();
-  const urls = [
-    'https://www.screener.in/company/' + encodeURIComponent(sUpper) + '/consolidated/',
-    'https://www.screener.in/company/' + encodeURIComponent(sUpper) + '/'
-  ];
-
-  for (const targetUrl of urls) {
-    try {
-      const text = await _fetchHtmlViaProxy(targetUrl, 5000);
-      if (text && (text.includes('id="quarters"') || text.includes('Quarters') || text.includes('quarters'))) {
-        const data = parseScreenerHtml(sUpper, text);
-        if (data && Array.isArray(data.quarters) && data.quarters.length > 0) {
-          return data;
-        }
-      }
-    } catch (e) { }
-  }
-  return null;
-}
 
 // TradingView Drawing Tools & Editing Engine lives in chart_draw.js
 function closeMaximizedChart() {
@@ -9355,12 +9115,6 @@ async function resolveDhanSecurityId(symbol) {
   return null;
 }
 
-function getDhanSecurityId(symbol) {
-  if (!symbol) return null;
-  const sUpper = symbol.toUpperCase().replace('.NS', '').trim();
-  if (DHAN_SECURITY_MAP[sUpper]) return DHAN_SECURITY_MAP[sUpper];
-  return null;
-}
 
 // Fetch daily/historical candles from Dhan HQ API
 async function fetchDhanCandles(symbol, range, interval) {
