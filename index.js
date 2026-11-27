@@ -229,7 +229,6 @@ function srtUpsertSector(fullName, shortName, close, niftyClose, date) {
   if (!sector.history) sector.history = []; const ei = sector.history.findIndex(h => h.date === date); const entry = { date, close, niftyClose: niftyClose || null }; if (ei >= 0) sector.history[ei] = entry; else sector.history.push(entry); sector.history = sector.history.sort((a, b) => a.date.localeCompare(b.date)).slice(-60); srtRecompute(sector); sector._updatedAt = Date.now(); srtSave(sectors);
 }
 const SRT_NAME_MAP = { 'it': 'NIFTY IT', 'pharma': 'NIFTY PHARMA', 'fmcg': 'NIFTY FMCG', 'bank': 'NIFTY BANK', 'auto': 'NIFTY AUTO', 'metal': 'NIFTY METAL', 'realty': 'NIFTY REALTY', 'infra': 'NIFTY INFRA', 'chemicals': 'NIFTY COMMODITIES', 'chem': 'NIFTY COMMODITIES', 'psu bank': 'NIFTY PSU BANK', 'psub': 'NIFTY PSU BANK', 'energy': 'NIFTY ENERGY', 'financial services': 'NIFTY FINANCIAL SERVICES', 'fin services': 'NIFTY FINANCIAL SERVICES', 'finserv': 'NIFTY FINANCIAL SERVICES', 'india manufacturing': 'NIFTY INDIA MANUFACTURING', 'manufacturing': 'NIFTY INDIA MANUFACTURING', 'capital market': 'NIFTY CAPITAL MARKETS', 'cap market': 'NIFTY CAPITAL MARKETS', 'defence': 'NIFTY INDIA DEFENCE', 'defense': 'NIFTY INDIA DEFENCE', 'pse': 'NIFTY CPSE', 'cpse': 'NIFTY CPSE' }; const SRT_SHORT_MAP = { 'NIFTY IT': 'Information Technology', 'NIFTY PHARMA': 'Pharma', 'NIFTY FMCG': 'Fast Moving Consumer Goods', 'NIFTY BANK': 'Banks', 'NIFTY AUTO': 'Automobile and Auto Components', 'NIFTY METAL': 'Metals & Mining', 'NIFTY REALTY': 'Realty', 'NIFTY INFRA': 'Construction', 'NIFTY COMMODITIES': 'Specialty Chemicals', 'NIFTY PSU BANK': 'PSU Bank', 'NIFTY ENERGY': 'Oil Gas & Consumable Fuels', 'NIFTY FINANCIAL SERVICES': 'NBFCs & Finance', 'NIFTY INDIA MANUFACTURING': 'Capital Goods', 'NIFTY CAPITAL MARKETS': 'Capital Goods', 'NIFTY INDIA DEFENCE': 'Defense', 'NIFTY CPSE': 'PSE' }; const SRT_LINKS = { 'NIFTY IT': 'https://www.nseindia.com/index-tracker/NIFTY%20IT', 'NIFTY PHARMA': 'https://www.nseindia.com/index-tracker/NIFTY%20PHARMA', 'NIFTY FMCG': 'https://www.nseindia.com/index-tracker/NIFTY%20FMCG', 'NIFTY BANK': 'https://www.nseindia.com/index-tracker/NIFTY%20BANK', 'NIFTY AUTO': 'https://www.nseindia.com/index-tracker/NIFTY%20AUTO', 'NIFTY METAL': 'https://www.nseindia.com/index-tracker/NIFTY%20METAL', 'NIFTY REALTY': 'https://www.nseindia.com/index-tracker/NIFTY%20REALTY', 'NIFTY INFRA': 'https://www.nseindia.com/index-tracker/NIFTY%20INFRA', 'NIFTY COMMODITIES': 'https://www.nseindia.com/index-tracker/NIFTY%20CHEMICALS', 'NIFTY PSU BANK': 'https://www.nseindia.com/index-tracker/NIFTY%20PSU%20BANK', 'NIFTY ENERGY': 'https://www.nseindia.com/index-tracker/NIFTY%20ENERGY', 'NIFTY FINANCIAL SERVICES': 'https://www.nseindia.com/index-tracker/NIFTY%20FIN%20SERVICE', 'NIFTY INDIA MANUFACTURING': 'https://www.nseindia.com/index-tracker/NIFTY%20INDIA%20MFG', 'NIFTY CAPITAL MARKETS': 'https://www.nseindia.com/index-tracker/NIFTY%20CAPITAL%20MKT', 'NIFTY INDIA DEFENCE': 'https://www.nseindia.com/index-tracker/NIFTY%20IND%20DEFENCE', 'NIFTY CPSE': 'https://www.nseindia.com/index-tracker/NIFTY%20PSE' }; function srtGetSessionNifty() { try { return JSON.parse(localStorage.getItem('nse_srt_nifty')) || null; } catch (e) { return null; } }
-function srtSetSessionNifty(close, date) { localStorage.setItem('nse_srt_nifty', JSON.stringify({ close, date })); }
 const SRT_BULK_ORDER = ['NIFTY IT', 'NIFTY PHARMA', 'NIFTY FMCG', 'NIFTY BANK', 'NIFTY AUTO', 'NIFTY METAL', 'NIFTY REALTY', 'NIFTY INFRA', 'NIFTY COMMODITIES', 'NIFTY PSU BANK', 'NIFTY ENERGY', 'NIFTY FINANCIAL SERVICES', 'NIFTY INDIA MANUFACTURING', 'NIFTY CAPITAL MARKETS', 'NIFTY INDIA DEFENCE', 'NIFTY CPSE']; const SRT_BULK_NAMES = ['Information Technology', 'Pharma', 'Fast Moving Consumer Goods', 'Banks', 'Automobile and Auto Components', 'Metals & Mining', 'Realty', 'Construction', 'Specialty Chemicals', 'PSU Bank', 'Oil Gas & Consumable Fuels', 'NBFCs & Finance', 'Capital Goods', 'Capital Goods', 'Defense', 'PSE']; const SRT_SHORT = { 'Information Technology': 'IT', 'Pharma': 'Pharma', 'Fast Moving Consumer Goods': 'FMCG', 'Banks': 'Banks', 'Automobile and Auto Components': 'Auto', 'Metals & Mining': 'Metals', 'Realty': 'Realty', 'Construction': 'Infra', 'Construction Materials': 'Const Mat', 'Specialty Chemicals': 'Chemicals', 'PSU Bank': 'PSU Bank', 'Oil Gas & Consumable Fuels': 'Energy', 'NBFCs & Finance': 'NBFCs', 'Capital Goods': 'Cap Goods', 'Defense': 'Defense', 'PSE': 'PSE', 'Hospitals & Healthcare': 'Healthcare', 'Railways': 'Railways', 'Agrochemicals & Fertilizers': 'Agrochem', 'Consumer Services': 'Cons Svc', 'Consumer Durables': 'Cons Dur', 'Telecommunication': 'Telecom', 'Services': 'Services', 'Power': 'Power', 'Media Entertainment & Publication': 'Media', 'Diversified': 'Diversified', 'Textiles': 'Textiles', 'Market (Index)': 'Market', }; function srtBulkImport() {
   const txt = (document.getElementById('srt-bulk-txt').value || '').trim(); const msg = document.getElementById('srt-bulk-msg'); if (!txt) { msg.style.display = 'block'; msg.style.color = 'var(--red)'; msg.textContent = 'Nothing to import.'; return; }
   let rowsOk = 0, errors = []; txt.split('\n').forEach((line, i) => {
@@ -2039,6 +2038,13 @@ async function sccChartRenderPanel(index) {
   try {
     const [candles, niftyCandles] = await Promise.all([fetchYfData(symbol.toUpperCase(), range, interval), symbol.toUpperCase() !== '^NSEI' ? fetchYfData('^NSEI', range, interval).catch(() => null) : Promise.resolve(null)]);
     if (loader) loader.style.display = 'none';
+    if (Array.isArray(candles) && candles.length > 0 && typeof syncWatchlistPriceInDom === 'function') {
+      const lastC = candles[candles.length - 1];
+      const prevC = candles.length > 1 ? candles[candles.length - 2] : null;
+      const isDaily = (interval === '1d');
+      const chg = (isDaily && prevC && prevC.close > 0) ? ((lastC.close - prevC.close) / prevC.close) * 100 : undefined;
+      syncWatchlistPriceInDom(symbol, lastC.close, chg, _chartDataSource || 'yf');
+    }
     const lwDone = sccRenderLwChart(index, candles, niftyCandles);
     const canvas = document.getElementById(canvasId);
     const lwEl = document.getElementById(`scc-chart-lw-${index}`);
@@ -3647,9 +3653,7 @@ async function sccWatchlistFetchSymbolData(symbol) {
           if (!isFinite(pctChange) && Number(v.prev_close_price) > 0) {
             pctChange = ((ltp - Number(v.prev_close_price)) / Number(v.prev_close_price)) * 100;
           }
-          _sccWatchlistData[sym] = { price: ltp, change: isFinite(pctChange) ? pctChange : 0, _source: 'fyers' };
-          sccWatchlistRender();
-          if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+          syncWatchlistPriceInDom(sym, ltp, isFinite(pctChange) ? pctChange : 0, 'fyers');
           return;
         }
       } catch (fErr) {
@@ -3664,18 +3668,20 @@ async function sccWatchlistFetchSymbolData(symbol) {
       const prevCandle = candles.length > 1 ? candles[candles.length - 2] : lastCandle;
       const price = lastCandle.close;
       const pctChange = prevCandle.close > 0 ? ((price - prevCandle.close) / prevCandle.close) * 100 : 0;
-      _sccWatchlistData[sym] = { price, change: pctChange, _source: 'yf' };
+      syncWatchlistPriceInDom(sym, price, pctChange, 'yf');
     }
   } catch (err) {
     console.error("Watchlist fetch error for " + sym, err);
-    if (!_sccWatchlistData[sym]) { _sccWatchlistData[sym] = { error: true }; }
+    if (!_sccWatchlistData[sym]) {
+      _sccWatchlistData[sym] = { error: true };
+      sccWatchlistRender();
+      if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+    }
   }
-  sccWatchlistRender();
-  if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
 }
 
 async function sccWatchlistFetchAll(bypassCache = false) {
-  const symsToFetch = _sccWatchlistSymbols.slice(0, _chartDataSource === 'fyers' ? 50 : 40);
+  const symsToFetch = _chartDataSource === 'fyers' ? [..._sccWatchlistSymbols] : _sccWatchlistSymbols.slice(0, 40);
   if (_chartDataSource === 'fyers' && typeof fetchFyersQuotesBatch === 'function' && typeof fyersGetCreds === 'function') {
     const creds = fyersGetCreds();
     if (creds && creds.appId && creds.token && symsToFetch.length > 0) {
@@ -3686,13 +3692,11 @@ async function sccWatchlistFetchAll(bypassCache = false) {
           const sUpper = sym.toUpperCase();
           const q = quotes[sUpper];
           if (q && isFinite(q.price) && q.price > 0) {
-            _sccWatchlistData[sUpper] = { price: q.price, change: q.change, _source: 'fyers' };
+            syncWatchlistPriceInDom(sUpper, q.price, q.change, 'fyers');
           } else {
             missing.push(sUpper);
           }
         });
-        sccWatchlistRender();
-        if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
         missing.forEach(sUpper => {
           sccWatchlistFetchSymbolData(sUpper);
         });
@@ -3703,16 +3707,22 @@ async function sccWatchlistFetchAll(bypassCache = false) {
     }
   }
 
-  symsToFetch.forEach(sym => {
-    const sUpper = sym.toUpperCase();
-    if (bypassCache) {
+  const queue = symsToFetch.map(sym => sym.toUpperCase());
+  if (bypassCache) {
+    queue.forEach(sUpper => {
       const yfSymbol = sUpper.startsWith('^') ? sUpper : (sUpper + '.NS');
-      const cacheKey = `${yfSymbol}_5d_1d`;
-      _yfDataCache.delete(cacheKey);
+      _yfDataCache.delete(`${yfSymbol}_5d_1d`);
       _yfDataCache.delete(`${yfSymbol}_6mo_1d`);
+    });
+  }
+  const concurrency = 6;
+  const workers = Array.from({ length: Math.min(concurrency, queue.length) }, async () => {
+    while (queue.length > 0) {
+      const sUpper = queue.shift();
+      if (sUpper) await sccWatchlistFetchSymbolData(sUpper);
     }
-    sccWatchlistFetchSymbolData(sUpper);
   });
+  await Promise.all(workers);
 }
 document.addEventListener('click', (e) => { const insideWl = e.target.closest('.scc-wl-item') || e.target.closest('#scc-wl-tabs-bar') || e.target.closest('#scc-wl-flag-popup') || e.target.closest('#scc-wl-context-menu') || e.target.closest('#scc-wl-add-input') || e.target.closest('#scc-wl-suggest') || e.target.closest('.wl-del-btn') || e.target.closest('button[onclick*="sccWatchlist"]') || e.target.closest('button[onclick*="sccToggleWatchlist"]'); if (!insideWl) { if (_sccWlSelectedSymbols.length > 0) { _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null; sccWatchlistRender(); } } }); document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
@@ -6689,12 +6699,12 @@ function _maxFetchAndDraw(symbol) {
     if (loader) loader.style.display = 'none';
     _maxCandles = candles;
     _maxNiftyCandles = niftyCandles;
-    if (_chartDataSource === 'fyers' && Array.isArray(candles) && candles.length > 0 && typeof syncWatchlistPriceInDom === 'function') {
+    if (Array.isArray(candles) && candles.length > 0 && typeof syncWatchlistPriceInDom === 'function') {
       const lastC = candles[candles.length - 1];
       const prevC = candles.length > 1 ? candles[candles.length - 2] : null;
       const isDaily = (!is15m && !is1H && !isW && !isM);
       const chg = (isDaily && prevC && prevC.close > 0) ? ((lastC.close - prevC.close) / prevC.close) * 100 : undefined;
-      syncWatchlistPriceInDom(symbol, lastC.close, chg, 'fyers');
+      syncWatchlistPriceInDom(symbol, lastC.close, chg, _chartDataSource || 'yf');
     }
     try {
       drawMaxChart();
@@ -8249,117 +8259,6 @@ function sccWlCycleFlag(sym, e) {
 window.sccWlCycleFlag = sccWlCycleFlag;
 
 
-// ── SCREENER.IN QUARTERLY EPS & SALES ENGINE ─────────────────────
-function parseScreenerHtml(symbol, html) {
-  if (!html) return null;
-  const quartersMatch = html.match(/<section id="quarters"[\s\S]*?<\/section>/);
-  if (!quartersMatch) return null;
-  const tableHtml = quartersMatch[0];
-
-  const theadMatch = tableHtml.match(/<thead>[\s\S]*?<\/thead>/);
-  if (!theadMatch) return null;
-  const thMatches = [...theadMatch[0].matchAll(/<th[^>]*>([\s\S]*?)<\/th>/g)].map(m => m[1].replace(/<[^>]+>/g, '').trim()).filter(Boolean);
-
-  const rowMatches = [...tableHtml.matchAll(/<tr>[\s\S]*?<\/tr>/g)];
-  let salesRow = null;
-  let epsRow = null;
-  let netProfitRow = null;
-
-  for (const r of rowMatches) {
-    const rowStr = r[0];
-    const textCell = rowStr.match(/<td[^>]*class="text"[^>]*>([\s\S]*?)<\/td>/);
-    if (!textCell) continue;
-    const label = textCell[1].replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim().toLowerCase();
-    const cells = [...rowStr.matchAll(/<td(?![^>]*class="text")[^>]*>([\s\S]*?)<\/td>/g)].map(m => {
-      const val = parseFloat(m[1].replace(/,/g, '').trim());
-      return isNaN(val) ? null : val;
-    });
-
-    if (label.startsWith('sales')) salesRow = cells;
-    else if (label.startsWith('eps')) epsRow = cells;
-    else if (label.startsWith('net profit')) netProfitRow = cells;
-  }
-
-  if (!thMatches.length || (!salesRow && !epsRow && !netProfitRow)) return null;
-
-  const items = [];
-  for (let i = 0; i < thMatches.length; i++) {
-    items.push({
-      dateStr: thMatches[i],
-      sales: salesRow ? salesRow[i] : null,
-      eps: epsRow ? epsRow[i] : (netProfitRow ? netProfitRow[i] : null),
-      netProfit: netProfitRow ? netProfitRow[i] : null
-    });
-  }
-
-  const quarters = [];
-  for (let i = items.length - 1; i >= 0; i--) {
-    const cur = items[i];
-    let epsPct = null;
-    let salesPct = null;
-
-    if (i >= 4) {
-      const prevYear = items[i - 4];
-      if (cur.eps != null && prevYear.eps != null && prevYear.eps !== 0) {
-        epsPct = Math.round(((cur.eps - prevYear.eps) / Math.abs(prevYear.eps)) * 100);
-      }
-      if (cur.sales != null && prevYear.sales != null && prevYear.sales !== 0) {
-        salesPct = Math.round(((cur.sales - prevYear.sales) / Math.abs(prevYear.sales)) * 100);
-      }
-    }
-
-    let dFormatted = cur.dateStr;
-    const dParts = cur.dateStr.split(' ');
-    if (dParts.length === 2) {
-      dFormatted = dParts[0].slice(0, 3) + '-' + dParts[1].slice(-2);
-    }
-
-    quarters.push(normalizeQuarterData({
-      date: dFormatted,
-      qtr: dFormatted,
-      epsPct: epsPct,
-      salesPct: salesPct,
-      salesCr: cur.sales,
-      netProfitCr: cur.netProfit,
-      eps: cur.eps
-    }));
-  }
-
-  // Extract Market Cap & ROE from Screener's top ratios if present
-  let roeFormatted = '—';
-  let roe = null;
-  const roeMatch = html.match(new RegExp("Return on equity[\\s\\S]*?<span class=\"number\">([0-9.]+)</span>%", "i"));
-  if (roeMatch) {
-    roe = parseFloat(roeMatch[1]) / 100;
-    roeFormatted = roeMatch[1] + '%';
-  }
-
-  let capCategory = '—';
-  let marketCap = null;
-  const mcMatch = html.match(new RegExp("Market Cap[\\s\\S]*?<span class=\"number\">([0-9,]+)</span>", "i"));
-  if (mcMatch) {
-    const mcInCr = parseFloat(mcMatch[1].replace(/,/g, ''));
-    if (!isNaN(mcInCr)) {
-      marketCap = mcInCr * 1e7;
-      if (mcInCr >= 20000) capCategory = 'LargeCap';
-      else if (mcInCr >= 5000) capCategory = 'MidCap';
-      else if (mcInCr >= 1000) capCategory = 'SmallCap';
-      else capCategory = 'MicroCap';
-    }
-  }
-
-  return {
-    symbol: symbol,
-    quarters: quarters,
-    roe: roe,
-    roeFormatted: roeFormatted,
-    marketCap: marketCap,
-    capCategory: capCategory,
-    screenerUrl: 'https://www.screener.in/company/' + encodeURIComponent(symbol) + '/consolidated/'
-  };
-}
-
-
 // TradingView Drawing Tools & Editing Engine lives in chart_draw.js
 function closeMaximizedChart() {
   try { sessionStorage.removeItem('nse_active_max_chart'); } catch (e) { }
@@ -9046,11 +8945,11 @@ async function maxChartRenderSubTile(tileNum, symbol) {
       }
       clean.sort((a, b) => a.time - b.time);
       series.setData(clean);
-      if (_chartDataSource === 'fyers' && clean.length > 0 && typeof syncWatchlistPriceInDom === 'function') {
+      if (clean.length > 0 && typeof syncWatchlistPriceInDom === 'function') {
         const lastC = clean[clean.length - 1];
         const prevC = clean.length > 1 ? clean[clean.length - 2] : null;
         const chg = (prevC && prevC.close > 0) ? ((lastC.close - prevC.close) / prevC.close) * 100 : undefined;
-        syncWatchlistPriceInDom(symbol, lastC.close, chg, 'fyers');
+        syncWatchlistPriceInDom(symbol, lastC.close, chg, _chartDataSource || 'yf');
       }
       resetChartPriceScale(chart, 'right');
       applyPreservedChartZoom(chart, clean.length, 'D');
