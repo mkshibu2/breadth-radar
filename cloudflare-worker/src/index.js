@@ -88,6 +88,61 @@ export default {
     const userId = 'default';
 
     // GET /api/sync -> reconstruct full payload from D1 tables
+    // ── /chart?url=… — Yahoo Finance passthrough ────────────────────────────────
+    // The dashboard fetches chart data through this route when it is served from
+    // GitHub Pages or a file:// URL, where cross-origin requests are blocked.
+    //
+    // Deliberately narrow: only Yahoo Finance chart endpoints are proxied, and the
+    // response is returned as-is. An open proxy (any URL, any host) would be abused
+    // within hours, so the host is allow-listed rather than trusting the ?url=.
+    if (path === '/chart' && request.method === 'GET') {
+      const raw = url.searchParams.get('url');
+      if (!raw) return jsonResponse({ ok: false, error: 'Missing url parameter' }, 400);
+
+      let target;
+      try {
+        target = new URL(raw);
+      } catch (e) {
+        return jsonResponse({ ok: false, error: 'Malformed url parameter' }, 400);
+      }
+
+      const allowed = ['query1.finance.yahoo.com', 'query2.finance.yahoo.com'];
+      if (target.protocol !== 'https:' || !allowed.includes(target.hostname)) {
+        return jsonResponse({ ok: false, error: 'Host not allowed' }, 403);
+      }
+      if (!target.pathname.startsWith('/v8/finance/chart/')) {
+        return jsonResponse({ ok: false, error: 'Path not allowed' }, 403);
+      }
+
+      try {
+        const upstream = await fetch(target.toString(), {
+          headers: {
+            // Yahoo returns 401/empty payloads to unknown agents.
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json,text/plain,*/*',
+          },
+          cf: { cacheTtl: 60, cacheEverything: true },
+        });
+
+        if (!upstream.ok) {
+          return jsonResponse({ ok: false, error: 'Upstream HTTP ' + upstream.status }, upstream.status === 404 ? 404 : 502);
+        }
+
+        // Pass the JSON straight through; the client parses Yahoo's shape directly.
+        return new Response(upstream.body, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            // Charts are per-symbol and already cached at the edge for 60s.
+            'Cache-Control': 'public, max-age=30',
+            ...CORS_HEADERS,
+          },
+        });
+      } catch (e) {
+        return jsonResponse({ ok: false, error: 'Upstream fetch failed' }, 502);
+      }
+    }
+
     if (path === '/api/sync' && request.method === 'GET') {
       try {
         const sectionsRes = await env.DB.prepare(

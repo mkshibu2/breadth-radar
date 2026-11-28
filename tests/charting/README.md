@@ -15,6 +15,7 @@ node tests/charting/lw_version_test.js  # the series/marker/scale contract again
 node tests/charting/lw_render_test.js   # builds a real chart (and the drawing overlay) headlessly
 node tests/charting/earnings_test.js     # EPS/Sales growth pane, against the real financials file
 node tests/charting/convergence_test.js  # the indicator is identical on every page
+node tests/charting/datasource_test.js  # chart-data routes, allow-list, circuit breaker
 ```
 
 Each script exits non-zero on failure. Run them all:
@@ -33,6 +34,7 @@ for t in tests/charting/*_test.js; do node "$t" || exit 1; done
 | `race_test.js` | A slow, superseded symbol request painting over the newer one after fast watchlist paging. |
 | `lint_test.js` | The class of bug where an inline `//` comment on a packed one-line block swallows the statements after it — plus a check that draw-engine globals are actually declared. |
 | `lw_version_test.js` | A LightweightCharts upgrade silently removing `addCandlestickSeries()` / `series.setMarkers()` — the failure mode is a blank chart area, not an exception. Boots the **real** bundled library in a `vm` sandbox and replays all seven series configurations plus the marker, overlay-scale and time-scale APIs the repo uses. Set `LW4_BUNDLE=…` to run the same suite against a v4 build and prove the adapter is not a one-way door. |
+| `datasource_test.js` | The route from Yahoo to the chart. Asserts the worker's `/chart` passthrough cannot be used as an open proxy, that the client tries routes in a sane order, and that a 404 from our own worker is not retried per chart. No network needed. |
 | `convergence_test.js` | The WIN indicator is computed once and drawn everywhere. Compares the shared module against the per-page maths still in `index.js` and demands a bit-exact match, so a future edit to one surface cannot silently re-diverge the others. |
 | `earnings_test.js` | The quarterly EPS/Sales pane. Runs against the **shipped** `exact_quarterly_financials.json` rather than fixtures, because that file contains the values that break naive plotting (10% of prints over +200%, one at +109,634%). Covers label parsing, range clamping, the clamp-to-cap behaviour, and pane teardown. |
 | `lw_render_test.js` | The same class of bug, one level up: it loads `index.js` and calls the real `drawMaxChartLightweight()` against the real bundle, then binds `chart_draw.js` to that live chart and exercises `pointToPixels`/`redrawChartDrawings`. This is the test that would have caught the v5 migration. |

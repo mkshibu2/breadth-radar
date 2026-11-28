@@ -7587,6 +7587,11 @@ const _promiseAny = (typeof Promise !== 'undefined' && Promise.any) ? Promise.an
   });
 };
 
+// The Cloudflare Worker that can proxy Yahoo chart data (see cloudflare-worker/).
+const CF_CHART_PROXY = 'https://nse-chart-proxy.shibu-mk.workers.dev';
+let _yfFileModeWarned = false;
+let _yfCfWorkerDead = false;
+
 async function _fetchYfDataWithSymbol(yfSymbol, range, interval, force) {
   const cacheKey = `${yfSymbol}_${range}_${interval}`;
   if (!force) {
@@ -7596,63 +7601,83 @@ async function _fetchYfDataWithSymbol(yfSymbol, range, interval, force) {
     _yfDataCache.delete(cacheKey);
   }
 
+  const host = window.location.hostname;
+  const proto = window.location.protocol;
+  const isLoopback = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+  const isFile = proto === 'file:';
   const currentOrigin = window.location.origin;
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
 
-  // 1. If running locally, try local proxy server first (fastest failover, <20ms if up)
-  if (isLocal) {
+  // With origin 'null' (file://) every cross-origin fetch is treated as opaque and
+  // both the CORS preflight and the response reading fail — no proxy can fix that
+  // from inside the page. Say so once, clearly, instead of firing dozens of doomed
+  // requests whose console noise looks like a code fault.
+  if (isFile && !_yfFileModeWarned) {
+    _yfFileModeWarned = true;
+    console.warn(
+      '[chart data] This page was opened directly from disk (file://). Cross-origin ' +
+      'data requests from a null origin are unreliable — public proxies reject them ' +
+      'outright. If charts stay empty, serve the folder over http instead, e.g. ' +
+      '`python -m http.server 8000`, and open http://localhost:8000/index.html'
+    );
+  }
+
+  const yahooUrl = (mirror) => `https://${mirror}.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`;
+
+  // 1. Local proxy. Only worth trying on loopback: on any other host "localhost:9090"
+  // is the visitor's own machine, not the one serving the page.
+  if (isLoopback) {
     try {
-      const localTarget = `https://query1.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`;
-      const candles = await _fetchProxyCandles(`http://localhost:9090/?url=${encodeURIComponent(localTarget)}`, 1200);
+      const candles = await _fetchProxyCandles(
+        `http://localhost:9090/?url=${encodeURIComponent(yahooUrl('query1'))}`, 4000);
       if (candles && candles.length > 0) {
         _yfCacheSet(cacheKey, candles);
         return candles;
       }
     } catch (e) {
-      // Local proxy not running, seamlessly proceed to cloud proxies
+      // Local proxy not running — fall through.
     }
   }
 
-  // 2. Query both Yahoo Finance mirrors (query1 and query2) with parallel proxy race
-  const endpoints = [
-    `https://query1.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`,
-    `https://query2.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`
-  ];
+  // 2. Every remaining route is a server-side fetch somewhere. Build them in the
+  // order that is most likely to work, then try them in turn.
+  const routes = [];
 
-  for (const targetUrl of endpoints) {
-    // Priority 1: User's Dedicated Cloudflare Worker Proxy (Sub-300ms, no public rate limits)
-    try {
-      const cfUrl = `https://nse-chart-proxy.shibu-mk.workers.dev/?url=${encodeURIComponent(targetUrl)}`;
-      const candles = await _fetchProxyCandles(cfUrl, 3800);
-      if (candles && candles.length > 0) {
-        _yfCacheSet(cacheKey, candles);
-        return candles;
+  // 2a. Same-origin proxy (a Worker/Pages function serving this site).
+  if (!isFile && host && !currentOrigin.includes('github.io')) {
+    routes.push((u) => `${currentOrigin}/api/proxy?url=${encodeURIComponent(u)}`);
+  }
+
+  // 2b. The user's own Cloudflare Worker, via its /chart passthrough.
+  // NOTE: this must be deployed with that route (see cloudflare-worker/src/index.js).
+  // Until then it answers 404 and this entry is skipped on the first failure.
+  if (!_yfCfWorkerDead) {
+    routes.push((u) => `${CF_CHART_PROXY}/chart?url=${encodeURIComponent(u)}`);
+  }
+
+  // 2c. Public CORS proxies, last resort. They rate-limit aggressively (HTTP 429),
+  // so they get one short attempt rather than being raced on every mirror.
+  if (!isFile) {
+    routes.push((u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`);
+  }
+
+  for (const mirror of ['query1', 'query2']) {
+    const targetUrl = yahooUrl(mirror);
+    for (const makeUrl of routes) {
+      // Re-checked per iteration: the breaker may have tripped on the previous pass.
+      if (_yfCfWorkerDead && makeUrl(targetUrl).startsWith(CF_CHART_PROXY)) continue;
+      try {
+        const candles = await _fetchProxyCandles(makeUrl(targetUrl), 6000);
+        if (candles && candles.length > 0) {
+          _yfCacheSet(cacheKey, candles);
+          return candles;
+        }
+      } catch (err) {
+        // A 404 from our own worker means the route isn't deployed. Stop asking it
+        // for the rest of the session instead of paying that timeout per chart.
+        if (!isFile && makeUrl(targetUrl).startsWith(CF_CHART_PROXY) && /HTTP 404/.test(err && err.message)) {
+          _yfCfWorkerDead = true;
+        }
       }
-    } catch (eCf) {
-      // Proceed to backup mirrors if Cloudflare Worker or primary target is slow
-    }
-
-    // Priority 2: Race backup cloud proxies in parallel
-    const proxyUrls = [
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-      `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
-      `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`
-    ];
-
-    if (currentOrigin && !currentOrigin.startsWith('file') && currentOrigin !== 'null' && !currentOrigin.includes('github.io')) {
-      proxyUrls.push(`${currentOrigin}/api/proxy?url=${encodeURIComponent(targetUrl)}`);
-    }
-
-    try {
-      const candles = await _promiseAny(
-        proxyUrls.map(pUrl => _fetchProxyCandles(pUrl, 4500))
-      );
-      if (candles && candles.length > 0) {
-        _yfCacheSet(cacheKey, candles);
-        return candles;
-      }
-    } catch (err) {
-      // Mirror failed, try next
     }
   }
 

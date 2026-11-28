@@ -232,7 +232,7 @@ for t in tests/charting/*_test.js; do node "$t" || exit 1; done   # 55 assertion
 ## Sprint 2 — shipped
 
 ```bash
-for t in tests/charting/*_test.js; do node "$t" || exit 1; done   # 295 assertions, all passing
+for t in tests/charting/*_test.js; do node "$t" || exit 1; done   # 320 assertions, all passing
 ```
 
 | # | Change | Files |
@@ -359,6 +359,29 @@ placement and the volume colours at once. Both are preserved, named, and comment
 The extraction was validated by comparing it to the old code **before** any of the old code
 was removed: identical to 0.0e+0 across EMA 10/20/50/200, SMA 30/50/200, average volume,
 and every one of the 320 volume-bar colours.
+
+## Sprint 3 (part 4) — the chart-data path was dead
+
+Not a charting defect, but it made the charting unverifiable: on a real machine **every**
+data route failed at once, so every chart came up empty.
+
+| Route | Symptom |
+| --- | --- |
+| `nse-chart-proxy.shibu-mk.workers.dev` | **404** — the `/chart` passthrough had never been committed; the deployed worker only served D1 routes |
+| `api.allorigins.win` | **429** — rate-limited, then a CORS rejection |
+| `localhost:9090` | never consulted when the page is opened from `file://`… and the page *was* |
+
+The screener-style grid requests ~40 charts at once, which is what tripped the 429s, so the
+console filled with errors that looked like a code fault.
+
+| Change | Files |
+| --- | --- |
+| `/chart?url=` passthrough added to the worker. Allow-listed to `query1\|query2.finance.yahoo.com` and to `/v8/finance/chart/` only — deliberately not an open proxy, which would be abused within hours. Sets a browser User-Agent (Yahoo rejects unknown agents) and edge-caches for 60s. | `cloudflare-worker/src/index.js`, `cloudflare-worker/README.md` |
+| The client stopped racing three public proxies on every mirror. It now tries routes in order of reliability and stops after the first success. | `index.js` |
+| A `404` from our own worker trips a session-long circuit breaker. The dead route previously cost a 3.8s timeout **per chart, per mirror** — a grid render paid it ~80 times. | `index.js` |
+| The `localhost:9090` probe is now gated on the page actually being served from loopback. On GitHub Pages it was probing the *visitor's* machine. | `index.js` |
+| `file://` mode now explains itself once, instead of failing silently and looking like a bug. | `index.js` |
+| New `datasource_test.js` (25 assertions) covers the worker's allow-list, the chain ordering, loopback gating and the circuit breaker — no network required. | `tests/charting/` |
 
 ### Still open from this review
 
