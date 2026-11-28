@@ -2373,8 +2373,9 @@ function sccEnableTabsDragScroll(tabsEl) {
 function sccWlSwitchTab(name) {
   if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
   _sccActiveWatchlist = name; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null; _sccWlIsBreadthSorted = false; _sccWlMaxLoaded = 40; if (name === 'VCP') { _sccWatchlistSymbols = []; } else if (name === 'Themes' || name === 'Clusters') { window._sccClustersStockLimit = 40; _sccWatchlistSymbols = []; } else if (name === 'Tight' || name === 'TIGHT') { _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || [])); if (!_sccTightSymbolsCache || !_sccTightSymbolsCache.length) { if (typeof sccScanTightStocks === 'function') sccScanTightStocks(); } } else if (name === 'Shortlist') { _sccWatchlistSymbols = Array.from(getShortlistSet()); } else if (name.startsWith('__flag_')) { const color = name.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else { _sccWatchlistSymbols = _sccWatchlists[name] || []; }
-  sccWlRenderTabs(); sccWatchlistRender(); sccWatchlistFetchAll();
+  sccWlRenderTabs(); sccWatchlistRender();
   if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+  sccWatchlistFetchAll();
   if (_sccChartLayout === 'watchlist') sccChartRebuildGrid();
 }
 function sccWlCreateTabPrompt() {
@@ -2388,6 +2389,287 @@ function sccWlDeleteTab(name) {
     sccSaveWatchlistsLocalAndSync(); _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null; sccWlRenderTabs(); sccWatchlistRender(); sccWatchlistFetchAll();
   }
 }
+
+function sccWlRenameTab(oldName) {
+  if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
+  if (!oldName || !_sccWatchlists || !_sccWatchlists[oldName]) return;
+  const reserved = ['VCP', 'Themes', 'THEMES', 'Clusters', 'CLUSTERS', 'Tight', 'TIGHT', 'Shortlist'];
+  const raw = prompt(`Rename watchlist "${oldName}" to:`, oldName);
+  if (raw === null) return;
+  const newName = raw.trim();
+  if (!newName || newName === oldName) return;
+  if (reserved.includes(newName) || newName.startsWith('__flag')) {
+    alert(`"${newName}" is a reserved watchlist name.`);
+    return;
+  }
+  if (_sccWatchlists[newName]) {
+    alert(`A watchlist named "${newName}" already exists.`);
+    return;
+  }
+
+  // Preserve key order in _sccWatchlists
+  const updated = {};
+  Object.keys(_sccWatchlists).forEach(k => {
+    if (k === oldName) updated[newName] = _sccWatchlists[oldName];
+    else updated[k] = _sccWatchlists[k];
+  });
+  _sccWatchlists = updated;
+
+  // Update custom tab order if saved
+  try {
+    const order = JSON.parse(localStorage.getItem('_sccCustomTabOrder') || '[]');
+    if (Array.isArray(order) && order.length) {
+      const nextOrder = order.map(t => (t === oldName ? newName : t));
+      localStorage.setItem('_sccCustomTabOrder', JSON.stringify(nextOrder));
+    }
+  } catch (e) { }
+
+  // Update collapsed section keys for this watchlist
+  if (typeof _sccWlCollapsedSections !== 'undefined' && _sccWlCollapsedSections instanceof Set) {
+    const nextCollapsed = new Set();
+    _sccWlCollapsedSections.forEach(k => {
+      if (k.startsWith(oldName + '::')) nextCollapsed.add(newName + '::' + k.slice(oldName.length + 2));
+      else nextCollapsed.add(k);
+    });
+    _sccWlCollapsedSections = nextCollapsed;
+  }
+
+  if (_sccActiveWatchlist === oldName) {
+    _sccActiveWatchlist = newName;
+    localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+  }
+  sccSaveWatchlistsLocalAndSync();
+  sccWlRenderTabs();
+  sccWatchlistRender();
+  if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+  if (typeof showChartToast === 'function') showChartToast(`Renamed watchlist to <b>${newName}</b>`, '#38bdf8');
+}
+window.sccWlRenameTab = sccWlRenameTab;
+
+function _sccWlParseImportedToken(rawToken) {
+  const token = String(rawToken || '').trim();
+  if (!token) return null;
+  if (token.startsWith('###')) return token;
+
+  const upper = token.toUpperCase();
+  if (upper.startsWith('IDX:')) {
+    const idxName = upper.slice(4).trim();
+    if (idxName === 'NIFTY' || idxName === 'NIFTY 50' || idxName === 'NIFTY50') return '^NSEI';
+    if (idxName === 'BANKNIFTY' || idxName === 'NIFTY BANK') return '^NSEBANK';
+    if (idxName === 'NIFTYIT' || idxName === 'NIFTY IT') return '^CNXIT';
+    if (idxName === 'NIFTY MIDSMALLCAP 400' || idxName === 'NIFTY MIDSMALL 400') return 'NIFTY MIDSMALLCAP 400';
+    return idxName;
+  }
+  if (upper.startsWith('NSE:') || upper.startsWith('BSE:')) {
+    return upper.slice(4).replace(/\.(NS|BO)$/i, '').trim();
+  }
+  return upper.replace(/\.(NS|BO)$/i, '').trim();
+}
+
+function sccWlTriggerImport() {
+  sccWlCloseManageMenu();
+  let input = document.getElementById('scc-wl-import-input');
+  if (!input) {
+    input = document.createElement('input');
+    input.type = 'file';
+    input.id = 'scc-wl-import-input';
+    input.accept = '.txt,.csv,text/plain';
+    input.style.display = 'none';
+    input.onchange = function () { sccWlHandleImportFile(this); };
+    document.body.appendChild(input);
+  }
+  input.value = '';
+  input.click();
+}
+window.sccWlTriggerImport = sccWlTriggerImport;
+
+function sccWlHandleImportFile(inputEl) {
+  const file = inputEl && inputEl.files && inputEl.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const text = String(e.target.result || '');
+    const tokens = text.split(/[\r\n,]+/);
+    const parsed = [];
+    const seen = new Set();
+    tokens.forEach(tok => {
+      const sym = _sccWlParseImportedToken(tok);
+      if (!sym) return;
+      if (sym.startsWith('###')) {
+        parsed.push(sym);
+      } else if (!seen.has(sym)) {
+        seen.add(sym);
+        parsed.push(sym);
+      }
+    });
+
+    const symbolCount = parsed.filter(s => !s.startsWith('###')).length;
+    if (symbolCount === 0) {
+      alert('No valid symbols found in the imported file.');
+      return;
+    }
+
+    const baseName = file.name.replace(/\.[^.]+$/, '').trim() || 'Imported';
+    const targetRaw = prompt(
+      `Found ${symbolCount} symbols. Enter watchlist name to create or update:`,
+      baseName
+    );
+    if (targetRaw === null) return;
+    const targetName = targetRaw.trim();
+    if (!targetName) return;
+
+    if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
+    _sccWatchlists[targetName] = parsed;
+    _sccActiveWatchlist = targetName;
+    _sccWatchlistSymbols = parsed.filter(s => !s.startsWith('###'));
+    localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist);
+    sccSaveWatchlistsLocalAndSync();
+    sccWlSwitchTab(targetName);
+    if (typeof showChartToast === 'function') {
+      showChartToast(`Imported <b>${symbolCount}</b> symbols into <b>${targetName}</b>`, '#22c55e');
+    }
+  };
+  reader.readAsText(file);
+}
+window.sccWlHandleImportFile = sccWlHandleImportFile;
+
+function _sccWlFormatExportToken(rawItem) {
+  const item = String(rawItem || '').trim();
+  if (!item) return null;
+  if (item.startsWith('###')) return item;
+  const upper = item.toUpperCase();
+  if (upper === '^NSEI' || upper === 'NIFTY' || upper === 'NIFTY50') return 'IDX:NIFTY';
+  if (upper === '^NSEBANK' || upper === 'BANKNIFTY') return 'IDX:NIFTY BANK';
+  if (upper === '^CNXIT' || upper === 'NIFTYIT') return 'IDX:NIFTY IT';
+  if (upper === 'NIFTY MIDSMALLCAP 400') return 'IDX:NIFTY MIDSMALLCAP 400';
+  if (upper === 'NSE') return 'BSE:NSE';
+  if (upper.startsWith('NSE:') || upper.startsWith('BSE:') || upper.startsWith('IDX:')) return upper;
+  return 'NSE:' + upper.replace(/\.(NS|BO)$/i, '').trim();
+}
+
+function sccWlExportTxt(targetName) {
+  sccWlCloseManageMenu();
+  if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
+  const wlName = targetName || _sccActiveWatchlist || 'Watchlist';
+  let rawItems = [];
+  if (_sccWatchlists && _sccWatchlists[wlName]) {
+    rawItems = _sccWatchlists[wlName];
+  } else {
+    rawItems = Array.isArray(_sccWatchlistSymbols) ? _sccWatchlistSymbols : [];
+  }
+
+  const formatted = rawItems.map(_sccWlFormatExportToken).filter(Boolean);
+  if (formatted.length === 0) {
+    alert(`Watchlist "${wlName}" is empty.`);
+    return;
+  }
+
+  const content = formatted.join(',');
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeFile = wlName.replace(/[^a-zA-Z0-9 _-]+/g, '_').trim() || 'watchlist';
+  a.href = url;
+  a.download = `${safeFile}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
+  if (typeof showChartToast === 'function') {
+    showChartToast(`Exported <b>${formatted.length}</b> items to <b>${safeFile}.txt</b>`, '#2dd4bf');
+  }
+}
+window.sccWlExportTxt = sccWlExportTxt;
+
+function sccWlCloseManageMenu() {
+  const menu = document.getElementById('tv-wl-manage-menu');
+  if (menu) menu.style.display = 'none';
+}
+window.sccWlCloseManageMenu = sccWlCloseManageMenu;
+
+function sccWlToggleManageMenu(event, anchorEl) {
+  if (event) event.stopPropagation();
+  if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
+
+  let menu = document.getElementById('tv-wl-manage-menu');
+  if (!menu) {
+    menu = document.createElement('div');
+    menu.id = 'tv-wl-manage-menu';
+    menu.className = 'tv-wl-manage-menu';
+    menu.onclick = function (e) { e.stopPropagation(); };
+    document.body.appendChild(menu);
+    document.addEventListener('click', sccWlCloseManageMenu);
+  }
+
+  const isOpen = menu.style.display === 'block' && menu._anchorEl === anchorEl;
+  if (isOpen) {
+    menu.style.display = 'none';
+    return;
+  }
+  menu._anchorEl = anchorEl;
+
+  const isCustomActive = !!(_sccWatchlists && _sccWatchlists[_sccActiveWatchlist]);
+  const escActive = String(_sccActiveWatchlist || '').replace(/'/g, "\\'");
+  const wlKeys = Object.keys(_sccWatchlists || {});
+
+  let listHtml = '';
+  wlKeys.forEach(name => {
+    const count = (_sccWatchlists[name] || []).filter(s => typeof s === 'string' && !s.startsWith('###')).length;
+    const isAct = name === _sccActiveWatchlist;
+    const esc = name.replace(/'/g, "\\'");
+    const delBtn = (wlKeys.length > 1 && name !== 'Main')
+      ? `<button class="tv-wl-manage-icon-btn del" title="Delete ${name}" onclick="event.stopPropagation(); sccWlCloseManageMenu(); sccWlDeleteTab('${esc}')">✕</button>`
+      : '';
+    listHtml += `
+      <div class="tv-wl-manage-wl-row ${isAct ? 'active' : ''}" onclick="sccWlCloseManageMenu(); sccWlSwitchTab('${esc}');">
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span>
+        <div class="tv-wl-manage-wl-actions">
+          <span style="font-size:10px;color:#787b86;font-family:var(--mono);margin-right:2px;">${count}</span>
+          <button class="tv-wl-manage-icon-btn" title="Rename ${name}" onclick="event.stopPropagation(); sccWlCloseManageMenu(); sccWlRenameTab('${esc}')">✎</button>
+          ${delBtn}
+        </div>
+      </div>
+    `;
+  });
+
+  menu.innerHTML = `
+    <button class="tv-wl-manage-item" onclick="sccWlCloseManageMenu(); sccWlPromptAddSection();">
+      <span>＋</span><span>Add section</span>
+    </button>
+    <button class="tv-wl-manage-item" onclick="sccWlCloseManageMenu(); sccWlCreateTabPrompt();">
+      <span>⊞</span><span>New watchlist</span>
+    </button>
+    ${isCustomActive ? `
+    <button class="tv-wl-manage-item" onclick="sccWlCloseManageMenu(); sccWlRenameTab('${escActive}');">
+      <span>✎</span><span>Rename "${_sccActiveWatchlist}"</span>
+    </button>` : ''}
+    <div class="tv-wl-manage-sep"></div>
+    <button class="tv-wl-manage-item" onclick="sccWlTriggerImport();">
+      <span>📥</span><span>Import list (.txt)…</span>
+    </button>
+    <button class="tv-wl-manage-item" onclick="sccWlExportTxt();">
+      <span>📤</span><span>Export "${_sccActiveWatchlist}" (.txt)</span>
+    </button>
+    <div class="tv-wl-manage-sep"></div>
+    <div class="tv-wl-manage-hdr">Watchlists</div>
+    <div class="tv-wl-manage-list">${listHtml}</div>
+  `;
+
+  menu.style.display = 'block';
+  const rect = anchorEl.getBoundingClientRect();
+  const menuW = menu.offsetWidth || 230;
+  const menuH = menu.offsetHeight || 280;
+  let left = rect.right - menuW;
+  if (left < 8) left = 8;
+  if (left + menuW > window.innerWidth - 8) left = window.innerWidth - menuW - 8;
+  let top = rect.bottom + 4;
+  if (top + menuH > window.innerHeight - 8) top = Math.max(8, rect.top - menuH - 4);
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+}
+window.sccWlToggleManageMenu = sccWlToggleManageMenu;
 let _sccWlCollapsedClusters = new Set();
 function sccWlToggleCluster(name) {
   if (_sccWlCollapsedClusters.has(name)) { _sccWlCollapsedClusters.delete(name); } else { _sccWlCollapsedClusters.add(name); }
@@ -2900,17 +3182,31 @@ function sccWatchlistRender() {
       `;
       return;
     }
-    const sym = item.symbol; const sUpper = sym.toUpperCase(); const data = _sccWatchlistData[sUpper]; const isSelected = _sccWlSelectedSymbols.includes(sUpper); const isChartActive = activeSymbols.includes(sUpper); let itemBg = 'background: transparent;'; if (isSelected) { itemBg = 'background: rgba(91, 163, 245, 0.15);'; } else if (isChartActive) { itemBg = 'background: rgba(91, 163, 245, 0.05);'; }
+    const sym = item.symbol; const sUpper = sym.toUpperCase().replace(/\.(NS|BO)$/i, '').trim(); const data = _sccWatchlistData[sUpper]; const isSelected = _sccWlSelectedSymbols.includes(sUpper); const isChartActive = activeSymbols.includes(sUpper); let itemBg = 'background: transparent;'; if (isSelected) { itemBg = 'background: rgba(91, 163, 245, 0.15);'; } else if (isChartActive) { itemBg = 'background: rgba(91, 163, 245, 0.05);'; }
     const borderStyle = isChartActive ? 'border-left: 3px solid var(--accent);' : 'border-left: 3px solid transparent;'; const itemPadding = isChartActive ? 'padding: 8px 12px 8px 9px;' : 'padding: 8px 12px;'; const meta = findStockMetadata(sUpper); const companyName = item.company || meta.company; const flagColorName = _sccSymbolFlags[sUpper] || 'none'; const hasFlag = flagColorName !== 'none'; const colorsMap = { red: '#ef4444', blue: '#3b82f6', green: '#22c55e', yellow: '#eab308', purple: '#a855f7', cyan: '#06b6d4', pink: '#ec4899' }; const flagColor = hasFlag ? colorsMap[flagColorName] : 'var(--dim)'; const flagClass = hasFlag ? 'wl-flag-flagged' : 'wl-flag-unflagged';
     let priceStr = '<span style="color:var(--dim)">...</span>'; let changeStr = '<span style="color:var(--dim)">...</span>';
-    if (data) {
-      if (data.error) {
-        priceStr = `<span data-wl-price="${sUpper}" style="color:var(--red)">Err</span>`; changeStr = `<span data-wl-chg="${sUpper}" style="color:var(--red)">--</span>`;
+    if (data && !data.error && data.price != null && isFinite(data.price)) {
+      priceStr = `<span data-wl-price="${sUpper}">${data.price.toFixed(1)}</span>`;
+      const changeVal = (data.change != null && isFinite(data.change)) ? data.change : (item.change_pct != null ? item.change_pct : null);
+      if (changeVal != null && isFinite(changeVal)) {
+        const sign = changeVal >= 0 ? '+' : '';
+        const color = changeVal >= 0 ? 'var(--lime)' : 'var(--red)';
+        changeStr = `<span data-wl-chg="${sUpper}" style="color:${color}">${sign}${changeVal.toFixed(1)}%</span>`;
       } else {
-        priceStr = `<span data-wl-price="${sUpper}">${data.price.toFixed(1)}</span>`; const changeVal = data.change; const sign = changeVal >= 0 ? '+' : ''; const color = changeVal >= 0 ? 'var(--lime)' : 'var(--red)'; changeStr = `<span data-wl-chg="${sUpper}" style="color:${color}">${sign}${changeVal.toFixed(1)}%</span>`;
+        changeStr = `<span data-wl-chg="${sUpper}" style="color:var(--dim)">—</span>`;
       }
-    } else if (item.price != null) {
-      priceStr = `<span data-wl-price="${sUpper}">${item.price.toFixed(1)}</span>`; const changeVal = item.change_pct != null ? item.change_pct : 0; const sign = changeVal >= 0 ? '+' : ''; const color = changeVal >= 0 ? 'var(--lime)' : 'var(--red)'; changeStr = `<span data-wl-chg="${sUpper}" style="color:${color}">${sign}${changeVal.toFixed(1)}%</span>`;
+    } else if (item.price != null && isFinite(item.price)) {
+      priceStr = `<span data-wl-price="${sUpper}">${item.price.toFixed(1)}</span>`;
+      const changeVal = item.change_pct != null ? item.change_pct : null;
+      if (changeVal != null && isFinite(changeVal)) {
+        const sign = changeVal >= 0 ? '+' : '';
+        const color = changeVal >= 0 ? 'var(--lime)' : 'var(--red)';
+        changeStr = `<span data-wl-chg="${sUpper}" style="color:${color}">${sign}${changeVal.toFixed(1)}%</span>`;
+      } else {
+        changeStr = `<span data-wl-chg="${sUpper}" style="color:var(--dim)">—</span>`;
+      }
+    } else if (data && data.error) {
+      priceStr = `<span data-wl-price="${sUpper}" style="color:var(--red)">Err</span>`; changeStr = `<span data-wl-chg="${sUpper}" style="color:var(--red)">--</span>`;
     }
     const leaderBadge = item.is52w ? '<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:rgba(45,212,191,0.15);color:var(--teal);margin-left:4px;" title="Within 3% of 52W High">52W</span>' : (item.is1m ? '<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:rgba(52,211,153,0.15);color:#34d399;margin-left:4px;" title="Within 2% of 1M High">1M</span>' : '');
     const tightDet = (_sccTightDetailsMap && _sccTightDetailsMap[sUpper]) || {};
@@ -3622,26 +3918,30 @@ function syncWatchlistPriceInDom(symbol, price, change, source) {
   if (!symbol || !isFinite(price) || price <= 0) return;
   const sym = symbol.toUpperCase().replace(/\.(NS|BO)$/i, '').trim();
   const prev = _sccWatchlistData[sym] || {};
-  const chgVal = isFinite(change) ? change : (prev.change != null ? prev.change : 0);
-  _sccWatchlistData[sym] = { price, change: chgVal, _source: source || prev._source || 'yf' };
+  const hasNewChg = (change != null && isFinite(change));
+  const chgVal = hasNewChg ? change : (prev.change != null && isFinite(prev.change) ? prev.change : null);
+  _sccWatchlistData[sym] = { price, change: chgVal, _source: source || prev._source || 'yf', _ts: Date.now() };
 
   const priceText = price.toFixed(1);
-  const sign = chgVal >= 0 ? '+' : '';
-  const chgText = `${sign}${chgVal.toFixed(1)}%`;
-
   document.querySelectorAll(`[data-wl-price="${sym}"]`).forEach(el => {
     el.textContent = priceText;
+    if (!el.closest('#max-chart-sidebar-rows')) el.style.color = '';
   });
-  document.querySelectorAll(`[data-wl-chg="${sym}"]`).forEach(el => {
-    el.textContent = chgText;
-    const inSidebar = !!el.closest('#max-chart-sidebar-rows');
-    el.style.color = chgVal >= 0 ? (inSidebar ? '#22c55e' : 'var(--lime)') : (inSidebar ? '#ef4444' : 'var(--red)');
-  });
+  if (chgVal != null && isFinite(chgVal)) {
+    const sign = chgVal >= 0 ? '+' : '';
+    const chgText = `${sign}${chgVal.toFixed(1)}%`;
+    document.querySelectorAll(`[data-wl-chg="${sym}"]`).forEach(el => {
+      el.textContent = chgText;
+      const inSidebar = !!el.closest('#max-chart-sidebar-rows');
+      el.style.color = chgVal >= 0 ? (inSidebar ? '#22c55e' : 'var(--lime)') : (inSidebar ? '#ef4444' : 'var(--red)');
+    });
+  }
 }
 window.syncWatchlistPriceInDom = syncWatchlistPriceInDom;
 
 async function sccWatchlistFetchSymbolData(symbol) {
-  const sym = symbol.toUpperCase();
+  const sym = symbol.toUpperCase().replace(/\.(NS|BO)$/i, '').trim();
+  if (!sym) return;
   if (_chartDataSource === 'fyers' && typeof fetchFyersQuote === 'function' && typeof fyersGetCreds === 'function') {
     const creds = fyersGetCreds();
     if (creds && creds.appId && creds.token) {
@@ -3653,7 +3953,7 @@ async function sccWatchlistFetchSymbolData(symbol) {
           if (!isFinite(pctChange) && Number(v.prev_close_price) > 0) {
             pctChange = ((ltp - Number(v.prev_close_price)) / Number(v.prev_close_price)) * 100;
           }
-          syncWatchlistPriceInDom(sym, ltp, isFinite(pctChange) ? pctChange : 0, 'fyers');
+          syncWatchlistPriceInDom(sym, ltp, isFinite(pctChange) ? pctChange : null, 'fyers');
           return;
         }
       } catch (fErr) {
@@ -3672,24 +3972,32 @@ async function sccWatchlistFetchSymbolData(symbol) {
     }
   } catch (err) {
     console.error("Watchlist fetch error for " + sym, err);
-    if (!_sccWatchlistData[sym]) {
+    if (!_sccWatchlistData[sym] || _sccWatchlistData[sym].error) {
       _sccWatchlistData[sym] = { error: true };
-      sccWatchlistRender();
-      if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
     }
   }
 }
 
 async function sccWatchlistFetchAll(bypassCache = false) {
-  const symsToFetch = _chartDataSource === 'fyers' ? [..._sccWatchlistSymbols] : _sccWatchlistSymbols.slice(0, 40);
+  const rawList = Array.isArray(_sccWatchlistSymbols) ? _sccWatchlistSymbols : [];
+  const normSyms = Array.from(new Set(rawList.map(s => String(s || '').toUpperCase().replace(/\.(NS|BO)$/i, '').trim()).filter(Boolean)));
+  if (normSyms.length === 0) return;
+
+  // Prioritize symbols missing valid prices, then others up to 100 in YF mode (all in Fyers batch mode)
+  const symsToFetch = _chartDataSource === 'fyers'
+    ? normSyms
+    : [
+        ...normSyms.filter(s => !_sccWatchlistData[s] || _sccWatchlistData[s].error || _sccWatchlistData[s].price == null),
+        ...normSyms.filter(s => _sccWatchlistData[s] && !_sccWatchlistData[s].error && _sccWatchlistData[s].price != null)
+      ].slice(0, 100);
+
   if (_chartDataSource === 'fyers' && typeof fetchFyersQuotesBatch === 'function' && typeof fyersGetCreds === 'function') {
     const creds = fyersGetCreds();
     if (creds && creds.appId && creds.token && symsToFetch.length > 0) {
       try {
         const quotes = await fetchFyersQuotesBatch(symsToFetch);
         const missing = [];
-        symsToFetch.forEach(sym => {
-          const sUpper = sym.toUpperCase();
+        symsToFetch.forEach(sUpper => {
           const q = quotes[sUpper];
           if (q && isFinite(q.price) && q.price > 0) {
             syncWatchlistPriceInDom(sUpper, q.price, q.change, 'fyers');
@@ -3697,9 +4005,16 @@ async function sccWatchlistFetchAll(bypassCache = false) {
             missing.push(sUpper);
           }
         });
-        missing.forEach(sUpper => {
-          sccWatchlistFetchSymbolData(sUpper);
-        });
+        if (missing.length > 0) {
+          const mQueue = [...missing];
+          const mWorkers = Array.from({ length: Math.min(6, mQueue.length) }, async () => {
+            while (mQueue.length > 0) {
+              const s = mQueue.shift();
+              if (s) await sccWatchlistFetchSymbolData(s);
+            }
+          });
+          await Promise.all(mWorkers);
+        }
         return;
       } catch (err) {
         console.warn('[WL Fyers Batch fallback]', err.message);
@@ -3707,7 +4022,7 @@ async function sccWatchlistFetchAll(bypassCache = false) {
     }
   }
 
-  const queue = symsToFetch.map(sym => sym.toUpperCase());
+  const queue = [...symsToFetch];
   if (bypassCache) {
     queue.forEach(sUpper => {
       const yfSymbol = sUpper.startsWith('^') ? sUpper : (sUpper + '.NS');
@@ -6624,7 +6939,22 @@ function openMaximizedChart(symbol) {
   }
   setTimeout(() => {
     if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
+    if (typeof sccWatchlistFetchAll === 'function' && Array.isArray(_sccWatchlistSymbols) && _sccWatchlistSymbols.length > 0) {
+      const needsFetch = _sccWatchlistSymbols.slice(0, 40).some(s => {
+        const sym = String(s || '').toUpperCase().replace(/\.(NS|BO)$/i, '').trim();
+        const d = _sccWatchlistData[sym];
+        if (!d || d.error || d.price == null) return true;
+        if (_chartDataSource === 'fyers' && d._source !== 'fyers') return true;
+        return false;
+      });
+      if (needsFetch) sccWatchlistFetchAll();
+    }
   }, 50);
+  try {
+    if (!history.state || !history.state.maxChartOpen) {
+      history.pushState({ maxChartOpen: true }, '');
+    }
+  } catch (e) { }
   updateWinPillStyles();
   updateWinLegendLabels();
   const overlay = document.getElementById('chart-max-overlay'); const maxSymbol = document.getElementById('max-chart-symbol'); const maxCompany = document.getElementById('max-chart-company'); const maxStats = document.getElementById('max-chart-stats'); const loader = document.getElementById('max-chart-loader'); const tfSelect = document.getElementById('max-chart-timeframe'); const typeSelect = document.getElementById('max-chart-type'); if (!overlay) return; _sdMaximizedChartSymbol = symbol; _maxViewOffset = 0;// reset pan on new symbol
@@ -7429,9 +7759,36 @@ function drawMaxChart() {
   }
 }
 function maxChartSearchInput(val) {
-  const suggestBox = document.getElementById('max-chart-suggest'); if (!suggestBox) return; const query = val.trim().toLowerCase(); if (!query) { suggestBox.style.display = 'none'; suggestBox.innerHTML = ''; return; }
-  let allStocks = n500CsvGetCached() || []; if (allStocks.length === 0 && _sdCurrentData?.stocks) { allStocks = _sdCurrentData.stocks; }
-  const matches = []; for (const s of allStocks) { if ((s.symbol && s.symbol.toLowerCase().includes(query)) || (s.company && s.company.toLowerCase().includes(query))) { matches.push(s); if (matches.length >= 8) break; } }
+  const suggestBox = document.getElementById('max-chart-suggest'); if (!suggestBox) return; const query = (val || '').trim().toLowerCase();
+  let allStocks = (typeof getAllAvailableStocks === 'function') ? getAllAvailableStocks() : (n500CsvGetCached() || []);
+  if (allStocks.length === 0 && _sdCurrentData?.stocks) { allStocks = _sdCurrentData.stocks; }
+  const matches = [];
+  if (!query) {
+    const wlSyms = Array.isArray(_sccWatchlistSymbols) ? _sccWatchlistSymbols.slice(0, 8) : [];
+    const seen = new Set();
+    wlSyms.forEach(sym => {
+      const sUpper = String(sym || '').toUpperCase().replace(/\.(NS|BO)$/i, '').trim();
+      if (!sUpper || seen.has(sUpper)) return;
+      seen.add(sUpper);
+      const found = allStocks.find(s => s.symbol && s.symbol.toUpperCase() === sUpper);
+      matches.push(found || { symbol: sUpper, company: '' });
+    });
+    for (const s of allStocks) {
+      if (matches.length >= 10) break;
+      const sUpper = (s.symbol || '').toUpperCase();
+      if (sUpper && !seen.has(sUpper)) {
+        seen.add(sUpper);
+        matches.push(s);
+      }
+    }
+  } else {
+    for (const s of allStocks) {
+      if ((s.symbol && s.symbol.toLowerCase().includes(query)) || (s.company && s.company.toLowerCase().includes(query))) {
+        matches.push(s);
+        if (matches.length >= 10) break;
+      }
+    }
+  }
   if (matches.length === 0) { suggestBox.style.display = 'none'; suggestBox.innerHTML = ''; return; }
   suggestBox.innerHTML = matches.map(s => {
     return `
@@ -8260,7 +8617,7 @@ window.sccWlCycleFlag = sccWlCycleFlag;
 
 
 // TradingView Drawing Tools & Editing Engine lives in chart_draw.js
-function closeMaximizedChart() {
+function closeMaximizedChart(fromPopState = false) {
   try { sessionStorage.removeItem('nse_active_max_chart'); } catch (e) { }
   if (typeof stopFyersLivePolling === 'function') stopFyersLivePolling();
   if (typeof closeMaxChartSnapshotMenu === 'function') closeMaxChartSnapshotMenu();
@@ -8269,6 +8626,13 @@ function closeMaximizedChart() {
   }
   const overlay = document.getElementById('chart-max-overlay');
   if (overlay) overlay.style.display = 'none';
+  if (!fromPopState) {
+    try {
+      if (history.state && history.state.maxChartOpen) {
+        history.back();
+      }
+    } catch (e) { }
+  }
   _selectedDrawingIndex = null;
   hideFloatingToolbar();
   if (_maxLwChart) {
@@ -8286,6 +8650,12 @@ function closeMaximizedChart() {
   setDrawingTool('select');
 }
 window.closeMaximizedChart = closeMaximizedChart;
+window.addEventListener('popstate', () => {
+  const overlay = document.getElementById('chart-max-overlay');
+  if (overlay && overlay.style.display !== 'none') {
+    closeMaximizedChart(true);
+  }
+});
 
 function maxChartChangeTimeframe(interval) {
   _sdChartsInterval = interval;
@@ -10472,15 +10842,15 @@ function updateMaxChartSidebarWatchlist() {
       return;
     }
 
-    const sUpper = item.symbol.toUpperCase();
+    const sUpper = item.symbol.toUpperCase().replace(/\.(NS|BO)$/i, '').trim();
     const isCur = sUpper === curSym;
     const flagColor = _sccSymbolFlags[sUpper] ? flagCols[_sccSymbolFlags[sUpper]] : 'rgba(255,255,255,0.2)';
     const data = _sccWatchlistData[sUpper] || {};
-    const priceVal = (item.price != null && !data.price) ? item.price : data.price;
-    const price = priceVal != null ? priceVal.toFixed(1) : '—';
-    const chgVal = (item.change_pct != null && data.change == null) ? item.change_pct : data.change;
-    const chg = chgVal != null ? (chgVal >= 0 ? '+' : '') + chgVal.toFixed(1) + '%' : '—';
-    const chgColor = chgVal != null ? (chgVal >= 0 ? '#22c55e' : '#ef4444') : '#94a3b8';
+    const priceVal = (data.price != null && isFinite(data.price)) ? data.price : item.price;
+    const price = (priceVal != null && isFinite(priceVal)) ? priceVal.toFixed(1) : '—';
+    const chgVal = (data.change != null && isFinite(data.change)) ? data.change : item.change_pct;
+    const chg = (chgVal != null && isFinite(chgVal)) ? (chgVal >= 0 ? '+' : '') + chgVal.toFixed(1) + '%' : '—';
+    const chgColor = (chgVal != null && isFinite(chgVal)) ? (chgVal >= 0 ? '#22c55e' : '#ef4444') : '#94a3b8';
 
     const leaderBadge = item.is52w ? '<span style="font-size:8px;padding:1px 3px;border-radius:2px;background:rgba(45,212,191,0.15);color:#2dd4bf;margin-left:4px;" title="Within 3% of 52W High">52W</span>' :
       (item.is1m ? '<span style="font-size:8px;padding:1px 3px;border-radius:2px;background:rgba(52,211,153,0.15);color:#34d399;margin-left:4px;" title="Within 2% of 1M High">1M</span>' : '');

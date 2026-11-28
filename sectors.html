@@ -932,7 +932,7 @@
                   📋
                 </button>
               </div>
-              <div style="display:flex; align-items:center; gap:8px;">
+              <div style="display:flex; align-items:center; gap:6px;">
                 <span id="scc-wl-count" style="font-size:10px; color:var(--dim); font-family:var(--mono);">0
                   items</span>
                 <button onclick="sccWatchlistFetchAll(true)" title="Refresh Watch List"
@@ -940,6 +940,8 @@
                   onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--dim)'">
                   ↺
                 </button>
+                <button class="tv-wl-menu-trigger" onclick="sccWlToggleManageMenu(event, this)"
+                  title="Watchlist options: Import, Export, Rename, New">⋯</button>
               </div>
             </div>
 
@@ -1126,138 +1128,158 @@
   <div id="chart-max-overlay" onclick="if(event.target===this)closeMaximizedChart()">
     <div id="chart-max-content" onclick="event.stopPropagation()">
 
-      <!-- ── Single-row header (wraps to 2 rows only on mobile) ── -->
+      <!-- ── Single-row header on desktop; 2-row (primary + scrollable controls) on mobile ── -->
       <div id="chart-max-header"
         style="flex-shrink:0;display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid var(--border);flex-wrap:wrap;min-height:44px;background:var(--bg3);">
 
-        <!-- Symbol -->
-        <span id="max-chart-symbol"
-          style="font-family:var(--disp);font-size:20px;font-weight:800;color:var(--teal);line-height:1;white-space:nowrap;">—</span>
+        <div class="max-hdr-primary">
+          <!-- Mobile Back / Close button -->
+          <button id="max-chart-mobile-back-btn" class="max-hdr-back-btn" onclick="closeMaximizedChart()"
+            title="Close chart &amp; go back">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
 
-        <!-- TV button -->
-        <a id="max-chart-tv-link" href="javascript:void(0)"
-          onclick="var sym=document.getElementById('max-chart-symbol').textContent.trim();if(sym&&sym!=='—')window.open('https://www.tradingview.com/chart/?symbol=NSE%3A'+encodeURIComponent(sym),'_blank');"
-          style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;font-size:12px;font-weight:700;color:var(--accent);text-decoration:none;border-radius:4px;border:1px solid rgba(91,163,245,.35);background:rgba(91,163,245,.10);white-space:nowrap;flex-shrink:0;cursor:pointer;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-            <polyline points="16 7 22 7 22 13" />
-          </svg>
-          TV
-        </a>
+          <!-- Symbol -->
+          <span id="max-chart-symbol"
+            style="font-family:var(--disp);font-size:20px;font-weight:800;color:var(--teal);line-height:1;white-space:nowrap;">—</span>
 
-        <!-- MS button -->
-        <a id="max-chart-ms-link" href="javascript:void(0)"
-          onclick="var sym=document.getElementById('max-chart-symbol').textContent.trim();if(sym&&sym!=='—')window.open('https://marketsmithindia.com/mstool/eval/'+sym.toLowerCase()+'/evaluation.jsp#/','_blank');"
-          style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;font-size:12px;font-weight:700;color:#f59e0b;text-decoration:none;border-radius:4px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.10);white-space:nowrap;flex-shrink:0;cursor:pointer;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          MS
-        </a>
+          <!-- Stock Search / Selector (visible on both desktop and mobile) -->
+          <div id="max-chart-search-wrap" style="position:relative;flex-shrink:0;">
+            <input type="text" id="max-chart-search" placeholder="Select stock…"
+              oninput="maxChartSearchInput(this.value)"
+              onfocus="this.style.borderColor='var(--teal)';maxChartSearchInput(this.value);"
+              onblur="setTimeout(()=>document.getElementById('max-chart-suggest').style.display='none',200);"
+              style="background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--body);font-size:11px;padding:0 8px;outline:none;border-radius:4px;height:28px;width:130px;box-sizing:border-box;">
+            <div id="max-chart-suggest" class="max-suggest-box"></div>
+          </div>
 
-        <!-- Main WL button -->
-        <button id="max-chart-main-wl-btn" onclick="maxChartToggleMainWl()" class="tv-shortlist-btn"
-          title="Add active stock to Main Watchlist (Press 'W' to toggle)"
-          style="color:#2dd4bf;border-color:rgba(45,212,191,0.35);font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;cursor:pointer;background:rgba(45,212,191,0.08);transition:all .15s ease;">
-          + Main WL
-        </button>
+          <!-- Watchlist Sidebar Toggle (Mobile & Desktop) -->
+          <button id="max-chart-wl-toggle-btn" onclick="toggleMaxChartSidebar()" class="tv-shortlist-btn"
+            title="Toggle Watchlist Sidebar"
+            style="color:var(--teal);border-color:rgba(45,212,191,0.35);font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;cursor:pointer;background:rgba(45,212,191,0.08);transition:all .15s ease;">
+            📋 WL
+          </button>
 
-        <!-- Shortlist toggle button -->
-        <button id="max-chart-shortlist-btn" onclick="maxChartToggleShortlist()" class="tv-shortlist-btn"
-          title="Toggle Shortlist (Press 'S' to toggle)">
-          ☆ Shortlist
-        </button>
+          <!-- Close -->
+          <button id="max-chart-close-btn" class="max-hdr-close-btn" onclick="closeMaximizedChart()"
+            title="Close chart &amp; go back"
+            style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;font-size:16px;color:var(--dim);background:none;border:1px solid transparent;cursor:pointer;border-radius:4px;line-height:1;flex-shrink:0;"
+            onmouseenter="this.style.color='var(--text)';this.style.borderColor='var(--border)';"
+            onmouseleave="this.style.color='var(--dim)';this.style.borderColor='transparent';">✕</button>
+        </div>
 
-        <!-- Divider -->
-        <div style="width:1px;height:20px;background:var(--border);flex-shrink:0;"></div>
+        <div class="max-hdr-secondary">
+          <!-- TV button -->
+          <a id="max-chart-tv-link" href="javascript:void(0)"
+            onclick="var sym=document.getElementById('max-chart-symbol').textContent.trim();if(sym&&sym!=='—')window.open('https://www.tradingview.com/chart/?symbol=NSE%3A'+encodeURIComponent(sym),'_blank');"
+            style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;font-size:12px;font-weight:700;color:var(--accent);text-decoration:none;border-radius:4px;border:1px solid rgba(91,163,245,.35);background:rgba(91,163,245,.10);white-space:nowrap;flex-shrink:0;cursor:pointer;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+              <polyline points="16 7 22 7 22 13" />
+            </svg>
+            TV
+          </a>
 
-        <!-- MarketSmith 4-Score Ratings (inline in header, zero chart space lost) -->
-        <div id="max-chart-ms-bar" class="ms-ratings-bar inline" style="display:none;"></div>
+          <!-- MS button -->
+          <a id="max-chart-ms-link" href="javascript:void(0)"
+            onclick="var sym=document.getElementById('max-chart-symbol').textContent.trim();if(sym&&sym!=='—')window.open('https://marketsmithindia.com/mstool/eval/'+sym.toLowerCase()+'/evaluation.jsp#/','_blank');"
+            style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;font-size:12px;font-weight:700;color:#f59e0b;text-decoration:none;border-radius:4px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.10);white-space:nowrap;flex-shrink:0;cursor:pointer;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            MS
+          </a>
 
-        <!-- Divider -->
-        <div style="width:1px;height:20px;background:var(--border);flex-shrink:0;"></div>
+          <!-- Main WL button -->
+          <button id="max-chart-main-wl-btn" onclick="maxChartToggleMainWl()" class="tv-shortlist-btn"
+            title="Add active stock to Main Watchlist (Press 'W' to toggle)"
+            style="color:#2dd4bf;border-color:rgba(45,212,191,0.35);font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;cursor:pointer;background:rgba(45,212,191,0.08);transition:all .15s ease;">
+            + Main WL
+          </button>
 
-        <!-- Company + sector (truncated) -->
-        <div id="max-chart-company"
-          style="font-size:11px;color:var(--sub);display:flex;align-items:center;gap:5px;min-width:0;flex:1;overflow:hidden;">
-          —</div>
+          <!-- Shortlist toggle button -->
+          <button id="max-chart-shortlist-btn" onclick="maxChartToggleShortlist()" class="tv-shortlist-btn"
+            title="Toggle Shortlist (Press 'S' to toggle)">
+            ☆ Shortlist
+          </button>
 
-        <!-- Stats -->
-        <span id="max-chart-stats" style="font-size:11px;color:var(--dim);white-space:nowrap;flex-shrink:0;">—</span>
+          <!-- Divider -->
+          <div style="width:1px;height:20px;background:var(--border);flex-shrink:0;"></div>
 
-        <!-- Divider -->
-        <div style="width:1px;height:20px;background:var(--border);flex-shrink:0;"></div>
+          <!-- MarketSmith 4-Score Ratings (inline in header, zero chart space lost) -->
+          <div id="max-chart-ms-bar" class="ms-ratings-bar inline" style="display:none;"></div>
 
-        <!-- TF select -->
-        <select id="max-chart-timeframe" onchange="maxChartChangeTimeframe(this.value)"
-          style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:28px;cursor:pointer;flex-shrink:0;">
-          <option value="15m">15m</option>
-          <option value="1H">1H</option>
-          <option value="D" selected>D</option>
-          <option value="W">W</option>
-          <option value="M">M</option>
-        </select>
+          <!-- Divider -->
+          <div style="width:1px;height:20px;background:var(--border);flex-shrink:0;"></div>
 
-        <!-- Layout select (Multi-Chart Layouts) -->
-        <div style="display:inline-flex;align-items:center;gap:4px;flex-shrink:0;">
-          <span style="font-size:10px;color:var(--dim);font-weight:600;">Layout:</span>
-          <select id="max-chart-layout-select" onchange="maxChartSetLayout(this.value)"
-            title="Layout Switcher (Number of Charts)"
-            style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:28px;cursor:pointer;">
-            <option value="1" selected>1 Chart</option>
-            <option value="2h">2 ◫ Horiz</option>
-            <option value="2v">2 ⊟ Vert</option>
-            <option value="4">4 ⊞ Grid</option>
+          <!-- Company + sector (truncated) -->
+          <div id="max-chart-company"
+            style="font-size:11px;color:var(--sub);display:flex;align-items:center;gap:5px;min-width:0;flex:1;overflow:hidden;">
+            —</div>
+
+          <!-- Stats -->
+          <span id="max-chart-stats" style="font-size:11px;color:var(--dim);white-space:nowrap;flex-shrink:0;">—</span>
+
+          <!-- Divider -->
+          <div style="width:1px;height:20px;background:var(--border);flex-shrink:0;"></div>
+
+          <!-- TF select -->
+          <select id="max-chart-timeframe" onchange="maxChartChangeTimeframe(this.value)"
+            style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:28px;cursor:pointer;flex-shrink:0;">
+            <option value="15m">15m</option>
+            <option value="1H">1H</option>
+            <option value="D" selected>D</option>
+            <option value="W">W</option>
+            <option value="M">M</option>
           </select>
+
+          <!-- Layout select (Multi-Chart Layouts) -->
+          <div style="display:inline-flex;align-items:center;gap:4px;flex-shrink:0;">
+            <span style="font-size:10px;color:var(--dim);font-weight:600;">Layout:</span>
+            <select id="max-chart-layout-select" onchange="maxChartSetLayout(this.value)"
+              title="Layout Switcher (Number of Charts)"
+              style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:28px;cursor:pointer;">
+              <option value="1" selected>1 Chart</option>
+              <option value="2h">2 ◫ Horiz</option>
+              <option value="2v">2 ⊟ Vert</option>
+              <option value="4">4 ⊞ Grid</option>
+            </select>
+          </div>
+
+          <!-- Data Source select (Yahoo Finance vs Fyers Free API vs Dhan HQ API) -->
+          <select id="max-chart-datasource" onchange="maxChartSetDataSource(this.value)" title="Chart Data Source"
+            style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:28px;cursor:pointer;flex-shrink:0;">
+            <option value="yf" selected>YF Data</option>
+            <option value="fyers">⚡ Fyers (Free API)</option>
+            <option value="dhan">Dhan HQ (API)</option>
+          </select>
+
+          <select id="max-chart-type" onchange="maxChartChangeType(this.value)"
+            style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:28px;cursor:pointer;flex-shrink:0;">
+            <option value="candlestick" selected>Candles</option>
+            <option value="ohlc">Bars</option>
+            <option value="volume_candles">Vol Candles</option>
+          </select>
+
+          <!-- Refresh button -->
+          <button id="max-chart-refresh-btn" onclick="maxChartRefresh()" title="Refresh chart data"
+            style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:var(--bg4);border:1px solid var(--border);color:var(--dim);border-radius:4px;cursor:pointer;flex-shrink:0;transition:color .15s,border-color .15s;"
+            onmouseenter="this.style.color='var(--teal)';this.style.borderColor='rgba(45,212,191,.4)';"
+            onmouseleave="this.style.color='var(--dim)';this.style.borderColor='var(--border)';">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+            </svg>
+          </button>
         </div>
-
-        <!-- Data Source select (Yahoo Finance vs Fyers Free API vs Dhan HQ API) -->
-        <select id="max-chart-datasource" onchange="maxChartSetDataSource(this.value)" title="Chart Data Source"
-          style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:28px;cursor:pointer;flex-shrink:0;">
-          <option value="yf" selected>YF Data</option>
-          <option value="fyers">⚡ Fyers (Free API)</option>
-          <option value="dhan">Dhan HQ (API)</option>
-        </select>
-
-        <select id="max-chart-type" onchange="maxChartChangeType(this.value)"
-          style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;outline:none;height:28px;cursor:pointer;flex-shrink:0;">
-          <option value="candlestick" selected>Candles</option>
-          <option value="ohlc">Bars</option>
-          <option value="volume_candles">Vol Candles</option>
-        </select>
-
-        <!-- WIN Settings removed from top bar, kept on left legend -->
-
-        <!-- Search box -->
-        <div style="position:relative;flex-shrink:0;">
-          <input type="text" id="max-chart-search" placeholder="Search…" oninput="maxChartSearchInput(this.value)"
-            style="background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--body);font-size:11px;padding:0 8px;outline:none;border-radius:4px;height:28px;width:120px;box-sizing:border-box;"
-            onfocus="this.style.borderColor='var(--teal)';"
-            onblur="setTimeout(()=>document.getElementById('max-chart-suggest').style.display='none',200);">
-          <div id="max-chart-suggest" class="max-suggest-box"></div>
-        </div>
-
-        <!-- Refresh button -->
-        <button id="max-chart-refresh-btn" onclick="maxChartRefresh()" title="Refresh chart data"
-          style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:var(--bg4);border:1px solid var(--border);color:var(--dim);border-radius:4px;cursor:pointer;flex-shrink:0;transition:color .15s,border-color .15s;"
-          onmouseenter="this.style.color='var(--teal)';this.style.borderColor='rgba(45,212,191,.4)';"
-          onmouseleave="this.style.color='var(--dim)';this.style.borderColor='var(--border)';">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 4 23 10 17 10" />
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-          </svg>
-        </button>
-
-        <!-- Close -->
-        <button onclick="closeMaximizedChart()"
-          style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;font-size:16px;color:var(--dim);background:none;border:1px solid transparent;cursor:pointer;border-radius:4px;line-height:1;flex-shrink:0;"
-          onmouseenter="this.style.color='var(--text)';this.style.borderColor='var(--border)';"
-          onmouseleave="this.style.color='var(--dim)';this.style.borderColor='transparent';">✕</button>
       </div>
 
       <!-- ── Chart body ── -->
@@ -1458,6 +1480,10 @@
             <div class="tv-max-sidebar-hdr">
               <span style="font-weight:700;font-size:12px;color:#f0f3fa;">Watchlist</span>
               <div id="max-chart-sidebar-flags" class="tv-max-flags-bar"></div>
+              <button class="tv-wl-menu-trigger" onclick="sccWlToggleManageMenu(event, this)"
+                title="Watchlist options: Import, Export, Rename, New">⋯</button>
+              <button class="tv-max-close-wl-btn" onclick="toggleMaxChartSidebar(false)"
+                title="Close Watchlist Sidebar">✕</button>
             </div>
             <div id="max-chart-sidebar-tabs" class="tv-max-sidebar-tabs"
               style="display:flex;align-items:center;gap:4px;overflow-x:auto;padding:4px 8px;background:#0e111a;border-bottom:1px solid #2a2e39;scrollbar-width:none;">
