@@ -320,6 +320,8 @@ try {
   if (savedSpanD && !isNaN(savedSpanD)) _chartUserZoomSpanDaily = parseInt(savedSpanD, 10);
   const savedSpanW = localStorage.getItem('nse_screener_zoom_weekly');
   if (savedSpanW && !isNaN(savedSpanW)) _chartUserZoomSpanWeekly = parseInt(savedSpanW, 10);
+  const savedSpanI = localStorage.getItem('nse_screener_zoom_intraday');
+  if (savedSpanI && !isNaN(savedSpanI)) _chartUserZoomSpanIntraday = parseInt(savedSpanI, 10);
   const savedOffset = localStorage.getItem('nse_screener_zoom_offset');
   if (savedOffset && !isNaN(savedOffset)) _chartUserZoomOffset = parseInt(savedOffset, 10);
 } catch (e) { }
@@ -328,33 +330,8 @@ function resetChartPriceScale(chartInstance, scaleId) {
   if (!chartInstance) return;
   scaleId = scaleId || 'right';
   try {
-    const psApi = chartInstance.priceScale(scaleId);
-    if (!psApi) return;
-    const internalPs = typeof psApi.Ei === 'function' ? psApi.Ei() : null;
-    if (psApi.Ub && typeof psApi.Ub.$t === 'function') {
-      const model = psApi.Ub.$t();
-      if (typeof model.Lc === 'function') {
-        const target = model.Lc(scaleId);
-        if (target && target.Ht && target.Dt) {
-          if (typeof model.A_ === 'function') {
-            model.A_(target.Ht, target.Dt);
-          } else if (typeof target.Ht.A_ === 'function') {
-            target.Ht.A_(target.Dt);
-          }
-        }
-      }
-    }
-    if (internalPs) {
-      if (typeof internalPs.Po === 'function') internalPs.Po(null);
-      if (typeof internalPs.So === 'function') internalPs.So({ Nn: true });
-      if (typeof internalPs.Sa === 'function') internalPs.Sa();
-    }
-    psApi.applyOptions({ autoScale: true });
-  } catch (e) {
-    try {
-      chartInstance.priceScale(scaleId).applyOptions({ autoScale: true });
-    } catch (err) { }
-  }
+    chartInstance.priceScale(scaleId).applyOptions({ autoScale: true });
+  } catch (e) { }
 }
 
 function applyPreservedChartZoom(chartInstance, candleCount, timeframe) {
@@ -388,6 +365,7 @@ function saveUserChartZoomPreference(range, candleCount, timeframe) {
       try { localStorage.setItem('nse_screener_zoom_weekly', _chartUserZoomSpanWeekly); } catch (e) { }
     } else if (is1H) {
       _chartUserZoomSpanIntraday = Math.round(span);
+      try { localStorage.setItem('nse_screener_zoom_intraday', _chartUserZoomSpanIntraday); } catch (e) { }
     } else {
       _chartUserZoomSpanDaily = Math.round(span);
       try { localStorage.setItem('nse_screener_zoom_daily', _chartUserZoomSpanDaily); } catch (e) { }
@@ -1152,6 +1130,7 @@ const WIN_DEFAULT_CONFIG = {
     vtLvnPct: 40.0,
     showEpsTable: true,
     epsRowsToShow: 4,
+    epsPane: false,
   },
   style: {
     ema10: { visible: true, color: '#3b82f6', opacity: 85, width: 1, lineStyle: 0 },
@@ -1265,6 +1244,22 @@ function updateWinLegendLabels() {
   setLblText('tv-style-lbl-sma200', `${inp.sma2Period} SMA`);
   setLblText('tv-style-lbl-sma30w', `Weekly ${inp.sma30wPeriod} SMA`);
 }
+
+/**
+ * Show/hide the quarterly earnings pane. Like any pane change this alters the
+ * chart layout, so the open chart is rebuilt rather than patched.
+ */
+function winToggleEpsPane() {
+  _winConfig.inputs.epsPane = !_winConfig.inputs.epsPane;
+  window._winConfig = _winConfig;
+  saveWinSettings();
+  updateWinPillStyles();
+  const overlay = document.getElementById('chart-max-overlay');
+  if (overlay && overlay.style.display !== 'none' && typeof drawMaxChartLightweight === 'function') {
+    drawMaxChartLightweight();
+  }
+}
+window.winToggleEpsPane = winToggleEpsPane;
 
 function updateWinPillStyles() {
   const keys = ['ema10', 'ema20', 'sma50', 'sma200', 'sma30w', 'rs', 'dots', 'vt', 'hud'];
@@ -2121,7 +2116,13 @@ function sccChartSubmitSymbol(index, value) {
   sccChartRebuildGrid();
 }
 function sccChartSetLayout(val) { _sccChartLayout = val; localStorage.setItem('_sccChartLayout', val); sccChartRebuildGrid(); }
-function sccChartSetType(val) { _sccChartType = val; localStorage.setItem('_sccChartType', val); const count = sccChartGetCount(); for (let i = 0; i < count; i++) { sccChartRenderPanel(i); } }
+function sccChartSetType(val) {
+  // 'volume_candles' is not implemented by the LightweightCharts renderer — normalise it.
+  _sccChartType = (val === 'volume_candles') ? 'candlestick' : val;
+  localStorage.setItem('_sccChartType', _sccChartType);
+  const count = sccChartGetCount();
+  for (let i = 0; i < count; i++) { sccChartRenderPanel(i); }
+}
 function sccChartSetTimeframe(index, val) { _sccChartTimeframes[index] = val; localStorage.setItem('_sccChartTimeframes', JSON.stringify(_sccChartTimeframes)); sccChartRenderPanel(index); }
 function sccChartSetSync(checked) {
   _sccSyncSymbols = checked; localStorage.setItem('_sccSyncSymbols', JSON.stringify(checked)); const globalWrap = document.getElementById('scc-chart-global-sym-wrap'); if (globalWrap) { globalWrap.style.display = checked ? 'flex' : 'none'; }
@@ -5165,7 +5166,7 @@ async function seedHistoricalData() {
     const savedChart = JSON.parse(sessionStorage.getItem('nse_active_max_chart') || 'null');
     if (savedChart && savedChart.symbol && typeof openMaximizedChart === 'function') {
       if (savedChart.interval) _sdChartsInterval = savedChart.interval;
-      if (savedChart.type) _sdChartType = savedChart.type;
+      if (savedChart.type) _sdChartType = (savedChart.type === 'volume_candles') ? 'candlestick' : savedChart.type;
       setTimeout(() => { openMaximizedChart(savedChart.symbol); }, 80);
     }
   } catch (e) { }
@@ -6407,7 +6408,9 @@ document.addEventListener('keydown', e => {
     }
     // Note: Never call closeMaximizedChart() on Escape!
   }
-}); var LS_SECTOR_STOCKS = 'nse_sector_stocks_v1'; var LS_N500_CSV = 'nse_n500csv_v1'; var LS_FILTER_STOCKS_CSV = 'nse_filter_stocks_csv_v1'; var _sectorStocksCache = null; var _n500CsvCache = null; var _filterStocksCache = null; let _sdCurrentSector = ''; let _sdCurrentData = null; let _sdActiveTab = 'vcp'; let _sdSearchQuery = ''; let _sdChartsSource = 'vcp'; let _sdChartsPage = 0; let _sdChartsPerPage = 9; let _sdChartsInterval = 'D'; let _sdChartsLayout = 'auto'; let _sdAutoChartsLimit = 12; let _sdChartType = 'volume_candles'; let _sdSortBy = 'score'; let _sdMaximizedChartSymbol = null; let _sdMaximizedChartCompany = null; let _sdMaximizedChartStats = '';
+}); var LS_SECTOR_STOCKS = 'nse_sector_stocks_v1'; var LS_N500_CSV = 'nse_n500csv_v1'; var LS_FILTER_STOCKS_CSV = 'nse_filter_stocks_csv_v1'; var _sectorStocksCache = null; var _n500CsvCache = null; var _filterStocksCache = null; let _sdCurrentSector = ''; let _sdCurrentData = null; let _sdActiveTab = 'vcp'; let _sdSearchQuery = ''; let _sdChartsSource = 'vcp'; let _sdChartsPage = 0; let _sdChartsPerPage = 9; let _sdChartsInterval = 'D'; let _sdChartsLayout = 'auto'; let _sdAutoChartsLimit = 12; let _sdChartType = 'candlestick';
+// NOTE: 'volume_candles' is only honoured by the legacy canvas renderer
+let _sdSortBy = 'score'; let _sdMaximizedChartSymbol = null; let _sdMaximizedChartCompany = null; let _sdMaximizedChartStats = '';
 // ── Max chart TV-style interaction state ──
 let _maxCandles = null;          // full candle array for the maximized chart
 let _maxNiftyCandles = null;
@@ -6426,7 +6429,7 @@ let _maxRsDragStartPad = 0.06;
 let _maxBaDragActive = false;    // dragging bottom axis (horizontal zoom)
 let _maxBaDragStartX = 0;
 let _maxBaDragStartBw = 8;
-let _sccChartSymbols = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK']; let _sccChartTimeframes = ['D', 'W', '1H', 'M']; let _sccChartLayout = '1'; let _sccChartType = 'volume_candles'; let _sccSyncSymbols = false; let _sccChartZoomFactors = [1.0, 1.0, 1.0, 1.0]; let _sccWatchlists = { "Main": ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT'] }; let _sccActiveWatchlist = "Main"; let _sccWatchlistSymbols = _sccWatchlists["Main"]; let _sccWatchlistData = {}; let _sccSymbolFlags = {}; let _sccShowWatchlist = true; let _sccWlSelectedSymbols = []; let _sccWlLastSelectedSymbol = null; let _sccWlCollapsedSectors = new Set(); let _sccWlCollapsedSections = new Set(); let _sccWlOriginalOrders = {}; let _sccWlIsBreadthSorted = false; let _sccDraggedTabName = null; let _sccDraggedRowSymbol = null; let _sccTouchActive = false; let _sccTouchTimeout = null; let _sccTouchDraggedSym = null; let _sccTouchStartY = 0; let _sccTouchDraggedEl = null; let _sccFlagHoldTimeout = null; let _sccFlagHoldActive = false; try {
+let _sccChartSymbols = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK']; let _sccChartTimeframes = ['D', 'W', '1H', 'M']; let _sccChartLayout = '1'; let _sccChartType = 'candlestick'; let _sccSyncSymbols = false; let _sccChartZoomFactors = [1.0, 1.0, 1.0, 1.0]; let _sccWatchlists = { "Main": ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT'] }; let _sccActiveWatchlist = "Main"; let _sccWatchlistSymbols = _sccWatchlists["Main"]; let _sccWatchlistData = {}; let _sccSymbolFlags = {}; let _sccShowWatchlist = true; let _sccWlSelectedSymbols = []; let _sccWlLastSelectedSymbol = null; let _sccWlCollapsedSectors = new Set(); let _sccWlCollapsedSections = new Set(); let _sccWlOriginalOrders = {}; let _sccWlIsBreadthSorted = false; let _sccDraggedTabName = null; let _sccDraggedRowSymbol = null; let _sccTouchActive = false; let _sccTouchTimeout = null; let _sccTouchDraggedSym = null; let _sccTouchStartY = 0; let _sccTouchDraggedEl = null; let _sccFlagHoldTimeout = null; let _sccFlagHoldActive = false; try {
   const savedSyms = localStorage.getItem('_sccChartSymbols'); if (savedSyms) _sccChartSymbols = JSON.parse(savedSyms); const savedTfs = localStorage.getItem('_sccChartTimeframes'); if (savedTfs) _sccChartTimeframes = JSON.parse(savedTfs); const savedLayout = localStorage.getItem('_sccChartLayout'); if (savedLayout) _sccChartLayout = savedLayout; if (window.innerWidth <= 600 && _sccChartLayout !== 'watchlist') _sccChartLayout = '1'; const savedType = localStorage.getItem('_sccChartType'); if (savedType) _sccChartType = savedType; const savedSync = localStorage.getItem('_sccSyncSymbols'); if (savedSync) _sccSyncSymbols = JSON.parse(savedSync); const savedZooms = localStorage.getItem('_sccChartZoomFactors'); if (savedZooms) _sccChartZoomFactors = JSON.parse(savedZooms); const savedWls = localStorage.getItem('_sccWatchlists'); if (savedWls) _sccWatchlists = JSON.parse(savedWls); const savedActiveWl = localStorage.getItem('_sccActiveWatchlist'); if (savedActiveWl) _sccActiveWatchlist = savedActiveWl; const savedFlags = localStorage.getItem('_sccSymbolFlags'); if (savedFlags) _sccSymbolFlags = JSON.parse(savedFlags);
   const savedCollapsedSecs = localStorage.getItem('_sccWlCollapsedSections'); if (savedCollapsedSecs) _sccWlCollapsedSections = new Set(JSON.parse(savedCollapsedSecs));
   if (_sccActiveWatchlist && _sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else {
@@ -6648,7 +6651,11 @@ function openMaximizedChart(symbol) {
   } catch (e) { }
   _maxFetchAndDraw(symbol);
 }
-function _maxFetchAndDraw(symbol) {
+let _maxChartReqId = 0;
+function _maxFetchAndDraw(symbol, force) {
+  // Guard against out-of-order responses: fast watchlist paging can resolve an older
+  // request last, which would paint the previous symbol under the new header.
+  const reqId = ++_maxChartReqId;
   if (typeof renderMsRatingsBar === 'function') renderMsRatingsBar('max-chart-ms-bar', symbol);
 
   const loader = document.getElementById('max-chart-loader');
@@ -6672,30 +6679,33 @@ function _maxFetchAndDraw(symbol) {
   let candlePromise;
   if (_chartDataSource === 'fyers') {
     candlePromise = fetchFyersCandles(symbol, range, interval).catch(err => {
+      if (reqId !== _maxChartReqId) throw err;
       console.warn('[Fyers API] Could not load candles:', err.message);
       showChartToast('⚡ Fyers: ' + err.message + ' (Using YF fallback)', '#f59e0b');
       if (err.message.includes('Token') || err.message.includes('App ID') || err.message.includes('401') || err.message.toLowerCase().includes('authenticate')) {
         openFyersConnectModal();
       }
-      return fetchYfData(symbol, range, interval);
+      return fetchYfData(symbol, range, interval, force);
     });
   } else if (_chartDataSource === 'dhan') {
     candlePromise = fetchDhanCandles(symbol, range, interval).catch(err => {
+      if (reqId !== _maxChartReqId) throw err;
       console.warn('[Dhan API] Could not load candles:', err.message);
       showChartToast('⚡ Dhan: ' + err.message + ' (Using YF fallback)', '#f59e0b');
       // If token missing, prompt user
       if (err.message.includes('token') || err.message.includes('Client ID') || err.message.includes('401')) {
         openDhanConnectModal();
       }
-      return fetchYfData(symbol, range, interval);
+      return fetchYfData(symbol, range, interval, force);
     });
   } else {
-    candlePromise = fetchYfData(symbol, range, interval);
+    candlePromise = fetchYfData(symbol, range, interval, force);
   }
 
-  const niftyPromise = (symbol.toUpperCase() !== '^NSEI') ? fetchYfData('^NSEI', range, interval).catch(() => null) : Promise.resolve(null);
+  const niftyPromise = (symbol.toUpperCase() !== '^NSEI') ? fetchYfData('^NSEI', range, interval, force).catch(() => null) : Promise.resolve(null);
 
   Promise.all([candlePromise, niftyPromise]).then(([candles, niftyCandles]) => {
+    if (reqId !== _maxChartReqId) return; // a newer symbol/timeframe request superseded this one
     if (loader) loader.style.display = 'none';
     _maxCandles = candles;
     _maxNiftyCandles = niftyCandles;
@@ -6713,6 +6723,7 @@ function _maxFetchAndDraw(symbol) {
       console.error("Error drawing max chart:", drawErr);
     }
   }).catch(err => {
+    if (reqId !== _maxChartReqId) return;
     console.warn("Max Chart Error for " + symbol + ":", err);
     if (loader) loader.style.display = 'none';
     const container = document.getElementById('max-chart-lw-container');
@@ -6754,6 +6765,7 @@ function drawMaxChartLightweight() {
   if (drawCanvas) drawCanvas.style.display = 'block';
 
   if (_maxLwChart) {
+    try { if (typeof clearEarningsPane === 'function') clearEarningsPane(_maxLwChart, 'max-chart'); } catch (e) { }
     try { _maxLwChart.remove(); } catch (e) { }
     _maxLwChart = null;
   }
@@ -6811,20 +6823,20 @@ function drawMaxChartLightweight() {
     },
     timeScale: {
       borderColor: 'rgba(255, 255, 255, 0.08)',
-      timeVisible: _sdChartsInterval === '1H',
+      timeVisible: _sdChartsInterval === '1H' || _sdChartsInterval === '15m',
       secondsVisible: false,
     },
   });
 
   let priceSeries;
   if (_sdChartType === 'ohlc') {
-    priceSeries = _maxLwChart.addBarSeries({
+    priceSeries = lwAddSeries(_maxLwChart, 'BarSeries', {
       upColor: '#26a69a',
       downColor: '#ef5350',
       wickVisible: true,
     });
   } else {
-    priceSeries = _maxLwChart.addCandlestickSeries({
+    priceSeries = lwAddSeries(_maxLwChart, 'CandlestickSeries', {
       upColor: '#26a69a',
       downColor: '#ef5350',
       borderVisible: false,
@@ -6835,7 +6847,7 @@ function drawMaxChartLightweight() {
   priceSeries.setData(cleanCandles);
   _maxLwPriceSeries = priceSeries;
 
-  const volSeries = _maxLwChart.addHistogramSeries({
+  const volSeries = lwAddSeries(_maxLwChart, 'HistogramSeries', {
     priceFormat: { type: 'volume' },
     priceScaleId: 'vol_scale',
   });
@@ -6843,75 +6855,9 @@ function drawMaxChartLightweight() {
     scaleMargins: { top: 0.82, bottom: 0 },
     visible: false,
   });
-  // VCP & Pocket Pivot Volume Color Hierarchy
-  const volPeriod = 50;
-  const avgVols = [];
-  let volSum = 0;
-  for (let i = 0; i < cleanCandles.length; i++) {
-    volSum += cleanCandles[i].volume;
-    if (i >= volPeriod) {
-      volSum -= cleanCandles[i - volPeriod].volume;
-      avgVols.push(volSum / volPeriod);
-    } else {
-      avgVols.push(volSum / (i + 1));
-    }
-  }
-
-  const volData = cleanCandles.map((c, i) => {
-    const curVol = c.volume;
-    const avg = avgVols[i] || 1;
-    const isUp = c.close >= c.open;
-
-    // Lookback 20 bars for lowest and highest volume
-    const windowStart = Math.max(0, i - 19);
-    const windowBars = cleanCandles.slice(windowStart, i + 1);
-    let minVol = Infinity;
-    let maxVol = -Infinity;
-    for (const b of windowBars) {
-      if (b.volume > 0) {
-        if (b.volume < minVol) minVol = b.volume;
-        if (b.volume > maxVol) maxVol = b.volume;
-      }
-    }
-
-    // Down bars in previous 10 days for Pocket Pivot test
-    const downBars10 = cleanCandles.slice(Math.max(0, i - 10), i).filter(b => b.close < b.open);
-    const maxDownVol10 = downBars10.length ? Math.max(...downBars10.map(b => b.volume)) : 0;
-    const isPocketPivot = isUp && curVol > maxDownVol10 && curVol >= avg * 1.05;
-
-    let col;
-    // 1. Highest volume day in lookback OR Pocket Pivot -> Blue (#2196f3)
-    if ((curVol >= maxVol && curVol >= avg) || isPocketPivot) {
-      col = '#2196f3';
-    }
-    // 2. Lowest volume day (Dry Volume / VDU) in lookback -> Yellow (#ffeb3b)
-    else if (curVol <= minVol && curVol < avg) {
-      col = '#ffeb3b';
-    }
-    // 3. Low volume day (below average volume) -> Gray
-    else if (curVol < avg) {
-      col = 'rgba(148, 163, 184, 0.45)';
-    }
-    // 4. Power Volume (extreme surge >= 1.75x average) -> Power Volume Up / Down (#c8e6ca / #fbc4bd)
-    else if (curVol >= avg * 1.75) {
-      col = isUp ? '#c8e6ca' : '#fbc4bd';
-    }
-    // 5. Above average Up day -> High Up Green (#4caf50)
-    else if (isUp) {
-      col = '#4caf50';
-    }
-    // 6. Above average Down day -> High Down Red (#f23645)
-    else {
-      col = '#f23645';
-    }
-
-    return {
-      time: c.time,
-      value: c.volume,
-      color: col
-    };
-  });
-  volSeries.setData(volData);
+  // Volume colour comes from the shared WIN hierarchy (winVolumeData), so the
+  // card charts and this chart can no longer drift apart.
+  volSeries.setData(winVolumeData(cleanCandles, _winConfig.inputs.volLen || 50));
 
   const isWeekly = (_sdChartsInterval === 'W');
   const isDaily = (_sdChartsInterval === 'D');
@@ -6919,159 +6865,68 @@ function drawMaxChartLightweight() {
   const inp = _winConfig.inputs;
   const st = _winConfig.style;
 
-  const ema10Vals = calculateEMA(cleanCandles, inp.ema1Period);
-  const ema20Vals = calculateEMA(cleanCandles, inp.ema2Period);
-  const sma50Vals = calculateSMA(cleanCandles, inp.sma1Period);
-  const sma200Vals = calculateSMA(cleanCandles, inp.sma2Period);
-  const sma30wVals = calculateSMA(cleanCandles, inp.sma30wPeriod);
-  const avgVolVals = calculateAvgVol(cleanCandles, inp.volLen);
+  // ── WIN indicator ───────────────────────────────────────────────────────────
+  // One shared implementation (chart_core.js) computes every value; this block
+  // only draws what it returns. Previously this chart carried its own copy of
+  // the whole indicator, which is how it drifted from the card charts.
+  const win = computeWinIndicator(cleanCandles, {
+    config: _winConfig,
+    timeframe: _sdChartsInterval,
+    niftyCandles: _maxNiftyCandles,
+  });
+  const ema10Vals = win.ema1;
+  const avgVolVals = win.avgVol;
 
-  // EMA 1
-  const ema10Map = new Map();
-  if (st.ema10 && st.ema10.visible) {
+  // Weekly uses the 30-week average; daily uses the 50/200 pair. win.lines
+  // encodes that per timeframe, so this loop never needs a timeframe check.
+  const maMapsForDraw = { ema10: new Map(), ema20: new Map(), sma50: new Map(), sma200: new Map() };
+  for (const line of win.lines) {
+    if (!line.active || !line.style || !line.style.visible) continue;
+    const values = line.vals;
     const data = [];
     for (let i = 0; i < cleanCandles.length; i++) {
-      if (ema10Vals[i] != null) {
-        data.push({ time: cleanCandles[i].time, value: ema10Vals[i] });
-        ema10Map.set(cleanCandles[i].time, ema10Vals[i]);
+      if (values[i] != null) {
+        data.push({ time: cleanCandles[i].time, value: values[i] });
+        if (maMapsForDraw[line.key]) maMapsForDraw[line.key].set(cleanCandles[i].time, values[i]);
       }
     }
-    const s = _maxLwChart.addLineSeries({
-      color: typeof hexToRgba === 'function' ? hexToRgba(st.ema10.color || '#3b82f6', (st.ema10.opacity != null ? st.ema10.opacity : 85) / 100) : (st.ema10.color || '#3b82f6'),
-      lineWidth: st.ema10.width != null ? Number(st.ema10.width) : 1,
-      lineStyle: st.ema10.lineStyle || 0,
+    const drawSeries = lwAddSeries(_maxLwChart, 'LineSeries', {
+      color: typeof hexToRgba === 'function'
+        ? hexToRgba(line.style.color || line.defaultColor, (line.style.opacity != null ? line.style.opacity : 85) / 100)
+        : (line.style.color || line.defaultColor),
+      lineWidth: line.style.width != null ? Number(line.style.width) : line.width,
+      lineStyle: line.style.lineStyle || 0,
       priceLineVisible: false,
       lastValueVisible: false,
       title: ''
     });
-    s.setData(data);
+    drawSeries.setData(data);
   }
 
-  // EMA 2
-  const ema20Map = new Map();
-  if (st.ema20 && st.ema20.visible) {
-    const data = [];
-    for (let i = 0; i < cleanCandles.length; i++) {
-      if (ema20Vals[i] != null) {
-        data.push({ time: cleanCandles[i].time, value: ema20Vals[i] });
-        ema20Map.set(cleanCandles[i].time, ema20Vals[i]);
-      }
-    }
-    const s = _maxLwChart.addLineSeries({
-      color: typeof hexToRgba === 'function' ? hexToRgba(st.ema20.color || '#ef4444', (st.ema20.opacity != null ? st.ema20.opacity : 85) / 100) : (st.ema20.color || '#ef4444'),
-      lineWidth: st.ema20.width != null ? Number(st.ema20.width) : 1,
-      lineStyle: st.ema20.lineStyle || 0,
+  // Relative strength vs Nifty, on its own hidden scale.
+  if (st.rs && st.rs.visible && win.rsData.length > 0) {
+    const rsSeries = lwAddSeries(_maxLwChart, 'LineSeries', {
+      color: typeof hexToRgba === 'function' ? hexToRgba(st.rs.color || '#38bdf8', (st.rs.opacity != null ? st.rs.opacity : 100) / 100) : '#38bdf8',
+      lineWidth: st.rs.width || 1.8,
+      lineStyle: st.rs.lineStyle || 0,
+      priceScaleId: 'rs_scale',
       priceLineVisible: false,
       lastValueVisible: false,
-      title: ''
+      title: '',
     });
-    s.setData(data);
-  }
-
-  // SMA 1 (Daily only)
-  const sma50Map = new Map();
-  if (st.sma50 && st.sma50.visible && !isWeekly) {
-    const data = [];
-    for (let i = 0; i < cleanCandles.length; i++) {
-      if (sma50Vals[i] != null) {
-        data.push({ time: cleanCandles[i].time, value: sma50Vals[i] });
-        sma50Map.set(cleanCandles[i].time, sma50Vals[i]);
-      }
-    }
-    const s = _maxLwChart.addLineSeries({
-      color: typeof hexToRgba === 'function' ? hexToRgba(st.sma50.color || '#06b6d4', (st.sma50.opacity != null ? st.sma50.opacity : 85) / 100) : (st.sma50.color || '#06b6d4'),
-      lineWidth: st.sma50.width != null ? Number(st.sma50.width) : 1,
-      lineStyle: st.sma50.lineStyle || 0,
-      priceLineVisible: false,
-      lastValueVisible: false,
-      title: ''
+    _maxLwChart.priceScale('rs_scale').applyOptions({
+      scaleMargins: { top: 0.05, bottom: 0.70 },
+      visible: false,
     });
-    s.setData(data);
-  }
-
-  // SMA 2 (Daily only)
-  const sma200Map = new Map();
-  if (st.sma200 && st.sma200.visible && !isWeekly) {
-    const data = [];
-    for (let i = 0; i < cleanCandles.length; i++) {
-      if (sma200Vals[i] != null) {
-        data.push({ time: cleanCandles[i].time, value: sma200Vals[i] });
-        sma200Map.set(cleanCandles[i].time, sma200Vals[i]);
-      }
-    }
-    const s = _maxLwChart.addLineSeries({
-      color: typeof hexToRgba === 'function' ? hexToRgba(st.sma200.color || '#22c55e', (st.sma200.opacity != null ? st.sma200.opacity : 85) / 100) : (st.sma200.color || '#22c55e'),
-      lineWidth: st.sma200.width != null ? Number(st.sma200.width) : 1.5,
-      lineStyle: st.sma200.lineStyle || 0,
-      priceLineVisible: false,
-      lastValueVisible: false,
-      title: ''
-    });
-    s.setData(data);
-  }
-
-  // SMA 30W (Weekly only)
-  const sma30wMap = new Map();
-  if (st.sma30w && st.sma30w.visible && isWeekly) {
-    const data = [];
-    for (let i = 0; i < cleanCandles.length; i++) {
-      if (sma30wVals[i] != null) {
-        data.push({ time: cleanCandles[i].time, value: sma30wVals[i] });
-        sma30wMap.set(cleanCandles[i].time, sma30wVals[i]);
-      }
-    }
-    const s = _maxLwChart.addLineSeries({
-      color: typeof hexToRgba === 'function' ? hexToRgba(st.sma30w.color || '#f97316', (st.sma30w.opacity != null ? st.sma30w.opacity : 85) / 100) : (st.sma30w.color || '#f97316'),
-      lineWidth: st.sma30w.width != null ? Number(st.sma30w.width) : 1,
-      lineStyle: st.sma30w.lineStyle || 0,
-      priceLineVisible: false,
-      lastValueVisible: false,
-      title: ''
-    });
-    s.setData(data);
-  }
-
-  // RS Nifty
-  const rsMap = new Map();
-  if (st.rs && st.rs.visible && _maxNiftyCandles && _maxNiftyCandles.length > 0) {
-    const nMap = new Map();
-    for (const nc of _maxNiftyCandles) {
-      nMap.set(new Date(nc.time).toISOString().split('T')[0], nc.close);
-    }
-    const rsData = [];
-    for (const c of cleanCandles) {
-      const dStr = new Date(c.time * 1000).toISOString().split('T')[0];
-      const nClose = nMap.get(dStr);
-      if (nClose != null && nClose > 0) {
-        const ratio = (c.close / nClose) * 1000;
-        rsData.push({ time: c.time, value: ratio });
-        rsMap.set(c.time, ratio);
-      }
-    }
-    if (rsData.length > 0) {
-      const rsSeries = _maxLwChart.addLineSeries({
-        color: typeof hexToRgba === 'function' ? hexToRgba(st.rs.color || '#38bdf8', (st.rs.opacity != null ? st.rs.opacity : 100) / 100) : (st.rs.color || '#38bdf8'),
-        lineWidth: st.rs.width || 1.8,
-        lineStyle: st.rs.lineStyle || 0,
-        priceScaleId: 'rs_scale',
-        priceLineVisible: false,
-        lastValueVisible: false,
-        title: '',
-      });
-      _maxLwChart.priceScale('rs_scale').applyOptions({
-        scaleMargins: { top: 0.05, bottom: 0.70 },
-        visible: false,
-      });
-      rsSeries.setData(rsData);
-    }
+    rsSeries.setData(win.rsData);
   }
 
   // WIN Markers
   if (st.dots && st.dots.visible) {
     const markers = calculateWinMarkers(cleanCandles, ema10Vals, avgVolVals, isDaily);
-    priceSeries.setMarkers(markers);
+    lwSetMarkers(priceSeries, markers);
   } else {
-    priceSeries.setMarkers([]);
+    lwSetMarkers(priceSeries, []);
   }
 
   // Volume Trigger V4 / GTT Line
@@ -7172,6 +7027,20 @@ function drawMaxChartLightweight() {
     hdrStatsEl.innerHTML = `<span style="background:${rBg};border:1px solid ${rCol}55;color:${rCol};padding:2px 7px;border-radius:4px;font-weight:700;font-family:var(--mono);font-size:11px;" title="Relative Strength Rating vs Nifty">RS ${rVal}</span>`;
   }
 
+  // Quarterly EPS/Sales growth under the price — off unless switched on.
+  try {
+    if (typeof applyEarningsPane === 'function' && _winConfig.inputs.epsPane) {
+      const qInfo = typeof getStockQuarterlyData === 'function' ? getStockQuarterlyData(_sdMaximizedChartSymbol) : null;
+      applyEarningsPane(_maxLwChart, 'max-chart', cleanCandles, qInfo && qInfo.qData, {
+        cap: _winConfig.inputs.epsCap,
+      });
+    } else if (typeof clearEarningsPane === 'function') {
+      clearEarningsPane(_maxLwChart, 'max-chart');
+    }
+  } catch (e) {
+    console.warn('[earnings pane]', e && e.message);
+  }
+
   // Render WIN HUD Table in modal
   const tableContainer = document.getElementById('max-chart-table-container');
   if (tableContainer) {
@@ -7189,7 +7058,7 @@ function drawMaxChartLightweight() {
   try {
     _maxLwChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
       saveUserChartZoomPreference(range, cleanCandles.length, _sdChartsInterval);
-      redrawChartDrawings();
+      if (typeof redrawChartDrawings === 'function') redrawChartDrawings();
       if (typeof updateFloatingToolbar === 'function') updateFloatingToolbar();
     });
   } catch (e) { }
@@ -7634,12 +7503,43 @@ function sdSetLayout(layout) {
   _sdChartsPage = 0; _sdAutoChartsLimit = 12; sdRenderCharts(_sdCurrentSector, _sdCurrentData);
 }
 function sdSetChartsInterval(interval) { _sdChartsInterval = interval; _sdChartsPage = 0; _sdAutoChartsLimit = 12; sdRenderCharts(_sdCurrentSector, _sdCurrentData); }
-function sdSetChartType(type) { _sdChartType = type; sdRenderCharts(_sdCurrentSector, _sdCurrentData); }
+function sdSetChartType(type) {
+  // 'volume_candles' is not implemented by the LightweightCharts renderer — it silently
+  // fell back to plain candles. Treat it as 'candlestick' until a real implementation lands.
+  _sdChartType = (type === 'volume_candles') ? 'candlestick' : type;
+  sdRenderCharts(_sdCurrentSector, _sdCurrentData);
+}
 function sdSetSortBy(val) { _sdSortBy = val; if (_sdActiveTab === 'charts') { sdRenderCharts(_sdCurrentSector, _sdCurrentData); } else if (_sdActiveTab === 'vcp') { sdRenderVcp(_sdCurrentSector, _sdCurrentData); } }
 function sdChartsLoadMore() { _sdAutoChartsLimit += 12; sdRenderCharts(_sdCurrentSector, _sdCurrentData); }
 function sdChartsPrevPage() { if (_sdChartsPage > 0) { _sdChartsPage--; sdRenderCharts(_sdCurrentSector, _sdCurrentData); } }
 function sdChartsNextPage(totalPages) { if (_sdChartsPage < totalPages - 1) { _sdChartsPage++; sdRenderCharts(_sdCurrentSector, _sdCurrentData); } }
 const _yfDataCache = new Map();
+// Cache entries are timestamped so that "Refresh" can actually bypass them and so
+// intraday bars do not go stale for the lifetime of the tab. Size-capped (LRU-ish)
+// because the key space is symbol x range x interval.
+const YF_CACHE_TTL_MS = 60 * 1000;
+const YF_CACHE_MAX_KEYS = 400;
+function _yfCacheGet(key) {
+  const hit = _yfDataCache.get(key);
+  if (!hit) return null;
+  if ((Date.now() - (hit.at || 0)) > YF_CACHE_TTL_MS) {
+    _yfDataCache.delete(key);
+    return null;
+  }
+  // refresh recency for the eviction heuristic
+  _yfDataCache.delete(key);
+  _yfDataCache.set(key, hit);
+  return hit.candles || null;
+}
+function _yfCacheSet(key, candles) {
+  if (!key || !candles) return;
+  _yfDataCache.delete(key);
+  _yfDataCache.set(key, { at: Date.now(), candles });
+  while (_yfDataCache.size > YF_CACHE_MAX_KEYS) {
+    const oldest = _yfDataCache.keys().next().value;
+    _yfDataCache.delete(oldest);
+  }
+}
 
 // Helper to fetch candles from a single proxy with a strict timeout
 async function _fetchProxyCandles(pUrl, timeoutMs) {
@@ -7687,9 +7587,14 @@ const _promiseAny = (typeof Promise !== 'undefined' && Promise.any) ? Promise.an
   });
 };
 
-async function _fetchYfDataWithSymbol(yfSymbol, range, interval) {
+async function _fetchYfDataWithSymbol(yfSymbol, range, interval, force) {
   const cacheKey = `${yfSymbol}_${range}_${interval}`;
-  if (_yfDataCache.has(cacheKey)) { return _yfDataCache.get(cacheKey); }
+  if (!force) {
+    const cached = _yfCacheGet(cacheKey);
+    if (cached) return cached;
+  } else {
+    _yfDataCache.delete(cacheKey);
+  }
 
   const currentOrigin = window.location.origin;
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
@@ -7700,7 +7605,7 @@ async function _fetchYfDataWithSymbol(yfSymbol, range, interval) {
       const localTarget = `https://query1.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`;
       const candles = await _fetchProxyCandles(`http://localhost:9090/?url=${encodeURIComponent(localTarget)}`, 1200);
       if (candles && candles.length > 0) {
-        _yfDataCache.set(cacheKey, candles);
+        _yfCacheSet(cacheKey, candles);
         return candles;
       }
     } catch (e) {
@@ -7720,7 +7625,7 @@ async function _fetchYfDataWithSymbol(yfSymbol, range, interval) {
       const cfUrl = `https://nse-chart-proxy.shibu-mk.workers.dev/?url=${encodeURIComponent(targetUrl)}`;
       const candles = await _fetchProxyCandles(cfUrl, 3800);
       if (candles && candles.length > 0) {
-        _yfDataCache.set(cacheKey, candles);
+        _yfCacheSet(cacheKey, candles);
         return candles;
       }
     } catch (eCf) {
@@ -7743,7 +7648,7 @@ async function _fetchYfDataWithSymbol(yfSymbol, range, interval) {
         proxyUrls.map(pUrl => _fetchProxyCandles(pUrl, 4500))
       );
       if (candles && candles.length > 0) {
-        _yfDataCache.set(cacheKey, candles);
+        _yfCacheSet(cacheKey, candles);
         return candles;
       }
     } catch (err) {
@@ -7796,14 +7701,14 @@ function getYfSymbolCandidates(symbol) {
 }
 window.getYfSymbolCandidates = getYfSymbolCandidates;
 
-async function fetchYfData(symbol, range, interval) {
+async function fetchYfData(symbol, range, interval, force) {
   const candidates = getYfSymbolCandidates(symbol);
   let bestCandles = null;
 
   for (let i = 0; i < candidates.length; i++) {
     const cand = candidates[i];
     try {
-      const candles = await _fetchYfDataWithSymbol(cand, range, interval);
+      const candles = await _fetchYfDataWithSymbol(cand, range, interval, force);
       if (candles && candles.length > 5) {
         return candles;
       } else if (candles && candles.length > 0 && !bestCandles) {
@@ -7997,7 +7902,6 @@ function sdRenderCharts(sectorName, secData) {
         <select onchange="sdSetChartType(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:10px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
           <option value="candlestick" ${_sdChartType === 'candlestick' ? 'selected' : ''}>Candles</option>
           <option value="ohlc" ${_sdChartType === 'ohlc' ? 'selected' : ''}>Bars</option>
-          <option value="volume_candles" ${_sdChartType === 'volume_candles' ? 'selected' : ''}>Volume Candles</option>
         </select>
       </div>
 
@@ -8298,7 +8202,9 @@ function maxChartChangeTimeframe(interval) {
 window.maxChartChangeTimeframe = maxChartChangeTimeframe;
 
 function maxChartChangeType(type) {
-  _sdChartType = type;
+  // Guard against a stale persisted 'volume_candles' selection restoring a no-op mode.
+  _sdChartType = (type === 'volume_candles') ? 'candlestick' : type;
+  type = _sdChartType;
   const sel = document.getElementById('max-chart-type');
   if (sel && sel.value !== type) sel.value = type;
   if (_sdMaximizedChartSymbol) {
@@ -8333,7 +8239,7 @@ function maxChartResetView() {
     }
   }
   syncCanvasSize();
-  redrawChartDrawings();
+  if (typeof redrawChartDrawings === 'function') redrawChartDrawings();
   if (typeof updateFloatingToolbar === 'function') updateFloatingToolbar();
   if (typeof showChartToast === 'function') showChartToast('⟲ Chart view reset');
 }
@@ -8341,7 +8247,8 @@ window.maxChartResetView = maxChartResetView;
 
 function maxChartRefresh() {
   if (_sdMaximizedChartSymbol) {
-    _maxFetchAndDraw(_sdMaximizedChartSymbol);
+    // force = true -> bypass the Yahoo candle cache so the button actually re-fetches
+    _maxFetchAndDraw(_sdMaximizedChartSymbol, true);
   }
 }
 window.maxChartRefresh = maxChartRefresh;
@@ -8624,6 +8531,7 @@ let _activeLayoutTile = 1; // 1, 2, 3, or 4
 let _layoutSymbols = ['SHYAMMETL', 'RELIANCE', 'TCS', 'HDFCBANK'];
 let _subLwCharts = [null, null, null, null]; // Sub-chart instances for tiles 2, 3, 4
 let _subLwSeries = [null, null, null, null];
+let _subLwCandles = [null, null, null, null]; // Cleaned candle arrays for tiles 2-4 (magnet snap)
 
 // Set active layout tile (1, 2, 3, 4) with blue focus ring
 function maxChartSetActiveTile(tileNum) {
@@ -8919,7 +8827,7 @@ async function maxChartRenderSubTile(tileNum, symbol) {
   });
   _subLwCharts[tileNum] = chart;
 
-  const series = chart.addCandlestickSeries({
+  const series = lwAddSeries(chart, 'CandlestickSeries', {
     upColor: '#26a69a', downColor: '#ef5350', borderVisible: false, wickUpColor: '#26a69a', wickDownColor: '#ef5350'
   });
   _subLwSeries[tileNum] = series;
@@ -8944,6 +8852,7 @@ async function maxChartRenderSubTile(tileNum, symbol) {
         }
       }
       clean.sort((a, b) => a.time - b.time);
+      _subLwCandles[tileNum] = clean;
       series.setData(clean);
       if (clean.length > 0 && typeof syncWatchlistPriceInDom === 'function') {
         const lastC = clean[clean.length - 1];
@@ -8960,7 +8869,7 @@ async function maxChartRenderSubTile(tileNum, symbol) {
       try {
         chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
           saveUserChartZoomPreference(range, clean.length, 'D');
-          redrawChartDrawings();
+          if (typeof redrawChartDrawings === 'function') redrawChartDrawings();
         });
       } catch (e) { }
     }
@@ -9793,7 +9702,7 @@ function toggleMaxChartWatchlist() {
       const container = document.getElementById('max-chart-lw-container');
       if (container) {
         _maxLwChart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
-        redrawChartDrawings();
+        if (typeof redrawChartDrawings === 'function') redrawChartDrawings();
       }
     }
   }, 80);
@@ -10688,6 +10597,9 @@ function openCoordsDialog(drawing) {
     pricenote: 'Price Note',
     comment: 'Comment',
     ray_h: 'Horizontal Ray',
+    hline: 'Horizontal Line',
+    vline: 'Vertical Line',
+    channel: 'Parallel Channel',
     ray: 'Arrow Ray',
     trendline: 'Trend Line',
     curve: 'Curve',
@@ -11211,7 +11123,7 @@ function applyDrawingCoordinates() {
 
   closeCoordsDialog();
   saveChartDrawings();
-  redrawChartDrawings();
+  if (typeof redrawChartDrawings === 'function') redrawChartDrawings();
   updateFloatingToolbar();
   showChartToast('✔ Settings updated', '#22c55e');
 }

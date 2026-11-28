@@ -6222,6 +6222,134 @@ thead th[onclick]:hover {
   color: #2962ff;
 }
 
+/* ── DRAWING OBJECT LIST PANEL ── */
+.tv-object-list {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 44;
+  width: 232px;
+  max-height: calc(100% - 16px);
+  display: flex;
+  flex-direction: column;
+  background: #1e222d;
+  border: 1px solid #363c4e;
+  border-radius: 6px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
+  font-family: -apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, sans-serif;
+  font-size: 11px;
+  color: #d1d4dc;
+  user-select: none;
+  overflow: hidden;
+}
+
+.tv-object-list-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #2a2e39;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: #9aa3b8;
+  flex-shrink: 0;
+}
+
+.tv-object-list-count {
+  background: #2a2e39;
+  color: #d1d4dc;
+  border-radius: 8px;
+  padding: 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.tv-object-list-x {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: #787b86;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.tv-object-list-x:hover { color: #f0f3fa; }
+
+.tv-object-list-body {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 3px;
+  scrollbar-width: thin;
+}
+
+.tv-object-list-empty {
+  padding: 12px 8px;
+  color: #787b86;
+  font-size: 11px;
+  text-align: center;
+}
+
+.tv-object-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.tv-object-row:hover { background: rgba(255, 255, 255, 0.06); }
+
+.tv-object-row.active {
+  background: rgba(41, 98, 255, 0.18);
+  border-color: #2962ff;
+}
+
+.tv-object-row.hidden-obj { opacity: 0.45; }
+
+.tv-object-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.tv-object-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tv-object-sub {
+  display: block;
+  font-style: normal;
+  font-size: 10px;
+  color: #787b86;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tv-object-act {
+  background: transparent;
+  border: none;
+  color: #787b86;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.tv-object-act:hover { color: #f0f3fa; }
+.tv-object-act.del:hover { color: #ef4444; }
+
 /* ── TRADINGVIEW DRAWING CUSTOMIZATION FLOATING TOOLBAR ── */
 .tv-drawing-float-bar {
   position: absolute;

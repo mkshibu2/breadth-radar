@@ -1,6 +1,13 @@
 // Shared TradingView Drawing Tools & Editing Engine
 // ── TRADINGVIEW DRAWING TOOLS & EDITING ENGINE ────────────────────────────
-let _currentDrawTool = 'select'; // 'select' | 'trendline' | 'ray_h' | 'ray' | 'rect' | 'scale' | 'pricenote' | 'text'
+// chart_draw.js is loaded on pages that never define showChartToast (screener.html),
+// so install a no-op fallback; index.js replaces it with the real toast when present.
+if (typeof window.showChartToast !== 'function') {
+  window.showChartToast = function () { };
+}
+var showChartToast = window.showChartToast;
+
+let _currentDrawTool = 'select'; // 'select' | 'trendline' | 'ray_h' | 'hline' | 'vline' | 'ray' | 'rect' | 'channel' | 'scale' | 'pricenote' | 'text'
 let _drawStep = 0; // 0 = idle, 1 = first point placed, waiting for second point
 let _drawStart = null; // { x, y, logical, price, time }
 let _activeDrawing = null; // preview object while drawing
@@ -255,6 +262,12 @@ function setDrawingTool(tool) {
     showChartToast('〽 Path: Click points, double-click or Enter to finish', '#38bdf8');
   } else if (tool === 'comment') {
     showChartToast('💬 Comment: Click to place callout balloon', '#38bdf8');
+  } else if (tool === 'hline') {
+    showChartToast('➖ Horizontal Line: Click any price level', '#f59e0b');
+  } else if (tool === 'vline') {
+    showChartToast('❙ Vertical Line: Click any bar', '#a855f7');
+  } else if (tool === 'channel') {
+    showChartToast('∥ Parallel Channel: Click 3 points (base start, base end, offset)', '#2962ff');
   }
 }
 window.setDrawingTool = setDrawingTool;
@@ -281,6 +294,36 @@ function getDrawingContext() {
   return { chart, series, timeScale };
 }
 
+// Returns the draw-canvas pixel offset of the active tile, or null when the drawing
+// layer covers the whole stage (single layout / host page). Tile 2-4 live inside the
+// shared #max-chart-stage overlay canvas, so their chart-local coordinates must be
+// shifted by the tile's position inside the stage or drawings land in the wrong pane.
+function getActiveTileOffset() {
+  if (window.CHART_DRAW_HOST && typeof window.CHART_DRAW_HOST.getContext === 'function') return null;
+  if (typeof _maxChartLayout === 'undefined' || _maxChartLayout === '1') return null;
+  if (typeof _activeLayoutTile === 'undefined' || !(_activeLayoutTile > 1)) return null;
+
+  const stage = document.getElementById('max-chart-stage');
+  const tile = document.getElementById('max-chart-lw-container-' + _activeLayoutTile);
+  if (!stage || !tile) return null;
+  const sr = stage.getBoundingClientRect();
+  const tr = tile.getBoundingClientRect();
+  if (!sr.width || !sr.height || !tr.width || !tr.height) return null;
+  return { dx: tr.left - sr.left, dy: tr.top - sr.top, w: tr.width, h: tr.height };
+}
+
+// Candle array for the chart currently under the cursor (used by magnet snap).
+function getActiveDrawCandles() {
+  if (window.CHART_DRAW_HOST && typeof window.CHART_DRAW_HOST.getCandles === 'function') {
+    return window.CHART_DRAW_HOST.getCandles() || [];
+  }
+  if (typeof _activeLayoutTile !== 'undefined' && _activeLayoutTile > 1) {
+    if (typeof _subLwCandles !== 'undefined' && _subLwCandles[_activeLayoutTile]) return _subLwCandles[_activeLayoutTile];
+    return [];
+  }
+  return window._maxCleanCandles || (typeof _maxCandles !== 'undefined' ? _maxCandles : []) || [];
+}
+
 function pointToPixels(p, timeScale, series) {
   let px = p.x;
   let py = p.y;
@@ -299,6 +342,30 @@ function pointToPixels(p, timeScale, series) {
   return { x: px, y: py };
 }
 
+// Human-readable time label for a logical bar index (used by the Vertical Line tag)
+function timeAtLogical(logical) {
+  if (logical == null || !isFinite(logical)) return null;
+  const candles = getActiveDrawCandles();
+  if (!candles || !candles.length) return null;
+  const idx = Math.max(0, Math.min(candles.length - 1, Math.round(logical)));
+  const bar = candles[idx];
+  if (!bar || bar.time == null) return null;
+  const t = bar.time;
+  if (typeof t === 'string') return t;
+  if (typeof t === 'number') {
+    const d = new Date(t > 1e11 ? t : t * 1000);
+    if (isNaN(d.getTime())) return null;
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    return yyyy + '-' + mm + '-' + dd;
+  }
+  if (t && typeof t === 'object' && t.year != null) {
+    return t.year + '-' + String(t.month).padStart(2, '0') + '-' + String(t.day).padStart(2, '0');
+  }
+  return null;
+}
+
 // Hit-testing drawings for selection & manipulation
 function hitTestChartDrawings(x, y) {
   const sym = getActiveDrawingSymbol();
@@ -309,7 +376,8 @@ function hitTestChartDrawings(x, y) {
 
   for (let i = drawings.length - 1; i >= 0; i--) {
     const d = drawings[i];
-    if (!d || (!d.p1 && (!d.points || !d.points.length))) continue;
+    if (!d || d.hidden) continue;
+    if (!d.p1 && (!d.points || !d.points.length)) continue;
 
     // Multi-point tool: Path
     if (d.type === 'path' && d.points && d.points.length >= 2) {
@@ -350,6 +418,29 @@ function hitTestChartDrawings(x, y) {
     } else if (d.type === 'ray_h') {
       if (Math.hypot(x - pt1.x, y - pt1.y) <= 9) return { index: i, drawing: d, handle: 'p1', pt: pt1 };
       if (Math.abs(y - pt1.y) <= 7 && x >= pt1.x - 6) return { index: i, drawing: d, handle: 'body' };
+    } else if (d.type === 'hline') {
+      if (Math.hypot(x - pt1.x, y - pt1.y) <= 9) return { index: i, drawing: d, handle: 'p1', pt: pt1 };
+      if (Math.abs(y - pt1.y) <= 7) return { index: i, drawing: d, handle: 'body' };
+    } else if (d.type === 'vline') {
+      if (Math.hypot(x - pt1.x, y - pt1.y) <= 9) return { index: i, drawing: d, handle: 'p1', pt: pt1 };
+      if (Math.abs(x - pt1.x) <= 7) return { index: i, drawing: d, handle: 'body' };
+    } else if (d.type === 'channel') {
+      const pt3 = d.p3 ? pointToPixels(d.p3, timeScale, series) : pt2;
+      if (Math.hypot(x - pt1.x, y - pt1.y) <= 9) return { index: i, drawing: d, handle: 'p1', pt: pt1 };
+      if (Math.hypot(x - pt2.x, y - pt2.y) <= 9) return { index: i, drawing: d, handle: 'p2', pt: pt2 };
+      if (Math.hypot(x - pt3.x, y - pt3.y) <= 9) return { index: i, drawing: d, handle: 'p3', pt: pt3 };
+      // both rails + the interior band are grabbable as 'body'
+      const ext = d.extend || 'right';
+      let lx = Math.min(pt1.x, pt2.x), rx = Math.max(pt1.x, pt2.x);
+      if (ext === 'left' || ext === 'both') lx = -1e4;
+      if (ext === 'right' || ext === 'both') rx = 1e4;
+      const slope = (pt2.x !== pt1.x) ? (pt2.y - pt1.y) / (pt2.x - pt1.x) : 0;
+      const offset = pt3.y - ((pt1.y + pt2.y) / 2);
+      const yAt = (px, off) => pt1.y + slope * (px - pt1.x) + off;
+      if (x < lx - 10 || x > rx + 10) continue;
+      const lo = Math.min(yAt(x, 0), yAt(x, offset));
+      const hi = Math.max(yAt(x, 0), yAt(x, offset));
+      if (y >= lo - 7 && y <= hi + 7) return { index: i, drawing: d, handle: 'body' };
     } else if (d.type === 'scale' || d.type === 'measure') {
       const minX = Math.min(pt1.x, pt2.x);
       const maxX = Math.max(pt1.x, pt2.x);
@@ -482,10 +573,20 @@ function initChartDrawingCanvas() {
     const rect = canvas.getBoundingClientRect();
     const clientX = e.clientX != null ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : (window._lastTouchX || 0));
     const clientY = e.clientY != null ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : (window._lastTouchY || 0));
-    const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
-    const y = Math.max(0, Math.min(rect.height, clientY - rect.top));
+    // Canvas-space position (the overlay may span the whole stage in multi-chart layouts)
+    const canvasX = Math.max(0, Math.min(rect.width, clientX - rect.left));
+    const canvasY = Math.max(0, Math.min(rect.height, clientY - rect.top));
 
     const { chart, series, timeScale } = getDrawingContext();
+
+    // Tile-local position: the time/price scales of tile 2-4 are relative to the tile,
+    // not to the shared stage-level overlay canvas.
+    const tile = getActiveTileOffset();
+    let x = canvasX, y = canvasY;
+    if (tile) {
+      x = Math.max(0, Math.min(tile.w, canvasX - tile.dx));
+      y = Math.max(0, Math.min(tile.h, canvasY - tile.dy));
+    }
 
     let logical = null;
     let price = null;
@@ -497,9 +598,7 @@ function initChartDrawingCanvas() {
     }
     let finalX = x, finalY = y;
     if (_drawMagnetMode && logical != null && price != null) {
-      const candlesArr = (window.CHART_DRAW_HOST && typeof window.CHART_DRAW_HOST.getCandles === 'function')
-        ? window.CHART_DRAW_HOST.getCandles()
-        : ((_activeLayoutTile > 1 && _subLwCandles[_activeLayoutTile]) ? _subLwCandles[_activeLayoutTile] : (window._maxCleanCandles || _maxCandles));
+      const candlesArr = getActiveDrawCandles();
       const barIdx = Math.round(logical);
       if (candlesArr && barIdx >= 0 && barIdx < candlesArr.length) {
         const bar = candlesArr[barIdx];
@@ -556,8 +655,9 @@ function initChartDrawingCanvas() {
     stage.addEventListener('mousedown', e => {
       const rect = stage.getBoundingClientRect();
       const x = e.clientX - rect.left;
-      const chartPlotW = rect.width - 65;
-      if (x >= chartPlotW || e.shiftKey || e.button === 0) {
+      const tile = getActiveTileOffset();
+      const plotRight = tile ? (tile.dx + tile.w - 65) : (rect.width - 65);
+      if (x >= plotRight || e.shiftKey || e.button === 0) {
         isPriceScaleDragging = true;
       }
     });
@@ -579,8 +679,10 @@ function initChartDrawingCanvas() {
     stage.addEventListener('mousemove', e => {
       if (_currentDrawTool !== 'select' || _dragMode) return;
       const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const tile = getActiveTileOffset();
+      // Convert to the active tile's local coordinate space for hit-testing
+      const x = e.clientX - rect.left - (tile ? tile.dx : 0);
+      const y = e.clientY - rect.top - (tile ? tile.dy : 0);
 
       const hit = hitTestChartDrawings(x, y);
       if (hit) {
@@ -690,6 +792,35 @@ function initChartDrawingCanvas() {
         style: 'dashed'
       });
       showChartToast('✔ Placed Horizontal Ray at ₹ ' + (coords.price != null ? coords.price.toFixed(1) : ''), '#38bdf8');
+      return;
+    }
+
+    // 1b. Single-click tool: Horizontal Line
+    if (_currentDrawTool === 'hline') {
+      commitNewDrawing({
+        type: 'hline',
+        p1: { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price },
+        color: '#f59e0b',
+        width: 1.5,
+        style: 'solid'
+      });
+      showChartToast('✔ Placed Horizontal Line at ₹ ' + (coords.price != null ? coords.price.toFixed(1) : ''), '#f59e0b');
+      return;
+    }
+
+    // 1c. Single-click tool: Vertical Line
+    if (_currentDrawTool === 'vline') {
+      commitNewDrawing({
+        type: 'vline',
+        p1: {
+          x: coords.x, y: coords.y, logical: coords.logical,
+          price: coords.price, time: timeAtLogical(coords.logical)
+        },
+        color: '#a855f7',
+        width: 1.5,
+        style: 'dashed'
+      });
+      showChartToast('✔ Placed Vertical Line', '#a855f7');
       return;
     }
 
@@ -827,6 +958,41 @@ function initChartDrawingCanvas() {
       return;
     }
 
+    // 6b. Parallel Channel: click base start -> base end -> offset rail
+    if (_currentDrawTool === 'channel') {
+      if (_drawStep === 0) {
+        _drawStep = 1;
+        _drawStart = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price };
+        _activeDrawing = {
+          type: 'channel',
+          p1: _drawStart,
+          p2: _drawStart,
+          p3: _drawStart,
+          color: '#2962ff',
+          width: 1.5,
+          style: 'solid',
+          fillOpacity: 0.12,
+          extend: 'right'
+        };
+        redrawChartDrawings();
+        showChartToast('∥ Channel: click the 2nd point of the base line', '#2962ff');
+      } else if (_drawStep === 1) {
+        const p2 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price };
+        if (Math.hypot(p2.x - _drawStart.x, p2.y - _drawStart.y) >= 4) {
+          _drawStep = 2;
+          _activeDrawing.p2 = p2;
+          _activeDrawing.p3 = { ...p2 };
+          redrawChartDrawings();
+          showChartToast('∥ Channel: click to set the parallel rail offset', '#2962ff');
+        }
+      } else if (_drawStep === 2) {
+        _activeDrawing.p3 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price };
+        commitNewDrawing({ ..._activeDrawing });
+        showChartToast('✔ Placed Parallel Channel', '#2962ff');
+      }
+      return;
+    }
+
     // 7. Two-point tools: trendline, ray, rect, scale, fib
     if (_drawStep === 0) {
       _drawStep = 1;
@@ -920,6 +1086,24 @@ function initChartDrawingCanvas() {
         logical: coords.logical,
         price: coords.price
       };
+      redrawChartDrawings();
+      return;
+    }
+    if (_activeDrawing && _activeDrawing.type === 'channel' && _drawStep === 1) {
+      const coords = getEventCoords(e);
+      _activeDrawing.p2 = {
+        x: coords.x,
+        y: coords.y,
+        logical: coords.logical,
+        price: coords.price != null ? coords.price : _drawStart.price
+      };
+      _activeDrawing.p3 = { ..._activeDrawing.p2 };
+      redrawChartDrawings();
+      return;
+    }
+    if (_activeDrawing && _activeDrawing.type === 'channel' && _drawStep === 2) {
+      const coords = getEventCoords(e);
+      _activeDrawing.p3 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price };
       redrawChartDrawings();
       return;
     }
@@ -1032,6 +1216,20 @@ function initChartDrawingCanvas() {
   window.addEventListener('mouseup', e => {
     // 1. Commit drag modification of existing drawing
     if (_dragMode) {
+      // Record the pre-drag geometry so Ctrl+Z restores it instead of deleting the drawing.
+      if (_dragStartDrawing && _selectedDrawingIndex != null) {
+        const dragSym = getActiveDrawingSymbol();
+        const dragArr = _chartDrawings[dragSym] || [];
+        const cur = dragArr[_selectedDrawingIndex];
+        if (cur && JSON.stringify(cur) !== JSON.stringify(_dragStartDrawing)) {
+          const snap = JSON.parse(JSON.stringify(dragArr));
+          snap[_selectedDrawingIndex] = JSON.parse(JSON.stringify(_dragStartDrawing));
+          if (!_drawUndoStack[dragSym]) _drawUndoStack[dragSym] = [];
+          _drawUndoStack[dragSym].push(snap);
+          if (_drawUndoStack[dragSym].length > 50) _drawUndoStack[dragSym].shift();
+          _drawRedoStack[dragSym] = [];
+        }
+      }
       _dragMode = null;
       _dragHandle = null;
       _dragStartDrawing = null;
@@ -1043,7 +1241,7 @@ function initChartDrawingCanvas() {
     }
 
     // 2. Drag-to-draw gesture for new drawing (Press-Drag-Release)
-    if (_activeDrawing && (_activeDrawing.type === 'curve' || _activeDrawing.type === 'fib_ext' || _activeDrawing.type === 'path')) {
+    if (_activeDrawing && (_activeDrawing.type === 'curve' || _activeDrawing.type === 'fib_ext' || _activeDrawing.type === 'path' || _activeDrawing.type === 'channel')) {
       return; // multi-step tools use click-based steps
     }
 
@@ -1207,6 +1405,7 @@ function redrawChartDrawings() {
   const canvas = document.getElementById('max-chart-draw-canvas');
   if (!canvas) return;
   syncCanvasSize();
+  scheduleObjectListRender();
 
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
@@ -1223,24 +1422,40 @@ function redrawChartDrawings() {
   const drawings = saved.concat(_activeDrawing ? [_activeDrawing] : []);
   if (!drawings.length) return;
 
+  // In a multi-chart layout the overlay spans the whole stage, so every drawing of the
+  // active tile must be shifted by the tile's origin and clipped to the tile's bounds.
+  const tile = getActiveTileOffset();
+  const originX = tile ? tile.dx : 0;
+  const originY = tile ? tile.dy : 0;
+
   // Calculate actual plot area width excluding right price scale column
-  let chartPlotW = W - 65;
+  let chartPlotW = (tile ? tile.w : W) - 65;
   if (timeScale && typeof timeScale.width === 'function') {
     const tsw = timeScale.width();
-    if (tsw > 50 && tsw < W) chartPlotW = tsw;
+    if (tsw > 50 && tsw < (tile ? tile.w : W)) chartPlotW = tsw;
   }
 
   // Clip all drawings strictly to the plot area so lines and labels never overlap the price scale!
   ctx.save();
   ctx.beginPath();
-  ctx.rect(0, 0, chartPlotW, H);
+  if (tile) {
+    // Clip to the active tile's pane only, in stage canvas space
+    ctx.rect(originX, originY, chartPlotW, tile.h);
+  } else {
+    ctx.rect(0, 0, chartPlotW, H);
+  }
   ctx.clip();
+
+  // All drawing coordinates below are tile-local; shift them into canvas space once.
+  if (tile) ctx.translate(originX, originY);
 
   const toPx = p => pointToPixels(p, timeScale, series);
 
   for (let idx = 0; idx < drawings.length; idx++) {
     const d = drawings[idx];
     if (!d || (!d.p1 && (!d.points || !d.points.length))) continue;
+
+    if (d.hidden) continue;
 
     const isSelected = (idx === _selectedDrawingIndex);
     const color = d.color || '#38bdf8';
@@ -1340,6 +1555,150 @@ function redrawChartDrawings() {
           drawAnchorHandle(ctx, pt1.x, pt1.y);
           drawAnchorHandle(ctx, pt2.x, pt2.y);
         }
+      }
+      ctx.restore();
+      continue;
+    }
+
+    // 0a. Horizontal Line (hline) — infinite price line with axis tag
+    if (d.type === 'hline') {
+      const pt = toPx(d.p1);
+      const y = pt.y;
+      if (y >= 0 && y <= H) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        if (style === 'dashed') ctx.setLineDash([6, 4]);
+        else if (style === 'dotted') ctx.setLineDash([2, 3]);
+        else ctx.setLineDash([]);
+
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(chartPlotW, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Price tag pinned to the right axis edge
+        const pTxt = d.p1.price != null ? ('₹ ' + d.p1.price.toFixed(1)) : '';
+        if (pTxt) {
+          ctx.font = 'bold 10px -apple-system,BlinkMacSystemFont,sans-serif';
+          const tw = ctx.measureText(pTxt).width;
+          ctx.fillStyle = '#1e222d';
+          ctx.fillRect(chartPlotW - tw - 16, y - 10, tw + 14, 20);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1;
+          ctx.strokeRect(chartPlotW - tw - 16, y - 10, tw + 14, 20);
+          ctx.fillStyle = color;
+          ctx.fillText(pTxt, chartPlotW - tw - 9, y + 3.5);
+        }
+
+        if (isSelected) {
+          const hx = Math.max(12, Math.min(chartPlotW - 12, pt.x));
+          drawAnchorHandle(ctx, hx, y);
+        }
+      }
+      ctx.restore();
+      continue;
+    }
+
+    // 0b. Vertical Line (vline) — infinite time line with date tag
+    if (d.type === 'vline') {
+      const pt = toPx(d.p1);
+      const x = pt.x;
+      if (x >= 0 && x <= chartPlotW) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        if (style === 'dashed') ctx.setLineDash([6, 4]);
+        else if (style === 'dotted') ctx.setLineDash([2, 3]);
+        else ctx.setLineDash([]);
+
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, H);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Time tag at the bottom of the line
+        const tTxt = d.p1.time != null ? String(d.p1.time) : '';
+        if (tTxt) {
+          ctx.font = 'bold 10px -apple-system,BlinkMacSystemFont,sans-serif';
+          const tw = ctx.measureText(tTxt).width;
+          const tagX = Math.max(2, Math.min(chartPlotW - tw - 10, x - tw / 2 - 5));
+          ctx.fillStyle = '#1e222d';
+          ctx.fillRect(tagX, H - 22, tw + 12, 18);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1;
+          ctx.strokeRect(tagX, H - 22, tw + 12, 18);
+          ctx.fillStyle = color;
+          ctx.fillText(tTxt, tagX + 6, H - 9);
+        }
+
+        if (isSelected) {
+          const hy = Math.max(12, Math.min(H - 12, pt.y));
+          drawAnchorHandle(ctx, x, hy);
+        }
+      }
+      ctx.restore();
+      continue;
+    }
+
+    // 0c. Parallel Channel (channel) — 3 clicks: base line p1->p2, offset via p3
+    if (d.type === 'channel') {
+      const p1 = toPx(d.p1);
+      const p2 = d.p2 ? toPx(d.p2) : p1;
+      const p3 = d.p3 ? toPx(d.p3) : p2;
+      const ext = d.extend || 'right';
+      const extW = chartPlotW;
+      const offset = p3.y - ((p1.y + p2.y) / 2);
+
+      // horizontal extent for "extend" option
+      let lx = Math.min(p1.x, p2.x), rx = Math.max(p1.x, p2.x);
+      if (ext === 'left' || ext === 'both') lx = 0;
+      if (ext === 'right' || ext === 'both') rx = extW;
+
+      const slope = (p2.x !== p1.x) ? (p2.y - p1.y) / (p2.x - p1.x) : 0;
+      const yAt = (x, off) => p1.y + slope * (x - p1.x) + off;
+
+      const fillOp = d.fillOpacity != null ? d.fillOpacity : 0.12;
+      if (fillOp > 0) {
+        ctx.fillStyle = typeof hexToRgba === 'function' ? hexToRgba(color, fillOp) : `rgba(56, 189, 248, ${fillOp})`;
+        ctx.beginPath();
+        ctx.moveTo(lx, yAt(lx, 0));
+        ctx.lineTo(rx, yAt(rx, 0));
+        ctx.lineTo(rx, yAt(rx, offset));
+        ctx.lineTo(lx, yAt(lx, offset));
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      // base line
+      if (style === 'dashed') ctx.setLineDash([6, 4]);
+      else if (style === 'dotted') ctx.setLineDash([2, 3]);
+      else ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(lx, yAt(lx, 0));
+      ctx.lineTo(rx, yAt(rx, 0));
+      ctx.stroke();
+      // parallel line
+      ctx.beginPath();
+      ctx.moveTo(lx, yAt(lx, offset));
+      ctx.lineTo(rx, yAt(rx, offset));
+      ctx.stroke();
+      // midline
+      ctx.setLineDash([4, 4]);
+      ctx.globalAlpha = 0.55;
+      ctx.beginPath();
+      ctx.moveTo(lx, yAt(lx, offset / 2));
+      ctx.lineTo(rx, yAt(rx, offset / 2));
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.setLineDash([]);
+
+      if (isSelected) {
+        drawAnchorHandle(ctx, p1.x, p1.y);
+        drawAnchorHandle(ctx, p2.x, p2.y);
+        drawAnchorHandle(ctx, p3.x, p3.y);
       }
       ctx.restore();
       continue;
@@ -1955,13 +2314,15 @@ function redrawChartDrawings() {
       const clr = (selD.color && selD.color !== '#22c55e' && selD.color !== '#ef4444' && selD.color !== '#089981' && selD.color !== '#f23645')
         ? selD.color
         : (isUp ? '#089981' : '#f23645');
-      const scaleW = Math.max(50, W - chartPlotW);
+      const paneW = tile ? tile.w : W;
+      const paneH = tile ? tile.h : H;
+      const scaleW = Math.max(50, paneW - chartPlotW);
       const drawScaleTag = (yCoord, priceVal) => {
         if (yCoord == null || !isFinite(yCoord) || priceVal == null || !isFinite(priceVal)) return;
-        if (yCoord < 0 || yCoord > H) return;
+        if (yCoord < 0 || yCoord > paneH) return;
         const txt = priceVal.toFixed(2);
         const bh = 18;
-        const by = Math.max(0, Math.min(H - bh, yCoord - bh / 2));
+        const by = Math.max(0, Math.min(paneH - bh, yCoord - bh / 2));
         ctx.fillStyle = clr;
         ctx.fillRect(chartPlotW, by, scaleW, bh);
         ctx.fillStyle = '#ffffff';
@@ -1981,6 +2342,190 @@ window.redrawChartDrawings = redrawChartDrawings;
 
 // ── FLOATING CUSTOMIZATION TOOLBAR LOGIC ──
 const TV_DRAW_PALETTE = ['#22c55e', '#ef4444', '#38bdf8', '#2962ff', '#eab308', '#f97316', '#a855f7', '#ec4899', '#14b8a6', '#f0f3fa'];
+
+// ============================================================================
+// Drawing Object List (TradingView-style "Object Tree" / Objects panel)
+// Lets the user click-to-select, hide/show and delete each drawing on the
+// active symbol without hunting for it on the chart.
+// ============================================================================
+const DRAW_OBJECT_LABELS = {
+  trendline: 'Trend Line',
+  ray: 'Arrow Ray',
+  ray_h: 'Horizontal Ray',
+  hline: 'Horizontal Line',
+  vline: 'Vertical Line',
+  channel: 'Parallel Channel',
+  rect: 'Rectangle',
+  scale: 'Price Range',
+  measure: 'Price Range',
+  fib: 'Fib Retracement',
+  fib_ext: 'Fib Extension',
+  curve: 'Curve',
+  path: 'Path',
+  comment: 'Comment',
+  pricenote: 'Price Note',
+  text: 'Text'
+};
+
+// Drawings round-trip through localStorage, so never trust their fields as markup
+function escObjHtml(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function drawingTypeLabel(type) {
+  return DRAW_OBJECT_LABELS[type] || (type ? type.replace(/_/g, ' ') : 'Drawing');
+}
+
+// Summarise a drawing's anchor so rows are distinguishable at a glance
+function drawingSummary(d) {
+  if (!d) return '';
+  if (d.type === 'hline' && d.p1 && d.p1.price != null) return '₹ ' + d.p1.price.toFixed(1);
+  if (d.type === 'vline' && d.p1 && d.p1.time != null) return String(d.p1.time);
+  if (d.type === 'ray_h' && d.p1 && d.p1.price != null) return '₹ ' + d.p1.price.toFixed(1);
+  if (d.p1 && d.p1.price != null && d.p2 && d.p2.price != null) {
+    const pct = d.p1.price ? ((d.p2.price - d.p1.price) / d.p1.price) * 100 : 0;
+    return '₹ ' + d.p1.price.toFixed(1) + ' → ₹ ' + d.p2.price.toFixed(1) +
+      ' (' + (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%)';
+  }
+  if (d.text) return String(d.text).slice(0, 40);
+  if (d.p1 && d.p1.price != null) return '₹ ' + d.p1.price.toFixed(1);
+  return '';
+}
+
+function ensureDrawingObjectList() {
+  const stage = document.getElementById('max-chart-stage');
+  if (!stage) return null;
+  let panel = document.getElementById('tv-drawing-object-list');
+  if (panel) return panel;
+
+  panel = document.createElement('div');
+  panel.id = 'tv-drawing-object-list';
+  panel.className = 'tv-object-list';
+  panel.style.display = 'none';
+  panel.innerHTML =
+    '<div class="tv-object-list-head">' +
+      '<span>Objects</span>' +
+      '<span id="tv-object-list-count" class="tv-object-list-count">0</span>' +
+      '<button class="tv-object-list-x" onclick="toggleDrawingObjectList(event)" title="Close">✕</button>' +
+    '</div>' +
+    '<div id="tv-object-list-body" class="tv-object-list-body"></div>';
+  stage.appendChild(panel);
+  return panel;
+}
+
+let _objectListRaf = null;
+function scheduleObjectListRender() {
+  const panel = document.getElementById('tv-drawing-object-list');
+  if (!panel || panel.style.display === 'none') return;
+  if (_objectListRaf) return;
+  _objectListRaf = requestAnimationFrame(() => {
+    _objectListRaf = null;
+    renderDrawingObjectList();
+  });
+}
+
+function renderDrawingObjectList() {
+  const panel = document.getElementById('tv-drawing-object-list');
+  if (!panel || panel.style.display === 'none') return;
+  const body = document.getElementById('tv-object-list-body');
+  const countEl = document.getElementById('tv-object-list-count');
+  if (!body) return;
+
+  const sym = getActiveDrawingSymbol();
+  const drawings = _chartDrawings[sym] || [];
+  if (countEl) countEl.textContent = String(drawings.length);
+
+  if (!drawings.length) {
+    body.innerHTML = '<div class="tv-object-list-empty">No drawings on ' + sym + ' yet.</div>';
+    return;
+  }
+
+  let html = '';
+  for (let i = drawings.length - 1; i >= 0; i--) {
+    const d = drawings[i];
+    if (!d) continue;
+    const active = (i === _selectedDrawingIndex);
+    const swatch = d.color || '#38bdf8';
+    const eye = d.hidden ? '◌' : '◉';
+    const eyeTitle = d.hidden ? 'Show' : 'Hide';
+    const summary = drawingSummary(d);
+    html +=
+      '<div class="tv-object-row' + (active ? ' active' : '') + (d.hidden ? ' hidden-obj' : '') + '" ' +
+        'data-idx="' + i + '" onclick="selectDrawingFromList(' + i + ')" ' +
+        'title="' + escObjHtml(drawingTypeLabel(d.type)) + '">' +
+        '<span class="tv-object-swatch" style="background:' + swatch + ';"></span>' +
+        '<span class="tv-object-label">' + escObjHtml(drawingTypeLabel(d.type)) +
+          (summary ? '<em class="tv-object-sub">' + escObjHtml(summary) + '</em>' : '') +
+        '</span>' +
+        '<button class="tv-object-act" onclick="toggleDrawingVisibility(event,' + i + ')" title="' + eyeTitle + '">' + eye + '</button>' +
+        '<button class="tv-object-act del" onclick="deleteDrawingFromList(event,' + i + ')" title="Delete">✕</button>' +
+      '</div>';
+  }
+  body.innerHTML = html;
+}
+
+function toggleDrawingObjectList(e) {
+  if (e) e.stopPropagation();
+  const panel = ensureDrawingObjectList();
+  if (!panel) return;
+  const show = panel.style.display === 'none' || !panel.style.display;
+  panel.style.display = show ? 'flex' : 'none';
+  const btn = document.getElementById('draw-tool-objects');
+  if (btn) btn.classList.toggle('active', show);
+  if (show) renderDrawingObjectList();
+}
+window.toggleDrawingObjectList = toggleDrawingObjectList;
+
+function selectDrawingFromList(idx) {
+  const sym = getActiveDrawingSymbol();
+  const drawings = _chartDrawings[sym] || [];
+  if (!drawings[idx]) return;
+  _selectedDrawingIndex = idx;
+  if (_currentDrawTool !== 'select') setDrawingTool('select');
+  updateFloatingToolbar();
+  redrawChartDrawings();
+}
+window.selectDrawingFromList = selectDrawingFromList;
+
+function toggleDrawingVisibility(e, idx) {
+  if (e) e.stopPropagation();
+  const sym = getActiveDrawingSymbol();
+  const drawings = _chartDrawings[sym] || [];
+  const d = drawings[idx];
+  if (!d) return;
+  pushDrawHistory(sym);
+  d.hidden = !d.hidden;
+  if (d.hidden && _selectedDrawingIndex === idx) {
+    _selectedDrawingIndex = null;
+    hideFloatingToolbar();
+  }
+  saveChartDrawings();
+  redrawChartDrawings();
+  renderDrawingObjectList();
+}
+window.toggleDrawingVisibility = toggleDrawingVisibility;
+
+function deleteDrawingFromList(e, idx) {
+  if (e) e.stopPropagation();
+  const sym = getActiveDrawingSymbol();
+  const drawings = _chartDrawings[sym] || [];
+  if (!drawings[idx]) return;
+  pushDrawHistory(sym);
+  drawings.splice(idx, 1);
+  if (_selectedDrawingIndex === idx) {
+    _selectedDrawingIndex = null;
+    hideFloatingToolbar();
+  } else if (_selectedDrawingIndex != null && _selectedDrawingIndex > idx) {
+    _selectedDrawingIndex--;
+  }
+  saveChartDrawings();
+  redrawChartDrawings();
+  renderDrawingObjectList();
+}
+window.deleteDrawingFromList = deleteDrawingFromList;
+window.renderDrawingObjectList = renderDrawingObjectList;
 
 function updateFloatingToolbar() {
   const bar = document.getElementById('tv-drawing-floating-toolbar');
@@ -2011,11 +2556,19 @@ function updateFloatingToolbar() {
   const stageW = stage ? stage.clientWidth : 800;
   const stageH = stage ? stage.clientHeight : 500;
 
+  // The toolbar is absolutely positioned inside #max-chart-stage, so tile-local
+  // coordinates need the active tile's origin added in multi-chart layouts.
+  const tile = getActiveTileOffset();
+  const originX = tile ? tile.dx : 0;
+  const originY = tile ? tile.dy : 0;
+  const paneW = tile ? tile.w : stageW;
+  const paneH = tile ? tile.h : stageH;
+
   const isScale = (d.type === 'scale' || d.type === 'measure');
   const hasFill = (d.type === 'rect' || isScale);
   const barW = hasFill ? 230 : 200;
-  const targetLeft = Math.max(10, Math.min(stageW - barW - 10, midX - barW / 2));
-  const targetTop = Math.max(48, Math.min(stageH - 60, minY - 44));
+  const targetLeft = originX + Math.max(10, Math.min(paneW - barW - 10, midX - barW / 2));
+  const targetTop = originY + Math.max(48, Math.min(paneH - 60, minY - 44));
 
   bar.style.left = targetLeft + 'px';
   bar.style.top = targetTop + 'px';
