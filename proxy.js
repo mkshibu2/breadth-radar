@@ -170,12 +170,15 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // 2c. Serve exact_quarterly_financials.json directly with CORS
-  if (parsedUrl.pathname === '/exact_quarterly_financials.json') {
+  // 2c. Serve local JSON files (/local/*.json or /exact_quarterly_financials.json) directly with CORS
+  if (parsedUrl.pathname === '/exact_quarterly_financials.json' || parsedUrl.pathname.startsWith('/local/')) {
     const fs = require('fs');
     const path = require('path');
-    const fPath = path.join(__dirname, 'exact_quarterly_financials.json');
-    if (fs.existsSync(fPath)) {
+    const relName = parsedUrl.pathname.startsWith('/local/')
+      ? path.basename(parsedUrl.pathname.slice('/local/'.length))
+      : 'exact_quarterly_financials.json';
+    const fPath = path.join(__dirname, relName);
+    if (relName.endsWith('.json') && fs.existsSync(fPath)) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(fs.readFileSync(fPath));
     } else {
@@ -249,7 +252,8 @@ function sendProxyRequest(clientReq, clientRes, targetUrl, method, body, extraHe
   };
 
   const proxyReq = https.request(options, (proxyRes) => {
-    clientRes.writeHead(proxyRes.statusCode, { 
+    const isYfChart404 = proxyRes.statusCode === 404 && parsed.hostname && parsed.hostname.includes('finance.yahoo.com');
+    clientRes.writeHead(isYfChart404 ? 200 : proxyRes.statusCode, { 
       'Content-Type': proxyRes.headers['content-type'] || 'application/json' 
     });
     proxyRes.pipe(clientRes);

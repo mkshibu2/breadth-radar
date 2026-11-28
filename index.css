@@ -1350,6 +1350,19 @@ body {
   display: contents;
 }
 
+.max-hdr-secondary > * {
+  order: 1;
+}
+
+.max-hdr-right-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  order: 99;
+  flex-shrink: 0;
+}
+
 .max-hdr-back-btn {
   display: none;
 }
@@ -1372,6 +1385,11 @@ body {
 .sd-chart-max-btn:hover {
   color: var(--teal);
   background: rgba(45, 212, 191, 0.1)
+}
+
+.sd-chart-card.sd-chart-selected {
+  border-color: var(--teal) !important;
+  box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.45), 0 4px 16px rgba(45, 212, 191, 0.12);
 }
 
 .tv-header-icon-btn {
@@ -6396,6 +6414,36 @@ thead th[onclick]:hover {
   border-color: rgba(255, 255, 255, 0.12);
 }
 
+.tv-wl-select-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f0f3fa;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  max-width: 145px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.tv-wl-select-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(45, 212, 191, 0.45);
+}
+.tv-wl-select-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tv-wl-select-caret {
+  font-size: 10px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
 .tv-wl-manage-menu {
   position: fixed;
   z-index: 9800;
@@ -7705,6 +7753,15 @@ thead th[onclick]:hover {
     width: 100% !important;
     min-width: 0 !important;
   }
+  .max-hdr-right-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    margin-left: auto !important;
+    flex: 1 1 auto !important;
+    justify-content: flex-end !important;
+    min-width: 0 !important;
+  }
   .max-hdr-back-btn {
     display: inline-flex !important;
     align-items: center;
@@ -7721,18 +7778,21 @@ thead th[onclick]:hover {
   }
   #max-chart-search-wrap {
     flex: 1 1 auto !important;
-    min-width: 90px !important;
+    max-width: 165px !important;
+    min-width: 80px !important;
   }
   #max-chart-search {
     width: 100% !important;
   }
   #max-chart-suggest {
+    left: auto !important;
+    right: 0 !important;
     min-width: 220px;
     max-width: calc(100vw - 24px);
     z-index: 9500 !important;
   }
   .max-hdr-close-btn {
-    margin-left: auto !important;
+    margin-left: 0 !important;
     border-color: var(--border) !important;
     background: var(--bg4) !important;
     color: var(--text) !important;

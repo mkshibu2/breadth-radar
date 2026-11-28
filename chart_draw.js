@@ -812,17 +812,19 @@ function initChartDrawingCanvas() {
         redrawChartDrawings();
         const nextPrompt = _currentDrawTool === 'curve' ? '〰 Click 2nd endpoint' : '🔢 Click 2nd point (Peak)';
         showChartToast(nextPrompt, '#38bdf8');
-      } else if (_drawStep === 1) {
+      } else if (_drawStep === 1 && _activeDrawing) {
         _drawStep = 2;
         _activeDrawing.p2 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price != null ? coords.price : _drawStart.price };
         _activeDrawing.p3 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price != null ? coords.price : _drawStart.price };
         redrawChartDrawings();
         const nextPrompt = _currentDrawTool === 'curve' ? '〰 Move and click to set curve bend' : '🔢 Click 3rd point (Pullback)';
         showChartToast(nextPrompt, '#38bdf8');
-      } else if (_drawStep === 2) {
-        _activeDrawing.p3 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price };
+      } else if (_drawStep === 2 && _activeDrawing) {
+        const placedType = _activeDrawing.type;
+        const fallbackP = _activeDrawing.p2 ? _activeDrawing.p2.price : _drawStart.price;
+        _activeDrawing.p3 = { x: coords.x, y: coords.y, logical: coords.logical, price: coords.price != null ? coords.price : fallbackP };
         commitNewDrawing({ ..._activeDrawing });
-        showChartToast('✔ Placed ' + (_activeDrawing.type === 'curve' ? 'Curve' : 'Fib Extension'), '#38bdf8');
+        showChartToast('✔ Placed ' + (placedType === 'curve' ? 'Curve' : 'Fib Extension'), '#38bdf8');
       }
       return;
     }
@@ -875,12 +877,14 @@ function initChartDrawingCanvas() {
       };
       const dist = Math.hypot(p2.x - _drawStart.x, p2.y - _drawStart.y);
       if (dist >= 4) {
-        const isScale = (_activeDrawing.type === 'scale' || _activeDrawing.type === 'measure');
+        const placedType = _activeDrawing.type;
+        const placedColor = _activeDrawing.color;
+        const isScale = (placedType === 'scale' || placedType === 'measure');
         commitNewDrawing({
-          type: _activeDrawing.type,
+          type: placedType,
           p1: _activeDrawing.p1,
           p2: p2,
-          color: _activeDrawing.color,
+          color: placedColor,
           width: isScale ? 1 : (_activeDrawing.width || 1),
           style: _activeDrawing.style || 'solid',
           fillOpacity: isScale ? 0.05 : (_activeDrawing.fillOpacity != null ? _activeDrawing.fillOpacity : 0),
@@ -897,7 +901,7 @@ function initChartDrawingCanvas() {
           showBorders: _activeDrawing.showBorders !== false,
           badgePos: _activeDrawing.badgePos || 'auto'
         });
-        showChartToast('✔ Placed ' + _activeDrawing.type, _activeDrawing.color);
+        showChartToast('✔ Placed ' + placedType, placedColor);
       } else {
         _activeDrawing = null;
         _drawStep = 0;
@@ -1058,14 +1062,16 @@ function initChartDrawingCanvas() {
           logical: coords.logical,
           price: coords.price != null ? coords.price : _drawStart.price
         };
+        const placedType = _activeDrawing.type;
+        const placedColor = _activeDrawing.color;
         commitNewDrawing({
           ..._activeDrawing,
           p1: _activeDrawing.p1,
           p2: p2,
-          color: _activeDrawing.color,
+          color: placedColor,
           width: _activeDrawing.width || 1,
           style: _activeDrawing.style || 'solid',
-          fillOpacity: _activeDrawing.fillOpacity != null ? _activeDrawing.fillOpacity : (_activeDrawing.type === 'scale' ? 0.15 : 0),
+          fillOpacity: _activeDrawing.fillOpacity != null ? _activeDrawing.fillOpacity : (placedType === 'scale' ? 0.15 : 0),
           showPrice: _activeDrawing.showPrice !== false,
           showPercent: _activeDrawing.showPercent !== false,
           showBars: _activeDrawing.showBars !== false,
@@ -1073,7 +1079,7 @@ function initChartDrawingCanvas() {
           showBorders: _activeDrawing.showBorders !== false,
           badgePos: _activeDrawing.badgePos || 'auto'
         });
-        showChartToast('✔ Placed ' + _activeDrawing.type, _activeDrawing.color);
+        showChartToast('✔ Placed ' + placedType, placedColor);
       }
       // If dist < 6, leave _drawStep = 1 waiting for 2nd click
     }

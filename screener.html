@@ -2241,9 +2241,9 @@
         <!-- QUICK SWITCHER PILLS FOR 4 FAVORITE SCREENS -->
         <div class="fav-quick-nav">
           <button class="fav-nav-btn active" id="fav-nav-Momentum-Leaders" onclick="selectPreset('Momentum-Leaders')" title="Momentum Leaders">⭐ Momentum Leaders</button>
-          <button class="fav-nav-btn" id="fav-nav-Post-Advance-Base" onclick="selectPreset('Post-Advance-Base')" title="Post-Advance Base Formation">⭐ Post-Advance Base</button>
-          <button class="fav-nav-btn" id="fav-nav-IPO-Bases" onclick="selectPreset('IPO-Bases')" title="IPO Bases">⭐ IPO Bases</button>
-          <button class="fav-nav-btn" id="fav-nav-Stage2-Transition" onclick="selectPreset('Stage2-Transition')" title="Stage 2 Transition">⭐ Stage 2 Transition</button>
+          <button class="fav-nav-btn" id="fav-nav-Post-Advance-Base" onclick="selectPreset('Post-Advance-Base')" title="VCP / Post-Advance Base">⭐ VCP / Post-Adv Base</button>
+          <button class="fav-nav-btn" id="fav-nav-IPO-Bases" onclick="selectPreset('IPO-Bases')" title="IPO Primary Bases">⭐ IPO Primary Bases</button>
+          <button class="fav-nav-btn" id="fav-nav-Stage2-Transition" onclick="selectPreset('Stage2-Transition')" title="Stage 2 Earnings Turn">⭐ Stage 2 Earnings Turn</button>
         </div>
 
         <!-- PRESETS DROPDOWN MENU -->
@@ -2867,7 +2867,7 @@
       },
       'Post-Advance-Base': {
         id: 'Post-Advance-Base',
-        name: 'Post-Advance Base Formation',
+        name: 'VCP / Post-Advance Base',
         desc: 'Identify stocks that have already made a substantial advance but are now consolidating.',
         filters: [
           { id: 'price', label: 'Price', type: 'numeric', op: 'gte', val: 30, unit: 'INR', enabled: true },
@@ -2885,7 +2885,7 @@
       },
       'IPO-Bases': {
         id: 'IPO-Bases',
-        name: 'IPO Bases',
+        name: 'IPO Primary Bases',
         desc: 'Identify newly listed stocks developing their first proper bases (with at least 40 sessions of history).',
         filters: [
           { id: 'price', label: 'Price', type: 'numeric', op: 'gte', val: 30, unit: 'INR', enabled: true },
@@ -2902,8 +2902,8 @@
       },
       'Stage2-Transition': {
         id: 'Stage2-Transition',
-        name: 'Stage 2 Transition',
-        desc: 'Stan Weinstein\'s Stage Analysis & Minervini Trend Template: Discover stocks moving from Stage 1 into Stage 2 advancement.',
+        name: 'Stage 2 Earnings Turn',
+        desc: 'Stan Weinstein\'s Stage Analysis & Minervini Trend Template: Stocks moving into Stage 2 within 20% of 52W High with EPS growth >= 15%.',
         filters: [
           { id: 'price', label: 'Price', type: 'numeric', op: 'gte', val: 30, unit: 'INR', enabled: true },
           { id: 'f_ma_pr_sma50', label: 'Price ≥ SMA, 50', type: 'compare', left: 'price', op: 'gte', right: 'sma_50', enabled: true },
@@ -2913,8 +2913,9 @@
           { id: 'mkt_cap_inr', label: 'Mkt cap', type: 'numeric', op: 'gte', val: 1000000000, displayVal: '1 B INR', enabled: true },
           { id: 'f_perf_3m_stg2', label: 'Perf, 3M', type: 'perf', period: '3m', op: 'gte', val: 0, unit: '%', enabled: true },
           { id: 'f_perf_6m_stg2', label: 'Perf, 6M', type: 'perf', period: '6m', op: 'gte', val: 10, unit: '%', enabled: true },
-          { id: 'dist_52w_high', label: 'Price below High, 52W', type: 'numeric', op: 'between', val: 0, val2: 30, unit: '%', enabled: true },
+          { id: 'dist_52w_high', label: 'Price below High, 52W', type: 'numeric', op: 'between', val: 0, val2: 20, unit: '%', enabled: true },
           { id: 'dist_52w_low', label: 'Price above Low, 52W', type: 'numeric', op: 'gte', val: 20, unit: '%', enabled: true },
+          { id: 'eps_growth_fq', label: 'EPS Growth (FQ)', type: 'numeric', op: 'gte', val: 15, unit: '%', enabled: true },
           { id: 'turnover_inr', label: 'Price × vol', type: 'numeric', op: 'gte', val: 10000000, displayVal: '10 M INR', enabled: true },
           { id: 'avg_vol_30d', label: 'Avg vol, 30D', type: 'numeric', op: 'gte', val: 200000, displayVal: '200 K', enabled: true }
         ]
@@ -2925,7 +2926,7 @@
     var FACTORY_PRESETS = {
       'PrimaryScan-PowerPlay': {
         id: 'PrimaryScan-PowerPlay',
-        name: 'PrimaryScan-PowerPlay',
+        name: '⚡ PowerPlay Leaders',
         desc: 'Matches your TradingView setup: 3M >= 30%, near 1M High (0-20%), EMA stack, liquidity filters',
         filters: [
           { id: 'price', label: 'Price', type: 'numeric', op: 'gte', val: 30, unit: 'INR', enabled: true },
@@ -2939,58 +2940,31 @@
           { id: 'avg_vol_30d', label: 'Avg vol, 30D', type: 'numeric', op: 'gt', val: 200000, displayVal: '200 K', enabled: true }
         ]
       },
-      'High-Momentum-Leaders': {
-        id: 'High-Momentum-Leaders',
-        name: '🚀 High Momentum Leaders (3M \u2265 40%)',
-        desc: 'Top moving momentum stocks with 3-month performance over 40% and elevated volume',
-        filters: [
-          { id: 'price', label: 'Price', type: 'numeric', op: 'gte', val: 50, unit: 'INR', enabled: true },
-          { id: 'f_perf_mom', label: 'Perf, 3M', type: 'perf', period: '3m', op: 'gte', val: 40, unit: '%', enabled: true },
-          { id: 'rel_vol', label: 'Relative Vol', type: 'numeric', op: 'gte', val: 1.0, enabled: true },
-          { id: 'f_ma_mom', label: 'Price \u2265 EMA, 20', type: 'compare', left: 'price', op: 'gte', right: 'ema_20', enabled: true },
-          { id: 'avg_vol_30d', label: 'Avg vol, 30D', type: 'numeric', op: 'gt', val: 100000, displayVal: '100 K', enabled: true }
-        ]
-      },
-      'Stage2-Trend-Stack': {
-        id: 'Stage2-Trend-Stack',
-        name: '📈 Stage 2 Moving Average Stack',
-        desc: 'Classic Minervini/Weinstein Stage 2: Price > EMA 20 > EMA 50 > SMA 200',
-        filters: [
-          { id: 'f_stg1', label: 'Price \u2265 EMA, 20', type: 'compare', left: 'price', op: 'gte', right: 'ema_20', enabled: true },
-          { id: 'f_stg2', label: 'EMA, 20 \u2265 EMA, 50', type: 'compare', left: 'ema_20', op: 'gte', right: 'ema_50', enabled: true },
-          { id: 'f_stg3', label: 'EMA, 50 \u2265 SMA, 200', type: 'compare', left: 'ema_50', op: 'gte', right: 'sma_200', enabled: true },
-          { id: 'price', label: 'Price', type: 'numeric', op: 'gte', val: 30, unit: 'INR', enabled: true },
-          { id: 'turnover_inr', label: 'Price \u00d7 vol', type: 'numeric', op: 'gte', val: 5000000, displayVal: '5 M INR', enabled: true }
-        ]
-      },
       'Tight-1M-Consolidation': {
         id: 'Tight-1M-Consolidation',
-        name: '🎯 Tight Consolidation (< 5% from 1M High)',
-        desc: 'Stocks resting within 5% of 1-Month High, coiling for breakout',
+        name: '🎯 Tight Near Highs (< 5%)',
+        desc: 'Stage 2 leaders resting within 5% of 1M High and 15% of 52W High, coiling for breakout',
         filters: [
           { id: 'dist_high_1m_pct', label: 'Price below High, 1M', type: 'numeric', op: 'between', val: 0, val2: 5, unit: '%', enabled: true },
+          { id: 'dist_52w_high', label: 'Price below High, 52W', type: 'numeric', op: 'between', val: 0, val2: 15, unit: '%', enabled: true },
           { id: 'f_ma_tight', label: 'Price \u2265 EMA, 20', type: 'compare', left: 'price', op: 'gte', right: 'ema_20', enabled: true },
+          { id: 'f_ma_tight2', label: 'EMA, 20 \u2265 EMA, 50', type: 'compare', left: 'ema_20', op: 'gte', right: 'ema_50', enabled: true },
+          { id: 'f_ma_tight3', label: 'EMA, 50 \u2265 SMA, 200', type: 'compare', left: 'ema_50', op: 'gte', right: 'sma_200', enabled: true },
           { id: 'price', label: 'Price', type: 'numeric', op: 'gte', val: 40, unit: 'INR', enabled: true },
           { id: 'avg_vol_30d', label: 'Avg vol, 30D', type: 'numeric', op: 'gt', val: 100000, displayVal: '100 K', enabled: true }
         ]
       },
       'Volume-Expansion-BO': {
         id: 'Volume-Expansion-BO',
-        name: '🔥 Volume Breakout (Rel Vol > 2x & Chg > 3%)',
-        desc: 'Huge volume surges breaking out with high relative volume today',
+        name: '🔥 Stage 2 Volume Breakout',
+        desc: 'Uptrending Stage 2 stocks breaking out near highs with Rel Vol >= 2x and Chg >= 3%',
         filters: [
           { id: 'rel_vol', label: 'Relative Vol', type: 'numeric', op: 'gte', val: 2.0, enabled: true },
           { id: 'change_pct', label: 'Change %', type: 'numeric', op: 'gte', val: 3.0, unit: '%', enabled: true },
+          { id: 'f_ma_vbo1', label: 'Price \u2265 EMA, 20', type: 'compare', left: 'price', op: 'gte', right: 'ema_20', enabled: true },
+          { id: 'f_ma_vbo2', label: 'Price \u2265 SMA, 50', type: 'compare', left: 'price', op: 'gte', right: 'sma_50', enabled: true },
+          { id: 'dist_52w_high', label: 'Price below High, 52W', type: 'numeric', op: 'between', val: 0, val2: 25, unit: '%', enabled: true },
           { id: 'turnover_inr', label: 'Price \u00d7 vol', type: 'numeric', op: 'gte', val: 10000000, displayVal: '10 M INR', enabled: true }
-        ]
-      },
-      'Only-IPOs-Recent-Listings': {
-        id: 'Only-IPOs-Recent-Listings',
-        name: '🆕 Recent IPOs & New Listings',
-        desc: 'Newly listed stocks and fresh IPOs (trading for less than 1 year)',
-        filters: [
-          { id: 'is_ipo', label: 'Recent IPO / New Listing', type: 'bool', val: true, enabled: true },
-          { id: 'turnover_inr', label: 'Price \u00d7 vol', type: 'numeric', op: 'gte', val: 5000000, displayVal: '5 M INR', enabled: true }
         ]
       }
     };

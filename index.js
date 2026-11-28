@@ -2372,7 +2372,15 @@ function sccEnableTabsDragScroll(tabsEl) {
 }
 function sccWlSwitchTab(name) {
   if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
-  _sccActiveWatchlist = name; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null; _sccWlIsBreadthSorted = false; _sccWlMaxLoaded = 40; if (name === 'VCP') { _sccWatchlistSymbols = []; } else if (name === 'Themes' || name === 'Clusters') { window._sccClustersStockLimit = 40; _sccWatchlistSymbols = []; } else if (name === 'Tight' || name === 'TIGHT') { _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || [])); if (!_sccTightSymbolsCache || !_sccTightSymbolsCache.length) { if (typeof sccScanTightStocks === 'function') sccScanTightStocks(); } } else if (name === 'Shortlist') { _sccWatchlistSymbols = Array.from(getShortlistSet()); } else if (name.startsWith('__flag_')) { const color = name.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else { _sccWatchlistSymbols = _sccWatchlists[name] || []; }
+  _sccActiveWatchlist = name; localStorage.setItem('_sccActiveWatchlist', _sccActiveWatchlist); _sccWlSelectedSymbols = []; _sccWlLastSelectedSymbol = null; _sccWlIsBreadthSorted = false; _sccWlMaxLoaded = 40;
+  if (name === 'VCP') { _sccWatchlistSymbols = []; }
+  else if (name === 'Themes' || name === 'Clusters') { window._sccClustersStockLimit = 40; _sccWatchlistSymbols = []; }
+  else if (name === 'Tight' || name === 'TIGHT') { _sccWatchlistSymbols = (typeof sccGetTightSymbols === 'function' ? sccGetTightSymbols() : (_sccTightSymbolsCache || [])); if (!_sccTightSymbolsCache || !_sccTightSymbolsCache.length) { if (typeof sccScanTightStocks === 'function') sccScanTightStocks(); } }
+  else if (name === 'Shortlist') { _sccWatchlistSymbols = Array.from(getShortlistSet()); }
+  else if (name.startsWith('scr:')) { _sccWatchlistSymbols = sccGetScreenerPresetStocks(name.slice(4)).map(s => s.symbol); }
+  else if (name.startsWith('__flag_')) { const color = name.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); }
+  else { _sccWatchlistSymbols = _sccWatchlists[name] || []; }
+  sccWlUpdateSelectLabels();
   sccWlRenderTabs(); sccWatchlistRender();
   if (typeof updateMaxChartSidebarWatchlist === 'function') updateMaxChartSidebarWatchlist();
   sccWatchlistFetchAll();
@@ -2670,6 +2678,285 @@ function sccWlToggleManageMenu(event, anchorEl) {
   menu.style.top = top + 'px';
 }
 window.sccWlToggleManageMenu = sccWlToggleManageMenu;
+
+const SCC_SCREENER_WL_PRESETS = [
+  {
+    id: 'Momentum-Leaders',
+    shortName: 'Mom Leaders',
+    filters: [
+      { id: 'price', type: 'numeric', op: 'gte', val: 30 },
+      { id: 'f1', type: 'compare', left: 'price', op: 'gte', right: 'ema_20' },
+      { id: 'f2', type: 'compare', left: 'ema_20', op: 'gte', right: 'ema_50' },
+      { id: 'f3', type: 'compare', left: 'ema_50', op: 'gte', right: 'sma_200' },
+      { id: 'mkt_cap_inr', type: 'numeric', op: 'gte', val: 1000000000 },
+      { id: 'p1', type: 'perf', period: '1m', op: 'gte', val: 5 },
+      { id: 'p2', type: 'perf', period: '3m', op: 'gte', val: 20 },
+      { id: 'p3', type: 'perf', period: '6m', op: 'gte', val: 30 },
+      { id: 'dist_52w_high', type: 'numeric', op: 'between', val: 0, val2: 15 },
+      { id: 'turnover_inr', type: 'numeric', op: 'gte', val: 10000000 },
+      { id: 'avg_vol_30d', type: 'numeric', op: 'gte', val: 200000 }
+    ]
+  },
+  {
+    id: 'Post-Advance-Base',
+    shortName: 'Post-Adv Base',
+    filters: [
+      { id: 'price', type: 'numeric', op: 'gte', val: 30 },
+      { id: 'f1', type: 'compare', left: 'price', op: 'gte', right: 'sma_50' },
+      { id: 'f2', type: 'compare', left: 'price', op: 'gte', right: 'sma_200' },
+      { id: 'f3', type: 'compare', left: 'ema_20', op: 'gte', right: 'ema_50' },
+      { id: 'f4', type: 'compare', left: 'ema_50', op: 'gte', right: 'sma_200' },
+      { id: 'mkt_cap_inr', type: 'numeric', op: 'gte', val: 1000000000 },
+      { id: 'p1', type: 'perf', period: '3m', op: 'between', val: -10, val2: 15 },
+      { id: 'p2', type: 'perf', period: '6m', op: 'gte', val: 25 },
+      { id: 'dist_52w_high', type: 'numeric', op: 'between', val: 0, val2: 25 },
+      { id: 'turnover_inr', type: 'numeric', op: 'gte', val: 10000000 },
+      { id: 'avg_vol_30d', type: 'numeric', op: 'gte', val: 200000 }
+    ]
+  },
+  {
+    id: 'IPO-Bases',
+    shortName: 'IPO Bases',
+    filters: [
+      { id: 'price', type: 'numeric', op: 'gte', val: 30 },
+      { id: 'is_ipo', type: 'bool', val: true },
+      { id: 'f1', type: 'compare', left: 'price', op: 'gte', right: 'ema_20' },
+      { id: 'f2', type: 'compare', left: 'price', op: 'gte', right: 'sma_50' },
+      { id: 'f3', type: 'compare', left: 'ema_20', op: 'gte', right: 'sma_50' },
+      { id: 'mkt_cap_inr', type: 'numeric', op: 'gte', val: 1000000000 },
+      { id: 'p1', type: 'perf', period: '3m', op: 'gte', val: 0 },
+      { id: 'dist_high_1m_pct', type: 'numeric', op: 'between', val: 0, val2: 25 },
+      { id: 'turnover_inr', type: 'numeric', op: 'gte', val: 10000000 },
+      { id: 'avg_vol_30d', type: 'numeric', op: 'gte', val: 200000 }
+    ]
+  },
+  {
+    id: 'Stage2-Transition',
+    shortName: 'Stage2 Turn',
+    filters: [
+      { id: 'price', type: 'numeric', op: 'gte', val: 30 },
+      { id: 'f1', type: 'compare', left: 'price', op: 'gte', right: 'sma_50' },
+      { id: 'f2', type: 'compare', left: 'price', op: 'gte', right: 'sma_200' },
+      { id: 'f3', type: 'compare', left: 'sma_50', op: 'gte', right: 'sma_200' },
+      { id: 'f4', type: 'compare', left: 'ema_50', op: 'gte', right: 'sma_200' },
+      { id: 'mkt_cap_inr', type: 'numeric', op: 'gte', val: 1000000000 },
+      { id: 'p1', type: 'perf', period: '3m', op: 'gte', val: 0 },
+      { id: 'p2', type: 'perf', period: '6m', op: 'gte', val: 10 },
+      { id: 'dist_52w_high', type: 'numeric', op: 'between', val: 0, val2: 20 },
+      { id: 'dist_52w_low', type: 'numeric', op: 'gte', val: 20 },
+      { id: 'eps_growth_fq', type: 'numeric', op: 'gte', val: 15 },
+      { id: 'turnover_inr', type: 'numeric', op: 'gte', val: 10000000 },
+      { id: 'avg_vol_30d', type: 'numeric', op: 'gte', val: 200000 }
+    ]
+  },
+  {
+    id: 'PrimaryScan-PowerPlay',
+    shortName: 'PowerPlay',
+    filters: [
+      { id: 'price', type: 'numeric', op: 'gte', val: 30 },
+      { id: 'f1', type: 'compare', left: 'price', op: 'gte', right: 'ema_20' },
+      { id: 'f2', type: 'compare', left: 'ema_20', op: 'gte', right: 'ema_50' },
+      { id: 'f3', type: 'compare', left: 'ema_50', op: 'gte', right: 'sma_200' },
+      { id: 'mkt_cap_inr', type: 'numeric', op: 'gte', val: 1000000000 },
+      { id: 'p1', type: 'perf', period: '3m', op: 'gte', val: 30 },
+      { id: 'dist_high_1m_pct', type: 'numeric', op: 'between', val: 0, val2: 20 },
+      { id: 'turnover_inr', type: 'numeric', op: 'gte', val: 10000000 },
+      { id: 'avg_vol_30d', type: 'numeric', op: 'gt', val: 200000 }
+    ]
+  },
+  {
+    id: 'Tight-1M-Consolidation',
+    shortName: 'Tight Highs',
+    filters: [
+      { id: 'dist_high_1m_pct', type: 'numeric', op: 'between', val: 0, val2: 5 },
+      { id: 'dist_52w_high', type: 'numeric', op: 'between', val: 0, val2: 15 },
+      { id: 'f1', type: 'compare', left: 'price', op: 'gte', right: 'ema_20' },
+      { id: 'f2', type: 'compare', left: 'ema_20', op: 'gte', right: 'ema_50' },
+      { id: 'f3', type: 'compare', left: 'ema_50', op: 'gte', right: 'sma_200' },
+      { id: 'price', type: 'numeric', op: 'gte', val: 40 },
+      { id: 'avg_vol_30d', type: 'numeric', op: 'gt', val: 100000 }
+    ]
+  },
+  {
+    id: 'Volume-Expansion-BO',
+    shortName: 'S2 Vol BO',
+    filters: [
+      { id: 'rel_vol', type: 'numeric', op: 'gte', val: 2.0 },
+      { id: 'change_pct', type: 'numeric', op: 'gte', val: 3.0 },
+      { id: 'f1', type: 'compare', left: 'price', op: 'gte', right: 'ema_20' },
+      { id: 'f2', type: 'compare', left: 'price', op: 'gte', right: 'sma_50' },
+      { id: 'dist_52w_high', type: 'numeric', op: 'between', val: 0, val2: 25 },
+      { id: 'turnover_inr', type: 'numeric', op: 'gte', val: 10000000 }
+    ]
+  }
+];
+
+function _sccEvalScreenerFilter(stock, f) {
+  if (!stock || !f) return true;
+  if (f.type === 'compare') {
+    const l = stock[f.left];
+    const r = stock[f.right];
+    if (l === null || l === undefined || r === null || r === undefined || isNaN(l) || isNaN(r)) return false;
+    if (f.op === 'gte') return l >= r;
+    if (f.op === 'gt') return l > r;
+    if (f.op === 'lte') return l <= r;
+    if (f.op === 'lt') return l < r;
+    return true;
+  }
+  if (f.type === 'perf') {
+    const val = stock['perf_' + (f.period || '3m')];
+    if (val === null || val === undefined || isNaN(val)) return false;
+    if (f.op === 'gte') return val >= f.val;
+    if (f.op === 'gt') return val > f.val;
+    if (f.op === 'lte') return val <= f.val;
+    if (f.op === 'lt') return val < f.val;
+    if (f.op === 'between') return val >= Math.min(f.val, f.val2) && val <= Math.max(f.val, f.val2);
+    return true;
+  }
+  if (f.type === 'bool') {
+    const isIpo = stock.is_ipo !== undefined ? Boolean(stock.is_ipo) : (stock.sma_200 === null || stock.perf_1y === null || stock.perf_6m === null);
+    return isIpo === Boolean(f.val);
+  }
+  const num = stock[f.id];
+  if (num === null || num === undefined || isNaN(num)) return false;
+  if (f.op === 'gte') return num >= f.val;
+  if (f.op === 'gt') return num > f.val;
+  if (f.op === 'lte') return num <= f.val;
+  if (f.op === 'lt') return num < f.val;
+  if (f.op === 'between') return num >= Math.min(f.val, f.val2) && num <= Math.max(f.val, f.val2);
+  return true;
+}
+
+function _sccGetScreenerUniverseStocks() {
+  try {
+    const syncedRaw = localStorage.getItem('tj_screener_synced_stocks');
+    if (syncedRaw) {
+      const syncedArr = JSON.parse(syncedRaw);
+      if (Array.isArray(syncedArr) && syncedArr.length > 500 && syncedArr[0] && syncedArr[0].symbol) {
+        return syncedArr;
+      }
+    }
+  } catch (e) { }
+  const uni = window.SCREENER_DATA || window.SCREENER_UNIVERSE;
+  if (uni && Array.isArray(uni.stocks)) return uni.stocks;
+  if (typeof window.SCREENER_STOCKS !== 'undefined' && Array.isArray(window.SCREENER_STOCKS)) return window.SCREENER_STOCKS;
+  return [];
+}
+
+function sccGetScreenerPresetStocks(presetId) {
+  const preset = SCC_SCREENER_WL_PRESETS.find(p => p.id === presetId);
+  const rawStocks = _sccGetScreenerUniverseStocks();
+  if (!preset || !rawStocks.length) return [];
+  const matched = rawStocks.filter(stk => preset.filters.every(f => _sccEvalScreenerFilter(stk, f)));
+  matched.sort((a, b) => (b.perf_3m || -999) - (a.perf_3m || -999));
+  return matched;
+}
+
+function sccGetWatchlistDisplayName(wlKey) {
+  if (!wlKey) return 'Watchlist';
+  if (wlKey.startsWith('scr:')) {
+    const pid = wlKey.slice(4);
+    const p = SCC_SCREENER_WL_PRESETS.find(x => x.id === pid);
+    return p ? p.shortName : pid;
+  }
+  if (wlKey.startsWith('__flag_') || wlKey.startsWith('__flage_')) {
+    return wlKey.replace(/^__flag[e]?_/, '').toUpperCase() + ' Flag';
+  }
+  return wlKey;
+}
+
+function sccWlUpdateSelectLabels() {
+  const label = sccGetWatchlistDisplayName(_sccActiveWatchlist);
+  document.querySelectorAll('.tv-wl-select-label').forEach(el => {
+    el.textContent = label;
+  });
+}
+
+function sccWlCloseSelectDropdown() {
+  const dd = document.getElementById('tv-wl-select-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+window.sccWlCloseSelectDropdown = sccWlCloseSelectDropdown;
+
+function sccWlToggleSelectDropdown(event, anchorEl) {
+  if (event) event.stopPropagation();
+  sccWlCloseManageMenu();
+  if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
+
+  let dd = document.getElementById('tv-wl-select-dropdown');
+  if (!dd) {
+    dd = document.createElement('div');
+    dd.id = 'tv-wl-select-dropdown';
+    dd.className = 'tv-wl-manage-menu';
+    dd.style.minWidth = '235px';
+    dd.onclick = function (e) { e.stopPropagation(); };
+    document.body.appendChild(dd);
+    document.addEventListener('click', sccWlCloseSelectDropdown);
+  }
+
+  const isOpen = dd.style.display === 'block' && dd._anchorEl === anchorEl;
+  if (isOpen) {
+    dd.style.display = 'none';
+    return;
+  }
+  dd._anchorEl = anchorEl;
+
+  const orderedTabs = typeof sccGetOrderedTabs === 'function' ? sccGetOrderedTabs() : Object.keys(_sccWatchlists || {});
+  let wlRows = '';
+  orderedTabs.forEach(name => {
+    const isAct = name === _sccActiveWatchlist;
+    const esc = name.replace(/'/g, "\\'");
+    let count = '';
+    if (_sccWatchlists && _sccWatchlists[name]) {
+      count = _sccWatchlists[name].filter(s => typeof s === 'string' && !s.startsWith('###')).length;
+    } else if (name === 'Shortlist' && typeof getShortlistSet === 'function') {
+      count = getShortlistSet().size;
+    } else if (name === 'Tight' && typeof sccGetTightSymbols === 'function') {
+      count = sccGetTightSymbols().length;
+    }
+    const disp = sccGetWatchlistDisplayName(name);
+    wlRows += `
+      <div class="tv-wl-manage-wl-row ${isAct ? 'active' : ''}" onclick="sccWlCloseSelectDropdown(); sccWlSwitchTab('${esc}');">
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${disp}</span>
+        ${count !== '' ? `<span style="font-size:10px;color:#787b86;font-family:var(--mono);">${count}</span>` : ''}
+      </div>
+    `;
+  });
+
+  let scrRows = '';
+  SCC_SCREENER_WL_PRESETS.forEach(p => {
+    const key = 'scr:' + p.id;
+    const isAct = _sccActiveWatchlist === key;
+    const count = sccGetScreenerPresetStocks(p.id).length;
+    scrRows += `
+      <div class="tv-wl-manage-wl-row ${isAct ? 'active' : ''}" onclick="sccWlCloseSelectDropdown(); sccWlSwitchTab('${key}');">
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.shortName}</span>
+        <span style="font-size:10px;color:#38bdf8;font-family:var(--mono);">${count}</span>
+      </div>
+    `;
+  });
+
+  dd.innerHTML = `
+    <div class="tv-wl-manage-hdr">Watchlists</div>
+    <div class="tv-wl-manage-list" style="max-height:175px;">${wlRows}</div>
+    <div class="tv-wl-manage-sep"></div>
+    <div class="tv-wl-manage-hdr">Screener Screens</div>
+    <div class="tv-wl-manage-list" style="max-height:195px;">${scrRows}</div>
+  `;
+
+  dd.style.display = 'block';
+  const rect = anchorEl.getBoundingClientRect();
+  const menuW = dd.offsetWidth || 235;
+  const menuH = dd.offsetHeight || 340;
+  let left = rect.left;
+  if (left + menuW > window.innerWidth - 8) left = window.innerWidth - menuW - 8;
+  if (left < 8) left = 8;
+  let top = rect.bottom + 4;
+  if (top + menuH > window.innerHeight - 8) top = Math.max(8, rect.top - menuH - 4);
+  dd.style.left = left + 'px';
+  dd.style.top = top + 'px';
+}
+window.sccWlToggleSelectDropdown = sccWlToggleSelectDropdown;
 let _sccWlCollapsedClusters = new Set();
 function sccWlToggleCluster(name) {
   if (_sccWlCollapsedClusters.has(name)) { _sccWlCollapsedClusters.delete(name); } else { _sccWlCollapsedClusters.add(name); }
@@ -3054,6 +3341,13 @@ function sccWatchlistRender() {
   } else if (_sccActiveWatchlist === 'Shortlist') {
     flatSymbols = Array.from(getShortlistSet());
     flatSymbols.forEach(sym => { watchlistItems.push({ type: 'stock', symbol: sym }); });
+    _sccWatchlistSymbols = flatSymbols;
+  } else if (_sccActiveWatchlist.startsWith('scr:')) {
+    const scrStocks = sccGetScreenerPresetStocks(_sccActiveWatchlist.slice(4));
+    flatSymbols = scrStocks.map(s => s.symbol);
+    scrStocks.forEach(s => {
+      watchlistItems.push({ type: 'stock', symbol: s.symbol, company: s.company || s.symbol, price: s.price, change_pct: s.change_pct });
+    });
     _sccWatchlistSymbols = flatSymbols;
   } else if (_sccActiveWatchlist.startsWith('__flag_')) {
     const color = _sccActiveWatchlist.replace('__flag_', '');
@@ -6722,7 +7016,7 @@ document.addEventListener('keydown', e => {
     }
     // Note: Never call closeMaximizedChart() on Escape!
   }
-}); var LS_SECTOR_STOCKS = 'nse_sector_stocks_v1'; var LS_N500_CSV = 'nse_n500csv_v1'; var LS_FILTER_STOCKS_CSV = 'nse_filter_stocks_csv_v1'; var _sectorStocksCache = null; var _n500CsvCache = null; var _filterStocksCache = null; let _sdCurrentSector = ''; let _sdCurrentData = null; let _sdActiveTab = 'vcp'; let _sdSearchQuery = ''; let _sdChartsSource = 'vcp'; let _sdChartsPage = 0; let _sdChartsPerPage = 9; let _sdChartsInterval = 'D'; let _sdChartsLayout = 'auto'; let _sdAutoChartsLimit = 12; let _sdChartType = 'volume_candles'; let _sdSortBy = 'score'; let _sdMaximizedChartSymbol = null; let _sdMaximizedChartCompany = null; let _sdMaximizedChartStats = '';
+}); var LS_SECTOR_STOCKS = 'nse_sector_stocks_v1'; var LS_N500_CSV = 'nse_n500csv_v1'; var LS_FILTER_STOCKS_CSV = 'nse_filter_stocks_csv_v1'; var _sectorStocksCache = null; var _n500CsvCache = null; var _filterStocksCache = null; let _sdCurrentSector = ''; let _sdCurrentData = null; let _sdActiveTab = 'vcp'; let _sdSearchQuery = ''; let _sdChartsSource = 'vcp'; let _sdChartsPage = 0; let _sdChartsPerPage = 9; let _sdChartsInterval = 'D'; let _sdChartsLayout = 'auto'; let _sdAutoChartsLimit = 12; let _sdChartType = 'candlestick'; let _sdSortBy = 'score'; let _sdMaximizedChartSymbol = null; let _sdMaximizedChartCompany = null; let _sdMaximizedChartStats = '';
 // ── Max chart TV-style interaction state ──
 let _maxCandles = null;          // full candle array for the maximized chart
 let _maxNiftyCandles = null;
@@ -6741,8 +7035,8 @@ let _maxRsDragStartPad = 0.06;
 let _maxBaDragActive = false;    // dragging bottom axis (horizontal zoom)
 let _maxBaDragStartX = 0;
 let _maxBaDragStartBw = 8;
-let _sccChartSymbols = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK']; let _sccChartTimeframes = ['D', 'W', '1H', 'M']; let _sccChartLayout = '1'; let _sccChartType = 'volume_candles'; let _sccSyncSymbols = false; let _sccChartZoomFactors = [1.0, 1.0, 1.0, 1.0]; let _sccWatchlists = { "Main": ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT'] }; let _sccActiveWatchlist = "Main"; let _sccWatchlistSymbols = _sccWatchlists["Main"]; let _sccWatchlistData = {}; let _sccSymbolFlags = {}; let _sccShowWatchlist = true; let _sccWlSelectedSymbols = []; let _sccWlLastSelectedSymbol = null; let _sccWlCollapsedSectors = new Set(); let _sccWlCollapsedSections = new Set(); let _sccWlOriginalOrders = {}; let _sccWlIsBreadthSorted = false; let _sccDraggedTabName = null; let _sccDraggedRowSymbol = null; let _sccTouchActive = false; let _sccTouchTimeout = null; let _sccTouchDraggedSym = null; let _sccTouchStartY = 0; let _sccTouchDraggedEl = null; let _sccFlagHoldTimeout = null; let _sccFlagHoldActive = false; try {
-  const savedSyms = localStorage.getItem('_sccChartSymbols'); if (savedSyms) _sccChartSymbols = JSON.parse(savedSyms); const savedTfs = localStorage.getItem('_sccChartTimeframes'); if (savedTfs) _sccChartTimeframes = JSON.parse(savedTfs); const savedLayout = localStorage.getItem('_sccChartLayout'); if (savedLayout) _sccChartLayout = savedLayout; if (window.innerWidth <= 600 && _sccChartLayout !== 'watchlist') _sccChartLayout = '1'; const savedType = localStorage.getItem('_sccChartType'); if (savedType) _sccChartType = savedType; const savedSync = localStorage.getItem('_sccSyncSymbols'); if (savedSync) _sccSyncSymbols = JSON.parse(savedSync); const savedZooms = localStorage.getItem('_sccChartZoomFactors'); if (savedZooms) _sccChartZoomFactors = JSON.parse(savedZooms); const savedWls = localStorage.getItem('_sccWatchlists'); if (savedWls) _sccWatchlists = JSON.parse(savedWls); const savedActiveWl = localStorage.getItem('_sccActiveWatchlist'); if (savedActiveWl) _sccActiveWatchlist = savedActiveWl; const savedFlags = localStorage.getItem('_sccSymbolFlags'); if (savedFlags) _sccSymbolFlags = JSON.parse(savedFlags);
+let _sccChartSymbols = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK']; let _sccChartTimeframes = ['D', 'W', '1H', 'M']; let _sccChartLayout = '1'; let _sccChartType = 'candlestick'; let _sccSyncSymbols = false; let _sccChartZoomFactors = [1.0, 1.0, 1.0, 1.0]; let _sccWatchlists = { "Main": ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT'] }; let _sccActiveWatchlist = "Main"; let _sccWatchlistSymbols = _sccWatchlists["Main"]; let _sccWatchlistData = {}; let _sccSymbolFlags = {}; let _sccShowWatchlist = true; let _sccWlSelectedSymbols = []; let _sccWlLastSelectedSymbol = null; let _sccWlCollapsedSectors = new Set(); let _sccWlCollapsedSections = new Set(); let _sccWlOriginalOrders = {}; let _sccWlIsBreadthSorted = false; let _sccDraggedTabName = null; let _sccDraggedRowSymbol = null; let _sccTouchActive = false; let _sccTouchTimeout = null; let _sccTouchDraggedSym = null; let _sccTouchStartY = 0; let _sccTouchDraggedEl = null; let _sccFlagHoldTimeout = null; let _sccFlagHoldActive = false; try {
+  const savedSyms = localStorage.getItem('_sccChartSymbols'); if (savedSyms) _sccChartSymbols = JSON.parse(savedSyms); const savedTfs = localStorage.getItem('_sccChartTimeframes'); if (savedTfs) _sccChartTimeframes = JSON.parse(savedTfs); const savedLayout = localStorage.getItem('_sccChartLayout'); if (savedLayout) _sccChartLayout = savedLayout; if (window.innerWidth <= 600 && _sccChartLayout !== 'watchlist') _sccChartLayout = '1'; const savedType = localStorage.getItem('_sccChartType'); if (savedType && savedType !== 'volume_candles') _sccChartType = savedType; const savedSync = localStorage.getItem('_sccSyncSymbols'); if (savedSync) _sccSyncSymbols = JSON.parse(savedSync); const savedZooms = localStorage.getItem('_sccChartZoomFactors'); if (savedZooms) _sccChartZoomFactors = JSON.parse(savedZooms); const savedWls = localStorage.getItem('_sccWatchlists'); if (savedWls) _sccWatchlists = JSON.parse(savedWls); const savedActiveWl = localStorage.getItem('_sccActiveWatchlist'); if (savedActiveWl) _sccActiveWatchlist = savedActiveWl; const savedFlags = localStorage.getItem('_sccSymbolFlags'); if (savedFlags) _sccSymbolFlags = JSON.parse(savedFlags);
   const savedCollapsedSecs = localStorage.getItem('_sccWlCollapsedSections'); if (savedCollapsedSecs) _sccWlCollapsedSections = new Set(JSON.parse(savedCollapsedSecs));
   if (_sccActiveWatchlist && _sccActiveWatchlist.startsWith('__flag_')) { const color = _sccActiveWatchlist.replace('__flag_', ''); _sccWatchlistSymbols = Object.keys(_sccSymbolFlags).filter(s => _sccSymbolFlags[s] === color); } else {
     if (!sccIsValidWatchlist(_sccActiveWatchlist)) { const keys = Object.keys(_sccWatchlists || {}); _sccActiveWatchlist = keys.length > 0 ? keys[0] : "Main"; if (keys.length === 0) { _sccWatchlists["Main"] = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'TATASTEEL', 'SBIN', 'BHARTIARTL', 'LT']; } }
@@ -7822,7 +8116,20 @@ async function sectorDrillOpen(sectorName, tabToOpen = 'vcp') {
   if (data) { calculateRSRatings(data); sdPopulateSectorsDropdown(data); }
   _sdCurrentData = data ? ((_vcpbViewMode === 'industry' ? data.industries?.[sectorName] : data.sectors?.[sectorName]) || null) : null; sdFetchCsv(); sdSwitchTab(tabToOpen);
 }
-function sectorDrillClose() { sdCleanupLwCharts(); const overlay = document.getElementById('sector-drill-overlay'); const modal = document.getElementById('sector-drill-modal'); const btn = document.getElementById('sd-max-btn'); if (overlay) overlay.style.display = 'none'; if (modal) modal.classList.remove('maximized'); if (overlay) overlay.classList.remove('maximized'); if (btn) { btn.innerHTML = '<span style="font-size:12px;line-height:1;">⛶</span>'; btn.title = 'Maximize Window'; } }
+let _sdSelectedChartSymbol = null;
+function sdSelectChartCard(symbol) {
+  if (!symbol) return;
+  const sym = symbol.toUpperCase().replace('.NS', '').trim();
+  _sdSelectedChartSymbol = sym;
+  document.querySelectorAll('.sd-chart-card.sd-chart-selected').forEach(el => {
+    el.classList.remove('sd-chart-selected');
+  });
+  const card = document.getElementById('sd-card-' + sym);
+  if (card) card.classList.add('sd-chart-selected');
+}
+window.sdSelectChartCard = sdSelectChartCard;
+
+function sectorDrillClose() { _sdSelectedChartSymbol = null; sdCleanupLwCharts(); const overlay = document.getElementById('sector-drill-overlay'); const modal = document.getElementById('sector-drill-modal'); const btn = document.getElementById('sd-max-btn'); if (overlay) overlay.style.display = 'none'; if (modal) modal.classList.remove('maximized'); if (overlay) overlay.classList.remove('maximized'); if (btn) { btn.innerHTML = '<span style="font-size:12px;line-height:1;">⛶</span>'; btn.title = 'Maximize Window'; } }
 function toggleMaximizeSectorDrill() {
   const modal = document.getElementById('sector-drill-modal'); const overlay = document.getElementById('sector-drill-overlay'); const btn = document.getElementById('sd-max-btn'); if (!modal || !overlay) return; const isMax = modal.classList.toggle('maximized'); overlay.classList.toggle('maximized', isMax); if (btn) { if (isMax) { btn.innerHTML = '<span style="font-size:12px;line-height:1;">🗗</span>'; btn.title = 'Restore Window'; } else { btn.innerHTML = '<span style="font-size:12px;line-height:1;">⛶</span>'; btn.title = 'Maximize Window'; } }
   if (_sdActiveTab === 'charts') { sdRenderCharts(_sdCurrentSector, _sdCurrentData); }
@@ -7997,6 +8304,8 @@ function sdChartsLoadMore() { _sdAutoChartsLimit += 12; sdRenderCharts(_sdCurren
 function sdChartsPrevPage() { if (_sdChartsPage > 0) { _sdChartsPage--; sdRenderCharts(_sdCurrentSector, _sdCurrentData); } }
 function sdChartsNextPage(totalPages) { if (_sdChartsPage < totalPages - 1) { _sdChartsPage++; sdRenderCharts(_sdCurrentSector, _sdCurrentData); } }
 const _yfDataCache = new Map();
+const _yfInFlightPromises = new Map();
+let _allOriginsCooldownUntil = 0;
 
 // Helper to fetch candles from a single proxy with a strict timeout
 async function _fetchProxyCandles(pUrl, timeoutMs) {
@@ -8018,6 +8327,9 @@ async function _fetchProxyCandles(pUrl, timeoutMs) {
     const trimmed = text.trim();
     if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) throw new Error('Not JSON');
     const data = JSON.parse(text);
+    if (data && data.chart && data.chart.error) {
+      throw new Error('YF_NOT_FOUND');
+    }
     const candles = parseYfData(data);
     if (candles && candles.length > 0) {
       return candles;
@@ -8047,68 +8359,90 @@ const _promiseAny = (typeof Promise !== 'undefined' && Promise.any) ? Promise.an
 async function _fetchYfDataWithSymbol(yfSymbol, range, interval) {
   const cacheKey = `${yfSymbol}_${range}_${interval}`;
   if (_yfDataCache.has(cacheKey)) { return _yfDataCache.get(cacheKey); }
+  if (_yfInFlightPromises.has(cacheKey)) { return _yfInFlightPromises.get(cacheKey); }
 
-  const currentOrigin = window.location.origin;
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+  const fetchPromise = (async () => {
+    const currentOrigin = window.location.origin;
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
 
-  // 1. If running locally, try local proxy server first (fastest failover, <20ms if up)
-  if (isLocal) {
-    try {
-      const localTarget = `https://query1.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`;
-      const candles = await _fetchProxyCandles(`http://localhost:9090/?url=${encodeURIComponent(localTarget)}`, 1200);
-      if (candles && candles.length > 0) {
-        _yfDataCache.set(cacheKey, candles);
-        return candles;
+    // 1. If running locally, try local proxy server first (fastest failover, <20ms if up)
+    if (isLocal) {
+      try {
+        const localTarget = `https://query1.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`;
+        const candles = await _fetchProxyCandles(`http://localhost:9090/?url=${encodeURIComponent(localTarget)}`, 1200);
+        if (candles && candles.length > 0) {
+          _yfDataCache.set(cacheKey, candles);
+          return candles;
+        }
+      } catch (e) {
+        // If local proxy got HTTP 404 / YF_NOT_FOUND directly from Yahoo Finance, symbol doesn't exist on YF — don't spam cloud proxies
+        if (e && (String(e.message) === 'HTTP 404' || String(e.message) === 'YF_NOT_FOUND')) {
+          return null;
+        }
+        // Local proxy not running or transient error, proceed to cloud proxies
       }
-    } catch (e) {
-      // Local proxy not running, seamlessly proceed to cloud proxies
-    }
-  }
-
-  // 2. Query both Yahoo Finance mirrors (query1 and query2) with parallel proxy race
-  const endpoints = [
-    `https://query1.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`,
-    `https://query2.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`
-  ];
-
-  for (const targetUrl of endpoints) {
-    // Priority 1: User's Dedicated Cloudflare Worker Proxy (Sub-300ms, no public rate limits)
-    try {
-      const cfUrl = `https://nse-chart-proxy.shibu-mk.workers.dev/?url=${encodeURIComponent(targetUrl)}`;
-      const candles = await _fetchProxyCandles(cfUrl, 3800);
-      if (candles && candles.length > 0) {
-        _yfDataCache.set(cacheKey, candles);
-        return candles;
-      }
-    } catch (eCf) {
-      // Proceed to backup mirrors if Cloudflare Worker or primary target is slow
     }
 
-    // Priority 2: Race backup cloud proxies in parallel
-    const proxyUrls = [
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-      `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
-      `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`
+    // 2. Query both Yahoo Finance mirrors (query1 and query2) with parallel proxy race
+    const endpoints = [
+      `https://query1.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`,
+      `https://query2.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=${range}&interval=${interval}`
     ];
 
-    if (currentOrigin && !currentOrigin.startsWith('file') && currentOrigin !== 'null' && !currentOrigin.includes('github.io')) {
-      proxyUrls.push(`${currentOrigin}/api/proxy?url=${encodeURIComponent(targetUrl)}`);
-    }
-
-    try {
-      const candles = await _promiseAny(
-        proxyUrls.map(pUrl => _fetchProxyCandles(pUrl, 4500))
-      );
-      if (candles && candles.length > 0) {
-        _yfDataCache.set(cacheKey, candles);
-        return candles;
+    for (const targetUrl of endpoints) {
+      // Priority 1: User's Dedicated Cloudflare Worker Proxy (Sub-300ms, no public rate limits)
+      try {
+        const cfUrl = `https://nse-chart-proxy.shibu-mk.workers.dev/?url=${encodeURIComponent(targetUrl)}`;
+        const candles = await _fetchProxyCandles(cfUrl, 3800);
+        if (candles && candles.length > 0) {
+          _yfDataCache.set(cacheKey, candles);
+          return candles;
+        }
+      } catch (eCf) {
+        // Proceed to backup mirrors if Cloudflare Worker or primary target is slow
       }
-    } catch (err) {
-      // Mirror failed, try next
-    }
-  }
 
-  return null;
+      // Priority 2: Race backup cloud proxies in parallel (avoid duplicate allorigins calls & respect 429 cooldown)
+      const proxyPromises = [
+        _fetchProxyCandles(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`, 4500)
+      ];
+
+      if (Date.now() > _allOriginsCooldownUntil) {
+        proxyPromises.push(
+          _fetchProxyCandles(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`, 4500)
+            .catch(err => {
+              if (err && (String(err.message).includes('429') || err.name === 'TypeError')) {
+                _allOriginsCooldownUntil = Date.now() + 60000;
+              }
+              throw err;
+            })
+        );
+      }
+
+      if (currentOrigin && !currentOrigin.startsWith('file') && currentOrigin !== 'null' && !currentOrigin.includes('github.io')) {
+        proxyPromises.push(_fetchProxyCandles(`${currentOrigin}/api/proxy?url=${encodeURIComponent(targetUrl)}`, 4500));
+      }
+
+      try {
+        const candles = await _promiseAny(proxyPromises);
+        if (candles && candles.length > 0) {
+          _yfDataCache.set(cacheKey, candles);
+          return candles;
+        }
+      } catch (err) {
+        // Mirror failed, try next
+      }
+    }
+
+    return null;
+  })();
+
+  _yfInFlightPromises.set(cacheKey, fetchPromise);
+  try {
+    return await fetchPromise;
+  } finally {
+    _yfInFlightPromises.delete(cacheKey);
+  }
 }
 
 function getYfSymbolCandidates(symbol) {
@@ -8275,7 +8609,7 @@ function sdRenderCharts(sectorName, secData) {
         </div>`;
     }
     return `
-      <div class="sd-chart-card" id="sd-card-${s.symbol}" data-symbol="${s.symbol}" style="height:${cardHeight}">
+      <div class="sd-chart-card ${_sdSelectedChartSymbol === s.symbol.toUpperCase() ? 'sd-chart-selected' : ''}" id="sd-card-${s.symbol}" data-symbol="${s.symbol}" onpointerdown="sdSelectChartCard('${s.symbol}')" style="height:${cardHeight}">
         <div class="sd-chart-header" style="gap:6px;">
           <span style="font-weight:800;font-size:12px;color:var(--teal);font-family:var(--mono);flex-shrink:0;">${s.symbol}</span>
           <div id="sd-chart-ms-${s.symbol}" class="ms-ratings-bar inline compact" style="display:none;"></div>
@@ -8354,7 +8688,6 @@ function sdRenderCharts(sectorName, secData) {
         <select onchange="sdSetChartType(this.value)" style="background:var(--bg4);border:1px solid var(--border);color:var(--text);font-size:10px;font-weight:600;padding:3px 6px;border-radius:3px;outline:none;height:24px;">
           <option value="candlestick" ${_sdChartType === 'candlestick' ? 'selected' : ''}>Candles</option>
           <option value="ohlc" ${_sdChartType === 'ohlc' ? 'selected' : ''}>Bars</option>
-          <option value="volume_candles" ${_sdChartType === 'volume_candles' ? 'selected' : ''}>Volume Candles</option>
         </select>
       </div>
 
@@ -10500,6 +10833,7 @@ document.addEventListener('pointerdown', e => {
 
 function updateMaxChartSidebarWatchlist() {
   if (typeof sccSyncWatchlistsFromStorage === 'function') sccSyncWatchlistsFromStorage();
+  if (typeof sccWlUpdateSelectLabels === 'function') sccWlUpdateSelectLabels();
   const rowsEl = document.getElementById('max-chart-sidebar-rows');
   const flagsEl = document.getElementById('max-chart-sidebar-flags');
   const tabsEl = document.getElementById('max-chart-sidebar-tabs');
@@ -10695,6 +11029,13 @@ function updateMaxChartSidebarWatchlist() {
   } else if (_sccActiveWatchlist === 'Shortlist') {
     flatSymbols = Array.from(getShortlistSet());
     flatSymbols.forEach(s => items.push({ type: 'stock', symbol: s }));
+    _sccWatchlistSymbols = flatSymbols;
+  } else if (_sccActiveWatchlist.startsWith('scr:')) {
+    const scrStocks = sccGetScreenerPresetStocks(_sccActiveWatchlist.slice(4));
+    flatSymbols = scrStocks.map(s => s.symbol);
+    scrStocks.forEach(s => {
+      items.push({ type: 'stock', symbol: s.symbol, company: s.company || s.symbol, price: s.price, change_pct: s.change_pct });
+    });
     _sccWatchlistSymbols = flatSymbols;
   } else if (_sccActiveWatchlist.startsWith('__flag_') || _sccActiveWatchlist.startsWith('__flage_')) {
     const col = _sccActiveWatchlist.replace(/^__flag[e]?_/, '');
@@ -10913,11 +11254,19 @@ window.addEventListener('keydown', e => {
   const sccChartPane = document.getElementById('scc-pane-chart');
   const isSccChartActive = sccChartPane && sccChartPane.style.display !== 'none';
 
+  const sdOverlay = document.getElementById('sector-drill-overlay');
+  const isSdOpen = sdOverlay && sdOverlay.style.display !== 'none' && sdOverlay.style.visibility !== 'hidden';
+  const activeShortcutSym = () => {
+    if (isMaxOpen && _sdMaximizedChartSymbol) return _sdMaximizedChartSymbol;
+    if (isSdOpen && _sdSelectedChartSymbol) return _sdSelectedChartSymbol;
+    return (_sdMaximizedChartSymbol || (_sccChartSymbols && _sccChartSymbols[0]) || (_stockData && _stockData.symbol) || '');
+  };
+
   // 1. Shortcut: Alt + W -> Toggle Main Watchlist
   if (e.altKey && (e.key === 'w' || e.key === 'W' || e.code === 'KeyW' || e.keyCode === 87)) {
     e.preventDefault();
     e.stopPropagation();
-    const sym = (_sdMaximizedChartSymbol || (_sccChartSymbols && _sccChartSymbols[0]) || (_stockData && _stockData.symbol) || '').toUpperCase().replace('.NS', '').trim();
+    const sym = activeShortcutSym().toUpperCase().replace('.NS', '').trim();
     if (sym && typeof maxChartToggleMainWl === 'function') {
       maxChartToggleMainWl(sym);
     }
@@ -10928,7 +11277,7 @@ window.addEventListener('keydown', e => {
   if (e.altKey && (e.key === 's' || e.key === 'S' || e.code === 'KeyS' || e.keyCode === 83)) {
     e.preventDefault();
     e.stopPropagation();
-    const sym = (_sdMaximizedChartSymbol || (_sccChartSymbols && _sccChartSymbols[0]) || (_stockData && _stockData.symbol) || '').toUpperCase().replace('.NS', '').trim();
+    const sym = activeShortcutSym().toUpperCase().replace('.NS', '').trim();
     if (sym && typeof maxChartToggleShortlist === 'function') {
       maxChartToggleShortlist(sym);
     }
@@ -10944,7 +11293,7 @@ window.addEventListener('keydown', e => {
   if (e.key === 'w' || e.key === 'W') {
     e.preventDefault();
     e.stopPropagation();
-    const sym = (_sdMaximizedChartSymbol || (_sccChartSymbols && _sccChartSymbols[0]) || (_stockData && _stockData.symbol) || '').toUpperCase().replace('.NS', '').trim();
+    const sym = activeShortcutSym().toUpperCase().replace('.NS', '').trim();
     if (sym && typeof maxChartToggleMainWl === 'function') {
       maxChartToggleMainWl(sym);
     }
@@ -10955,7 +11304,7 @@ window.addEventListener('keydown', e => {
   if (e.key === 's' || e.key === 'S') {
     e.preventDefault();
     e.stopPropagation();
-    const sym = (_sdMaximizedChartSymbol || (_sccChartSymbols && _sccChartSymbols[0]) || (_stockData && _stockData.symbol) || '').toUpperCase().replace('.NS', '').trim();
+    const sym = activeShortcutSym().toUpperCase().replace('.NS', '').trim();
     if (sym && typeof maxChartToggleShortlist === 'function') {
       maxChartToggleShortlist(sym);
     }
@@ -10976,6 +11325,26 @@ window.addEventListener('keydown', e => {
       e.preventDefault();
       e.stopPropagation();
       sccNavigateWatchlist(isNextKey ? 1 : -1);
+      return;
+    }
+  }
+
+  // 3b. Drawing Tool Shortcuts (Chart Studio or Sector Command Chart View)
+  if ((isMaxOpen || isSccChartActive) && typeof setDrawingTool === 'function') {
+    const drawKeyMap = {
+      t: { tool: 'trendline', label: 'Trend Line (T)' },
+      m: { tool: 'scale', label: 'Price Range (M)' },
+      p: { tool: 'pricenote', label: 'Price Note (P)' },
+      a: { tool: 'ray', label: 'Arrow Ray (A)' },
+      r: { tool: 'ray_h', label: 'Horizontal Ray (R)' },
+      c: { tool: 'curve', label: 'Curve (C)' }
+    };
+    const match = drawKeyMap[(e.key || '').toLowerCase()];
+    if (match) {
+      e.preventDefault();
+      e.stopPropagation();
+      setDrawingTool(match.tool);
+      if (typeof showChartToast === 'function') showChartToast(`✏️ <b>${match.label}</b>`, '#38bdf8');
       return;
     }
   }
