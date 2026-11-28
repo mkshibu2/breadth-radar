@@ -8399,6 +8399,9 @@ async function _fetchYfDataWithSymbol(yfSymbol, range, interval) {
           return candles;
         }
       } catch (eCf) {
+        if (eCf && (String(eCf.message) === 'HTTP 404' || String(eCf.message) === 'YF_NOT_FOUND')) {
+          return null;
+        }
         // Proceed to backup mirrors if Cloudflare Worker or primary target is slow
       }
 
